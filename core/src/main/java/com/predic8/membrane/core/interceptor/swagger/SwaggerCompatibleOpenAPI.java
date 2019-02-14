@@ -1,16 +1,21 @@
 package com.predic8.membrane.core.interceptor.swagger;
 
-import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Paths;
 
-public class SwaggerCompatibleOpenAPI extends OpenAPI {
+import java.io.UnsupportedEncodingException;
 
-    void setHost(String host) {}
+public interface SwaggerCompatibleOpenAPI {
 
-    String getHost() {
-        return "TODO";
-    }
+    // change to List<String> ?
+    String getHost();
 
-    String getBasePath() {
-        return "TODO";
-    }
+    String getBasePath();
+
+    Paths getPaths();
+
+    byte[] toJSON() throws UnsupportedEncodingException;
+
+    void setHost(String newHost);
+
+    boolean isNull();
 }

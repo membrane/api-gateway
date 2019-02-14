@@ -14,23 +14,19 @@
 package com.predic8.membrane.core.rules;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.core.interceptor.swagger.SwaggerCompatibleOpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.swagger.models.Path;
-import io.swagger.models.Swagger;
-
 public class SwaggerProxyKey extends ServiceProxyKey {
 	private static Logger log = LoggerFactory.getLogger(SwaggerProxyKey.class.getName());
 
-	private OpenAPI swagger;
+	private SwaggerCompatibleOpenAPI swagger;
 	private boolean allowUI;
 
 	public SwaggerProxyKey(int port) {
@@ -51,7 +47,7 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 
 	@Override
 	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
-		if (swagger == null) {
+		if (swagger.isNull()) {
 			log.error("Swagger specification is null!");
 			return false;
 		}
@@ -67,7 +63,7 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		}
 
 		// check if request is in Swagger specification
-		Paths paths = swagger.getPaths();
+		Paths paths = swagger.getPaths(); // TODO unverified type conversion from Map<String, Path> paths to current
 		for (Entry<String, PathItem> p : paths.entrySet()) {
 			if (pathTemplateMatch(uri, p.getKey()) && methodMatch(method, p.getValue())) {
 				log.debug("Request is a Swagger call according to specification");
@@ -82,7 +78,7 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 	private boolean pathTemplateMatch(String calledURI, String specName) {
 		final String IDENTIFIER = "[-_a-zA-Z0-9]+";
 		specName = specName.replaceAll("\\{" + IDENTIFIER + "\\}", IDENTIFIER);
-		String spec = swagger.getPaths() + specName; //.getBasePath() + specName; // TODO
+		String spec = swagger.getBasePath() + specName;
 		return Pattern.matches(spec, calledURI);
 	}
 
@@ -122,10 +118,10 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		).contains(path);
 	}
 
-	public OpenAPI getSwagger() {
+	public SwaggerCompatibleOpenAPI getSwagger() {
 		return swagger;
 	}
-	public void setSwagger(OpenAPI swag) {
+	public void setSwagger(SwaggerCompatibleOpenAPI swag) {
 		this.swagger = swag;
 	}
 
