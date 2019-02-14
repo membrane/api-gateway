@@ -28,7 +28,6 @@ public class OpenAPIAdapter implements SwaggerCompatibleOpenAPI {
         if (hostMatcher.find()) {
             return hostMatcher.group(1);
         } else {
-            //throw new RuntimeException("not implemented"); // can relative paths appear here?
             return "";
         }
     }
@@ -61,8 +60,6 @@ public class OpenAPIAdapter implements SwaggerCompatibleOpenAPI {
         Server server = new Server();
         server.setUrl("http://" + newHost);
         api.setServers(Lists.newArrayList(server));
-        // TODO - überhaupt nötig?
-        //api.setHost()
     }
 
     @Override

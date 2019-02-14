@@ -6,7 +6,6 @@ import java.io.UnsupportedEncodingException;
 
 public interface SwaggerCompatibleOpenAPI {
 
-    // change to List<String> ?
     String getHost();
 
     String getBasePath();

@@ -39,7 +39,7 @@ public class SwaggerAdapter implements SwaggerCompatibleOpenAPI {
                 PathItem v3Path = convert(v2Path);
                 v3Paths.put(pathname, v3Path);
             } catch (Exception e) {
-                //System.out.println("Conversion of " + v2Path.toString() + " failed.");
+                // conversion apparently not necessary
 
             }
         }
@@ -48,20 +48,15 @@ public class SwaggerAdapter implements SwaggerCompatibleOpenAPI {
 
     public PathItem convert(Path v2Path) {
 
-//        SwaggerConverter converter = new SwaggerConverter();
-//        try {
-//            return converter.convert(v2Path);
-//        } catch (Exception e) {
-            PathItem v3Path = new PathItem();
+        PathItem v3Path = new PathItem();
 
-            if (v2Path instanceof RefPath) {
+        if (v2Path instanceof RefPath) {
 
-                v3Path.set$ref(((RefPath) v2Path).get$ref());
-            } else {
-                // TODO
-            }
-            return  v3Path;
-//        }
+            v3Path.set$ref(((RefPath) v2Path).get$ref());
+        } else {
+            // Apparently no conversion needed
+        }
+        return  v3Path;
     }
 
 
