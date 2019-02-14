@@ -14,20 +14,19 @@
 package com.predic8.membrane.core.rules;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import com.predic8.membrane.core.interceptor.swagger.SwaggerCompatibleOpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.swagger.models.Path;
-import io.swagger.models.Swagger;
 
 public class SwaggerProxyKey extends ServiceProxyKey {
 	private static Logger log = LoggerFactory.getLogger(SwaggerProxyKey.class.getName());
 
-	private Swagger swagger;
+	private SwaggerCompatibleOpenAPI swagger;
 	private boolean allowUI;
 
 	public SwaggerProxyKey(int port) {
@@ -48,7 +47,7 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 
 	@Override
 	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
-		if (swagger == null) {
+		if (swagger.isNull()) {
 			log.error("Swagger specification is null!");
 			return false;
 		}
@@ -64,8 +63,8 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		}
 
 		// check if request is in Swagger specification
-		Map<String, Path> paths = swagger.getPaths();
-		for (Entry<String, Path> p : paths.entrySet()) {
+		Paths paths = swagger.getPaths(); // TODO unverified type conversion from Map<String, Path> paths to current
+		for (Entry<String, PathItem> p : paths.entrySet()) {
 			if (pathTemplateMatch(uri, p.getKey()) && methodMatch(method, p.getValue())) {
 				log.debug("Request is a Swagger call according to specification");
 				return true;
@@ -83,7 +82,7 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		return Pattern.matches(spec, calledURI);
 	}
 
-	private boolean methodMatch(String method, Path path) {
+	private boolean methodMatch(String method, PathItem path) {
 		return method.equalsIgnoreCase("GET") && path.getGet() != null
 			|| method.equalsIgnoreCase("POST") && path.getPost() != null
 			|| method.equalsIgnoreCase("HEAD") && path.getHead() != null
@@ -119,10 +118,10 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		).contains(path);
 	}
 
-	public Swagger getSwagger() {
+	public SwaggerCompatibleOpenAPI getSwagger() {
 		return swagger;
 	}
-	public void setSwagger(Swagger swag) {
+	public void setSwagger(SwaggerCompatibleOpenAPI swag) {
 		this.swagger = swag;
 	}
 

@@ -9,7 +9,7 @@
 		<swaggerProxy port="7000" url="http://petstore.swagger.io/v2/swagger.json" />
 
 		<serviceProxy port="8000">
-			<swaggerRewriter />
+			<swaggerRewriter swaggerJson="http://petstore.swagger.io/v2/swagger.json" />
 			<target host="petstore.swagger.io" port="80" />
 		</serviceProxy>
 

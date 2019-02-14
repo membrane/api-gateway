@@ -13,8 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import io.swagger.models.Swagger;
+//import io.swagger.models.Swagger;
+//import io.swagger.parser.SwaggerParser;
+import com.predic8.membrane.core.interceptor.swagger.OpenAPIAdapter;
+import com.predic8.membrane.core.interceptor.swagger.SwaggerAdapter;
+import com.predic8.membrane.core.interceptor.swagger.SwaggerCompatibleOpenAPI;
 import io.swagger.parser.SwaggerParser;
+import io.swagger.v3.parser.OpenAPIV3Parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +44,7 @@ public class SwaggerProxy extends ServiceProxy {
 
 	private String swaggerUrl;
 	private boolean allowUI = true;
-	private Swagger swagger;
+	private SwaggerCompatibleOpenAPI swagger;
 
 	public SwaggerProxy() {
 		this.key = new SwaggerProxyKey(80);
@@ -63,14 +68,14 @@ public class SwaggerProxy extends ServiceProxy {
 		HttpClient hc = new HttpClient(router.getHttpClientConfig());
 		Exchange ex = hc.call(new Request.Builder().get(swaggerUrl).buildExchange());
 		if (ex.getResponse().getStatusCode() != 200) {
-			log.error("Couldn't fetch Swagger URL!");
+		log.error("Couldn't fetch Swagger URL!");
 			throw new Exception("Couldn't fetch Swagger URL!");
 		}
 		// parse swaggerUrl
-		swagger = new SwaggerParser().parse(ex.getResponse().getBodyAsStringDecoded());
-		if (swagger == null) {
-			// TODO Deal with it
-			throw new Exception("couldn't parse Swagger definition. OpenAPI?");
+		swagger = new OpenAPIAdapter(new OpenAPIV3Parser().readContents(ex.getResponse().getBodyAsStringDecoded(), null, null).getOpenAPI());
+		if (swagger.isNull()) {
+			swagger = new SwaggerAdapter(new SwaggerParser().parse(ex.getResponse().getBodyAsStringDecoded()));
+			if (swagger.isNull()) throw new Exception("couldn't parse Swagger definition");
 		}
 		// pass swagger specification to Swagger Key
 		((SwaggerProxyKey)key).setSwagger(swagger);
@@ -107,7 +112,7 @@ public class SwaggerProxy extends ServiceProxy {
 		this.allowUI = allowUI;
 	}
 
-	public Swagger getSwagger() {
+	public SwaggerCompatibleOpenAPI getSwagger() {
 		return swagger;
 	}
 
