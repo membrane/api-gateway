@@ -6,7 +6,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.rules.RuleKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,17 +117,13 @@ public abstract class SessionManager {
     }
 
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
-        String originalCookieValueAtBeginning = exc.getProperty(SESSION_COOKIE_ORIGINAL).toString();
+        Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
-        if(session.isDirty() || cookieRenewalNeeded(originalCookieValueAtBeginning) || thereIsNoCookieHeaderInRequest(exc, originalCookieValueAtBeginning)){
+        if(session.isDirty() || !originalCookieValueAtBeginning.isPresent() || cookieRenewalNeeded(originalCookieValueAtBeginning.get().toString())){
             String currentCookieValueOfSession = getCookieValue(session);
             setCookieForCurrentSession(exc, currentCookieValueOfSession);
             setCookieForExpiredSessions(exc, currentCookieValueOfSession);
         }
-    }
-
-    private boolean thereIsNoCookieHeaderInRequest(Exchange exc, String originalCookieValueAtBeginning) {
-        return originalCookieValueAtBeginning != null && !originalCookieValueAtBeginning.isEmpty() && !cookieIsAlreadySet(exc, originalCookieValueAtBeginning);
     }
 
     private boolean cookieIsAlreadySet(Exchange exc, String currentSessionCookieValue) {
@@ -172,24 +167,30 @@ public abstract class SessionManager {
     }
 
     protected Session getSessionInternal(Exchange exc) {
+        exc.setProperty(SESSION_COOKIE_ORIGINAL,null);
         if (getCookieHeader(exc) == null)
-            return new Session(usernameKeyName,new HashMap<>());
+            return new Session(usernameKeyName, new HashMap<>());
 
-        return new Session(usernameKeyName, mergeCookies(exc));
+        Map<String, Map<String, Object>> validCookiesAsListOfMaps = convertValidCookiesToAttributes(exc);
+        Session session = new Session(usernameKeyName, mergeCookies(validCookiesAsListOfMaps.values().stream().collect(Collectors.toList())));
+
+        if(validCookiesAsListOfMaps.size() == 1)
+            exc.setProperty(SESSION_COOKIE_ORIGINAL,validCookiesAsListOfMaps.keySet().iterator().next());
+
+        return session;
     }
 
-    private Map<String, Object> mergeCookies(Exchange exc) {
-        return convertCookiesToAttributes(exc)
+    private Map<String, Object> mergeCookies(List<Map<String,Object>> validCookiesAsListOfMaps) {
+        return validCookiesAsListOfMaps
                 .stream()
                 .flatMap(map -> map.entrySet().stream())
                 .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(), (e1, e2) -> e1 != null && e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
     }
 
-    private List<Map<String, Object>> convertCookiesToAttributes(Exchange exc) {
+    private Map<String,Map<String, Object>> convertValidCookiesToAttributes(Exchange exc) {
         return getCookies(exc)
                 .filter(cookie -> isValidCookieForThisSessionManager(cookie))
-                .map(cookie -> cookieValueToAttributes(cookie.split("=")[0]))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(cookie -> cookie, cookie -> cookieValueToAttributes(cookie.split("=")[0]), (c1,c2) -> c1));
     }
 
     public Session getSession(Exchange exc) {
@@ -197,13 +198,7 @@ public abstract class SessionManager {
         if(sessionFromExchange.isPresent()) // have to do it like this and not with .orElse because getSessionFromManager would be called unnecessarily (overwriting session property)
             return sessionFromExchange.get();
 
-        Session sessionFromManager = getSessionFromManager(exc);
-        try {
-            exc.setProperty(SESSION_COOKIE_ORIGINAL, getCookieValue(sessionFromManager));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return sessionFromManager;
+        return getSessionFromManager(exc);
     }
 
     private Session getSessionFromManager(Exchange exc) {

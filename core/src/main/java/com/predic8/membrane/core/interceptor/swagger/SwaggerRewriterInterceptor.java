@@ -15,20 +15,15 @@
 package com.predic8.membrane.core.interceptor.swagger;
 
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SwaggerProxy;
+import io.swagger.parser.SwaggerParser;
+import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.apache.commons.io.IOUtils;
 import org.springframework.http.MediaType;
 
-import io.swagger.models.Swagger;
-import io.swagger.parser.SwaggerParser;
-import io.swagger.util.Json;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -43,25 +38,25 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 @MCElement(name = "swaggerRewriter")
 public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
-	private Swagger swagger;
+	private SwaggerCompatibleOpenAPI swagger;
 	private boolean rewriteUI = true;
 	private String swaggerUrl;
 	private String swaggerJson = "swagger.json";
 
 	public SwaggerRewriterInterceptor() { this(null, true, "swagger.json"); } // 0-parameter ctor needed because of MCElement
-	public SwaggerRewriterInterceptor(Swagger swag) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag) {
 		this(swag, true, "swagger.json");
 	}
-	public SwaggerRewriterInterceptor(Swagger swag, boolean rewrite) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag, boolean rewrite) {
 		this(swag, rewrite, "swagger.json");
 	}
-	public SwaggerRewriterInterceptor(Swagger swag, boolean rewrite, String json) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag, boolean rewrite, String json) {
 		name = "Swagger Rewriter";
 		this.swagger = swag;
 		this.rewriteUI = rewrite;
 		this.swaggerJson = json;
 	}
-	public SwaggerRewriterInterceptor(Swagger swag, String swagUrl) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag, String swagUrl) {
 		this(swag);
 		this.swaggerUrl = swagUrl;
 	}
@@ -69,16 +64,20 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 	@Override
 	public void init() throws Exception {
 		// inherit wsdl="..." from SoapProxy
-		if (this.swagger == null) {
+		if (this.swagger == null || this.swagger.isNull()) {
 			Rule parent = router.getParentProxy(this);
 			if (parent instanceof SwaggerProxy) {
 				setSwagger(((SwaggerProxy)parent).getSwagger());
 			}
 		}
 		// use default if no SwaggerProxy is found
-		if(this.swagger == null) {
+		if(this.swagger == null || this.swagger.isNull()) {
 			String swaggerSource = IOUtils.toString(this.getRouter().getResolverMap().resolve(this.swaggerJson));
-			this.swagger = new SwaggerParser().parse(swaggerSource);
+			this.swagger = new OpenAPIAdapter(new OpenAPIV3Parser().readContents(swaggerSource).getOpenAPI());
+			if (this.swagger == null || this.swagger.isNull()) {
+				this.swagger = new SwaggerAdapter(new SwaggerParser().parse(swaggerSource));
+				if (this.swagger == null || swagger.isNull()) throw new Exception("couldn't parse Swagger definition");
+			}
 			this.swaggerUrl = this.swaggerJson;
 		}
 
@@ -97,9 +96,12 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
 		// replacement in swagger.json
 		if (exc.getRequest().getUri().endsWith(swaggerJson) && exc.getResponseContentType().equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE)) {
-			Swagger swagBody = new SwaggerParser().parse(exc.getResponse().getBodyAsStringDecoded());
+			SwaggerCompatibleOpenAPI swagBody = new OpenAPIAdapter(new OpenAPIV3Parser().readContents(exc.getResponse().getBodyAsStringDecoded()).getOpenAPI());
+			if (swagBody == null || swagBody.isNull()) {
+				swagBody = new SwaggerAdapter(new SwaggerParser().parse(exc.getResponse().getBodyAsStringDecoded()));
+			}
 			swagBody.setHost(exc2originalHostPort(exc));
-			exc.getResponse().setBodyContent(Json.pretty(swagBody).getBytes(exc.getResponse().getCharset()));
+			exc.getResponse().setBodyContent(swagBody.toJSON());
 		}
 
 		// replacement in json and javascript (specifically UI)
@@ -109,12 +111,16 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 						&& exc.getResponse().getHeader().getContentType().equals(MediaType.TEXT_HTML_VALUE)
 				)) {
 			String from = "(http(s)?://)" + Pattern.quote(((ServiceProxy) exc.getRule()).getTarget().getHost()) + "(/.*\\.js(on)?)";
-			String to = "$1" + exc2originalHostPort(exc) + "$3";
+			String to = "http" + (isTLS(exc) ? "s" : "") + "://" + exc2originalHostPort(exc) + "$3";
 			byte[] body = exc.getResponse().getBodyAsStringDecoded().replaceAll(from, to).getBytes(exc.getResponse().getCharset());
 			exc.getResponse().setBodyContent(body);
 		}
 
 		return super.handleResponse(exc);
+	}
+
+	private boolean isTLS(Exchange exc) {
+		return exc.getRule().getSslInboundContext() != null;
 	}
 
 	private String exc2originalHostPort(Exchange exc) {
@@ -131,10 +137,10 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 				+ "JSON Specification: <a target='_blank' href='" + jsonpath + "'>" + jsonpath + "</a><br/>";
 	}
 
-	public Swagger getSwagger() {
+	public SwaggerCompatibleOpenAPI getSwagger() {
 		return swagger;
 	}
-	public void setSwagger(Swagger swagger) {
+	public void setSwagger(SwaggerCompatibleOpenAPI swagger) {
 		this.swagger = swagger;
 	}
 
