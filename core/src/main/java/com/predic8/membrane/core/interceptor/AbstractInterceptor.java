@@ -111,6 +111,8 @@ public class AbstractInterceptor implements Interceptor {
 				.getRules()
 				.stream()
 				.filter(rule -> rule
+						.getInterceptors() != null)
+				.filter(rule -> rule
 						.getInterceptors()
 						.stream()
 						.filter(interceptor -> hasSameReferenceAs(interceptor))
