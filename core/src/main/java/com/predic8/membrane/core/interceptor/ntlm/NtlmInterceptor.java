@@ -1,9 +1,5 @@
 package com.predic8.membrane.core.interceptor.ntlm;
 
-import com.hierynomus.smbj.SmbConfig;
-import com.hierynomus.smbj.auth.AuthenticateResponse;
-import com.hierynomus.smbj.auth.AuthenticationContext;
-import com.hierynomus.smbj.auth.NtlmAuthenticator;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -16,21 +12,17 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import jcifs.CIFSContext;
-import jcifs.context.SingletonContext;
-import jcifs.ntlmssp.*;
-import jcifs.smb.NtlmPasswordAuthenticator;
-import jcifs.smb.NtlmUtil;
-import org.bouncycastle.util.encoders.Base64;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.apache.http.impl.auth.NTLMEngineTrampoline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.SecureRandom;
+import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 @MCElement(name = "ntlm")
 public class NtlmInterceptor extends AbstractInterceptor {
@@ -42,11 +34,9 @@ public class NtlmInterceptor extends AbstractInterceptor {
     String passwordHeaderName;
     String domainHeaderName;
     String workstationHeaderName;
+    private HttpClient httpClient;
 
     //temporary not configurable
-
-
-    private CIFSContext context = SingletonContext.getInstance();
 
 
     @Override
@@ -60,8 +50,9 @@ public class NtlmInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        HttpClient httpClient = new HttpClient();
-        String originalRequestUrl = (exc.getTargetConnection().getSslProvider() != null ? "https" : "http") + "://" + exc.getRequest().getHeader().getHost() + "/";
+        httpClient = createClient();
+
+        String originalRequestUrl = buildRequestUrl(exc);
 
         if(exc.getResponse().getHeader().getWwwAuthenticate() == null)
             return CONTINUE;
@@ -70,76 +61,50 @@ public class NtlmInterceptor extends AbstractInterceptor {
         if(wwwAuthenticate.stream().filter(h -> h.getValue().toLowerCase().equals("ntlm")).count() == 0)
             return CONTINUE;
 
+        prepareStreamByEmptyingIt(exc);
+
         String user = getNTLMRetriever().fetchUsername(exc);
         String pass = getNTLMRetriever().fetchPassword(exc);
-        String domain = getNTLMRetriever().fetchDomain(exc) != null ? getNTLMRetriever().fetchDomain(exc) : "";
-        String workstation = getNTLMRetriever().fetchWorkstation(exc) != null ? getNTLMRetriever().fetchWorkstation(exc) : "";
+        String domain = getNTLMRetriever().fetchDomain(exc) != null ? getNTLMRetriever().fetchDomain(exc) : null;
+        String workstation = getNTLMRetriever().fetchWorkstation(exc) != null ? getNTLMRetriever().fetchWorkstation(exc) : null;
 
-        context = context.withCredentials(new NtlmPasswordAuthenticator(domain,user,pass));
-
-        Type1Message t1 = new Type1Message(this.context,0x00080000,null,null);
-        /*if ( context.getConfig().getLanManCompatibility() > 2 )
-            t1.setFlag(NtlmFlags.NTLMSSP_REQUEST_TARGET, true);*/
-
-        String t1Payload = new String(encode(t1.toByteArray()));
-
-        Exchange reqT1 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + t1Payload).buildExchange();
+        Exchange reqT1 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(null,null,null,null,null)).buildExchange();
+        reqT1.getRequest().getHeader().add("Connection","keep-alive");
         reqT1.setTargetConnection(exc.getTargetConnection());
+
         Exchange resT1 = httpClient.call(reqT1);
+        prepareStreamByEmptyingIt(resT1);
 
-        //printInterestingThings(resT1);
-
-        String t2Payload = resT1.getResponse().getHeader().getWwwAuthenticate().split(Pattern.quote(" "))[1];
-        Type2Message t2 = new Type2Message(decode(t2Payload));
-
-        Type3Message t3 = new Type3Message(context, t2,null,pass,domain,user,workstation,0);
-        String t3Payload = new String(encode(t3.toByteArray()));
-
-        Exchange reqT3 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + t3Payload).buildExchange();
+        Exchange reqT3 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(getT2Payload(resT1),user,pass,domain,workstation)).buildExchange();
+        reqT3.getRequest().getHeader().add("Connection","keep-alive");
         reqT3.setTargetConnection(resT1.getTargetConnection());
-        Exchange resRess = httpClient.call(reqT3);
 
-        //printInterestingThings(reqT3);
-
-        exc.setResponse(resRess.getResponse());
-        exc.setTargetConnection(resRess.getTargetConnection());
-
-        //smbj(exc, httpClient, originalRequestUrl, user, pass, domain); // this was just a test
-
+        Exchange finalResult = httpClient.call(reqT3);
+        exc.setResponse(finalResult.getResponse());
+        exc.setTargetConnection(finalResult.getTargetConnection());
 
         return CONTINUE;
     }
 
-    private void smbj(Exchange exc, HttpClient httpClient, String originalRequestUrl, String user, String pass, String domain) throws Exception {
-        AuthenticationContext ctx = new AuthenticationContext(user,pass.toCharArray(),domain);
-        NtlmAuthenticator ntlmAuthenticator = new NtlmAuthenticator();
-        SmbConfig smbConfig = SmbConfig.builder().withAuthenticators(new NtlmAuthenticator.Factory()).withRandomProvider(new SecureRandom()).build();
-        ntlmAuthenticator.init(smbConfig);
-        AuthenticateResponse t1 = ntlmAuthenticator.authenticate(ctx, null, null);
-
-        String t1Payload = new String(encode(t1.getNegToken()));
-
-        Exchange reqT1 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + t1Payload).buildExchange();
-        reqT1.setTargetConnection(exc.getTargetConnection());
-        Exchange resT1 = httpClient.call(reqT1);
+    private String getT2Payload(Exchange resT1) {
+        return resT1.getResponse().getHeader().getWwwAuthenticate().split(Pattern.quote(" "))[1];
     }
 
-    private byte[] encode(byte[] b){
-        return Base64.encode(b);
-        //return Base64.getEncoder().encode(b);
+    private String buildRequestUrl(Exchange exc) {
+        return (exc.getTargetConnection().getSslProvider() != null ? "https" : "http") + "://" + exc.getRequest().getHeader().getHost() + "/";
     }
 
-    private byte[] decode(String str){
-        return Base64.decode(str.getBytes());
-        //return Base64.getDecoder().decode(str.getBytes());
+    private void prepareStreamByEmptyingIt(Exchange exc) {
+        try {
+            exc.getResponse().getBody().getContent();
+        } catch (IOException e) {
+            LOG.warn("",e);
+        }
     }
 
-    private void printInterestingThings(Exchange exc){
-        if(exc.getRequest() != null)
-            LOG.info("REQ Authorization: " + exc.getRequest().getHeader().getAuthorization());
-
-        if(exc.getResponse() != null)
-            LOG.info("REQ WWW-Authenticate: " + exc.getResponse().getHeader().getWwwAuthenticate());
+    private HttpClient createClient() {
+        HttpClientConfiguration configuration = new HttpClientConfiguration();
+        return new HttpClient(configuration);
     }
 
     @MCChildElement(order = 1)
