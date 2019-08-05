@@ -20,10 +20,10 @@ public class HeaderNTLMRetriever implements NTLMRetriever {
             throw new RuntimeException("userHeaderName attribute cannot be null or empty");
         if(passwordHeaderName == null || passwordHeaderName.isEmpty())
             throw new RuntimeException("passwordHeaderName attribute cannot be null or empty");
-        if(domainHeaderName == null || domainHeaderName.isEmpty())
+        /*if(domainHeaderName == null || domainHeaderName.isEmpty())
             throw new RuntimeException("domainHeaderName attribute cannot be null or empty");
         if(workstationHeaderName == null || workstationHeaderName.isEmpty())
-            throw new RuntimeException("workstationHeaderName attribute cannot be null or empty");
+            throw new RuntimeException("workstationHeaderName attribute cannot be null or empty");*/
 
         this.userHeaderName = userHeaderName;
         this.passwordHeaderName = passwordHeaderName;

@@ -5,10 +5,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -16,6 +13,7 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.apache.http.impl.auth.NTLMEngineTrampoline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.util.List;
@@ -65,6 +63,12 @@ public class NtlmInterceptor extends AbstractInterceptor {
 
         String user = getNTLMRetriever().fetchUsername(exc);
         String pass = getNTLMRetriever().fetchPassword(exc);
+
+        if(user == null || pass == null){
+            exc.setResponse(Response.unauthorized().header(Header.WWW_AUTHENTICATE,"Realm=ntlm").build());
+            return RETURN;
+        }
+
         String domain = getNTLMRetriever().fetchDomain(exc) != null ? getNTLMRetriever().fetchDomain(exc) : null;
         String workstation = getNTLMRetriever().fetchWorkstation(exc) != null ? getNTLMRetriever().fetchWorkstation(exc) : null;
 
