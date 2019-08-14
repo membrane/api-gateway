@@ -8,14 +8,16 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.apache.http.impl.auth.NTLMEngineException;
 import org.apache.http.impl.auth.NTLMEngineTrampoline;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -51,6 +53,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
         httpClient = createClient();
 
         String originalRequestUrl = buildRequestUrl(exc);
+        Connection stableConnection = exc.getTargetConnection();
 
         if(exc.getResponse().getHeader().getWwwAuthenticate() == null)
             return CONTINUE;
@@ -72,22 +75,29 @@ public class NtlmInterceptor extends AbstractInterceptor {
         String domain = getNTLMRetriever().fetchDomain(exc) != null ? getNTLMRetriever().fetchDomain(exc) : null;
         String workstation = getNTLMRetriever().fetchWorkstation(exc) != null ? getNTLMRetriever().fetchWorkstation(exc) : null;
 
-        Exchange reqT1 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(null,null,null,null,null)).buildExchange();
-        reqT1.getRequest().getHeader().add("Connection","keep-alive");
-        reqT1.setTargetConnection(exc.getTargetConnection());
-
-        Exchange resT1 = httpClient.call(reqT1);
+        Exchange resT1 = httpClient.call(createT1MessageRequest(stableConnection, originalRequestUrl));
         prepareStreamByEmptyingIt(resT1);
 
-        Exchange reqT3 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(getT2Payload(resT1),user,pass,domain,workstation)).buildExchange();
-        reqT3.getRequest().getHeader().add("Connection","keep-alive");
-        reqT3.setTargetConnection(resT1.getTargetConnection());
+        Exchange authenticationResult = httpClient.call(createT3MessageRequest(stableConnection, originalRequestUrl, user, pass, domain, workstation, resT1));
 
-        Exchange finalResult = httpClient.call(reqT3);
-        exc.setResponse(finalResult.getResponse());
-        exc.setTargetConnection(finalResult.getTargetConnection());
+        exc.setResponse(authenticationResult.getResponse());
+        exc.setTargetConnection(stableConnection);
 
         return CONTINUE;
+    }
+
+    private Exchange createT3MessageRequest(Connection stableConnection, String originalRequestUrl, String user, String pass, String domain, String workstation, Exchange resT1) throws URISyntaxException, NTLMEngineException {
+        Exchange reqT3 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(getT2Payload(resT1),user,pass,domain,workstation)).buildExchange();
+        reqT3.getRequest().getHeader().add("Connection","keep-alive");
+        reqT3.setTargetConnection(stableConnection);
+        return reqT3;
+    }
+
+    private Exchange createT1MessageRequest(Connection stableConnection, String originalRequestUrl) throws URISyntaxException, NTLMEngineException {
+        Exchange reqT1 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(null,null,null,null,null)).buildExchange();
+        reqT1.getRequest().getHeader().add("Connection","keep-alive");
+        reqT1.setTargetConnection(stableConnection);
+        return reqT1;
     }
 
     private String getT2Payload(Exchange resT1) {
