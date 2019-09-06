@@ -82,14 +82,14 @@ public class NtlmInterceptor extends AbstractInterceptor {
 
         exc.setResponse(authenticationResult.getResponse());
         exc.setTargetConnection(stableConnection);
-
         return CONTINUE;
     }
 
     private Exchange createT3MessageRequest(Connection stableConnection, String originalRequestUrl, String user, String pass, String domain, String workstation, Exchange resT1) throws URISyntaxException, NTLMEngineException {
-        Exchange reqT3 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(getT2Payload(resT1),user,pass,domain,workstation)).buildExchange();
+        Exchange reqT3 = new Request.Builder().get(originalRequestUrl).header("Authorization", "NTLM " + NTLMEngineTrampoline.getResponseFor(getT2Payload(resT1), user, pass, workstation, domain)).buildExchange();
         reqT3.getRequest().getHeader().add("Connection","keep-alive");
         reqT3.setTargetConnection(stableConnection);
+
         return reqT3;
     }
 
@@ -105,7 +105,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
     }
 
     private String buildRequestUrl(Exchange exc) {
-        return (exc.getTargetConnection().getSslProvider() != null ? "https" : "http") + "://" + exc.getRequest().getHeader().getHost() + "/";
+        return (exc.getTargetConnection().getSslProvider() != null ? "https" : "http") + "://" + exc.getRequest().getHeader().getHost() + exc.getRequestURI();
     }
 
     private void prepareStreamByEmptyingIt(Exchange exc) {
