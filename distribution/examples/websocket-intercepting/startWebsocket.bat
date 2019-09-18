@@ -1,3 +1,3 @@
 echo please wait
-npm install
-npm start
+call npm install
+call npm start
