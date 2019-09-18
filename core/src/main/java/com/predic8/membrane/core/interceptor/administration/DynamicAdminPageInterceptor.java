@@ -628,7 +628,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				div();
 				span().text("Method").end()
 				.select().id("message-filter-method")
-				.onchange("membrane.messageTable.fnDraw();");
+				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", true);
 				for (String s : sort(propertyValues.getMethods())) {
 					option(s, s, false);
@@ -636,7 +636,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				end();
 				span().text("Status Code").end()
 				.select().id("message-filter-statuscode")
-				.onchange("membrane.messageTable.fnDraw();");
+				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", true);
 				for (Integer i : sort(propertyValues.statusCodes)) {
 					option(i.toString(), i.toString(), false);
@@ -645,7 +645,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				div();
 				span().text("Proxy").end()
 				.select().id("message-filter-proxy")
-				.onchange("membrane.messageTable.fnDraw();");
+				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", !params.containsKey("proxy"));
 				for (String s : sort(propertyValues.getProxies())) {
 					option(s, s, s.equals(params.get("proxy")));
@@ -653,7 +653,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				end();
 				span().text("Client").end()
 				.select().id("message-filter-client")
-				.onchange("membrane.messageTable.fnDraw();");
+				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", !params.containsKey("client"));
 				for (String s : sort(propertyValues.getClients())) {
 					option(s, s, s.equals(params.get("client")));
@@ -661,7 +661,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				end();
 				span().text("Server").end()
 				.select().id("message-filter-server")
-				.onchange("membrane.messageTable.fnDraw();");
+				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", true);
 				for (String s : sort(propertyValues.getServers())) {
 					option(s==null?"undefined":s, s==null?"":s, false);
@@ -670,7 +670,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				div();
 				span().text("Request Content-Type").end()
 				.select().id("message-filter-reqcontenttype")
-				.onchange("membrane.messageTable.fnDraw();");
+				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", true);
 				for (String s : sort(propertyValues.getReqContentTypes())) {
 					option(s.isEmpty()?"undefined":s, s, false);
@@ -678,7 +678,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				end();
 				span().text("Response Content-Type").end()
 				.select().id("message-filter-respcontenttype")
-				.onchange("membrane.messageTable.fnDraw();");
+				.onchange("membrane.onFilterUpdate();");
 				option("*", "*", true);
 				for (String s : sort(propertyValues.getRespContentTypes())) {
 					option(s.isEmpty()?"undefined":s, s, false);
