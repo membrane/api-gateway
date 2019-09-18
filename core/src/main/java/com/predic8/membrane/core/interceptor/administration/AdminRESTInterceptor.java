@@ -252,7 +252,10 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		}
 
 		List<AbstractExchange> exchanges;
+		long lm;
 		synchronized (getRouter().getExchangeStore().getAllExchangesAsList()) {
+			lm = getRouter().getExchangeStore().getLastModified();
+
 			exchanges = new ArrayList<AbstractExchange>(
 					getRouter().getExchangeStore().getAllExchangesAsList());
 		}
@@ -280,7 +283,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				}
 				gen.writeEndArray();
 				gen.writeNumberField("total", total);
-				gen.writeNumberField("lastModified", getRouter().getExchangeStore().getLastModified());
+				gen.writeNumberField("lastModified", lm);
 				gen.writeEndObject();
 			}
 		});
