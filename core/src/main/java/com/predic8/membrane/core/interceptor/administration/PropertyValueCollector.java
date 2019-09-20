@@ -20,6 +20,8 @@ import java.util.Set;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchangestore.ExchangeCollector;
 
+import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.getClientAddr;
+
 public class PropertyValueCollector implements ExchangeCollector{
 
 	Set<Integer> statusCodes = new HashSet<Integer>();
@@ -30,7 +32,17 @@ public class PropertyValueCollector implements ExchangeCollector{
 	Set<String> clients = new HashSet<String>();
 	Set<String> servers = new HashSet<String>();
 
-	public void collect(AbstractExchange exc) {
+    boolean useXForwardedForAsClientAddr;
+
+    public boolean isUseXForwardedForAsClientAddr() {
+        return useXForwardedForAsClientAddr;
+    }
+
+    public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
+        this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
+    }
+
+    public void collect(AbstractExchange exc) {
 		if (exc.getResponse() != null) {
 			statusCodes.add(exc.getResponse().getStatusCode());
 		}
@@ -39,7 +51,7 @@ public class PropertyValueCollector implements ExchangeCollector{
 		reqContentTypes.add(exc.getRequestContentType());
 		respContentTypes.add(exc.getResponseContentType());
 		methods.add(exc.getRequest().getMethod());
-		clients.add(exc.getRemoteAddr());
+		clients.add(getClientAddr(useXForwardedForAsClientAddr, exc));
 		servers.add(exc.getServer());
 	}
 

@@ -58,6 +58,7 @@ import com.predic8.membrane.core.util.URLUtil;
 public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	private static Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
 	private boolean readOnly;
+	private boolean useXForwardedForAsClientAddr;
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
@@ -621,6 +622,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				PropertyValueCollector propertyValues = new PropertyValueCollector();
+				propertyValues.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 
 				router.getExchangeStore().collect(propertyValues);
 				h3().text("Filter").end();
@@ -897,6 +899,14 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
+	}
+
+	public boolean isUseXForwardedForAsClientAddr() {
+		return useXForwardedForAsClientAddr;
+	}
+
+	public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
+		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
 	}
 
 	public Response createReadOnlyErrorResponse() {
