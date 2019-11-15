@@ -61,6 +61,9 @@ public class XMLProtector {
 		this.removeDTD = removeDTD;
 		this.maxElementNameLength = maxElementNameLength;
 		this.maxAttibuteCount = maxAttibuteCount;
+
+		if(!removeDTD)
+			xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,true);
 	}
 
 	public boolean protect(InputStreamReader isr) {
