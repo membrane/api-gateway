@@ -48,6 +48,7 @@ public class XMLProtector {
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,false);
 	}
 
 	private XMLEventWriter writer;
