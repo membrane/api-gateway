@@ -47,6 +47,7 @@ public class SSLProxy implements Rule {
     private Target target;
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
     private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
+    private boolean useAsDefault = true;
 
     @MCElement(id = "sslProxy-target", name="target", topLevel = false)
     public static class Target {
@@ -319,10 +320,16 @@ public class SSLProxy implements Rule {
         }
     }
 
+    private SSLParser getSSLParser() {
+        SSLParser sslParser = new SSLParser();
+        sslParser.setUseAsDefault(useAsDefault);
+        return sslParser;
+    }
+
     private class ForwardingStaticSSLContext extends StaticSSLContext {
 
         public ForwardingStaticSSLContext() {
-            super(new SSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getBaseLocation());
+            super(getSSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getBaseLocation());
         }
 
         @Override
@@ -377,5 +384,18 @@ public class SSLProxy implements Rule {
         public SSLProxy getSSLProxy() {
             return SSLProxy.this;
         }
+    }
+
+    public boolean isUseAsDefault() {
+        return useAsDefault;
+    }
+
+    /**
+     * @description whether to use the SSLContext built from this SSLProxy when no SNI header was transmitted.
+     * @default true
+     */
+    @MCAttribute
+    public void setUseAsDefault(boolean useAsDefault) {
+        this.useAsDefault = useAsDefault;
     }
 }
