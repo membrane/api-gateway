@@ -228,6 +228,34 @@ public class OAuth2ResourceTest {
     }
 
     @Test
+    public void testConsecutiveCalls() throws Exception {
+        AtomicInteger authCounter = new AtomicInteger(0);
+
+        mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                if (exc.getRequest().getUri().startsWith("/auth"))
+                    authCounter.incrementAndGet();
+
+                return Outcome.CONTINUE;
+            }
+        });
+
+        for (int j = 0; j < 2; j++) {
+            Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
+            LOG.debug("getting " + excCallResource.getDestinations().get(0));
+            excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+            Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+            Assert.assertEquals("/init" + j, (String) body2.get("path"));
+        }
+
+        // expect the auth server to be hit exactly once, second call should have had a cookie
+        assertEquals(1, authCounter.get());
+
+        assertEquals(1, countCookies());
+    }
+
+    @Test
     public void testStateAttack() throws Exception {
         AtomicReference<String> ref = new AtomicReference<>();
         AtomicInteger state = new AtomicInteger();
