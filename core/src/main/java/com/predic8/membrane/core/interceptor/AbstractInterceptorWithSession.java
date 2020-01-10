@@ -26,8 +26,8 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
     public void init() throws Exception {
         if(sessionManager == null){
             sessionManager = new JwtSessionManager();
-            sessionManager.init(this.router);
         }
+        sessionManager.init(this.router);
     }
 
     /**
