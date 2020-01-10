@@ -29,6 +29,7 @@ import org.junit.runners.Suite.SuiteClasses;
         EmptyEndpointOpenidTest.class,
         OAuth2AuthorizationServerInterceptorNormalTest.class,
         OAuth2AuthorizationServerInterceptorOpenidTest.class,
+        OAuth2ResourceTest.class,
         PasswordGrantTest.class,
         RevocationRequestTest.class,
         TokenRequestTest.class,
