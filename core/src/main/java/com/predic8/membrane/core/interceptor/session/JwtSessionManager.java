@@ -87,7 +87,7 @@ public class JwtSessionManager extends SessionManager {
             return idTokenVerifier.createCustomJwtValidator()
                     .setSkipSignatureVerification()
                     .build()
-                    .processToClaims(cookie)
+                    .processToClaims(getCookieKey(cookie))
                     .getClaimsMap()
 
                     .entrySet()
@@ -99,6 +99,10 @@ public class JwtSessionManager extends SessionManager {
             e.printStackTrace();
         }
         return new HashMap<>();
+    }
+
+    private String getCookieKey(String cookie) {
+        return cookie.split("=")[0].trim();
     }
 
     @Override
@@ -127,7 +131,7 @@ public class JwtSessionManager extends SessionManager {
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
         return Stream
                 .of(getAllCookieKeys(exc))
-                .map(cookie -> cookie.split("=true")[0].trim())
+                .map(cookie -> getCookieKey(cookie))
                 .filter(cookie -> {
                     try {
                         checkJwtWithoutVerifyingSignature(cookie);
@@ -148,6 +152,7 @@ public class JwtSessionManager extends SessionManager {
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
         try {
+            cookie = getCookieKey(cookie);
             checkJwtWithoutVerifyingSignature(cookie);
             validateSignatureOfJwt(cookie);
             return true;

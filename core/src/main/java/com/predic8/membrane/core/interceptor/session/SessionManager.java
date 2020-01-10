@@ -203,7 +203,7 @@ public abstract class SessionManager {
     private Map<String,Map<String, Object>> convertValidCookiesToAttributes(Exchange exc) {
         return getCookies(exc)
                 .filter(cookie -> isValidCookieForThisSessionManager(cookie))
-                .collect(Collectors.toMap(cookie -> cookie, cookie -> cookieValueToAttributes(cookie.split("=")[0]), (c1,c2) -> c1));
+                .collect(Collectors.toMap(cookie -> cookie, cookie -> cookieValueToAttributes(cookie), (c1,c2) -> c1));
     }
 
     public Session getSession(Exchange exc) {
