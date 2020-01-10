@@ -359,7 +359,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         Session session = getSessionManager().getSession(exc);
 
-        session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(new AbstractExchangeSnapshot(exc)));
+        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exc);
+        // trim the exchange as far as possible to save space
+        excSnapshot.getRequest().getHeader().remove("Cookie");
+        excSnapshot.setResponse(null);
+        session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(excSnapshot));
 
         if(session.get().containsKey(ParamNames.STATE))
             state = session.get(ParamNames.STATE) + " " + state;

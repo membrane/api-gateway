@@ -174,19 +174,14 @@ public class MembraneAuthorizationService extends AuthorizationService {
                 "response_type=code&"+
                 "scope="+scope+"&"+
                 "redirect_uri=" + publicURL + "oauth2callback&"+
-                "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery +
+                "state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(pathQuery) +
                 getClaimsParameter();
     }
 
     private String getClaimsParameter() {
         if(claimsParameter == null)
             return "";
-        try {
-            return "&claims=" + OAuth2Util.urlencode(claimsParameter);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return "";
-        }
+        return "&claims=" + OAuth2Util.urlencode(claimsParameter);
     }
 
     @Override
