@@ -119,7 +119,9 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 				return false;
 			return true;
 		} catch (MalformedURLException e) {
-			log.warn("", e); // TODO: fix these cases
+			if (e.getMessage().startsWith("unknown protocol:"))
+				return false;
+			log.warn("Location: " + location + " Location2: " + location2, e); // TODO: fix these cases
 			return false;
 		}
 	}
