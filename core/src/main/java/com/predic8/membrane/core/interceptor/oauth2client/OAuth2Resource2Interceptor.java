@@ -245,6 +245,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                 .header(Header.ACCEPT, "application/json")
                 .header(Header.USER_AGENT, Constants.USERAGENT)
+                .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
                 .body("&grant_type=refresh_token"
                         + "&refresh_token=" + oauth2Params.getRefreshToken())
                 .buildExchange();
