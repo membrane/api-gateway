@@ -50,6 +50,7 @@ import java.net.URL;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -290,6 +291,37 @@ public class OAuth2ResourceTest {
         assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("CSRF"));
     }
 
+    @Test
+    public void testCSRFProblem() throws Exception {
+        AtomicBoolean blocked = new AtomicBoolean(true);
+        mockAuthServer.getTransport().getInterceptors().add(2, new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                if (blocked.get()) {
+                    exc.setResponse(Response.ok("Login aborted").build());
+                    return Outcome.RETURN;
+                }
+                return Outcome.CONTINUE;
+            }
+        });
+
+        // hit the client, do not continue at AS with login
+        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 0).buildExchange();
+        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+
+        assertEquals(200, excCallResource.getResponse().getStatusCode());
+        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("Login aborted"));
+
+        blocked.set(false);
+
+        // hit client again, login
+        excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 1).buildExchange();
+        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+
+        // works
+        assertEquals(200, excCallResource.getResponse().getStatusCode());
+        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("/init1"));
+    }
 
     private int countCookies() {
         JwtConsumer jwtc = new JwtConsumerBuilder()
