@@ -700,7 +700,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private boolean idTokenIsValid(String idToken) throws Exception {
         //TODO maybe change this to return claims and also save them in the oauth2AnswerParameters
         try {
-            JwtGenerator.getClaimsFromSignedIdToken(idToken, getAuthService().getIssuer(), getAuthService().getClientId(), getAuthService().getJwksEndpoint(),auth.getHttpClient());
+            JwtGenerator.getClaimsFromSignedIdToken(idToken, getAuthService().getIssuer(), getAuthService().getClientId(), getAuthService().getJwksEndpoint(), auth);
             return true;
         }catch(Exception e){
             return false;
