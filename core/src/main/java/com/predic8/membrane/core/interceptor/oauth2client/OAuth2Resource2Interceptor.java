@@ -194,11 +194,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         if (refreshingOfAccessTokenIsNeeded(session)) {
             synchronized (session) {
-                refreshAccessToken(session);
-                exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER)));
+                try {
+                    refreshAccessToken(session);
+                    exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER)));
+                } catch (Exception e) {
+                    log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
+                    session.clearAuthentication();
+                }
             }
         }
-
         if (session.isVerified()) {
             applyBackendAuthorization(exc, session);
             statistics.successfulRequest();
