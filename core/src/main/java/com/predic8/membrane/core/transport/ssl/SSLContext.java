@@ -196,6 +196,7 @@ public abstract class SSLContext implements SSLProvider {
                 points = 100;
             points += getAESStrength(cipher) * 5;
             points += getSHAStrength(cipher) * 2;
+            points += getChaChaPoly1305Strength(cipher) * 25;
             if (supportsAESGCM(cipher))
                 points += 15;
 
@@ -204,6 +205,12 @@ public abstract class SSLContext implements SSLProvider {
 
         private boolean supportsAESGCM(String cipher) {
             return cipher.contains("_GCM_");
+        }
+
+        private int getChaChaPoly1305Strength(String cipher) {
+            if (cipher.contains("_CHACHA20_POLY1305_"))
+                return 1;
+            return 0;
         }
 
         private int getAESStrength(String cipher) {
