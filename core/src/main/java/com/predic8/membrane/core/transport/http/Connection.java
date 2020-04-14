@@ -366,8 +366,8 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 			replyStr = new String(reply, 0, replyLen);
 		}
 
-      /* We asked for HTTP/1.0, so we should get that back */
-		if (!replyStr.startsWith("HTTP/1.1 200")) {
+        /* Look for '200 OK' response. Probably, some proxies may return HTTP/1.1 back */
+		if (!replyStr.startsWith("HTTP/1.0 200") && !replyStr.startsWith("HTTP/1.1 200")) {
 			throw new IOException("Unable to tunnel through "
 					+ proxy.getHost() + ":" + proxy.getPort()
 					+ ".  Proxy returns \"" + replyStr + "\"");
