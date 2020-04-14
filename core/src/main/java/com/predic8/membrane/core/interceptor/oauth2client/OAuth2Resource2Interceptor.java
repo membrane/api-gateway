@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -70,6 +71,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public static final String ORIGINAL_REQUEST_PREFIX = "_original_request_for_state_";
     public static final String OA2REDIRECT_PREFIX = "_redirect_for_oa2redirect_";
     private static Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
+
+    private final Cache<String, Object> synchronizers = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build();
 
     private String publicURL;
     private AuthorizationService auth;
@@ -193,7 +196,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER)));
 
         if (refreshingOfAccessTokenIsNeeded(session)) {
-            synchronized (session) {
+            synchronized (getTokenSynchronizer(session)) {
                 try {
                     refreshAccessToken(session);
                     exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER)));
@@ -220,6 +223,24 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
 
         return respondWithRedirect(exc);
+    }
+
+    private Object getTokenSynchronizer(Session session) {
+        OAuth2AnswerParameters oauth2Params = null;
+        try {
+            oauth2Params = OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        String rt = oauth2Params.getRefreshToken();
+        if (rt == null)
+            return new Object();
+
+        try {
+            return synchronizers.get(rt, () -> new Object());
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void handleOriginalRequest(Exchange exc) throws Exception {
