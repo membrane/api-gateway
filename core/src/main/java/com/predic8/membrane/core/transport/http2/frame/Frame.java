@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
-import com.predic8.membrane.core.transport.http2.frame.SettingsFrame;
 import com.predic8.membrane.core.util.ByteUtil;
 import org.apache.commons.lang.NotImplementedException;
 
@@ -46,15 +45,22 @@ public class Frame {
         return read;
     }
 
-    private SettingsFrame asSettings() {
+    public SettingsFrame asSettings() {
         if (type != TYPE_SETTINGS)
             throw new IllegalStateException();
         return new SettingsFrame(this);
     }
 
+    public WindowUpdateFrame asWindowUpdate() {
+        if (type != TYPE_WINDOW_UPDATE)
+            throw new IllegalStateException();
+        return new WindowUpdateFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();
+            case TYPE_WINDOW_UPDATE: return asWindowUpdate().toString();
             default: throw new NotImplementedException();
         }
     }

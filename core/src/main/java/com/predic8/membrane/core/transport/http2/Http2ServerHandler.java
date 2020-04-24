@@ -31,8 +31,16 @@ public class Http2ServerHandler {
 
         Frame frame = new Frame();
         frame.read(srcIn);
+        System.out.println(frame);
+        // TODO: handle frame
 
-        throw new NotImplementedException("handling HTTP/2 requests."); // TODO
+        while(true) {
+            frame = new Frame();
+            frame.read(srcIn);
+            System.out.println(frame);
+            // TODO: handle frame
+
+        }
     }
 
     private boolean isCorrectPreface(byte[] preface) {
