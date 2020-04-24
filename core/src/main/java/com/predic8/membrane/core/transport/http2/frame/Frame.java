@@ -57,11 +57,44 @@ public class Frame {
         return new WindowUpdateFrame(this);
     }
 
+    public HeadersFrame asHeaders() {
+        if (type != TYPE_HEADERS)
+            throw new IllegalStateException();
+        return new HeadersFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();
             case TYPE_WINDOW_UPDATE: return asWindowUpdate().toString();
+            case TYPE_HEADERS: return asHeaders().toString();
             default: throw new NotImplementedException();
+        }
+    }
+
+    public void appendHex(StringBuilder sb, byte[] buffer, int offset, int length, int indent) {
+        for (int i = 0; i < length; i+=16) {
+            for (int j = 0; j < indent; j++)
+                sb.append(" ");
+            sb.append(String.format("%04X", i));
+            sb.append(": ");
+            for (int j = 0; j < 16; j++) {
+                if (i + j >= length)
+                    sb.append("  ");
+                else
+                    sb.append(String.format("%02X", buffer[offset + i + j]));
+                if (j == 7)
+                    sb.append("   ");
+                else
+                    sb.append(" ");
+            }
+            sb.append("  ");
+            for (int j = 0; j < 16 && i + j < length; j++)
+                if (buffer[offset + i + j] < 32)
+                    sb.append(".");
+                else
+                    sb.append((char) buffer[offset + i + j]);
+            sb.append("\n");
         }
     }
 }
