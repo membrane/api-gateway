@@ -1,34 +1,46 @@
 package com.predic8.membrane.core.transport.http2;
 
+import com.google.common.collect.Lists;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http2.frame.Frame;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.twitter.hpack.Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSocket;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.generateErrorResponse;
+import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
+import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
+import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_STREAM;
 
 public class Http2ExchangeHandler implements Runnable {
-    private static Logger log = LoggerFactory.getLogger(Http2ExchangeHandler.class.getName());
-
+    private static final Logger log = LoggerFactory.getLogger(Http2ExchangeHandler.class.getName());
     private static final InterceptorFlowController flowController = new InterceptorFlowController();
+
+    private final int streamId;
     private final Http2ServerHandler http2ServerHandler;
     private final Exchange exchange;
-
-    private boolean showSSLExceptions = true;
+    private final boolean showSSLExceptions;
     private final String remoteAddr;
 
 
-    public Http2ExchangeHandler(Http2ServerHandler http2ServerHandler, Exchange exchange, boolean showSSLExceptions, String remoteAddr) {
+    public Http2ExchangeHandler(int streamId, Http2ServerHandler http2ServerHandler, Exchange exchange, boolean showSSLExceptions, String remoteAddr) {
+        this.streamId = streamId;
         this.http2ServerHandler = http2ServerHandler;
         this.exchange = exchange;
         this.showSSLExceptions = showSSLExceptions;
@@ -145,6 +157,8 @@ public class Http2ExchangeHandler implements Runnable {
             sb.append(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
             sb.append(" ");
             sb.append(remoteAddr);
+            sb.append(" stream ");
+            sb.append(streamId);
             Thread.currentThread().setName(sb.toString());
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
@@ -152,16 +166,82 @@ public class Http2ExchangeHandler implements Runnable {
     }
 
     protected void writeResponse(Response res) throws Exception{
-        if (res.isRedirect())
-            res.getHeader().setConnection(Header.CLOSE);
 
-        // TODO: remove Keep-Alive, Proxy-Connection, Transfer-Encoding, Upgrade, Connection
+        BufferedInputStream bs = new BufferedInputStream(res.getBodyAsStream(), 4096);
+        bs.mark(2);
+        boolean isAtEof = bs.read() == -1;
+        bs.reset();
 
+        http2ServerHandler.getSender().send((encoder, sendSettings) -> createHeadersFrames(res, encoder, sendSettings, isAtEof));
 
-        // TODO: res.write(srcOut);
-        // TODO: srcOut.flush();
+        AtomicBoolean continue_ = new AtomicBoolean(true);
+
+        while(continue_.get()) {
+            http2ServerHandler.getSender().send(((encoder, sendSettings) -> {
+                byte[] buf = new byte[sendSettings.getMaxFrameSize()];
+
+                int offset = 0;
+                while (offset < buf.length) {
+                    int r = bs.read(buf, offset, buf.length - offset);
+                    if (r == -1)
+                        break;
+                    offset += r;
+                }
+
+                bs.mark(2);
+                boolean isAtEof2 = bs.read() == -1;
+                if (isAtEof2)
+                    continue_.set(false);
+                bs.reset();
+
+                Frame frame = new Frame();
+                frame.fill(TYPE_DATA,
+                        isAtEof2 ? FLAG_END_STREAM : 0,
+                        streamId,
+                        buf,
+                        0,
+                        offset);
+                return Lists.newArrayList(frame);
+            }));
+        }
+
         exchange.setTimeResSent(System.currentTimeMillis());
         exchange.collectStatistics();
+    }
+
+    private List<Frame> createHeadersFrames(Response res, Encoder encoder, Settings sendSettings, boolean isAtEof) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        encoder.encodeHeader(baos, ":status".getBytes(StandardCharsets.US_ASCII), (""+res.getStatusCode()).getBytes(StandardCharsets.US_ASCII), false);
+
+        for (HeaderField hf : res.getHeader().getAllHeaderFields()) {
+            String key = hf.getHeaderName().toString().toLowerCase();
+            if ("keep-alive".equals(key) || "proxy-connection".equals(key) || "transfer-encoding".equals(key) || "upgrade".equals(key) || "connection".equals(key))
+                continue;
+
+            boolean sensitive = "set-cookie".equals(key);
+
+            encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), hf.getValue().getBytes(StandardCharsets.US_ASCII), sensitive);
+        }
+
+        byte[] header = baos.toByteArray();
+        List<Frame> frames = new ArrayList<>();
+
+        for (int offset = 0; offset < header.length; offset += sendSettings.getMaxFrameSize()) {
+            Frame frame = new Frame();
+            boolean isLast = offset + sendSettings.getMaxFrameSize() >= header.length;
+            frame.fill(
+                    offset == 0 ? TYPE_HEADERS : TYPE_CONTINUATION,
+                    (isLast ? FLAG_END_HEADERS : 0) + (isAtEof ? FLAG_END_STREAM : 0),
+                    streamId,
+                    header,
+                    offset,
+                    Math.min(sendSettings.getMaxFrameSize(), header.length - offset)
+            );
+            frames.add(frame);
+        }
+
+        return frames;
     }
 
     private void removeBodyFromBuffer() throws IOException {

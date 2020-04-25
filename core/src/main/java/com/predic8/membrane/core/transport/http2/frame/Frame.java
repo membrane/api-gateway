@@ -112,11 +112,18 @@ public class Frame {
         return new ContinuationFrame(this);
     }
 
+    public DataFrame asData() {
+        if (type != TYPE_DATA)
+            throw new IllegalStateException();
+        return new DataFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();
             case TYPE_WINDOW_UPDATE: return asWindowUpdate().toString();
             case TYPE_HEADERS: return asHeaders().toString();
+            case TYPE_DATA: return asData().toString();
             default: throw new NotImplementedException();
         }
     }

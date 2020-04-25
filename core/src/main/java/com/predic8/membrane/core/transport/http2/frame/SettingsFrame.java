@@ -62,6 +62,8 @@ public class SettingsFrame {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Settings {\n");
+        if (isAck())
+            sb.append("  Flags: ACK");
         for (int i = 0; i < getSettingsCount(); i++) {
             sb.append("  ");
             sb.append(getSettingsIdAsString(i));
@@ -87,5 +89,9 @@ public class SettingsFrame {
 
     public Frame getFrame() {
         return frame;
+    }
+
+    public boolean isAck() {
+        return (frame.type & FLAG_ACK) != 0;
     }
 }

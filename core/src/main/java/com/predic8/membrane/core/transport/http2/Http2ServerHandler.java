@@ -9,6 +9,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.twitter.hpack.Decoder;
+import com.twitter.hpack.Encoder;
 import com.twitter.hpack.HeaderListener;
 import org.apache.commons.lang.NotImplementedException;
 
@@ -55,12 +56,13 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         this.sourceSocket = sourceSocket;
         this.srcIn = srcIn;
         this.srcOut = srcOut;
-        this.sender = new FrameSender(srcOut);
         this.showSSLExceptions = showSSLExceptions;
 
         int maxHeaderSize = 4096; // TODO: update this value, when a SETTINGS frame arrives
         int maxHeaderTableSize = 4096;
         decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+        Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
+        this.sender = new FrameSender(srcOut, encoder, sendSettings);
 
         StringBuilder sb = new StringBuilder();
         InetAddress ia = sourceSocket.getInetAddress();
@@ -206,7 +208,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         exchange.setRequest(request);
         exchange.setOriginalRequestUri(request.getUri());
 
-        executor.submit(new Http2ExchangeHandler(this, exchange, showSSLExceptions, remoteAddr));
+        executor.submit(new Http2ExchangeHandler(streamId1, this, exchange, showSSLExceptions, remoteAddr));
 
 
         handleStreamEnd(streamInfo, headers);
@@ -330,4 +332,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         return httpServerHandler.getLocalPort();
     }
 
+    public FrameSender getSender() {
+        return sender;
+    }
 }

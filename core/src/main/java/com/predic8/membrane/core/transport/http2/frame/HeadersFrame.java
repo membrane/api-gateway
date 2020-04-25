@@ -1,10 +1,10 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
 public class HeadersFrame implements HeaderBlockFragment, StreamEnd {
-    private static final int FLAG_END_STREAM = 0x1;
-    private static final int FLAG_END_HEADERS = 0x4;
-    private static final int FLAG_PADDED = 0x8;
-    private static final int FLAG_PRIORITY = 0x20;
+    public static final int FLAG_END_STREAM = 0x1;
+    public static final int FLAG_END_HEADERS = 0x4;
+    public static final int FLAG_PADDED = 0x8;
+    public static final int FLAG_PRIORITY = 0x20;
 
     private final Frame frame;
 
@@ -67,7 +67,9 @@ public class HeadersFrame implements HeaderBlockFragment, StreamEnd {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Headers {\n");
-        sb.append("  flags = ");
+        sb.append("  streamId = ");
+        sb.append(frame.streamId);
+        sb.append("\n  flags = ");
         if (isEndHeaders())
             sb.append("END_HEADERS ");
         if (isEndStream())
