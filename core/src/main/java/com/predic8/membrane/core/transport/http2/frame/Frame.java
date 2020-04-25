@@ -142,6 +142,12 @@ public class Frame {
         return new RstStreamFrame(this);
     }
 
+    public PushPromiseFrame asPushPromise() {
+        if (type != TYPE_PUSH_PROMISE)
+            throw new IllegalStateException();
+        return new PushPromiseFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();
@@ -152,6 +158,8 @@ public class Frame {
             case TYPE_PING: return asPing().toString();
             case TYPE_GOAWAY: return asGoaway().toString();
             case TYPE_RST_STREAM: return asRstStream().toString();
+            case TYPE_PUSH_PROMISE: return asPushPromise().toString();
+            case TYPE_CONTINUATION: return asContinuation().toString();
             default: throw new NotImplementedException("type = " + type);
         }
     }
