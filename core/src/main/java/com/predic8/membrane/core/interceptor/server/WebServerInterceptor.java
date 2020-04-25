@@ -180,7 +180,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         if (uri.endsWith(".css"))
             return "text/css";
         if (uri.endsWith(".js"))
-            return "application/x-javascript";
+            return "application/javascript";
         if (uri.endsWith(".wsdl"))
             return "text/xml";
         if (uri.endsWith(".xml"))
@@ -195,6 +195,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
             return "image/png";
         if (uri.endsWith(".json"))
             return "application/json";
+        if (uri.endsWith(".svg"))
+            return "image/svg+xml";
         return null;
     }
 
