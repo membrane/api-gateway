@@ -100,7 +100,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				}
 
 				if (Http2TlsSupport.isHttp2(sourceSocket)) {
-					new Http2ServerHandler(sourceSocket, srcIn, srcOut).handle();
+					new Http2ServerHandler(this, sourceSocket, srcIn, srcOut, showSSLExceptions).handle();
 					break;
 				}
 

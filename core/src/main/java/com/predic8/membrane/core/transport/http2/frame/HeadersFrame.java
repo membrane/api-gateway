@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
-public class HeadersFrame {
+public class HeadersFrame implements HeaderBlockFragment, StreamEnd {
     private static final int FLAG_END_STREAM = 0x1;
     private static final int FLAG_END_HEADERS = 0x4;
     private static final int FLAG_PADDED = 0x8;
@@ -92,5 +92,9 @@ public class HeadersFrame {
 
     public byte[] getContent() {
         return frame.getContent();
+    }
+
+    public Frame getFrame() {
+        return frame;
     }
 }

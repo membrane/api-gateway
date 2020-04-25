@@ -106,6 +106,12 @@ public class Frame {
         return new HeadersFrame(this);
     }
 
+    public ContinuationFrame asContinuation() {
+        if (type != TYPE_CONTINUATION)
+            throw new IllegalStateException();
+        return new ContinuationFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();

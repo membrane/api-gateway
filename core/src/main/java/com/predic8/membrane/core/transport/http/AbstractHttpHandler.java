@@ -91,6 +91,10 @@ public abstract class AbstractHttpHandler  {
 	}
 
 	private Response generateErrorResponse(Exception e) {
+		return generateErrorResponse(e, exchange, transport);
+	}
+
+	public static Response generateErrorResponse(Exception e, Exchange exchange, Transport transport) {
 		String msg;
 		boolean printStackTrace = transport.isPrintStackTrace();
 		if (printStackTrace) {
@@ -111,44 +115,44 @@ public abstract class AbstractHttpHandler  {
 		if (b == null)
 			b = Response.internalServerError();
 		switch (ContentTypeDetector.detect(exchange.getRequest()).getEffectiveContentType()) {
-		case XML:
-			error = b.
-			header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-			body(("<error><message>" +
-					StringEscapeUtils.escapeXml(msg) +
-					"</message><comment>" +
-					StringEscapeUtils.escapeXml(comment) +
-					"</comment></error>").getBytes(Constants.UTF_8_CHARSET)).
-					build();
-			break;
-		case JSON:
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			try {
-				JsonGenerator jg = new JsonFactory().createGenerator(baos);
-				jg.writeStartObject();
-				jg.writeFieldName("error");
-				jg.writeString(msg);
-				jg.writeFieldName("comment");
-				jg.writeString(comment);
-				jg.close();
-			} catch (Exception f) {
-				log.error("Error generating JSON error response", f);
-			}
+			case XML:
+				error = b.
+						header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
+						body(("<error><message>" +
+								StringEscapeUtils.escapeXml(msg) +
+								"</message><comment>" +
+								StringEscapeUtils.escapeXml(comment) +
+								"</comment></error>").getBytes(Constants.UTF_8_CHARSET)).
+						build();
+				break;
+			case JSON:
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				try {
+					JsonGenerator jg = new JsonFactory().createGenerator(baos);
+					jg.writeStartObject();
+					jg.writeFieldName("error");
+					jg.writeString(msg);
+					jg.writeFieldName("comment");
+					jg.writeString(comment);
+					jg.close();
+				} catch (Exception f) {
+					log.error("Error generating JSON error response", f);
+				}
 
-			error = b.
-					header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
-					body(baos.toByteArray()).
-					build();
-			break;
-		case SOAP:
-			error = b.
-			header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-			body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
-			build();
-			break;
-		case UNKNOWN:
-			error = HttpUtil.setHTMLErrorResponse(b, msg, comment);
-			break;
+				error = b.
+						header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
+						body(baos.toByteArray()).
+						build();
+				break;
+			case SOAP:
+				error = b.
+						header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
+						body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
+						build();
+				break;
+			case UNKNOWN:
+				error = HttpUtil.setHTMLErrorResponse(b, msg, comment);
+				break;
 		}
 		return error;
 	}

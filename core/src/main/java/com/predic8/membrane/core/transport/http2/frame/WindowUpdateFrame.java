@@ -25,4 +25,7 @@ public class WindowUpdateFrame {
         return sb.toString();
     }
 
+    public Frame getFrame() {
+        return frame;
+    }
 }
