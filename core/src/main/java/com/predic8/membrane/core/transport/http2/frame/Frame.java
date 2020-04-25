@@ -118,12 +118,26 @@ public class Frame {
         return new DataFrame(this);
     }
 
+    public PriorityFrame asPriority() {
+        if (type != TYPE_PRIORITY)
+            throw new IllegalStateException();
+        return new PriorityFrame(this);
+    }
+
+    public PingFrame asPing() {
+        if (type != TYPE_PING)
+            throw new IllegalStateException();
+        return new PingFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();
             case TYPE_WINDOW_UPDATE: return asWindowUpdate().toString();
             case TYPE_HEADERS: return asHeaders().toString();
             case TYPE_DATA: return asData().toString();
+            case TYPE_PRIORITY: return asPriority().toString();
+            case TYPE_PING: return asPing().toString();
             default: throw new NotImplementedException("type = " + type);
         }
     }

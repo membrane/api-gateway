@@ -112,11 +112,40 @@ public class Http2ServerHandler extends AbstractHttpHandler {
             case TYPE_CONTINUATION:
                 handleFrame(frame.asContinuation());
                 break;
+            case TYPE_PRIORITY:
+                handleFrame(frame.asPriority());
+                break;
+            case TYPE_PING:
+                handlePing(frame.asPing());
+                break;
             default:
                 // TODO
                 throw new NotImplementedException("frame type " + frame.getType());
         }
 
+    }
+
+    private void handlePing(PingFrame ping) throws IOException {
+        if (ping.isAck())
+            return;
+
+        if (ping.getFrame().getStreamId() != 0)
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+
+        if (ping.getFrame().getLength() != 8)
+            throw new FatalConnectionException(ERROR_FRAME_SIZE_ERROR);
+
+        sender.send(PingFrame.pong(ping));
+    }
+
+    private void handleFrame(PriorityFrame priority) throws IOException {
+        if (priority.getFrame().getStreamId() == 0)
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+
+        if (priority.getFrame().getLength() != 5)
+            throw new FatalConnectionException(ERROR_FRAME_SIZE_ERROR); // TODO: convert to stream error
+
+        // TODO
     }
 
     private void handleFrame(WindowUpdateFrame windowUpdate) throws IOException {
