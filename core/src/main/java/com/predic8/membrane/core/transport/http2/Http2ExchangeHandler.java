@@ -212,7 +212,21 @@ public class Http2ExchangeHandler implements Runnable {
     private List<Frame> createHeadersFrames(Response res, Encoder encoder, Settings sendSettings, boolean isAtEof) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        encoder.encodeHeader(baos, ":status".getBytes(StandardCharsets.US_ASCII), (""+res.getStatusCode()).getBytes(StandardCharsets.US_ASCII), false);
+        StringBuilder sb = log.isInfoEnabled() ? new StringBuilder() : null;
+
+        String keyStatus = ":status";
+        String valStatus = "" + res.getStatusCode();
+        encoder.encodeHeader(baos, keyStatus.getBytes(StandardCharsets.US_ASCII), valStatus.getBytes(StandardCharsets.US_ASCII), false);
+        if (sb != null) {
+            sb.append("Headers on stream ");
+            sb.append(streamId);
+            sb.append(":\n");
+
+            sb.append(keyStatus);
+            sb.append(": ");
+            sb.append(valStatus);
+            sb.append("\n");
+        }
 
         for (HeaderField hf : res.getHeader().getAllHeaderFields()) {
             String key = hf.getHeaderName().toString().toLowerCase();
@@ -222,7 +236,18 @@ public class Http2ExchangeHandler implements Runnable {
             boolean sensitive = "set-cookie".equals(key);
 
             encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), hf.getValue().getBytes(StandardCharsets.US_ASCII), sensitive);
+            if (sb != null) {
+                sb.append(key);
+                sb.append(": ");
+                sb.append(hf.getValue());
+                if (sensitive)
+                    sb.append("    (sensitive)");
+                sb.append("\n");
+            }
         }
+
+        if (sb != null)
+            log.info(sb.toString());
 
         byte[] header = baos.toByteArray();
         List<Frame> frames = new ArrayList<>();

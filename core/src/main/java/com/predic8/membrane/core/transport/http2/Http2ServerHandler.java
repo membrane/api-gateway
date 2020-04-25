@@ -12,6 +12,8 @@ import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 import com.twitter.hpack.HeaderListener;
 import org.apache.commons.lang.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 
 public class Http2ServerHandler extends AbstractHttpHandler {
+    private static final Logger log = LoggerFactory.getLogger(Http2ServerHandler.class.getName());
     private static final byte[] PREFACE = new byte[]{0x50, 0x52, 0x49, 0x20, 0x2a, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2f, 0x32, 0x2e,
             0x30, 0x0d, 0x0a, 0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a};
 
@@ -44,7 +47,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
     ExecutorService executor = Executors.newCachedThreadPool();
 
-    private Settings sendSettings = new Settings(); // TODO: changing the sender settings is not supported.
+    private Settings sendSettings = new Settings(); // TODO: changing the sender settings is not supported (and the ACK ignored)
     private Settings recSettings = new Settings();
     private long peerWindowSize = 65535;
     private Map<Integer, StreamInfo> streams = new HashMap<>();
@@ -94,7 +97,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     }
 
     private void handleFrame(Frame frame) throws IOException {
-        System.out.println(frame);
+        log.info("received: " + frame);
 
         switch (frame.getType()) {
             case TYPE_SETTINGS:
@@ -177,11 +180,27 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         Request request = new Request();
         exchange.setRequest(request);
 
+        StringBuilder sb = log.isInfoEnabled() ? new StringBuilder() : null;
+
+        if (sb != null) {
+            sb.append("Headers on stream ");
+            sb.append(streamId1);
+            sb.append(":\n");
+        }
+
         decoder.decode(getPackedHeaderStream(headerFrames), new HeaderListener() {
             @Override
             public void addHeader(byte[] name, byte[] value, boolean sensitive) {
                 String key = new String(name);
                 String val = new String(value);
+
+                if (sb != null) {
+                    sb.append(key);
+                    sb.append(": ");
+                    sb.append(val);
+                    sb.append("\n");
+                }
+
                 if (":method".equals(key))
                     request.setMethod(val);
                 else if (":scheme".equals(key))
@@ -195,6 +214,9 @@ public class Http2ServerHandler extends AbstractHttpHandler {
             }
         });
         decoder.endHeaderBlock();
+
+        if (sb != null)
+            log.info(sb.toString());
 
         // TODO: free headerBlockFragments of stream
 
@@ -253,6 +275,9 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
         if (settings.getFrame().getStreamId() != 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+
+        if (settings.isAck())
+            return; // TODO: updating our settings is not implemented
 
         for (int i = 0; i < settings.getSettingsCount(); i++) {
             long settingsValue = settings.getSettingsValue(i);

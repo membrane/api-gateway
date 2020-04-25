@@ -124,7 +124,7 @@ public class Frame {
             case TYPE_WINDOW_UPDATE: return asWindowUpdate().toString();
             case TYPE_HEADERS: return asHeaders().toString();
             case TYPE_DATA: return asData().toString();
-            default: throw new NotImplementedException();
+            default: throw new NotImplementedException("type = " + type);
         }
     }
 
