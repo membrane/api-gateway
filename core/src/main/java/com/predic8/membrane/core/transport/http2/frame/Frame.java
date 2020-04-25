@@ -130,6 +130,12 @@ public class Frame {
         return new PingFrame(this);
     }
 
+    public GoawayFrame asGoaway() {
+        if (type != TYPE_GOAWAY)
+            throw new IllegalStateException();
+        return new GoawayFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();
@@ -138,6 +144,7 @@ public class Frame {
             case TYPE_DATA: return asData().toString();
             case TYPE_PRIORITY: return asPriority().toString();
             case TYPE_PING: return asPing().toString();
+            case TYPE_GOAWAY: return asGoaway().toString();
             default: throw new NotImplementedException("type = " + type);
         }
     }
