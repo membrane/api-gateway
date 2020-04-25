@@ -136,6 +136,12 @@ public class Frame {
         return new GoawayFrame(this);
     }
 
+    public RstStreamFrame asRstStream() {
+        if (type != TYPE_RST_STREAM)
+            throw new IllegalStateException();
+        return new RstStreamFrame(this);
+    }
+
     public String toString() {
         switch (type) {
             case TYPE_SETTINGS: return asSettings().toString();
@@ -145,6 +151,7 @@ public class Frame {
             case TYPE_PRIORITY: return asPriority().toString();
             case TYPE_PING: return asPing().toString();
             case TYPE_GOAWAY: return asGoaway().toString();
+            case TYPE_RST_STREAM: return asRstStream().toString();
             default: throw new NotImplementedException("type = " + type);
         }
     }
