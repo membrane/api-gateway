@@ -56,11 +56,11 @@ public class HeadersFrame {
         return (frame.flags & FLAG_PRIORITY) != 0;
     }
 
-    private int getHeaderBlockStartIndex() {
+    public int getHeaderBlockStartIndex() {
         return headerBlockStartIndex;
     }
 
-    private int getHeaderBlockLength() {
+    public int getHeaderBlockLength() {
         return frame.length - padLength - headerBlockStartIndex;
     }
 

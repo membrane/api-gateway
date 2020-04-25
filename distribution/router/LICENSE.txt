@@ -45,6 +45,7 @@ Google Guava
 Apache Commons FileUpload
 Java Minimal Template Engine
 XML Commons External Components XML APIs
+Twitter.com HPACK
 
 Apache Software License, Version 1.1
 -------------------------------------------------

@@ -97,4 +97,12 @@ public class Frame {
             sb.append("\n");
         }
     }
+
+    public int getType() {
+        return type;
+    }
+
+    public byte[] getContent() {
+        return content;
+    }
 }
