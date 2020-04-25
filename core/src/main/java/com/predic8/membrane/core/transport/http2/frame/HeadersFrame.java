@@ -90,4 +90,7 @@ public class HeadersFrame {
     }
 
 
+    public byte[] getContent() {
+        return frame.getContent();
+    }
 }

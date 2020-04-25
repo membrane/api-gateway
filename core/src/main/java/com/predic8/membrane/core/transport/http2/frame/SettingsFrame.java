@@ -1,21 +1,25 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
 
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FRAME_SIZE_ERROR;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
+
 public class SettingsFrame {
-    public final int ID_SETTINGS_HEADER_TABLE_SIZE = 0x1;
-    public final int ID_SETTINGS_ENABLE_PUSH = 0x2;
-    public final int ID_SETTINGS_MAX_CONCURRENT_STREAMS = 0x3;
-    public final int ID_SETTINGS_INITIAL_WINDOW_SIZE = 0x04;
-    public final int ID_SETTINGS_MAX_FRAME_SIZE  = 0x05;
-    public final int ID_SETTINGS_MAX_HEADER_LIST_SIZE  = 0x06;
+    public static final int FLAG_ACK = 0x1;
+
+    public static final int ID_SETTINGS_HEADER_TABLE_SIZE = 0x1;
+    public static final int ID_SETTINGS_ENABLE_PUSH = 0x2;
+    public static final int ID_SETTINGS_MAX_CONCURRENT_STREAMS = 0x3;
+    public static final int ID_SETTINGS_INITIAL_WINDOW_SIZE = 0x04;
+    public static final int ID_SETTINGS_MAX_FRAME_SIZE  = 0x05;
+    public static final int ID_SETTINGS_MAX_HEADER_LIST_SIZE  = 0x06;
 
     private final Frame frame;
 
     public SettingsFrame(Frame frame) {
         this.frame = frame;
-        if (frame.length % 6 != 0)
-            throw new RuntimeException("Expected SETTINGS frame to have content length divisible by 6.");
     }
 
     public int getSettingsCount() {
@@ -30,6 +34,9 @@ public class SettingsFrame {
                 (frame.content[i * 6 + 1] & 0xFF);
     }
 
+    /**
+     * @return a value between 0 and 2^32-1
+     */
     public long getSettingsValue(int i) {
         if (i < 0 || i >= getSettingsCount())
             throw new IllegalArgumentException();
@@ -66,4 +73,19 @@ public class SettingsFrame {
         return sb.toString();
     }
 
+    public static Frame ack() {
+        Frame frame = new Frame();
+        frame.fill(Frame.TYPE_SETTINGS, FLAG_ACK, 0, null, 0, 0);
+        return frame;
+    }
+
+    public static Frame empty() {
+        Frame frame = new Frame();
+        frame.fill(Frame.TYPE_SETTINGS, 0, 0, null, 0, 0);
+        return frame;
+    }
+
+    public Frame getFrame() {
+        return frame;
+    }
 }

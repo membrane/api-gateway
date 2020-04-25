@@ -1,11 +1,13 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
+import com.predic8.membrane.core.transport.http2.Settings;
 import com.predic8.membrane.core.util.ByteUtil;
 import org.apache.commons.lang.NotImplementedException;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 public class Frame {
     public static final int TYPE_DATA = 0x0;
@@ -19,15 +21,56 @@ public class Frame {
     public static final int TYPE_WINDOW_UPDATE = 0x08;
     public static final int TYPE_CONTINUATION = 0x09;
 
-    byte[] buf = new byte[9];
+    final int maximumFrameSize;
+
     int length;
     int type;
     int flags;
     int streamId;
     byte[] content;
 
+    public Frame(Settings receivingSettings) {
+        maximumFrameSize = receivingSettings.getMaxFrameSize();
+    }
+
+    public Frame() {
+        maximumFrameSize = -1;
+    }
+
+    public void fill(int type, int flags, int streamId, byte[] buf, int offset, int length) {
+        this.length = length;
+        this.type = type;
+        this.flags = flags;
+        this.streamId = streamId;
+        if (length == 0) {
+            content = null;
+        } else {
+            content = new byte[length]; // TODO: this allocates memory
+            System.arraycopy(buf, offset, content, 0, length); // TODO: this is bad performance
+        }
+    }
+
+    public void write(OutputStream stream) throws IOException {
+        stream.write(length >> 16);
+        stream.write(length >> 8);
+        stream.write(length);
+        stream.write(type);
+        stream.write(flags);
+        stream.write((streamId >> 24) & 0x7F);
+        stream.write(streamId >> 16);
+        stream.write(streamId >> 8);
+        stream.write(streamId);
+        if (length > 0) {
+            stream.write(content, 0, length);
+        }
+    }
+
     public void read(InputStream stream) throws IOException {
         length = readByte(stream) * 0x10000 + readByte(stream) * 0x100 + readByte(stream);
+
+        if (length > maximumFrameSize)
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR);
+
         type = readByte(stream);
         flags = readByte(stream);
         streamId = (readByte(stream) & 0x7F) * 0x1000000 + readByte(stream) * 0x10000 + readByte(stream) * 0x100 + readByte(stream);
@@ -104,5 +147,13 @@ public class Frame {
 
     public byte[] getContent() {
         return content;
+    }
+
+    public int getStreamId() {
+        return streamId;
+    }
+
+    public int getLength() {
+        return length;
     }
 }
