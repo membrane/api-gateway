@@ -19,6 +19,7 @@ public class StreamInfo {
     public StreamState state = StreamState.IDLE;
 
     private LinkedTransferQueue<DataFrame> dataFrames = new LinkedTransferQueue<>();
+    private int streamId;
 
     public StreamInfo(int streamId, Http2ServerHandler h2sh) {
         peerFlowControl = new PeerFlowControl(streamId, h2sh.getSender(), h2sh.getPeerSettings());
@@ -123,5 +124,9 @@ public class StreamInfo {
 
     public PeerFlowControl getPeerFlowControl() {
         return peerFlowControl;
+    }
+
+    public int getStreamId() {
+        return streamId;
     }
 }

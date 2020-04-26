@@ -290,7 +290,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         exchange.setRequest(request);
         exchange.setOriginalRequestUri(request.getUri());
 
-        executor.submit(new Http2ExchangeHandler(streamId1, this, exchange, showSSLExceptions, remoteAddr));
+        executor.submit(new Http2ExchangeHandler(streamInfo, this, exchange, showSSLExceptions, remoteAddr));
 
 
         handleStreamEnd(streamInfo, headers);
