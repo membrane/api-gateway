@@ -100,8 +100,8 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     private void handleFrame(Frame frame) throws IOException {
         if (log.isTraceEnabled())
             log.trace("received: " + frame);
-        else if (log.isInfoEnabled())
-            log.info("received: " + frame.getTypeString() + " length=" + frame.getLength());
+        else if (log.isDebugEnabled())
+            log.debug("received: " + frame.getTypeString() + " length=" + frame.getLength());
 
         switch (frame.getType()) {
             case TYPE_SETTINGS:
@@ -239,7 +239,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         Request request = new Request();
         exchange.setRequest(request);
 
-        StringBuilder sb = log.isInfoEnabled() ? new StringBuilder() : null;
+        StringBuilder sb = log.isDebugEnabled() ? new StringBuilder() : null;
 
         if (sb != null) {
             sb.append("Headers on stream ");
@@ -275,7 +275,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         decoder.endHeaderBlock();
 
         if (sb != null)
-            log.info(sb.toString());
+            log.debug(sb.toString());
 
         if (!headers.isEndStream())
             request.setBody(streamInfo.createBody());

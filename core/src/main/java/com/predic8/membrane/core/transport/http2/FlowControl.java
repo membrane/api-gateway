@@ -27,7 +27,8 @@ public class FlowControl {
     public void received(int length) {
         ourWindowPositionReceived += length;
 
-        log.info("stream=" + streamId + " size=" + ourWindowSize + " pos=" + ourWindowPositionReceived + " diff=" + (ourWindowSize - ourWindowPositionReceived));
+        if (log.isDebugEnabled())
+            log.debug("stream=" + streamId + " size=" + ourWindowSize + " pos=" + ourWindowPositionReceived + " diff=" + (ourWindowSize - ourWindowPositionReceived));
     }
 
     public void processed(int length) throws IOException {
@@ -35,7 +36,8 @@ public class FlowControl {
         if (ourWindowSize - ourWindowPositionProcessed < (ourWindowSizeStep >> 1))
             increaseWindow();
 
-        log.info("stream=" + streamId + " size=" + ourWindowSize + " pos=" + ourWindowPositionReceived + " diff=" + (ourWindowSize - ourWindowPositionReceived));
+        if (log.isDebugEnabled())
+            log.debug("stream=" + streamId + " size=" + ourWindowSize + " pos=" + ourWindowPositionReceived + " diff=" + (ourWindowSize - ourWindowPositionReceived));
     }
 
     private void increaseWindow() throws IOException {

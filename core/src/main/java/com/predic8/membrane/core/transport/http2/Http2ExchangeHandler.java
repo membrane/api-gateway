@@ -228,7 +228,7 @@ public class Http2ExchangeHandler implements Runnable {
     private List<Frame> createHeadersFrames(Response res, Encoder encoder, Settings sendSettings, boolean isAtEof) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        StringBuilder sb = log.isInfoEnabled() ? new StringBuilder() : null;
+        StringBuilder sb = log.isDebugEnabled() ? new StringBuilder() : null;
 
         String keyStatus = ":status";
         String valStatus = "" + res.getStatusCode();
@@ -263,7 +263,7 @@ public class Http2ExchangeHandler implements Runnable {
         }
 
         if (sb != null)
-            log.info(sb.toString());
+            log.debug(sb.toString());
 
         byte[] header = baos.toByteArray();
         List<Frame> frames = new ArrayList<>();

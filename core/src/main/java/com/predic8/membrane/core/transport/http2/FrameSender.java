@@ -28,8 +28,8 @@ public class FrameSender {
     public synchronized void send(Frame frame) throws IOException {
         if (log.isTraceEnabled())
             log.trace("sending: " + frame);
-        else
-            log.info("sending: " + frame.getTypeString() + " length=" + frame.getLength());
+        else if (log.isDebugEnabled())
+            log.debug("sending: " + frame.getTypeString() + " length=" + frame.getLength());
 
         frame.write(out);
         out.flush();
