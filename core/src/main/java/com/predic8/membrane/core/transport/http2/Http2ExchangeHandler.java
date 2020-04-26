@@ -227,6 +227,8 @@ public class Http2ExchangeHandler implements Runnable {
     private List<Frame> createHeadersFrames(Response res, Encoder encoder, Settings peerSettings, boolean isAtEof) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
+        encoder.setMaxHeaderTableSize(baos, peerSettings.getHeaderTableSize());
+
         StringBuilder sb = log.isDebugEnabled() ? new StringBuilder() : null;
 
         String keyStatus = ":status";
