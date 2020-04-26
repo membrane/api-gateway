@@ -7,5 +7,5 @@ import java.io.IOException;
 import java.util.List;
 
 public interface FrameProducer {
-    List<Frame> call(Encoder encoder, Settings sendSettings) throws IOException;
+    List<Frame> call(Encoder encoder, Settings peerSettings) throws IOException;
 }

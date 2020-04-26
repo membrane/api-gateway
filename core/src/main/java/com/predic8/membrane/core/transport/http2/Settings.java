@@ -1,17 +1,23 @@
 package com.predic8.membrane.core.transport.http2;
 
 public class Settings {
-    private int maxFrameSize = 16384;
+    private volatile int maxFrameSize = 16384;
     private int headerTableSize = 4096;
     private int maxConcurrentStreams = -1; // initially, there is no limit
     private int initialWindowSize = 65535;
     private int maxHeaderListSize = -1; // initially, there is no limit
     private int enablePush = 1;
 
+    /**
+     * PeerSettings: Called on various threads.
+     */
     public int getMaxFrameSize() {
         return maxFrameSize;
     }
 
+    /**
+     * PeerSettings: Called from the receiver thread.
+     */
     public void setMaxFrameSize(int value) {
         maxFrameSize = value;
     }

@@ -169,7 +169,7 @@ public class Http2ExchangeHandler implements Runnable {
     }
 
     protected void writeResponse(Response res) throws Exception {
-        http2ServerHandler.getSender().send((encoder, sendSettings) -> createHeadersFrames(res, encoder, sendSettings, false));
+        http2ServerHandler.getSender().send(streamId, (encoder, peerSettings) -> createHeadersFrames(res, encoder, peerSettings, false));
 
         res.getBody().write(new AbstractBodyTransferrer() {
             @Override
@@ -180,7 +180,7 @@ public class Http2ExchangeHandler implements Runnable {
             private void sendData(byte[] content, int offset, int length) throws IOException {
                 int mOffset = offset;
                 while (mOffset < offset + length) {
-                    int mLength = Math.min(http2ServerHandler.getOurSettings().getMaxFrameSize(), length - (mOffset - offset));
+                    int mLength = Math.min(http2ServerHandler.getPeerSettings().getMaxFrameSize(), length - (mOffset - offset));
 
                     // as we do not send padding, reserve exactly the length we want to send
                     streamInfo.getPeerFlowControl().reserve(mLength, streamId);
@@ -225,7 +225,7 @@ public class Http2ExchangeHandler implements Runnable {
         exchange.collectStatistics();
     }
 
-    private List<Frame> createHeadersFrames(Response res, Encoder encoder, Settings sendSettings, boolean isAtEof) throws IOException {
+    private List<Frame> createHeadersFrames(Response res, Encoder encoder, Settings peerSettings, boolean isAtEof) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         StringBuilder sb = log.isDebugEnabled() ? new StringBuilder() : null;
@@ -268,16 +268,17 @@ public class Http2ExchangeHandler implements Runnable {
         byte[] header = baos.toByteArray();
         List<Frame> frames = new ArrayList<>();
 
-        for (int offset = 0; offset < header.length; offset += sendSettings.getMaxFrameSize()) {
+        int maxFrameSize = peerSettings.getMaxFrameSize();
+        for (int offset = 0; offset < header.length; offset += maxFrameSize) {
             Frame frame = new Frame();
-            boolean isLast = offset + sendSettings.getMaxFrameSize() >= header.length;
+            boolean isLast = offset + maxFrameSize >= header.length;
             frame.fill(
                     offset == 0 ? TYPE_HEADERS : TYPE_CONTINUATION,
                     (isLast ? FLAG_END_HEADERS : 0) + (isAtEof ? FLAG_END_STREAM : 0),
                     streamId,
                     header,
                     offset,
-                    Math.min(sendSettings.getMaxFrameSize(), header.length - offset)
+                    Math.min(maxFrameSize, header.length - offset)
             );
             frames.add(frame);
         }

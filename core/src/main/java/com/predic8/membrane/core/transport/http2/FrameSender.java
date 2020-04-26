@@ -1,45 +1,57 @@
 package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.transport.http2.frame.Frame;
-import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import com.twitter.hpack.Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.List;
 
-import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_DATA;
-
+/**
+ * The FrameSender instance synchronized access to the OutputStream as well as the Encoder.
+ */
 public class FrameSender {
     private static final Logger log = LoggerFactory.getLogger(FrameSender.class.getName());
 
     private final OutputStream out;
     private final Encoder encoder;
-    private final Settings sendSettings;
+    private final Settings peerSettings;
 
-    public FrameSender(Http2ServerHandler http2ServerHandler, OutputStream out, Encoder encoder, Settings sendSettings) {
+    public FrameSender(OutputStream out, Encoder encoder, Settings peerSettings) {
         this.out = out;
         this.encoder = encoder;
-        this.sendSettings = sendSettings;
+        this.peerSettings = peerSettings;
     }
 
-    public synchronized void send(Frame frame) throws IOException {
-        if (log.isTraceEnabled())
-            log.trace("sending: " + frame);
-        else if (log.isDebugEnabled())
-            log.debug("sending: " + frame.getTypeString() + " length=" + frame.getLength());
+    public void send(Frame frame) throws IOException {
+        long now = System.nanoTime();
+        synchronized (this) {
+            long enter = System.nanoTime();
+            if (enter - now > 1000000)
+                log.warn("Took " + ((enter - now) / 1000) + "ms to acquire lock (streamId=" + frame.getStreamId() + ").");
 
-        frame.write(out);
-        out.flush();
-        // TODO
-    }
+            if (log.isTraceEnabled())
+                log.trace("sending: " + frame);
+            else if (log.isDebugEnabled())
+                log.debug("sending: " + frame.getTypeString() + " length=" + frame.getLength());
 
-    public synchronized void send(FrameProducer frameProducer) throws IOException {
-        for (Frame frame : frameProducer.call(encoder, sendSettings)) {
-            send(frame);
+            frame.write(out);
+            out.flush();
+            // TODO
         }
-        // TODO
+    }
+
+    public void send(int streamId, FrameProducer frameProducer) throws IOException {
+        long now = System.nanoTime();
+        synchronized (this) {
+            long enter = System.nanoTime();
+            if (enter - now > 1000000)
+                log.warn("Took " + ((enter - now) / 1000) + "ms to acquire lock (streamId=" + streamId + ").");
+
+            for (Frame frame : frameProducer.call(encoder, peerSettings)) {
+                send(frame);
+            }
+        }
     }
 }

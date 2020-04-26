@@ -44,12 +44,10 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     private final String remoteAddr;
     private final FlowControl flowControl;
     private final PeerFlowControl peerFlowControl;
-
-    ExecutorService executor = Executors.newCachedThreadPool();
-
-    private Settings ourSettings = new Settings(); // TODO: changing our settings is not supported (and the ACK ignored)
-    private Settings peerSettings = new Settings();
-    private Map<Integer, StreamInfo> streams = new HashMap<>();
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final Settings ourSettings = new Settings(); // TODO: changing our settings is not supported (and the ACK ignored)
+    private final Settings peerSettings = new Settings();
+    private final Map<Integer, StreamInfo> streams = new HashMap<>();
 
     public Http2ServerHandler(HttpServerHandler httpServerHandler, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions) {
         super(httpServerHandler.getTransport());
@@ -64,7 +62,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         int maxHeaderTableSize = 4096;
         decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
         Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
-        this.sender = new FrameSender(this, srcOut, encoder, ourSettings);
+        this.sender = new FrameSender(srcOut, encoder, peerSettings);
         flowControl = new FlowControl(0, sender, ourSettings);
         peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
 
@@ -86,12 +84,12 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
         sender.send(SettingsFrame.empty());
 
-        Frame frame = new Frame(peerSettings);
+        Frame frame = new Frame(ourSettings);
         frame.read(srcIn);
         handleFrame(frame);
 
         while (true) {
-            frame = new Frame(peerSettings);
+            frame = new Frame(ourSettings);
             frame.read(srcIn);
             handleFrame(frame);
         }
@@ -220,7 +218,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         HeaderBlockFragment last = headers;
 
         while (!last.isEndHeaders()) {
-            Frame frame = new Frame(peerSettings);
+            Frame frame = new Frame(ourSettings);
             frame.read(srcIn);
 
             if (frame.getType() != TYPE_CONTINUATION)
@@ -266,9 +264,10 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                     ; // ignore
                 else if (":authority".equals(key))
                     request.getHeader().setHost(val);
-                else if (":path".equals(key))
+                else if (":path".equals(key)) {
                     request.setUri(val);
-                else
+                    log.info("streamId=" + streamId1 + " uri=" + val);
+                } else
                     request.getHeader().add(key, val);
             }
         });
@@ -373,8 +372,6 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                     for (StreamInfo si : streams.values()) {
                         si.getPeerFlowControl().increment(delta);
                     }
-
-                    // TODO: should peerFlowControl also be incremented?
 
                     peerSettings.setInitialWindowSize((int) settingsValue);
                     break;

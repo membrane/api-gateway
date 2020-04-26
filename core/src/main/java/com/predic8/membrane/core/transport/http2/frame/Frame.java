@@ -29,8 +29,8 @@ public class Frame {
     int streamId;
     byte[] content;
 
-    public Frame(Settings receivingSettings) {
-        maximumFrameSize = receivingSettings.getMaxFrameSize();
+    public Frame(Settings ourSettings) {
+        maximumFrameSize = ourSettings.getMaxFrameSize();
     }
 
     public Frame() {

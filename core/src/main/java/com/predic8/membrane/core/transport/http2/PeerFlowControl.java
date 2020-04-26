@@ -3,11 +3,16 @@ package com.predic8.membrane.core.transport.http2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 public class PeerFlowControl {
     private static final Logger log = LoggerFactory.getLogger(PeerFlowControl.class);
 
     private final int streamId;
+
+    @GuardedBy("this")
     public long peerWindowSize;
+    @GuardedBy("this")
     public long peerWindowPosition;
 
     public PeerFlowControl(int streamId, FrameSender sender, Settings peerSettings) {
