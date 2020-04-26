@@ -60,7 +60,7 @@ public class StreamInfo {
             }
 
             private byte[] createByteArray(DataFrame df) {
-                // TODO this has bad performance
+                // TODO this has bad performance, can be avoided by subclassing Chunk
                 byte[] buf = new byte[df.getDataLength()];
                 System.arraycopy(df.getContent(), df.getDataStartIndex(), buf, 0, df.getDataLength());
                 return buf;

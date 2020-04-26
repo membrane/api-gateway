@@ -103,7 +103,6 @@ public class Http2ExchangeHandler implements Runnable {
 
     private void process() throws Exception {
         try {
-            // TODO: kick off processing
             invokeHandlers();
 
             exchange.blockResponseIfNeeded();
