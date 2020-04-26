@@ -17,21 +17,28 @@ public class PeerFlowControl {
 
     public synchronized void increment(int delta) {
         peerWindowSize += delta;
-        log.info("stream=" + streamId + " size=" + peerWindowSize + " pos=" + peerWindowPosition + " diff=" + (peerWindowSize - peerWindowPosition));
+        if (log.isDebugEnabled())
+            log.debug("stream=" + streamId + " size=" + peerWindowSize + " pos=" + peerWindowPosition + " diff=" + (peerWindowSize - peerWindowPosition));
         notifyAll();
     }
 
     private void used(int length) {
         peerWindowPosition += length;
-        log.info("stream=" + streamId + " size=" + peerWindowSize + " pos=" + peerWindowPosition + " diff=" + (peerWindowSize - peerWindowPosition));
+        if (log.isDebugEnabled())
+            log.debug("stream=" + streamId + " size=" + peerWindowSize + " pos=" + peerWindowPosition + " diff=" + (peerWindowSize - peerWindowPosition));
     }
 
     private boolean canUse(int length) {
         return peerWindowSize - peerWindowPosition >= length;
     }
 
-    public synchronized void reserve(int wantLength) {
+    public synchronized void reserve(int wantLength, int streamId) {
+        boolean warned = false;
         while(!canUse(wantLength)) {
+            if (!warned) {
+                log.warn("stream " + streamId + " blocked because of flow control on stream " + this.streamId + ".");
+                warned = true;
+            }
             try {
                 wait();
             } catch (InterruptedException e) {

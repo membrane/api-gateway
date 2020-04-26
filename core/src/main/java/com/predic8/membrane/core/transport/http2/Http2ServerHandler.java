@@ -151,8 +151,8 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         //   recipient MUST respond with a stream error (Section 5.4.2) of type
         //   STREAM_CLOSED.
 
-        flowControl.received(dataFrame.getDataLength());
-        flowControl.processed(dataFrame.getDataLength());
+        flowControl.received(dataFrame.getFrame().getLength());
+        flowControl.processed(dataFrame.getFrame().getLength());
     }
 
     private void handleFrame(PingFrame ping) throws IOException {

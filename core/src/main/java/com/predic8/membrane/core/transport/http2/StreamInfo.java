@@ -28,14 +28,14 @@ public class StreamInfo {
 
     public void addDataFrame(DataFrame df) {
         dataFrames.add(df);
-        flowControl.received(df.getDataLength());
+        flowControl.received(df.getFrame().getLength());
     }
 
     public DataFrame removeDataFrame() throws IOException {
         try {
             DataFrame dataFrame = dataFrames.poll(1, TimeUnit.MINUTES);
             if (dataFrame != null) {
-                flowControl.processed(dataFrame.getDataLength());
+                flowControl.processed(dataFrame.getFrame().getLength());
             }
             return dataFrame;
         } catch (InterruptedException e) {

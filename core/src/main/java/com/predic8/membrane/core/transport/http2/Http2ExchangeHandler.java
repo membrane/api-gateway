@@ -39,7 +39,7 @@ public class Http2ExchangeHandler implements Runnable {
     private final Exchange exchange;
     private final boolean showSSLExceptions;
     private final String remoteAddr;
-
+    private final int streamId;
 
     public Http2ExchangeHandler(StreamInfo streamInfo, Http2ServerHandler http2ServerHandler, Exchange exchange, boolean showSSLExceptions, String remoteAddr) {
         this.streamInfo = streamInfo;
@@ -47,6 +47,7 @@ public class Http2ExchangeHandler implements Runnable {
         this.exchange = exchange;
         this.showSSLExceptions = showSSLExceptions;
         this.remoteAddr = remoteAddr;
+        streamId = streamInfo.getStreamId();
     }
 
     @Override
@@ -160,7 +161,7 @@ public class Http2ExchangeHandler implements Runnable {
             sb.append(" ");
             sb.append(remoteAddr);
             sb.append(" stream ");
-            sb.append(streamInfo.getStreamId());
+            sb.append(streamId);
             Thread.currentThread().setName(sb.toString());
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
@@ -181,14 +182,14 @@ public class Http2ExchangeHandler implements Runnable {
                 while (mOffset < offset + length) {
                     int mLength = Math.min(http2ServerHandler.getOurSettings().getMaxFrameSize(), length - (mOffset - offset));
 
-                    // TODO: does the frame length (which one?) or data length count?
-                    streamInfo.getPeerFlowControl().reserve(mLength);
-                    http2ServerHandler.getPeerFlowControl().reserve(mLength);
+                    // as we do not send padding, reserve exactly the length we want to send
+                    streamInfo.getPeerFlowControl().reserve(mLength, streamId);
+                    http2ServerHandler.getPeerFlowControl().reserve(mLength, streamId);
 
                     Frame frame = new Frame();
                     frame.fill(TYPE_DATA,
                             0,
-                            streamInfo.getStreamId(),
+                            streamId,
                             content,
                             mOffset,
                             mLength);
@@ -213,7 +214,7 @@ public class Http2ExchangeHandler implements Runnable {
         Frame frame = new Frame();
         frame.fill(TYPE_DATA,
                 FLAG_END_STREAM,
-                streamInfo.getStreamId(),
+                streamId,
                 null,
                 0,
                 0);
@@ -234,7 +235,7 @@ public class Http2ExchangeHandler implements Runnable {
         encoder.encodeHeader(baos, keyStatus.getBytes(StandardCharsets.US_ASCII), valStatus.getBytes(StandardCharsets.US_ASCII), false);
         if (sb != null) {
             sb.append("Headers on stream ");
-            sb.append(streamInfo.getStreamId());
+            sb.append(streamId);
             sb.append(":\n");
 
             sb.append(keyStatus);
@@ -273,7 +274,7 @@ public class Http2ExchangeHandler implements Runnable {
             frame.fill(
                     offset == 0 ? TYPE_HEADERS : TYPE_CONTINUATION,
                     (isLast ? FLAG_END_HEADERS : 0) + (isAtEof ? FLAG_END_STREAM : 0),
-                    streamInfo.getStreamId(),
+                    streamId,
                     header,
                     offset,
                     Math.min(sendSettings.getMaxFrameSize(), header.length - offset)
