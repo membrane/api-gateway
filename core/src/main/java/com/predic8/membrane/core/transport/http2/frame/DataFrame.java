@@ -37,6 +37,9 @@ public class DataFrame implements StreamEnd {
         return frame.length - padLength;
     }
 
+    public byte[] getContent() {
+        return frame.getContent();
+    }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -55,4 +58,7 @@ public class DataFrame implements StreamEnd {
         return sb.toString();
     }
 
+    public Frame getFrame() {
+        return frame;
+    }
 }

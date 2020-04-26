@@ -2,12 +2,10 @@ package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http2.frame.*;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.DNSCache;
-import com.predic8.membrane.core.util.EndOfStreamException;
 import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 import com.twitter.hpack.HeaderListener;
@@ -83,11 +81,11 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         if (!isCorrectPreface(preface))
             throw new RuntimeException("Incorrect Preface.");
 
+        sender.send(SettingsFrame.empty());
+
         Frame frame = new Frame(recSettings);
         frame.read(srcIn);
         handleFrame(frame);
-
-        sender.send(SettingsFrame.empty());
 
         while (true) {
             frame = new Frame(recSettings);
@@ -116,8 +114,14 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                 handleFrame(frame.asPriority());
                 break;
             case TYPE_PING:
-                handlePing(frame.asPing());
+                handleFrame(frame.asPing());
                 break;
+            case TYPE_DATA:
+                handleFrame(frame.asData());
+                break;
+            case TYPE_GOAWAY:
+            case TYPE_PUSH_PROMISE:
+            case TYPE_RST_STREAM:
             default:
                 // TODO
                 throw new NotImplementedException("frame type " + frame.getType());
@@ -125,7 +129,26 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
     }
 
-    private void handlePing(PingFrame ping) throws IOException {
+    private void handleFrame(DataFrame dataFrame) throws IOException {
+        if (dataFrame.getFrame().getStreamId() == 0)
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+
+        StreamInfo streamInfo = streams.get(dataFrame.getFrame().getStreamId());
+
+        if (streamInfo == null)
+            throw new FatalConnectionException(ERROR_STREAM_CLOSED); // TODO: change to stream error
+
+        streamInfo.dataFrames.add(dataFrame);
+
+        // TODO: If a DATA frame is received
+        //   whose stream is not in "open" or "half-closed (local)" state, the
+        //   recipient MUST respond with a stream error (Section 5.4.2) of type
+        //   STREAM_CLOSED.
+
+        // TODO: flow control
+    }
+
+    private void handleFrame(PingFrame ping) throws IOException {
         if (ping.isAck())
             return;
 
@@ -247,7 +270,8 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         if (sb != null)
             log.info(sb.toString());
 
-        // TODO: free headerBlockFragments of stream
+        if (!headers.isEndStream())
+            request.setBody(streamInfo.createBody());
 
         exchange.received();
         DNSCache dnsCache = httpServerHandler.getTransport().getRouter().getDnsCache();
@@ -317,7 +341,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                     recSettings.setMaxFrameSize((int) settingsValue);
                     break;
                 case SettingsFrame.ID_SETTINGS_ENABLE_PUSH:
-                    if (settingsValue == 0 || settingsValue == 1)
+                    if (settingsValue != 0 && settingsValue != 1)
                         throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
                     recSettings.setEnablePush((int) settingsValue);
                     break;
