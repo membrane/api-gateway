@@ -42,11 +42,12 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     private final boolean showSSLExceptions;
     private final Decoder decoder;
     private final String remoteAddr;
+    private final FlowControl flowControl;
 
     ExecutorService executor = Executors.newCachedThreadPool();
 
-    private Settings sendSettings = new Settings(); // TODO: changing the sender settings is not supported (and the ACK ignored)
-    private Settings recSettings = new Settings();
+    private Settings ourSettings = new Settings(); // TODO: changing our settings is not supported (and the ACK ignored)
+    private Settings peerSettings = new Settings();
     private long peerWindowSize = 65535;
     private Map<Integer, StreamInfo> streams = new HashMap<>();
 
@@ -63,7 +64,8 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         int maxHeaderTableSize = 4096;
         decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
         Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
-        this.sender = new FrameSender(srcOut, encoder, sendSettings);
+        this.sender = new FrameSender(srcOut, encoder, ourSettings);
+        flowControl = new FlowControl(0, sender, ourSettings);
 
         StringBuilder sb = new StringBuilder();
         InetAddress ia = sourceSocket.getInetAddress();
@@ -83,19 +85,22 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
         sender.send(SettingsFrame.empty());
 
-        Frame frame = new Frame(recSettings);
+        Frame frame = new Frame(peerSettings);
         frame.read(srcIn);
         handleFrame(frame);
 
         while (true) {
-            frame = new Frame(recSettings);
+            frame = new Frame(peerSettings);
             frame.read(srcIn);
             handleFrame(frame);
         }
     }
 
     private void handleFrame(Frame frame) throws IOException {
-        log.info("received: " + frame);
+        if (log.isTraceEnabled())
+            log.trace("received: " + frame);
+        else if (log.isInfoEnabled())
+            log.info("received: " + frame.getTypeString() + " length=" + frame.getLength());
 
         switch (frame.getType()) {
             case TYPE_SETTINGS:
@@ -138,14 +143,15 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         if (streamInfo == null)
             throw new FatalConnectionException(ERROR_STREAM_CLOSED); // TODO: change to stream error
 
-        streamInfo.dataFrames.add(dataFrame);
+        streamInfo.addDataFrame(dataFrame);
 
         // TODO: If a DATA frame is received
         //   whose stream is not in "open" or "half-closed (local)" state, the
         //   recipient MUST respond with a stream error (Section 5.4.2) of type
         //   STREAM_CLOSED.
 
-        // TODO: flow control
+        flowControl.received(dataFrame.getDataLength());
+        flowControl.processed(dataFrame.getDataLength());
     }
 
     private void handleFrame(PingFrame ping) throws IOException {
@@ -196,7 +202,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         StreamInfo streamInfo = streams.get(streamId1);
 
         if (streamInfo == null) {
-            streamInfo = new StreamInfo(sendSettings);
+            streamInfo = new StreamInfo(streamId1, this);
             streams.put(streamId1, streamInfo);
         }
 
@@ -213,7 +219,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         HeaderBlockFragment last = headers;
 
         while (!last.isEndHeaders()) {
-            Frame frame = new Frame(recSettings);
+            Frame frame = new Frame(peerSettings);
             frame.read(srcIn);
 
             if (frame.getType() != TYPE_CONTINUATION)
@@ -338,42 +344,42 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                 case SettingsFrame.ID_SETTINGS_MAX_FRAME_SIZE:
                     if (settingsValue < 16384 || settingsValue > 16777215)
                         throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
-                    recSettings.setMaxFrameSize((int) settingsValue);
+                    peerSettings.setMaxFrameSize((int) settingsValue);
                     break;
                 case SettingsFrame.ID_SETTINGS_ENABLE_PUSH:
                     if (settingsValue != 0 && settingsValue != 1)
                         throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
-                    recSettings.setEnablePush((int) settingsValue);
+                    peerSettings.setEnablePush((int) settingsValue);
                     break;
                 case SettingsFrame.ID_SETTINGS_HEADER_TABLE_SIZE:
                     if (settingsValue > Integer.MAX_VALUE) {
                         System.err.println("HEADER_TABLE_SIZE > Integer.MAX_VALUE received: " + settingsValue);
                         throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // this is limited by our implementation
                     }
-                    recSettings.setHeaderTableSize((int) settingsValue);
+                    peerSettings.setHeaderTableSize((int) settingsValue);
                     break;
                 case SettingsFrame.ID_SETTINGS_MAX_CONCURRENT_STREAMS:
                     if (settingsValue > Integer.MAX_VALUE)
-                        recSettings.setMaxConcurrentStreams(Integer.MAX_VALUE); // this is the limit in our implementation
+                        peerSettings.setMaxConcurrentStreams(Integer.MAX_VALUE); // this is the limit in our implementation
                     else
-                        recSettings.setMaxConcurrentStreams((int) settingsValue);
+                        peerSettings.setMaxConcurrentStreams((int) settingsValue);
                     break;
                 case SettingsFrame.ID_SETTINGS_INITIAL_WINDOW_SIZE:
                     if (settingsValue > 1 << 31 - 1)
                         throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
 
-                    int delta = (int) settingsValue - recSettings.getInitialWindowSize();
+                    int delta = (int) settingsValue - peerSettings.getInitialWindowSize();
                     for (StreamInfo si : streams.values()) {
                         si.peerWindowSize += delta;
                     }
 
-                    recSettings.setInitialWindowSize((int) settingsValue);
+                    peerSettings.setInitialWindowSize((int) settingsValue);
                     break;
                 case SettingsFrame.ID_SETTINGS_MAX_HEADER_LIST_SIZE:
                     if (settingsValue > Integer.MAX_VALUE)
-                        recSettings.setMaxHeaderListSize(Integer.MAX_VALUE); // this is the limit in our implementation
+                        peerSettings.setMaxHeaderListSize(Integer.MAX_VALUE); // this is the limit in our implementation
                     else
-                        recSettings.setMaxHeaderListSize((int) settingsValue);
+                        peerSettings.setMaxHeaderListSize((int) settingsValue);
                     break;
                 default:
                     System.err.println("not implemented: setting " + settings.getSettingsId(i));
@@ -412,5 +418,13 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
     public FrameSender getSender() {
         return sender;
+    }
+
+    public Settings getOurSettings() {
+        return ourSettings;
+    }
+
+    public Settings getPeerSettings() {
+        return peerSettings;
     }
 }

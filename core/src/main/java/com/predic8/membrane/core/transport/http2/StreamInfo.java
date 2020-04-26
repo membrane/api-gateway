@@ -14,13 +14,33 @@ import java.util.concurrent.TimeUnit;
 public class StreamInfo {
     private static final Logger log = LoggerFactory.getLogger(StreamInfo.class);
 
+    private final FlowControl flowControl;
     public long peerWindowSize;
     public StreamState state = StreamState.IDLE;
 
-    LinkedTransferQueue<DataFrame> dataFrames = new LinkedTransferQueue<>();
+    private LinkedTransferQueue<DataFrame> dataFrames = new LinkedTransferQueue<>();
 
-    public StreamInfo(Settings settings) {
-        peerWindowSize = settings.getInitialWindowSize();
+    public StreamInfo(int streamId, Http2ServerHandler h2sh) {
+        peerWindowSize = h2sh.getPeerSettings().getInitialWindowSize();
+        flowControl = new FlowControl(streamId, h2sh.getSender(), h2sh.getOurSettings());
+    }
+
+    public void addDataFrame(DataFrame df) {
+        dataFrames.add(df);
+        flowControl.received(df.getDataLength());
+    }
+
+    public DataFrame removeDataFrame() throws IOException {
+        try {
+            DataFrame dataFrame = dataFrames.poll(1, TimeUnit.MINUTES);
+            if (dataFrame != null) {
+                flowControl.processed(dataFrame.getDataLength());
+            }
+            return dataFrame;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
     }
 
     public AbstractBody createBody() {
@@ -28,12 +48,7 @@ public class StreamInfo {
             @Override
             protected void readLocal() throws IOException {
                 while(true) {
-                    DataFrame df = null;
-                    try {
-                        df = dataFrames.poll(1, TimeUnit.MINUTES);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    DataFrame df = removeDataFrame();
                     if (df == null)
                         continue;
                     chunks.add(new Chunk(createByteArray(df)));
@@ -63,12 +78,7 @@ public class StreamInfo {
             protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
                 chunks.clear();
                 while (true) {
-                    DataFrame df = null;
-                    try {
-                        df = dataFrames.poll(1, TimeUnit.MINUTES);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    DataFrame df = removeDataFrame();
                     if (df == null)
                         continue;
                     out.write(df.getContent(), df.getDataStartIndex(), df.getDataLength());
@@ -86,12 +96,7 @@ public class StreamInfo {
             protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
                 chunks.clear();
                 while (true) {
-                    DataFrame df = null;
-                    try {
-                        df = dataFrames.poll(1, TimeUnit.MINUTES);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+                    DataFrame df = removeDataFrame();
                     if (df == null)
                         continue;
                     out.write(df.getContent(), df.getDataStartIndex(), df.getDataLength());

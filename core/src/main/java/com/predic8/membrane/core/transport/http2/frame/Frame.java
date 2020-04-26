@@ -199,6 +199,21 @@ public class Frame {
         return type;
     }
 
+    public String getTypeString() {
+        switch (type) {
+            case TYPE_DATA: return "DATA";
+            case TYPE_HEADERS: return "HEADERS";
+            case TYPE_RST_STREAM: return "RST_STREAM";
+            case TYPE_SETTINGS: return "SETTINGS";
+            case TYPE_PUSH_PROMISE: return "PUSH_PROMISE";
+            case TYPE_PING: return "PING";
+            case TYPE_GOAWAY: return "GOAWAY";
+            case TYPE_WINDOW_UPDATE: return "WINDOW_UPDATE";
+            case TYPE_CONTINUATION: return "CONTINUATION";
+            default: return "unknown (" + type + ")";
+        }
+    }
+
     public byte[] getContent() {
         return content;
     }

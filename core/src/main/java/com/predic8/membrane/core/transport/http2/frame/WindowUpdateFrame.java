@@ -18,7 +18,8 @@ public class WindowUpdateFrame {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("WindowUpdate {\n");
-        sb.append("  windowUpdate = ");
+        sb.append("  streamId = " + frame.streamId);
+        sb.append("\n  windowUpdate = ");
         sb.append(getWindowSizeIncrement());
         sb.append("\n");
         sb.append("}");
@@ -28,4 +29,16 @@ public class WindowUpdateFrame {
     public Frame getFrame() {
         return frame;
     }
+
+    public static Frame inc(int streamId, int value) {
+        Frame frame = new Frame();
+        byte[] buf = new byte[4];
+        buf[0] = (byte)(value >> 24 & 0x7F);
+        buf[1] = (byte)(value >> 16 & 0xFF);
+        buf[2] = (byte)(value >> 8 & 0xFF);
+        buf[3] = (byte)(value & 0xFF);
+        frame.fill(Frame.TYPE_WINDOW_UPDATE, 0, streamId, buf, 0, 4);
+        return frame;
+    }
+
 }
