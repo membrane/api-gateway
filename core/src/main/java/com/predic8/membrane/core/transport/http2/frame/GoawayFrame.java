@@ -9,15 +9,15 @@ public class GoawayFrame {
     public GoawayFrame(Frame frame) {
         this.frame = frame;
 
-        lastStreamId = (frame.content[0] & 0x7F) * 0x1000000 +
-                (frame.content[1] & 0xFF) * 0x10000 +
-                (frame.content[2] & 0xFF) * 0x100 +
+        lastStreamId = (frame.content[0] & 0x7F) << 24 |
+                (frame.content[1] & 0xFF) << 16 |
+                (frame.content[2] & 0xFF) << 8 |
                 (frame.content[3] & 0xFF);
 
-        errorCode = ((frame.content[4] & 0xFF) << 24) |
-                ((frame.content[5] & 0xFF) << 16) |
-                ((frame.content[6] & 0xFF) << 8 ) |
-                ((frame.content[7] & 0xFF));
+        errorCode = (frame.content[4] & 0xFF) << 24 |
+                (frame.content[5] & 0xFF) << 16 |
+                (frame.content[6] & 0xFF) << 8 |
+                (frame.content[7] & 0xFF);
     }
 
     public String toString() {

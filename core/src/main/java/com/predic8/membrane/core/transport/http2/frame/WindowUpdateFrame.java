@@ -9,9 +9,9 @@ public class WindowUpdateFrame {
 
     public int getWindowSizeIncrement() {
         return
-                (frame.content[0] & 0x7F) * 0x1000000 +
-                (frame.content[1] & 0xFF) * 0x10000 +
-                (frame.content[2] & 0xFF) * 0x100 +
+                (frame.content[0] & 0x7F) << 24 |
+                (frame.content[1] & 0xFF) << 16 |
+                (frame.content[2] & 0xFF) << 8 |
                 (frame.content[3] & 0xFF);
     }
 

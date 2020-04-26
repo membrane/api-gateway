@@ -66,14 +66,19 @@ public class Frame {
     }
 
     public void read(InputStream stream) throws IOException {
-        length = readByte(stream) * 0x10000 + readByte(stream) * 0x100 + readByte(stream);
+        length = readByte(stream) << 16 |
+                readByte(stream) << 8 |
+                readByte(stream);
 
         if (length > maximumFrameSize)
             throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR);
 
         type = readByte(stream);
         flags = readByte(stream);
-        streamId = (readByte(stream) & 0x7F) * 0x1000000 + readByte(stream) * 0x10000 + readByte(stream) * 0x100 + readByte(stream);
+        streamId = (readByte(stream) & 0x7F) << 24 |
+                readByte(stream) << 16 |
+                readByte(stream) << 8 |
+                readByte(stream);
         content = ByteUtil.readByteArray(stream, length); // TODO: allocates a new byte[]
     }
 

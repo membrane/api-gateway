@@ -21,9 +21,9 @@ public class PushPromiseFrame implements HeaderBlockFragment {
             padLength = 0;
         }
 
-        promisedStreamId = (frame.content[p++] & 0x7F) * 0x1000000 +
-                (frame.content[p++] & 0xFF) * 0x10000 +
-                (frame.content[p++] & 0xFF) * 0x100 +
+        promisedStreamId = (frame.content[p++] & 0x7F) << 24 |
+                (frame.content[p++] & 0xFF) << 16 |
+                (frame.content[p++] & 0xFF) << 8 |
                 (frame.content[p++] & 0xFF);
 
         headerBlockStartIndex = p;

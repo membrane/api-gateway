@@ -26,10 +26,10 @@ public class HeadersFrame implements HeaderBlockFragment, StreamEnd {
         }
         if (isPriority()) {
             exclusive = (frame.content[p] & 0x80) != 0;
-            streamDependency = (frame.content[p++] & 0x7F) * 0x1000000 +
-                    (frame.content[p++] & 0xFF) * 0x10000 +
-                    (frame.content[p++] & 0xFF) * 0x100 +
-                    (frame.content[p++] & 0xFF);
+            streamDependency = (frame.content[p++] & 0x7F) << 24 |
+                    (frame.content[p++] & 0xFF) << 16 |
+                    (frame.content[p++] & 0xFF) << 8 |
+                    frame.content[p++] & 0xFF;
             weight = (frame.content[p++] & 0xFF) + 1;
         } else {
             exclusive = false;

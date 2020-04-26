@@ -11,10 +11,10 @@ public class PriorityFrame {
         this.frame = frame;
 
         exclusive = (frame.content[0] & 0x80) != 0;
-        streamDependency = (frame.content[0] & 0x7F) * 0x1000000 +
-                (frame.content[1] & 0xFF) * 0x10000 +
-                (frame.content[2] & 0xFF) * 0x100 +
-                (frame.content[3] & 0xFF);
+        streamDependency = (frame.content[0] & 0x7F) << 24 |
+                (frame.content[1] & 0xFF) << 16 |
+                (frame.content[2] & 0xFF) << 8 |
+                frame.content[3] & 0xFF;
         weight = (frame.content[4] & 0xFF) + 1;
     }
 

@@ -30,7 +30,7 @@ public class SettingsFrame {
         if (i < 0 || i >= getSettingsCount())
             throw new IllegalArgumentException();
         return
-                (frame.content[i * 6] & 0xFF) * 0x100 +
+                (frame.content[i * 6] & 0xFF) << 8 |
                 (frame.content[i * 6 + 1] & 0xFF);
     }
 
@@ -41,9 +41,9 @@ public class SettingsFrame {
         if (i < 0 || i >= getSettingsCount())
             throw new IllegalArgumentException();
         return
-                (frame.content[i * 6 + 2] & 0xFF) * 0x1000000l +
-                        (frame.content[i * 6 + 3] & 0xFF) * 0x10000l +
-                        (frame.content[i * 6 + 4] & 0xFF) * 0x100l +
+                (long)(frame.content[i * 6 + 2] & 0xFF) << 24 |
+                        (frame.content[i * 6 + 3] & 0xFF) << 16 |
+                        (frame.content[i * 6 + 4] & 0xFF) << 8 |
                         (frame.content[i * 6 + 5] & 0xFF);
     }
     
