@@ -3,6 +3,7 @@ package com.predic8.membrane.core.transport.http2;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBodyTransferrer;
+import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
@@ -166,51 +167,58 @@ public class Http2ExchangeHandler implements Runnable {
         }
     }
 
-    protected void writeResponse(Response res) throws Exception{
+    protected void writeResponse(Response res) throws Exception {
+        http2ServerHandler.getSender().send((encoder, sendSettings) -> createHeadersFrames(res, encoder, sendSettings, false));
 
-        // TODO: res.getBodyAsStream() causes the full body to be read. instead use
-        // res.getBody().write(new AbstractBodyTransferrer() { });
-        BufferedInputStream bs = new BufferedInputStream(res.getBodyAsStream(), 4096);
-        bs.mark(2);
-        boolean isAtEof = bs.read() == -1;
-        bs.reset();
-
-        http2ServerHandler.getSender().send((encoder, sendSettings) -> createHeadersFrames(res, encoder, sendSettings, isAtEof));
-
-        AtomicBoolean continue_ = new AtomicBoolean(true);
-
-        while(continue_.get()) {
-            byte[] buf = new byte[http2ServerHandler.getOurSettings().getMaxFrameSize()];
-
-            int offset = 0;
-            while (offset < buf.length) {
-                int r = bs.read(buf, offset, buf.length - offset);
-                if (r == -1)
-                    break;
-                offset += r;
+        res.getBody().write(new AbstractBodyTransferrer() {
+            @Override
+            public void write(byte[] content, int i, int length) throws IOException {
+                sendData(content, i, length);
             }
 
-            bs.mark(2);
-            boolean isAtEof2 = bs.read() == -1;
-            if (isAtEof2)
-                continue_.set(false);
-            bs.reset();
+            private void sendData(byte[] content, int offset, int length) throws IOException {
+                int mOffset = offset;
+                while (mOffset < offset + length) {
+                    int mLength = Math.min(http2ServerHandler.getOurSettings().getMaxFrameSize(), length - (mOffset - offset));
 
-            // TODO: does the frame length (which one?) or data length count?
-            streamInfo.getPeerFlowControl().reserve(offset);
-            http2ServerHandler.getPeerFlowControl().reserve(offset);
-            int theOffset = offset;
+                    // TODO: does the frame length (which one?) or data length count?
+                    streamInfo.getPeerFlowControl().reserve(mLength);
+                    http2ServerHandler.getPeerFlowControl().reserve(mLength);
 
-            Frame frame = new Frame();
-            frame.fill(TYPE_DATA,
-                    isAtEof2 ? FLAG_END_STREAM : 0,
-                    streamInfo.getStreamId(),
-                    buf,
-                    0,
-                    theOffset);
+                    Frame frame = new Frame();
+                    frame.fill(TYPE_DATA,
+                            0,
+                            streamInfo.getStreamId(),
+                            content,
+                            mOffset,
+                            mLength);
 
-            http2ServerHandler.getSender().send(frame);
-        }
+                    http2ServerHandler.getSender().send(frame);
+
+                    mOffset += mLength;
+                }
+            }
+
+            @Override
+            public void write(Chunk chunk) throws IOException {
+                sendData(chunk.getContent(), 0, chunk.getLength());
+            }
+
+            @Override
+            public void finish() throws IOException {
+
+            }
+        });
+
+        Frame frame = new Frame();
+        frame.fill(TYPE_DATA,
+                FLAG_END_STREAM,
+                streamInfo.getStreamId(),
+                null,
+                0,
+                0);
+
+        http2ServerHandler.getSender().send(frame);
 
         exchange.setTimeResSent(System.currentTimeMillis());
         exchange.collectStatistics();
