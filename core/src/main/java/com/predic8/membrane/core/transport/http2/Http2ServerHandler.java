@@ -43,12 +43,12 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     private final Decoder decoder;
     private final String remoteAddr;
     private final FlowControl flowControl;
+    private final PeerFlowControl peerFlowControl;
 
     ExecutorService executor = Executors.newCachedThreadPool();
 
     private Settings ourSettings = new Settings(); // TODO: changing our settings is not supported (and the ACK ignored)
     private Settings peerSettings = new Settings();
-    private long peerWindowSize = 65535;
     private Map<Integer, StreamInfo> streams = new HashMap<>();
 
     public Http2ServerHandler(HttpServerHandler httpServerHandler, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions) {
@@ -64,8 +64,9 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         int maxHeaderTableSize = 4096;
         decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
         Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
-        this.sender = new FrameSender(srcOut, encoder, ourSettings);
+        this.sender = new FrameSender(this, srcOut, encoder, ourSettings);
         flowControl = new FlowControl(0, sender, ourSettings);
+        peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
 
         StringBuilder sb = new StringBuilder();
         InetAddress ia = sourceSocket.getInetAddress();
@@ -182,7 +183,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
             if (windowUpdate.getWindowSizeIncrement() == 0)
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
-            peerWindowSize += windowUpdate.getWindowSizeIncrement();
+            peerFlowControl.increment(windowUpdate.getWindowSizeIncrement());
         } else {
             if (windowUpdate.getWindowSizeIncrement() == 0)
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // TODO: change to stream error
@@ -191,7 +192,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
             if (streamInfo == null)
                 throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // stream not open // TODO: change to stream error
 
-            streamInfo.peerWindowSize += windowUpdate.getWindowSizeIncrement();
+            streamInfo.getPeerFlowControl().increment(windowUpdate.getWindowSizeIncrement());
         }
     }
 
@@ -370,8 +371,10 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
                     int delta = (int) settingsValue - peerSettings.getInitialWindowSize();
                     for (StreamInfo si : streams.values()) {
-                        si.peerWindowSize += delta;
+                        si.getPeerFlowControl().increment(delta);
                     }
+
+                    // TODO: should peerFlowControl also be incremented?
 
                     peerSettings.setInitialWindowSize((int) settingsValue);
                     break;
@@ -426,5 +429,13 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
     public Settings getPeerSettings() {
         return peerSettings;
+    }
+
+    public PeerFlowControl getPeerFlowControl() {
+        return peerFlowControl;
+    }
+
+    public StreamInfo getStreamInfo(int streamId) {
+        return streams.get(streamId);
     }
 }

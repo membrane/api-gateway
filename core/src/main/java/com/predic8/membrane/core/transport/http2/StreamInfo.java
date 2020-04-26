@@ -15,13 +15,13 @@ public class StreamInfo {
     private static final Logger log = LoggerFactory.getLogger(StreamInfo.class);
 
     private final FlowControl flowControl;
-    public long peerWindowSize;
+    private final PeerFlowControl peerFlowControl;
     public StreamState state = StreamState.IDLE;
 
     private LinkedTransferQueue<DataFrame> dataFrames = new LinkedTransferQueue<>();
 
     public StreamInfo(int streamId, Http2ServerHandler h2sh) {
-        peerWindowSize = h2sh.getPeerSettings().getInitialWindowSize();
+        peerFlowControl = new PeerFlowControl(streamId, h2sh.getSender(), h2sh.getPeerSettings());
         flowControl = new FlowControl(streamId, h2sh.getSender(), h2sh.getOurSettings());
     }
 
@@ -119,5 +119,9 @@ public class StreamInfo {
                 return getContent();
             }
         };
+    }
+
+    public PeerFlowControl getPeerFlowControl() {
+        return peerFlowControl;
     }
 }
