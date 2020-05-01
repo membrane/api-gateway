@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
+import java.io.IOException;
+
 public class RstStreamFrame {
     private final Frame frame;
     private final int errorCode;
@@ -21,4 +23,12 @@ public class RstStreamFrame {
         return sb.toString();
     }
 
+    public Frame getFrame() {
+        return frame;
+    }
+
+    public void validateSize() throws IOException {
+        if (frame.length != 4)
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR);
+    }
 }
