@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
+import java.io.IOException;
+
 public class PriorityFrame {
     private final Frame frame;
 
@@ -35,4 +37,22 @@ public class PriorityFrame {
     public Frame getFrame() {
         return frame;
     }
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public int getStreamDependency() {
+        return streamDependency;
+    }
+
+    public boolean isExclusive() {
+        return exclusive;
+    }
+
+    public void validateSize() throws IOException {
+        if (frame.length != 5)
+            throw new FatalConnectionException(Error.ERROR_FRAME_SIZE_ERROR); // TODO: switch this into a stream error
+    }
+
 }

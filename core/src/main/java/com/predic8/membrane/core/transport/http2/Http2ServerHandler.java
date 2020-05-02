@@ -49,6 +49,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     private final Settings ourSettings = new Settings(); // TODO: changing our settings is not supported (and the ACK ignored)
     private final Settings peerSettings = new Settings();
     private final Map<Integer, StreamInfo> streams = new HashMap<>();
+    private final PriorityTree priorityTree = new PriorityTree();
 
     public Http2ServerHandler(HttpServerHandler httpServerHandler, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions) {
         super(httpServerHandler.getTransport());
@@ -190,13 +191,23 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     }
 
     private void handleFrame(PriorityFrame priority) throws IOException {
+        priority.validateSize();
+
         if (priority.getFrame().getStreamId() == 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
-        if (priority.getFrame().getLength() != 5)
-            throw new FatalConnectionException(ERROR_FRAME_SIZE_ERROR); // TODO: convert to stream error
+        int streamId1 = priority.getFrame().getStreamId();
 
-        // TODO
+        StreamInfo streamInfo = streams.get(streamId1);
+
+        if (streamInfo == null) {
+            streamInfo = new StreamInfo(streamId1, this);
+            streams.put(streamId1, streamInfo);
+        }
+
+        streamInfo.receivedPriority();
+
+        priorityTree.reprioritize(streamInfo, priority.getWeight(), streams.get(priority.getStreamDependency()), priority.isExclusive());
     }
 
     private void handleFrame(WindowUpdateFrame windowUpdate) throws IOException {
@@ -229,6 +240,11 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         }
 
         streamInfo.receivedHeaders();
+
+        if (headers.isPriority())
+            priorityTree.reprioritize(streamInfo, headers.getWeight(), streams.get(headers.getStreamDependency()), headers.isExclusive());
+        else
+            priorityTree.reprioritize(streamInfo, 16, null, false);
 
         List<HeaderBlockFragment> headerFrames = new ArrayList<>();
         headerFrames.add(headers);
@@ -284,7 +300,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                     request.getHeader().setHost(val);
                 else if (":path".equals(key)) {
                     request.setUri(val);
-                    log.info("streamId=" + streamId1 + " uri=" + val + (headers.isPriority() ? " exclusive=" + headers.isExclusive() + " weight=" + headers.getWeight() + " streamDependency=" + headers.getStreamDependency() : ""));
+                    log.info("streamId=" + streamId1 + " uri=" + val);
                 } else
                     request.getHeader().add(key, val);
             }

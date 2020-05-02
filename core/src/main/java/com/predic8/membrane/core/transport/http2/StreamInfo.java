@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -21,12 +23,21 @@ public class StreamInfo {
     private final PeerFlowControl peerFlowControl;
     private final LinkedTransferQueue<DataFrame> dataFrames = new LinkedTransferQueue<>();
     private final int streamId;
+    private final List<StreamInfo> priorityChildren = new ArrayList<>();
+    private StreamInfo priorityParent = null;
     private StreamState state = StreamState.IDLE;
+    private int weight;
 
     public StreamInfo(int streamId, Http2ServerHandler h2sh) {
         this.streamId = streamId;
-        peerFlowControl = new PeerFlowControl(streamId, h2sh.getSender(), h2sh.getPeerSettings());
-        flowControl = new FlowControl(streamId, h2sh.getSender(), h2sh.getOurSettings());
+        if (streamId == 0) {
+            peerFlowControl = null;
+            flowControl = null;
+        } else {
+            peerFlowControl = new PeerFlowControl(streamId, h2sh.getSender(), h2sh.getPeerSettings());
+            flowControl = new FlowControl(streamId, h2sh.getSender(), h2sh.getOurSettings());
+        }
+
     }
 
     public void receivedDataFrame(DataFrame df) {
@@ -80,6 +91,10 @@ public class StreamInfo {
         if (state == StreamState.IDLE)
             state = StreamState.OPEN;
 
+    }
+
+    public void receivedPriority() {
+        // nothing to do
     }
 
     private class Http2Body extends AbstractBody {
@@ -156,5 +171,29 @@ public class StreamInfo {
 
             return getContent();
         }
+    }
+
+    public List<StreamInfo> getPriorityChildren() {
+        return priorityChildren;
+    }
+
+    public StreamInfo getPriorityParent() {
+        return priorityParent;
+    }
+
+    public void setPriorityParent(StreamInfo priorityParent) {
+        this.priorityParent = priorityParent;
+    }
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
+    }
+
+    public StreamState getState() {
+        return state;
     }
 }
