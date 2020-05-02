@@ -284,7 +284,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                     request.getHeader().setHost(val);
                 else if (":path".equals(key)) {
                     request.setUri(val);
-                    log.info("streamId=" + streamId1 + " uri=" + val);
+                    log.info("streamId=" + streamId1 + " uri=" + val + (headers.isPriority() ? " exclusive=" + headers.isExclusive() + " weight=" + headers.getWeight() + " streamDependency=" + headers.getStreamDependency() : ""));
                 } else
                     request.getHeader().add(key, val);
             }

@@ -99,4 +99,16 @@ public class HeadersFrame implements HeaderBlockFragment, StreamEnd {
     public Frame getFrame() {
         return frame;
     }
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public int getStreamDependency() {
+        return streamDependency;
+    }
+
+    public boolean isExclusive() {
+        return exclusive;
+    }
 }
