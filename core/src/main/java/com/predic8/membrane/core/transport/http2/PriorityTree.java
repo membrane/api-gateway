@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Null;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,9 +41,14 @@ public class PriorityTree {
         }
 
         if (exclusive) {
+            for (StreamInfo streamInfo : parent.getPriorityChildren())
+                streamInfo.setPriorityParent(stream);
             stream.getPriorityChildren().addAll(parent.getPriorityChildren());
             parent.getPriorityChildren().clear();
         }
+
+        if (stream.getPriorityParent() != null)
+            stream.getPriorityParent().getPriorityChildren().remove(stream);
 
         parent.getPriorityChildren().add(stream);
         stream.setWeight(weight);
@@ -66,7 +72,11 @@ public class PriorityTree {
     private static List<StringBuilder> toStringBuilderList(StreamInfo node) {
         if (node.getPriorityChildren().size() == 0)
             return Lists.newArrayList(toStringBuilder(node));
-        List<StringBuilder> res = merge(node.getPriorityChildren().stream().map(n -> toStringBuilderList(n)).collect(Collectors.toList()));
+        List<StreamInfo> priorityChildren = node.getPriorityChildren();
+        List<List<StringBuilder>> cols = new ArrayList<>(priorityChildren.size());
+        for (StreamInfo streamInfo : priorityChildren)
+            cols.add(toStringBuilderList(streamInfo));
+        List<StringBuilder> res = merge(cols);
         res.add(0, fill(toStringBuilder(node), res.get(0).length()));
         return res;
     }

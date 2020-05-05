@@ -244,4 +244,12 @@ public class StreamInfo {
     public Semaphore getBufferedDataFrames() {
         return bufferedDataFrames;
     }
+
+    @Override
+    public String toString() {
+        return "StreamInfo{" +
+                "streamId=" + streamId +
+                ", state=" + state +
+                '}';
+    }
 }

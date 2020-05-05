@@ -2,8 +2,8 @@ package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http2.frame.Frame;
+import com.predic8.membrane.core.transport.http2.frame.HeadersFrame;
 import com.twitter.hpack.Encoder;
-import jdk.internal.net.http.frame.HeaderFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,7 +119,9 @@ public class FrameSender implements Runnable {
                 if (frame.getType() == Frame.TYPE_HEADERS)
                     streams.get(frame.getStreamId()).sendHeaders();
 
-                if ((frame.getFlags() & HeaderFrame.END_STREAM) != 0)
+                if ((frame.getType() == Frame.TYPE_HEADERS ||
+                        frame.getType() == Frame.TYPE_DATA)&&
+                        (frame.getFlags() & HeadersFrame.FLAG_END_STREAM) != 0)
                     streams.get(frame.getStreamId()).sendEndStream();
 
                 if (log.isTraceEnabled())
@@ -129,7 +131,7 @@ public class FrameSender implements Runnable {
 
                 frame.write(out);
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         } finally {
             updateThreadName(false);
