@@ -225,4 +225,8 @@ public class Frame {
     public int getLength() {
         return length;
     }
+
+    public int getFlags() {
+        return flags;
+    }
 }

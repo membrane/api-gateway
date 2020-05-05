@@ -1,15 +1,18 @@
 package com.predic8.membrane.core.transport.http2;
 
+import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http2.frame.Frame;
 import com.twitter.hpack.Encoder;
+import jdk.internal.net.http.frame.HeaderFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.Map;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The FrameSender instance synchronized access to the OutputStream as well as the Encoder.
@@ -21,26 +24,38 @@ public class FrameSender implements Runnable {
     private final OutputStream out;
     private final Encoder encoder;
     private final Settings peerSettings;
-    private final ArrayBlockingQueue<Frame> queue = new ArrayBlockingQueue<>(80);
+    private final Map<Integer, StreamInfo> streams;
+    private final String remoteAddr;
+    private final LinkedTransferQueue<Frame> queue = new LinkedTransferQueue<>();
+    private final AtomicInteger totalBufferedFrames = new AtomicInteger(0);
 
-    public FrameSender(OutputStream out, Encoder encoder, Settings peerSettings) {
+    public FrameSender(OutputStream out, Encoder encoder, Settings peerSettings, Map<Integer, StreamInfo> streams, String remoteAddr) {
         this.out = out;
         this.encoder = encoder;
         this.peerSettings = peerSettings;
+        this.streams = streams;
+        this.remoteAddr = remoteAddr;
     }
 
     public void send(Frame frame) throws IOException {
-        try {
+        if (frame.getType() == Frame.TYPE_DATA) {
+            StreamInfo streamInfo = streams.get(frame.getStreamId());
+            try {
+                streamInfo.getBufferedDataFrames().acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            streamInfo.getDataFramesToBeSent().add(frame);
+        } else {
             if (!queue.offer(frame)) {
                 long now = System.nanoTime();
                 queue.put(frame);
                 long enter = System.nanoTime();
                 if (enter - now > 10 * 1000 * 1000)
-                    log.info("waited " + (enter - now ) / 1000000 + "ms for queue");
+                    log.info("waited " + (enter - now) / 1000000 + "ms for queue");
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
+        totalBufferedFrames.incrementAndGet();
     }
 
     public void send(int streamId, FrameProducer frameProducer) throws IOException {
@@ -56,19 +71,56 @@ public class FrameSender implements Runnable {
         }
     }
 
+    private Frame getNextFrame() {
+        Frame frame = queue.poll();
+        if (frame != null) {
+            totalBufferedFrames.decrementAndGet();
+            return frame;
+        }
+        // TODO: implement prioritization logic
+        for (StreamInfo streamInfo : streams.values()) {
+            frame = streamInfo.getDataFramesToBeSent().poll();
+            if (frame != null) {
+                streamInfo.getBufferedDataFrames().release();
+                totalBufferedFrames.decrementAndGet();
+                return frame;
+            }
+        }
+        return null;
+    }
+
+    private Frame waitForNextFrame() throws InterruptedException {
+        // TODO: improve waiting logic
+        Thread.sleep(100);
+        Frame frame = getNextFrame();
+        return frame;
+    }
+
     @Override
     public void run() {
         try {
+            updateThreadName(true);
             while (true) {
-                Frame frame = queue.poll();
+                Frame frame = getNextFrame();
                 if (frame == null) {
                     out.flush();
+                    log.info("found no frame to send, starting wait loop.");
                     while (frame == null)
-                        frame = queue.poll(10, TimeUnit.MINUTES);
+                        frame = waitForNextFrame();
+                    log.info("found found another frame to send.");
                 }
 
                 if (frame.getType() == TYPE_STOP)
                     break;
+
+                if (frame.getType() == Frame.TYPE_RST_STREAM)
+                    streams.get(frame.getStreamId()).sendRstStream();
+
+                if (frame.getType() == Frame.TYPE_HEADERS)
+                    streams.get(frame.getStreamId()).sendHeaders();
+
+                if ((frame.getFlags() & HeaderFrame.END_STREAM) != 0)
+                    streams.get(frame.getStreamId()).sendEndStream();
 
                 if (log.isTraceEnabled())
                     log.trace("sending: " + frame);
@@ -79,6 +131,8 @@ public class FrameSender implements Runnable {
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            updateThreadName(false);
         }
         log.debug("frame sender shutdown");
     }
@@ -88,4 +142,16 @@ public class FrameSender implements Runnable {
         e.fill(TYPE_STOP, 0, 0, null, 0, 0);
         queue.add(e);
     }
+
+    private void updateThreadName(boolean fromConnection) {
+        if (fromConnection) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("HTTP2 Frame Sender ");
+            sb.append(remoteAddr);
+            Thread.currentThread().setName(sb.toString());
+        } else {
+            Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
+        }
+    }
+
 }

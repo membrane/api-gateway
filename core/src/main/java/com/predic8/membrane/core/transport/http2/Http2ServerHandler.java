@@ -2,7 +2,8 @@ package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.transport.http2.frame.*;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.DNSCache;
@@ -20,9 +21,9 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,16 +40,16 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     private final HttpServerHandler httpServerHandler;
     private final Socket sourceSocket;
     private final InputStream srcIn;
-    private final OutputStream srcOut;
     private final FrameSender sender;
     private final boolean showSSLExceptions;
     private final Decoder decoder;
     private final String remoteAddr;
     private final FlowControl flowControl;
     private final PeerFlowControl peerFlowControl;
-    private final Settings ourSettings = new Settings(); // TODO: changing our settings is not supported (and the ACK ignored)
+    private final Settings ourSettings = new Settings();
     private final Settings peerSettings = new Settings();
-    private final Map<Integer, StreamInfo> streams = new HashMap<>();
+    private final List<Settings> wantedSettings = new ArrayList<>();
+    private final Map<Integer, StreamInfo> streams = new ConcurrentHashMap<>();
     private final PriorityTree priorityTree = new PriorityTree();
 
     public Http2ServerHandler(HttpServerHandler httpServerHandler, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions) {
@@ -57,17 +58,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         this.httpServerHandler = httpServerHandler;
         this.sourceSocket = sourceSocket;
         this.srcIn = srcIn;
-        this.srcOut = srcOut;
         this.showSSLExceptions = showSSLExceptions;
-
-        int maxHeaderSize = 4096; // TODO: update this value, when a SETTINGS frame arrives
-        int maxHeaderTableSize = 4096;
-        decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
-        Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
-        this.sender = new FrameSender(srcOut, encoder, peerSettings);
-        executor.submit(sender);
-        flowControl = new FlowControl(0, sender, ourSettings);
-        peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
 
         StringBuilder sb = new StringBuilder();
         InetAddress ia = sourceSocket.getInetAddress();
@@ -77,6 +68,16 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         sb.append(sourceSocket.getPort());
         remoteAddr = sb.toString();
 
+        log.info("started HTTP2 connection " + remoteAddr);
+
+        int maxHeaderSize = 4096; // TODO: update this value, when a SETTINGS frame arrives
+        int maxHeaderTableSize = 4096;
+        decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
+        Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
+        this.sender = new FrameSender(srcOut, encoder, peerSettings, streams, remoteAddr);
+        executor.submit(sender);
+        flowControl = new FlowControl(0, sender, ourSettings);
+        peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
     }
 
     public void handle() throws IOException {
@@ -85,7 +86,10 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         if (!isCorrectPreface(preface))
             throw new RuntimeException("Incorrect Preface.");
 
-        sender.send(SettingsFrame.empty());
+        Settings newSettings = new Settings();
+        newSettings.copyFrom(ourSettings);
+        newSettings.setMaxConcurrentStreams(50);
+        updateSettings(newSettings);
 
         try {
             Frame frame = new Frame(ourSettings);
@@ -100,6 +104,11 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         } finally {
             sender.stop();
         }
+    }
+
+    private void updateSettings(Settings newSettings) throws IOException {
+        wantedSettings.add(newSettings);
+        sender.send(SettingsFrame.diff(ourSettings, newSettings));
     }
 
     private void handleFrame(Frame frame) throws IOException {
@@ -363,8 +372,10 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         if (settings.getFrame().getStreamId() != 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
-        if (settings.isAck())
-            return; // TODO: updating our settings is not implemented
+        if (settings.isAck()) {
+            ourSettings.copyFrom(wantedSettings.remove(0));
+            return;
+        }
 
         for (int i = 0; i < settings.getSettingsCount(); i++) {
             long settingsValue = settings.getSettingsValue(i);

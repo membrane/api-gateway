@@ -1,7 +1,11 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
+import com.predic8.membrane.core.transport.http2.Settings;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_FRAME_SIZE_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
@@ -85,6 +89,36 @@ public class SettingsFrame {
         Frame frame = new Frame();
         frame.fill(Frame.TYPE_SETTINGS, 0, 0, null, 0, 0);
         return frame;
+    }
+
+    public static Frame diff(Settings oldS, Settings newS) {
+        byte[] buf = new byte[6 * 6];
+        int p = 0;
+
+        p = put(p, buf, ID_SETTINGS_HEADER_TABLE_SIZE, oldS.getHeaderTableSize(), newS.getHeaderTableSize());
+        p = put(p, buf, ID_SETTINGS_ENABLE_PUSH, oldS.getEnablePush(), newS.getEnablePush());
+        p = put(p, buf, ID_SETTINGS_MAX_CONCURRENT_STREAMS, oldS.getMaxConcurrentStreams(), newS.getMaxConcurrentStreams());
+        p = put(p, buf, ID_SETTINGS_INITIAL_WINDOW_SIZE, oldS.getInitialWindowSize(), newS.getInitialWindowSize());
+        p = put(p, buf, ID_SETTINGS_MAX_FRAME_SIZE, oldS.getMaxFrameSize(), newS.getMaxFrameSize());
+        p = put(p, buf, ID_SETTINGS_MAX_HEADER_LIST_SIZE, oldS.getMaxHeaderListSize(), newS.getMaxHeaderListSize());
+
+        Frame frame = new Frame();
+        frame.fill(Frame.TYPE_SETTINGS, 0, 0, buf, 0, p);
+        return frame;
+    }
+
+    private static int put(int p, byte[] buf, int key, int oldValue, int newValue) {
+        if (oldValue == newValue)
+            return p;
+
+        buf[p++] = (byte)(key >> 8);
+        buf[p++] = (byte)key;
+        buf[p++] = (byte)(newValue >> 24);
+        buf[p++] = (byte)(newValue >> 16);
+        buf[p++] = (byte)(newValue >> 8);
+        buf[p++] = (byte)(newValue);
+
+        return p;
     }
 
     public Frame getFrame() {

@@ -5,6 +5,7 @@ import com.predic8.membrane.core.http.AbstractBodyTransferrer;
 import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.transport.http2.frame.DataFrame;
 import com.predic8.membrane.core.transport.http2.frame.FatalConnectionException;
+import com.predic8.membrane.core.transport.http2.frame.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
@@ -21,9 +23,11 @@ public class StreamInfo {
 
     private final FlowControl flowControl;
     private final PeerFlowControl peerFlowControl;
-    private final LinkedTransferQueue<DataFrame> dataFrames = new LinkedTransferQueue<>();
+    private final LinkedTransferQueue<DataFrame> dataFramesReceived = new LinkedTransferQueue<>();
     private final int streamId;
     private final List<StreamInfo> priorityChildren = new ArrayList<>();
+    private final LinkedTransferQueue<Frame> dataFramesToBeSent = new LinkedTransferQueue<>();
+    private final Semaphore bufferedDataFrames = new Semaphore(4);
     private StreamInfo priorityParent = null;
     private StreamState state = StreamState.IDLE;
     private int weight;
@@ -41,7 +45,7 @@ public class StreamInfo {
     }
 
     public void receivedDataFrame(DataFrame df) {
-        dataFrames.add(df);
+        dataFramesReceived.add(df);
         flowControl.received(df.getFrame().getLength());
 
         if (df.isEndStream()) {
@@ -51,7 +55,7 @@ public class StreamInfo {
 
     public DataFrame removeDataFrame() throws IOException {
         try {
-            DataFrame dataFrame = dataFrames.poll(1, TimeUnit.MINUTES);
+            DataFrame dataFrame = dataFramesReceived.poll(1, TimeUnit.MINUTES);
             if (dataFrame != null) {
                 flowControl.processed(dataFrame.getFrame().getLength());
             }
@@ -74,27 +78,60 @@ public class StreamInfo {
         return streamId;
     }
 
-    public void receivedRstStream() {
-        state = StreamState.CLOSED;
+    public synchronized void receivedRstStream() {
+        if (state == StreamState.IDLE)
+            return;
+        setState(StreamState.CLOSED);
         // TODO: stop sending frames
     }
 
-    public void receivedEndStream() {
-        // TODO: add condition
-        state = StreamState.HALF_CLOSED_REMOTE;
+    public synchronized void receivedEndStream() {
+        if (state == StreamState.OPEN)
+            setState(StreamState.HALF_CLOSED_REMOTE);
+        if (state == StreamState.HALF_CLOSED_LOCAL)
+            setState(StreamState.CLOSED);
     }
 
-    public void receivedHeaders() throws IOException {
+    public synchronized void receivedHeaders() throws IOException {
         if (state != StreamState.IDLE && state != StreamState.RESERVED_REMOTE && state != StreamState.RESERVED_LOCAL && state != StreamState.OPEN)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         if (state == StreamState.IDLE)
-            state = StreamState.OPEN;
+            setState(StreamState.OPEN);
 
+        if (state == StreamState.RESERVED_REMOTE)
+            setState(StreamState.HALF_CLOSED_LOCAL);
+    }
+
+    private void setState(StreamState state) {
+        this.state = state;
+
+        log.info("streamId=" + streamId + " changed state to " + state);
     }
 
     public void receivedPriority() {
         // nothing to do
+    }
+
+    public synchronized void sendRstStream() {
+        if (state == StreamState.IDLE)
+            return;
+
+        setState(StreamState.CLOSED);
+    }
+
+    public synchronized void sendHeaders() {
+        if (state == StreamState.IDLE)
+            setState(StreamState.OPEN);
+        if (state == StreamState.RESERVED_LOCAL)
+            setState(StreamState.HALF_CLOSED_REMOTE);
+    }
+
+    public synchronized void sendEndStream() {
+        if (state == StreamState.OPEN)
+            setState(StreamState.HALF_CLOSED_LOCAL);
+        if (state == StreamState.HALF_CLOSED_REMOTE)
+            setState(StreamState.CLOSED);
     }
 
     private class Http2Body extends AbstractBody {
@@ -193,7 +230,18 @@ public class StreamInfo {
         this.weight = weight;
     }
 
-    public StreamState getState() {
+    /**
+     * Do not use within the logic part.
+     */
+    public synchronized StreamState getState() {
         return state;
+    }
+
+    public LinkedTransferQueue<Frame> getDataFramesToBeSent() {
+        return dataFramesToBeSent;
+    }
+
+    public Semaphore getBufferedDataFrames() {
+        return bufferedDataFrames;
     }
 }

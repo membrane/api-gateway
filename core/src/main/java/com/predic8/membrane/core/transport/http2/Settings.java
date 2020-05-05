@@ -8,6 +8,18 @@ public class Settings {
     private int maxHeaderListSize = -1; // initially, there is no limit
     private int enablePush = 1;
 
+    public Settings() {
+    }
+
+    public void copyFrom(Settings settings) {
+        setMaxFrameSize(settings.getMaxFrameSize());
+        setHeaderTableSize(settings.getHeaderTableSize());
+        setMaxConcurrentStreams(settings.getMaxConcurrentStreams());
+        setInitialWindowSize(settings.getInitialWindowSize());
+        setMaxHeaderListSize(settings.getMaxHeaderListSize());
+        setEnablePush(settings.getEnablePush());
+    }
+
     /**
      * PeerSettings: Called on various threads.
      */
