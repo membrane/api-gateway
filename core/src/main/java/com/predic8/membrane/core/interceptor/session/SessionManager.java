@@ -134,6 +134,9 @@ public abstract class SessionManager {
 
         if(session.isDirty() || !originalCookieValueAtBeginning.isPresent() || cookieRenewalNeeded(originalCookieValueAtBeginning.get().toString())){
             String currentCookieValueOfSession = getCookieValue(session);
+            if (originalCookieValueAtBeginning.isPresent() &&
+                    originalCookieValueAtBeginning.get().toString().trim().equals(currentCookieValueOfSession))
+                return;
             setCookieForCurrentSession(exc, currentCookieValueOfSession);
             setCookieForExpiredSessions(exc, currentCookieValueOfSession);
         }
