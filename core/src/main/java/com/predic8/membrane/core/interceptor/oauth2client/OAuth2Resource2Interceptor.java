@@ -161,10 +161,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return Outcome.RETURN;
         }
 
+        Session session = getSessionManager().getSession(exc);
+        simplifyMultipleOAuth2Answers(session);
+
         if(isOAuth2RedirectRequest(exc))
             handleOriginalRequest(exc);
-
-        Session session = getSessionManager().getSession(exc);
 
         if (session == null) {
             String auth = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
@@ -175,16 +176,20 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 oauth2Answer.setAccessToken(auth.substring(7));
                 oauth2Answer.setTokenType("Bearer");
                 HashMap<String, String> userinfo = revalidateToken(oauth2Answer);
-                if (userinfo == null)
+                if (userinfo == null) {
+                    log.debug("userinfo is null, redirecting.");
                     return respondWithRedirect(exc);
+                }
                 oauth2Answer.setUserinfo(userinfo);
                 session.put(OAUTH2_ANSWER,oauth2Answer.serialize());
                 processUserInfo(userinfo, session);
             }
         }
 
-        if (session == null)
+        if (session == null) {
+            log.debug("session is null, redirecting.");
             return respondWithRedirect(exc);
+        }
 
 
         if (session.get(OAUTH2_ANSWER) != null && tokenNeedsRevalidation(session.get(ParamNames.ACCESS_TOKEN))) {
@@ -222,7 +227,67 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return Outcome.RETURN;
         }
 
+        log.debug("session present, but not verified, redirecting.");
         return respondWithRedirect(exc);
+    }
+
+    /**
+     * Tries to avoid very long cookies by dropping all OAUTH2_ANSWERS except the first one.
+     *
+     * (The SessionManager.mergeCookies produces a value with "{...answer1...},{...answer2...}".
+     * We locate the ',' in between the JSON objects and split the string.)
+     */
+    private void simplifyMultipleOAuth2Answers(Session session) {
+        if (session == null)
+            return;
+        String answer = session.get(OAUTH2_ANSWER);
+        if (answer == null)
+            return;
+        int indexOfTopLevelComma = getIndexOfTopLevelComma(answer);
+        if (indexOfTopLevelComma == -1)
+            return;
+        answer = answer.substring(0, indexOfTopLevelComma);
+        session.put(OAUTH2_ANSWER, answer);
+    }
+
+    private int getIndexOfTopLevelComma(String answer) {
+        int curlyBraceLevel = 0;
+        boolean inString = false;
+        boolean escapeNext = false;
+        for (int i = 0; i < answer.length(); i++) {
+            if (escapeNext) {
+                escapeNext = false;
+                continue;
+            }
+            char c = answer.charAt(i);
+            if (inString) {
+                switch (c) {
+                    case '\"':
+                        inString = false;
+                        break;
+                    case '\\':
+                        escapeNext = true;
+                        break;
+                }
+            } else {
+                switch (c) {
+                    case '{':
+                        curlyBraceLevel++;
+                        break;
+                    case '}':
+                        curlyBraceLevel--;
+                        break;
+                    case ',':
+                        if (curlyBraceLevel == 0)
+                            return i;
+                        break;
+                    case '"':
+                        inString = true;
+                        break;
+                }
+            }
+        }
+        return -1;
     }
 
     private Object getTokenSynchronizer(Session session) {
