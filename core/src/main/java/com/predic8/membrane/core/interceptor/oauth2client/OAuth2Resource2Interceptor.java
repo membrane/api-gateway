@@ -354,7 +354,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         oauth2Params.setAccessToken(json.get("access_token"));
         oauth2Params.setRefreshToken(json.get("refresh_token"));
         oauth2Params.setExpiration(json.get("expires_in"));
-        oauth2Params.setReceivedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        oauth2Params.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
         if (json.containsKey("id_token")) {
             if (idTokenIsValid(json.get("id_token")))
                 oauth2Params.setIdToken(json.get("id_token"));
@@ -557,7 +558,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 oauth2Answer.setTokenType(json.get("token_type"));
                 oauth2Answer.setExpiration(json.get("expires_in"));
                 oauth2Answer.setRefreshToken(json.get("refresh_token"));
-                oauth2Answer.setReceivedAt(LocalDateTime.now());
+                LocalDateTime now = LocalDateTime.now();
+                oauth2Answer.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
                 if(json.containsKey("id_token")) {
                     if (idTokenIsValid(json.get("id_token")))
                         oauth2Answer.setIdToken(json.get("id_token"));
