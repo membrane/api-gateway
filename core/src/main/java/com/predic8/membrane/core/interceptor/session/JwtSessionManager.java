@@ -60,8 +60,8 @@ public class JwtSessionManager extends SessionManager {
     private SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
-    private Duration validTime = Duration.ofSeconds(expiresAfterSeconds);
-    private Duration renewalTime = validTime.dividedBy(3);
+    private Duration validTime;
+    private Duration renewalTime;
     private Duration jwtCacheTime = Duration.ofMinutes(2);
 
     IdTokenProvider idTokenProvider;
@@ -71,6 +71,11 @@ public class JwtSessionManager extends SessionManager {
     boolean verbose = false;
 
     public void init(Router router) throws Exception {
+        if (validTime == null)
+            validTime = Duration.ofSeconds(expiresAfterSeconds);
+        if (renewalTime == null)
+            renewalTime = validTime.dividedBy(3);
+
         if (jwk == null)
             rsaJsonWebKey = generateKey();
         else
