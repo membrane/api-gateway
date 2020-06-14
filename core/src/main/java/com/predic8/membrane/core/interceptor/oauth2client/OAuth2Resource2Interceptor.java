@@ -68,7 +68,6 @@ import java.util.concurrent.TimeUnit;
 public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public static final String OAUTH2_ANSWER = "oauth2Answer";
     public static final String OA2REDIRECT = "oa2redirect";
-    public static final String ORIGINAL_REQUEST_PREFIX = "_original_request_for_state_";
     public static final String OA2REDIRECT_PREFIX = "_redirect_for_oa2redirect_";
     private static Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
 
@@ -85,7 +84,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private URIFactory uriFactory;
     private boolean firstInitWhenDynamicAuthorizationService;
     private boolean initPublicURLOnFirstExchange = false;
+    private OriginalExchangeStore originalExchangeStore;
 
+    @Override
+    public void init() throws Exception {
+        super.init();
+        if (originalExchangeStore == null)
+            originalExchangeStore = new CookieOriginialExchangeStore();
+    }
 
     public String getPublicURL() {
         return publicURL;
@@ -451,11 +457,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         Session session = getSessionManager().getSession(exc);
 
-        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exc);
-        // trim the exchange as far as possible to save space
-        excSnapshot.getRequest().getHeader().remove("Cookie");
-        excSnapshot.setResponse(null);
-        session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(excSnapshot));
+        originalExchangeStore.store(exc, session, state, exc);
 
         if(session.get().containsKey(ParamNames.STATE))
             state = session.get(ParamNames.STATE) + SessionManager.SESSION_VALUE_SEPARATOR + state;
@@ -464,16 +466,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return Outcome.RETURN;
     }
 
-    private String originalRequestKeyNameInSession(String state) {
-        return prefixValue(ORIGINAL_REQUEST_PREFIX,state);
-    }
-
     private String oa2redictKeyNameInSession(String oa2redirect) {
-        return prefixValue(OA2REDIRECT_PREFIX,oa2redirect);
-    }
-
-    private String prefixValue(String prefix,String value){
-        return prefix + value;
+        return OA2REDIRECT_PREFIX + oa2redirect;
     }
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
@@ -502,11 +496,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
                 session.put(ParamNames.STATE,stateFromUri);
 
-                AbstractExchangeSnapshot originalRequest = new ObjectMapper().readValue(session.get(originalRequestKeyNameInSession(stateFromUri)).toString(),AbstractExchangeSnapshot.class);
+                AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
                 String url = originalRequest.getRequest().getUri();
                 if (url == null)
                     url = "/";
-                session.remove(originalRequestKeyNameInSession(stateFromUri));
+                originalExchangeStore.remove(exc, session, stateFromUri);
 
                 if (log.isDebugEnabled())
                     log.debug("CSRF token match.");
@@ -602,10 +596,13 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 processUserInfo(json2, session);
 
                 doRedirect(exc,originalRequest);
+
+                originalExchangeStore.postProcess(exc);
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
                 exc.setResponse(Response.badRequest().body(e.getMessage()).build());
+                originalExchangeStore.postProcess(exc);
                 return true;
             }
         }
@@ -691,4 +688,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return "Client of the oauth2 authentication process.\n" + statistics.toString();
     }
 
+    public OriginalExchangeStore getOriginalExchangeStore() {
+        return originalExchangeStore;
+    }
+
+    @MCChildElement(order=20)
+    public void setOriginalExchangeStore(OriginalExchangeStore originalExchangeStore) {
+        this.originalExchangeStore = originalExchangeStore;
+    }
 }

@@ -153,7 +153,7 @@ public abstract class SessionManager {
         if (currentSessionCookieValue.length() > 4093)
             log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
         exc.getResponse().getHeader()
-                .setValue(Header.SET_COOKIE, currentSessionCookieValue
+                .add(Header.SET_COOKIE, currentSessionCookieValue
                         + ";" + String.join(";", createCookieAttributes(exc)));
     }
 
