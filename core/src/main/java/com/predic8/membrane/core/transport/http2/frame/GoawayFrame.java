@@ -33,4 +33,7 @@ public class GoawayFrame {
         return sb.toString();
     }
 
+    public Frame getFrame() {
+        return frame;
+    }
 }

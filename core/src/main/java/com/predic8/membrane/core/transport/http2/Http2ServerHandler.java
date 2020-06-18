@@ -143,12 +143,23 @@ public class Http2ServerHandler extends AbstractHttpHandler {
                 handleFrame(frame.asRstStream());
                 break;
             case TYPE_GOAWAY:
+                handleFrame(frame.asGoaway());
+                break;
             case TYPE_PUSH_PROMISE:
             default:
                 // TODO
                 throw new NotImplementedException("frame type " + frame.getType());
         }
 
+    }
+
+    private void handleFrame(GoawayFrame goawayFrame) throws IOException {
+        int streamId = goawayFrame.getFrame().getStreamId();
+
+        if (streamId == 0)
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
+
+        // TODO: implement this, once sending PUSH_PROMISE is implemented
     }
 
     private void handleFrame(RstStreamFrame rstStream) throws IOException {
