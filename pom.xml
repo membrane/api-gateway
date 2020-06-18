@@ -267,7 +267,7 @@
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>16.0.1</version>
+				<version>29.0-jre</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.code.findbugs</groupId>
@@ -397,7 +397,7 @@
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
 				<artifactId>bcpkix-jdk15on</artifactId>
-				<version>1.60</version>
+				<version>1.65</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
