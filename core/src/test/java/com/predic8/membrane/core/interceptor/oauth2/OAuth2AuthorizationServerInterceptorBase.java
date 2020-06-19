@@ -271,7 +271,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         mas.setClientSecret("def");
         mas.setSrc(System.getProperty("user.dir") + "/src/test/resources/oauth2");
         mas.init(router);
-        mas.init2();
+        //mas.init2();    // requires pull request 330
     }
 
     private void initOasi() throws Exception {
