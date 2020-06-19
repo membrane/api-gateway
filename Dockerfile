@@ -1,14 +1,9 @@
-FROM ubuntu:18.04
+FROM ubuntu:xenial
 
-RUN \
-  apt-get update && \
-  apt-get install -y software-properties-common zip curl && \
-  echo oracle-java7-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-  add-apt-repository -y ppa:webupd8team/java && \
-  apt-get update && \
-  apt-get install -y oracle-java8-installer 
-  
-RUN  rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/oracle-jdk8-installer
+RUN apt-get update && \
+    apt-get install -y openjdk-8-jdk-headless zip curl
+
+RUN rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/oracle-jdk8-installer
 
 RUN curl -o /maven.tar.gz http://ftp.halifax.rwth-aachen.de/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz && \
   mkdir /maven && \
