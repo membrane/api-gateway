@@ -20,25 +20,31 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
 import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.ConnectionManager;
 import com.predic8.membrane.core.transport.http.StreamPump;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLExchange;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.util.DNSCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
+import static com.predic8.membrane.core.interceptor.InterceptorFlowController.ABORTION_REASON;
 
 @MCElement(name="sslProxy")
 public class SSLProxy implements Rule {
@@ -48,6 +54,7 @@ public class SSLProxy implements Rule {
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
     private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
     private boolean useAsDefault = true;
+    private List<SSLInterceptor> sslInterceptors = new ArrayList<>();
 
     @MCElement(id = "sslProxy-target", name="target", topLevel = false)
     public static class Target {
@@ -101,6 +108,16 @@ public class SSLProxy implements Rule {
     public void setInterceptors(List<Interceptor> interceptors) {
 
     }
+
+    public List<SSLInterceptor> getSslInterceptors() {
+        return sslInterceptors;
+    }
+
+    @MCChildElement(allowForeign=true, order=50)
+    public void setSslInterceptors(List<SSLInterceptor> sslInterceptors) {
+        this.sslInterceptors = sslInterceptors;
+    }
+
 
     @Override
     public boolean isBlockRequest() {
@@ -202,6 +219,8 @@ public class SSLProxy implements Rule {
     public void init(Router router) throws Exception {
         this.router = router;
         cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout());
+        for (SSLInterceptor i : sslInterceptors)
+            i.init(router);
     }
 
     @Override
@@ -334,6 +353,45 @@ public class SSLProxy implements Rule {
 
         @Override
         public Socket wrap(Socket socket, byte[] buffer, int position) throws IOException {
+            DNSCache dnsCache = SSLProxy.this.router.getDnsCache();
+            SSLExchange exc = new SSLExchange();
+            InetAddress remoteAddr = socket.getInetAddress();
+            String ip = dnsCache.getHostAddress(remoteAddr);
+            exc.setRemoteAddrIp(ip);
+            exc.setRemotePort(socket.getPort());
+            exc.setRule(SSLProxy.this);
+
+            boolean cont = true;
+            try {
+                for (SSLInterceptor interceptor : sslInterceptors) {
+                    Outcome o = interceptor.handleRequest(exc);
+                    if (o != Outcome.CONTINUE) {
+                        cont = false;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                exc.setProperty(ABORTION_REASON, e);
+                cont = false;
+            }
+
+            if (!cont) {
+                if (exc.getProperty(ABORTION_REASON) != null && exc.getProperty(ABORTION_REASON) instanceof Throwable)
+                    ((Throwable) exc.getProperty(ABORTION_REASON)).printStackTrace();
+                byte error = exc.getError().getCode();
+
+                byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+                        2 /* fatal */, error };
+
+                try {
+                    socket.getOutputStream().write(alert_unrecognized_name);
+                } finally {
+                    socket.close();
+                }
+
+                throw new SocketException("not continuing");
+            }
+
             int port = target.getPort();
             if (port == -1)
                 port = getPort();
