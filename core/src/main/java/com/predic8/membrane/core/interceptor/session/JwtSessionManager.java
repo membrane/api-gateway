@@ -24,6 +24,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.exchange.Exchange;
 import org.jose4j.json.JsonUtil;
+import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jwt.JwtClaims;
@@ -76,10 +77,15 @@ public class JwtSessionManager extends SessionManager {
         if (renewalTime == null)
             renewalTime = validTime.dividedBy(3);
 
-        if (jwk == null)
+        if (jwk == null) {
             rsaJsonWebKey = generateKey();
-        else
+            LOG.warn("jwtSessionManager uses a generated key ('" +
+                    rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE)+
+                    "'). Sessions of this instance will not be compatible with sessions of other (e.g. restarted)"+
+                    "instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location=\"...\">.");
+        } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
+        }
 
         idTokenProvider = new IdTokenProvider(rsaJsonWebKey);
         idTokenVerifier = new IdTokenVerifier(idTokenProvider.getJwk());
@@ -240,7 +246,6 @@ public class JwtSessionManager extends SessionManager {
         return jwk;
     }
 
-    @Required
     @MCChildElement
     public void setJwk(Jwk jwk) {
         this.jwk = jwk;
