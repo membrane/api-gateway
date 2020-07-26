@@ -173,7 +173,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if(isOAuth2RedirectRequest(exc))
             handleOriginalRequest(exc);
 
-        if (session == null) {
+        if (session == null || !session.isVerified()) {
             String auth = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
             if (auth != null && auth.substring(0, 7).equalsIgnoreCase("Bearer ")) {
                 session = getSessionManager().getSession(exc);
