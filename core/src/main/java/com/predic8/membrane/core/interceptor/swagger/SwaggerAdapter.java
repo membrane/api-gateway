@@ -19,6 +19,7 @@ import io.swagger.models.Swagger;
 import io.swagger.util.Json;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.parser.converter.SwaggerConverter;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -49,7 +50,8 @@ public class SwaggerAdapter implements SwaggerCompatibleOpenAPI {
         for (String pathname : pathMap.keySet()) {
             io.swagger.models.Path v2Path = api.getPath(pathname);
             try {
-                PathItem v3Path = convert(v2Path);
+                SwaggerConverter swaggerConverter = new SwaggerConverter();
+                PathItem v3Path = swaggerConverter.convert(v2Path);
                 v3Paths.put(pathname, v3Path);
             } catch (Exception e) {
                 // conversion apparently not necessary
