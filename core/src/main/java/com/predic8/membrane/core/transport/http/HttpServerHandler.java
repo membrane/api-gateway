@@ -25,10 +25,11 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -36,44 +37,60 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.Util;
 
 public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
-	private static final Log log = LogFactory.getLog(HttpServerHandler.class);
+	private static final Logger log = LoggerFactory.getLogger(HttpServerHandler.class);
 	private static final AtomicInteger counter = new AtomicInteger();
-	
-	private final Socket sourceSocket;
+
 	private final HttpEndpointListener endpointListener;
-	private final InputStream srcIn;
-	private final OutputStream srcOut;
+	private Socket sourceSocket;
+	private InputStream srcIn;
+	private OutputStream srcOut;
+
+	private boolean showSSLExceptions = true;
 
 
-	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListerer) throws IOException {
-		super(endpointListerer.getTransport());
+	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListener) throws IOException {
+		super(endpointListener.getTransport());
+		this.endpointListener = endpointListener;
 		this.sourceSocket = socket;
-		this.endpointListener = endpointListerer;
-		this.exchange = new Exchange(this);
-		log.debug("New ServerThread created. " + counter.incrementAndGet());
-		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
-		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
-		sourceSocket.setSoTimeout(endpointListerer.getTransport().getSocketTimeout());
-		sourceSocket.setTcpNoDelay(endpointListerer.getTransport().isTcpNoDelay());
 	}
 
+	@Override
 	public HttpTransport getTransport() {
 		return (HttpTransport)super.getTransport();
 	}
-	
+
+	private void setup() throws IOException {
+		this.exchange = new Exchange(this);
+		SSLProvider sslProvider = endpointListener.getSslProvider();
+		if (sslProvider != null) {
+			showSSLExceptions = sslProvider.showSSLExceptions();
+			sourceSocket = sslProvider.wrapAcceptedSocket(sourceSocket);
+		}else{
+			// if there is no SSLProvider then there shouldn't be any ssl exceptions showing here
+			showSSLExceptions = false;
+		}
+		log.debug("New ServerThread created. " + counter.incrementAndGet());
+		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
+		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
+		sourceSocket.setSoTimeout(endpointListener.getTransport().getSocketTimeout());
+		sourceSocket.setTcpNoDelay(endpointListener.getTransport().isTcpNoDelay());
+	}
+
 	public void run() {
 		Connection boundConnection = null; // see Request.isBindTargetConnectionToIncoming()
 		try {
 			updateThreadName(true);
+			setup();
 			while (true) {
 				srcReq = new Request();
-				
+
 				endpointListener.setIdleStatus(sourceSocket, true);
 				try {
 					srcIn.mark(2);
@@ -119,8 +136,17 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("Socket of thread " + counter + " timed out");
 		} catch (SocketException se) {
 			log.debug("client socket closed");
+		} catch (SSLException s) {
+			if(showSSLExceptions) {
+				if (s.getCause() instanceof SSLException)
+					s = (SSLException) s.getCause();
+				if (s.getCause() instanceof SocketException)
+					log.debug("ssl socket closed");
+				else
+					log.error("", s);
+			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("", e);
 		} catch (EndOfStreamException e) {
 			log.debug("stream closed");
 		} catch (AbortException e) {
@@ -133,26 +159,23 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getLineSoFar() + ")");
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("", e);
 		}
 
 		finally {
 			endpointListener.setOpenStatus(sourceSocket, false);
-			
+
 			if (boundConnection != null)
 				try {
 					boundConnection.close();
 				} catch (IOException e) {
 					log.debug("Closing bound connection.", e);
 				}
-			
-			if (srcReq.isCONNECTRequest())
-				return;
 
 			closeConnections();
-			
+
 			exchange.detach();
-			
+
 			updateThreadName(false);
 		}
 
@@ -167,10 +190,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				sourceSocket.close();
 			}
 		} catch (Exception e2) {
+			if (e2.getMessage().contains("Socket closed"))
+				return;
 			log.error("problems closing socket on remote port: "
 					+ sourceSocket.getPort() + " on remote host: "
-					+ sourceSocket.getInetAddress());
-			e2.printStackTrace();
+					+ sourceSocket.getInetAddress(), e2);
 		}
 	}
 
@@ -185,7 +209,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
-			
+
 			if (exchange.getRequest().getHeader().is100ContinueExpected()) {
 				final Request request = exchange.getRequest();
 				request.addObserver(new MessageObserver() {
@@ -201,19 +225,19 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 							throw new RuntimeException(e);
 						}
 					}
-					
+
 					public void bodyComplete(AbstractBody body) {
 					}
 				});
 			}
 
 			invokeHandlers();
-			
+
 			exchange.blockResponseIfNeeded();
 		} catch (AbortException e) {
 			log.debug("Aborted");
-			exchange.finishExchange(true, exchange.getErrorMessage());
-			
+			exchange.finishExchange(true, e.getMessage());
+
 			removeBodyFromBuffer();
 			writeResponse(exchange.getResponse());
 
@@ -221,15 +245,20 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			return;
 		}
 
-		removeBodyFromBuffer();
-		writeResponse(exchange.getResponse());
-		exchange.setCompleted();
-		log.debug("exchange set completed");
+		try {
+			removeBodyFromBuffer();
+			writeResponse(exchange.getResponse());
+			exchange.setCompleted();
+			log.debug("exchange set completed");
+		} catch (Exception e) {
+			exchange.finishExchange(true, e.getMessage());
+			throw e;
+		}
 	}
 
 	/**
 	 * Read the body from the client, if not already read.
-	 * 
+	 *
 	 * If the body has not already been read, the header includes
 	 * "Expect: 100-continue" and the body has not already been sent by the
 	 * client, nothing will be done. (Allowing the HTTP connection state to skip
@@ -237,7 +266,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	 */
 	private void removeBodyFromBuffer() throws IOException {
 		if (!exchange.getRequest().getHeader().is100ContinueExpected() || srcIn.available() > 0) {
-			exchange.getRequest().readBody();
+			exchange.getRequest().discardBody();
 		}
 	}
 
@@ -256,19 +285,21 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
 		}
 	}
-	
+
 	protected void writeResponse(Response res) throws Exception{
+		if (res.isRedirect())
+			res.getHeader().setConnection(Header.CLOSE);
 		res.write(srcOut);
 		srcOut.flush();
 		exchange.setTimeResSent(System.currentTimeMillis());
 		exchange.collectStatistics();
 	}
-	
+
 	@Override
 	public void shutdownInput() throws IOException {
-		Util.shutdownInput(sourceSocket);	
+		Util.shutdownInput(sourceSocket);
 	}
-	
+
 	@Override
 	public InetAddress getLocalAddress() {
 		return sourceSocket.getLocalAddress();
@@ -278,13 +309,17 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	public int getLocalPort() {
 		return sourceSocket.getLocalPort();
 	}
-	
+
 	public InputStream getSrcIn() {
 		return srcIn;
 	}
 
 	public OutputStream getSrcOut() {
 		return srcOut;
+	}
+
+	public Socket getSourceSocket() {
+		return sourceSocket;
 	}
 
 }

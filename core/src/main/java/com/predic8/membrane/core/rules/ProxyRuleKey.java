@@ -49,5 +49,5 @@ public class ProxyRuleKey extends AbstractRuleKey {
 			return false;
 		return true;
 	}
-	
+
 }

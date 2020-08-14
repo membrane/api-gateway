@@ -15,8 +15,8 @@ package com.predic8.membrane.core.interceptor;
 
 import java.net.URL;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -35,24 +35,34 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 @MCElement(name="dispatching")
 public class DispatchingInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(DispatchingInterceptor.class.getName());
-	
-	public DispatchingInterceptor() {		
-		name = "Dispatching Interceptor";		
+	private static Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
+
+	public DispatchingInterceptor() {
+		name = "Dispatching Interceptor";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-	
+
 		if (exc.getRule() instanceof AbstractServiceProxy) {
-			exc.getDestinations().add(getForwardingDestination(exc));	
+			exc.getDestinations().add(getForwardingDestination(exc));
+			setSNIPropertyOnExchange(exc);
 			return Outcome.CONTINUE;
 		}
 
-		exc.getDestinations().add(exc.getRequest().getUri());	
-	
+		exc.getDestinations().add(exc.getRequest().getUri());
+
 		return Outcome.CONTINUE;
+	}
+
+	private void setSNIPropertyOnExchange(Exchange exc) {
+		AbstractServiceProxy asp = (AbstractServiceProxy) exc.getRule();
+		if(asp.getTargetSSL() != null) {
+			String sni = asp.getTargetSSL().getServerName();
+			if (sni != null)
+				exc.setProperty(Exchange.SNI_SERVER_NAME, sni);
+		}
 	}
 
 	public static String getForwardingDestination(Exchange exc) throws Exception {
@@ -61,13 +71,13 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 			log.debug("destination: " + p.getTargetURL());
 			return p.getTargetURL();
 		}
-		
+
 		if (p.getTargetHost() != null) {
 			String url = new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
 			log.debug("destination: " + url);
 			return url;
 		}
-		
+
 		return exc.getRequest().getUri();
 	}
 

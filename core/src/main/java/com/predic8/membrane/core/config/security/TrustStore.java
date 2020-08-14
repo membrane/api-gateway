@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
+import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
@@ -20,14 +21,33 @@ import com.predic8.membrane.annot.MCElement;
 public class TrustStore extends Store {
 
 	protected String algorithm;
+	protected String checkRevocation;
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof TrustStore))
+			return false;
+		TrustStore other = (TrustStore) obj;
+		return super.equals(obj)
+				&& Objects.equal(algorithm, other.algorithm);
+	}
+
 
 	public String getAlgorithm() {
 		return algorithm;
 	}
-	
+
 	@MCAttribute
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
 	}
-	
+
+	public String getCheckRevocation() {
+		return checkRevocation;
+	}
+
+	@MCAttribute
+	public void setCheckRevocation(String checkRevocation) {
+		this.checkRevocation = checkRevocation;
+	}
 }

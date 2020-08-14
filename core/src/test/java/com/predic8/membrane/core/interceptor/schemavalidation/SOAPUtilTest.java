@@ -31,29 +31,29 @@ import com.predic8.membrane.core.util.SOAPUtil;
 
 public class SOAPUtilTest {
 	private XMLInputFactory xmlInputFactory;
-	
+
 	@Before
 	public void setUp() throws Exception {
-		
+
 		xmlInputFactory = XMLInputFactory.newInstance();
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-		
+
 	}
-	
+
 	@Test
-	public void testFaultCheckSpecExample() throws Exception {		
+	public void testFaultCheckSpecExample() throws Exception {
 		Assert.assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultFromSpec.xml")));
 	}
-	
+
 	@Test
 	public void testFaultCustom() throws Exception {
-		
+
 		Assert.assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultCustom.xml")));
 	}
 
 	private Message getMessage(String path) throws Exception {
 		return Response.ok().contentType("text/xml").body(new FileInputStream(path), true).build();
 	}
-	
+
 }

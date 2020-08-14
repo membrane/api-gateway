@@ -24,18 +24,18 @@ import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 public class ProxyTest {
 
 	private ProxyConfiguration proxy;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		proxy = new ProxyConfiguration();
 		proxy.setUsername("predic8");
 		proxy.setPassword("secret");
 	}
-	
+
 	@Test
 	public void testGetCredentials() throws Exception {
 		String credentials = proxy.getCredentials();
 		assertEquals("Basic cHJlZGljODpzZWNyZXQ=", credentials);
 	}
-	
+
 }

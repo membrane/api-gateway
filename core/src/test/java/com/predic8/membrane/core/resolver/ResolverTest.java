@@ -43,7 +43,7 @@ import com.predic8.wsdl.WSDLParserContext;
 
 @RunWith(Parameterized.class)
 public class ResolverTest {
-	
+
 	/*
 	 * The ResolverTest is a 5-dimensional parametrized test:
 	 * 1. Deployment Type
@@ -51,15 +51,15 @@ public class ResolverTest {
 	 * 3. Basis URL Type
 	 * 4. Relative URL Type
 	 * 5. Resolver Interface used
-	 * 
+	 *
 	 * Not all combinations exist (or are currently supported). (See #setupLocations())
 	 */
-	
 
-	// DeploymentType (STANDALONE, J2EE, OSGI) is handled differently on the tests setup/execution level 
-	
+
+	// DeploymentType (STANDALONE, J2EE, OSGI) is handled differently on the tests setup/execution level
+
 	// OperatingSystemType (WINDOWS, LINUX) is handled by Jenkins
-	
+
 	public enum BasisUrlType {
 		HTTP,
 		FILE,
@@ -73,13 +73,13 @@ public class ResolverTest {
 		WINDOWS_DRIVE,
 		WINDOWS_DRIVE_BACKSLASH
 	}
-	
+
 	// RelativeUrlType (SCHEMA, NAME, SAME_DIR, PARENT_DIR) is handled by the test methods as well as by the test resources
 	// (WSDL and XSD files referencing other files in these ways)
-	
+
 	// ResolverInterfaceType (MEMBRANE_SERVICE_PROXY, MEMBRANE_SOA_MODEL, LS_RESOURCE_RESOLVER) is handled by
 	// different test methods below
-	
+
 	@Parameters
 	public static List<Object[]> getConfigurations() {
 		List<Object[]> res = new ArrayList<Object[]>();
@@ -96,10 +96,10 @@ public class ResolverTest {
 
 
 	public static ResolverMap resolverMap = new ResolverMap();
-	
+
 	private String wsdlLocation;
 	private String xsdLocation;
-	
+
 	@Test
 	public void testLSResourceResolver() throws IOException {
 		if (hit = !setupLocations())
@@ -111,12 +111,12 @@ public class ResolverTest {
 			throw new RuntimeException("xsdLocation = " + xsdLocation, e);
 		}
 	}
-	
+
 	@Test
 	public void testMembraneServiceProxyCombine() throws IOException {
 		if (hit = !setupLocations())
 			return;
-		
+
 		Assert.assertNotNull(resolverMap.resolve(wsdlLocation));
 		for (String relUrl : new String[] { "1.xsd", "./1.xsd", "../resolver/1.xsd", "http://localhost:3029/resolver/1.xsd" }) {
 			try {
@@ -125,32 +125,32 @@ public class ResolverTest {
 				throw new RuntimeException("Error during combine(\"" + wsdlLocation + "\", \"" + relUrl + "\"):", e);
 			}
 		}
-	}	
+	}
 
 	@Test
 	public void testMembraneSoaModel() throws IOException {
 		if (hit = !setupLocations())
 			return;
-		
+
 		try {
 			WSDLParserContext ctx = new WSDLParserContext();
 			ctx.setInput(wsdlLocation);
 			WSDLParser wsdlParser = new WSDLParser();
-			wsdlParser.setResourceResolver(resolverMap.toExternalResolver());
+			wsdlParser.setResourceResolver(resolverMap.toExternalResolver().toExternalResolver());
 			Definitions definitions = wsdlParser.parse(ctx);
 			for (Schema schema : definitions.getSchemas())
 				schema.getElements(); // trigger lazy-loading
 		} catch (Exception e) {
 			throw new RuntimeException("wsdlLocation = " + xsdLocation, e);
 		}
-	}	
-	
+	}
+
 	@After
 	public void postpare() {
 		// since a.wsdl and 2.xsd reference a HTTP resource, it should get loaded
 		Assert.assertTrue("No HTTP resource was retrieved (while referenced)", hit);
 	}
-	
+
 	/**
 	 * Sets wsdlLocation and xsdLocation, given the current test parameters
 	 * @return whether the current test parameters is supported
@@ -251,12 +251,12 @@ public class ResolverTest {
 
 	static HttpRouter router = new HttpRouter();
 	static volatile boolean hit = false;
-	
+
 	public static final String STANDALONE = "standalone";
 	public static final String J2EE = "J2EE";
-	
+
 	public static String deployment = STANDALONE;
-	
+
 	@BeforeClass
 	public static void setup() throws Exception {
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3029), "localhost", 8080);
@@ -277,14 +277,14 @@ public class ResolverTest {
 			router.getResolverMap().addSchemaResolver(resolverMap.getFileSchemaResolver());
 		}
 		sp.getInterceptors().add(i);
-		
+
 		router.add(sp);
 		router.init();
 	}
-	
+
 	@AfterClass
 	public static void teardown() throws IOException {
 		router.shutdown();
 	}
-	
+
 }

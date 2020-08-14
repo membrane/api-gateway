@@ -19,18 +19,20 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.util.ContentTypeDetector;
@@ -39,14 +41,14 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public abstract class AbstractHttpHandler  {
 
-	private static Log log = LogFactory.getLog(AbstractHttpHandler.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AbstractHttpHandler.class.getName());
 
 	protected Exchange exchange;
 	protected Request srcReq;
 	private static final InterceptorFlowController flowController = new InterceptorFlowController();
-		
+
 	private final Transport transport;
-	
+
 	public AbstractHttpHandler(Transport transport) {
 		this.transport = transport;
 	}
@@ -62,7 +64,7 @@ public abstract class AbstractHttpHandler  {
 	public abstract InetAddress getLocalAddress();
 	public abstract int getLocalPort();
 
-	
+
 	protected void invokeHandlers() throws IOException, EndOfStreamException, AbortException, NoMoreRequestsException, EOFWhileReadingFirstLineException {
 		try {
 			flowController.invokeHandlers(exchange, transport.getInterceptors());
@@ -71,7 +73,7 @@ public abstract class AbstractHttpHandler  {
 		} catch (Exception e) {
 			if (exchange.getResponse() == null)
 				exchange.setResponse(generateErrorResponse(e));
-			
+
 			if (e instanceof IOException)
 				throw (IOException)e;
 			if (e instanceof EndOfStreamException)
@@ -99,48 +101,53 @@ public abstract class AbstractHttpHandler  {
 			msg = e.toString();
 		}
 		String comment = "Stack traces can be " + (printStackTrace ? "dis" : "en") + "abled by setting the "+
-				"@printStackTrace attribute on <a href=\"http://membrane-soa.org/esb-doc/current/configuration/reference/transport.htm\">transport</a>. " +
+				"@printStackTrace attribute on <a href=\"https://membrane-soa.org/service-proxy-doc/current/configuration/reference/transport.htm\">transport</a>. " +
 				"More details might be found in the log.";
-		
+
 		Response error = null;
+		ResponseBuilder b = null;
+		if (e instanceof URISyntaxException)
+			b = Response.badRequest();
+		if (b == null)
+			b = Response.internalServerError();
 		switch (ContentTypeDetector.detect(exchange.getRequest()).getEffectiveContentType()) {
 		case XML:
-			error = Response.interalServerError().
-				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-				body(("<error><message>" + 
-						StringEscapeUtils.escapeXml(msg) + 
-						"</message><comment>" + 
-						StringEscapeUtils.escapeXml(comment) + 
-						"</comment></error>").getBytes(Constants.UTF_8_CHARSET)).
-				build();
+			error = b.
+			header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
+			body(("<error><message>" +
+					StringEscapeUtils.escapeXml(msg) +
+					"</message><comment>" +
+					StringEscapeUtils.escapeXml(comment) +
+					"</comment></error>").getBytes(Constants.UTF_8_CHARSET)).
+					build();
 			break;
 		case JSON:
-	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	        try {
-	        	JsonGenerator jg = new JsonFactory().createJsonGenerator(baos);
-	        	jg.writeStartObject();
-	        	jg.writeFieldName("error");
-	        	jg.writeString(msg);
-	        	jg.writeFieldName("comment");
-	        	jg.writeString(comment);
-	        	jg.close();
-	        } catch (Exception f) {
-	        	log.error("Error generating JSON error response", f);
-	        }
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try {
+				JsonGenerator jg = new JsonFactory().createGenerator(baos);
+				jg.writeStartObject();
+				jg.writeFieldName("error");
+				jg.writeString(msg);
+				jg.writeFieldName("comment");
+				jg.writeString(comment);
+				jg.close();
+			} catch (Exception f) {
+				log.error("Error generating JSON error response", f);
+			}
 
-			error = Response.interalServerError().
+			error = b.
 					header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
 					body(baos.toByteArray()).
 					build();
 			break;
 		case SOAP:
-			error = Response.interalServerError().
-				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-				body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
-				build();
+			error = b.
+			header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
+			body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
+			build();
 			break;
 		case UNKNOWN:
-			error = HttpUtil.createHTMLErrorResponse(msg, comment);
+			error = HttpUtil.setHTMLErrorResponse(b, msg, comment);
 			break;
 		}
 		return error;

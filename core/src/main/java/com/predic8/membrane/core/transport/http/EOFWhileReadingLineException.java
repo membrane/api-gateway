@@ -17,20 +17,20 @@ package com.predic8.membrane.core.transport.http;
 public class EOFWhileReadingLineException extends RuntimeException {
 
 	private static final long serialVersionUID = -6998133859472737055L;
-	
+
 	private final String lineSoFar;
-	
+
 	public EOFWhileReadingLineException(String lineSoFar) {
 		this.lineSoFar = lineSoFar;
 	}
-	
+
 	public String getLineSoFar() {
 		return lineSoFar;
 	}
-	
+
 	@Override
 	public String getMessage() {
-		return super.getMessage() + " line so far: \"" + lineSoFar + "\"";
+		return "line so far: \"" + lineSoFar + "\"";
 	}
-	
+
 }

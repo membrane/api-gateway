@@ -26,20 +26,20 @@ public class ChildElementInfo extends AbstractJavadocedInfo implements Comparabl
 	private ExecutableElement e;
 	private TypeElement typeDeclaration;
 	private MCChildElement annotation;
-	
+
 	private String propertyName;
 	private boolean list;
 	private boolean required;
-	
+
 	@Override
 	public int compareTo(ChildElementInfo o) {
 		return getAnnotation().order() - o.getAnnotation().order();
 	}
-	
+
 	public ElementInfo getEi() {
 		return ei;
 	}
-	
+
 	public void setEi(ElementInfo ei) {
 		this.ei = ei;
 	}

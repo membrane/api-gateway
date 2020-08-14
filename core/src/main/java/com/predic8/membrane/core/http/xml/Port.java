@@ -23,13 +23,13 @@ public class Port extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "port";
 
 	int value;
-	
+
 	public Port(int port) {
 		value = port;
 	}
 
 	public Port() {
-		
+
 	}
 
 	@Override
@@ -41,9 +41,9 @@ public class Port extends AbstractXmlElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 		out.writeCharacters(""+value);
-		out.writeEndElement();		
+		out.writeEndElement();
 	}
-	
+
 	public int getValue() {
 		return value;
 	}
@@ -56,5 +56,5 @@ public class Port extends AbstractXmlElement {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 }

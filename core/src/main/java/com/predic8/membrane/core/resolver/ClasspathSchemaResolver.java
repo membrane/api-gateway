@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 public class ClasspathSchemaResolver implements SchemaResolver {
 
@@ -34,6 +35,11 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 		return is;
 	}
 
+	@Override
+	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+		throw new RuntimeException("Not implemented");
+	}
+
 	private String normalize(String url) {
 		if (url.startsWith("classpath:"))
 			url = url.substring(10);
@@ -41,16 +47,16 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 			url = url.substring(1);
 		return url;
 	}
-	
+
 	@Override
 	public List<String> getChildren(String url) {
 		return null;
 	}
-	
+
 	@Override
 	public long getTimestamp(String url) {
 		return 0;
 	}
-	
+
 
 }

@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.config.spring;
 
 public interface CheckableBeanFactory {
-	
+
 	/**
 	 * Checks whether this application context's configuration file(s) contain valid bean definitions.
 	 * @throws InvalidConfigurationException if the configuration is not valid
@@ -40,6 +40,6 @@ public interface CheckableBeanFactory {
 		public InvalidConfigurationException(Throwable cause) {
 			super(cause);
 		}
-		
+
 	}
 }

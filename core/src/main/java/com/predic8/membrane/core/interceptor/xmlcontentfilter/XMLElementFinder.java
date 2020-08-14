@@ -35,15 +35,15 @@ import javax.xml.stream.events.XMLEvent;
 @ThreadSafe
 public class XMLElementFinder {
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	
+
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
-	
+
 	private final HashSet<QName> elements = new HashSet<QName>();
 	private final boolean usesWildcardNamespace;
-	
+
 	public XMLElementFinder(List<QName> elements) {
 		boolean usesWildcardNamespace = false;
 		for (QName element : elements) {
@@ -53,7 +53,7 @@ public class XMLElementFinder {
 		}
 		this.usesWildcardNamespace = usesWildcardNamespace;
 	}
-	
+
 	/**
 	 * @return true, if the input is well-formed XML and any of the elements were found
 	 */

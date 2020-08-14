@@ -14,34 +14,22 @@
 
 package com.predic8.membrane.core.util;
 
-import java.net.URI;
+import java.net.URISyntaxException;
 
 public class URLUtil {
 
-	public static String getPathFromPathQuery(String pathQuery) {
-		int i = pathQuery.indexOf('?');
-		return i == -1 ? pathQuery : pathQuery.substring(0, i);
+	public static String getPathQuery(URIFactory uriFactory, String uri) throws URISyntaxException {
+		URI u = uriFactory.create(uri);
+		String query = u.getRawQuery();
+		String path = u.getRawPath();
+		return (path.isEmpty() ? "/" : path) + (query == null ? "" : "?" + query);
 	}
 
-	public static String getPathQuery(String uri) {
-		try {
-			URI u = new URI(uri);
-			String query = u.getQuery();
-			return u.getPath() + (query == null ? "" : "?" + query);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public static String getName(String uri) {
-		try {
-			URI u = new URI(uri);
-			String p = u.getPath();
-			int i = p.lastIndexOf('/');
-			return i == -1 ? p : p.substring(i+1);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static String getName(URIFactory uriFactory, String uri) throws URISyntaxException {
+		URI u = uriFactory.create(uri);
+		String p = u.getPath();
+		int i = p.lastIndexOf('/');
+		return i == -1 ? p : p.substring(i+1);
 	}
 
 }

@@ -21,19 +21,19 @@ import java.util.Map;
 
 /**
  * See InetAddress Caching of InetAddress class
- * 
- * Java 1.5 implementation of InetAddress Caching differs from Java 1.6 one.  
+ *
+ * Java 1.5 implementation of InetAddress Caching differs from Java 1.6 one.
  */
 public class DNSCache {
 
 	private Map<InetAddress, String> hostNames = new Hashtable<InetAddress, String>();
 	private Map<InetAddress, String> canonicalHostNames = new Hashtable<InetAddress, String>();
 	private Map<InetAddress, String> hostAddresses = new Hashtable<InetAddress, String>();
-	
+
 	public String getHostName(InetAddress address) {
 		if (hostNames.containsKey(address))
 			return hostNames.get(address);
-		
+
 		String hostName = address.getHostName();
 		hostNames.put(address, hostName);
 		return hostName;
@@ -42,7 +42,7 @@ public class DNSCache {
 	public String getCanonicalHostName(InetAddress address) {
 		if (canonicalHostNames.containsKey(address))
 			return canonicalHostNames.get(address);
-		
+
 		String canonicalHostName = address.getCanonicalHostName();
 		canonicalHostNames.put(address, canonicalHostName);
 		return canonicalHostName;
@@ -51,12 +51,12 @@ public class DNSCache {
 	public String getHostAddress(InetAddress address) {
 		if (hostAddresses.containsKey(address))
 			return hostAddresses.get(address);
-		
+
 		String hostAddress = address.getHostAddress();
 		hostAddresses.put(address, hostAddress);
 		return hostAddress;
 	}
-	
+
 	public Collection<String> getCachedHostNames() {
 		return hostNames.values();
 	}
@@ -64,9 +64,9 @@ public class DNSCache {
 	public Collection<String> getCachedCanonicalHostNames() {
 		return canonicalHostNames.values();
 	}
-	
+
 	public Collection<String> getCachedHostAddresses() {
 		return hostAddresses.values();
 	}
-	
+
 }

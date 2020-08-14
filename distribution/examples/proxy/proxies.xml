@@ -1,0 +1,73 @@
+
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<!-- 
+		Start the first router. It is the proxy. It is used by the other routers.
+	-->
+	<router>
+		<proxy port="3128">
+			<log/>
+		</proxy>
+	</router>
+
+	<!--
+		Next, we start a router using the proxy for all HTTP requests
+		(retrieving the WSDL at startup as well as forwarding SOAP requests).
+	-->	
+	<router>
+		<httpClientConfig>
+			<proxy host="localhost" port="3128" />
+		</httpClientConfig>
+
+		<soapProxy port="2000"
+			wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+			
+		</soapProxy>
+	</router>
+	
+	
+	<!--
+		Next, we start a router which uses basic authentication only to retrieve
+		the WSDL. (SOAP requests will not be affected and are forwarded without
+		adding the "Authorization" header.)
+	 -->
+	
+	<httpClientConfig id="myHttpClientConfig">
+		<authentication username="USERNAME" password="PASSWORD" />
+	</httpClientConfig>
+
+	<router>
+		<soapProxy port="2001"
+			wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"
+			wsdlHttpClientConfig="myHttpClientConfig">
+			
+		</soapProxy>
+	</router>
+	
+
+	<!-- 
+		The last router demonstrates all configuration options of the
+		<httpClientConfig> element.
+	 -->
+
+	<httpClientConfig id="fullHttpClientConfig" maxRetries="5">
+		<connection keepAliveTimeout="3000" timeout="1000" />
+		<proxy host="localhost" port="3128" authentication="true" username="PROXY_USERNAME" password="PROXY_PASSWORD" />
+		<authentication username="USERNAME" password="PASSWORD" />
+	</httpClientConfig>
+
+	<router>
+		<spring:ref bean="myHttpClientConfig" />
+
+		<soapProxy port="2002"
+			wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+			
+		</soapProxy>
+	</router>
+
+
+</spring:beans>

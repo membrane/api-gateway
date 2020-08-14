@@ -16,25 +16,25 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-class CleanupThread extends Thread {
+public class CleanupThread extends Thread {
 	public interface Cleaner {
 		public void cleanup();
 	}
-	
+
 	private final ArrayList<WeakReference<Cleaner>> cleaners = new ArrayList<WeakReference<Cleaner>>();
-	
+
 	public CleanupThread(Cleaner... cleaner) {
 		for (Cleaner c : cleaner)
 			cleaners.add(new WeakReference<Cleaner>(c));
 	}
-	
+
 	@Override
 	public void run() {
 		while (!interrupted()) {
 			try {
 				Thread.sleep(60 * 1000);
 			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				return;
 			}
 			ArrayList<WeakReference<Cleaner>> removeUs = new ArrayList<WeakReference<Cleaner>>();
 			for (WeakReference<Cleaner> wr : cleaners) {
@@ -47,7 +47,7 @@ class CleanupThread extends Thread {
 			}
 			for (WeakReference<Cleaner> wr : removeUs)
 				cleaners.remove(wr);
-			if (cleaners.size() == 0)
+			if (cleaners.isEmpty())
 				return;
 		}
 	}

@@ -24,9 +24,14 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.predic8.membrane.annot.bean.MCUtil;
+import com.predic8.membrane.core.jmx.JmxExporter;
+import com.predic8.membrane.core.jmx.JmxRouter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
@@ -47,13 +52,13 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.URIFactory;
 
 /**
  * @description <p>
@@ -77,9 +82,9 @@ import com.predic8.membrane.core.util.DNSCache;
 		outputName="router-conf.xsd",
 		targetNamespace="http://membrane-soa.org/proxies/1/")
 @MCElement(name="router")
-public class Router implements Lifecycle, ApplicationContextAware {
+public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware {
 
-	private static final Log log = LogFactory.getLog(Router.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Router.class.getName());
 
 	/**
 	 * In case more than one <router hotDeploy="true" /> starts within the same
@@ -96,15 +101,20 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	protected Transport transport;
 	protected ResolverMap resolverMap = new ResolverMap();
 	protected DNSCache dnsCache = new DNSCache();
-	protected ExecutorService backgroundInitializator = 
+	protected ExecutorService backgroundInitializator =
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 	protected HotDeploymentThread hdt;
-	
+	protected URIFactory uriFactory = new URIFactory(false);
+	protected Statistics statistics = new Statistics();
+	protected String jmxRouterName;
+
 	private boolean hotDeploy = true;
 	private boolean running;
 
 	private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
+	private boolean retryInit;
 	private Timer reinitializator;
+	private String id;
 
 	public Router() {
 		ruleManager.setRouter(this);
@@ -113,7 +123,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public Collection<Rule> getRules() {
 		return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING);
 	}
-	
+
 	@MCChildElement(order=3)
 	public void setRules(Collection<Rule> proxies) {
 		for (Rule rule : proxies)
@@ -129,7 +139,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
 
-		TrackingFileSystemXmlApplicationContext beanFactory = 
+		TrackingFileSystemXmlApplicationContext beanFactory =
 				new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
@@ -144,7 +154,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		if (applicationContext instanceof BaseLocationApplicationContext)
 			setBaseLocation(((BaseLocationApplicationContext)applicationContext).getBaseLocation());
 	}
-	
+
 	public RuleManager getRuleManager() {
 		return ruleManager;
 	}
@@ -162,7 +172,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	 * @description Spring Bean ID of an {@link ExchangeStore}. The exchange store will be used by this router's
 	 *              components ({@link AdminConsoleInterceptor}, {@link ExchangeStoreInterceptor}, etc.) by default, if
 	 *              no other exchange store is explicitly set to be used by them.
-	 * @default create a {@link LimitedMemoryExchangeStore} limited to the size of 1 MB. 
+	 * @default create a {@link LimitedMemoryExchangeStore} limited to the size of 1 MB.
 	 */
 	@MCAttribute
 	public void setExchangeStore(ExchangeStore exchangeStore) {
@@ -181,12 +191,12 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public HttpClientConfiguration getHttpClientConfig() {
 		return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
 	}
-	
+
 	@MCChildElement(order=0)
 	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
 		resolverMap.getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
 	}
-	
+
 	public DNSCache getDnsCache() {
 		return dnsCache;
 	}
@@ -197,29 +207,37 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	/**
 	 * Closes all ports (if any were opened) and waits for running exchanges to complete.
-	 * 
+	 *
 	 * When running as an embedded servlet, this has no effect.
 	 */
 	public void shutdown() throws IOException {
 		backgroundInitializator.shutdown();
-		getTransport().closeAll();
+		if (transport != null)
+			transport.closeAll();
 	}
-	
+
+	public void shutdownAll() throws IOException{
+		for(String s : this.getBeanFactory().getBeanNamesForType(Router.class)){
+			((Router) this.getBeanFactory().getBean(s)).shutdown();
+		}
+	}
+
 	/**
 	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
-	 * 
+	 *
 	 * @deprecated Simply invokes {@link #shutdown()}. "Not waiting" is not supported anymore, as open connections can
 	 *             now be forcibly closed after a timeout. See
 	 *             {@link HttpTransport#setForceSocketCloseOnHotDeployAfter(int)}.
 	 */
+	@Deprecated
 	public void shutdownNoWait() throws IOException {
 		shutdown();
 	}
-	
+
 	public ExecutorService getBackgroundInitializator() {
 		return backgroundInitializator;
 	}
-	
+
 	public Rule getParentProxy(Interceptor interceptor) {
 		for (Rule r : getRuleManager().getRules()) {
 			for (Interceptor i : r.getInterceptors())
@@ -229,9 +247,9 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
 	}
 
-    public void add(ServiceProxy serviceProxy) throws IOException {
-        ruleManager.addProxyAndOpenPortIfNew(serviceProxy);
-    }
+	public void add(Rule rule) throws IOException {
+		ruleManager.addProxyAndOpenPortIfNew(rule);
+	}
 
 	public void init() throws Exception {
 		for (Rule rule : getRuleManager().getRules())
@@ -241,16 +259,16 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	@Override
 	public void start() {
-		log.info("Starting " + Constants.PRODUCT_NAME + " " + Constants.VERSION);
 		try {
-			if (transport == null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
+			if (transport == null && beanFactory != null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
 				throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
 			if (exchangeStore == null)
 				exchangeStore = new LimitedMemoryExchangeStore();
 			if (transport == null)
 				transport = new HttpTransport();
-			
+
 			init();
+			initJmx();
 			getRuleManager().openPorts();
 
 			try {
@@ -260,13 +278,46 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				shutdown();
 				throw e;
 			}
-			
+
 			if (retryInitInterval > 0)
 				startAutoReinitializator();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+
+		startJmx();
+
 		running = true;
+		log.info(Constants.PRODUCT_NAME + " " + Constants.VERSION + " up and running!");
+	}
+
+	private void startJmx() {
+		if(getBeanFactory() != null) {
+			try{
+				Object exporterObj = getBeanFactory().getBean(JmxExporter.JMX_EXPORTER_NAME);
+				if (exporterObj != null) {
+					((JmxExporter) exporterObj).initAfterBeansAdded();
+				}
+			}catch(NoSuchBeanDefinitionException ignored){
+				// If bean is not available, then dont start jmx
+			}
+		}
+	}
+
+	private void initJmx() {
+		if (beanFactory != null) {
+			try {
+				Object exporterObj = beanFactory.getBean(JmxExporter.JMX_EXPORTER_NAME);
+				if (exporterObj != null) {
+					JmxExporter exporter = (JmxExporter) exporterObj;
+					String prefix = "org.membrane-soa:00=routers, name=";
+					//exporter.removeBean(prefix + jmxRouterName);
+					exporter.addBean(prefix + jmxRouterName, new JmxRouter(this, exporter));
+				}
+			}catch(NoSuchBeanDefinitionException ignored){
+				// If bean is not available, then dont init jmx
+			}
+		}
 	}
 
 	private void startHotDeployment() {
@@ -296,49 +347,53 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			}
 		}
 	}
-	
+
 	private void startAutoReinitializator() {
-		if (getInactiveRules().size() == 0)
+		if (getInactiveRules().isEmpty())
 			return;
-		
+
 		reinitializator = new Timer("auto reinitializator", true);
 		reinitializator.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				boolean stillFailing = false;
-				ArrayList<Rule> inactive = getInactiveRules();
-				if (inactive.size() > 0) {
-					log.info("Trying to activate all inactive rules.");
-					for (Rule rule : inactive) {
-						try {
-							Rule newRule = ((SOAPProxy) rule).clone();
-							if (!newRule.isActive()) {
-								log.info("New rule is still not active.");
-								stillFailing = true;
-							}
-							getRuleManager().replaceRule(rule, newRule);
-						} catch (CloneNotSupportedException e) {
-							e.printStackTrace();
-						}
-					}
-				}
-				if (stillFailing)
-					log.info("There are still inactive rules.");
-				else {
-					stopAutoReinitializator();
-					log.info("All rules have been initialized.");
-				}
+				tryReinitialization();
 			}
 		}, retryInitInterval, retryInitInterval);
 	}
-	
+
+	public void tryReinitialization() {
+		boolean stillFailing = false;
+		ArrayList<Rule> inactive = getInactiveRules();
+		if (inactive.size() > 0) {
+			log.info("Trying to activate all inactive rules.");
+			for (Rule rule : inactive) {
+				try {
+					Rule newRule = rule.clone();
+					if (!newRule.isActive()) {
+						log.info("New rule is still not active.");
+						stillFailing = true;
+					}
+					getRuleManager().replaceRule(rule, newRule);
+				} catch (CloneNotSupportedException e) {
+					log.error("", e);
+				}
+			}
+		}
+		if (stillFailing)
+			log.info("There are still inactive rules.");
+		else {
+			stopAutoReinitializator();
+			log.info("All rules have been initialized.");
+		}
+	}
+
 	private void stopAutoReinitializator() {
 		Timer reinitializator2 = reinitializator;
 		if (reinitializator2 != null) {
 			reinitializator2.cancel();
 		}
 	}
-	
+
 	@Override
 	public void stop() {
 		try {
@@ -351,13 +406,19 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		running = false;
 	}
 
+	public void stopAll(){
+		for(String s : this.getBeanFactory().getBeanNamesForType(Router.class)){
+			((Router) this.getBeanFactory().getBean(s)).stop();
+		}
+	}
+
 	@Override
 	public boolean isRunning() {
 		return running;
 	}
-	
+
 	/**
-	 * @description 
+	 * @description
 	 * <p>Whether changes to the router's configuration file should automatically trigger a restart.
 	 * </p>
 	 * <p>
@@ -377,15 +438,15 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		}
 		this.hotDeploy = hotDeploy;
 	}
-	
+
 	public boolean isHotDeploy() {
 		return hotDeploy;
 	}
-	
+
 	public int getRetryInitInterval() {
 		return retryInitInterval;
 	}
-	
+
 	/**
 	 * @description number of milliseconds after which reinitialization of &lt;soapProxy&gt;s should be attempted periodically
 	 * @default 5 minutes
@@ -397,18 +458,79 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	private ArrayList<Rule> getInactiveRules() {
 		ArrayList<Rule> inactive = new ArrayList<Rule>();
-		for (Rule rule : getRuleManager().getRules()) 
-			if (!rule.isActive()) 
+		for (Rule rule : getRuleManager().getRules())
+			if (!rule.isActive())
 				inactive.add(rule);
 		return inactive;
 	}
-	
+
 	public String getBaseLocation() {
 		return baseLocation;
 	}
-	
+
 	public void setBaseLocation(String baseLocation) {
 		this.baseLocation = baseLocation;
 	}
-	
+
+	public ApplicationContext getBeanFactory() {
+		return beanFactory;
+	}
+
+	public boolean isRetryInit() {
+		return retryInit;
+	}
+
+	/**
+	 * @explanation
+	 * <p>Whether the router should continue startup, if initialization of a rule (proxy, serviceProxy or soapProxy) failed
+	 * (for example, when a WSDL a component depends on could not be downloaded).</p>
+	 * <p>If false, the router will exit with code -1 just after startup, when the initialization of a rule failed.</p>
+	 * <p>If true, the router will continue startup, and all rules which could not be initialized will be <i>inactive</i> (=not
+	 * {@link Rule#isActive()}).</p>
+	 * <h3>Inactive rules</h3>
+	 * <p>Inactive rules will simply be ignored for routing decissions for incoming requests.
+	 * This means that requests for inactive rules might be routed using different routes or result in a "400 Bad Request"
+	 * when no active route could be matched to the request.</p>
+	 * <p>Once rules become active due to reinitialization, they are considered in future routing decissions.</p>
+	 * <h3>Reinitialization</h3>
+	 * <p>Inactive rules may be <i>reinitialized</i> and, if reinitialization succeeds, become active.</p>
+	 * <p>By default, reinitialization is attempted at regular intervals using a timer (see {@link #setRetryInitInterval(int)}).</p>
+	 * <p>Additionally, using the {@link AdminConsoleInterceptor}, an admin may trigger reinitialization of inactive rules at any time.</p>
+	 * @default false
+	 */
+	@MCAttribute
+	public void setRetryInit(boolean retryInit) {
+		this.retryInit = retryInit;
+	}
+
+	public URIFactory getUriFactory() {
+		return uriFactory;
+	}
+
+	@MCChildElement(order=-1, allowForeign=true)
+	public void setUriFactory(URIFactory uriFactory) {
+		this.uriFactory = uriFactory;
+	}
+
+	public Statistics getStatistics() {
+		return statistics;
+	}
+
+	@MCAttribute
+	public void setJmx(String name){
+		jmxRouterName = name;
+	}
+
+	public String getJmx(){
+		return jmxRouterName;
+	}
+
+	@Override
+	public void setBeanName(String s) {
+		this.id = s;
+	}
+
+	public String getId(){
+		return id;
+	}
 }

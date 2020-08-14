@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -31,7 +32,7 @@ public class FileSchemaWebAppResolver implements SchemaResolver {
 	private static final Log log = LogFactory.getLog(FileSchemaWebAppResolver.class.getName());
 
 	private final ServletContext ctx;
-	
+
 	public FileSchemaWebAppResolver(ServletContext ctx) {
 		this.ctx = ctx;
 	}
@@ -54,6 +55,11 @@ public class FileSchemaWebAppResolver implements SchemaResolver {
 		if (is == null)
 			throw new ResourceRetrievalException(url);
 		return is;
+	}
+
+	@Override
+	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+		throw new RuntimeException("Not implemented");
 	}
 
 	@Override

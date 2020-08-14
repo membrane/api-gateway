@@ -19,16 +19,16 @@ import com.predic8.membrane.core.Router;
 public class Any extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "any";
-	
+
 	public Any(Router router) {
 		super(router);
 	}
-	
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 	@Override
 	public boolean matches(String hostname, String ip) {
 		return true;

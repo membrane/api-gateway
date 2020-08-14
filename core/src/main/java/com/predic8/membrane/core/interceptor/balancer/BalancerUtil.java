@@ -61,10 +61,14 @@ public class BalancerUtil {
 	}
 
 	public static boolean hasLoadBalancing(Router router) {
-		for (Rule r : router.getRuleManager().getRules())
-			for (Interceptor i : r.getInterceptors())
+		for (Rule r : router.getRuleManager().getRules()) {
+			List<Interceptor> interceptors = r.getInterceptors();
+			if (interceptors == null)
+				continue;
+			for (Interceptor i : interceptors)
 				if (i instanceof LoadBalancingInterceptor)
 					return true;
+		}
 		return false;
 	}
 
@@ -91,7 +95,7 @@ public class BalancerUtil {
 	public static void addSession2Cluster(Router router, String balancerName, String sessionId, String cName, Node n) {
 		lookupBalancer(router, balancerName).addSession2Cluster(sessionId, cName, n);
 	}
-	
+
 	public static void removeNode(Router router, String balancerName, String cluster, String host, int port) {
 		lookupBalancer(router, balancerName).removeNode(cluster, host, port);
 	}
@@ -108,5 +112,10 @@ public class BalancerUtil {
 		return lookupBalancer(router, balancerName).getSessionsByNode(cName, node);
 	}
 
+	public static String getSingleClusterNameOrDefault(Balancer balancer){
+		if(balancer.getClusters().size() == 1)
+			return balancer.getClusters().get(0).getName();
+		return Cluster.DEFAULT_NAME;
+	}
 
 }

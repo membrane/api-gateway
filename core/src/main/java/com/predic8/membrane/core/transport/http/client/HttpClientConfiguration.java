@@ -18,51 +18,64 @@ import java.security.InvalidParameterException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 @MCElement(name="httpClientConfig")
-public class HttpClientConfiguration {
-	
+public class HttpClientConfiguration implements ApplicationContextAware {
+
 	private int maxRetries = 5;
 	private ConnectionConfiguration connection = new ConnectionConfiguration();
 	private ProxyConfiguration proxy;
 	private AuthenticationConfiguration authentication;
-	
+	private SSLParser sslParser;
+	private String baseLocation;
+
+
+
 	public ConnectionConfiguration getConnection() {
 		return connection;
 	}
-	
+
 	@MCChildElement(order=1)
 	public void setConnection(ConnectionConfiguration connection) {
 		if (connection == null)
 			throw new InvalidParameterException("'connection' parameter cannot be null.");
 		this.connection = connection;
 	}
-	
+
 	public ProxyConfiguration getProxy() {
 		return proxy;
 	}
-	
+
 	@MCChildElement(order=2)
 	public void setProxy(ProxyConfiguration proxy) {
 		this.proxy = proxy;
 	}
-	
+
 	public AuthenticationConfiguration getAuthentication() {
 		return authentication;
 	}
-	
+
 	@MCChildElement(order=3)
 	public void setAuthentication(AuthenticationConfiguration authentication) {
 		this.authentication = authentication;
 	}
-	
+
 	public int getMaxRetries() {
 		return maxRetries;
 	}
-	
+
 	/**
 	 * @description Determines how often Membrane tries to send a message to a target before it gives up and returns an
 	 *              error message to the client.
+	 *              All tries to all servers count together. For example if you have 2 targets, and a RoundRobin
+	 *              strategy, then the number 5 means it tries, in this order: one, two, one, two, one.
+	 *              NOTE: the word "retries" is used incorrectly throughout this project. The current meaning is "tries".
+	 *              The first attempt, which is semantically not a "re"-try, counts as one already.
 	 * @default 5
 	 */
 	@MCAttribute
@@ -70,4 +83,26 @@ public class HttpClientConfiguration {
 		this.maxRetries = maxRetries;
 	}
 
+	public SSLParser getSslParser() {
+		return sslParser;
+	}
+
+	@MCChildElement(order=4, allowForeign = true)
+	public void setSslParser(SSLParser sslParser) {
+		this.sslParser = sslParser;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		if (applicationContext instanceof BaseLocationApplicationContext)
+			setBaseLocation(((BaseLocationApplicationContext)applicationContext).getBaseLocation());
+	}
+
+	public String getBaseLocation() {
+		return baseLocation;
+	}
+
+	public void setBaseLocation(String baseLocation) {
+		this.baseLocation = baseLocation;
+	}
 }

@@ -17,23 +17,30 @@ package com.predic8.membrane.core;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.transport.http.IpPort;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContextCollection;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class RuleManager {
 
-	private static Log log = LogFactory.getLog(RuleManager.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
 
 	private Router router;
 
@@ -47,7 +54,7 @@ public class RuleManager {
 	private int defaultTargetPort = 8080;
 	private String defaultPath = ".*";
 	private int defaultMethod = 4;
-	
+
 	public enum RuleDefinitionSource {
 		/** rule defined in the spring context that created the router */
 		SPRING,
@@ -99,7 +106,7 @@ public class RuleManager {
 	public void addProxyAndOpenPortIfNew(Rule rule) throws IOException {
 		addProxyAndOpenPortIfNew(rule, RuleDefinitionSource.MANUAL);
 	}
-	
+
 	public synchronized void addProxyAndOpenPortIfNew(Rule rule, RuleDefinitionSource source) throws IOException {
 		if (exists(rule.getKey()))
 			return;
@@ -125,10 +132,34 @@ public class RuleManager {
 			listener.ruleAdded(rule);
 		}
 	}
-	
+
 	public synchronized void openPorts() throws IOException {
+		HashMap<IpPort, SSLProvider> sslProviders;
+		try {
+			HashMap<IpPort, SSLContextCollection.Builder> sslContexts = new HashMap<IpPort, SSLContextCollection.Builder>();
+			for (Rule rule : rules) {
+				SSLContext sslContext = rule.getSslInboundContext();
+				if (sslContext != null) {
+					IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
+					SSLContextCollection.Builder builder = sslContexts.get(ipPort);
+					if (builder == null) {
+						builder = new SSLContextCollection.Builder();
+						sslContexts.put(ipPort, builder);
+					}
+					builder.add(sslContext);
+				}
+			}
+
+			sslProviders = new HashMap<IpPort, SSLProvider>();
+			for (Map.Entry<IpPort, SSLContextCollection.Builder> entry : sslContexts.entrySet())
+				sslProviders.put(entry.getKey(), entry.getValue().build());
+		} catch (ConfigurationException e) {
+			throw new IOException(e);
+		}
+
 		for (Rule rule : rules) {
-			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
+			IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
+			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort));
 		}
 	}
 
@@ -178,31 +209,30 @@ public class RuleManager {
 		getExchangeStore().refreshExchangeStoreListeners();
 	}
 
-	public Rule getMatchingRule(String hostHeader, String method, String uri, int port, String localIP) {
+	public Rule getMatchingRule(String hostHeader, String method, String uri, String version, int port, String localIP) {
 		for (Rule rule : rules) {
+			RuleKey key = rule.getKey();
 
-			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + hostHeader);
-			
+			log.debug("Host from rule: " + key.getHost() + ";   Host from parameter rule key: " + hostHeader);
+
 			if (!rule.isActive())
 				continue;
-			
-			if (rule.getKey().getIp() != null)
-				if (!rule.getKey().getIp().equals(localIP))
-					continue;
-
-			if (!rule.getKey().matchesHostHeader(hostHeader))
+			if (!key.matchesVersion(version))
 				continue;
-			if (rule.getKey().getPort() != -1 && port != -1 && rule.getKey().getPort() != port)
+			if (key.getIp() != null && !key.getIp().equals(localIP))
 				continue;
-			if (!rule.getKey().getMethod().equals(method) && !rule.getKey().isMethodWildcard())
+			if (!key.matchesHostHeader(hostHeader))
+				continue;
+			if (key.getPort() != -1 && port != -1 && key.getPort() != port)
+				continue;
+			if (!key.getMethod().equals(method) && !key.isMethodWildcard())
+				continue;
+			if (key.isUsePathPattern() && !key.matchesPath(uri))
+				continue;
+			if (!key.complexMatch(hostHeader, method, uri, version, port, localIP))
 				continue;
 
-			if (!rule.getKey().isUsePathPattern())
-				return rule;
-
-			if (rule.getKey().matchesPath(uri))
-				return rule;
-
+			return rule;
 		}
 		return null;
 	}
@@ -228,7 +258,7 @@ public class RuleManager {
 
 	public synchronized void removeRule(Rule rule) {
 		getExchangeStore().removeAllExchanges(rule);
-		
+
 		int i = rules.indexOf(rule);
 		rules.remove(i);
 		ruleSources.remove(i);
@@ -241,7 +271,7 @@ public class RuleManager {
 
 	public synchronized void replaceRule(Rule rule, Rule newRule) {
 		getExchangeStore().removeAllExchanges(rule);
-		
+
 		int i = rules.indexOf(rule);
 		rules.set(i, newRule);
 
@@ -258,7 +288,7 @@ public class RuleManager {
 			if (ruleSources.get(i) == source)
 				removeRule(rules.get(i--));
 	}
-	
+
 	public synchronized void removeAllRules() {
 		while (rules.size() > 0)
 			removeRule(rules.get(0));
@@ -291,13 +321,16 @@ public class RuleManager {
 					if (ruleSources.get(i) == source)
 						add(rules.get(i));
 			}
+			@Override
 			public Rule set(int index, Rule element) {
 				throw new IllegalStateException("set(int, Rule) is not allowed");
 			}
+			@Override
 			public boolean add(Rule e) {
 				addProxy(e, source);
 				return super.add(e);
 			}
+			@Override
 			public void add(int index, Rule e) {
 				addProxy(e, source);
 				super.add(index, e);

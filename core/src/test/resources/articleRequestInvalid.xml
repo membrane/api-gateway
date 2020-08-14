@@ -1,8 +1,0 @@
-<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
-  <s11:Body>
-    <ns1:getAll xmlns:ns1="http://predic8.com/wsdl/material/ArticleService/1/">
-    <Invalid></Invalid>
-    </ns1:getAll>
-    
-  </s11:Body>
-</s11:Envelope>

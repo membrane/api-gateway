@@ -19,8 +19,8 @@ import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.ZERO;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.ByteUtil;
@@ -28,17 +28,37 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 /**
  * Reads the body with "Transfer-Encoding: chunked".
- * 
- * See {@link ChunkedBodyTransferrer} for writing a body using chunks. 
+ *
+ * See {@link ChunkedBodyTransferrer} for writing a body using chunks.
  */
 public class ChunkedBody extends AbstractBody {
 
-	private static final Log log = LogFactory.getLog(ChunkedBody.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
 	private InputStream inputStream;
-	
+
 	public ChunkedBody(InputStream in) {
 		log.debug("ChunkedInOutBody constructor");
 		inputStream = in;
+	}
+
+	@Override
+	public void read() throws IOException {
+		if (bodyObserved && !bodyComplete)
+			ByteUtil.readStream(getContentAsStream());
+		bodyObserved = true;
+		super.read();
+	}
+
+	public void write(AbstractBodyTransferrer out) throws IOException {
+		if (bodyObserved && !bodyComplete)
+			ByteUtil.readStream(getContentAsStream());
+		super.write(out);
+	}
+
+	@Override
+	protected void markAsRead() {
+		super.markAsRead();
+		bodyComplete = true;
 	}
 
 	@Override
@@ -46,6 +66,59 @@ public class ChunkedBody extends AbstractBody {
 		chunks.addAll(HttpUtil.readChunks(inputStream));
 	}
 
+	@Override
+	public void discard() throws IOException {
+		if (read)
+			return;
+
+		for (MessageObserver observer : observers)
+			observer.bodyRequested(this);
+
+		HttpUtil.readChunksAndDrop(inputStream);
+		markAsRead();
+	}
+
+	boolean bodyObserved = false;
+	boolean bodyComplete = false;
+
+	public InputStream getContentAsStream() throws IOException {
+		read = true;
+
+		if (!bodyObserved) {
+			bodyObserved = true;
+			for (MessageObserver observer : observers)
+				observer.bodyRequested(this);
+			chunks.clear();
+		}
+
+		return new BodyInputStream(chunks) {
+			@Override
+			protected Chunk readNextChunk() throws IOException {
+				if (bodyComplete)
+					return null;
+				int chunkSize = HttpUtil.readChunkSize(inputStream);
+				if (chunkSize > 0) {
+					Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+					inputStream.read(); // CR
+					inputStream.read(); // LF
+					return c;
+				} else {
+					inputStream.read(); // CR
+					inputStream.read(); // LF
+
+					bodyComplete = true;
+
+					for (MessageObserver observer : observers)
+						observer.bodyComplete(ChunkedBody.this);
+					observers.clear();
+
+					return null;
+				}
+			}
+		};
+	}
+
+	@Override
 	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
 		log.debug("writeNotReadChunked");
 		int chunkSize;
@@ -62,8 +135,24 @@ public class ChunkedBody extends AbstractBody {
 		markAsRead();
 	}
 
+	@Override
+	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+		log.debug("writeStreamed");
+		int chunkSize;
+		while ((chunkSize = HttpUtil.readChunkSize(inputStream)) > 0) {
+			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+			out.write(chunk);
+			inputStream.read(); // CR
+			inputStream.read(); // LF
+		}
+		inputStream.read(); // CR
+		inputStream.read(); // LF-
+		out.finish();
+		markAsRead();
+	}
+
 	protected int getRawLength() throws IOException {
-		if (chunks.size() == 0)
+		if (chunks.isEmpty())
 			return 0;
 		int length = getLength();
 		for (Chunk chunk : chunks) {
@@ -89,7 +178,7 @@ public class ChunkedBody extends AbstractBody {
 		destPos = copyCRLF(raw, destPos);
 		return raw;
 	}
-	
+
 	private int copyLastChunk(byte[] raw, int destPos) {
 		System.arraycopy(ZERO, 0, raw, destPos, ZERO.length);
 		destPos += ZERO.length;
@@ -101,7 +190,7 @@ public class ChunkedBody extends AbstractBody {
 		System.arraycopy(Constants.CRLF_BYTES, 0, raw, destPos, 2);
 		return destPos += 2;
 	}
-	
+
 	@Override
 	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
 		if (getLength() == 0)

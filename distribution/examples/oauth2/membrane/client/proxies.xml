@@ -1,0 +1,41 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <serviceProxy name="Resource Service" port="2000">
+
+            <!-- Protects a resource with OAuth2 - blocks on invalid login -->
+            <oauth2Resource publicURL="http://localhost:2000/">
+                <membrane src="http://localhost:7000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
+            </oauth2Resource>
+
+            <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
+            <groovy>
+                def oauth2 = exc.properties.oauth2
+                <!-- Put the eMail into the header X-EMAIL and pass it to the protected server. -->
+                exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
+                CONTINUE
+            </groovy>
+
+            <target host="localhost" port="3000"/>
+
+        </serviceProxy>
+
+        <serviceProxy port="3000">
+            <groovy>
+                exc.setResponse(Response.ok("You accessed the protected resource! Hello " + exc.request.header.getFirstValue("X-EMAIL")).build())
+                RETURN
+            </groovy>
+        </serviceProxy>
+
+        <serviceProxy port="9001">
+            <adminConsole/>
+        </serviceProxy>
+
+    </router>
+
+</spring:beans>

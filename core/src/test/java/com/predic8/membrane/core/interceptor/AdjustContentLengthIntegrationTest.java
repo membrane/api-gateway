@@ -26,6 +26,7 @@ public class AdjustContentLengthIntegrationTest extends TestCase {
 
 	private Router router;
 
+	@Override
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("classpath:/adjustContentLength/xslt.proxies.xml");
@@ -49,6 +50,7 @@ public class AdjustContentLengthIntegrationTest extends TestCase {
 
 	}
 
+	@Override
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();

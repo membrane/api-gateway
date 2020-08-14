@@ -16,38 +16,49 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.util.ByteUtil;
 
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
  * "Transfer-Encoding: chunked" is set on the input.
- * 
+ *
  * The "Transfer-Encoding" of the output is not determined by this class hierarchy, but by
  * {@link AbstractBodyTransferrer} and its subclasses.
- * 
+ *
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
  */
 public class Body extends AbstractBody {
 
-	private static Log log = LogFactory.getLog(Body.class.getName());
+	private final static int BUFFER_SIZE;
+	private final static int MAX_CHUNK_LENGTH;
+
+	static {
+		String bufferSize = System.getProperty("membrane.core.http.body.buffersize");
+		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
+		String maxChunkLength = System.getProperty("membrane.core.http.body.maxchunklength");
+		MAX_CHUNK_LENGTH = maxChunkLength == null ? 1000000000 : Integer.parseInt(maxChunkLength);
+	}
+
+	private static Logger log = LoggerFactory.getLogger(Body.class.getName());
 	private final InputStream inputStream;
-	private final int length;
-	
+	private final long length;
+
 
 	public Body(InputStream in) throws IOException {
 		this(in, -1);
 	}
-		
-	public Body(InputStream in, int length) throws IOException {
+
+	public Body(InputStream in, long length) throws IOException {
 		this.inputStream = in;
 		this.length = length;
 	}
-	
+
 	public Body(byte[] content) {
 		this.inputStream = null;
 		this.length = content.length;
@@ -58,33 +69,70 @@ public class Body extends AbstractBody {
 
 	@Override
 	protected void readLocal() throws IOException {
-		chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, length)));
+		long l = length;
+		while (l > 0 || l == -1) {
+			int chunkLength = l > MAX_CHUNK_LENGTH ? MAX_CHUNK_LENGTH : (int)l;
+			chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, chunkLength)));
+			l -= chunkLength;
+		}
 	}
-	
+
+	public void discard() throws IOException {
+		if (read)
+			return;
+
+		for (MessageObserver observer : observers)
+			observer.bodyRequested(this);
+
+		chunks.clear();
+		long toSkip = length;
+		while (toSkip > 0) {
+			long skipped = inputStream.skip(toSkip);
+			if (skipped == 0)
+				break; // EOF
+			toSkip -= skipped;
+		}
+		markAsRead();
+	}
+
 	@Override
 	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
 		if (getLength() == 0)
 			return;
-		
+
 		out.write(getContent(), 0, getLength());
 		out.finish();
 	}
-	
-	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
-		byte[] buffer = new byte[8192];
 
-		int totalLength = 0;
+	@Override
+	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
+		byte[] buffer = new byte[BUFFER_SIZE];
+
+		long totalLength = 0;
 		int length = 0;
 		chunks.clear();
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
 			out.write(buffer, 0, length);
-			// TODO: for improved performance and memory usage, do not retain a copy of
-			// the chunk, if not executing the monitor. Throw an exception in
-			// handleResponse(), if read() is called but was already called from the HttpClient
 			byte[] chunk = new byte[length];
 			System.arraycopy(buffer, 0, chunk, 0, length);
 			chunks.add(new Chunk(chunk));
+		}
+
+		out.finish();
+		markAsRead();
+	}
+
+	@Override
+	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+		byte[] buffer = new byte[BUFFER_SIZE];
+
+		long totalLength = 0;
+		int length = 0;
+		chunks.clear();
+		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
+			totalLength += length;
+			out.write(buffer, 0, length);
 		}
 		out.finish();
 		markAsRead();

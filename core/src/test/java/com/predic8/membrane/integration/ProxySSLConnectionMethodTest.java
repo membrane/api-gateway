@@ -30,7 +30,7 @@ import com.predic8.membrane.test.AssertUtils;
 public class ProxySSLConnectionMethodTest {
 
 	private Router router;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		router = new HttpRouter();
@@ -38,20 +38,22 @@ public class ProxySSLConnectionMethodTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3129)));
 		router.init();
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	@Test
 	public void testSSLConnectionMethod() throws Exception {
 		HttpClient client = new HttpClient();
 		client.getHostConfiguration().setProxy("localhost", 3129);
-	
+
 		GetMethod post = new GetMethod("https://www.google.com/");
 		client.executeMethod(post);
 		AssertUtils.assertContains("<html", post.getResponseBodyAsString());
+
+		client.getHttpConnectionManager().closeIdleConnections(0);
 	}
-	
+
 }

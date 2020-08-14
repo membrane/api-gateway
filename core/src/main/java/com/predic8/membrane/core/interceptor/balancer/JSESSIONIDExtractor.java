@@ -17,7 +17,8 @@ import java.util.regex.*;
 
 import javax.xml.stream.*;
 
-import org.apache.commons.logging.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.Message;
@@ -29,10 +30,10 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="jSessionIdExtractor")
 public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 
-	private static Log log = LogFactory.getLog(JSESSIONIDExtractor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(JSESSIONIDExtractor.class.getName());
 
 	Pattern pattern = Pattern.compile(".*JSESSIONID\\s*=([^;]*)");
-	
+
 	@Override
 	public String getSessionId(Message msg) throws Exception {
 
@@ -41,22 +42,23 @@ public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 			log.debug("no cookie set");
 			return null;
 		}
-		
+
 		Matcher m = pattern.matcher(cookie);
-		
+
 		log.debug("cookie: " + msg.getHeader().getFirstValue("Cookie"));
-		
+
 		if (!m.lookingAt()) return null;
-		
+
 		log.debug("JSESSION cookie found: "+m.group(1).trim());
 		return m.group(1).trim();
 	}
-	
-	public void write(XMLStreamWriter out)
-		throws XMLStreamException {
 
-		out.writeStartElement("jSessionIdExtractor");		
+	@Override
+	public void write(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("jSessionIdExtractor");
 		out.writeEndElement();
 	}
-	
+
 }

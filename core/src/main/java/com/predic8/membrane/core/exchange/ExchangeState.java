@@ -17,5 +17,5 @@ package com.predic8.membrane.core.exchange;
 public enum ExchangeState {
 
 	STARTED, SENT, RECEIVED, COMPLETED, FAILED
-	
+
 }

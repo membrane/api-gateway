@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.http.LargeBodyTest;
+import com.predic8.membrane.core.rules.ProxySSLTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -27,8 +29,10 @@ import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegratio
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
 import com.predic8.membrane.core.resolver.ResolverTest;
 import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
+import com.predic8.membrane.core.rules.UnavailableSoapProxyTest;
 import com.predic8.membrane.core.transport.ExceptionHandlingTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
+import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
 import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
 import com.predic8.membrane.integration.Http10Test;
@@ -39,19 +43,23 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ MethodTest.class, RegExReplaceInterceptorTest.class,
-		Http10Test.class, Http11Test.class,
-		AccessControlInterceptorIntegrationTest.class,
-		LoadBalancingInterceptorTest.class,
-		REST2SOAPInterceptorIntegrationTest.class,
-		InterceptorInvocationTest.class,
-		BasicAuthenticationInterceptorIntegrationTest.class,
-		ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
-		AdjustContentLengthIntegrationTest.class,
-		BoundConnectionTest.class, ExceptionHandlingTest.class,
-		WSDLPublisherTest.class, LimitInterceptorTest.class,
-		SOAPProxyIntegrationTest.class,
-		SpringReferencesTest.class,
-		ResolverTest.class })
+	Http10Test.class, Http11Test.class,
+	AccessControlInterceptorIntegrationTest.class,
+	LoadBalancingInterceptorTest.class,
+	REST2SOAPInterceptorIntegrationTest.class,
+	InterceptorInvocationTest.class,
+	BasicAuthenticationInterceptorIntegrationTest.class,
+	ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
+	AdjustContentLengthIntegrationTest.class,
+	BoundConnectionTest.class, ExceptionHandlingTest.class,
+	WSDLPublisherTest.class, LimitInterceptorTest.class,
+	SOAPProxyIntegrationTest.class,
+	SpringReferencesTest.class,
+	ResolverTest.class,
+	UnavailableSoapProxyTest.class,
+	IllegalCharactersInURLTest.class,
+	ProxySSLTest.class,
+	LargeBodyTest.class})
 public class IntegrationTests {
 	/*
 	@BeforeClass
@@ -65,5 +73,5 @@ public class IntegrationTests {
 		System.setOut(ps);
 		System.setErr(ps);
 	}
-	*/
+	 */
 }

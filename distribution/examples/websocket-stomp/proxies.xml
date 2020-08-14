@@ -1,0 +1,35 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy port="4443">
+			<ssl>
+				<keystore location="../../conf/membrane.jks" password="secret" keyPassword="secret" />
+				<truststore location="../../conf/membrane.jks" password="secret" />
+			</ssl>
+
+			<log />
+
+			<webSocket url="http://localhost:61614/" />
+
+			<target host="localhost" port="4444" />
+		</serviceProxy>
+
+		<serviceProxy port="4444">
+			<webServer docBase="." index="index.html" />
+		</serviceProxy>
+
+		<serviceProxy name="Console" port="9000">
+			<basicAuthentication>
+				<user name="admin" password="membrane" />
+			</basicAuthentication>
+			<adminConsole />
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>

@@ -23,8 +23,8 @@ import java.util.Map;
 
 import javax.xml.xpath.XPathConstants;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.xml.sax.InputSource;
 
@@ -43,33 +43,33 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="switch")
 public class XPathCBRInterceptor extends AbstractInterceptor {
-	private static Log log = LogFactory.getLog(XPathCBRInterceptor.class.getName());
-	
+	private static Logger log = LoggerFactory.getLogger(XPathCBRInterceptor.class.getName());
+
 	private List<Case> cases = new ArrayList<Case>();
 	private Map<String, String> namespaces;
-	
+
 	public XPathCBRInterceptor() {
 		name = "Content Based Router";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().isBodyEmpty()) {
 			return Outcome.CONTINUE;
 		}
-		
-		Case r = findRoute(exc.getRequest());		
+
+		Case r = findRoute(exc.getRequest());
 		if (r == null) {
 			return Outcome.CONTINUE;
 		}
 		log.debug("match found for {"+r.getxPath()+"} routing to {"+ r.getUrl() + "}");
-		
+
 		updateDestination(exc, r);
 		return Outcome.CONTINUE;
 	}
 
 	private void updateDestination(Exchange exc, Case r) {
-		exc.setOriginalRequestUri(r.getUrl());		
+		exc.setOriginalRequestUri(r.getUrl());
 		exc.getDestinations().clear();
 		exc.getDestinations().add(r.getUrl());
 	}
@@ -79,11 +79,11 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 			//TODO getBodyAsStream creates ByteArray each call. That could be a performance issue. Using BufferedInputStream did't work, because stream got closed.
 			InputSource is = new InputSource(request.getBodyAsStreamDecoded());
 			is.setEncoding(request.getCharset());
-			if ( (Boolean) newXPath(namespaces).evaluate(r.getxPath(), is, XPathConstants.BOOLEAN) ) 
+			if ( (Boolean) newXPath(namespaces).evaluate(r.getxPath(), is, XPathConstants.BOOLEAN) )
 				return r;
 			log.debug("no match found for xpath {"+r.getxPath()+"}");
-		}			
-		return null;			
+		}
+		return null;
 	}
 
 	public Map<String, String> getNamespaces() {
@@ -102,16 +102,16 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	public void setCases(List<Case> cases) {
 		this.cases = cases;
 	}
-	
+
 	public List<Case> getCases() {
 		return cases;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Routes incoming requests based on XPath expressions.";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		StringBuilder sb = new StringBuilder();
@@ -121,24 +121,24 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		new Html(sw){{
 			text("The requests are routed based on the following rules:");
 			table();
-				thead();
-					tr();
-						th().text("XPath").end();
-						th().text("URL").end();
-					end();
+			thead();
+			tr();
+			th().text("XPath").end();
+			th().text("URL").end();
+			end();
+			end();
+			tbody();
+			for (Case c : cases) {
+				tr();
+				td().text(c.getxPath()).end();
+				td().raw(TextUtil.linkURL(c.getUrl())).end();
 				end();
-				tbody();
-				for (Case c : cases) {
-					tr();
-						td().text(c.getxPath()).end();
-						td().raw(TextUtil.linkURL(c.getUrl())).end();
-					end();
-				}
-				end();
+			}
+			end();
 			end();
 		}};
 		sb.append(sw.toString());
 		return sb.toString();
 	}
-	
+
 }

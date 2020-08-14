@@ -17,11 +17,11 @@ package com.predic8.membrane.core;
 import org.apache.commons.cli.*;
 
 public class MembraneCommandLine {
-	
+
 	CommandLine cl;
-	
+
 	public void parse(String[] args) throws ParseException {
-		cl = new BasicParser().parse(getOptions(), args, true);
+		cl = new DefaultParser().parse(getOptions(), args, true);
 	}
 
 	public void printUsage() {
@@ -29,7 +29,7 @@ public class MembraneCommandLine {
 		System.out.println("--help          Help content for router.");
 		System.out.println("-c <location>   Location of the proxies configuration file");
 	}
-	
+
 	public boolean needHelp() {
 		return cl.hasOption('h');
 	}
@@ -38,7 +38,7 @@ public class MembraneCommandLine {
 		return cl.hasOption('c');
 	}
 
-	public String getConfiguration() {		
+	public String getConfiguration() {
 		return cl.getOptionValue('c');
 	}
 

@@ -29,13 +29,13 @@ import com.predic8.membrane.annot.MCMain;
 public class MainInfo {
 	private TypeElement element;
 	private MCMain annotation;
-	
+
 	private List<ElementInfo> iis = new ArrayList<ElementInfo>();
 	private Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new HashMap<TypeElement, ChildElementDeclarationInfo>();
 	private Map<TypeElement, ElementInfo> elements = new HashMap<TypeElement, ElementInfo>();
 	private Map<String, ElementInfo> globals = new HashMap<String, ElementInfo>();
 	private Map<String, ElementInfo> ids = new HashMap<String, ElementInfo>();
-	
+
 	public List<Element> getInterceptorElements() {
 		ArrayList<Element> res = new ArrayList<Element>(getIis().size());
 		for (ElementInfo ii : getIis())

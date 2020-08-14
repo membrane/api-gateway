@@ -21,8 +21,8 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -64,7 +64,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
  */
 @MCElement(name="accountBlocker")
 public class AccountBlocker extends AbstractXmlElement implements Cleaner {
-	private static Log log = LogFactory.getLog(AccountBlocker.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AccountBlocker.class.getName());
 
 	private int blockWholeSystemAfter = 1000000;
 	private int afterFailedLogins = 5;
@@ -72,37 +72,37 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 	private long blockFor = 3600000;
 
 	private HashMap<String, Info> users = new HashMap<String, Info>();
-	
+
 	private class Info {
 		private final long tries[];
 		private int current = 0;
 		private long blockedUntil;
-		
+
 		public Info() {
-			tries = new long[afterFailedLogins];
+			tries = new long[afterFailedLogins-1];
 		}
-		
+
 		public synchronized boolean isBlocked() {
 			if (blockedUntil == 0)
 				return false;
 			return System.currentTimeMillis() < blockedUntil;
 		}
-		
+
 		private synchronized void fail() {
+			current = ++current % tries.length;
 			long firstFail = tries[current];
-			current = ++current % afterFailedLogins;
 			long now = tries[current] = System.currentTimeMillis();
 			if (firstFail == 0)
 				return;
 			if (now - firstFail < afterFailedLoginsWithin)
 				blockedUntil = now + blockFor;
 		}
-		
+
 		public synchronized boolean hasRelevantInformation(long death) {
 			return tries[current] > death;
 		}
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		blockWholeSystemAfter = Integer.parseInt(StringUtils.defaultString(token.getAttributeValue("", "blockWholeSystemAfter"), "1000000"));
@@ -110,7 +110,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		afterFailedLoginsWithin = Long.parseLong(StringUtils.defaultString(token.getAttributeValue("", "afterFailedLoginsWithin"), ""+Long.MAX_VALUE));
 		blockFor = Integer.parseInt(StringUtils.defaultString(token.getAttributeValue("", "blockFor"), "3600000"));
 	}
-	
+
 	public boolean isBlocked(String username) {
 		Info info;
 		synchronized (users) {
@@ -124,14 +124,14 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 			return false;
 		return info.isBlocked();
 	}
-	
+
 	public void unblock(String username) {
 		synchronized (users) {
 			users.remove(username);
 		}
 	}
-	
-	public void fail(String username) {
+
+	public boolean fail(String username) {
 		Info info, info2 = new Info();
 		synchronized (users) {
 			info = users.get(username);
@@ -142,8 +142,9 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 			}
 		}
 		info.fail();
+		return info.isBlocked();
 	}
-	
+
 	public void cleanup() {
 		List<String> removeUs = new ArrayList<String>();
 		long death = System.currentTimeMillis() - afterFailedLoginsWithin;

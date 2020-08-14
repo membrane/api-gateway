@@ -26,24 +26,24 @@ public abstract class AbstractClientAddress extends AbstractXmlElement {
 
 	protected Router router;
 	protected Pattern pattern;
-	
+
 	public AbstractClientAddress(Router router) {
 		super();
 		this.router = router;
 	}
-	
+
 	public abstract boolean matches(String hostname, String ip);
-	
+
 	@Override
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
 		setPattern(TextUtil.globToRegExp(token.getText()));
 	}
-	
+
 	@Override
 	public String toString() {
 		return pattern.pattern();
 	}
-	
+
 	public void setPattern(String pattern) {
 		this.pattern = Pattern.compile(pattern);
 	}

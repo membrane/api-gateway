@@ -19,7 +19,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 
 import org.junit.Before;
@@ -45,7 +44,7 @@ public class BodyTest {
 
 	private AbstractBody unchunkedBody;
 	private AbstractBody unchunkedBody2;
-	
+
 
 	@Before
 	public void setUp() throws Exception {
@@ -78,14 +77,14 @@ public class BodyTest {
 		assertEquals(426, body.getContent().length);
 		assertEquals(426, body.getLength());
 	}
-	
+
 	@Test
 	public void testChunkedBodyContent2() throws Exception {
 		AbstractBody body = new ChunkedBody( new ByteArrayInputStream(chunk1.getBytes()));
 		assertTrue(Arrays.equals(body.getContent(), chunk1Body.getBytes()));
 
 	}
-	
+
 	@Test
 	public void testChunkedBodyConten3() throws Exception {
 		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk2.getBytes()));
@@ -95,20 +94,20 @@ public class BodyTest {
 		}
 		assertEquals(chunk2Body, buf.toString());
 	}
-	
+
 	@Test
 	public void testStringConstructor() throws Exception {
 		AbstractBody body = new Body("mmebrane Monitor is Cool".getBytes(Constants.UTF_8_CHARSET));
 		assertEquals(24, body.getContent().length);
 		assertEquals(24, body.getLength());
 	}
-	
+
 	@Test
 	public void testPlainToChunked() throws Exception {
 		Body chunked = new Body(new ByteArrayInputStream(msg1));
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		chunked.write(new ChunkedBodyTransferrer(baos));
-		
+
 		ChunkedBody ciob = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
 		assertTrue(Arrays.equals(ciob.getContent(), msg1));
 	}
@@ -123,7 +122,7 @@ public class BodyTest {
 		chunked.write(new ChunkedBodyTransferrer(baos));
 
 		ChunkedBody ciob2 = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
-		
+
 		assertTrue(Arrays.equals(ciob2.getContent(), ciob.getContent()));
 	}
 

@@ -1,3 +1,7 @@
+# any VIM swap file
+.*.swp
+_*.swp
+
 # /
 /target
 /membrane.log
@@ -5,6 +9,10 @@
 /.project
 /.metadata
 /.DS_Store
+*.iml
+*.eml
+*.idea
+/.m2
 
 # /annot/
 /annot/.classpath
@@ -20,6 +28,8 @@
 /cli/memrouter.log
 /cli/membrane.log
 /cli/derby.log
+/cli/executable.ps1
+/cli/log.csv
 
 # /cli/examples/router/custom-interceptor/
 /cli/examples/router/custom-interceptor/dist
@@ -42,12 +52,25 @@
 /core/temp
 /core/.DS_Store
 
-# /karaf-deployer/
-/karaf-deployer/.project
-/karaf-deployer/.classpath
-/karaf-deployer/target
-/karaf-deployer/.settings
-/karaf-deployer/.settings
+# /maven-plugin
+/maven-plugin/target
+
+# /distribution/
+/distribution/.classpath
+/distribution/.project
+/distribution/.settings
+/distribution/target
+/distribution/memrouter.log
+/distribution/membrane.log
+/distribution/derby.log
+/distribution/log.csv
+/distribution/examples/router/custom-interceptor/dist
+/distribution/examples/router/loadbalancer-session-3/build
+/distribution/examples/router/versioning/routing/build
+/distribution/examples/router/versioning/xslt/build
+/distribution/executable.ps1
+/distribution/executable-*.pid
+/distribution/executable_launcher.sh
 
 # /osgi/
 /osgi/.classpath
@@ -60,7 +83,6 @@
 /osgi-extender/.classpath
 /osgi-extender/target
 /osgi-extender/.project
-/osgi-extender/.settings
 
 # /sar/
 /sar/.settings
@@ -81,3 +103,10 @@
 /war/target
 /war/.settings
 /war/memrouter.log
+
+
+# Intellj
+.idea
+maven-plugin/target/surefire/
+/distribution/conf/consentFile.json
+/distribution/conf/logindialog/

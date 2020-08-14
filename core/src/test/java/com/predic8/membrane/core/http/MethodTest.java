@@ -29,7 +29,7 @@ import com.predic8.membrane.core.rules.Rule;
 public class MethodTest {
 
 	private HttpRouter router;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
@@ -37,17 +37,17 @@ public class MethodTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
 	}
-	
+
 	@Test
 	public void testDELETE() throws Exception {
 		HttpClient client = new HttpClient();
-		
+
 		DeleteMethod delete = new DeleteMethod("http://localhost:4000/method-test/");
-		
+
 		int status = client.executeMethod(delete);
 		assertTrue(status < 400);
 	}
-		
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();

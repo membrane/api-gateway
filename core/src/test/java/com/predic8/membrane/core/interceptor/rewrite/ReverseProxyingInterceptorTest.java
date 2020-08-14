@@ -40,7 +40,7 @@ public class ReverseProxyingInterceptorTest {
 	public void sameServer() throws Exception {
 		// same server, redirection location should be rewritten
 		// (whether ":80" actually occurs the final string does not matter)
-		Assert.assertEquals("http://membrane:80/bar", getRewrittenRedirectionLocation("membrane", 80, "http://target/foo", "http://target/bar"));
+		Assert.assertEquals("http://membrane/bar", getRewrittenRedirectionLocation("membrane", 80, "http://target/foo", "http://target/bar"));
 	}
 
 	@Test
@@ -81,7 +81,7 @@ public class ReverseProxyingInterceptorTest {
 	public void sameServerDestination() throws Exception {
 		// same server, redirection location should be rewritten
 		// (whether ":80" actually occurs the final string does not matter)
-		Assert.assertEquals("http://target:80/bar", getRewrittenDestination("membrane", "http://membrane/bar", 80, "/foo", "http", 80));
+		Assert.assertEquals("http://target/bar", getRewrittenDestination("membrane", "http://membrane/bar", 80, "/foo", "http", 80));
 	}
 
 	@Test
@@ -102,7 +102,7 @@ public class ReverseProxyingInterceptorTest {
 		Assert.assertEquals("http://target2/bar", getRewrittenDestination("membrane", "http://target2/bar", 2000, "/foo", "http", 80));
 	}
 
-	
+
 	/**
 	 * Lets the ReverseProxyingInterceptor handle a fake Exchange and returns the rewritten "Destination" header.
 	 */
@@ -113,9 +113,9 @@ public class ReverseProxyingInterceptorTest {
 		Assert.assertEquals(Outcome.CONTINUE, rp.handleRequest(exc));
 		return exc.getRequest().getHeader().getFirstValue(Header.DESTINATION);
 	}
-	
+
 	/**
-	 * Creates a fake exchange which simulates a received redirect by the server. 
+	 * Creates a fake exchange which simulates a received redirect by the server.
 	 */
 	private Exchange createExchange(String requestHostHeader, String requestDestinationHeader, int port, String requestURI, String redirectionURI) {
 		Exchange exc = new Exchange(new FakeHttpHandler(port));

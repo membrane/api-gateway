@@ -22,7 +22,7 @@ public class EmptyBody extends AbstractBody {
 	public int getLength() {
 		return 0;
 	}
-	
+
 	@Override
 	public byte[] getContent() {
 		return new byte[0];
@@ -44,16 +44,21 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
+	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+		//ignore
+	}
+
+	@Override
 	protected byte[] getRawLocal() throws IOException {
 		return new byte[0];
 	}
-	
+
 	@Override
 	public void write(AbstractBodyTransferrer out) throws IOException {
 		out.finish();
 		markAsRead();
 	}
-	
+
 	@Override
 	public boolean isRead() {
 		return true;

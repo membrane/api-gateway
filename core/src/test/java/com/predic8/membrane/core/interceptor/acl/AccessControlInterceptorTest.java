@@ -30,46 +30,46 @@ public class AccessControlInterceptorTest {
 	private static final String BASE_URL = "http://localhost:4000";
 
 	private AccessControlInterceptor interceptor;
-	
+
 	private HttpRouter router;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		router = new HttpRouter();
-		
+
 		interceptor = new AccessControlInterceptor();
 		interceptor.setFile("classpath:/acl/acl.xml");
-		
+
 		Rule rule4000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule4000);
 		router.addUserFeatureInterceptor(interceptor);
 		router.init();
 	}
-	
+
 	@Test
 	public void testGetAccessControl() throws Exception {
 		assertNotNull(interceptor.getAccessControl());
 	}
-	
+
 	@Test
 	public void testAuthorizedAccess() throws Exception {
 		getAndAssert(200, BASE_URL + "/axis2/services/BLZService?wsdl");
 	}
-	
+
 	@Test
 	public void testUnauthorizedRequestUri() throws Exception {
-		getAndAssert(403, BASE_URL + "/predic8/services/BLZService?wsdl"); 
+		getAndAssert(403, BASE_URL + "/predic8/services/BLZService?wsdl");
 	}
-	
+
 	@Test
 	public void testUnauthorizedClient() throws Exception {
-		getAndAssert(403, BASE_URL + "/crm/services/BLZService?wsdl"); 
+		getAndAssert(403, BASE_URL + "/crm/services/BLZService?wsdl");
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 }

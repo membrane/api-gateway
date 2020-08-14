@@ -22,8 +22,8 @@ import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 import javax.sql.DataSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -39,7 +39,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
 /**
- * @description Writes statistics (time, status code, hostname, URI, etc.) about exchanges passing through into a 
+ * @description Writes statistics (time, status code, hostname, URI, etc.) about exchanges passing through into a
  * database (one row per exchange).
  * @topic 5. Monitoring, Logging and Statistics
  */
@@ -47,33 +47,34 @@ import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 public class StatisticsJDBCInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 	private static final String DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "datasource bean id attribute cannot be used";
 
-	private static Log log = LogFactory.getLog(StatisticsJDBCInterceptor.class.getName());
-	
+	private static Logger log = LoggerFactory.getLogger(StatisticsJDBCInterceptor.class.getName());
+
 	private ApplicationContext applicationContext;
 	private DataSource dataSource;
-	
+
 	private boolean postMethodOnly;
 	private boolean soapOnly;
 	private boolean idGenerated;
 	private String statString;
-	private String dataSourceBeanId = DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED; 
-	
+	private String dataSourceBeanId = DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED;
+
 	public StatisticsJDBCInterceptor() {
 		name = "JDBC Logging";
 	}
-	
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
-	
+
+	@Override
 	public void init() {
 		if (dataSourceBeanId != DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
 			dataSource = applicationContext.getBean(dataSourceBeanId, DataSource.class);
 		Connection con = null;
 		try {
 			con = dataSource.getConnection();
-			idGenerated = JDBCUtil.isIdGenerated(con.getMetaData());	
+			idGenerated = JDBCUtil.isIdGenerated(con.getMetaData());
 			statString = JDBCUtil.getPreparedInsertStatement(idGenerated);
 			logDatabaseMetaData(con.getMetaData());
 			createTableIfNecessary(con);
@@ -83,7 +84,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 			closeConnection(con);
 		}
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		Connection con = null;
@@ -103,9 +104,9 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		if ( ignoreNotSoap(exc) ) return;
 		PreparedStatement stat = con.prepareStatement(statString);
 		JDBCUtil.setData(exc, stat, idGenerated);
-		stat.executeUpdate();	
+		stat.executeUpdate();
 	}
-	
+
 	private boolean ignoreNotSoap(Exchange exc) {
 		ContentType ct;
 		try {
@@ -122,7 +123,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	private boolean ignoreGetMethod(Exchange exc) {
 		return postMethodOnly && !Request.METHOD_POST.equals(exc.getRequest().getMethod());
 	}
-	
+
 	private void createTableIfNecessary(Connection con) throws Exception {
 		if (JDBCUtil.tableExists(con, JDBCUtil.TABLE_NAME))
 			return;
@@ -144,7 +145,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 			closeConnection(st);
 		}
 	}
-	
+
 	public DataSource getDataSource() {
 		return dataSource;
 	}
@@ -171,7 +172,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	public void setPostMethodOnly(boolean postMethodOnly) {
 		this.postMethodOnly = postMethodOnly;
 	}
-	
+
 	public boolean isSoapOnly() {
 		return soapOnly;
 	}
@@ -183,11 +184,11 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	public void setSoapOnly(boolean soapOnly) {
 		this.soapOnly = soapOnly;
 	}
-	
+
 	public String getDataSourceBeanId() {
 		return dataSourceBeanId;
 	}
-	
+
 	/**
 	 * @deprecated use {@link #setDataSource(DataSource)} instead: Using
 	 *             {@link #setDataSourceBeanId(String)} from Spring works,
@@ -205,7 +206,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		log.debug("idGenerated: "+idGenerated);
 		log.debug("statString: "+statString);
 	}
-	
+
 	private void closeConnection(Connection con) {
 		try {
 			if (con != null ) con.close();
@@ -213,7 +214,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 			log.warn("Could not close JDBC connection", e);
 		}
 	}
-	
+
 	private void closeConnection(Statement con) {
 		try {
 			if (con != null ) con.close();
@@ -221,5 +222,5 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 			log.warn("Could not close Statement", e);
 		}
 	}
-	
+
 }

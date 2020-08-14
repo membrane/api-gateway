@@ -19,13 +19,13 @@ import com.predic8.membrane.annot.AnnotUtils;
 import com.predic8.membrane.annot.ProcessingException;
 
 public class OtherAttributesInfo extends AbstractJavadocedInfo {
-	
+
 	private ExecutableElement otherAttributesSetter;
 
 	public ExecutableElement getOtherAttributesSetter() {
 		return otherAttributesSetter;
 	}
-	
+
 	public void setOtherAttributesSetter(ExecutableElement otherAttributesSetter) {
 		this.otherAttributesSetter = otherAttributesSetter;
 		setDocedE(otherAttributesSetter);

@@ -17,14 +17,14 @@ import java.io.IOException;
 
 /**
  * Used to send a message body.
- * 
+ *
  * An implementation might realize "chunking", for example.
  */
 public abstract class AbstractBodyTransferrer {
 
 	public abstract void write(byte[] content, int i, int length) throws IOException;
 	public abstract void write(Chunk chunk) throws IOException;
-	
+
 	public abstract void finish() throws IOException;
 
 }

@@ -13,16 +13,18 @@
    See the License for the specific language governing permissions and
    limitations under the License.
  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>service-proxy-annot</artifactId>
-    <packaging>jar</packaging>
 
-    <parent>
-        <groupId>org.membrane-soa.service-proxy</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>4.0.13-SNAPSHOT</version>
-    </parent>
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>service-proxy-annot</artifactId>
+	<name>${project.artifactId}</name>
+	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>org.membrane-soa</groupId>
+		<artifactId>service-proxy-parent</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>4.7.3-SNAPSHOT</version>
+	</parent>
 
 	<dependencies>
 		<dependency>
@@ -33,20 +35,27 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.aries.blueprint</groupId>
+			<artifactId>blueprint-parser</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.aries.blueprint</groupId>
+			<artifactId>org.apache.aries.blueprint.api</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
-    		<plugin>
-    			<artifactId>maven-compiler-plugin</artifactId>
-    			<version>2.3.2</version>
-    			<configuration>
-    				<source>1.6</source>
-    				<target>1.6</target>
-				    <!-- Disable annotation processing for ourselves. -->
-    				<compilerArgument>-proc:none</compilerArgument>
-    			</configuration>
-    		</plugin>
-    	</plugins>
-    </build>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- Disable annotation processing for ourselves. -->
+					<compilerArgument>-proc:none</compilerArgument>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

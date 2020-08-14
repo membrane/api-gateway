@@ -1,0 +1,31 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<!-- This service proxy transform a JSON object from "api.predic8.de" to another format through "convert()" -->
+		<serviceProxy name="json2json transformer" port="2000">
+			<path>/shop/orders/7958</path>
+			<response>
+				<javascript>
+					load('converter.js');
+					var data = JSON.parse(exc.getResponse().getBodyAsStringDecoded());
+					Response.ok(JSON.stringify(convert(data))).build();
+				</javascript>
+			</response>
+			<target host="api.predic8.de" port="443">
+				<ssl/>
+			</target>
+		</serviceProxy>
+
+		<!-- open the admin console on http://localhost:9000 and have a look at the interceptors -->
+		<serviceProxy port="9000">
+			<adminConsole/>
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>

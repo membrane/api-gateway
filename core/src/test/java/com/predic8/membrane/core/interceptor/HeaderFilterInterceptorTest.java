@@ -25,12 +25,12 @@ import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Action;
 import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Rule;
 
 public class HeaderFilterInterceptorTest {
-	
+
 	@Test
 	public void doit() throws Exception {
 		Exchange exc = new Exchange(null);
 		exc.setResponse(Response.ok().header("a", "b").header("c", "d").header("c", "d2").header("e", "f").build());
-		
+
 		HeaderFilterInterceptor fhi = new HeaderFilterInterceptor();
 		fhi.setRules(Lists.newArrayList(new Rule[] {
 				new Rule("Server", Action.REMOVE), // implicitly set by Response.ok()
@@ -38,7 +38,7 @@ public class HeaderFilterInterceptorTest {
 				new Rule("c.*", Action.REMOVE),
 		}));
 		fhi.handleResponse(exc);
-		
+
 		HeaderField[] h = exc.getResponse().getHeader().getAllHeaderFields();
 		assertEquals(3, h.length);
 		assertEquals("Content-Length", h[0].getHeaderName().toString());

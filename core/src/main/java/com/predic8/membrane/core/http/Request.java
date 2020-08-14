@@ -14,15 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -31,12 +22,24 @@ import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Request extends Message {
 
-	private static final Log LOG = LogFactory.getLog(Request.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Request.class.getName());
 	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
+	private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
 	public static final String METHOD_GET = "GET";
 	public static final String METHOD_POST = "POST";
@@ -46,13 +49,13 @@ public class Request extends Message {
 	public static final String METHOD_TRACE = "TRACE";
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
-	
+
 	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet("GET", "HEAD", "CONNECT");
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
 			"DELETE",
 			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
 			"PROPFIND",
-			"MKCOL", 
+			"MKCOL",
 			"COPY",
 			"MOVE",
 			"LOCK",
@@ -62,15 +65,22 @@ public class Request extends Message {
 	String method;
 	String uri;
 
+	@Override
 	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
-			if (!matcher.find())
+			if (matcher.find()) {
+				method = matcher.group(1);
+				uri = matcher.group(2);
+				version = matcher.group(3);
+			} else if (stompPattern.matcher(firstLine).find()) {
+				method = firstLine;
+				uri = "";
+				version = "STOMP";
+			} else {
 				throw new EOFWhileReadingFirstLineException(firstLine);
-			method = matcher.group(1);
-			uri = matcher.group(2);
-			version = matcher.group(3);
+			}
 		} catch (EOFWhileReadingLineException e) {
 			if (e.getLineSoFar().length() == 0)
 				throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
@@ -86,6 +96,11 @@ public class Request extends Message {
 		this.method = method;
 	}
 
+	/**
+	 * @return the "Request-URI" as sent by the client in the first line of the HTTP request (quoting from <a
+	 *         href="https://tools.ietf.org/html/rfc2616#page-36">RFC 2616</a>: Request-URI = "*" | absoluteURI |
+	 *         abs_path | authority )
+	 */
 	public String getUri() {
 		return uri;
 	}
@@ -93,16 +108,16 @@ public class Request extends Message {
 	public void setUri(String uri) {
 		this.uri = uri;
 	}
-	
+
 	public void create(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
 		this.method = method;
 		this.uri = uri;
 		if (!protocol.startsWith("HTTP/"))
 			throw new RuntimeException("Unknown protocol '" + protocol + "'");
 		this.version = protocol.substring(5);
-		
+
 		this.header = header;
-		
+
 		createBody(in);
 	}
 
@@ -119,11 +134,12 @@ public class Request extends Message {
 		return buf.toString();
 	}
 
+	@Override
 	protected void createBody(InputStream in) throws IOException {
-		LOG.debug("createBody");
+		log.debug("createBody");
 
 		if (isBodyEmpty()) {
-			LOG.debug("empty body created");
+			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}
@@ -180,7 +196,7 @@ public class Request extends Message {
 
 	/**
 	 * NTLM and SPNEGO authentication schemes authorize HTTP connections, not single requests.
-	 * 
+	 *
 	 * We therefore have to "bind" the targetConnection to the incoming connection to ensure
 	 * the same targetConnection is used again for further requests.
 	 */
@@ -188,48 +204,78 @@ public class Request extends Message {
 		String auth = header.getFirstValue(Header.AUTHORIZATION);
 		return auth != null && (auth.startsWith("NTLM") || auth.startsWith("Negotiate"));
 	}
-	
+
 	@Override
 	public int estimateHeapSize() {
-		return super.estimateHeapSize() + 
+		return super.estimateHeapSize() +
 				12 +
 				(method != null ? 2*method.length() : 0) +
 				(uri != null ? 2*uri.length() : 0);
 	}
-	
+
+	@Override
+	public <T extends Message> T createSnapshot() throws Exception {
+		Request result = this.createMessageSnapshot(new Request());
+
+		result.setUri(this.getUri());
+		result.setMethod(this.getMethod());
+
+		return (T) result;
+	}
+
+	public final void writeSTOMP(OutputStream out) throws IOException {
+		out.write(getMethod().getBytes(Constants.UTF_8));
+		out.write(10);
+		for (HeaderField hf : header.getAllHeaderFields())
+			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(Constants.UTF_8));
+		out.write(10);
+		body.write(new PlainBodyTransferrer(out));
+	}
+
+
 	public static class Builder {
 		private Request req;
 		private String fullURL;
-		
+
 		public Builder() {
 			req = new Request();
 			req.setVersion("1.1");
 		}
-		
+
 		public Request build() {
 			return req;
 		}
-		
+
 		public Exchange buildExchange() {
-		    Exchange exc = new Exchange(null);
+			Exchange exc = new Exchange(null);
 			exc.setRequest(build());
-		    exc.getDestinations().add(fullURL);
-		    return exc;
+			exc.getDestinations().add(fullURL);
+			return exc;
 		}
-		
+
 		public Builder method(String method) {
 			req.setMethod(method);
 			return this;
 		}
-		
-		public Builder url(String url) {
+
+		public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
 			fullURL = url;
-			req.setUri(URLUtil.getPathQuery(url));
+			req.setUri(URLUtil.getPathQuery(uriFactory, url));
 			return this;
 		}
-		
+
 		public Builder header(String headerName, String headerValue) {
 			req.getHeader().add(headerName, headerValue);
+			return this;
+		}
+
+		public Builder contentType(String value) {
+			req.getHeader().add(Header.CONTENT_TYPE, value);
+			return this;
+		}
+
+		public Builder header(Header headers) {
+			req.setHeader(headers);
 			return this;
 		}
 
@@ -242,6 +288,50 @@ public class Request extends Message {
 			req.setBodyContent(body);
 			return this;
 		}
+
+		public Builder body(long contentLength, InputStream body) throws IOException {
+			req.body = new Body(body, contentLength);
+			Header header = req.getHeader();
+			header.removeFields(Header.CONTENT_ENCODING);
+			header.removeFields(Header.TRANSFER_ENCODING);
+			header.setContentLength(contentLength);
+			return this;
+		}
+
+		public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_POST).url(uriFactory, url);
+		}
+
+		public Builder post(String url) throws URISyntaxException {
+			return post(new URIFactory(), url);
+		}
+
+		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_GET).url(uriFactory, url);
+		}
+
+		/**
+		 * Sets the request's method to "GET" and the URI to the parameter. Uses a standard {@link URIFactory}.
+		 */
+		public Builder get(String url) throws URISyntaxException {
+			return get(new URIFactory(), url);
+		}
+		
+		public Builder delete(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_DELETE).url(uriFactory, url);
+		}
+
+		public Builder delete(String url) throws URISyntaxException {
+			return delete(new URIFactory(), url);
+		}
+		
+		public Builder put(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_PUT).url(uriFactory, url);
+		}
+
+		public Builder put(String url) throws URISyntaxException {
+			return put(new URIFactory(), url);
+		}
 	}
-	
+
 }

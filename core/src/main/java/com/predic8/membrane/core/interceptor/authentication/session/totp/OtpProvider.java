@@ -24,18 +24,21 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.predic8.membrane.core.interceptor.authentication.session.totp.PasscodeGenerator.Signer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class containing implementation of HOTP/TOTP. Generates OTP codes for one or
  * more accounts.
- * 
+ *
  * Source: http://code.google.com/p/google-authenticator
  * License: ASL 2.0
- * 
+ *
  * @author Steve Weis (sweis@google.com)
  * @author Cem Paya (cemp@google.com)
  */
 public class OtpProvider {
+	private static Logger log = LoggerFactory.getLogger(OtpProvider.class.getName());
 
 	private static final int PIN_LENGTH = 6; // HOTP or TOTP
 
@@ -70,9 +73,9 @@ public class OtpProvider {
 				}
 			};
 		} catch (NoSuchAlgorithmException error) {
-			error.printStackTrace();
+			log.error("", error);
 		} catch (InvalidKeyException error) {
-			error.printStackTrace();
+			log.error("", error);
 		}
 
 		return null;
@@ -80,7 +83,7 @@ public class OtpProvider {
 
 	/**
 	 * Computes the one-time PIN given the secret key.
-	 * 
+	 *
 	 * @param secret
 	 *            the secret key
 	 * @param otp_state

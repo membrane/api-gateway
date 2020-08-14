@@ -16,12 +16,13 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.ArrayList;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -31,12 +32,12 @@ import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.schema.Schema;
+import com.predic8.wsdl.Types;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
-	static Log log = LogFactory
-			.getLog(WSDLValidator.class.getName());
+	static Logger log = LoggerFactory.getLogger(WSDLValidator.class.getName());
 
 	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
 		super(resourceResolver, location, failureHandler, skipFaults);
@@ -45,23 +46,29 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);
 	}
-	
+
+	@Override
 	protected List<Schema> getSchemas() {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(location);
 		try {
 			WSDLParser wsdlParser = new WSDLParser();
-			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver());
-			return wsdlParser.parse(ctx).getTypes().getSchemas();
+			//System.out.println("Resolver----" + resourceResolver);
+			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver().toExternalResolver());
+			List<Schema> schemaList = new ArrayList<Schema>();
+			for (Types t : wsdlParser.parse(ctx).getTypes())
+				schemaList.addAll(t.getSchemas());
+			return schemaList;
 		} catch (RuntimeException e) {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		}
 	}
-	
+
+	@Override
 	protected Source getMessageBody(InputStream input) throws Exception {
 		return MessageUtil.getSOAPBody(input);
 	}
-	
+
 	@Override
 	protected Response createErrorResponse(String message) {
 		return HttpUtil.createSOAPValidationErrorResponse(message);
@@ -77,7 +84,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	protected boolean isFault(Message msg) {
 		return SOAPUtil.isFault(xmlInputFactory, xopr, msg);
 	}
-	
+
 	@Override
 	protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
 		if (SOAPUtil.isSOAP(xmlInputFactory, xopr, msg))

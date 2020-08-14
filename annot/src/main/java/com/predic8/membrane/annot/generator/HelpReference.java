@@ -63,7 +63,7 @@ public class HelpReference {
 			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
 			if (path == null)
 				return;
-			path = path.replace("%VERSION%", "4.0");
+			path = path.replace("%VERSION%", "4.2");
 
 			sw = new StringWriter();
 			XMLOutputFactory output = XMLOutputFactory.newInstance();
@@ -71,19 +71,19 @@ public class HelpReference {
 			xew.writeStartDocument();
 			handle(m);
 			xew.writeEndDocument();
-			
+
 			// indent
-	        TransformerFactory factory = TransformerFactory.newInstance();
-	        Transformer transformer = factory.newTransformer();
-	        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-	        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-	        transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
+			TransformerFactory factory = TransformerFactory.newInstance();
+			Transformer transformer = factory.newTransformer();
+			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+			transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
 
 			xew = null;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		
+
 	}
 
 	private String getFileName(Model m) {
@@ -137,9 +137,9 @@ public class HelpReference {
 			if (primaryParentId != null)
 				xew.writeAttribute("primaryParentId", primaryParentId);
 		}
-		
+
 		handleDoc(ei);
-		
+
 		List<AttributeInfo> ais = ei.getAis();
 		Collections.sort(ais, new Comparator<AttributeInfo>() {
 
@@ -147,13 +147,13 @@ public class HelpReference {
 			public int compare(AttributeInfo o1, AttributeInfo o2) {
 				return o1.getXMLName().compareTo(o2.getXMLName());
 			}
-			
+
 		});
 		OtherAttributesInfo oai = ei.getOai();
-		
+
 		if (ais.size() > 0 && ais.get(0).getXMLName().equals("id"))
 			ais.remove(0);
-		
+
 		if (ais.size() > 0 || oai != null) {
 			xew.writeStartElement("attributes");
 			for (AttributeInfo ai : ais)
@@ -165,15 +165,15 @@ public class HelpReference {
 			}
 			xew.writeEndElement();
 		}
-		
+
 		List<ChildElementInfo> ceis = ei.getCeis();
 		if (ceis.size() > 0) {
 			xew.writeStartElement("children");
-			for (ChildElementInfo cei : ceis) 
+			for (ChildElementInfo cei : ceis)
 				handle(m, main, cei);
 			xew.writeEndElement();
 		}
-		
+
 		xew.writeEndElement();
 	}
 
@@ -208,15 +208,15 @@ public class HelpReference {
 		idsReverse.put(id, xsdTypeName);
 		return id;
 	}
-	*/
+	 */
 
 	private void handle(Model m, MainInfo main, ChildElementInfo cei) throws XMLStreamException {
 		xew.writeStartElement("child");
 		xew.writeAttribute("min", cei.isRequired() ? "1" : "0");
 		xew.writeAttribute("max", cei.isList() ? "unbounded" : "1");
-		
+
 		handleDoc(cei);
-		
+
 		SortedSet<String> possibilities = new TreeSet<String>();
 		for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
 			possibilities.add(ei.getId());
@@ -226,21 +226,21 @@ public class HelpReference {
 			xew.writeAttribute("refId", id);
 			xew.writeEndElement();
 		}
-		
+
 		if (cei.getAnnotation().allowForeign()) {
 			xew.writeStartElement("possibility");
 			xew.writeAttribute("foreign", "true");
 			xew.writeEndElement();
 		}
-		
+
 		xew.writeEndElement();
-		
+
 	}
 
 	private void handle(AttributeInfo ai) throws XMLStreamException {
 		if (ai.getXMLName().equals("id"))
 			return;
-		
+
 		xew.writeStartElement("attribute");
 		xew.writeAttribute("name", ai.getXMLName());
 		xew.writeAttribute("required", Boolean.toString(ai.isRequired()));
@@ -252,19 +252,19 @@ public class HelpReference {
 		Doc doc = info.getDoc(processingEnv);
 		if (doc == null)
 			return;
-		
+
 		xew.writeStartElement("documentation");
-		
+
 		for (Doc.Entry e : doc.getEntries())
 			handleDoc(e);
-		
+
 		xew.writeEndElement();
 	}
-	
+
 	private void handleDoc(Doc.Entry e) throws XMLStreamException {
 		xew.writeCharacters("");
 		xew.flush();
-		
+
 		sw.append(e.getValueAsXMLSnippet(true));
 	}
 

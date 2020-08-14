@@ -35,7 +35,7 @@ public class ResponseInterceptor extends AbstractFlowInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		for (Interceptor i : getInterceptors()) {
 			EnumSet<Flow> f = i.getFlow();
-			
+
 			if (f.contains(Flow.RESPONSE))
 				exc.pushInterceptorToStack(i);
 		}

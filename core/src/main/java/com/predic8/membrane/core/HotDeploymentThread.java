@@ -18,8 +18,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import com.predic8.membrane.core.config.spring.CheckableBeanFactory;
@@ -27,12 +27,12 @@ import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfi
 
 public class HotDeploymentThread extends Thread {
 
-	private static Log log = LogFactory.getLog(HotDeploymentThread.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HotDeploymentThread.class.getName());
 
 	private List<HotDeploymentThread.FileInfo> files = new ArrayList<HotDeploymentThread.FileInfo>();
 	protected AbstractRefreshableApplicationContext applicationContext;
 	private boolean reloading;
-	
+
 	private static class FileInfo {
 		public String file;
 		public long lastModified;
@@ -69,28 +69,29 @@ public class HotDeploymentThread extends Thread {
 	@Override
 	public void run() {
 		log.debug("Spring Hot Deployment Thread started.");
-		OUTER:
 		while (!isInterrupted()) {
 			try {
 				while (!configurationChanged()) {
 					sleep(1000);
-					if (isInterrupted())
-						break OUTER;
 				}
 
 				log.debug("spring configuration changed.");
 
 				if (applicationContext instanceof CheckableBeanFactory)
 					((CheckableBeanFactory)applicationContext).checkForInvalidBeanDefinitions();
-				
+
 				reload();
-				
+
 				break;
 			} catch (InvalidConfigurationException e) {
 				log.error(e.getMessage());
 				log.error("Application context was NOT restarted. Please fix the error in the configuration file.");
 				updateLastModified();
-			} catch (InterruptedException e) {				
+			} catch (InterruptedException e) {
+				// #162 HotDeploymentThread don't stop on Interrupt.
+				// InterruptedException clears interrupt flag. see javadoc Thread.interrupt();
+				// So reset it.
+				interrupt();
 			} catch (Exception e) {
 				log.error("Could not redeploy.", e);
 				updateLastModified();
@@ -107,7 +108,7 @@ public class HotDeploymentThread extends Thread {
 		applicationContext.refresh();
 		applicationContext.start();
 	}
-	
+
 	public void stopASAP() {
 		synchronized (this) {
 			if (reloading)

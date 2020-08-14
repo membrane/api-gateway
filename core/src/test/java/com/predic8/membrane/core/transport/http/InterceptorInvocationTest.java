@@ -39,41 +39,41 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 public class InterceptorInvocationTest {
 
 	private HttpRouter router;
-	
+
 	List<String> backboneInterceptorNames;
-	
+
 	List<String> regularInterceptorNames;
-	
+
 	List<String> ruleInterceptorNames;
-	
+
 	List<String> interceptorSequence;
-	
+
 	@Before
 	public void setUp() throws Exception {
-		
+
 		MockInterceptor.clear();
-		
+
 		ruleInterceptorNames = Arrays.asList(new String[] {"Rule 1", "Rule 2", "Rule 3"});
-		
+
 		regularInterceptorNames = Arrays.asList(new String[] {"TR Normal 1", "TR Normal 2", "TR Normal 3", "TR Normal 4" });
-		
+
 		router = createRouter();
-		
+
 		interceptorSequence = createInterceptorSequence();
-		
+
 	}
 
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	@Test
 	public void testInterceptorSequence() throws Exception {
 		callService();
 
 		MockInterceptor.assertContent(
-				interceptorSequence, 
+				interceptorSequence,
 				getReverseList(interceptorSequence),
 				Arrays.<String>asList());
 	}
@@ -85,25 +85,25 @@ public class InterceptorInvocationTest {
 		}
 		return rule;
 	}
-	
+
 	private void callService() throws HttpException, IOException {
 		new HttpClient().executeMethod(createPostMethod());
 	}
-	
+
 	private PostMethod createPostMethod() {
 		PostMethod post = new PostMethod("http://localhost:4000/axis2/services/BLZService");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml"))); 
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 		return post;
 	}
-	
+
 	private List<String> getReverseList(List<String> list) {
 		List<String> res = new ArrayList<String>(list);
 		Collections.reverse(res);
 		return res;
 	}
-	
+
 	private List<String> createInterceptorSequence() {
 		List<String> sequense = new ArrayList<String>();
 		sequense.addAll(regularInterceptorNames);

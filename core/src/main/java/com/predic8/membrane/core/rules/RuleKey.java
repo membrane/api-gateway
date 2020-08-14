@@ -18,73 +18,76 @@ public interface RuleKey {
 
 	/**
 	 * Returns the TCP port that receives the messages
-	 * @return 
-	 * 		an integer value which corresponds to TCP port
-	 * 		
+	 *
+	 * @return an integer value which corresponds to TCP port
 	 */
-	public int getPort();
-	
+	int getPort();
+
 	/**
 	 * Returns the name of the HTTP method
-	 * @return 
-	 * 		a String specifying the name of the HTTP method
+	 *
+	 * @return a String specifying the name of the HTTP method
 	 */
-	public String getMethod();
-	
+	String getMethod();
+
 	/**
-	 * Returns the request URI. 
-	 * For the request 
-	 * 		GET index.htm
+	 * Returns the request URI.
+	 * For the request
+	 * GET index.htm
 	 * it is
-	 * 		index.htm
-	 * 
-	 * @return 
-	 * 		a String specifying the request URI
+	 * index.htm
+	 *
+	 * @return a String specifying the request URI
 	 */
-	public String getPath();
-	
+	String getPath();
+
 	/**
 	 * @return the value of the HTTP Host header field
 	 */
-	public String getHost();
-	
+	String getHost();
+
 	/**
 	 * When isMethodWildcard is set to true any value of the HTTP Host header will match
-	 * @return  true
-	 * 				if HTTP method wildcard is set to true
-	 * 			false
-	 * 				otherwise
-	 */			
-	 
-	public boolean isMethodWildcard();
-	
-	/**
-	 * If isPathRegExp is true, than the path will be treated as a regexp pattern. 
-	 * The path of the incoming request will be match against this regexp. 
-	 * 
-	 * return true
-	 * 			if a path is an regexp expression
-	 * 		  false
-	 * 			otherwise
+	 *
+	 * @return true
+	 * if HTTP method wildcard is set to true
+	 * false
+	 * otherwise
 	 */
-	public boolean isPathRegExp();
-	
-	public boolean isUsePathPattern();
-	
-	public void setUsePathPattern(boolean usePathPattern);
-	
-	public void setPathRegExp(boolean pathRegExp);
-	
-	public void setPath(String path);
-	
-	public boolean matchesPath(String path); 
-	
+
+	boolean isMethodWildcard();
+
+	/**
+	 * If isPathRegExp is true, than the path will be treated as a regexp pattern.
+	 * The path of the incoming request will be match against this regexp.
+	 * <p>
+	 * return true
+	 * if a path is an regexp expression
+	 * false
+	 * otherwise
+	 */
+	boolean isPathRegExp();
+
+	boolean isUsePathPattern();
+
+	void setUsePathPattern(boolean usePathPattern);
+
+	void setPathRegExp(boolean pathRegExp);
+
+	void setPath(String path);
+
+	boolean matchesPath(String path);
+
 	/**
 	 * IP address to bind to, or null to bind to 0.0.0.0 (=any local address).
 	 */
-	public String getIp();
-	
-	public void setIp(String ip);
+	String getIp();
 
-	public boolean matchesHostHeader(String hostHeader);
+	void setIp(String ip);
+
+	boolean matchesHostHeader(String hostHeader);
+
+	boolean matchesVersion(String version);
+
+	boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP);
 }

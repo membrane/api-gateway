@@ -31,18 +31,18 @@ public class MockInterceptor extends AbstractInterceptor {
 
 	private final String label;
 	private final Set<String> failurePoints;
-	
+
 
 	public MockInterceptor(String label) {
 		this(label, new String[]{});
 	}
-	
+
 	public MockInterceptor(String label, String[] failurePoints) {
 		this.label = label;
-		name = "MockInterceptor: "+label; 
+		name = "MockInterceptor: "+label;
 		this.failurePoints = new HashSet<String>(Arrays.asList(failurePoints));
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		reqLabels.add(label);
@@ -50,28 +50,28 @@ public class MockInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		return super.handleRequest(exc);
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		respLabels.add(label);
 		if (failurePoints.contains("response"))
 			return Outcome.ABORT;
 		return super.handleResponse(exc);
-	}	
-	
+	}
+
 	@Override
 	public void handleAbort(Exchange exchange) {
 		abortLabels.add(label);
 		if (failurePoints.contains("abort"))
 			throw new RuntimeException("fail in abort");
 	}
-	
+
 	public static void clear() {
 		reqLabels.clear();
 		respLabels.clear();
 		abortLabels.clear();
 	}
-	
+
 	public static void assertContent(List<String> reqLabels, List<String> respLabels, List<String> abortLabels) {
 		assertEquals(reqLabels, MockInterceptor.reqLabels);
 		assertEquals(respLabels, MockInterceptor.respLabels);

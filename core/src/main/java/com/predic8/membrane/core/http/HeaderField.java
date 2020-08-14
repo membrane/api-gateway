@@ -21,17 +21,17 @@ public class HeaderField {
 
 	private HeaderName headerName;
 	private String value;
-	
+
 	public HeaderField(HeaderName headerName,String value) {
 		this.headerName = headerName;
 		this.value = value;
 	}
-	
+
 	public HeaderField(String line) {
 		headerName = new HeaderName(getName(line));
 		value = getValue(line);
 	}
-	
+
 	private String getValue(String line) {
 		return (line.substring(line.indexOf(":")+1)).trim();
 	}
@@ -39,11 +39,11 @@ public class HeaderField {
 	private String getName(String line) {
 		return line.substring(0, line.indexOf(":"));
 	}
-	
+
 	public HeaderField(String headerName,String value) {
 		this(new HeaderName(headerName),value);
 	}
-	
+
 	public HeaderField(HeaderField element) {
 		headerName = new HeaderName(element.headerName);
 		value = element.value;
@@ -60,7 +60,8 @@ public class HeaderField {
 	public void setHeaderName(HeaderName headerName) {
 		this.headerName = headerName;
 	}
-	
+
+	@Override
 	public String toString(){
 		StringBuilder buf = new StringBuilder();
 		buf.append(headerName.toString());
@@ -69,7 +70,7 @@ public class HeaderField {
 		buf.append(Constants.CRLF);
 		return buf.toString();
 	}
-	
+
 	public int estimateHeapSize() {
 		return 2*(4 + headerName.toString().length() + value.length());
 	}

@@ -20,8 +20,8 @@ import java.util.Queue;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -50,17 +50,17 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 @MCElement(name="wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LogManager.getLogger(WSDLPublisherInterceptor.class);
-	
+	private static Logger log = LoggerFactory.getLogger(WSDLPublisherInterceptor.class);
+
 	public WSDLPublisherInterceptor() {
 		name = "WSDL Publisher";
 	}
-	
+
 	/**
 	 * Note that this class fulfills two purposes:
-	 * 
+	 *
 	 * * During the initial processDocuments() run, the XSDs are enumerated.
-	 * 
+	 *
 	 * * During later runs (as well as the initial run, but that's result is discarded),
 	 * the documents are rewritten.
 	 */
@@ -90,7 +90,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						path = Integer.toString(n);
 					}
 				}
-				path = "./" + URLUtil.getName(exc.getDestinations().get(0)) + "?xsd=" + path;
+				path = "./" + URLUtil.getName(router.getUriFactory(), exc.getDestinations().get(0)) + "?xsd=" + path;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -104,7 +104,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 	private final HashMap<String, Integer> paths_reverse = new HashMap<String, Integer>();
 	@GuardedBy("paths")
 	private final Queue<String> documents_to_process = new LinkedList<String>();
-	
+
 	private void processDocuments(Exchange exc) throws Exception {
 		// exc.response is only temporarily used so we can call the WSDLInterceptor
 		// exc.response is set to garbage and should be discarded after this method
@@ -127,13 +127,13 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			}
 		}
 	}
-	
+
 	private String wsdl;
-	
+
 	public String getWsdl() {
 		return wsdl;
 	}
-	
+
 	/**
 	 * @description The WSDL (URL or file).
 	 * @example /WEB-INF/wsdl/ArticleService.wsdl
@@ -148,7 +148,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			documents_to_process.add(wsdl);
 		}
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		// inherit wsdl="..." from SoapProxy
@@ -160,12 +160,12 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			}
 		}
 	}
-	
+
 	@Override
 	public Outcome handleRequest(final Exchange exc) throws Exception {
 		if (!"GET".equals(exc.getRequest().getMethod()))
 			return Outcome.CONTINUE;
-		
+
 		try {
 			String resource = null;
 			if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
@@ -174,7 +174,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 				exc.getResponse().getHeader().setContentType(MimeType.TEXT_XML);
 			}
 			if (exc.getRequestURI().contains("?xsd=")) {
-				Map<String, String> params = URLParamUtil.getParams(exc);
+				Map<String, String> params = URLParamUtil.getParams(router.getUriFactory(), exc);
 				if (params.containsKey("xsd")) {
 					int n = Integer.parseInt(params.get("xsd"));
 					String path;
@@ -198,19 +198,19 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 				return Outcome.RETURN;
 			}
 		} catch (NumberFormatException e) {
-			exc.setResponse(HttpUtil.createHTMLErrorResponse("Bad parameter format.", ""));
+			exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.internalServerError(), "Bad parameter format.", ""));
 			return Outcome.ABORT;
 		} catch (ResourceRetrievalException e) {
 			exc.setResponse(Response.notFound().build());
 			return Outcome.ABORT;
 		}
-			
+
 		return Outcome.CONTINUE;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Publishes the WSDL at " + wsdl + " under \"?wsdl\" (as well as its dependent schemas under similar URLs).";
 	}
-	
+
 }

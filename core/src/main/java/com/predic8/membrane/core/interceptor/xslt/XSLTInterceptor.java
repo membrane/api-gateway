@@ -62,13 +62,13 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		msg.setBodyContent(xsltTransformer.transform(
 				new StreamSource(xopr.reconstituteIfNecessary(msg)), parameter));
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 		xsltTransformer = new XSLTTransformer(xslt, router, concurrency);
 	}
-	
+
 	public String getXslt() {
 		return xslt;
 	}
@@ -82,12 +82,12 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		this.xslt = xslt;
 		this.xsltTransformer = null;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Applies an XSLT transformation.";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		StringBuilder sb = new StringBuilder();
@@ -97,5 +97,5 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		sb.append(" .");
 		return sb.toString();
 	}
-	
+
 }

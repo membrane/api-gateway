@@ -18,8 +18,9 @@ import org.junit.Before;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 public class LoadBalancingWithClusterManagerAndNoSessionTest extends
-		LoadBalancingInterceptorTest {
+LoadBalancingInterceptorTest {
 
+	@Override
 	@Before
 	public void setUp() throws Exception {
 		super.setUp();

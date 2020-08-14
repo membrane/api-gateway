@@ -1,0 +1,9 @@
+{
+	"id": 106825605,
+	"name": "FORD Fusion 1.25 Style",
+	"price": 8990.00,
+	"tags": ["black", "metallic", "gasoline" ],
+	"weight": 1145,
+	"co2": 140,
+	"transmission":"manual"
+}

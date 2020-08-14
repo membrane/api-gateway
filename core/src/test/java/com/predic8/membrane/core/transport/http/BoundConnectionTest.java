@@ -39,7 +39,7 @@ public class BoundConnectionTest {
 
 	HttpRouter router;
 	volatile long connectionHash = 0;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		router = new HttpRouter();
@@ -66,7 +66,7 @@ public class BoundConnectionTest {
 		router.shutdown();
 	}
 
-	
+
 	private Request createRequest(boolean includeAuthorizationHeader) {
 		Request r = new Request();
 		r.setMethod("GET");
@@ -78,24 +78,24 @@ public class BoundConnectionTest {
 		r.getHeader().add(Header.HOST, "localhost");
 		return r;
 	}
-	
+
 	private void doExchange(Connection c, boolean includeAuthorizationHeader) throws IOException, EndOfStreamException {
 		createRequest(includeAuthorizationHeader).write(c.out);
 		Response r = new Response();
 		r.read(c.in, true);
 	}
-	
+
 	@Test
 	public void testBinding() throws Exception {
 		Connection c = null, c2 = null;
 		try {
-			c = Connection.open(InetAddress.getByName("localhost"), 3021, null, null, 30000);
+			c = Connection.open("localhost", 3021, null, null, 30000);
 			doExchange(c, true); // this opens a bound targetConnection
 
 			long authenticatedConnectionHash = connectionHash;
 			assertTrue(authenticatedConnectionHash != 0);
 
-			c2 = Connection.open(InetAddress.getByName("localhost"), 3021, null, null, 30000);
+			c2 = Connection.open("localhost", 3021, null, null, 30000);
 			doExchange(c2, true); // this should not reuse the same targetConnection
 
 			long authenticatedConnection2Hash = connectionHash;
@@ -110,7 +110,7 @@ public class BoundConnectionTest {
 			doExchange(c, false); // this reuses the bound targetConnection1 (now even without the "Authorization" header)
 			assertTrue(connectionHash == authenticatedConnectionHash);
 
-			doExchange(c2, false);  // this reuses the bound targetConnection2 
+			doExchange(c2, false);  // this reuses the bound targetConnection2
 			assertTrue(connectionHash == authenticatedConnection2Hash);
 		} finally {
 			if (c != null)

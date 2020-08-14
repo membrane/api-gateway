@@ -14,67 +14,84 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * A HTTP message (request or response).
  */
 public abstract class Message {
 
-	private static Log log = LogFactory.getLog(Message.class.getName());
-	
+	private static Logger log = LoggerFactory.getLogger(Message.class.getName());
+
 	protected Header header;
-	
+
 	protected AbstractBody body;
-	
+
 	protected String version = "1.1";
 
 	private boolean released = false;
-	
+
 	private String errorMessage = "";
-	
-	
-	
+
+
+
 	public Message() {
 		header = new Header();
 		body = new EmptyBody();
-		
+
 	}
 
 	/**
 	 * If the message is HTTP 1.1 but the header has no information about the
 	 * content length, then an assumption is made that after the body the server
 	 * will send an EOF. So the body is read till end of the stream.
-	 * 
+	 *
 	 * See http://www.ietf.org/rfc/rfc2145.txt
 	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
-		parseStartLine(in);		
+		parseStartLine(in);
 		header = new Header(in);
-				
-		if (createBody) 
-		  createBody(in);
-	} 
+
+		if (createBody)
+			createBody(in);
+	}
 
 	public void readBody() throws IOException {
 		body.read();
 	}
-	
+
+	public void discardBody() throws IOException {
+		if (body.hasRelevantObservers())
+			body.read();
+		else
+			body.discard();
+	}
+
 	public AbstractBody getBody() {
 		return body;
 	}
-	
+
+	/**
+	 * <p>Probably you want to use {@link #getBodyAsStreamDecoded()} instead:</p>
+	 *
+	 * <p>Transfer-Encodings (e.g. chunking) have been unapplied, but Content-Encodings (e.g. gzip) have <b>not</b>.</p>
+	 *
+	 * <p>Returns the body as a stream.</p>
+	 *
+	 * <p>Supports streaming: The HTTP message does not have to be completely received yet for this method to return.</p>
+	 *
+	 * @see AbstractBody#getContentAsStream()
+	 */
 	public InputStream getBodyAsStream() {
 		try {
 			return body.getContentAsStream();
@@ -83,9 +100,16 @@ public abstract class Message {
 			throw new RuntimeException("Could not get body as stream", e);
 		}
 	}
-	
+
 	private static XOPReconstitutor xopr = new com.predic8.membrane.core.multipart.XOPReconstitutor();
-	
+
+	/**
+	 * <p>Returns the logical body content.</p>
+	 *
+	 * <p>Any Transfer-Encodings (e.g. chunking) and/or Content-Encodings (e.g. gzip) have been unapplied.</p>
+	 *
+	 * <p>Supports streaming: The HTTP message does not have to be completely received yet for this method to return.</p>
+	 */
 	public InputStream getBodyAsStreamDecoded() {
 		// TODO: this logic should be split up into configurable decoding modules
 		// TODO: decoding result should be cached
@@ -99,9 +123,17 @@ public abstract class Message {
 			throw new RuntimeException("Could not decode body stream", e);
 		}
 	}
-	
+
 	/**
-	 * As this method has bad performance, it should not be used in any critical component. 
+	 * <p>As this method has bad performance, it should <b>not</b> be used in any critical component.
+	 * (Use {@link #getBodyAsStreamDecoded()} instead.)</p>
+	 *
+	 * <p>Allocates a new {@link String} object for the whole body (potentially performing charset conversion).</p>
+	 *
+	 * <p>Blocks until the body has been fully received.</p>
+	 *
+	 * <p>(... and more bad internal performance)</p>
+	 *
 	 * @return the message's body as a Java String.
 	 */
 	public String getBodyAsStringDecoded() {
@@ -112,50 +144,58 @@ public abstract class Message {
 		}
 	}
 
+	/**
+	 * Sets the body.
+	 *
+	 * Does <b>NOT</b> adjust the header fields (<tt>Content-Length</tt> etc.): Use {@link #setBodyContent(byte[])} instead.
+	 */
 	public void setBody(AbstractBody b) {
 		body = b;
 	}
 
+	/**
+	 * Sets the body. Also adjusts the header fields (<tt>Content-Length</tt>, <tt>Content-Encoding</tt>, <tt>Transfer-Encoding</tt>).
+	 */
 	public void setBodyContent(byte[] content) {
 		body = new Body(content);
 		header.removeFields(Header.CONTENT_ENCODING);
 		header.removeFields(Header.TRANSFER_ENCODING);
 		header.setContentLength(content.length);
 	}
-	
+
 	protected void createBody(InputStream in) throws IOException {
- 		log.debug("createBody");
+		log.debug("createBody");
 		if (isHTTP10()) {
-			body = new Body(in, header.getContentLength()); 
+			body = new Body(in, header.getContentLength());
 			return;
 		}
-		
+
 		if (header.isChunked()) {
 			body = new ChunkedBody(in);
 			return;
 		}
-		
-		if (!isKeepAlive()  || header.hasContentLength() || header.isProxyConnectionClose()) {			
+
+		if (!isKeepAlive()  || header.hasContentLength() || header.isProxyConnectionClose()) {
 			body = new Body(in, header.getContentLength());
 			return;
 		}
-		
-		
+
+
 		if (log.isDebugEnabled()) {
 			log.error("Message has no content length: " + toString());
 		}
-		
+
 		if (this instanceof Request && ((Request)this).isOPTIONSRequest()) {
 			// OPTIONS without Transfer-Encoding and Content-Length has no body,
 			// see http://www.ietf.org/rfc/rfc2616.txt section 9.2
 			body = new EmptyBody();
 			return;
 		}
-		
+
 		// Message is HTTP 1.1 but the header has no information about the content length.
 		// An assumption is made that after the body the server will send EOF. So the body is read till end of the stream
 		// See http://www.ietf.org/rfc/rfc2145.txt
-		body = new Body(in); 
+		body = new Body(in);
 	}
 
 	abstract protected void parseStartLine(InputStream in) throws IOException, EndOfStreamException;
@@ -165,7 +205,7 @@ public abstract class Message {
 	}
 
 	/**
-	 *preserve synchronized keyword, notify method is called  
+	 *preserve synchronized keyword, notify method is called
 	 */
 	public synchronized void release() {
 		notify();
@@ -184,32 +224,32 @@ public abstract class Message {
 		writeStartLine(out);
 		header.write(out);
 		out.write(Constants.CRLF_BYTES);
-		
+
 		if (header.is100ContinueExpected()) {
 			out.flush();
 			return;
 		}
-			
+
 		body.write(getHeader().isChunked() ? new ChunkedBodyTransferrer(out) : new PlainBodyTransferrer(out));
-		
+
 		out.flush();
 	}
-	
+
 	/**
 	 * The start line supposedly only contains ASCII characters. But since
 	 * {@link HttpUtil#readLine(InputStream)} converts the input byte-by-byte
-	 * to char-by-char, we use ISO-8859-1 for output.  
+	 * to char-by-char, we use ISO-8859-1 for output.
 	 */
 	public void writeStartLine(OutputStream out) throws IOException {
 		out.write(getStartLine().getBytes(Constants.ISO_8859_1_CHARSET));
 	}
 
 	public abstract String getStartLine();
-	
+
 	public boolean isHTTP11() {
 		return version.equalsIgnoreCase("1.1");
 	}
-	
+
 	public boolean isHTTP10() {
 		return version.equalsIgnoreCase("1.0");
 	}
@@ -225,20 +265,20 @@ public abstract class Message {
 
 	@Override
 	public String toString() {
-	    return getStartLine() + header.toString() + Constants.CRLF + body.toString();
+		return getStartLine() + header.toString() + Constants.CRLF + body.toString();
 	}
-	
+
 	public boolean isKeepAlive() {
 		if (isHTTP10())
 			return false;
 		if (header.getConnection() == null)
 			return true;
-		if (header.isConnectionClose()) 
+		if (header.isConnectionClose())
 			return false;
-		
+
 		if (header.isProxyConnectionClose())
 			return false;
-		
+
 		return true;
 	}
 
@@ -255,78 +295,100 @@ public abstract class Message {
 	}
 
 	public boolean isBodyEmpty() throws IOException {
-		if (header.hasContentLength()) 
+		if (header.hasContentLength())
 			return header.getContentLength() == 0;
-		
-		
+
+
 		if (getBody().read)
 			return getBody().getLength() == 0;
-		
+
 		return false;
 	}
-	
-	
+
+
 	public boolean isImage() {
-		if (header.getContentType() == null) 
+		if (header.getContentType() == null)
 			return false;
 		return header.getContentType().indexOf("image") >= 0;
 	}
-	
+
 	public boolean isXML() {
-		if (header.getContentType() == null) 
+		if (header.getContentType() == null)
 			return false;
-		return header.getContentType().indexOf("xml") > 0;
+		return header.getContentType().toLowerCase().indexOf("xml") > 0;
 	}
-	
+
 	public boolean isJSON() {
-		if (header.getContentType() == null) 
+		if (header.getContentType() == null)
 			return false;
 		return header.getContentType().indexOf("json") > 0;
 	}
-	
+
 	public boolean isHTML() {
-		if (header.getContentType() == null) 
+		if (header.getContentType() == null)
 			return false;
 		return header.getContentType().indexOf("html") > 0;
 	}
-	
+
 	public boolean isCSS() {
-		if (header.getContentType() == null) 
+		if (header.getContentType() == null)
 			return false;
 		return header.getContentType().indexOf("css") > 0;
 	}
-	
+
 	public boolean isJavaScript() {
-		if (header.getContentType() == null) 
+		if (header.getContentType() == null)
 			return false;
 		return header.getContentType().indexOf("javascript") > 0;
 	}
-	
+
 	public boolean isGzip() {
 		return "gzip".equalsIgnoreCase(header.getContentEncoding());
 	}
-	
+
 	public boolean isDeflate() {
 		return "deflate".equalsIgnoreCase(header.getContentEncoding());
 	}
-	
+
 	public String getCharset() {
 		return header.getCharset();
 	}
-	
+
 	public void addObserver(MessageObserver observer) {
 		body.addObserver(observer);
 	}
-	
+
 	public int estimateHeapSize() {
 		try {
 			return 100 +
-					(header != null ? header.estimateHeapSize() : 0) + 
+					(header != null ? header.estimateHeapSize() : 0) +
 					(body != null ? body.isRead() ? body.getLength() : 0 : 0) +
 					(errorMessage != null ? 2*errorMessage.length() : 0);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
+    public abstract <T extends Message> T createSnapshot() throws Exception;
+
+	public <T extends Message> T createMessageSnapshot(T result) throws IOException {
+		result.setHeader(new Header(this.getHeader()));
+		result.setBody(new Body(this.getBodyAsStream()));
+		result.setErrorMessage(this.getErrorMessage());
+		result.setReleased(this.isReleased());
+
+		return result;
+	}
+
+	public boolean isReleased() {
+		return released;
+	}
+
+	public void setReleased(boolean released) {
+		this.released = released;
+	}
+
+    public boolean containsObserver(MessageObserver obs){
+		return body.observers.contains(obs);
+	}
 }

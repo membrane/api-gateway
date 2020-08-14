@@ -18,10 +18,10 @@ import java.io.IOException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -41,8 +41,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 @MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
 
-	private static final Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());
-	
+	private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class.getName());
+
 	private String file;
 
 	private AccessControl accessControl;
@@ -51,14 +51,14 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		setDisplayName("Access Control");
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Resource resource;
 		try {
 			resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
-			log.error(e);
+			log.error("",e);
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
@@ -89,33 +89,33 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return file;
 	}
 
+	@Override
 	public void init() throws Exception {
 		accessControl = parse(file, router);
 	}
-	
+
 	public AccessControl getAccessControl() {
 		return accessControl;
 	}
 
 	protected AccessControl parse(String fileName, Router router) throws Exception {
-	    try {
+		try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
 			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(router.getResolverMap()
 					.resolve(ResolverMap.combine(router == null ? null : router.getBaseLocation(), fileName))));
-		    AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
-		    res.init(router);
+			AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
+			res.init(router);
 			return res;
-	    } catch (Exception e) {
-	    	log.error("Error initializing accessControl.", e);
-	    	e.printStackTrace();
-	    	System.err.println("Error initializing accessControl: terminating.");
-	    	throw new RuntimeException(e);
-	    }
+		} catch (Exception e) {
+			log.error("Error initializing accessControl.", e);
+			System.err.println("Error initializing accessControl: terminating.");
+			throw new RuntimeException(e);
+		}
 	}
-	
+
 	@Override
 	public String getShortDescription() {
-		return "Authenticates incoming requests based on the file " + HtmlUtils.htmlEscape(file) + " .";
+		return "Authenticates incoming requests based on the file " + StringEscapeUtils.escapeHtml(file) + " .";
 	}
-	
+
 }

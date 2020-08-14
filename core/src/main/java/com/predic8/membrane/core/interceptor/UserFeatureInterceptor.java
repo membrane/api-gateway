@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -22,14 +22,14 @@ import com.predic8.membrane.core.rules.Rule;
 
 /**
  * Handles features that are user-configured in proxies.xml .
- * 
+ *
  * Not that we do not implement handleResponse() as this will be
  * automatically done by the stack-unwinding in {@link InterceptorFlowController}.
  */
 @MCElement(name="userFeature")
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
-	private static final Log log = LogFactory.getLog(UserFeatureInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());
 	private static final InterceptorFlowController flowController = new InterceptorFlowController();
 
 	public UserFeatureInterceptor() {
@@ -41,7 +41,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Rule predecessorRule = exc.getRule();
 		Outcome outcome = flowController.invokeRequestHandlers(exc, predecessorRule.getInterceptors());
-		
+
 		while (isTargetInternalAndContinue(exc, outcome)) {
 			log.debug("routing to serviceProxy with name: " + getServiceProxyName(exc));
 

@@ -27,21 +27,23 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
 public class XSLTTransformer {
-	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
 
-	private final TransformerFactory fac = TransformerFactory.newInstance();
+	private final TransformerFactory fac;
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final String styleSheet;
-	
+
 	public XSLTTransformer(String styleSheet, final Router router, final int concurrency) throws Exception {
+		fac = TransformerFactory.newInstance();
+
 		this.styleSheet = styleSheet;
 		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
 		transformers = new ArrayBlockingQueue<Transformer>(concurrency);
@@ -58,7 +60,7 @@ public class XSLTTransformer {
 			}
 		});
 	}
-	
+
 	private void createOneTransformer(ResolverMap rr, String baseLocation) throws TransformerConfigurationException, InterruptedException, ResourceRetrievalException {
 		Transformer t;
 		if (isNullOrEmpty(styleSheet))
@@ -74,11 +76,11 @@ public class XSLTTransformer {
 	public byte[] transform(Source xml) throws Exception {
 		return transform(xml, new HashMap<String, String>());
 	}
-	
+
 	public byte[] transform(Source xml, Map<String, String> parameters)
 			throws Exception {
 		log.debug("applying transformation: " + styleSheet);
-		
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Transformer t = transformers.take();
 		try {
@@ -87,9 +89,9 @@ public class XSLTTransformer {
 			} catch (NullPointerException e) {
 				// do nothing
 			}
-	 		for (Map.Entry<String, String> e : parameters.entrySet()) {
-	 			t.setParameter(e.getKey(), e.getValue());
-	 		}
+			for (Map.Entry<String, String> e : parameters.entrySet()) {
+				t.setParameter(e.getKey(), e.getValue());
+			}
 			t.transform(xml, new StreamResult(baos));
 		} finally {
 			transformers.put(t);

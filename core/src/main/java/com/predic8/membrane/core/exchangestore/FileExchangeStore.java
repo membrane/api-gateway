@@ -16,15 +16,20 @@ package com.predic8.membrane.core.exchangestore;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -46,13 +51,13 @@ import com.predic8.membrane.core.util.TextUtil;
 @MCElement(name="fileExchangeStore")
 public class FileExchangeStore extends AbstractExchangeStore {
 
-	private static Log log = LogFactory.getLog(FileExchangeStore.class
+	private static Logger log = LoggerFactory.getLogger(FileExchangeStore.class
 			.getName());
 
 	private static AtomicInteger counter = new AtomicInteger();
 
-	private static final String DATE_FORMAT = "'h'HH'm'mm's'ss'ms'SSS"; 
-	
+	private static final String DATE_FORMAT = "'h'HH'm'mm's'ss'ms'SSS";
+
 	private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<DateFormat>();
 
 	private static final String separator = System
@@ -62,17 +67,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private String dir;
 
-	private boolean raw;
-
 	private File directory;
 
+	private boolean raw = false;
 	private boolean saveBodyOnly = false;
+	private int maxDays = -1;
+
+	private Timer oldFilesCleanupTimer;
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		try {
 			Message m = flow == Flow.REQUEST ? exc.getRequest() : exc.getResponse();
 			// TODO: [fix me] support multi-snap
-			// TODO: [fix me] snap message headers *here*, not in observer 
+			// TODO: [fix me] snap message headers *here*, not in observer
 			if (m != null)
 				m.addObserver(new MessageObserver() {
 					public void bodyRequested(AbstractBody body) {
@@ -85,7 +92,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			throw new RuntimeException(e);
 		}
 	}
-		
+
 	private void snapInternal(AbstractExchange exc, Flow flow) {
 		int fileNumber = counter.incrementAndGet();
 
@@ -114,7 +121,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 						writeFile(exc.getResponse(), buf2.toString());
 				}
 			} catch (Exception e) {
-				log.error(e, e);
+				log.error("{}",e, e);
 			}
 		} else {
 			log.error("Directory does not exists or file is not a directory: "+ buf.toString());
@@ -133,7 +140,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		buf.append(time.get(Calendar.DAY_OF_MONTH));
 		return buf;
 	}
-	
+
 	private static DateFormat getDateFormat() {
 		DateFormat df = dateFormat.get();
 		if (df == null) {
@@ -165,12 +172,74 @@ public class FileExchangeStore extends AbstractExchangeStore {
 					os.write(TextUtil.formatXML(
 							new InputStreamReader(msg.getBodyAsStream(), msg
 									.getHeader().getCharset()))
-							.getBytes(Constants.UTF_8));
+									.getBytes(Constants.UTF_8));
 				else
 					os.write(msg.getBody().getContent());
 			}
 		} finally {
 			os.close();
+		}
+	}
+
+	public void initializeTimer() {
+		if (this.maxDays < 0) {
+			return; // don't do anything if this feature is deactivated
+		}
+
+		oldFilesCleanupTimer = new Timer("Clean up old log files", true);
+
+		// schedule first run for the night
+		Calendar firstRun = Calendar.getInstance();
+		firstRun.set(Calendar.HOUR_OF_DAY, 3);
+		firstRun.set(Calendar.MINUTE, 14);
+
+		// schedule for the next day if the scheduled execution time is before now
+		if (firstRun.before(Calendar.getInstance()))
+			firstRun.add(Calendar.DAY_OF_MONTH, 1);
+
+		oldFilesCleanupTimer.scheduleAtFixedRate(
+				new TimerTask() {
+					@Override
+					public void run() {
+						try {
+							deleteOldFolders(Calendar.getInstance());
+						} catch (IOException e) {
+							log.error("", e);
+						}
+					}
+				},
+				firstRun.getTime(),
+				24*60*60*1000		// one day
+				);
+	}
+
+	public void deleteOldFolders(Calendar now) throws IOException {
+		if (this.maxDays < 0) {
+			return; // don't do anything if this feature is deactivated
+		}
+
+		Calendar threshold = now;
+		threshold.add(Calendar.DAY_OF_MONTH, -maxDays);
+
+		ArrayList<File> folders3 = new DepthWalker(3).getDirectories(new File(dir));
+
+		ArrayList<File> deletion = new ArrayList<File>();
+
+		for (File f : folders3) {
+
+			int day =  Integer.parseInt(f.getName());
+			int mon =  Integer.parseInt(f.getParentFile().getName());
+			int year = Integer.parseInt(f.getParentFile().getParentFile().getName());
+			Calendar folderTime = Calendar.getInstance();
+			folderTime.clear();
+			folderTime.set(year, mon-1, day);
+			if (folderTime.before(threshold)) {
+				deletion.add(f);
+			}
+		}
+
+		for (File d : deletion) {
+			FileUtils.deleteDirectory(d);
 		}
 	}
 
@@ -194,33 +263,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				"Method removeAllExchanges() is not supported by FileExchangeStore");
 	}
 
-	public String getDir() {
-		return dir;
-	}
-
-	/**
-	 * @description Directory where the exchanges are saved.
-	 * @example logs
-	 */
-	@Required
-	@MCAttribute
-	public void setDir(String dir) {
-		this.dir = dir;
-	}
-
-	public boolean isRaw() {
-		return raw;
-	}
-
-	/**
-	 * @default false
-	 * @example true
-	 */
-	@MCAttribute
-	public void setRaw(boolean raw) {
-		this.raw = raw;
-	}
-
 	public StatisticCollector getStatistics(RuleKey ruleKey) {
 		return null;
 	}
@@ -241,17 +283,61 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		// ignore
 	}
 
+	public String getDir() {
+		return dir;
+	}
+	/**
+	 * @description Directory where the exchanges are saved.
+	 * @example logs
+	 */
+	@Required
+	@MCAttribute
+	public void setDir(String dir) {
+		this.dir = dir;
+	}
+
+	public boolean isRaw() {
+		return raw;
+	}
+	/**
+	 * @default false
+	 * @description If this is true, headers will always be printed (overriding
+	 *              saveBodyOnly) and the body of the exchange won't be
+	 *              formatted nicely.
+	 * @example true
+	 */
+	@MCAttribute
+	public void setRaw(boolean raw) {
+		this.raw = raw;
+	}
+
 	public boolean isSaveBodyOnly() {
 		return saveBodyOnly;
 	}
-
 	/**
 	 * @default false
+	 * @description If this is true, no headers will be written to the exchange
+	 *              log files.
 	 * @example true
 	 */
 	@MCAttribute
 	public void setSaveBodyOnly(boolean saveBodyOnly) {
 		this.saveBodyOnly = saveBodyOnly;
+	}
+
+	public int getMaxDays() {
+		return maxDays;
+	}
+	/**
+	 * @default -1
+	 * @description Number of days for which exchange logs are preserved. A
+	 *              value smaller than zero deactivates the deletion of old
+	 *              logs.
+	 * @example 60
+	 */
+	@MCAttribute
+	public void setMaxDays(int maxDays) {
+		this.maxDays = maxDays;
 	}
 
 }

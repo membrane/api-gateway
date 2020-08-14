@@ -1,0 +1,49 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+
+	<!-- <simpleApiConfig> - this bean is implicitly here when no other api configurator is specified.
+		 In this example we use the file base api management-->
+	<router>
+
+		<!-- To use API Management one has to explicitly specifiy the transport chain of Membrane-->
+		<transport>
+			<ruleMatching />
+			<exchangeStore />
+			<dispatching />
+
+			<!-- API Management is activated by putting it in the transport chain between dispatching and reverseProxying -->
+			<apiManagement>
+				<!-- API Management currently has 2 interceptors, a rate limiter and quota ( bandwidth limiter ) -->
+				<amRateLimiter/>
+				<amQuota/>
+			</apiManagement>
+
+			<reverseProxying />
+			<userFeature />
+			<httpClient />
+		</transport>
+
+
+		<!-- API Management works with service proxy names. Thus the name attribute needs to be defined -->
+		<serviceProxy port="8080" name="Web Page">
+			<target host="www.thomas-bayer.com" port="80"/>
+		</serviceProxy>
+
+		<serviceProxy port="8081" name="Names API">
+			<path>/restnames</path>
+			<target host="www.thomas-bayer.com" port="80"/>
+		</serviceProxy>
+
+		<!-- Admin console can always be accessed without an API key so in production environments they have to be secured, e.g. by basic authentication -->
+		<serviceProxy port="9000" name="AdminConsole">
+			<adminConsole/>
+		</serviceProxy>
+
+
+	</router>
+
+</spring:beans>

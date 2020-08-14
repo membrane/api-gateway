@@ -18,8 +18,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -37,26 +37,31 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="xmlProtection")
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(XMLProtectionInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XMLProtectionInterceptor.class.getName());
 
 	private int maxAttibuteCount = 1000;
 	private int maxElementNameLength = 1000;
 	private boolean removeDTD = true;
 
-	
+
 	public XMLProtectionInterceptor() {
 		name = "XML Protection";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+
+		if (exc.getRequest().isBodyEmpty()) {
+			log.info("body is empty -> request is not scanned by xmlProtection");
+			return Outcome.CONTINUE;
+		}
+
 		if (!exc.getRequest().isXML()) {
-			log.debug("request discarded by xmlProtection because it is not XML");
-			setFailResponse(exc);
+			log.warn("request discarded by xmlProtection, because it's Content-Type header did not indicate that it is actually XML.");
 			return Outcome.ABORT;
 		}
-		
+
 		if (!protectXML(exc)) {
 			log.warn("request discarded by xmlProtection, because it is not wellformed or exceeds limits");
 			setFailResponse(exc);
@@ -67,17 +72,17 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 		return Outcome.CONTINUE;
 	}
-	
+
 	private void setFailResponse(Exchange exc) {
 		exc.setResponse(Response.badRequest("Invalid XML features used in request.").build());
 	}
 
 	private boolean protectXML(Exchange exc) throws Exception {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		
-		XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)), 
+
+		XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)),
 				removeDTD, maxElementNameLength, maxAttibuteCount);
-		
+
 		if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), getCharset(exc) )))
 			return false;
 		exc.getRequest().setBodyContent(stream.toByteArray());
@@ -91,7 +96,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		String charset = exc.getRequest().getCharset();
 		if (charset == null)
 			return Constants.UTF_8;
-		
+
 		return charset;
 	}
 
@@ -121,11 +126,11 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	public void setRemoveDTD(boolean removeDTD) {
 		this.removeDTD = removeDTD;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Protects agains XML attacks.";
 	}
-	
+
 }
 

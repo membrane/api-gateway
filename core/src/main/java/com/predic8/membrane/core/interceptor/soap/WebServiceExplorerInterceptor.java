@@ -18,14 +18,13 @@ import groovy.xml.MarkupBuilder;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
@@ -56,16 +55,16 @@ import com.predic8.wstool.creator.SOARequestCreator;
 
 @MCElement(name="webServiceExplorer")
 public class WebServiceExplorerInterceptor extends RESTInterceptor {
-	
-	private static Log log = LogFactory.getLog(WebServiceExplorerInterceptor.class.getName());
-	
+
+	private static Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class.getName());
+
 	private String wsdl;
 	private String portName;
-	
+
 	public WebServiceExplorerInterceptor() {
 		name = "Web Service Explorer";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().getMethod().equals("GET"))
@@ -76,7 +75,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	private static final Pattern wsdlRequest = Pattern.compile(".*\\?(wsdl|xsd=.*)", Pattern.CASE_INSENSITIVE);
-	
+
 	private boolean isWSDLRequest(Request request) {
 		return wsdlRequest.matcher(request.getUri()).matches();
 	}
@@ -84,23 +83,23 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	public String getWsdl() {
 		return wsdl;
 	}
-	
+
 	@Required
 	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
 		this.parsedWSDL = null;
 	}
-	
+
 	public String getPortName() {
 		return portName;
 	}
-	
+
 	@MCAttribute
 	public void setPortName(String portName) {
 		this.portName = portName;
 	}
-	
+
 	private volatile Definitions parsedWSDL;
 
 	private Definitions getParsedWSDL() {
@@ -109,10 +108,10 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
 		WSDLParser wsdlParser = new WSDLParser();
-		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver());
+		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver().toExternalResolver());
 		return parsedWSDL = wsdlParser.parse(ctx);
 	}
-	
+
 	@Mapping("[^?]*/operation/([^/?]+)/([^/?]+)/([^/?]+)")
 	public Response createOperationResponse(QueryParameter params, String relativeRootPath) throws Exception {
 		try {
@@ -122,26 +121,26 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);
-			
+
 			StringWriter sw = new StringWriter();
 			new StandardPage(sw, null) {
 				@Override
 				protected void createContent() {
 					h1().text("Service Proxy for " + service.getName());
 					h2().text("Operation: " + operationName).end();
-					
+
 					h3().text("Sample Request").end();
 
-				    pre().text(generateSampleRequest(portName, operationName, bindingName, w)).end();
+					pre().text(generateSampleRequest(portName, operationName, bindingName, w)).end();
 				}
 			};
 			return Response.ok(sw.toString()).build();
 		} catch (IllegalArgumentException e) {
 			log.error("", e);
-			return Response.interalServerError().build();
+			return Response.internalServerError().build();
 		}
 	}
-	
+
 	private Service getService(Definitions d) {
 		if (d.getServices().size() != 1)
 			throw new IllegalArgumentException("WSDL needs to have exactly one service for SOAPUIInterceptor to work.");
@@ -165,29 +164,29 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			return exc.getRequest().getUri();
 		}
 	}
-	
+
 	@Mapping("(?!.*operation)([^?]*)")
 	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, final Exchange exc) throws Exception {
 		try {
-			final String myPath = new URI(exc.getRequestURI()).getPath();
-			
+			final String myPath = router.getUriFactory().create(exc.getRequestURI()).getPath();
+
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);
 			final Port port = SOAPProxy.selectPort(service.getPorts(), portName);
 			final List<Port> ports = getPortsByLocation(service, port);
-			
+
 			StringWriter sw = new StringWriter();
 			new StandardPage(sw, service.getName()) {
 				@Override
 				protected void createContent() {
 					h1().text("Service Proxy: " + service.getName()).end();
 					p();
-						text("Target Namespace: " + w.getTargetNamespace());
-						br().end();
-						String wsdlLink = getClientURL(exc) + "?wsdl";
-						text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
+					text("Target Namespace: " + w.getTargetNamespace());
+					br().end();
+					String wsdlLink = getClientURL(exc) + "?wsdl";
+					text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
-					
+
 					for (PortType pt : w.getPortTypes()) {
 						h2().text("Port Type: " + pt.getName()).end();
 						Documentation d = pt.getDocumentation();
@@ -195,20 +194,20 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 							p().text("Documentation: " + d.toString()).end();
 						}
 					}
-						
+
 					Binding binding = port.getBinding();
 					PortType portType = binding.getPortType();
 					List<Operation> bindingOperations = getOperationsByBinding(w, binding);
-					if (bindingOperations.size() == 0)
+					if (bindingOperations.isEmpty())
 						p().text("There are no operations defined.").end();
-					else 
+					else
 						createOperationsTable(w, bindingOperations, binding, portType);
-					
+
 					h2().text("Virtual Endpoint").end();
 					p().a().href(getClientURL(exc)).text(getClientURL(exc)).end().end();
-					
+
 					h2().text("Target Endpoints").end();
-					if (service.getPorts().size() == 0)
+					if (service.getPorts().isEmpty())
 						p().text("There are no endpoints defined.").end();
 					else
 						createEndpointTable(service.getPorts(), ports);
@@ -216,53 +215,53 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 				private void createOperationsTable(Definitions w, List<Operation> bindingOperations, Binding binding, PortType portType) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
+					tr();
+					th().text("Operation").end();
+					th().text("Input").end();
+					th().text("Output").end();
+					end();
+					for (Operation o : bindingOperations) {
 						tr();
-							th().text("Operation").end();
-							th().text("Input").end();
-							th().text("Output").end();
-						end();
-						for (Operation o : bindingOperations) {
-							tr();
-								td();
-								if ("HTTP".equals(getProtocolVersion(binding))) {
-									text(o.getName());
-								} else {
-									String link = myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName(); 
-									a().href(link).text(o.getName()).end();
-								}
-								end();
-								td();
-									for (Part p : o.getInput().getMessage().getParts())
-										text(p.getElement());
-									
-								end();
-								td();
-									for (Part p : o.getOutput().getMessage().getParts())
-										text(p.getElement());
-								end();
-							end();
+						td();
+						if ("HTTP".equals(getProtocolVersion(binding))) {
+							text(o.getName());
+						} else {
+							String link = myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName();
+							a().href(link).text(o.getName()).end();
 						}
+						end();
+						td();
+						for (Part p : o.getInput().getMessage().getParts())
+							text(p.getElement().getName());
+
+						end();
+						td();
+						for (Part p : o.getOutput().getMessage().getParts())
+							text(p.getElement().getName());
+						end();
+						end();
+					}
 					end();
 				}
 
 				private void createEndpointTable(List<Port> ports, List<Port> matchingPorts) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
+					tr();
+					th().text("Port Name").end();
+					th().text("Protocol").end();
+					th().text("URL").end();
+					end();
+					for (Port p : ports) {
 						tr();
-							th().text("Port Name").end();
-							th().text("Protocol").end();
-							th().text("URL").end();
+						td().text(p.getName()).end();
+						td().text(getProtocolVersion(p.getBinding())).end();
+						td().text(p.getAddress().getLocation()).end();
+						td();
+						if (matchingPorts.contains(p))
+							text("*");
 						end();
-						for (Port p : ports) {
-							tr();
-								td().text(p.getName()).end();
-								td().text(getProtocolVersion(p.getBinding())).end();
-								td().text(p.getAddress().getLocation()).end();
-								td();
-									if (matchingPorts.contains(p))
-										text("*");
-								end();
-							end();
-						}
+						end();
+					}
 					end();
 					p().small().text("* available through this proxy").end().end();
 				}
@@ -271,7 +270,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			return Response.ok(sw.toString()).build();
 		} catch (IllegalArgumentException e) {
 			log.error("", e);
-			return Response.interalServerError().build();
+			return Response.internalServerError().build();
 		}
 	}
 
@@ -279,32 +278,32 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 		public StandardPage(Writer writer, String title) {
 			super(writer);
-			
+
 			html();
-				head();
-					title().text(Constants.PRODUCT_NAME + (title == null ? "" : ": " + title)).end();
-					style();
-					raw("<!--\r\n" +
-						"body { font-family: sans-serif; }\r\n" +
-						"h1 { font-size: 24pt; }\r\n" +
-						"h2 { font-size: 16pt; }\r\n" +
-						"h3 { font-size: 12pt; }\r\n" +
-						"td, th { border: 1px solid black; padding: 0pt 10pt; }\r\n" +
-						"table { border-collapse: collapse; }\r\n" +
-						".help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r\n" + 
-						".footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r\n" + 
-						".footer a { color:#AAAAAA; }\r\n" + 
-						".footer a:hover { color:#000000; }\r\n" + 
-						"-->");
-					end();
-				end();
-				body();
-					createContent();
-					p().classAttr("footer").raw(Constants.HTML_FOOTER).end();
-				end();
+			head();
+			title().text(Constants.PRODUCT_NAME + (title == null ? "" : ": " + title)).end();
+			style();
+			raw("<!--\r\n" +
+					"body { font-family: sans-serif; }\r\n" +
+					"h1 { font-size: 24pt; }\r\n" +
+					"h2 { font-size: 16pt; }\r\n" +
+					"h3 { font-size: 12pt; }\r\n" +
+					"td, th { border: 1px solid black; padding: 0pt 10pt; }\r\n" +
+					"table { border-collapse: collapse; }\r\n" +
+					".help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r\n" +
+					".footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r\n" +
+					".footer a { color:#AAAAAA; }\r\n" +
+					".footer a:hover { color:#000000; }\r\n" +
+					"-->");
+			end();
+			end();
+			body();
+			createContent();
+			p().classAttr("footer").raw(Constants.HTML_FOOTER).end();
+			end();
 			end();
 		}
-		
+
 		protected abstract void createContent();
 	}
 
@@ -327,9 +326,9 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 				ports.add(p);
 		return ports;
 	}
-	
+
 	private String getProtocolVersion(Binding binding) {
-		String transport = (String) binding.getBinding().getElementName().getNamespaceURI();
+		String transport = binding.getBinding().getElementName().getNamespaceURI();
 		if (Constants.WSDL_SOAP11_NS.equals(transport))
 			transport = "SOAP 1.1";
 		if (Constants.WSDL_SOAP12_NS.equals(transport))
@@ -342,8 +341,8 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	private String generateSampleRequest(final String portName, final String operationName,
 			final String bindingName, final Definitions w) {
 		StringWriter writer = new StringWriter();
-	    SOARequestCreator creator = new SOARequestCreator(w, new RequestTemplateCreator(), new MarkupBuilder(writer));
-	    creator.createRequest(portName, operationName, bindingName);
+		SOARequestCreator creator = new SOARequestCreator(w, new RequestTemplateCreator(), new MarkupBuilder(writer));
+		creator.createRequest(portName, operationName, bindingName);
 		return writer.toString();
 	}
 

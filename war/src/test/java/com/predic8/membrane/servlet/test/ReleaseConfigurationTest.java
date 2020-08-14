@@ -23,7 +23,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 
@@ -32,15 +32,15 @@ import com.predic8.membrane.test.AssertUtils;
 public class ReleaseConfigurationTest {
 
 	private final int port;
-	
+
 	public ReleaseConfigurationTest() {
 		this.port = 3021;
 	}
-	
+
 	@Test
 	public void testReachable() throws ClientProtocolException, IOException {
 		String secret = "Web Services";
-		HttpClient hc = new DefaultHttpClient();
+		HttpClient hc = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(getBaseURL());
 		post.setEntity(new StringEntity(secret));
 		HttpResponse res = hc.execute(post);
@@ -48,9 +48,9 @@ public class ReleaseConfigurationTest {
 
 		AssertUtils.assertContains(secret, EntityUtils.toString(res.getEntity()));
 	}
-	
+
 	private String getBaseURL() {
 		return "http://localhost:" + port + "/release/";
 	}
-	
+
 }

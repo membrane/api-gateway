@@ -18,7 +18,7 @@ import java.util.Map;
 import com.predic8.membrane.core.Router;
 
 public interface TokenProvider {
-	
+
 	public void init(Router router);
 	public void requestToken(Map<String, String> userAttributes);
 	public void verifyToken(Map<String, String> userAttributes, String token);

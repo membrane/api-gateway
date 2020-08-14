@@ -31,7 +31,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
-		
+
 	}
 
 	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
@@ -46,43 +46,43 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		return null;
 	}
 
-	
+
 	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange) {
-		
+
 	}
 
-	
+
 	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange) {
-		
+
 	}
 
-	
+
 	public void notifyListenersOnRuleAdd(Rule rule) {
-		
+
 	}
 
-	
+
 	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft) {
-		
+
 	}
 
-	
+
 	public void refreshExchangeStoreListeners() {
-		
+
 	}
 
-	
+
 	public void remove(AbstractExchange exchange) {
-		
-	}
-	
-	public void removeAllExchanges(Rule rule) {
-		
+
 	}
 
-	
+	public void removeAllExchanges(Rule rule) {
+
+	}
+
+
 	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
-		
+
 	}
 
 	public Object[] getAllExchanges() {
@@ -90,7 +90,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	public Object[] getLatExchanges(int count) {
-		
+
 		return null;
 	}
 
@@ -99,7 +99,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	public void removeAllExchanges(AbstractExchange[] exchanges) {
-		
+
 	}
 
 	public AbstractExchange getExchangeById(int intParam) {
@@ -113,7 +113,15 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	public List<? extends ClientStatistics> getClientStatistics() {
 		return null;
 	}
-	
+
 	public void collect(ExchangeCollector collector) {}
-	
+
+	public long getLastModified() {
+		return 0;
+	}
+
+	public void waitForModification(long lastKnownModification) {
+
+	}
+
 }

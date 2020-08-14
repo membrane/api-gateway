@@ -24,19 +24,22 @@ import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link StatisticCollector} counts {@link Exchange} objects, tracks the time they took
  * to complete, the number of bytes they sent, and some more numbers.
- * 
+ *
  * Instances are not thread-safe.
  */
 public class StatisticCollector {
+	private static Logger log = LoggerFactory.getLogger(StatisticCollector.class.getName());
 
 	private final NumberFormat nf = NumberFormat.getInstance(Locale.US);
-	
+
 	private final boolean countErrorExchanges;
-	
+
 	private int totalCount = 0;
 	private int goodCount = 0;
 	private int errorCount = 0;
@@ -48,7 +51,7 @@ public class StatisticCollector {
 
 	/**
 	 * @param countErrorExchanges whether to count failed Exchange objects. Since
-	 * {@link AbstractHttpHandler} counts Exchanges before their state is set to completed 
+	 * {@link AbstractHttpHandler} counts Exchanges before their state is set to completed
 	 * (and {@link Exchange#getStatus()} still returns {@link ExchangeState#FAILED},
 	 * we need to be able to count them as successful (and track their statistics). On the
 	 * other hand {@link MemoryExchangeStore} needs to count failures as failures,
@@ -58,10 +61,10 @@ public class StatisticCollector {
 		this.countErrorExchanges = countErrorExchanges;
 		nf.setMaximumFractionDigits(3);
 	}
-	
+
 	public void collectFrom(AbstractExchange exc) {
 		totalCount++;
-		
+
 		if (exc.getStatus() == ExchangeState.FAILED) {
 			errorCount++;
 			if (!countErrorExchanges)
@@ -71,13 +74,13 @@ public class StatisticCollector {
 		long timeReqSent = exc.getTimeReqSent();
 		if (timeReqSent == 0)
 			return; // this Exchange did not reach the HTTPClientInterceptor
-		
+
 		long timeResSent = exc.getTimeResSent();
 		if (timeResSent == 0)
 			return; // this Exchange is not yet completed
 
 		goodCount++;
-		
+
 		int time = (int) (timeResSent - timeReqSent);
 		if (time < minTime)
 			minTime = time;
@@ -91,7 +94,7 @@ public class StatisticCollector {
 			AbstractBody responseBody = exc.getResponse().getBody();
 			totalBytesReceived += responseBody.isRead() ? responseBody.getLength() : 0;
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.warn("", e);
 		}
 	}
 
@@ -109,7 +112,7 @@ public class StatisticCollector {
 	public int getCount() {
 		return totalCount;
 	}
-	
+
 	public int getGoodCount() {
 		return goodCount;
 	}
@@ -126,6 +129,18 @@ public class StatisticCollector {
 		return goodCount == 0 ? "" : "" + nf.format(((double)totalTime)/goodCount) + " ms";
 	}
 
+	public long getGoodTotalTime() {
+		return totalTime;
+	}
+
+	public long getGoodTotalBytesReceived() {
+		return totalBytesReceived;
+	}
+
+	public long getGoodTotalBytesSent() {
+		return totalBytesSent;
+	}
+
 	public String getBytesSent() {
 		return goodCount == 0 ? "" : "" + nf.format(totalBytesSent);
 	}
@@ -133,13 +148,13 @@ public class StatisticCollector {
 	public String getBytesReceived() {
 		return goodCount == 0 ? "" : "" + nf.format(totalBytesReceived);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "min: " + getMinTime() + "   " +
-				"max: " + getMaxTime() + "   " + 
-				"avg: " + getAvgTime() + "   " + 
-				"total: " + getCount() + "   " + 
+				"max: " + getMaxTime() + "   " +
+				"avg: " + getAvgTime() + "   " +
+				"total: " + getCount() + "   " +
 				"error: " + getErrorCount();
 	}
 

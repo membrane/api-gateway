@@ -1,36 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-<!--
-  Copyright (c) 2006, Doeke Zanstra
-  All rights reserved.
+  <!--
+    Copyright (c) 2006, Doeke Zanstra
+    All rights reserved.
 
-  Redistribution and use in source and binary forms, with or without modification, 
-  are permitted provided that the following conditions are met:
+    Redistribution and use in source and binary forms, with or without modification,
+    are permitted provided that the following conditions are met:
 
-  Redistributions of source code must retain the above copyright notice, this 
-  list of conditions and the following disclaimer. Redistributions in binary 
-  form must reproduce the above copyright notice, this list of conditions and the 
-  following disclaimer in the documentation and/or other materials provided with 
-  the distribution.
+    Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer. Redistributions in binary
+    form must reproduce the above copyright notice, this list of conditions and the
+    following disclaimer in the documentation and/or other materials provided with
+    the distribution.
 
-  Neither the name of the dzLib nor the names of its contributors may be used to 
-  endorse or promote products derived from this software without specific prior 
-  written permission.
+    Neither the name of the dzLib nor the names of its contributors may be used to
+    endorse or promote products derived from this software without specific prior
+    written permission.
 
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-  WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
-  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR 
-  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
-  THE POSSIBILITY OF SUCH DAMAGE.
--->
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+    IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+    INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+    OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+    THE POSSIBILITY OF SUCH DAMAGE.
+  -->
 
   <xsl:output indent="no" omit-xml-declaration="yes" method="text" encoding="UTF-8" media-type="text/x-json"/>
-	<xsl:strip-space elements="*"/>
+  <xsl:strip-space elements="*"/>
   <!--contant-->
   <xsl:variable name="d">0123456789</xsl:variable>
 
@@ -43,8 +43,8 @@
       <xsl:with-param name="s" select="."/>
     </xsl:call-template>
   </xsl:template>
-  
-  <!-- Main template for escaping strings; used by above template and for object-properties 
+
+  <!-- Main template for escaping strings; used by above template and for object-properties
        Responsibilities: placed quotes around string, and chain up to next filter, escape-bs-string -->
   <xsl:template name="escape-string">
     <xsl:param name="s"/>
@@ -54,7 +54,7 @@
     </xsl:call-template>
     <xsl:text>"</xsl:text>
   </xsl:template>
-  
+
   <!-- Escape the backslash (\) before everything else. -->
   <xsl:template name="escape-bs-string">
     <xsl:param name="s"/>
@@ -74,7 +74,7 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
-  
+
   <!-- Escape the double quote ("). -->
   <xsl:template name="escape-quot-string">
     <xsl:param name="s"/>
@@ -94,10 +94,10 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
-  
+
   <!-- Replace tab, line feed and/or carriage return by its matching escape code. Can't escape backslash
-       or double quote here, because they don't replace characters (&#x0; becomes \t), but they prefix 
-       characters (\ becomes \\). Besides, backslash should be seperate anyway, because it should be 
+       or double quote here, because they don't replace characters (&#x0; becomes \t), but they prefix
+       characters (\ becomes \\). Besides, backslash should be seperate anyway, because it should be
        processed first. This function can't do that. -->
   <xsl:template name="encode-string">
     <xsl:param name="s"/>
@@ -124,8 +124,8 @@
     </xsl:choose>
   </xsl:template>
 
-  <!-- number (no support for javascript mantise) -->
-  <xsl:template match="text()[not(string(number())='NaN')]">
+  <!-- number (no support for javascript mantise)-->
+  <xsl:template match="text()[not(string(number())='NaN' or (starts-with(.,'0' ) and . != '0'))]">
     <xsl:value-of select="."/>
   </xsl:template>
 
@@ -170,10 +170,10 @@
     <xsl:if test="following-sibling::*">,</xsl:if>
     <xsl:if test="not(following-sibling::*)">]</xsl:if>
   </xsl:template>
-  
+
   <!-- convert root element to an anonymous container -->
   <xsl:template match="/">
     <xsl:apply-templates select="node()"/>
   </xsl:template>
-    
+
 </xsl:stylesheet>

@@ -35,9 +35,9 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 public class ServiceInvocationTest {
 
 	private HttpRouter router;
-	
+
 	@Before
-	public void setUp() throws Exception {		
+	public void setUp() throws Exception {
 		router = createRouter();
 		MockInterceptor.clear();
 	}
@@ -45,7 +45,7 @@ public class ServiceInvocationTest {
 	@Test
 	public void testInterceptorSequence() throws Exception {
 		callService();
-		
+
 		MockInterceptor.assertContent(
 				new String[] {"process", "log", "transport-log" },
 				new String[] {"transport-log", "log", "process" },
@@ -57,33 +57,33 @@ public class ServiceInvocationTest {
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	private ServiceProxy createFirstRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 3016), "thomas-bayer.com", 80);
 		rule.setTargetURL("service:log");
 		rule.getInterceptors().add(new MockInterceptor("process"));
 		return rule;
 	}
-	
+
 	private ServiceProxy createServiceRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 3012), "thomas-bayer.com", 80);
 		rule.setName("log");
 		rule.getInterceptors().add(new MockInterceptor("log"));
 		return rule;
 	}
-	
+
 	private void callService() throws HttpException, IOException {
 		new HttpClient().executeMethod(createPostMethod());
 	}
-	
+
 	private PostMethod createPostMethod() {
 		PostMethod post = new PostMethod("http://localhost:3016/axis2/services/BLZService?wsdl");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml"))); 
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 		return post;
 	}
-	
+
 	private HttpRouter createRouter() throws Exception {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(createFirstRule());

@@ -15,7 +15,8 @@ package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -50,20 +51,20 @@ import com.predic8.membrane.core.interceptor.Outcome;
  */
 @MCElement(name="xmlContentFilter")
 public class XMLContentFilterInterceptor extends AbstractInterceptor {
-	
-	private static final Logger LOG = Logger.getLogger(XMLContentFilterInterceptor.class);
-	
+
+	private static final Logger LOG = LoggerFactory.getLogger(XMLContentFilterInterceptor.class);
+
 	private String xPath;
 	private XMLContentFilter xmlContentFilter;
-	
+
 	public XMLContentFilterInterceptor() {
 		setFlow(Flow.Set.REQUEST_RESPONSE);
 	}
-	
+
 	public String getXPath() {
 		return xPath;
 	}
-	
+
 	/**
 	 * @description An XPath 1.0 expression describing the elements to be removed from message bodies.
 	 */
@@ -77,26 +78,26 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getRequest());
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getResponse());
 	}
-	
+
 	private Outcome handleMessage(Exchange exc, Message message) {
 		try {
 			xmlContentFilter.removeMatchingElements(message);
 			return Outcome.CONTINUE;
 		} catch (Exception e) {
 			LOG.error("xmlContentFilter error", e);
-			exc.setResponse(Response.interalServerError("xmlContentFilter error. See log for details.").build());
+			exc.setResponse(Response.internalServerError("xmlContentFilter error. See log for details.").build());
 			return Outcome.ABORT;
 		}
 	}
-	
+
 }

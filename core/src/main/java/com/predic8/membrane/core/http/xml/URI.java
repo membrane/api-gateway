@@ -25,7 +25,7 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class URI extends AbstractXmlElement {
-	
+
 	public static final String ELEMENT_NAME = "uri";
 
 	String value;
@@ -33,13 +33,13 @@ public class URI extends AbstractXmlElement {
 	Host host;
 	Path path;
 	Query query;
-	
+
 	public URI() {}
-	
+
 	public URI(String uri) throws Exception {
 		setValue(uri);
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
 		value = token.getAttributeValue("", "value");
@@ -57,7 +57,7 @@ public class URI extends AbstractXmlElement {
 			query = (Query) new Query().parse(token);
 		}
 	}
-	
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
@@ -66,20 +66,20 @@ public class URI extends AbstractXmlElement {
 		writeIfNotNull(port, out);
 		writeIfNotNull(path, out);
 		writeIfNotNull(query, out);
-		out.writeEndElement();		
+		out.writeEndElement();
 	}
 
 	public void setValue(String value) throws Exception {
 		this.value = value;
 
-		java.net.URI jUri = new java.net.URI(value); 
-		
+		java.net.URI jUri = new java.net.URI(value);
+
 		if (jUri.getHost()!=null)
 			setHost(jUri.getHost());
-		
+
 		if (jUri.getPort()!=-1)
 			setPort(jUri.getPort());
-		
+
 		parsePathFromURI(jUri);
 		parseQueryFromURI(jUri);
 	}
@@ -91,12 +91,12 @@ public class URI extends AbstractXmlElement {
 		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery()).entrySet()) {
 			q.getParams().add(new Param(e.getKey(),e.getValue()));
 		}
-		setQuery(q);		
+		setQuery(q);
 	}
 
 	private void parsePathFromURI(java.net.URI jUri) {
 		if (jUri.getPath() == null) return;
-		
+
 		Path p = new Path();
 		for (String c : jUri.getPath().substring(1).split("/")) {
 			p.getComponents().add(new Component(c));
@@ -145,5 +145,5 @@ public class URI extends AbstractXmlElement {
 		return ELEMENT_NAME;
 	}
 
-	
+
 }

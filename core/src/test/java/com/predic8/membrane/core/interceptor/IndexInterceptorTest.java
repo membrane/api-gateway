@@ -30,7 +30,7 @@ public class IndexInterceptorTest {
 		check("a(\\Q.|\\E|b).*", true);
 		check("[ab]+", true);
 	}
-	
+
 	@Test
 	public void doit2() {
 		check("a(c|b).*");
@@ -44,11 +44,11 @@ public class IndexInterceptorTest {
 	private void check(String regex) {
 		check(regex, false);
 	}
-	
+
 	/**
 	 * Same as {@link #check(String)}, but if allowFulfillmentFailure is true,
 	 * fulfillment may fail.
-	 * If fulfillment succeeds, the result has to be matchable by the regex. 
+	 * If fulfillment succeeds, the result has to be matchable by the regex.
 	 */
 	private void check(String regex, boolean allowFulfillmentFailure) {
 		String fulfilled = IndexInterceptor.fullfillRegexp(regex);

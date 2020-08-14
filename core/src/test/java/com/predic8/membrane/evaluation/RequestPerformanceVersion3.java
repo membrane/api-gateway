@@ -73,9 +73,9 @@ public class RequestPerformanceVersion3 {
 		int s = 0;
 		int e = 0;
 		for (e = s; e < buf.length; e++) {
-		
+
 			int c1 = buf[e];
-		
+
 			if (c1 == 13 || c1 == ' ') {
 				break;
 			}
@@ -85,9 +85,9 @@ public class RequestPerformanceVersion3 {
 
 		s = ++e;
 		for (e = s; e < buf.length; e++) {
-		
+
 			int c2 = buf[e];
-				
+
 			if (c2 == 13 || c2 == ' ') {
 				break;
 			}
@@ -96,18 +96,18 @@ public class RequestPerformanceVersion3 {
 
 		s = ++e;
 		for (e = s; e < buf.length; e++) {
-		
+
 			int c3 = buf[e];
-		
+
 			if (c3 == 13 || c3 == '/') {
 				break;
 			}
 		}
 		s = ++e;
 		for (e = s; e < buf.length; e++) {
-		
+
 			int c = buf[e];
-		
+
 			if (c == 13 || c == ((char) 13)) {
 				break;
 			}
@@ -117,9 +117,9 @@ public class RequestPerformanceVersion3 {
 		while (true) {
 			s = e + 2;
 			for (e = s; e < buf.length; e++) {
-			
+
 				int c = buf[e];
-			
+
 				if (c == 13 || c == ':') {
 					break;
 				}
@@ -130,9 +130,9 @@ public class RequestPerformanceVersion3 {
 
 			s = ++e;
 			for (e = s; e < buf.length; e++) {
-			
+
 				int c = buf[e];
-			
+
 				if (c == 13 || c == '\n') {
 					break;
 				}

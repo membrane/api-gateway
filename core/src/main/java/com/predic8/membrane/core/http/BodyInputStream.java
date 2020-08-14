@@ -20,47 +20,61 @@ import java.util.List;
 /**
  * An {@link InputStream} offering a <code>List&lt;Chunk&gt;</code> as one
  * single stream.
- * 
+ *
  * Used by {@link AbstractBody} to offer an efficient way of reading a message's
  * body.
  */
 public class BodyInputStream extends InputStream {
-	
+
 	// the data
 	private final List<Chunk> chunks;
-	
+
 	// position
 	private int currentChunkIndex = 0;
 	private int positionWithinChunk = -1;
-	
+
 	// cached data at position
 	private Chunk currentChunk;
 	private byte[] currentChunkData;
 	private int currentChunkLength;
-	
+
 	public BodyInputStream(List<Chunk> chunks) {
 		this.chunks = chunks;
 		currentChunk = chunks.isEmpty() ? null : chunks.get(0);
 		if (currentChunk != null) {
 			currentChunkLength = currentChunk.getLength();
 			currentChunkData = currentChunk.getContent();
+		} else {
+			currentChunkIndex = -1;
 		}
 	}
 
 	/**
 	 * @return whether the new position is still a valid index
 	 */
-	private boolean advanceToNextPosition() {
-		if (currentChunk == null)
-			return false;
-		
+	private boolean advanceToNextPosition() throws IOException {
+		if (currentChunk == null) {
+			currentChunk = readNextChunk();
+			if (currentChunk == null) {
+				return false;
+			}
+			chunks.add(currentChunk);
+			currentChunkIndex = chunks.size() - 1;
+			currentChunkLength = currentChunk.getLength();
+			currentChunkData = currentChunk.getContent();
+		}
+
 		positionWithinChunk++;
-		
+
 		while (positionWithinChunk == currentChunkLength) {
 			currentChunkIndex++;
 			if (currentChunkIndex == chunks.size()) {
-				currentChunk = null;
-				return false;
+				Chunk c = readNextChunk();
+				if (c == null) {
+					currentChunk = null;
+					return false;
+				}
+				chunks.add(c);
 			}
 			currentChunk = chunks.get(currentChunkIndex);
 			currentChunkLength = currentChunk.getLength();
@@ -69,31 +83,38 @@ public class BodyInputStream extends InputStream {
 		}
 		return true;
 	}
-	
+
+	/**
+	 * @return the next chunk or null, if there is no next chunk
+	 */
+	protected Chunk readNextChunk() throws IOException {
+		return null;
+	}
+
 	@Override
 	public int read() throws IOException {
 		if (!advanceToNextPosition())
 			return -1;
 		return currentChunkData[positionWithinChunk] & 0xFF;
 	}
-	
+
 	@Override
 	public int read(byte[] b, int off, int len) throws IOException {
 		if (b == null) {
-		    throw new NullPointerException();
+			throw new NullPointerException();
 		} else if (off < 0 || len < 0 || len > b.length - off) {
-		    throw new IndexOutOfBoundsException();
+			throw new IndexOutOfBoundsException();
 		} else if (len == 0) {
-		    return 0;
+			return 0;
 		}
 
 		if (!advanceToNextPosition())
 			return -1;
-		
+
 		// read at most the rest of the current chunk
 		if (len > currentChunkLength - positionWithinChunk)
 			len = currentChunkLength - positionWithinChunk;
-		
+
 		System.arraycopy(currentChunkData, positionWithinChunk, b, off, len);
 		positionWithinChunk += len - 1;
 		return len;

@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 public class MethodExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Method";
-	
+
 	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getRequest() == null)
 			return "";

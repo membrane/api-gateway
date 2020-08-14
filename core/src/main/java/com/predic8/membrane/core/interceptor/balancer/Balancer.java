@@ -19,8 +19,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 @MCElement(name="clusters", topLevel=false)
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
-	private static Log log = LogFactory.getLog(Balancer.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Balancer.class.getName());
 
 	private final Map<String, Cluster> clusters = new Hashtable<String, Cluster>();
 	private String name = DEFAULT_NAME;
@@ -37,7 +37,7 @@ public class Balancer extends AbstractXmlElement {
 	private SessionCleanupThread sct;
 
 	public Balancer() {
-		addCluster(Cluster.DEFAULT_NAME);
+		addCluster(BalancerUtil.getSingleClusterNameOrDefault(this));
 		sct = new SessionCleanupThread(clusters);
 		sct.start();
 	}
@@ -82,6 +82,7 @@ public class Balancer extends AbstractXmlElement {
 		return new ArrayList<Cluster>(clusters.values()) {
 			private static final long serialVersionUID = 1L;
 
+			@Override
 			public boolean add(Cluster e) {
 				Balancer.this.clusters.put(e.getName(), e);
 				return super.add(e);
@@ -91,7 +92,7 @@ public class Balancer extends AbstractXmlElement {
 
 	private Cluster getCluster(String name) {
 		if (!clusters.containsKey(name)) // backward-compatibility: auto create
-											// clusters as they are accessed
+			// clusters as they are accessed
 			addCluster(name);
 		return clusters.get(name);
 	}
@@ -104,7 +105,7 @@ public class Balancer extends AbstractXmlElement {
 		clusters.put(name, new Cluster(name));
 		return true;
 	}
-	
+
 	/**
 	 * @description A list of clusters.
 	 */

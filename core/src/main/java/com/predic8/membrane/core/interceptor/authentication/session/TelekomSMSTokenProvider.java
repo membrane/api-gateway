@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2012,2014 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,28 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-
-import javax.xml.stream.XMLStreamReader;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.springframework.beans.factory.annotation.Required;
-
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
+import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import javax.annotation.concurrent.GuardedBy;
+import java.io.ByteArrayOutputStream;
+import java.net.URLEncoder;
+import java.util.HashMap;
 
 /**
  * @explanation A <i>token provider</i> using <i>Deutsche Telekom's</i> REST interface <a
@@ -52,8 +52,15 @@ import com.predic8.membrane.core.util.Util;
  *              <p>
  *              The text message is sent via <a href="http://www.developergarden.com/">Deutsche Telekom's developer
  *              garden</a> REST API. To use this API, a registered user account with sufficient balance is necessary and
- *              the <i>Send SMS</i> API has to be enabled for this account. The user account is specified using the
- *              <i>user</i> and <i>password</i> attributes.
+ *              the <i>Send SMS</i> API has to be enabled for this account. Membrane Service Proxy must be registered as an
+ *              "application" on the developer garden website, and the "Global SMS API" must be enabled both for the user account
+ *              as well as the registered application. Once completed, the <i>scope</i>, <i>clientId</i> and <i>clientSecret</i>
+ *              settings must be copied from the website into Membrane's proxies.xml configuration file. Membrane uses these three
+ *              parameters to identify itself when connecting to the Telekom API Gateway.
+ *              </p>
+ *              <p>
+ *              When using a non-standard <i>environment</i> (see https://www.developergarden.com/apis/documentation/bundle/telekom-api-rest/html/sendsms.html#environmental_infos for more information),
+ *              the parameters <i>senderName</i> and <i>senderAddress</i> may be used to set the SMS sender address and name.
  *              </p>
  *              <p>
  *              The token is prepended by <i>prefixText</i> to generate the text message's text.
@@ -70,118 +77,190 @@ import com.predic8.membrane.core.util.Util;
  */
 @MCElement(name="telekomSMSTokenProvider", topLevel=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
-	private static Log log = LogFactory.getLog(TelekomSMSTokenProvider.class.getName());
-
-	private String user, password;
+	private static Logger log = LoggerFactory.getLogger(TelekomSMSTokenProvider.class.getName());
 
 	private HttpClient hc;
-	private String smsAuthorToken;
+
+	private String scope, clientId, clientSecret;
+	private String senderAddress = "0191011";
+	private String senderName;
+	private EnvironmentType environment = EnvironmentType.BUDGET;
+
+	public enum EnvironmentType {
+		BUDGET,
+		PREMIUM,
+		MOCK,
+		SANDBOX,
+	}
+
+	@GuardedBy("this")
+	private String token;
+	@GuardedBy("this")
+	private long tokenExpiration;
 
 	@Override
 	public void init(Router router) {
 		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
 	}
-	
+
 	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		super.parseAttributes(token);
-		user = token.getAttributeValue("", "user");
-		password = token.getAttributeValue("", "password");
+	protected String normalizeNumber(String number) {
+		return number.replaceAll("\\+", "00").replaceAll("[- ]|\\(.*\\)", "");
 	}
 
+	@Override
 	protected void sendSMS(String text, String recipientNumber) {
-		// tries to send the SMS. if failing, tries once again with a new auth token
+		recipientNumber = recipientNumber.replaceAll("^00", "\\+");
+
 		try {
-			synchronized(this) {
-				if (smsAuthorToken == null)
-					smsAuthorToken = getAuthToken(user, password, hc);
-				try {
-					sendSMS(hc, smsAuthorToken, recipientNumber, text);
-				} catch (InvalidAuthTokenException e) {
-					smsAuthorToken = getAuthToken(user, password, hc);
-					sendSMS(hc, smsAuthorToken, recipientNumber, text);
-				} catch (Exception e) {
-					log.error(e);
-					smsAuthorToken = getAuthToken(user, password, hc);
-					sendSMS(hc, smsAuthorToken, recipientNumber, text);
-				}
-			}
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			JsonFactory jsonFactory = new JsonFactory();
+			JsonGenerator jg = jsonFactory.createGenerator(baos, JsonEncoding.UTF8);
+
+			jg.writeStartObject();
+			jg.writeObjectFieldStart("outboundSMSMessageRequest");
+			jg.writeArrayFieldStart("address");
+			jg.writeString("tel:" + recipientNumber);
+			jg.writeEndArray();
+			jg.writeStringField("senderAddress", senderAddress);
+			jg.writeObjectFieldStart("outboundSMSTextMessage");
+			jg.writeStringField("message", text);
+			jg.writeEndObject();
+			jg.writeStringField("outboundEncoding", "7bitGSM");
+			jg.writeStringField("clientCorrelator", "" + ((long)(Math.random() * Long.MAX_VALUE)));
+			if (senderName != null)
+				jg.writeStringField("senderName", senderName);
+			jg.writeEndObject();
+			jg.writeEndObject();
+
+			jg.close();
+
+			Exchange exc = new Request.Builder().
+					post("https://gateway.developer.telekom.com/plone/sms/rest/" + environment.name().toLowerCase()
+							+ "/smsmessaging/v1/outbound/" + URLEncoder.encode(senderAddress, "UTF-8") + "/requests").
+							header("Host", "gateway.developer.telekom.com").
+							header("Authorization", "OAuth realm=\"developergarden.com\",oauth_token=\"" + getAccessToken() + "\"").
+							header("Accept", "application/json").
+							header("Content-Type", "application/json").
+							body(baos.toByteArray()).
+							buildExchange();
+
+			hc.call(exc, false, true);
+
+			if (exc.getResponse().getStatusCode() != 201)
+				throw new RuntimeException("Could not send SMS: " + exc.getResponse());
+
+			log.debug("sent SMS to " + recipientNumber);
 		} catch (Exception e2) {
 			throw new RuntimeException(e2);
 		}
 	}
 
-	private static void sendSMS(HttpClient hc, String token, String recipientNumber, String text) throws InvalidAuthTokenException {
-		Exchange exc = new Request.Builder().method(Request.METHOD_POST).
-				url("https://gateway.developer.telekom.com/p3gw-mod-odg-sms/rest/production/sms").
-				header("Authorization", "TAuth realm=\"https://odg.t-online.de\",tauth_token=\"" + token + "\"").
-				header("Accept", "application/json").
-				header("Content-Type", "application/x-www-form-urlencoded").
-				body(new URLParamUtil.ParamBuilder().add("number", recipientNumber).add("message", text).build()).
-				buildExchange();
-		
-		try {
-			Response response = hc.call(exc).getResponse();
-			response.readBody();
+	private synchronized String getAccessToken() throws Exception {
+		long now = System.currentTimeMillis();
+		if (token == null || tokenExpiration < now) {
+			Exchange exc = new Request.Builder().
+					post("https://global.telekom.com/gcp-web-api/oauth").
+					header(Header.HOST, "global.telekom.com").
+					header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((clientId + ":" + clientSecret).getBytes("UTF-8")), "UTF-8")).
+					header(Header.ACCEPT, "application/json").
+					header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).
+					header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded").
+					body(new URLParamUtil.ParamBuilder().add("grant_type", "client_credentials").add("scope", scope).build()).
+					buildExchange();
 
-			if (response.getStatusCode() != 200) {
-				String body = StringUtils.defaultString(response.getBodyAsStringDecoded());
-				// statusCode 0090 "Token is invalid."
-				if (body.contains("\"statusCode\":\"0090\""))
-					throw new InvalidAuthTokenException();
-				throw new RuntimeException("Sending SMS failed: " + body);
-			}
+			new HttpClient().call(exc, false, true);
+			if (exc.getResponse().getStatusCode() != 200)
+				throw new RuntimeException("Telekom Authentication Server returned: " + exc.getResponse());
 
-			log.debug("sent SMS to " + recipientNumber);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+			HashMap<String, String> values = Util.parseSimpleJSONResponse(exc.getResponse());
+
+			if (!values.containsKey("access_token") || !values.containsKey("expires_in"))
+				throw new Exception("Telekom Authentication: Received 200 and JSON body, but no access_token or no expires_in.");
+
+			token = values.get("access_token");
+			tokenExpiration = Long.parseLong(values.get("expires_in")) + System.currentTimeMillis() - 2000;
 		}
+
+		return token;
+	}
+
+	public String getScope() {
+		return scope;
 	}
 
 	/**
-	 * @return a HashMap containing the keys "tokenFormat", "tokenEncoding" and "token".
-	 * @throws Exception when an error occurs (system, network or authentication)
+	 * @description The <i>scope</i> assigned to you by developergarden.com .
 	 */
-	private static String getAuthToken(String user, String password, HttpClient hc)
-			throws UnsupportedEncodingException, IOException, Exception, JsonParseException {
-		Exchange g = new Request.Builder().method(Request.METHOD_GET).
-				url("https://sts.idm.telekom.com/rest-v1/tokens/odg").
-				header("Authorization", "Basic " + new String(Base64.encodeBase64((user + ":" + password).getBytes("UTF-8")), "UTF-8")).
-				header("Accept", "application/json").buildExchange();
-		Response response = hc.call(g).getResponse();
-		
-		if (response.getStatusCode() != 200)
-			throw new Exception("Authentication failed: " + response.getBodyAsStringDecoded());
-
-		HashMap<String, String> values = Util.parseSimpleJSONResponse(response);
-		
-		if (!values.containsKey("token"))
-			throw new Exception("Telekom Authentication: Received 200 and JSON body, but no token.");
-		
-		return values.get("token");
-	}
-
-	private static class InvalidAuthTokenException extends Exception {
-		private static final long serialVersionUID = 1L;
-	}
-
-	public String getUser() {
-		return user;
-	}
-
 	@Required
 	@MCAttribute
-	public void setUser(String user) {
-		this.user = user;
+	public void setScope(String scope) {
+		this.scope = scope;
 	}
 
-	public String getPassword() {
-		return password;
+	public String getClientId() {
+		return clientId;
 	}
 
+	/**
+	 * @description The <i>clientId</i> assigned to you by developergarden.com .
+	 */
 	@Required
 	@MCAttribute
-	public void setPassword(String password) {
-		this.password = password;
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
 	}
+
+	public String getClientSecret() {
+		return clientSecret;
+	}
+
+	/**
+	 * @description The <i>clientSecret</i> assigned to you by developergarden.com .
+	 */
+	@Required
+	@MCAttribute
+	public void setClientSecret(String clientSecret) {
+		this.clientSecret = clientSecret;
+	}
+
+	public String getSenderName() {
+		return senderName;
+	}
+
+	/**
+	 * @description The sender name of the text messages. May only be set, if you are a member of the <i>premium</i> program on developergarded.com .
+	 */
+	@MCAttribute
+	public void setSenderName(String senderName) {
+		this.senderName = senderName;
+	}
+
+	public String getSenderAddress() {
+		return senderAddress;
+	}
+
+	/**
+	 * @description The sender address (telephone number) of the text messages. May only be set, if you are a member of the <i>premium</i> program on developergarded.com .
+	 */
+	@MCAttribute
+	public void setSenderAddress(String senderAddress) {
+		this.senderAddress = senderAddress;
+	}
+
+	public EnvironmentType getEnvironment() {
+		return environment;
+	}
+
+	/**
+	 * @description The <i>environment</i> (program name) you are paying for on developergarden.com .
+	 * @example premium
+	 * @default budget
+	 */
+	@MCAttribute
+	public void setEnvironment(EnvironmentType environment) {
+		this.environment = environment;
+	}
+
+
 }

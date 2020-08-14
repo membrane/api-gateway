@@ -14,23 +14,30 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.*;
-import java.security.InvalidParameterException;
-import java.util.*;
-import java.util.regex.*;
-
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.*;
-import org.springframework.http.MediaType;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.cookie.Cookies;
 import com.predic8.membrane.core.http.cookie.MimeHeaders;
 import com.predic8.membrane.core.http.cookie.ServerCookie;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
+import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The headers of a HTTP message.
@@ -57,6 +64,10 @@ public class Header {
 
 	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
 
+	public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
+
+	public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
+
 	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
 
 	public static final String SOAP_ACTION = "SOAPAction";
@@ -66,39 +77,61 @@ public class Header {
 	public static final String LOCATION = "Location";
 
 	public static final String AUTHORIZATION = "Authorization";
-	
+
 	public static final String SET_COOKIE = "Set-Cookie";
-	
+
 	public static final String COOKIE = "Cookie";
 
 	public static final String DESTINATION = "Destination";
 
 	public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
 
-    public static final String USER_AGENT = "User-Agent";
-    
-    public static final String X_REQUESTED_WITH = "X-Requested-With";
+	public static final String USER_AGENT = "User-Agent";
 
-    public static final String EXPIRES = "Expires";
-    
-    public static final String KEEP_ALIVE = "Keep-Alive";
+	public static final String X_REQUESTED_WITH = "X-Requested-With";
 
-    public static final String SERVER = "Server";
+	public static final String EXPIRES = "Expires";
+
+	public static final String KEEP_ALIVE = "Keep-Alive";
+
+	public static final String SERVER = "Server";
+
+	public static final String PRAGMA = "Pragma";
+
+	public static final String CACHE_CONTROL = "Cache-Control";
+
+	public static final String UPGRADE = "Upgrade";
+
+	public static final String LAST_MODIFIED = "Last-Modified";
+
+	public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
+
+	public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+
+	public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+
+	public static final String ORIGIN = "Origin";
+
+	public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
 
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
-	
+
 	public static final String TIMEOUT = "timeout";
 	public static final String MAX = "max";
 
+	public static final String CLOSE = "close";
+
 	private static final Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
 	private static final Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
-	
+
 	private static final Pattern timeoutPattern = Pattern.compile("timeout\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 	private static final Pattern maxPattern = Pattern.compile("max\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 
-	private static final Log log = LogFactory.getLog(Header.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
+
+
 
 	private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
 
@@ -182,7 +215,7 @@ public class Header {
 			String name = field.getHeaderName().toString();
 			String value = field.getValue();
 			buffer.append(name).append(": ").append(value)
-					.append(Constants.CRLF);
+			.append(Constants.CRLF);
 		}
 		out.write(buffer.toString().getBytes(Constants.ISO_8859_1_CHARSET));
 	}
@@ -212,7 +245,7 @@ public class Header {
 		setValue(HOST, value);
 	}
 
-	public void setContentLength(int length) {
+	public void setContentLength(long length) {
 		setValue(CONTENT_LENGTH, "" + length);
 	}
 
@@ -224,16 +257,16 @@ public class Header {
 		return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));
 	}
 
-	public int getContentLength() {
+	public long getContentLength() {
 		if (!hasContentLength())
 			return -1;
-		return Integer.parseInt(getFirstValue(CONTENT_LENGTH));
+		return Long.parseLong(getFirstValue(CONTENT_LENGTH));
 	}
 
 	public String getContentType() {
 		return getFirstValue(CONTENT_TYPE);
 	}
-	
+
 	/**
 	 * @return An object describing the value of the "Content-Type" HTTP header.
 	 * 	Null, if the header is not present.
@@ -245,7 +278,7 @@ public class Header {
 	}
 
 	public void setContentType(String value) {
-		add(CONTENT_TYPE, value);
+		setValue(CONTENT_TYPE, value);
 	}
 
 	public String getSOAPAction() {
@@ -253,7 +286,7 @@ public class Header {
 	}
 
 	public void setSOAPAction(String value) {
-		add(SOAP_ACTION, value);
+		setValue(SOAP_ACTION, value);
 	}
 
 	public String getAccept() {
@@ -269,7 +302,7 @@ public class Header {
 	}
 
 	public void setConnection(String connection) {
-		add(CONNECTION, connection);
+		setValue(CONNECTION, connection);
 	}
 
 	public String getProxyConnection() {
@@ -284,14 +317,14 @@ public class Header {
 		if (getProxyConnection() == null)
 			return false;
 
-		return "close".equalsIgnoreCase(getProxyConnection());
+		return CLOSE.equalsIgnoreCase(getProxyConnection());
 	}
 
 	public boolean isConnectionClose() {
 		if (getConnection() == null)
 			return false;
 
-		return "close".equalsIgnoreCase(getConnection());
+		return CLOSE.equalsIgnoreCase(getConnection());
 	}
 
 	public boolean hasContentLength() {
@@ -326,20 +359,28 @@ public class Header {
 	}
 
 	public void setXForwardedFor(String value) {
-		add(X_FORWARDED_FOR, value);
+		setValue(X_FORWARDED_FOR, value);
 	}
 
 	public String getXForwardedFor() {
 		return getFirstValue(X_FORWARDED_FOR);
 	}
 
+	public void setXForwardedProto(String value) {
+		setValue(X_FORWARDED_PROTO, value);
+	}
+
+	public String getXForwardedProto() {
+		return getFirstValue(X_FORWARDED_PROTO);
+	}
+
 	public String getContentEncoding() {
 		return getFirstValue(CONTENT_ENCODING);
 	}
 
-    public String getUserAgent() {
-        return getFirstValue(USER_AGENT);
-    }
+	public String getUserAgent() {
+		return getFirstValue(USER_AGENT);
+	}
 
 	// TODO header value is a complex unit
 	public String getCharset() {
@@ -382,11 +423,15 @@ public class Header {
 		}
 		return map;
 	}
-	
+
 	public void addCookieSession(String cookieName, String value) {
-		add(SET_COOKIE, cookieName + "=" + value);
+		addRawCookieSession(cookieName + "=" + value);
 	}
-	
+
+	public void addRawCookieSession(String cookie){
+		add(SET_COOKIE, cookie);
+	}
+
 	public String getFirstCookie(String cookieName) {
 		Cookies c = new Cookies(new MimeHeaders(this));
 		for (int i = 0; i < c.getCookieCount(); i++) {
@@ -396,7 +441,7 @@ public class Header {
 		}
 		return null;
 	}
-	
+
 	public int estimateHeapSize() {
 		int size = 10;
 		for (HeaderField hf : fields)
@@ -424,7 +469,7 @@ public class Header {
 					return i;
 		return -1;
 	}
-	
+
 	public static MediaType[] convertStringsToMediaType(String[] mediaTypes) {
 		MediaType[] m = new MediaType[mediaTypes.length];
 		for (int i = 0; i < mediaTypes.length; i++)
@@ -464,4 +509,94 @@ public class Header {
 		fields.clear();
 	}
 
+	public boolean isUserAgentSupportsSNI() {
+		// a mostly conservative approximation of http://en.wikipedia.org/wiki/Server_Name_Indication#Support
+		String ua = getUserAgent();
+		if (ua == null)
+			return false;
+		if (getBrowserVersion(ua, "Firefox") >= 2)
+			return true;
+		if (getBrowserVersion(ua, "Opera") >= 8)
+			return true;
+		if (getBrowserVersion(ua, "Safari") >= 522)
+			return getBrowserVersion(ua, "Windows NT") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
+			if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
+				return getBrowserVersion(ua, "Windows NT") >= 6;
+				if (getBrowserVersion(ua, "Chrome") > 0) {
+					int windows = getBrowserVersion(ua, "Windows NT");
+					return windows >= 6 || windows == -1;
+				}
+				return false;
+	}
+
+	private int getBrowserVersion(String userAgent, String browserID) {
+		int p = userAgent.indexOf(browserID);
+		p += browserID.length();
+
+		if (userAgent.length() == p)
+			return -1;
+		char c = userAgent.charAt(p++);
+		if (c != ' ' && c != '/' && c != '_')
+			return -1;
+
+		int version = 0;
+		while (userAgent.length() != p) {
+			c = userAgent.charAt(p++);
+			if (c < '0' || c > '9')
+				break;
+			version = version * 10 + (c - '0');
+		}
+		return version;
+	}
+
+	public void setNoCacheResponseHeaders() {
+		setValue(EXPIRES, "Tue, 03 Jul 2001 06:00:00 GMT");
+		setValue(CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
+		add(CACHE_CONTROL, "post-check=0, pre-check=0");
+		add(PRAGMA, "no-cache");
+	}
+
+	public String getAuthorization() {
+		return getFirstValue(AUTHORIZATION);
+	}
+
+	public void setWwwAuthenticate(String params){
+		setValue(WWW_AUTHENTICATE,params);
+	}
+
+	public String getWwwAuthenticate(){
+		return getFirstValue(WWW_AUTHENTICATE);
+	}
+
+	public String getNormalizedValue(String headerName) {
+		StringBuilder sb = new StringBuilder();
+		for (HeaderField headerField : fields) {
+			if (headerField.getHeaderName().equals(headerName)) {
+				if (sb.length() > 0)
+					sb.append(",");
+				sb.append(headerField.getValue());
+			}
+		}
+		return sb.length() == 0 ? null : sb.toString();
+	}
+
+	public boolean isBinaryContentType() {
+		String contentType = getContentType();
+		if(contentType == null)
+			return false;
+
+		// incomplete list - better safe than sorry!
+		return contentType.startsWith("audio/")
+				|| contentType.startsWith("image/")
+				|| contentType.startsWith("video/")
+				|| contentType.startsWith("application/octet-stream");
+	}
+
+	public String getXForwardedHost() {
+		return getFirstValue(X_FORWARDED_HOST);
+	}
+
+	public void setXForwardedHost(String xForwardedHostHeaderValue) {
+		setValue(X_FORWARDED_HOST,xForwardedHostHeaderValue);
+	}
 }

@@ -1,0 +1,27 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy port="2000">
+			<request>
+				<validator schema="year.xsd" />
+			</request>
+			<response>
+				<validator schema="amount.xsd" />
+			</response>
+			<target host="localhost" port="2001" />
+		</serviceProxy>
+	
+		<serviceProxy port="2001">
+			<groovy>
+				Response.ok("&lt;amount&gt;100&lt;/amount&gt;").build()			
+			</groovy>
+		</serviceProxy>
+		
+	</router>
+	
+</spring:beans>

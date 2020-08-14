@@ -16,8 +16,12 @@ package com.predic8.membrane.interceptor;
 import static org.junit.Assert.assertEquals;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.List;
 
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLUtil;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
@@ -122,7 +126,7 @@ public class LoadBalancingInterceptorTest {
 
 	@Test
 	public void testGetDestinationURLWithHostname()
-			throws MalformedURLException {
+			throws MalformedURLException, URISyntaxException {
 		doTestGetDestinationURL(
 				"http://localhost/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
@@ -130,13 +134,15 @@ public class LoadBalancingInterceptorTest {
 
 	@Test
 	public void testGetDestinationURLWithoutHostname()
-			throws MalformedURLException {
+			throws MalformedURLException, URISyntaxException {
 		doTestGetDestinationURL("/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
-	private void doTestGetDestinationURL(String requestUri, String expectedUri) {
+	private void doTestGetDestinationURL(String requestUri, String expectedUri) throws URISyntaxException {
 		Exchange exc = new Exchange(null);
+		exc.setRequest(new Request());
+		exc.getRequest().setUri(URLUtil.getPathQuery(new URIFactory(), requestUri));
 		exc.setOriginalRequestUri(requestUri);
 		assertEquals(expectedUri, new Node("thomas-bayer.com", 80).getDestinationURL(exc));
 	}
@@ -154,20 +160,20 @@ public class LoadBalancingInterceptorTest {
 		//System.out.println(new String(vari.getResponseBody()));
 
 		assertEquals(200, status);
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(0, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(0, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(1, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(1, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(2, mockInterceptor1.counter);
-		assertEquals(1, mockInterceptor2.counter);
+		assertEquals(2, mockInterceptor1.getCount());
+		assertEquals(1, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(2, mockInterceptor1.counter);
-		assertEquals(2, mockInterceptor2.counter);
+		assertEquals(2, mockInterceptor1.getCount());
+		assertEquals(2, mockInterceptor2.getCount());
 	}
 
 	@Test
@@ -181,20 +187,20 @@ public class LoadBalancingInterceptorTest {
 		int status = client.executeMethod(vari);
 
 		assertEquals(200, status);
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(0, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(0, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(1, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(1, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(2, mockInterceptor1.counter);
-		assertEquals(1, mockInterceptor2.counter);
+		assertEquals(2, mockInterceptor1.getCount());
+		assertEquals(1, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(2, mockInterceptor1.counter);
-		assertEquals(2, mockInterceptor2.counter);
+		assertEquals(2, mockInterceptor1.getCount());
+		assertEquals(2, mockInterceptor2.getCount());
 	}
 
 	private PostMethod getPostMethod() {
@@ -217,22 +223,22 @@ public class LoadBalancingInterceptorTest {
 				HttpVersion.HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(0, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(0, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(1, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(1, mockInterceptor2.getCount());
 
 		service1.shutdown();
 		Thread.sleep(1000);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(2, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(2, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(3, mockInterceptor2.counter);
+		assertEquals(3, mockInterceptor2.getCount());
 
 	}
 
@@ -245,27 +251,27 @@ public class LoadBalancingInterceptorTest {
 				HttpVersion.HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(0, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(0, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(1, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(1, mockInterceptor2.getCount());
 
 		((ServiceProxy)service1.getRuleManager().getRules().get(0)).getInterceptors().add(0, new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) throws Exception {
-				exc.setResponse(Response.interalServerError().build());
+				exc.setResponse(Response.internalServerError().build());
 				return Outcome.ABORT;
 			}
 		});
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(1, mockInterceptor1.counter);
-		assertEquals(2, mockInterceptor2.counter);
+		assertEquals(1, mockInterceptor1.getCount());
+		assertEquals(2, mockInterceptor2.getCount());
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
-		assertEquals(3, mockInterceptor2.counter);
+		assertEquals(3, mockInterceptor2.getCount());
 
 	}
 

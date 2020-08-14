@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -36,27 +36,31 @@ import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 @MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(RuleMatchingInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());
 
 	private boolean xForwardedForEnabled = true;
 	private int maxXForwardedForHeaders = 20;
 
 	public RuleMatchingInterceptor() {
-		name = "Rule Matching Interceptor";		
+		name = "Rule Matching Interceptor";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
+	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRule() != null ) return Outcome.CONTINUE;
-		
+
 		Rule rule = getRule(exc);
 		exc.setRule(rule);
-		
+		if(exc.getRule().getSslOutboundContext() != null){
+			exc.setProperty(Exchange.SSL_CONTEXT, exc.getRule().getSslOutboundContext());
+		}
+
 		if (rule instanceof NullRule) {
 			handleNoRuleFound(exc);
 			return Outcome.ABORT;
 		}
-		
+
 		if (xForwardedForEnabled && (rule instanceof AbstractServiceProxy))
 			insertXForwardedFor(exc);
 
@@ -66,25 +70,26 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private void handleNoRuleFound(Exchange exc) throws IOException {
 		exc.setResponse(
 				Response.badRequest(
-						"This request was not accepted by " + 
-								"<a href=\"http://www.membrane-soa.org/esb-doc/\">" + Constants.PRODUCT_NAME + "</a>" + 
+						"This request was not accepted by " +
+								"<a href=\"" + Constants.PRODUCT_WEBSITE_DOC + "\">" + Constants.PRODUCT_NAME + "</a>" +
 								". Please correct the request and try again.",
-						false).build());
+								false).build());
 	}
 
 	private Rule getRule(Exchange exc) {
 		Request request = exc.getRequest();
 		AbstractHttpHandler handler = exc.getHandler();
-		
+
 		// retrieve value to match
 		String hostHeader = request.getHeader().getHost();
 		String method = request.getMethod();
 		String uri = request.getUri();
+		String version = request.getVersion();
 		int port = handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
 		String localIP = handler.getLocalAddress().getHostAddress();
 
 		// match it
-		Rule rule = router.getRuleManager().getMatchingRule(hostHeader, method, uri, port, localIP);
+		Rule rule = router.getRuleManager().getMatchingRule(hostHeader, method, uri, version, port, localIP);
 		if (rule != null) {
 			if (log.isDebugEnabled())
 				log.debug("Matching Rule found for RuleKey " + hostHeader + " " + method + " " + uri + " " + port + " " + localIP);
@@ -103,7 +108,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 				if (!rule.getKey().getIp().equals(exc.getHandler().getLocalAddress().toString()))
 					continue;
 
-			
+
 			if (rule.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || rule.getKey().getPort() == exc.getHandler().getLocalPort()) {
 				if (log.isDebugEnabled())
 					log.debug("proxy rule found: " + rule);
@@ -118,21 +123,59 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		Header h = exc.getRequest().getHeader();
 		if (h.getNumberOf(Header.X_FORWARDED_FOR) > maxXForwardedForHeaders) {
 			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_FOR + " flood: " + r.getStartLine() +  
+			throw new RuntimeException("Request caused " + Header.X_FORWARDED_FOR + " flood: " + r.getStartLine() +
 					r.getHeader().toString());
 		}
 		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
+
+		if (h.getNumberOf(Header.X_FORWARDED_PROTO) > maxXForwardedForHeaders) {
+			Request r = exc.getRequest();
+			throw new RuntimeException("Request caused " + Header.X_FORWARDED_PROTO + " flood: " + r.getStartLine() +
+					r.getHeader().toString());
+		}
+		h.setXForwardedProto(getXForwardedProtoHeaderValue(exc));
+
+
+		if (h.getNumberOf(Header.X_FORWARDED_HOST) > maxXForwardedForHeaders) {
+			Request r = exc.getRequest();
+			throw new RuntimeException("Request caused " + Header.X_FORWARDED_HOST + " flood: " + r.getStartLine() +
+					r.getHeader().toString());
+		}
+		h.setXForwardedHost(getXForwardedHostHeaderValue(exc));
+
+	}
+
+	private String getXForwardedHostHeaderValue(AbstractExchange exc) {
+		if(getXForwardedHost(exc) != null)
+			return getXForwardedHost(exc) + ", " + exc.getRequest().getHeader().getHost();
+		return exc.getRequest().getHeader().getHost();
+	}
+
+	private String getXForwardedHost(AbstractExchange exc) {
+		return exc.getRequest().getHeader().getXForwardedHost();
 	}
 
 	private String getXForwardedForHeaderValue(AbstractExchange exc) {
 		if (getXForwardedFor(exc) != null )
 			return getXForwardedFor(exc) + ", " + exc.getRemoteAddrIp();
-		
+
 		return exc.getRemoteAddrIp();
+	}
+
+	private String getXForwardedProtoHeaderValue(AbstractExchange exc) {
+		String proto = ((Exchange)exc).getRule().getSslInboundContext() != null ? "https" : "http";
+		if (getXForwardedProto(exc) != null )
+			return getXForwardedProto(exc);
+
+		return proto;
 	}
 
 	private String getXForwardedFor(AbstractExchange exc) {
 		return exc.getRequest().getHeader().getXForwardedFor();
+	}
+
+	private String getXForwardedProto(AbstractExchange exc) {
+		return exc.getRequest().getHeader().getXForwardedProto();
 	}
 
 	@Override
@@ -143,16 +186,16 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	public boolean isxForwardedForEnabled() {
 		return xForwardedForEnabled;
 	}
-	
+
 	@MCAttribute
 	public void setxForwardedForEnabled(boolean xForwardedForEnabled) {
 		this.xForwardedForEnabled = xForwardedForEnabled;
 	}
-	
+
 	public int getMaxXForwardedForHeaders() {
 		return maxXForwardedForHeaders;
 	}
-	
+
 	@MCAttribute
 	public void setMaxXForwardedForHeaders(int maxXForwardedForHeaders) {
 		this.maxXForwardedForHeaders = maxXForwardedForHeaders;

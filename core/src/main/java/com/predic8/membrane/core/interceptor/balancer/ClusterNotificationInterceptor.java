@@ -26,8 +26,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -43,15 +43,14 @@ import com.predic8.membrane.core.interceptor.Outcome;
  */
 @MCElement(name="clusterNotification")
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
-	private static Log log = LogFactory
-			.getLog(ClusterNotificationInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ClusterNotificationInterceptor.class.getName());
 
 	private Pattern urlPattern = Pattern.compile("/clustermanager/(up|down|takeout)/?\\??(.*)");
 
 	private boolean validateSignature = false;
 	private int timeout = 0;
 	private String keyHex;
-	
+
 	public ClusterNotificationInterceptor() {
 		name = "ClusterNotifcationInterceptor";
 	}
@@ -61,28 +60,28 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		log.debug(exc.getOriginalRequestUri());
 
 		Matcher m = urlPattern.matcher(exc.getOriginalRequestUri());
-		
+
 		if (!m.matches()) return Outcome.CONTINUE;
-		
+
 		log.debug("request received: "+m.group(1));
 		if (validateSignature && !getParams(exc).containsKey("data")) {
 			exc.setResponse(Response.forbidden().build());
-			return Outcome.ABORT;			
-		}
-		
-		Map<String, String> params = validateSignature?
-				getDecryptedParams(getParams(exc).get("data")):
-				getParams(exc);
-
-		if ( isTimedout(params) ) {
-			exc.setResponse(Response.forbidden().build());
 			return Outcome.ABORT;
 		}
-		
-		updateClusterManager(m, params);
-		
-		exc.setResponse(Response.noContent().build());
-		return Outcome.RETURN;
+
+		Map<String, String> params = validateSignature?
+				getDecryptedParams(getParams(exc).get("data")):
+					getParams(exc);
+
+				if ( isTimedout(params) ) {
+					exc.setResponse(Response.forbidden().build());
+					return Outcome.ABORT;
+				}
+
+				updateClusterManager(m, params);
+
+				exc.setResponse(Response.noContent().build());
+				return Outcome.RETURN;
 	}
 
 	private void updateClusterManager(Matcher m, Map<String, String> params)
@@ -92,22 +91,22 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 					router,
 					getBalancerParam(params),
 					getClusterParam(params),
-					params.get("host"), 
-					getPortParam(params));			
+					params.get("host"),
+					getPortParam(params));
 		} else if ("down".equals(m.group(1))) {
 			BalancerUtil.down(
 					router,
 					getBalancerParam(params),
 					getClusterParam(params),
-					params.get("host"), 
-					getPortParam(params));			
+					params.get("host"),
+					getPortParam(params));
 		} else {
 			BalancerUtil.takeout(
 					router,
 					getBalancerParam(params),
 					getClusterParam(params),
-					params.get("host"), 
-					getPortParam(params));			
+					params.get("host"),
+					getPortParam(params));
 		}
 	}
 
@@ -119,7 +118,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		Cipher cipher = Cipher.getInstance("AES");
 		SecretKeySpec skeySpec = new SecretKeySpec(Hex.decodeHex(keyHex.toCharArray()), "AES");
 		cipher.init(Cipher.DECRYPT_MODE, skeySpec);
-	    return parseQueryString(new String(cipher.doFinal(Base64.decodeBase64(data.getBytes("UTF-8"))),"UTF-8"));						
+		return parseQueryString(new String(cipher.doFinal(Base64.decodeBase64(data.getBytes("UTF-8"))),"UTF-8"));
 	}
 
 	private int getPortParam(Map<String, String> params) throws Exception {
@@ -180,7 +179,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	public void setKeyHex(String keyHex) {
 		this.keyHex = keyHex;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Sets the status of load-balancer nodes to UP or DOWN, based on the request attributes.";

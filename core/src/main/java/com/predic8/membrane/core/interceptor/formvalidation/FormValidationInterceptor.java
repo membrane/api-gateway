@@ -22,8 +22,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -47,9 +47,9 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	public static class Field extends AbstractXmlElement {
 		public String name;
 		public String regex;
-		
+
 		private Pattern pattern;
-		
+
 		public boolean matchesSubstring(String input) {
 			return pattern.matcher(input).matches();
 		}
@@ -99,10 +99,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			pattern = Pattern.compile(regex);
 		}
 
-		
+
 	}
 
-	private static Log log = LogFactory.getLog(FormValidationInterceptor.class
+	private static Logger log = LoggerFactory.getLogger(FormValidationInterceptor.class
 			.getName());
 
 	private List<Field> fields = new ArrayList<Field>();
@@ -114,13 +114,13 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-	
+
 		logMappings();
-		
-		Map<String, String> propMap = URLParamUtil.getParams(exc);
+
+		Map<String, String> propMap = URLParamUtil.getParams(router.getUriFactory(), exc);
 		for (Field f : fields) {
 			if ( !propMap.containsKey(f.name) ) continue;
-			
+
 			if ( !f.matchesSubstring(propMap.get(f.name)) ) {
 				setErrorResponse(exc, propMap, f);
 				return Outcome.ABORT;
@@ -139,8 +139,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			log.debug("[regex:"+m.regex+"],[name:"+m.name+"]");
 		}
 	}
-	
-	
+
+
 	public List<Field> getFields() {
 		return fields;
 	}

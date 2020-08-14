@@ -28,46 +28,40 @@ import com.predic8.membrane.annot.MCElement;
 public class ProxyRule extends AbstractProxy {
 
 	public static final String ELEMENT_NAME = "proxy";
-	
+
 	public ProxyRule() {
 		key = new ProxyRuleKey(80);
 	}
-	
+
 	public ProxyRule(ProxyRuleKey ruleKey) {
 		super(ruleKey);
 	}
-	
+
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new ProxyRule();
 	}
-	
+
 	@Override
 	public String getName() {
 		return StringUtils.defaultIfEmpty(name, getKey().toString());
 	}
-	
+
 	public int getPort() {
 		return ((ProxyRuleKey)key).getPort();
 	}
-	
+
 	@MCAttribute
 	public void setPort(int port) {
 		((ProxyRuleKey)key).setPort(port);
 	}
-	
+
 	public String getIp() {
 		return ((ProxyRuleKey)key).getIp();
 	}
-	
+
 	@MCAttribute
 	public void setIp(String ip) {
 		((ProxyRuleKey)key).setIp(ip);
 	}
-	
-	@Override
-	public AbstractProxy clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException();
-	}
-
 }

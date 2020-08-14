@@ -39,12 +39,12 @@ public class MembraneServlet extends HttpServlet {
 
 	private XmlWebApplicationContext appCtx;
 	private Router router;
-	
+
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		try {
 			appCtx = new BaseLocationXmlWebApplicationContext();
-			
+
 			log.debug("loading beans configuration from: " + getProxiesXmlLocation(config));
 			router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, config.getServletContext(), getProxiesXmlLocation(config));
 			if (router == null)
@@ -54,12 +54,12 @@ public class MembraneServlet extends HttpServlet {
 			throw new ServletException(e);
 		}
 	}
-	
+
 	@Override
 	public void destroy() {
 		appCtx.stop();
 	}
-	
+
 	private String getProxiesXmlLocation(ServletConfig config) {
 		return config.getInitParameter("proxiesXml");
 	}

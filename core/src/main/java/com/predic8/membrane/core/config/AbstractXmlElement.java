@@ -21,12 +21,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractXmlElement implements XMLElement {
 
-	private static Log log = LogFactory.getLog(AbstractXmlElement.class
+	private static Logger log = LoggerFactory.getLogger(AbstractXmlElement.class
 			.getName());
 
 	/**

@@ -1,5 +1,7 @@
 var membrane = function() {
-			
+
+	runningDataLoadCall = null;
+
 	function createLink(href, content, params) {
 		var i,
 		    url = encodeURI(href);
@@ -155,16 +157,25 @@ var membrane = function() {
 		$('#response-headers').dataTable(getHeaderTableConfiguration(responseHeaderUrl));	
 		loadText('#response-raw', responseRawUrl);
 	}
-	
+
+	function onFilterUpdate() {
+		membrane.lastMod=0;
+		membrane.messageTable.fnDraw();
+	}
+
 	return {
 		createLink:createLink,
-		loadExchange:loadExchange
+		loadExchange:loadExchange,
+		onFilterUpdate:onFilterUpdate,
 	}
 }();
 
 $(function() {
 	
-	$('#proxy-rules-table, #interceptor-table, #statistics-table, #statuscode-table' ).dataTable({
+	// initialize at the beginning
+	membrane.lastMod = 0;
+
+	$('#proxy-rules-table, #interceptor-table, #statistics-table, #stream-pumps-table, #statuscode-table' ).dataTable({
 	  'bJQueryUI': true,
 	  'sPaginationType': 'full_numbers'
 	});
@@ -344,6 +355,7 @@ $(function() {
         	  var queryData = [{name:'offset', value:getParam('iDisplayStart')}, 
                           {name:'max', value:getParam('iDisplayLength')},
                           {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
+                          {name:'waitForModification', value:membrane.lastMod},
                           {name:'order', value:getParam('sSortDir_0')}];
         	  
         	  function addFilterProps(name) {
@@ -366,8 +378,10 @@ $(function() {
         	  addFilterProps('server');
         	  addFilterProps('reqcontenttype');
         	  addFilterProps('respcontenttype');
-        	  
-              $.ajax( {            	  
+
+        	  if (runningDataLoadCall != null)
+        	  	runningDataLoadCall.abort();
+			  runningDataLoadCall = $.ajax( {
                 "dataType": 'json', 
                 "type": "GET", 
                 "url": sSource, 
@@ -376,7 +390,9 @@ $(function() {
                 	data.sEcho = aoData.sEcho;
                 	data.iTotalRecords = data.total;
                 	data.iTotalDisplayRecords = data.total;
+                	membrane.lastMod = data.lastModified;
                 	fnCallback(data);
+                	window.setTimeout(updateCallsTablePeriodically, 1000);
                 }
               } );
             }		              
@@ -392,7 +408,29 @@ $(function() {
     );
     
     $('.mb-button').button();
-    
+
+	$('#reload-data-button').click(function() {
+		updateCallsTable();
+	});
+
+	$('#reload-data-checkbox').change(function() {
+		if ($('#reload-data-checkbox').attr('checked')) {
+			updateCallsTablePeriodically();
+		}
+	});
+
+	function updateCallsTable() {
+		$('#message-stat-table').dataTable()._fnAjaxUpdate();
+	}
+
+	function updateCallsTablePeriodically() {
+		if ($('#reload-data-checkbox').attr('checked')) {
+			updateCallsTable();
+		} else {
+			return;
+		}
+	}
+
     $('form').validationEngine('attach', {promptPosition : 'bottomRight', scroll: false});
     $('form').submit(function() {
 		return this.validationEngine('validate');

@@ -18,15 +18,15 @@ import com.predic8.membrane.core.rules.Rule;
 
 
 public interface IRuleChangeListener {
-	
+
 	public void ruleAdded(Rule rule);
 
 	public void ruleRemoved(Rule rule, int rulesLeft);
-	
+
 	public void ruleUpdated(Rule rule);
-	
+
 	public void rulePositionsChanged();
 
 	public void batchUpdate(int size);
-	
+
 }

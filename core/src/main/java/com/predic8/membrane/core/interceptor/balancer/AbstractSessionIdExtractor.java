@@ -19,7 +19,7 @@ import com.predic8.membrane.core.http.Message;
 
 public abstract class AbstractSessionIdExtractor extends AbstractXmlElement {
 
-	public boolean hasSessionId(Message msg) throws Exception {		
+	public boolean hasSessionId(Message msg) throws Exception {
 		return getSessionId(msg) != null;
 	}
 

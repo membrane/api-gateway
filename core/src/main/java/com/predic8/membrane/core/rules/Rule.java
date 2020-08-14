@@ -19,50 +19,45 @@ import java.util.Map;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public interface Rule extends Cloneable {
-	
-	public List<Interceptor> getInterceptors();
-	
-	public void setInterceptors(List<Interceptor> interceptors); 
-	
-	public boolean isBlockRequest();
-	
-	public boolean isBlockResponse();
-	
-	public RuleKey getKey();
-	
-	public void setKey(RuleKey ruleKey);
-	
-	public void setName(String name);
-	
-	public String getName();
-	
-	public void setBlockRequest(boolean blockStatus);
-	
-	public void setBlockResponse(boolean blockStatus);
-	
-	public String getLocalHost();
-	
-	public void setLocalHost(String localHost);
-	
-	public void collectStatisticsFrom(Exchange exc);
 
-	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes();
-	
-	public int getCount();
-	
+	public List<Interceptor> getInterceptors();
+
+	public void setInterceptors(List<Interceptor> interceptors);
+
+	public boolean isBlockRequest();
+
+	public boolean isBlockResponse();
+
+	public RuleKey getKey();
+
+	public void setKey(RuleKey ruleKey);
+
+	public void setName(String name);
+
+	public String getName();
+
+	public void setBlockRequest(boolean blockStatus);
+
+	public void setBlockResponse(boolean blockStatus);
+
+	public RuleStatisticCollector getStatisticCollector();
+
 	public SSLContext getSslInboundContext();
 
-	public SSLContext getSslOutboundContext();
-	
+	public SSLProvider getSslOutboundContext();
+
 	public void init(Router router) throws Exception;
-	
+
 	public boolean isTargetAdjustHostHeader();
-	
+
 	public boolean isActive();
 
 	public String getErrorState();
 
+	public Rule clone() throws CloneNotSupportedException;
 }

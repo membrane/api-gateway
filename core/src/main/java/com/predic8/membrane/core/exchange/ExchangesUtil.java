@@ -20,8 +20,8 @@ import com.predic8.membrane.core.Constants;
 
 public class ExchangesUtil {
 
-	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
-	
+	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
 	public static String extractContentTypeValue(String contentType) {
 		if (contentType == null)
 			return "";
@@ -31,7 +31,7 @@ public class ExchangesUtil {
 		}
 		return contentType;
 	}
-	
+
 	public static String getStatusCode(AbstractExchange exc) {
 		if (exc.getResponse() == null)
 			return "";
@@ -45,26 +45,26 @@ public class ExchangesUtil {
 			return DATE_FORMATTER.format(exc.getTime().getTime());
 		}
 	}
-	
+
 	public static String getRequestContentLength(AbstractExchange exc) {
 		if (exc.getRequestContentLength() == -1)
 			return Constants.UNKNOWN;
 		return "" + exc.getRequestContentLength();
 	}
-	
+
 	public static String getResponseContentLength(AbstractExchange exc) {
 		if (exc.getResponseContentLength() == -1)
 			return Constants.UNKNOWN;
 		return "" + exc.getResponseContentLength();
 	}
-	
+
 	public static String getResponseContentType(AbstractExchange exc) {
 		if (exc.getResponse() == null)
 			return Constants.N_A;
 		return exc.getResponseContentType();
 	}
-	
-	
+
+
 	public static String getTimeDifference(AbstractExchange exc) {
 		return "" + (exc.getTimeResReceived() - exc.getTimeReqSent());
 	}

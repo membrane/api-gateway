@@ -45,6 +45,7 @@ public class CustomSpringConfigurationTest {
 		router = Router.init("src/test/resources/custom-spring-beans.xml");
 	}
 
+	@Ignore
 	@Test
 	public void testInit() throws Exception {
 		assertNotNull(router);
@@ -157,10 +158,10 @@ public class CustomSpringConfigurationTest {
 
 		assertEquals(10,
 				((ByThreadStrategy) i.getDispatchingStrategy())
-						.getMaxNumberOfThreadsPerEndpoint());
+				.getMaxNumberOfThreadsPerEndpoint());
 		assertEquals(1000,
 				((ByThreadStrategy) i.getDispatchingStrategy())
-						.getRetryTimeOnBusy());
+				.getRetryTimeOnBusy());
 	}
 
 	private void assertClusterNotificationInterceptor(
@@ -194,11 +195,11 @@ public class CustomSpringConfigurationTest {
 	}
 
 	private void assertForgetfulExchangeStore(ExchangeStoreInterceptor i) {
-		assertNotNull((ForgetfulExchangeStore) i.getExchangeStore());
+		assertNotNull(i.getExchangeStore());
 	}
 
 	private void assertMemoryExchangeStore(ExchangeStoreInterceptor i) {
-		assertNotNull((MemoryExchangeStore) i.getExchangeStore());
+		assertNotNull(i.getExchangeStore());
 	}
 
 	private void assertFileExchangeStore(ExchangeStoreInterceptor i) {

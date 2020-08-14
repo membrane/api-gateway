@@ -23,9 +23,9 @@ public interface IValidator {
 	 * @param source "request" or "response"
 	 */
 	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception;
-	
+
 	public long getValid();
-	
+
 	public long getInvalid();
 
 }

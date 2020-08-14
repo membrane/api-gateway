@@ -17,72 +17,72 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.ls.LSInput;
 
 import com.predic8.membrane.core.Constants;
 
 public class LSInputImpl implements LSInput {
 
-	private static Log log = LogFactory.getLog(LSInputImpl.class.getName());
-	
+	private static Logger log = LoggerFactory.getLogger(LSInputImpl.class.getName());
+
 	private String publicId;
 	private String systemId;
 	private InputStream inputStream;
 
 	public LSInputImpl(String publicId, String systemId, InputStream inputStream) {
-	    this.publicId = publicId;
-	    this.systemId = systemId;
-	    this.inputStream = inputStream;
+		this.publicId = publicId;
+		this.systemId = systemId;
+		this.inputStream = inputStream;
 	}
 
 	@Override
 	public String getPublicId() {
-	    return publicId;
+		return publicId;
 	}
 
 	@Override
 	public void setPublicId(String publicId) {
-	    this.publicId = publicId;
+		this.publicId = publicId;
 	}
 
 	@Override
 	public String getBaseURI() {
-	    return null;
+		return null;
 	}
 
 	@Override
 	public InputStream getByteStream() {
-	    return null;
+		return null;
 	}
 
 	@Override
 	public boolean getCertifiedText() {
-	    return false;
+		return false;
 	}
 
 	@Override
 	public Reader getCharacterStream() {
-	    return null;
+		return null;
 	}
 
 	@Override
 	public String getEncoding() {
-	    return Constants.UTF_8;
+		return Constants.UTF_8;
 	}
 
 	@Override
 	public String getStringData() {
-	    synchronized (inputStream) {
-	    	String result = "";
-	    	try {
-	            result = streamToString();
-	        } catch (IOException e) {
-	            log.error("Unable to read stream: " + e);
-	        }
-	        return result;
-	    }
+		synchronized (inputStream) {
+			String result = "";
+			try {
+				result = streamToString();
+			} catch (IOException e) {
+				log.error("Unable to read stream: " + e);
+			}
+			return result;
+		}
 	}
 
 	private String streamToString() throws IOException {
@@ -123,12 +123,12 @@ public class LSInputImpl implements LSInput {
 
 	@Override
 	public String getSystemId() {
-	    return systemId;
+		return systemId;
 	}
 
 	@Override
 	public void setSystemId(String systemId) {
-	    this.systemId = systemId;
+		this.systemId = systemId;
 	}
-	
+
 }

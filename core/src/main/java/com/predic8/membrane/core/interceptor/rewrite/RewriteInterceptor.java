@@ -21,8 +21,8 @@ import java.util.ListIterator;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
@@ -50,22 +50,22 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		REDIRECT_TEMPORARY,
 		REDIRECT_PERMANENT,
 	}
-	
+
 	@MCElement(name="map", topLevel=false, id="rewriter-map")
 	public static class Mapping {
 		public String to;
 		public String from;
 		private Type do_;
-		
+
 		private Pattern pattern;
-		
+
 		public Mapping() {
 		}
-		
+
 		public Mapping(String from, String to, String do_) {
 			this.from = from;
 			this.to = to;
-			
+
 			if (StringUtils.isEmpty(do_))
 				this.do_ = getDo();
 			else if (do_.equals("rewrite"))
@@ -79,15 +79,15 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 			pattern = Pattern.compile(from);
 		}
-		
+
 		public boolean matches(String uri) {
 			return pattern.matcher(uri).find();
 		}
-		
+
 		public String getFrom() {
 			return from;
 		}
-		
+
 		/**
 		 * @description Java Regular expression
 		 * @example ^/bank/(.*)
@@ -101,7 +101,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			else
 				pattern = Pattern.compile(from);
 		}
-		
+
 		public String getTo() {
 			return to;
 		}
@@ -115,13 +115,13 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		public void setTo(String to) {
 			this.to = to;
 		}
-		
+
 		public Type getDo() {
 			if (do_ == null)
 				do_ = to.contains("://") ? Type.REDIRECT_TEMPORARY : Type.REWRITE;
 			return do_;
 		}
-		
+
 		/**
 		 * @description What to do: "rewrite", "redirect-temporary" or "redirect-permanent".
 		 * @default rewrite (default) or redirect (if "to" contains "://")
@@ -131,11 +131,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		public void setDo(Type do_) {
 			this.do_ = do_;
 		}
-		
-		
+
+
 	}
 
-	private static Log log = LogFactory.getLog(RewriteInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
 	private List<Mapping> mappings = new ArrayList<Mapping>();
 
@@ -146,30 +146,33 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-	
+
 		logMappings();
-		
+
 		ListIterator<String>  it = exc.getDestinations().listIterator();
 		while ( it.hasNext() ) {
 			String dest = it.next();
-			
-			String pathQuery = URLUtil.getPathQuery(dest);
-			int pathBegin = dest.lastIndexOf(pathQuery);
-			String schemaHostPort = pathBegin == -1 ? dest : dest.substring(0, pathBegin); // TODO check -1 case
-			
+
+			String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), dest);
+			int pathBegin = -1;
+			int authorityBegin = dest.indexOf("//");
+			if (authorityBegin != -1)
+				pathBegin = dest.indexOf("/", authorityBegin + 2);
+			String schemaHostPort = pathBegin == -1 ? null : dest.substring(0, pathBegin);
+
 			log.debug("pathQuery: " + pathQuery);
 			log.debug("schemaHostPort: " + schemaHostPort);
-			
+
 			Mapping mapping = findFirstMatchingRegEx(pathQuery);
 			if (mapping == null)
 				continue;
-			
+
 			Type do_ = mapping.getDo();
-			
+
 			log.debug("match found: " + mapping.from);
 			log.debug("replacing with: " + mapping.to);
 			log.debug("for type: " + do_);
-			
+
 			String newDest = replace(pathQuery, mapping);
 
 			if (do_ == Type.REDIRECT_PERMANENT || do_ == Type.REDIRECT_TEMPORARY) {
@@ -177,13 +180,23 @@ public class RewriteInterceptor extends AbstractInterceptor {
 				return Outcome.RETURN;
 			}
 
-			if (!newDest.contains("://")) {
+			if (!newDest.contains("://") && schemaHostPort != null) {
 				// prepend schema, host and port from original uri
 				newDest = schemaHostPort + newDest;
 			}
-			
+
 			it.set(newDest);
 		}
+
+		Mapping mapping = findFirstMatchingRegEx(exc.getRequest().getUri());
+		if (mapping != null && mapping.do_ == Type.REWRITE) {
+			String newDest = replace(exc.getRequest().getUri(), mapping);
+			if (newDest.contains("://")) {
+				newDest = URLUtil.getPathQuery(router.getUriFactory(), newDest);
+			}
+			exc.getRequest().setUri(newDest);
+		}
+
 		return Outcome.CONTINUE;
 	}
 
@@ -192,7 +205,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			log.debug("[from:"+m.from+"],[to:"+m.to+"],[do:"+m.do_+"]");
 		}
 	}
-	
+
 	private String replace(String uri, Mapping mapping) {
 		String replaced = uri.replaceAll(mapping.from, mapping.to);
 
@@ -221,45 +234,45 @@ public class RewriteInterceptor extends AbstractInterceptor {
 	public void setMappings(List<Mapping> mappings) {
 		this.mappings = mappings;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		EnumSet<Type> s = EnumSet.noneOf(Type.class);
 		for (Mapping m : mappings)
 			s.add(m.getDo());
-		
+
 		StringBuilder sb = new StringBuilder();
-		sb.append(TextUtil.capitalize(TextUtil.toEnglishList("or", 
+		sb.append(TextUtil.capitalize(TextUtil.toEnglishList("or",
 				s.contains(Type.REDIRECT_PERMANENT) || s.contains(Type.REDIRECT_TEMPORARY) ?
-						TextUtil.toEnglishList("or", 
-								s.contains(Type.REDIRECT_PERMANENT) ? "permanently" : null, 
-								s.contains(Type.REDIRECT_TEMPORARY) ? "temporarily" : null) + 
-						" redirects" : null,
-				s.contains(Type.REWRITE) ? "rewrites" : null)));
+						TextUtil.toEnglishList("or",
+								s.contains(Type.REDIRECT_PERMANENT) ? "permanently" : null,
+										s.contains(Type.REDIRECT_TEMPORARY) ? "temporarily" : null) +
+										" redirects" : null,
+										s.contains(Type.REWRITE) ? "rewrites" : null)));
 		sb.append(" URLs.");
 		return sb.toString();
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		StringWriter sw = new StringWriter();
 		new Html(sw) {{
 			text(getShortDescription());
-			
+
 			table().style("margin-top: 5pt;");
 			thead();
-				tr();
-					th().text("From").end();
-					th().text("To").end();
-					th().text("Action").end();
-				end();
+			tr();
+			th().text("From").end();
+			th().text("To").end();
+			th().text("Action").end();
+			end();
 			end();
 			tbody();
 			for (Mapping m : mappings) {
 				tr();
-					td().text(m.from).end();
-					td().text(m.to).end();
-					td().text(m.do_.toString()).end();
+				td().text(m.from).end();
+				td().text(m.to).end();
+				td().text(m.do_.toString()).end();
 				end();
 			}
 			end();

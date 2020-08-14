@@ -39,7 +39,7 @@ public class ViaProxyTest {
 
 	HttpRouter proxyRouter;
 	HttpRouter router;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		ProxyConfiguration proxy = new ProxyConfiguration();
@@ -49,27 +49,27 @@ public class ViaProxyTest {
 		proxyRouter = new HttpRouter(proxy);
 		proxyRouter.getRuleManager().addProxy(new ProxyRule(new ProxyRuleKey(3128)), RuleDefinitionSource.MANUAL);
 		proxyRouter.init();
-		
+
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
 		router.init();
 	}
-	
+
 	@Test
 	public void testPost() throws Exception {
 		HttpClient client = new HttpClient();
 		PostMethod post = new PostMethod("http://localhost:4000/axis2/services/BLZService");
 		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
-		
-		
+
+
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
-		post.setRequestEntity(entity); 
+		post.setRequestEntity(entity);
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
-		
+
 		assertEquals(200, client.executeMethod(post));
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();

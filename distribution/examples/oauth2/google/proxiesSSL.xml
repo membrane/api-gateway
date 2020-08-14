@@ -1,0 +1,42 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy port="8080">
+
+			<ssl>
+				<keystore location="../../../conf/membrane.jks" password="secret" keyPassword="secret" />
+				<truststore location="../../../conf/membrane.jks" password="secret" />
+			</ssl>
+
+			<headerFilter>
+				<exclude>X-Authenticated-Email</exclude>
+			</headerFilter>
+
+			<oauth2Resource publicURL="http://localhost:8080/">
+				<google
+						clientId="Enter client ID from Google here"
+						clientSecret="Enter client Secret from Google here" />
+			</oauth2Resource>
+
+			<!-- this will act as the secret resource to make the example simple. See below in the comments for an alternative -->
+			<groovy>
+				def email = exc.request.header.getFirstValue("X-Authenticated-Email")
+				exc.response = Response.ok("Hello " + email + ".").build()
+				RETURN
+			</groovy>
+
+			<!--
+			Use the <target> instead of the <groovy> interceptor to forward requests to another host:
+			<target host="membrane-soa.org" port="80" />
+			-->
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>

@@ -24,11 +24,11 @@ public class MagicTest {
 
 	@Test
 	public void testRelocator() throws Exception {
-		
-//		List<Technology> res = magic.scan(this.getClass().getClassLoader().getResourceAsStream("namesservice.wsdl"));
-//		for (Technology tech : res) {
-//			System.out.println(tech.name);
-//		}
-		
+
+		//		List<Technology> res = magic.scan(this.getClass().getClassLoader().getResourceAsStream("namesservice.wsdl"));
+		//		for (Technology tech : res) {
+		//			System.out.println(tech.name);
+		//		}
+
 	}
 }

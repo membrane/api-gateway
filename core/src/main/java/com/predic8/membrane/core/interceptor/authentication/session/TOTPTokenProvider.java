@@ -19,6 +19,8 @@ import java.util.NoSuchElementException;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @description A <i>token provider</i> using the Time-based One-time Password (TOTP) algorithm specified in RFC 6238 to
@@ -45,11 +47,13 @@ import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProv
 @MCElement(name="totpTokenProvider", topLevel=false)
 public class TOTPTokenProvider implements TokenProvider {
 
+	Logger log = LoggerFactory.getLogger(TOTPTokenProvider.class);
+
 	@Override
 	public void init(Router router) {
 		// does nothing
 	}
-	
+
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
 		// does nothing
@@ -62,8 +66,11 @@ public class TOTPTokenProvider implements TokenProvider {
 		synchronized (userAttributes) {
 			secret = userAttributes.get("secret");
 		}
-		if (!otpp.verifyCode(secret, System.currentTimeMillis(), token, 1))
+		long curTime = System.currentTimeMillis();
+		if (!otpp.verifyCode(secret, curTime, token, 1)) {
+			log.info("The given token was not equal to generated token.\nGenerated token: \"" + otpp.getNextCode(secret,curTime) + "\"\nGiven token: \"" + token + "\"\nUser: \"" + userAttributes.get("username")+ "\"");
 			throw new NoSuchElementException("INVALID_TOKEN");
+		}
 	}
 
 }

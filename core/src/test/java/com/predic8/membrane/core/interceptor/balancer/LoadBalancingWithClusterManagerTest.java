@@ -42,7 +42,7 @@ public class LoadBalancingWithClusterManagerTest {
 	private HttpRouter node2;
 	private HttpRouter node3;
 
-	@Test 
+	@Test
 	public void nodesTest() throws Exception {
 		node1 = new HttpRouter();
 		node2 = new HttpRouter();
@@ -51,46 +51,46 @@ public class LoadBalancingWithClusterManagerTest {
 		DummyWebServiceInterceptor service1 = startNode(node1, 2000);
 		DummyWebServiceInterceptor service2 = startNode(node2, 3000);
 		DummyWebServiceInterceptor service3 = startNode(node3, 4000);
-		
+
 		startLB();
-		
+
 		sendNotification("up", 2000);
 		sendNotification("up", 3000);
-				
+
 		assertEquals(200, post("/getBankwithSession555555.xml"));// goes to service one
-		assertEquals(1, service1.counter);
-		assertEquals(0, service2.counter);
+		assertEquals(1, service1.getCount());
+		assertEquals(0, service2.getCount());
 
 		assertEquals(200, post("/getBankwithSession555555.xml"));// goes to service 1 again
-		assertEquals(2, service1.counter);
-		assertEquals(0, service2.counter);
+		assertEquals(2, service1.getCount());
+		assertEquals(0, service2.getCount());
 
 		assertEquals(200, post("/getBankwithSession444444.xml")); // goes to service 2
-		assertEquals(2, service1.counter);
-		assertEquals(1, service2.counter);
-		
+		assertEquals(2, service1.getCount());
+		assertEquals(1, service2.getCount());
+
 		sendNotification("down", 2000);
 
 		assertEquals(200, post("/getBankwithSession555555.xml")); // goes to service 2 because service 1 is down
-		assertEquals(2, service1.counter);
-		assertEquals(2, service2.counter);
+		assertEquals(2, service1.getCount());
+		assertEquals(2, service2.getCount());
 
 		sendNotification("up", 4000);
 
-		assertEquals(0, service3.counter);
+		assertEquals(0, service3.getCount());
 		assertEquals(200, post("/getBankwithSession666666.xml")); // goes to service 3
-		assertEquals(2, service1.counter);
-		assertEquals(2, service2.counter);
-		assertEquals(1, service3.counter);
-		
+		assertEquals(2, service1.getCount());
+		assertEquals(2, service2.getCount());
+		assertEquals(1, service3.getCount());
+
 		assertEquals(200, post("/getBankwithSession555555.xml")); // goes to service 2
 		assertEquals(200, post("/getBankwithSession444444.xml")); // goes to service 2
 		assertEquals(200, post("/getBankwithSession666666.xml")); // goes to service 3
-		assertEquals(2, service1.counter);
-		assertEquals(4, service2.counter);
-		assertEquals(2, service3.counter);
-		
-		
+		assertEquals(2, service1.getCount());
+		assertEquals(4, service2.getCount());
+		assertEquals(2, service3.getCount());
+
+
 	}
 
 	@After
@@ -100,7 +100,7 @@ public class LoadBalancingWithClusterManagerTest {
 		node2.shutdown();
 		node3.shutdown();
 	}
-	
+
 	private void startLB() throws Exception {
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
@@ -112,12 +112,12 @@ public class LoadBalancingWithClusterManagerTest {
 
 		ServiceProxy lbiRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3017), "thomas-bayer.com", 80);
 		lbiRule.getInterceptors().add(lbi);
-		
+
 		ClusterNotificationInterceptor cni = new ClusterNotificationInterceptor();
-		
+
 		ServiceProxy cniRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3012), "thomas-bayer.com", 80);
 		cniRule.getInterceptors().add(cni);
-		
+
 		lb = new HttpRouter();
 		lb.getRuleManager().addProxyAndOpenPortIfNew(lbiRule);
 		lb.getRuleManager().addProxyAndOpenPortIfNew(cniRule);
@@ -146,17 +146,17 @@ public class LoadBalancingWithClusterManagerTest {
 
 		return post;
 	}
-	
+
 	private void sendNotification(String cmd, int port) throws UnsupportedEncodingException, IOException,
-			HttpException {
+	HttpException {
 		PostMethod post = new PostMethod("http://localhost:3012/clustermanager/"+cmd+"?"+
-				   createQueryString("host", "localhost",
-						   			 "port", String.valueOf(port)));
+				createQueryString("host", "localhost",
+						"port", String.valueOf(port)));
 		new HttpClient().executeMethod(post);
 	}
-	
+
 	private int post(String req) throws IOException, HttpException {
 		return getClient().executeMethod(getPostMethod(req));
 	}
-	
+
 }

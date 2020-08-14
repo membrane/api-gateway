@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,15 +23,19 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+
+import javax.annotation.Nullable;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
- * 
+ *
  * With keep-alive use as follows:
  * <code>
  * Connection connection = connectionManager.getConnection(...);
@@ -42,46 +45,63 @@ import com.predic8.membrane.core.transport.SSLContext;
  *   connection.release();
  * }
  * </code>
- * 
+ *
  * Without keep-alive replace {@link Connection#release()} by {@link Connection#close()}.
- * 
+ *
  * Note that you should call {@link Connection#release()} exactly once, or alternatively
  * {@link Connection#close()} at least once.
  */
 public class ConnectionManager {
 
-	private static Log log = LogFactory.getLog(ConnectionManager.class.getName());
-	
-	private final long keepAliveTimeout; 
-	private final long autoCloseInterval; 
-	
+	private static Logger log = LoggerFactory.getLogger(ConnectionManager.class.getName());
+
+	private final long keepAliveTimeout;
+	private final long autoCloseInterval;
+
 	private static class ConnectionKey {
-		public final InetAddress host;
+		// SSLProvider and ProxyConfiguration do not override equals() or hashCode(), but this is OK, as only a few will exist and are used read-only
+
+		public final String host;
 		public final int port;
-		
-		public ConnectionKey(InetAddress host, int port) {
+		@Nullable private SSLProvider sslProvider;
+		@Nullable public String serverName;
+		@Nullable public ProxyConfiguration proxy;
+
+		public ConnectionKey(String host, int port, SSLProvider sslProvider, String serverName, ProxyConfiguration proxy) {
 			this.host = host;
 			this.port = port;
+			this.sslProvider = sslProvider;
+			this.serverName = serverName;
+			this.proxy = proxy;
 		}
-		
+
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(host, port);
+			return Objects.hashCode(host, port, sslProvider, serverName, proxy);
 		}
-		
+
 		@Override
 		public boolean equals(Object obj) {
 			if (!(obj instanceof ConnectionKey) || obj == null)
 				return false;
 			ConnectionKey other = (ConnectionKey)obj;
-			return host.equals(other.host) && port == other.port;
+			return host.equals(other.host)
+					&& port == other.port
+					&& Objects.equal(sslProvider,other.sslProvider)
+					&& Objects.equal(serverName, other.serverName)
+					&& Objects.equal(proxy,other.proxy);
+		}
+
+		@Override
+		public String toString() {
+			return host + ":" + port + (sslProvider != null ? " with SSL" : "") + (proxy != null ? " via proxy" : "");
 		}
 	}
-	
+
 	private static class OldConnection {
 		public final Connection connection;
 		public final long deathTime;
-		
+
 		public OldConnection(Connection connection, long defaultKeepAliveTimeout) {
 			this.connection = connection;
 			long lastUse = connection.getLastUse();
@@ -99,7 +119,7 @@ public class ConnectionManager {
 			this.deathTime = lastUse + delta;
 		}
 	}
-	
+
 	private AtomicInteger numberInPool = new AtomicInteger();
 	private HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
 			new HashMap<ConnectionManager.ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
@@ -118,16 +138,26 @@ public class ConnectionManager {
 			}
 		}, autoCloseInterval, autoCloseInterval);
 	}
-	
-	public Connection getConnection(InetAddress host, int port, String localHost, SSLContext sslContext, int connectTimeout) throws UnknownHostException, IOException {
-		
-		log.debug("connection requested for host: " + host + " and port: " + port);
-		
+
+	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, @Nullable String sniServerName,
+		@Nullable ProxyConfiguration proxy, @Nullable SSLContext proxySSLContext) throws UnknownHostException, IOException {
+
+		log.debug("connection requested for " + host + ":" + port + (proxy != null ? " via " + proxy.getHost() + ":" + proxy.getPort() : ""));
+
 		log.debug("Number of connections in pool: " + numberInPool.get());
-		
-		ConnectionKey key = new ConnectionKey(host, port);
+
+		String cacheHost = host;
+		int cachePort = port;
+		if (proxy != null && sslProvider == null) {
+			// if a proxy is used, but no SSLProvider, the host:port do not have to be included in the ConnectionKey,
+			// as this simply caches the connection to the proxy
+			cacheHost = "";
+			cachePort = 0;
+		}
+
+		ConnectionKey key = new ConnectionKey(cacheHost, cachePort, sslProvider, sniServerName, proxy);
 		long now = System.currentTimeMillis();
-		
+
 		synchronized(this) {
 			ArrayList<OldConnection> l = availableConnections.get(key);
 			if (l != null) {
@@ -144,21 +174,25 @@ public class ConnectionManager {
 			}
 		}
 
-		Connection result = Connection.open(host, port, localHost, sslContext, this, connectTimeout);
+		Connection result = Connection.open(host, port, localHost, sslProvider, this, connectTimeout,sniServerName,proxy,proxySSLContext);
 		numberInPool.incrementAndGet();
 		return result;
 	}
-	
+
+	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+		return getConnection(host,port,localHost,sslProvider,connectTimeout,null,null,null);
+	}
+
 	public void releaseConnection(Connection connection) {
 		if (connection == null)
 			return;
-		
+
 		if (connection.isClosed()) {
 			numberInPool.decrementAndGet();
 			return;
 		}
-		
-		ConnectionKey key = new ConnectionKey(connection.socket.getInetAddress(), connection.socket.getPort());
+
+		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort(), connection.getSslProvider(), connection.getSniServerName(),connection.getProxyConfiguration());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
 		synchronized(this) {
@@ -170,9 +204,10 @@ public class ConnectionManager {
 			l.add(o);
 		}
 	}
-	
+
 	private int closeOldConnections() {
 		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
+		ArrayList<Connection> toClose = new ArrayList<Connection>();
 		long now = System.currentTimeMillis();
 		log.trace("closing old connections");
 		int closed = 0, remaining;
@@ -190,26 +225,45 @@ public class ConnectionManager {
 							l.set(i, l.remove(l.size() - 1));
 						--i;
 						closed++;
+						toClose.add(o.connection);
 					}
 				}
-				if (l.size() == 0)
+				if (l.isEmpty())
 					toRemove.add(e.getKey());
 			}
 			for (ConnectionKey remove : toRemove)
 				availableConnections.remove(remove);
 			remaining = availableConnections.size();
 		}
-		numberInPool.addAndGet(-closed);
+		for (Connection c : toClose) {
+			try {
+				c.close();
+			} catch (Exception e) {
+				// do nothing
+			}
+		}
 		if (closed != 0)
 			log.debug("closed " + closed + " connections");
 		return remaining;
 	}
-	
+
 	public void shutdownWhenDone() {
 		shutdownWhenDone = true;
 	}
-	
+
 	public int getNumberInPool() {
 		return numberInPool.get();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Number in pool: " + numberInPool.get() + "\n");
+		synchronized(this) {
+			for (Map.Entry<ConnectionKey, ArrayList<OldConnection>> e : availableConnections.entrySet()) {
+				sb.append("To " + e.getKey() + ": " + e.getValue().size() + "\n");
+			}
+		}
+		return sb.toString();
 	}
 }

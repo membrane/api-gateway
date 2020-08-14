@@ -19,8 +19,8 @@ import java.io.IOException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCMain;
-import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 @MCMain(
 		outputPackage="com.predic8.membrane.servlet.config.spring",
@@ -30,7 +30,7 @@ import com.predic8.membrane.core.transport.Transport;
 public class ServletTransport extends Transport {
 
 	boolean removeContextRoot = true;
-	
+
 	public boolean isRemoveContextRoot() {
 		return removeContextRoot;
 	}
@@ -39,12 +39,12 @@ public class ServletTransport extends Transport {
 	public void setRemoveContextRoot(boolean removeContextRoot) {
 		this.removeContextRoot = removeContextRoot;
 	}
-	
+
 	@Override
-	public void openPort(String ip, int port, SSLContext sslContext) throws IOException {
+	public void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
 		// do nothing
 	}
-	
+
 	@Override
 	public void closeAll() throws IOException {
 		// do nothing
@@ -54,5 +54,5 @@ public class ServletTransport extends Transport {
 	public boolean isOpeningPorts() {
 		return false;
 	}
-	
+
 }

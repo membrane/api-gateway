@@ -19,14 +19,17 @@ import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
+	private static Logger log = LoggerFactory.getLogger(HttpResendHandler.class.getName());
 
 	public HttpResendHandler(Exchange exc, HttpTransport transport) {
 		super(transport);
 		exchange = new Exchange(exc, this);
-		
+
 		srcReq = exc.getRequest();
 	}
 
@@ -42,22 +45,22 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 			exchange.setCompleted();
 			return;
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.warn("", e);
 		} catch (EndOfStreamException e) {
-			e.printStackTrace();
+			log.warn("", e);
 		}
 	}
-	
+
 	@Override
 	public void shutdownInput() {
 		// do nothing
 	}
-	
+
 	@Override
 	public InetAddress getLocalAddress() {
 		return null;
 	}
-	
+
 	@Override
 	public int getLocalPort() {
 		return 0;

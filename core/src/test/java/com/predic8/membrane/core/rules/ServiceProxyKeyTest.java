@@ -26,12 +26,12 @@ import com.predic8.membrane.core.http.Request;
 
 public class ServiceProxyKeyTest {
 
-	
+
 	@Before
 	public void setUp() throws Exception {
-			
+
 	}
-	
+
 	@Test
 	public void testSimpleConstructor() throws Exception {
 		ServiceProxyKey key = new ServiceProxyKey(3000);
@@ -43,30 +43,30 @@ public class ServiceProxyKeyTest {
 		assertTrue(key.isHostWildcard());
 		assertFalse(key.isUsePathPattern());
 	}
-	
+
 	@Test
 	public void testNoRegExpMatchesPath() throws Exception {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, "/axis2/services", 3000);
 		key.setPathRegExp(false);
-		
+
 		assertTrue(key.matchesPath("/axis2/services/bla/other"));
 		assertFalse(key.matchesPath("/service/we"));
 	}
-	
+
 	@Test
 	public void testRegularExpressionMatchesPath() throws Exception {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertFalse(key.matchesPath("/axis2/services/FooService/Bla")); //???
 	}
-	
+
 	@Test
 	public void testRegularExpressionMatchesPathAnyURI() throws Exception {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertTrue(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
-	
+
 	@Test
 	public void testHostMatch() {
 		testHostMatch("localhost", "localhost");
@@ -83,7 +83,7 @@ public class ServiceProxyKeyTest {
 	private void testHostMatch(String hostArg, String hostHeader) {
 		testHostMatch(hostArg, hostHeader, true);
 	}
-	
+
 	private void testHostMatch(String hostArg, String hostHeader, boolean result) {
 		assertEquals(new ServiceProxyKey(hostArg, "GET", null, 80).matchesHostHeader(hostHeader), result);
 	}

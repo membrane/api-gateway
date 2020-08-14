@@ -13,10 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Required;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -26,6 +22,11 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.Map;
 
 /**
  * @description <p>
@@ -94,31 +95,36 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
  */
 @MCElement(name="login")
 public class LoginInterceptor extends AbstractInterceptor {
-	
-	private String location, path;
-	
+
+	private static final Logger log = LoggerFactory.getLogger(LoginInterceptor.class.getName());
+
+	private String location, path, message;
+	private boolean exposeUserCredentialsToSession;
+
 	private UserDataProvider userDataProvider;
 	private TokenProvider tokenProvider;
 	private SessionManager sessionManager;
 	private AccountBlocker accountBlocker;
 	private LoginDialog loginDialog;
-	
+
 	@Override
 	public void init() throws Exception {
 		if (userDataProvider == null)
 			throw new Exception("No userDataProvider configured. - Cannot work without one.");
 		if (tokenProvider == null)
-			throw new Exception("No tokenProvider configured. - Cannot work without one.");
+			log.info("No Tokenprovider given, two-factor authentication not enabled");
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
 		userDataProvider.init(router);
-		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path);
+		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession, message);
 	}
 
+	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		tokenProvider.init(router);
-		loginDialog.init(router);
+        if (tokenProvider != null)
+            tokenProvider.init(router);
+        loginDialog.init(router);
 		sessionManager.init(router);
 		new CleanupThread(sessionManager, accountBlocker).start();
 	}
@@ -129,17 +135,24 @@ public class LoginInterceptor extends AbstractInterceptor {
 			loginDialog.handleLoginRequest(exc);
 			return Outcome.RETURN;
 		}
-		Session s = sessionManager.getSession(exc.getRequest());
-		if (s == null || !s.isAuthorized()) {
-			return loginDialog.redirectToLogin(exc);
-		}
-		
+		Session s = sessionManager.getSession(exc);
+        if (s != null && s.isPreAuthorized()) {
+            if (tokenProvider == null) {
+                s.authorize();
+            }
+        }
+        else if (s == null || !s.isAuthorized()) {
+            return loginDialog.redirectToLogin(exc);
+        }
+
 		applyBackendAuthorization(exc, s);
 		return super.handleRequest(exc);
 	}
 
 	private void applyBackendAuthorization(Exchange exc, Session s) {
-		Header h = exc.getRequest().getHeader();
+        if (getId() != null)
+            exc.setProperty(getId() + "-session", s);
+        Header h = exc.getRequest().getHeader();
 		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
 			if (e.getKey().startsWith("header")) {
 				String headerName = e.getKey().substring(6);
@@ -147,19 +160,11 @@ public class LoginInterceptor extends AbstractInterceptor {
 				h.add(headerName, e.getValue());
 			}
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		Header header = exc.getResponse().getHeader();
-		header.removeFields("Cache-Control");
-		header.removeFields("Pragma");
-		header.removeFields("Expires");
-			
-	    header.add("Expires", "Tue, 03 Jul 2001 06:00:00 GMT");
-	    header.add("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-	    header.add("Cache-Control", "post-check=0, pre-check=0");
-	    header.add("Pragma", "no-cache");
-		
+		header.setNoCacheResponseHeaders();
 		return super.handleResponse(exc);
 	}
 
@@ -212,7 +217,6 @@ public class LoginInterceptor extends AbstractInterceptor {
 	 * @description The <i>token provider</i> computing or generating a numeric value used for <a
 	 *              href="http://en.wikipedia.org/wiki/Two_Factor_Authentication">two-factor authentication</a>.
 	 */
-	@Required
 	@MCChildElement(order=4)
 	public void setTokenProvider(TokenProvider tokenProvider) {
 		this.tokenProvider = tokenProvider;
@@ -242,4 +246,28 @@ public class LoginInterceptor extends AbstractInterceptor {
 		this.accountBlocker = accountBlocker;
 	}
 
+	public boolean isExposeUserCredentialsToSession() {
+		return exposeUserCredentialsToSession;
+	}
+
+	/**
+	 * @description Whether the user's credentials should be copied over to the session. This means they
+	 * will stay in memory and will be available to all Membrane components.
+	 */
+	@MCAttribute
+	public void setExposeUserCredentialsToSession(boolean exposeUserCredentialsToSession) {
+		this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	/**
+	 * @description Set the message displayed during redirect.
+	 */
+	@MCAttribute
+	public void setMessage(String message) {
+		this.message = message;
+	}
 }

@@ -30,21 +30,20 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class ConnectionTest {
 
-	private static final byte[] LOCALHOST_IP = new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 };
 	Connection conLocalhost;
 	Connection con127_0_0_1;
-	
+
 	HttpRouter router;
-	
+
 	@Before
 	public void setUp() throws Exception {
-		
+
 		Rule rule2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule2000);
-		
-		conLocalhost = Connection.open(InetAddress.getByName("localhost"), 2000, null, null, 30000);
-		con127_0_0_1 = Connection.open(InetAddress.getByAddress(LOCALHOST_IP), 2000, null, null, 30000);
+
+		conLocalhost = Connection.open("localhost", 2000, null, null, 30000);
+		con127_0_0_1 = Connection.open("127.0.0.1", 2000, null, null, 30000);
 	}
 
 	@After
@@ -53,14 +52,14 @@ public class ConnectionTest {
 		con127_0_0_1.close();
 		assertTrue(conLocalhost.isClosed());
 		assertTrue(con127_0_0_1.isClosed());
-		
+
 		router.shutdown();
 	}
 
-	
+
 	@Test
 	public void testIsSame() throws Exception {
-		assertTrue(conLocalhost.isSame(InetAddress.getByAddress(LOCALHOST_IP), 2000));
-		assertTrue(con127_0_0_1.isSame(InetAddress.getByName("localhost"), 2000));
+		assertTrue(conLocalhost.isSame("127.0.0.1", 2000));
+		assertTrue(con127_0_0_1.isSame("localhost", 2000));
 	}
 }

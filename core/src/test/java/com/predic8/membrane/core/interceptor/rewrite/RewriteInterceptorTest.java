@@ -15,34 +15,61 @@ package com.predic8.membrane.core.interceptor.rewrite;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.util.MessageUtil;
 public class RewriteInterceptorTest {
 
+	private RewriteInterceptor rewriter;
 	private Exchange exc;
-	
+	private DispatchingInterceptor di;
+	private ServiceProxy sp;
+
 	@Before
 	public void setUp() throws Exception {
+		HttpRouter router = new HttpRouter();
+
+		di = new DispatchingInterceptor();
+		di.init(router);
+
+		sp = new ServiceProxy(new ServiceProxyKey(80, null), "www.predic8.de", 80);
+		sp.init(router);
+
 		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
+
+		rewriter = new RewriteInterceptor();
+		List<Mapping> mappings = new ArrayList<Mapping>();
+		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2", null));
+		rewriter.setMappings(mappings);
+		rewriter.init(router);
+	}
+
+	@Test
+	public void testRewriteWithoutTarget() throws Exception {
+		assertEquals(Outcome.CONTINUE, di.handleRequest(exc));
+		assertEquals(Outcome.CONTINUE, rewriter.handleRequest(exc));
+		assertEquals("/buy?item=banana&amount=3", exc.getDestinations().get(0));
 	}
 
 	@Test
 	public void testRewrite() throws Exception {
-		RewriteInterceptor interceptor = new RewriteInterceptor();
-		List<Mapping> mappings = new ArrayList<Mapping>();
-		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2", null));
-		interceptor.setMappings(mappings);
+		exc.setRule(sp);
 
-		assertEquals(Outcome.RETURN, interceptor.handleRequest(exc));
-		assertEquals("/buy?item=banana&amount=3", exc.getRequest().getUri());
+		assertEquals(Outcome.CONTINUE, di.handleRequest(exc));
+		assertEquals(Outcome.CONTINUE, rewriter.handleRequest(exc));
+		assertEquals("http://www.predic8.de:80/buy?item=banana&amount=3", exc.getDestinations().get(0));
 	}
-	
+
 }

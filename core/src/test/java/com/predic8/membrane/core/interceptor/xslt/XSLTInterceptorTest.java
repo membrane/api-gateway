@@ -45,9 +45,9 @@ public class XSLTInterceptorTest extends TestCase {
 
 		//printBodyContent();
 		assertXPath("/person/name/first", "Rick");
-		assertXPath("/person/name/last", "Cortés Ribotta");
+		assertXPath("/person/name/last", "Cort\u00e9s Ribotta");
 		assertXPath("/person/address/street",
-				"Calle Pública \"B\" 5240 Casa 121");
+				"Calle P\u00fablica \"B\" 5240 Casa 121");
 		assertXPath("/person/address/city", "Omaha");
 	}
 
@@ -55,9 +55,9 @@ public class XSLTInterceptorTest extends TestCase {
 	public void testXSLTParameter() throws Exception {
 		exc = new Exchange(null);
 		exc.setResponse(Response.ok().body(getClass().getResourceAsStream("/customer.xml"), true).build());
-		
+
 		exc.setProperty("XSLT_COMPANY", "predic8");
-		
+
 		XSLTInterceptor i = new XSLTInterceptor();
 		i.setXslt("classpath:/customer2personAddCompany.xsl");
 		i.init(new HttpRouter());
@@ -65,9 +65,9 @@ public class XSLTInterceptorTest extends TestCase {
 
 		//printBodyContent();
 		assertXPath("/person/name/first", "Rick");
-		assertXPath("/person/name/last", "Cortés Ribotta");
+		assertXPath("/person/name/last", "Cort\u00e9s Ribotta");
 		assertXPath("/person/address/street",
-				"Calle Pública \"B\" 5240 Casa 121");
+				"Calle P\u00fablica \"B\" 5240 Casa 121");
 		assertXPath("/person/address/city", "Omaha");
 		assertXPath("/person/company", "predic8");
 	}

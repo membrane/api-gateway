@@ -34,7 +34,7 @@ public class ProxyRuleTest {
 
 	private Router router;
 	private Rule rule;
-		
+
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
@@ -43,43 +43,42 @@ public class ProxyRuleTest {
 		// TODO: this is not possible anymore rule.setInboundTLS(true);
 		rule.setBlockResponse(true);
 		rule.setInterceptors(getInterceptors());
-		
+
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-		
+
 	@Test
 	public void testRule() throws Exception {
-		
+
 		assertEquals(8888, rule.getKey().getPort());
 		assertEquals("Rule 1", rule.getName());
-		assertNull(rule.getLocalHost()); 
 		//TODO: see above assertEquals(true, rule.isInboundTLS());
 		assertNull(rule.getSslOutboundContext());
-		
+
 		List<Interceptor> inters = rule.getInterceptors();
 		assertFalse(inters.isEmpty());
 		assertTrue(inters.size()  == 2);
 		inters.get(0).getId().equals("roundRobinBalancer");
 		inters.get(1).getId().equals("accessControlInterceptor");
-		
+
 		assertEquals(true, rule.isBlockResponse());
 		assertFalse(rule.isBlockRequest());
 	}
-	
+
 	private List<Interceptor> getInterceptors() {
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
 		Interceptor balancer = new LoadBalancingInterceptor();
 		balancer.setId("roundRobinBalancer");
 		interceptors.add(balancer);
-		
+
 		Interceptor acl = new AccessControlInterceptor();
 		acl.setId("accessControlInterceptor");
 		interceptors.add(acl);
 		return interceptors;
 	}
-	
+
 }

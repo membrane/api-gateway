@@ -24,7 +24,7 @@ import org.junit.Test;
 import com.predic8.membrane.test.WSDLUtil;
 
 public class WSDLPublisherTest {
-	
+
 	@Test
 	public void doit() throws ParseException, IOException, XMLStreamException {
 		Assert.assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));

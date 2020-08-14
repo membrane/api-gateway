@@ -18,9 +18,7 @@ import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import java.io.IOException;
 
 import org.apache.http.client.ClientProtocolException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
@@ -29,15 +27,15 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class LimitInterceptorTest {
-	
-	private HttpRouter router;
 
-	@Before
-	public void before() throws Exception {
+	private static HttpRouter router;
+
+	@BeforeClass
+	public static void before() throws Exception {
 		router = new HttpRouter();
 
-		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3026), "", -1);
-		
+		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 3026), "", -1);
+
 		LimitInterceptor wi = new LimitInterceptor();
 		wi.setMaxBodyLength(10);
 		wi.setFlow(Flow.Set.REQUEST);
@@ -51,20 +49,20 @@ public class LimitInterceptorTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
 		router.init();
 	}
-	
-	@After
-	public void after() throws IOException {
+
+	@AfterClass
+	public static void after() throws IOException {
 		router.shutdown();
 	}
 
 	@Test
 	public void small() throws ClientProtocolException, IOException {
-		postAndAssert(200, "http://localhost:3026/articleRequest.xml", "aaaaa");
+		postAndAssert(200, "http://localhost:3026/validation/articleRequest.xml", "aaaaa");
 	}
 
 	@Test
 	public void large() throws ClientProtocolException, IOException {
-		postAndAssert(400, "http://localhost:3026/articleRequest.xml", "aaaaaaaaaaaaaa");
+		postAndAssert(400, "http://localhost:3026/validation/articleRequest.xml", "aaaaaaaaaaaaaa");
 	}
 
 }

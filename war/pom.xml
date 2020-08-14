@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- 
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
    Copyright 2012, predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,35 +12,36 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
- --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>service-proxy-war</artifactId>
-    <packaging>war</packaging>
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <parent>
-        <groupId>org.membrane-soa.service-proxy</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>4.0.13-SNAPSHOT</version>
-    </parent>
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>service-proxy-war</artifactId>
+	<name>${project.artifactId}</name>
+	<packaging>war</packaging>
+
+	<parent>
+		<groupId>org.membrane-soa</groupId>
+		<artifactId>service-proxy-parent</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>4.7.3-SNAPSHOT</version>
+	</parent>
 
 	<dependencies>
 		<dependency>
-			<groupId>org.membrane-soa.service-proxy</groupId>
+			<groupId>org.membrane-soa</groupId>
 			<artifactId>service-proxy-annot</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.membrane-soa.service-proxy</groupId>
+			<groupId>org.membrane-soa</groupId>
 			<artifactId>service-proxy-core</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>xalan</groupId>
 			<artifactId>xalan</artifactId>
@@ -57,9 +58,9 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 		</dependency>
-		
+
 		<dependency>
-			<groupId>org.membrane-soa.service-proxy</groupId>
+			<groupId>org.membrane-soa</groupId>
 			<artifactId>service-proxy-test</artifactId>
 			<scope>test</scope>
 		</dependency>
@@ -68,7 +69,7 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
+
 	</dependencies>
 
 	<build>
@@ -87,9 +88,8 @@
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
 			</plugin>
-		 	<plugin>
+			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.2.2</version>
 				<configuration>
 					<descriptors>
 						<descriptor>src/assembly/integration-test-war.xml</descriptor>
@@ -106,7 +106,6 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.11</version>
 				<configuration>
 					<failIfNoTests>false</failIfNoTests>
 					<test>**/UnitTests.java</test>
@@ -114,7 +113,7 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<profiles>
 		<profile>
 			<id>jenkins</id>
@@ -127,7 +126,6 @@
 				<plugins>
 					<plugin>
 						<artifactId>maven-failsafe-plugin</artifactId>
-						<version>2.11</version>
 						<executions>
 							<execution>
 								<goals>
@@ -142,7 +140,6 @@
 					<plugin>
 						<groupId>org.eclipse.jetty</groupId>
 						<artifactId>jetty-maven-plugin</artifactId>
-						<version>9.0.3.v20130506</version>
 						<!-- documentation is at http://www.eclipse.org/jetty/documentation/current/jetty-maven-plugin.html -->
 						<configuration>
 							<war>${basedir}/target/${project.artifactId}-${project.version}-integration-test.war</war>
@@ -155,7 +152,7 @@
 									<war>${basedir}/target/${project.artifactId}-${project.version}.war</war>
 									<contextPath>/release</contextPath>
 								</contextHandler>
-    						</contextHandlers>
+							</contextHandlers>
 							<scanIntervalSeconds>10</scanIntervalSeconds>
 							<contextPath>/</contextPath>
 							<stopPort>3022</stopPort>
@@ -187,5 +184,5 @@
 			</build>
 		</profile>
 	</profiles>
-	    
+
 </project>

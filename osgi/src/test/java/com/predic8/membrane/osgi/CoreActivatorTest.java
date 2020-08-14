@@ -25,13 +25,13 @@ import com.predic8.membrane.osgi.CoreActivator;
 public class CoreActivatorTest {
 
 	CoreActivator activator = new CoreActivator();
-	
+
 	@Test
 	public void testGetJarUrls() throws Exception {
 		List<URL> urls = ClassloaderUtil.getJarUrls("target");
-		
+
 		assertFalse(urls == null);
 		assertFalse(urls.isEmpty());
 	}
-	
+
 }

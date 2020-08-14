@@ -17,6 +17,9 @@ package com.predic8.membrane.core.rules;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.EtcdRegistryApiConfig;
 
 /**
  * @description <p>
@@ -27,7 +30,19 @@ import com.predic8.membrane.annot.MCElement;
  */
 @MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {
-	
+
+	private String externalHostname;
+
+	@Override
+	public void init() throws Exception {
+		super.init();
+		if(externalHostname != null){
+			if(!hasAdminConsole() || !etcdRegistryApiConfigExists())
+				throw new RuntimeException("externalHostname is only usable in combination with AdminConsoleInterceptor and EtcdRegistryApiConfig");
+
+		}
+	}
+
 	public ServiceProxy() {
 		this.key = new ServiceProxyKey(80);
 	}
@@ -37,17 +52,33 @@ public class ServiceProxy extends AbstractServiceProxy {
 		setTargetHost(targetHost);
 		setTargetPort(targetPort);
 	}
-	
+
+	public boolean hasAdminConsole(){
+		for(Interceptor i : interceptors)
+			if(i instanceof AdminConsoleInterceptor)
+				return true;
+		return false;
+	}
+
+	public boolean etcdRegistryApiConfigExists(){
+		try {
+			if (router.getBeanFactory().getBean(EtcdRegistryApiConfig.class) != null)
+				return true;
+		}catch(Exception ignored){
+		}
+		return false;
+	}
+
 
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new ServiceProxy();
 	}
-	
+
 	public String getMethod() {
 		return ((ServiceProxyKey)key).getMethod();
 	}
-	
+
 	/**
 	 * @description If set, Membrane will only consider this rule, if the method (GET, PUT, POST, DELETE, etc.)
 	 *              header of incoming HTTP requests matches. The asterisk '*' matches any method.
@@ -57,6 +88,13 @@ public class ServiceProxy extends AbstractServiceProxy {
 	@MCAttribute
 	public void setMethod(String method) {
 		((ServiceProxyKey)key).setMethod(method);
+	}
+
+	public String getExternalHostname() {return externalHostname;}
+
+	@MCAttribute
+	public void setExternalHostname(String externalHostname){
+		this.externalHostname = externalHostname;
 	}
 
 	public Target getTarget() {
@@ -78,11 +116,6 @@ public class ServiceProxy extends AbstractServiceProxy {
 
 	public void setTargetURL(String targetURL) {
 		this.target.setUrl(targetURL);
-	}
-
-	@Override
-	public AbstractProxy clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException();
 	}
 
 }

@@ -22,8 +22,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
@@ -35,16 +35,16 @@ import org.xml.sax.SAXParseException;
 
 /**
  * Delegates everything to {@link FileSystemXmlApplicationContext}.
- * 
+ *
  * Additionally adds aspects of {@link TrackingApplicationContext}, {@link BaseLocationApplicationContext} and
- * {@link CheckableBeanFactory}. 
+ * {@link CheckableBeanFactory}.
  */
 public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements
-		TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory {
-	private static final Log log = LogFactory.getLog(TrackingFileSystemXmlApplicationContext.class.getName());
-	
+TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory {
+	private static final Logger log = LoggerFactory.getLogger(TrackingFileSystemXmlApplicationContext.class.getName());
+
 	private List<File> files = new ArrayList<File>();
-	
+
 	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh) throws BeansException {
 		super(configLocations, refresh);
 	}
@@ -52,13 +52,14 @@ public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplic
 	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh, ApplicationContext parent) throws BeansException {
 		super(configLocations, refresh, parent);
 	}
-	
+
+	@Override
 	public Resource getResource(String location) {
 		final Resource r = super.getResource(location);
 		try {
 			files.add(r.getFile());
 		} catch (IOException e) {
-			log.debug(e);
+			log.debug("",e);
 		}
 		return new Resource() {
 			Resource r2 = r;
@@ -108,32 +109,32 @@ public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplic
 			public String getDescription() {
 				return r2.getDescription();
 			}
-			
+
 			public long contentLength() throws IOException {
 				return r2.contentLength();
 			}
-			
+
 			@Override
 			public String toString() {
 				return r2.toString();
 			}
 		};
 	}
-	
+
 	public List<File> getFiles() {
 		return files;
 	}
-	
+
 	public String getBaseLocation() {
 		return getConfigLocations()[0];
 	}
-	
+
 	@Override
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		files.clear();
 		super.loadBeanDefinitions(beanFactory);
 	}
-	
+
 	@Override
 	public void checkForInvalidBeanDefinitions() throws InvalidConfigurationException {
 		try {
@@ -159,7 +160,7 @@ public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplic
 		}
 		throw e;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Membrane Service Proxy's Spring Context";

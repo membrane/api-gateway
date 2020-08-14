@@ -21,7 +21,7 @@ import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Message;
 
 public class PlainBody extends AbstractXmlElement {
-	
+
 	private final String charset;
 	private final AbstractBody body;
 
@@ -33,7 +33,7 @@ public class PlainBody extends AbstractXmlElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeAttribute("type", "plain");
-		
+
 		try {
 			out.writeCData(new String(body.getContent(), charset));
 		} catch (Exception e) {

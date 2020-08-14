@@ -14,15 +14,6 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
@@ -33,33 +24,66 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.util.HttpUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Exchange extends AbstractExchange {
 
 	public static final String HTTP_SERVLET_REQUEST = "HttpServletRequest";
 
-	private static Log log = LogFactory.getLog(Exchange.class.getName());
+	public static final String /*PROPERTY_*/ALLOW_WEBSOCKET = "use-websocket";
+
+	public static final String /*PROPERTY_*/ALLOW_TCP = "use-tcp";
+
+	public static final String /*PROPERTY_*/ALLOW_SPDY = "use-sdpy";
+
+	public static final String /*PROPERTY_*/TRACK_NODE_STATUS = "TRACK_NODE_STATUS";
+
+	public static final String /*PROPERTY_*/SSL_CONTEXT = "SSL_CONTEXT";
+
+	public static final String API_KEY = "API_KEY";
+
+	public static final String OAUTH2 = "oauth2";
+
+	public static final String SNI_SERVER_NAME = "SNI_SERVER_NAME";
+
+	public static final String WS_ORIGINAL_EXCHANGE = "WS_ORIGINAL_EXCHANGE";
+
+	private static Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;
 
 	private String originalHostHeader = "";
 
 	private Connection targetConnection;
+	
+	private int[] nodeStatusCodes;
+	
+	private Exception[] nodeExceptions;
+
+	private long id;
 
 	public Exchange(AbstractHttpHandler handler) {
 		this.handler = handler;
-
+		this.id = hashCode();
 	}
 
 	/**
 	 * For HttpResendRunnable
-	 * 
+	 *
 	 * @param original
 	 */
 	public Exchange(Exchange original, AbstractHttpHandler handler) {
 		super(original);
 		this.handler = handler;
 		originalHostHeader = original.originalHostHeader;
+		id = hashCode();
 	}
 
 	public AbstractHttpHandler getHandler() {
@@ -96,12 +120,16 @@ public class Exchange extends AbstractExchange {
 			if (isForcedToStop())
 				throw new TerminateException("Force the exchange to stop.");
 		} catch (InterruptedException e1) {
-			e1.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
 	}
 
 	public String getOriginalHostHeaderPort() {
 		return originalHostHeader.replaceFirst(".*:", "");
+	}
+
+	public String getOriginalHostHeader() {
+		return originalHostHeader;
 	}
 
 	public void setOriginalHostHeader(String hostHeader) {
@@ -123,9 +151,16 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void collectStatistics() {
-		rule.collectStatisticsFrom(this);
+		rule.getStatisticCollector().collect(this);
 	}
 
+	/**
+	 * Returns the relative original URI.
+	 *
+	 * "original" meaning "as recieved by Membrane's transport".
+	 *
+	 * To be used, for example, when generating self-referring web pages.
+	 */
 	public String getRequestURI() {
 		if (HttpUtil.isAbsoluteURI(getOriginalRequestUri())) {
 			try {
@@ -163,13 +198,61 @@ public class Exchange extends AbstractExchange {
 		return map;
 	}
 	
+	public void setNodeStatusCode(int tryCounter, int code){
+		if(nodeStatusCodes == null){
+			nodeStatusCodes = new int[getDestinations().size()];
+		}
+		nodeStatusCodes[tryCounter % getDestinations().size()] = code;
+	}
+	
+	public void setNodeException(int tryCounter, Exception e){
+		if(nodeExceptions == null){
+			nodeExceptions = new Exception[getDestinations().size()];
+		}
+		nodeExceptions[tryCounter % getDestinations().size()] = e;
+	}
+
 	@Override
 	public void detach() {
 		super.detach();
 		handler = null;
 	}
-	
+
 	public boolean canKeepConnectionAlive() {
 		return getRequest().isKeepAlive() && getResponse().isKeepAlive();
+	}
+
+	@Override
+	public long getId() {
+		return id;
+	}
+
+	@Override
+	public AbstractExchange createSnapshot() throws Exception {
+		Exchange exc = updateCopy(this,new Exchange(null));
+		exc.setId(this.getId());
+		return exc;
+	}
+
+
+
+	public void setId(long id) {
+		this.id = id;
+	}
+
+	public int[] getNodeStatusCodes() {
+		return nodeStatusCodes;
+	}
+
+	public void setNodeStatusCodes(int[] nodeStatusCodes) {
+		this.nodeStatusCodes = nodeStatusCodes;
+	}
+
+	public Exception[] getNodeExceptions() {
+		return nodeExceptions;
+	}
+
+	public void setNodeExceptions(Exception[] nodeExceptions) {
+		this.nodeExceptions = nodeExceptions;
 	}
 }

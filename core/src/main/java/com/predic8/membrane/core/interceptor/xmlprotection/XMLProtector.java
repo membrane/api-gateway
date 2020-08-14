@@ -26,8 +26,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Filters XML streams, removing potentially malicious elements:
@@ -35,21 +35,22 @@ import org.apache.commons.logging.LogFactory;
  * <li>DTDs can be removed.</li>
  * <li>The length of element names can be limited.</li>
  * <li>The number of attibutes per element can be limited.</li>
- * </ul> 
- * 
+ * </ul>
+ *
  * If {@link #protect(InputStreamReader)} returns false, an unrecoverable error has
  * occurred (such as not-wellformed XML or an element name length exceeded the limit),
  * the {@link OutputStreamWriter} is left at this position: It should be discarded and
  * an error response should be returned to the requestor.
  */
 public class XMLProtector {
-	private static Log log = LogFactory.getLog(XMLProtector.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,false);
 	}
-	
+
 	private XMLEventWriter writer;
 	private final int maxAttibuteCount;
 	private final int maxElementNameLength;
@@ -60,8 +61,11 @@ public class XMLProtector {
 		this.removeDTD = removeDTD;
 		this.maxElementNameLength = maxElementNameLength;
 		this.maxAttibuteCount = maxAttibuteCount;
+
+		if(!removeDTD)
+			xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,true);
 	}
-	
+
 	public boolean protect(InputStreamReader isr) {
 		try {
 			XMLEventReader parser;

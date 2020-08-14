@@ -47,7 +47,7 @@ public class InternalInvocationTest {
 	@Test
 	public void testReturnedChain() throws Exception {
 		callService(3029);
-		
+
 		MockInterceptor.assertContent(
 				new String[] { "Mock1", "Mock2", "Mock3"},
 				new String[] { "Mock3", "Mock2", "Mock1" },

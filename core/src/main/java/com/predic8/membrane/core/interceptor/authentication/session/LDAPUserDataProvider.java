@@ -13,6 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -31,9 +35,13 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.net.SocketFactory;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -87,7 +95,7 @@ import com.predic8.membrane.core.Router;
 @MCElement(name="ldapUserDataProvider", topLevel=false)
 public class LDAPUserDataProvider implements UserDataProvider {
 
-	private static Log log = LogFactory.getLog(LDAPUserDataProvider.class.getName());
+	private static Logger log = LoggerFactory.getLogger(LDAPUserDataProvider.class.getName());
 
 	String url; // the LDAP server
 	String base; // the base DN
@@ -101,10 +109,11 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	boolean readAttributesAsSelf = true; // whether reading the user's attributes requires authentication
 	HashMap<String, String> attributeMap = new HashMap<String, String>(); // maps LDAP attributes to TokenGenerator attributes
 	AttributeMap map;
-	
+	SSLParser sslParser;
+
 	@MCElement(name="map", topLevel=false, id="ldapUserDataProvider-map")
 	public static class AttributeMap {
-	
+
 		@MCElement(name="attribute", topLevel=false)
 		public static class Attribute {
 			String from;
@@ -130,20 +139,20 @@ public class LDAPUserDataProvider implements UserDataProvider {
 				this.to = to;
 			}
 		}
-		
+
 		private List<Attribute> attributes = new ArrayList<Attribute>();
-		
+
 		public List<Attribute> getAttributes() {
 			return attributes;
 		}
-		
+
 		@MCChildElement
 		public void setAttributes(List<Attribute> attributes) {
 			this.attributes = attributes;
 		}
-	
+
 	}
-	
+
 	/**
 	 * @throws NoSuchElementException if no user could be found with the given login
 	 * @throws AuthenticationException if the password does not match
@@ -161,11 +170,20 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			env.put(Context.SECURITY_PRINCIPAL, binddn);
 			env.put(Context.SECURITY_CREDENTIALS, bindpw);
 		}
+		if (sslParser != null)
+			env.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
 
 		HashMap<String, String> userAttrs = new HashMap<String, String>();
 		String uid;
 
-		DirContext ctx = new InitialDirContext(env);
+		DirContext ctx;
+		ClassLoader old = Thread.currentThread().getContextClassLoader();
+		try {
+			Thread.currentThread().setContextClassLoader(CustomSocketFactory.class.getClassLoader());
+			ctx = new InitialDirContext(env);
+		} finally {
+			Thread.currentThread().setContextClassLoader(old);
+		}
 		try {
 			uid = searchUser(login, userAttrs, ctx);
 		} finally {
@@ -187,8 +205,15 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			env.put(Context.SECURITY_AUTHENTICATION, "simple");
 			env.put(Context.SECURITY_PRINCIPAL, uid + "," + base);
 			env.put(Context.SECURITY_CREDENTIALS, password);
-			DirContext ctx2 = new InitialDirContext(env);
-			try {
+			DirContext ctx2;
+            ClassLoader old2 = Thread.currentThread().getContextClassLoader();
+            try {
+                Thread.currentThread().setContextClassLoader(CustomSocketFactory.class.getClassLoader());
+                ctx2 = new InitialDirContext(env);
+            } finally {
+                Thread.currentThread().setContextClassLoader(old2);
+            }
+            try {
 				if (readAttributesAsSelf)
 					searchUser(login, userAttrs, ctx2);
 			} finally {
@@ -242,8 +267,8 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			case ')':
 				sb.append("\\29");
 				break;
-			case '\u0000': 
-				sb.append("\\00"); 
+			case '\u0000':
+				sb.append("\\00");
 				break;
 			default:
 				sb.append(curChar);
@@ -263,7 +288,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		} catch (NoSuchElementException e) {
 			throw e;
 		} catch (AuthenticationException e) {
-			log.debug(e);
+			log.debug("",e);
 			throw new NoSuchElementException();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -323,7 +348,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		ONELEVEL,
 		SUBTREE,
 	}
-	
+
 	public SearchScope getSearchScope() {
 		return SearchScope.values()[searchScope];
 	}
@@ -394,12 +419,21 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			attributeMap.put(passwordAttribute, "_pass");
 		}
 	}
-	
+
+	public SSLParser getSslParser() {
+		return sslParser;
+	}
+
+	@MCChildElement(order=100, allowForeign = true)
+	public void setSslParser(SSLParser sslParser) {
+		this.sslParser = sslParser;
+	}
+
 	@Override
 	public void init(Router router) {
 		if (passwordAttribute != null && readAttributesAsSelf)
 			throw new RuntimeException("@passwordAttribute is not compatible with @readAttributesAsSelf.");
-		
+
 		if (map != null) {
 			for (AttributeMap.Attribute a : map.getAttributes())
 				attributeMap.put(a.getFrom(), a.getTo());
@@ -407,15 +441,56 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		if (passwordAttribute != null) {
 			attributeMap.put(passwordAttribute, "_pass");
 		}
+
+		if (sslParser != null)
+			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
 	}
-	
+
 	public AttributeMap getMap() {
 		return map;
 	}
-	
-	@MCChildElement
+
+	@MCChildElement(order=200)
 	public void setMap(AttributeMap map) {
 		this.map = map;
 	}
 
+	public static class CustomSocketFactory extends SocketFactory {
+		public static SSLContext sslContext;
+		public static int connectTimeout = 60000;
+
+		private static CustomSocketFactory instance;
+
+		public static CustomSocketFactory getDefault() {
+			synchronized (CustomSocketFactory.class) {
+				if (instance == null)
+					instance = new CustomSocketFactory();
+			}
+			return instance;
+		}
+
+		public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+			return sslContext.createSocket(host, port, connectTimeout, host);
+		}
+
+		@Override
+		public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+			return sslContext.createSocket(host, port, localHost, localPort, connectTimeout, host);
+		}
+
+		@Override
+		public Socket createSocket(InetAddress host, int port) throws IOException {
+			throw new RuntimeException("not implemented");
+		}
+
+		@Override
+		public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+			throw new RuntimeException("not implemented");
+		}
+
+		public Socket createSocket() throws IOException {
+			return sslContext.createSocket();
+		}
+
+	}
 }

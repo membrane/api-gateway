@@ -14,26 +14,25 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoResponseException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Response extends Message {
 
-	private static final Log LOG = LogFactory.getLog(Response.class.getName());
-	private static final Pattern pattern = Pattern.compile("HTTP/(.+?) (.+?) (.+?)$");
+	private static final Logger log = LoggerFactory.getLogger(Response.class.getName());
+	private static final Pattern pattern = Pattern.compile("HTTP/(\\d\\.\\d) (\\d\\d\\d)( (.*?))?$");
 
 	private int statusCode;
 	private String statusMessage;
@@ -59,10 +58,28 @@ public class Response extends Message {
 			res.setBodyContent(msg.getBytes(Constants.UTF_8_CHARSET));
 			return this;
 		}
-		
+
 		public ResponseBuilder body(byte[] body) {
 			res.setBodyContent(body);
 			return this;
+		}
+
+		private class BodyCompleteMessageObserver extends AbstractMessageObserver implements NonRelevantBodyObserver{
+
+			private final InputStream stream;
+
+			public BodyCompleteMessageObserver(InputStream stream) {
+				this.stream = stream;
+			}
+
+			@Override
+			public void bodyComplete(AbstractBody body) {
+				try {
+					stream.close();
+				} catch (IOException e) {
+					log.error("Could not close body stream.", e);
+				}
+			}
 		}
 
 		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) throws IOException {
@@ -71,26 +88,17 @@ public class Response extends Message {
 			res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
 			Body b = new Body(stream);
 			if (closeStreamWhenDone) {
-				b.addObserver(new AbstractMessageObserver() {
-					@Override
-					public void bodyComplete(AbstractBody body) {
-						try {
-							stream.close();
-						} catch (IOException e) {
-							LOG.error("Could not close body stream.", e);
-						}
-					}
-				});
+				b.addObserver(new BodyCompleteMessageObserver(stream));
 			}
 			res.setBody(b);
 			return this;
 		}
-		
+
 		public ResponseBuilder bodyEmpty() {
 			res.getHeader().setContentLength(0);
 			return this;
 		}
-		
+
 		public ResponseBuilder header(Header header) {
 			res.setHeader(header);
 			return this;
@@ -110,28 +118,39 @@ public class Response extends Message {
 			return new ResponseBuilder();
 		}
 
+		public ResponseBuilder dontCache() {
+			res.getHeader().setNoCacheResponseHeaders();
+			return this;
+		}
 	}
 
 	public static ResponseBuilder ok(String msg) throws Exception {
 		return ok().contentType(MimeType.TEXT_HTML_UTF8).body(msg);
 	}
-	
+
 	private static String SERVER_HEADER = Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org";
-	
+
 	public static ResponseBuilder ok() {
 		return ResponseBuilder.newInstance().
-							   status(200, "Ok").
-							   header("Server", SERVER_HEADER).
-							   bodyEmpty();
+				status(200, "Ok").
+				header("Server", SERVER_HEADER).
+				bodyEmpty();
 	}
-	
+
 	public static ResponseBuilder noContent() {
 		return ResponseBuilder.newInstance().
 				status(204, "No Content").
 				bodyEmpty();
 	}
-	
-	
+
+	public static ResponseBuilder notModified(String date) {
+		return ResponseBuilder.newInstance().
+				status(304, "Not Modified").
+				header("Server", SERVER_HEADER).
+				header("Date", date).
+				bodyEmpty();
+	}
+
 	public static ResponseBuilder badRequest() {
 		return ResponseBuilder.newInstance().
 				status(400, "Bad Request").
@@ -159,7 +178,7 @@ public class Response extends Message {
 		return ResponseBuilder.newInstance().
 				status(100, "Continue");
 	}
-	
+
 	public static ResponseBuilder redirect(String uri, boolean permanent) {
 		String escaped = StringEscapeUtils.escapeXml(uri);
 		return ResponseBuilder.newInstance().
@@ -169,18 +188,32 @@ public class Response extends Message {
 				body(unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
 
-	public static ResponseBuilder redirectWithout300(String uri, boolean permanent) {
+	public static ResponseBuilder redirectGet(String uri){
+		String escaped = StringEscapeUtils.escapeXml(uri);
+		return ResponseBuilder.newInstance().
+				status(303, "Temporary Redirect").
+				header("Location", uri).
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
+	}
+
+	public static ResponseBuilder redirectWithout300(String uri) {
+		String escaped = StringEscapeUtils.escapeXml(uri);
+		return redirectWithout300(uri, " This page has moved to <a href=\"" + escaped + "\">" + escaped + "</a>.");
+	}
+
+	public static ResponseBuilder redirectWithout300(String uri, String body) {
 		String escaped = StringEscapeUtils.escapeXml(uri);
 		return ResponseBuilder.newInstance().
 				status(200, "OK").
 				header("Location", uri).
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body("<html><head><meta http-equiv=\"refresh\" content=\"0;URL='"+escaped+"'\" /></head>" +
-				"<body>" +
-				" This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>." +
-				"</body>");
+				body("<html><head><meta http-equiv=\"refresh\" content=\"0;URL='" + escaped + "'\" /></head>" +
+						"<body>" +
+						body +
+						"</body>");
 	}
-	
+
 	private static String unescapedHtmlMessage(String caption, String text) {
 		return "<html><head><title>" + caption
 				+ "</title></head>" + "<body><h1>"
@@ -200,15 +233,15 @@ public class Response extends Message {
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(htmlMessage("Service Unavailable", message));
 	}
-	
-	public static ResponseBuilder interalServerError() {
+
+	public static ResponseBuilder internalServerError() {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(htmlMessage("Internal Server Error", ""));
 	}
 
-	public static ResponseBuilder interalServerError(String message) {
+	public static ResponseBuilder internalServerError(String message) {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").
 				contentType(MimeType.TEXT_HTML_UTF8).
@@ -220,6 +253,13 @@ public class Response extends Message {
 				status(502, "Bad Gateway").
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(htmlMessage("Bad Gateway", message));
+	}
+
+	public static ResponseBuilder gatewayTimeout(String message) {
+		return ResponseBuilder.newInstance().
+				status(504, "Gateway timeout").
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(htmlMessage("Gateway timeout", message));
 	}
 
 	public static ResponseBuilder forbidden() {
@@ -248,6 +288,13 @@ public class Response extends Message {
 				status(401, "Unauthorized.").
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(htmlMessage("Unauthorized.", message));
+	}
+
+	public static ResponseBuilder unauthorized() {
+		return ResponseBuilder.newInstance().
+				status(401, "Unauthorized.").
+				contentType(MimeType.TEXT_HTML_UTF8).
+				bodyEmpty();
 	}
 
 	@Override
@@ -279,32 +326,34 @@ public class Response extends Message {
 		this.statusMessage = statusMessage;
 	}
 
+	@Override
 	public void parseStartLine(InputStream in) throws IOException,
-			EndOfStreamException {
+	EndOfStreamException {
 
 		String line;
 		try {
 			line = HttpUtil.readLine(in);
 		} catch (EOFWhileReadingLineException e) {
 			if (e.getLineSoFar().length() == 0)
-				throw new NoResponseException();
+				throw new NoResponseException(e);
 			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
 		}
-		
+
 		Matcher matcher = pattern.matcher(line);
 		boolean find = matcher.find();
 
 		if (!find) {
-			return;
+			throw new RuntimeException("Invalid server response: " + line);
 		}
 		version = matcher.group(1);
 		statusCode = Integer.parseInt(matcher.group(2));
-		statusMessage = matcher.group(3);
+		statusMessage = matcher.group(4);
 
 	}
 
+	@Override
 	public void read(InputStream in, boolean createBody) throws IOException,
-			EndOfStreamException {
+	EndOfStreamException {
 		parseStartLine(in);
 
 		if (getStatusCode() == 100) {
@@ -318,12 +367,13 @@ public class Response extends Message {
 			createBody(in);
 	}
 
+	@Override
 	protected void createBody(InputStream in) throws IOException {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
 		if (isBodyEmpty()) {
-			LOG.debug("empty body created");
+			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}
@@ -346,9 +396,13 @@ public class Response extends Message {
 
 	@Override
 	public boolean isBodyEmpty() throws IOException {
-		if (statusCode == 100 || statusCode == 204 || statusCode == 205)
+		if (statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205)
 			return true;
 		return super.isBodyEmpty();
+	}
+
+	public boolean isOk(){
+		return statusCode >= 200 && statusCode < 300;
 	}
 
 	public boolean isUserError() {
@@ -358,7 +412,7 @@ public class Response extends Message {
 	public boolean isServerError() {
 		return statusCode >= 500;
 	}
-	
+
 	/**
 	 * Some web servers may not send a body e.g. after a redirect. We therefore
 	 * do not parse it in {@link #createBody(InputStream)} and close the connection
@@ -373,7 +427,7 @@ public class Response extends Message {
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public boolean isKeepAlive() {
 		if (isRedirect() && mayHaveNoBody())
@@ -383,8 +437,18 @@ public class Response extends Message {
 
 	@Override
 	public int estimateHeapSize() {
-		return super.estimateHeapSize() + 
+		return super.estimateHeapSize() +
 				12 +
 				(statusMessage != null ? 2*statusMessage.length() : 0);
+	}
+
+	@Override
+	public <T extends Message> T createSnapshot() throws Exception {
+		Response result = this.createMessageSnapshot(new Response());
+
+		result.setStatusCode(this.getStatusCode());
+		result.setStatusMessage(this.getStatusMessage());
+
+		return (T) result;
 	}
 }

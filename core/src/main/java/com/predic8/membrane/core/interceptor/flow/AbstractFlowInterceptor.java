@@ -24,16 +24,16 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 	private List<Interceptor> interceptors = new ArrayList<Interceptor>();
-	
+
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
 	}
-	
+
 	@MCChildElement(allowForeign=true)
 	public void setInterceptors(List<Interceptor> interceptors) {
 		this.interceptors = interceptors;
 	}
-	
+
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);

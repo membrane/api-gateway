@@ -17,9 +17,9 @@ package com.predic8.membrane.core.transport.http;
 public class EOFWhileReadingFirstLineException extends EOFWhileReadingLineException {
 
 	private static final long serialVersionUID = -6998133859472737055L;
-	
+
 	public EOFWhileReadingFirstLineException(String lineSoFar) {
 		super(lineSoFar);
 	}
-	
+
 }

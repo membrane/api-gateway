@@ -14,99 +14,132 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.PlainBodyTransferrer;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.concurrent.GuardedBy;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
 
 /**
+ * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
+ * switch destinations on failures.
+ *
  * Instances are thread-safe.
  */
 public class HttpClient {
 
-	private static Log log = LogFactory.getLog(HttpClient.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
+	@GuardedBy("HttpClient.class")
+	private static SSLProvider defaultSSLProvider;
 
 	private final ProxyConfiguration proxy;
+	private final SSLContext proxySSLContext;
 	private final AuthenticationConfiguration authentication;
-	private final int timeBetweenTries = 250;
+
+	/**
+	 * How long to wait between calls to the same destination, in milliseconds.
+	 * To prevent hammering one target.
+	 * Between calls to different targets (think servers) this waiting time is not applied.
+	 *
+	 * Note: for reasons of code simplicity, this sleeping time is only applied between direct successive calls
+	 * to the same target. If there are multiple targets like one, two, one and it all goes very fast, then
+	 * it's possible that the same server gets hit with less time in between.
+	 */
+	private final int timeBetweenTriesMs = 250;
+	/**
+	 * See {@link HttpClientConfiguration#setMaxRetries(int)}
+	 */
 	private final int maxRetries;
 	private final int connectTimeout;
+	private final String localAddr;
+	private final SSLContext sslContext;
 
 	private final ConnectionManager conMgr;
-	
+	private StreamPump.StreamPumpStats streamPumpStats;
+
 	public HttpClient() {
 		this(new HttpClientConfiguration());
 	}
-	
+
 	public HttpClient(HttpClientConfiguration configuration) {
 		proxy = configuration.getProxy();
+		if (proxy != null && proxy.getSslParser() != null)
+			proxySSLContext = new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
+		else
+			proxySSLContext = null;
+		if (configuration.getSslParser() != null) {
+			if (configuration.getBaseLocation() == null)
+				throw new RuntimeException("Cannot find keystores as base location is unknown");
+			sslContext = new StaticSSLContext(configuration.getSslParser(), new ResolverMap(), configuration.getBaseLocation());
+		}else
+			sslContext = null;
 		authentication = configuration.getAuthentication();
 		maxRetries = configuration.getMaxRetries();
-		
+
 		connectTimeout = configuration.getConnection().getTimeout();
-		
+		localAddr = configuration.getConnection().getLocalAddr();
+
 		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
 	}
-	
+
+	public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
+		this.streamPumpStats = streamPumpStats;
+	}
+
 	@Override
 	protected void finalize() throws Throwable {
 		conMgr.shutdownWhenDone();
 	}
-	
+
 	private void setRequestURI(Request req, String dest) throws MalformedURLException {
 		if (proxy != null || req.isCONNECTRequest())
 			req.setUri(dest);
 		else {
 			if (!dest.startsWith("http"))
 				throw new MalformedURLException("The exchange's destination URL ("+dest+") does not start with 'http'. Please specify a <target> within your <serviceProxy>.");
-			req.setUri(HttpUtil.getPathAndQueryString(dest));
+			String originalUri = req.getUri();
+			try {
+				req.setUri(HttpUtil.getPathAndQueryString(dest));
+			} catch (MalformedURLException e) {
+				throw new RuntimeException("while handling destination '" + dest + "'", e);
+			}
+			if("/".equals(originalUri) && req.getUri().isEmpty())
+				req.setUri("/");
 		}
 	}
-	
+
 	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
-		if (proxy != null)
-			return new HostColonPort(proxy.getHost(), proxy.getPort());
-		
 		if (connect)
-			return new HostColonPort(dest);
-		
+			return new HostColonPort(false, dest);
+
 		return new HostColonPort(new URL(dest));
 	}
-	
+
 	private HostColonPort init(Exchange exc, String dest, boolean adjustHostHeader) throws UnknownHostException, IOException, MalformedURLException {
 		setRequestURI(exc.getRequest(), dest);
 		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
-		
-		if (proxy != null && proxy.isAuthentication()) {
-			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
-		} 
-		
-		if (authentication != null) 
+
+		if (authentication != null)
 			exc.getRequest().getHeader().setAuthorization(authentication.getUsername(), authentication.getPassword());
-		
+
 		if (adjustHostHeader && (exc.getRule() == null || exc.getRule().isTargetAdjustHostHeader())) {
 			URL d = new URL(dest);
 			exc.getRequest().getHeader().setHost(d.getHost() + ":" + HttpUtil.getPort(d));
@@ -114,20 +147,37 @@ public class HttpClient {
 		return target;
 	}
 
-	private SSLContext getOutboundSSLContext(Exchange exc) {
-		return exc.getRule() == null ? null : exc.getRule().getSslOutboundContext();
+	private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
+		Object sslPropObj = exc.getProperty(Exchange.SSL_CONTEXT);
+		if(sslPropObj != null)
+			return (SSLProvider) sslPropObj;
+		if(hcp.useSSL)
+			if(sslContext != null)
+				return sslContext;
+			else
+				return getDefaultSSLProvider();
+		return null;
+	}
+
+	private static synchronized SSLProvider getDefaultSSLProvider() {
+		if (defaultSSLProvider == null)
+			defaultSSLProvider = new StaticSSLContext(new SSLParser(), null, null);
+		return defaultSSLProvider;
 	}
 
 	public Exchange call(Exchange exc) throws Exception {
 		return call(exc, true, true);
 	}
-	
+
 	public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
-		if (exc.getDestinations().size() == 0)
+		if (exc.getDestinations().isEmpty())
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
-		
+
 		int counter = 0;
 		Exception exception = null;
+		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
+		boolean trackNodeStatus = trackNodeStatusObj != null && trackNodeStatusObj instanceof Boolean && (Boolean)trackNodeStatusObj;
+		disableStreamingForRetries(exc);
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
@@ -135,11 +185,10 @@ public class HttpClient {
 			try {
 				log.debug("try # " + counter + " to " + dest);
 				target = init(exc, dest, adjustHostHeader);
-				InetAddress targetAddr = InetAddress.getByName(target.host);
 				if (counter == 0) {
 					con = exc.getTargetConnection();
 					if (con != null) {
-						if (!con.isSame(targetAddr, target.port)) {
+						if (!con.isSame(target.host, target.port)) {
 							con.close();
 							con = null;
 						} else {
@@ -147,13 +196,51 @@ public class HttpClient {
 						}
 					}
 				}
+				SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLContext(exc), connectTimeout);
+					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout, getSNIServerName(exc), proxy, proxySSLContext);
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
-				Response response = doCall(exc, con);
-				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
+				if (proxy != null && sslProvider == null)
+					// if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
+					exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
+				Response response;
+				String newProtocol = null;
+
+				if (exc.getRequest().isCONNECTRequest()) {
+					handleConnectRequest(exc, con);
+					response = Response.ok().build();
+					newProtocol = "CONNECT";
+				} else {
+					response = doCall(exc, con);
+					if (trackNodeStatus)
+						exc.setNodeStatusCode(counter, response.getStatusCode());
+
+					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToResponse(response, "websocket")) {
+						log.debug("Upgrading to WebSocket protocol.");
+						newProtocol = "WebSocket";
+					}
+					if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
+						log.debug("Upgrading to TCP protocol.");
+						newProtocol = "TCP";
+					}
+					if (exc.getProperty(Exchange.ALLOW_SPDY) == Boolean.TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
+						log.debug("Upgrading to SPDY/3.1 protocol.");
+						newProtocol = "SPDY/3.1";
+					}
+				}
+
+				if (newProtocol != null) {
+					setupConnectionForwarding(exc, con, newProtocol, streamPumpStats);
+					exc.getDestinations().clear();
+					exc.getDestinations().add(dest);
+					con.setExchange(exc);
+					exc.setResponse(response);
+					return exc;
+				}
+
+				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600;
 				if (!failOverOn5XX || !is5XX || counter == maxRetries-1) {
 					applyKeepAliveHeader(response, con);
 					exc.getDestinations().clear();
@@ -172,15 +259,16 @@ public class HttpClient {
 					log.info("Connection to " + dest + " was aborted externally. Maybe by the server or the OS Membrane is running on.");
 				} else if (e.getMessage().contains("Connection reset") ) {
 					log.info("Connection to " + dest + " was reset externally. Maybe by the server or the OS Membrane is running on.");
- 				} else {
- 					logException(exc, counter, e);
- 				}
+				} else {
+					logException(exc, counter, e);
+				}
 				exception = e;
 			} catch (UnknownHostException e) {
 				log.warn("Unknown host: " + (target == null ? dest : target ));
 				exception = e;
 				if (exc.getDestinations().size() < 2) {
-					break; 
+					//don't retry this host, it's useless. (it's very unlikely that it will work after timeBetweenTriesMs)
+					break;
 				}
 			} catch (EOFWhileReadingFirstLineException e) {
 				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getLineSoFar());
@@ -191,57 +279,87 @@ public class HttpClient {
 				logException(exc, counter, e);
 				exception = e;
 			}
+			finally	{
+				if (trackNodeStatus) {
+					if(exception != null){
+						exc.setNodeException(counter, exception);
+					}
+				}
+			}
 			counter++;
-			if (exc.getDestinations().size() == 1)
-				Thread.sleep(timeBetweenTries);
+			if (exc.getDestinations().size() == 1) {
+				//as documented above, the sleep timeout is only applied between successive calls to the same destination.
+				Thread.sleep(timeBetweenTriesMs);
+			}
 		}
 		throw exception;
+	}
+
+	private void disableStreamingForRetries(Exchange exc) {
+		if(maxRetries > 1)
+			exc.getRequest().addObserver(new MessageObserver() {
+				@Override
+				public void bodyRequested(AbstractBody body) {
+				}
+
+				@Override
+				public void bodyComplete(AbstractBody body) {
+				}
+			});
+	}
+
+	private String getSNIServerName(Exchange exc) {
+		Object sniObject = exc.getProperty(Exchange.SNI_SERVER_NAME);
+		if(sniObject == null)
+			return null;
+		return (String) sniObject;
 	}
 
 	private void applyKeepAliveHeader(Response response, Connection con) {
 		String value = response.getHeader().getFirstValue(Header.KEEP_ALIVE);
 		if (value == null)
 			return;
-		
-		long timeout = Header.parseKeepAliveHeader(value, Header.TIMEOUT);
-		if (timeout != -1)
-			con.setTimeout(timeout * 1000);
-		
+
+		long timeoutSeconds = Header.parseKeepAliveHeader(value, Header.TIMEOUT);
+		if (timeoutSeconds != -1)
+			con.setTimeout(timeoutSeconds * 1000);
+
 		long max = Header.parseKeepAliveHeader(value, Header.MAX);
 		if (max != -1 && max < con.getMaxExchanges())
 			con.setMaxExchanges((int)max);
 	}
 
+	/**
+	 * Returns the target destination to use for this attempt.
+	 * @param counter starting at 0 meaning the first.
+	 */
 	private String getDestination(Exchange exc, int counter) {
 		return exc.getDestinations().get(counter % exc.getDestinations().size());
 	}
 
 	private void logException(Exchange exc, int counter, Exception e) throws IOException {
-		StringBuilder msg = new StringBuilder();
-		msg.append("try # ");
-		msg.append(counter);
-		msg.append(" failed\n");
-		
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		exc.getRequest().writeStartLine(baos);
-		exc.getRequest().getHeader().write(baos);
-		msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
+		if (log.isDebugEnabled()) {
+			StringBuilder msg = new StringBuilder();
+			msg.append("try # ");
+			msg.append(counter);
+			msg.append(" failed\n");
 
-		if (e != null)
-			log.debug(msg, e);
-		else
-			log.debug(msg);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			exc.getRequest().writeStartLine(baos);
+			exc.getRequest().getHeader().write(baos);
+			msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
+
+			if (e != null)
+				log.debug("{}",msg, e);
+			else
+				log.debug("{}",msg);
+		}
 	}
 
 	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-		if (exc.getRequest().isCONNECTRequest()) {
-			handleConnectRequest(exc, con);
-			return Response.ok().build();
-		}
-		
 		exc.getRequest().write(con.out);
 		exc.setTimeReqSent(System.currentTimeMillis());
-		
+
 		if (exc.getRequest().isHTTP10()) {
 			shutDownRequestInputOutput(exc, con);
 		}
@@ -258,6 +376,53 @@ public class HttpClient {
 		return res;
 	}
 
+	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats streamPumpStats) throws SocketException {
+		final HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
+		String source = hsr.getSourceSocket().getRemoteSocketAddress().toString();
+		String dest = con.toString();
+		final StreamPump a;
+		final StreamPump b;
+		if("WebSocket".equals(protocol)){
+			WebSocketStreamPump aTemp = new WebSocketStreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule(),true,exc);
+			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule(),false, null);
+			aTemp.init(bTemp);
+			bTemp.init(aTemp);
+			a = aTemp;
+			b = bTemp;
+		}
+		else {
+			a = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule());
+			b = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule());
+		}
+
+		hsr.getSourceSocket().setSoTimeout(0);
+
+		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+
+			@Override
+			public void setExchangeFinished() {
+				String threadName = Thread.currentThread().getName();
+				new Thread(b, threadName + " " + protocol + " Backward Thread").start();
+				try {
+					Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
+					a.run();
+				} finally {
+					try {
+						con.close();
+					} catch (IOException e) {
+						log.debug("", e);
+					}
+				}
+			}
+		});
+	}
+
+	private boolean isUpgradeToResponse(Response res, String protocol) {
+		return res.getStatusCode() == 101 &&
+				"upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(Header.CONNECTION)) &&
+				protocol.equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
+	}
+
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		if (proxy != null) {
 			exc.getRequest().write(con.out);
@@ -266,9 +431,6 @@ public class HttpClient {
 			log.debug("Status code response on CONNECT request: " + response.getStatusCode());
 		}
 		exc.getRequest().setUri(Constants.N_A);
-		HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
-		new TunnelThread(con.in, hsr.getSrcOut(), "Onward Thread").start();
-		new TunnelThread(hsr.getSrcIn(), con.out, "Backward Thread").start();
 	}
 
 	private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
@@ -281,7 +443,7 @@ public class HttpClient {
 		exc.getHandler().shutdownInput();
 		Util.shutdownOutput(con.socket);
 	}
-	
+
 	ConnectionManager getConnectionManager() {
 		return conMgr;
 	}

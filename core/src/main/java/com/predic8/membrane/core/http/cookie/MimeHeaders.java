@@ -25,11 +25,11 @@ import com.predic8.membrane.core.http.Request;
 public class MimeHeaders {
 
 	private final HeaderField header[];
-	
+
 	public MimeHeaders(Header header) {
 		this.header = header.getAllHeaderFields();
 	}
-	
+
 	public int findHeader(String string, int pos) {
 		while (true) {
 			if (pos >= header.length)

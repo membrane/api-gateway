@@ -43,7 +43,7 @@ public class HttpRouter extends Router {
 	private Transport createTransport(ProxyConfiguration proxyConfiguration) {
 		Transport transport = new HttpTransport();
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
-		interceptors.add(new RuleMatchingInterceptor());		
+		interceptors.add(new RuleMatchingInterceptor());
 		interceptors.add(new DispatchingInterceptor());
 		interceptors.add(new UserFeatureInterceptor());
 		HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
@@ -51,15 +51,15 @@ public class HttpRouter extends Router {
 		transport.setInterceptors(interceptors);
 		return transport;
 	}
-	
+
 	@Override
 	public HttpTransport getTransport() {
 		return (HttpTransport)transport;
 	}
-	
+
 	public void addUserFeatureInterceptor(Interceptor i) {
 		List<Interceptor> is = getTransport().getInterceptors();
 		is.add(is.size()-2, i);
 	}
-	
+
 }

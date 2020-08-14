@@ -38,11 +38,11 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 
 	private int order = 100; // the order in which BeanFactoryPostProcessors get executed
-	
+
 	public void setOrder(int order) {
 		this.order = order;
 	}
-	
+
 	@Override
 	public int getOrder() {
 		return order;
@@ -61,7 +61,7 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 	private void defineRouter(BeanDefinitionRegistry beanDefinitionRegistry) {
 		if (!beanDefinitionRegistry.containsBeanDefinition("router")) {
 			beanDefinitionRegistry.registerBeanDefinition(
-					"router", 
+					"router",
 					root().clazz(Router.class).addRef("transport", "transport").addRef("exchangeStore", "memoryExchangeStore").build());
 		}
 	}
@@ -69,7 +69,7 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 	private void defineTransport(BeanDefinitionRegistry beanDefinitionRegistry) {
 		if (!beanDefinitionRegistry.containsBeanDefinition("transport")) {
 			beanDefinitionRegistry.registerBeanDefinition(
-					"transport", 
+					"transport",
 					root()
 					.clazz(HttpTransport.class)
 					.addRef("interceptors[0]", childOf("transport").clazz(RuleMatchingInterceptor.class).build())
@@ -89,7 +89,7 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 	private BeanDefinitionBuilder root() {
 		return new BeanDefinitionBuilder();
 	}
-	
+
 	private class BeanDefinitionBuilder {
 		private AbstractBeanDefinition cbd;
 
@@ -100,12 +100,12 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 		public BeanDefinitionBuilder(String parentBeanName) {
 			cbd = new GenericBeanDefinition();
 		}
-		
+
 		public BeanDefinitionBuilder clazz(Class<?> clazz) {
 			cbd.setBeanClass(clazz);
 			return this;
 		}
-		
+
 		public BeanDefinitionBuilder addRef(String name, String ref) {
 			cbd.getPropertyValues().add(name, new RuntimeBeanReference(ref));
 			return this;
@@ -120,11 +120,11 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 			return cbd;
 		}
 	}
-	
+
 	private void defineLimitedMemoryExchangeStore(BeanDefinitionRegistry beanDefinitionRegistry) {
 		if (!beanDefinitionRegistry.containsBeanDefinition("memoryExchangeStore")) {
 			beanDefinitionRegistry.registerBeanDefinition(
-					"memoryExchangeStore", 
+					"memoryExchangeStore",
 					new RootBeanDefinition(LimitedMemoryExchangeStore.class));
 		}
 	}
@@ -140,7 +140,7 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 			RootBeanDefinition def = new RootBeanDefinition(clazz);
 			def.setScope("singleton");
 			beanDefinitionRegistry.registerBeanDefinition(
-					"transformerFactory", 
+					"transformerFactory",
 					def);
 		}
 	}

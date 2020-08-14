@@ -15,12 +15,12 @@ package com.predic8.membrane.core.rules;
 
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRuleKey implements RuleKey {
 
-	private static Log log = LogFactory.getLog(AbstractRuleKey.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AbstractRuleKey.class.getName());
 
 	/**
 	 * -1 is used as a wildcard. It is used by HttpServletHandler, since its port
@@ -35,7 +35,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 	protected boolean pathRegExp = true;
 
 	protected boolean usePathPattern;
-	
+
 	protected String ip;
 
 	public AbstractRuleKey(int port, String ip) {
@@ -117,18 +117,27 @@ public abstract class AbstractRuleKey implements RuleKey {
 
 		return p;
 	}
-	
+
 	public String getIp() {
 		return ip;
 	}
-	
+
 	public void setIp(String ip) {
 		this.ip = ip;
 	}
-	
+
 	@Override
 	public boolean matchesHostHeader(String hostHeader) {
 		return false;
+	}
+
+	@Override
+	public boolean matchesVersion(String version) {
+		return !"STOMP".equals(version);
+	}
+
+	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+		return true;
 	}
 
 }

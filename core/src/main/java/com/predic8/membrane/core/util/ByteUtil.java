@@ -22,19 +22,19 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.http.Chunk;
 
 public class ByteUtil {
 
-	private static Log log = LogFactory.getLog(ByteUtil.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ByteUtil.class.getName());
 
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		if (length < 0)
 			return getByteArrayData(in);
-		
+
 		byte[] content = new byte[length];
 		int offset = 0;
 		int count = 0;
@@ -59,10 +59,19 @@ public class ByteUtil {
 		try {
 			bos.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("", e);
 		}
 
 		return bos.toByteArray();
+	}
+
+	public static void readStream(InputStream stream) throws IOException {
+		byte[] buffer = new byte[2048];
+		while (true) {
+			int read = stream.read(buffer);
+			if (read < 0)
+				break;
+		}
 	}
 
 	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
@@ -70,9 +79,9 @@ public class ByteUtil {
 		decompressor.setInput(compressedData);
 
 		byte[] buf = new byte[1024];
-		
+
 		List<Chunk> chunks = new ArrayList<Chunk>();
-		
+
 		while (!decompressor.finished()) {
 			int count;
 			try {
@@ -92,24 +101,73 @@ public class ByteUtil {
 				chunks.add(chunk);
 			}
 		}
-		
+
 		log.debug("Number of decompressed chunks: " + chunks.size());
 		if (chunks.size() > 0) {
-			
+
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			
+
 			for (Chunk chunk : chunks) {
 				chunk.write(bos);
 			}
-			
+
 			try {
 				bos.close();
 			} catch (IOException e) {
 			}
-			return bos.toByteArray();	
-		} 
-		
+			return bos.toByteArray();
+		}
+
 		return null;
 	}
 
+	public static int getValueOfBits(byte b, int minBitPosition, int maxBitPosition){
+        byte result = 0;
+        for(int i = minBitPosition; i <= maxBitPosition; i++){
+            if(getBitValueBigEndian(b,i))
+                result = setBitValueBigEndian(result,i,true);
+        }
+        return Byte.toUnsignedInt(result);
+    }
+
+	public static boolean getBitValueBigEndian(byte b, int position){
+        return getBitValue(b,position,true);
+    }
+
+	public static boolean getBitValue(byte b, int position, boolean isBigEndian){
+        if(isBigEndian)
+            position = 7 - position;
+        return (b & (1 << position)) != 0;
+    }
+
+	public static byte setBitValue(byte b, int position, boolean value, boolean isBigEndian){
+        if(isBigEndian)
+            position = 7 - position;
+
+        if(value)
+            b |= (1 << position);
+        else
+            b &= ~(1 << position);
+        return b;
+    }
+
+	public static byte setBitValueBigEndian(byte b, int position, boolean value) {
+        return setBitValue(b,position,value,true);
+    }
+
+    public static byte setBitValues(byte b, int beginning, int end, int value){
+		byte valByte = (byte)value;
+		for(int i = beginning; i <= end;i++)
+			if(getBitValueBigEndian(valByte,i))
+				b = setBitValueBigEndian(b,i,true);
+		return b;
+	}
+
+	public static byte setBitValuesBigEndian(byte b, int beginning, int end, int value){
+    	return setBitValues(b,beginning, end,value);
+	}
+
+	public static int getNumberOfBits(int i){
+		return Integer.SIZE-Integer.numberOfLeadingZeros(i);
+	}
 }

@@ -19,6 +19,7 @@ import java.util.*;
 
 import org.junit.*;
 
+import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor.Field;
@@ -28,40 +29,41 @@ public class FormValidationInterceptorTest {
 	@Test
 	public void testValidation() throws Exception {
 		FormValidationInterceptor interceptor = new FormValidationInterceptor();
-		
+		interceptor.init(new HttpRouter());
+
 		Field article = new Field();
 		article.setName("article");
 		article.setRegex("banana|apple");
-		
+
 		Field amount = new Field();
 		amount.setName("amount");
 		amount.setRegex("\\d+");
 
 		List<Field> fields = new ArrayList<Field>();
-		fields.add(amount);		
-		fields.add(article);		
+		fields.add(amount);
+		fields.add(article);
 		interceptor.setFields(fields);
-		
+
 		Exchange exc = getExchange("/buy?article=pizza&amount=five");
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));		
+		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
 		assertEquals(400, exc.getResponse().getStatusCode());
 
 		exc = getExchange("/buy?article=pizza&amount=2");
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));		
+		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
 		assertEquals(400, exc.getResponse().getStatusCode());
 
 		exc = getExchange("/buy?article=banana&amount=five");
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));		
+		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
 		assertEquals(400, exc.getResponse().getStatusCode());
 
 		exc = getExchange("/buy?article=banana&amount=5");
-		assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));		
+		assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
 	}
-	
+
 	private Exchange getExchange(String uri) {
 		Exchange exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest(uri));
 		return exc;
 	}
-	
+
 }

@@ -1,0 +1,42 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <serviceProxy name="Authorization Server" port="7000">
+
+            <oauth2authserver issuer="http://localhost:7000">
+
+                <!-- UserDataProvider is exchangeable, e.g. for a database table -->
+                <staticUserDataProvider>
+                    <user username="john" password="password" email="john@predic8.de" />
+                </staticUserDataProvider>
+
+                <staticClientList>
+                    <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2000/oauth2callback" />
+                </staticClientList>
+
+                <!-- Generates tokens in the given format -->
+                <bearerToken/>
+
+                <claims value="aud email iss sub username">
+
+                    <!-- Scopes are defined from the claims exposed above -->
+                    <scope id="username" claims="username"/>
+                    <scope id="profile" claims="username email"/>
+
+                </claims>
+            </oauth2authserver>
+
+        </serviceProxy>
+
+        <serviceProxy port="9000">
+            <adminConsole/>
+        </serviceProxy>
+
+    </router>
+
+</spring:beans>

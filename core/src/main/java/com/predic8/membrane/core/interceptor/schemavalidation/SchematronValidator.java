@@ -37,6 +37,8 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -51,19 +53,20 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 public class SchematronValidator implements IValidator {
+	private static Logger log = LoggerFactory.getLogger(SchematronValidator.class.getName());
 
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
 	private final XOPReconstitutor xopr = new XOPReconstitutor();
-	
+
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
-	
-	
+
+
 	public SchematronValidator(ResolverMap resourceResolver, String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
 		this.failureHandler = failureHandler;
-		
+
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 		TransformerFactory fac;
 		try {
@@ -83,7 +86,7 @@ public class SchematronValidator implements IValidator {
 		// transform schematron-XML into XSLT
 		DOMResult r = new DOMResult();
 		t.transform(new StreamSource(router.getResolverMap().resolve(schematron)), r);
-		
+
 		// build XSLT transformers
 		fac.setURIResolver(null);
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
@@ -93,7 +96,7 @@ public class SchematronValidator implements IValidator {
 			transformer.setErrorListener(new NullErrorListener()); // silence console logging
 			transformers.put(transformer);
 		}
-		
+
 		xmlInputFactory = XMLInputFactory.newInstance();
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
@@ -112,7 +115,7 @@ public class SchematronValidator implements IValidator {
 			}
 
 			byte[] result = baos.toByteArray();
-			
+
 			// check for errors
 			XMLEventReader parser;
 			synchronized (xmlInputFactory) {
@@ -135,7 +138,7 @@ public class SchematronValidator implements IValidator {
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("", e);
 			setErrorMessage(exc, "internal error", true, source);
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
@@ -143,7 +146,7 @@ public class SchematronValidator implements IValidator {
 		valid.incrementAndGet();
 		return Outcome.CONTINUE;
 	}
-	
+
 	private void setErrorMessage(Exchange exc, String message, boolean escape, String source) {
 		String MSG_HEADER = "<?xml version=\"1.0\"?>\r\n<error" + (escape ? " source=\"" + StringEscapeUtils.escapeXml(source) + "\"" : "") + ">";
 		String MSG_FOOTER = "</error>";
@@ -159,7 +162,7 @@ public class SchematronValidator implements IValidator {
 		if (!escape)
 			exc.getResponse().getHeader().add(Header.VALIDATION_ERROR_SOURCE, source);
 	}
-	
+
 	@Override
 	public long getValid() {
 		return valid.get();

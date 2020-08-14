@@ -20,13 +20,13 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class Component extends AbstractXmlElement {
-	
+
 	public static final String ELEMENT_NAME = "component";
 
 	String value;
-	
+
 	public Component() {}
-	
+
 	public Component(String c) {
 		value = c;
 	}
@@ -41,7 +41,7 @@ public class Component extends AbstractXmlElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 		out.writeCharacters(value);
-		out.writeEndElement();		
+		out.writeEndElement();
 	}
 
 	public String getValue() {
@@ -56,5 +56,5 @@ public class Component extends AbstractXmlElement {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 }

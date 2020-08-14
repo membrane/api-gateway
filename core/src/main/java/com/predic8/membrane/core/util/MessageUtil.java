@@ -39,7 +39,7 @@ public class MessageUtil {
 		}
 		return res.getBodyAsStream();
 	}
-	
+
 	public static byte[] getContent(Message res) throws Exception {
 		if (res.isGzip()) {
 			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));
@@ -48,35 +48,35 @@ public class MessageUtil {
 		}
 		return res.getBody().getContent();
 	}
-	
+
 	public static Source getSOAPBody(InputStream stream) throws Exception {
 		return new SAXSource(new SOAPXMLFilter(XMLReaderFactory.createXMLReader()), new InputSource(stream));
 	}
-	
+
 	public static Request getGetRequest(String uri) {
 		Request req = getStandartRequest(Request.METHOD_GET);
 		req.setUri(uri);
 		return req;
 	}
-	
+
 	public static Request getPostRequest(String uri) {
 		Request req = getStandartRequest(Request.METHOD_POST);
 		req.setUri(uri);
 		return req;
 	}
-	
+
 	public static Request getDeleteRequest(String uri) {
 		Request req = getStandartRequest(Request.METHOD_DELETE);
 		req.setUri(uri);
 		return req;
 	}
-	
+
 	private static Request getStandartRequest(String method) {
 		Request request = new Request();
 		request.setMethod(method);
 		request.setVersion(Constants.HTTP_VERSION_11);
-		
+
 		return request;
 	}
-	
+
 }

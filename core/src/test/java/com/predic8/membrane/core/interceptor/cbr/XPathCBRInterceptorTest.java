@@ -30,42 +30,42 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 
 public class XPathCBRInterceptorTest extends TestCase {
-		
+
 	Exchange exc = new Exchange(null);
-	
+
 	@Test
 	public void testRouting() throws Exception {
 		exc = new Exchange(null);
-		Request res = new Request();		
+		Request res = new Request();
 		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream("/customerFromBonn.xml")));
 		exc.setRequest(res);
 
 		XPathCBRInterceptor i = new XPathCBRInterceptor();
 		i.setCases(getRouteList("//CITY[text()='England']","http://www.host.uk/service",
-							    "//CITY[text()='Bonn']","http://www.host.de/service"));
-		
+				"//CITY[text()='Bonn']","http://www.host.de/service"));
+
 		i.handleRequest(exc);
 		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
-		
+
 	}
 
 	@Test
 	public void testRoutingNSAware() throws Exception {
 		exc = new Exchange(null);
-		Request res = new Request();		
+		Request res = new Request();
 		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream("/customerFromBonnWithNS.xml")));
 		exc.setRequest(res);
 
 		XPathCBRInterceptor i = new XPathCBRInterceptor();
-		
+
 		i.setCases(getRouteList("//pre:CITY[text()='England']","http://www.host.uk/service",
-								"//pre:CITY[text()='Bonn']","http://www.host.de/service"));
-		
+				"//pre:CITY[text()='Bonn']","http://www.host.de/service"));
+
 		i.setNamespaces(getNamespaceMap("pre", "http://predic8.de/customer/1"));
-		
+
 		i.handleRequest(exc);
 		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
-		
+
 	}
 
 	private List<Case> getRouteList(String... args) {

@@ -33,7 +33,7 @@ public class XMLProtectionInterceptorTest {
 		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
-		
+
 		interceptor = new XMLProtectionInterceptor();
 	}
 
@@ -43,7 +43,7 @@ public class XMLProtectionInterceptorTest {
 		Outcome outcome = interceptor.handleRequest(exc);
 		assertEquals(expectSuccess ? Outcome.CONTINUE : Outcome.ABORT, outcome);
 	}
-	
+
 	@Test
 	public void testInvariant() throws Exception {
 		runOn("/customer.xml", true);

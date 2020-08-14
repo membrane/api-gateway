@@ -16,7 +16,10 @@ package com.predic8.membrane.core.resolver;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCElement;
@@ -28,61 +31,123 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
-@MCElement(name="httpSchemaResolver")
+@MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
 
-	private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
-	
-	private HttpClient httpClient;
-	
-	public synchronized HttpClient getHttpClient() {
-		if (httpClient == null) {
-			httpClient = new HttpClient(httpClientConfig);
-		}
-		return httpClient;
-	}
-	
-	@Override
-	public List<String> getSchemas() {
-		return Lists.newArrayList("http", "https");
-	}
-	
-	public InputStream resolve(String url) throws ResourceRetrievalException {
-		try {
-		    Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
-		    Response response = getHttpClient().call(exc).getResponse();
-		    response.readBody();
-		    
-	    	if(response.getStatusCode() != 200) {
-	    		ResourceRetrievalException rde = new ResourceRetrievalException(url, response.getStatusCode());
-	    		throw rde;
-	    	}
-	    	return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
-		} catch (ResourceRetrievalException e) {
-			throw e;
-		} catch (Exception e) {
-			ResourceRetrievalException rre = new ResourceRetrievalException(url, e);
-			throw rre;
-		}
-	}
+    private ConcurrentHashMap<String,String> watchedUrlMd5s = new ConcurrentHashMap<String,String>();
+    private ConcurrentHashMap<String,Consumer<InputStream>> consumerForUrls = new ConcurrentHashMap<String, Consumer<InputStream>>();
+    int httpWatchIntervalInSeconds = 1;
+    Thread httpWatcher = null;
+    Runnable httpWatchJob = new Runnable() {
+        @Override
+        public void run() {
+            MessageDigest md5 = null;
+            try {
+                md5 = MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException ignored) {
+            }
+            HttpClient client = new HttpClient();
+            while (watchedUrlMd5s.size() > 0) {
+                try {
+                    for (String url : watchedUrlMd5s.keySet()) {
+                        md5.reset();
+                        Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
+                        Response response = client.call(exc).getResponse();
+                        if (response.getStatusCode() != 200) {
+                            ResourceRetrievalException rde = new ResourceRetrievalException(url, response.getStatusCode());
+                            throw rde;
+                        }
+                        String hash = new String(md5.digest(response.getBody().getContent()));
+                        if (watchedUrlMd5s.get(url).equals("")) {
+                            watchedUrlMd5s.put(url, hash);
+                        } else {
+                            if (!hash.equals(watchedUrlMd5s.get(url))) {
+                                Consumer<InputStream> inputStreamConsumer = consumerForUrls.get(url);
+                                watchedUrlMd5s.remove(url);
+                                consumerForUrls.remove(url);
+                                inputStreamConsumer.call(response.getBodyAsStream());
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                try {
+                    Thread.sleep(httpWatchIntervalInSeconds * 1000);
+                } catch (InterruptedException ignored) {
+                }
+            }
+            httpWatcher = null;
+        }
+    };
 
-	@Override
-	public List<String> getChildren(String url) {
-		return null;
-	}
-	
-	@Override
-	public long getTimestamp(String url) {
-		return 0;
-	}
-	
-	public synchronized HttpClientConfiguration getHttpClientConfig() {
-		return httpClientConfig;
-	}
-	
-	public synchronized void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-		this.httpClientConfig = httpClientConfig;
-		httpClient = null;
-	}
+
+    private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
+
+    private HttpClient httpClient;
+    private URIFactory uriFactory = new URIFactory(false);
+
+    public synchronized HttpClient getHttpClient() {
+        if (httpClient == null) {
+            httpClient = new HttpClient(httpClientConfig);
+        }
+        return httpClient;
+    }
+
+    @Override
+    public List<String> getSchemas() {
+        return Lists.newArrayList("http", "https");
+    }
+
+    public InputStream resolve(String url) throws ResourceRetrievalException {
+        try {
+            Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
+            Response response = getHttpClient().call(exc).getResponse();
+            response.readBody();
+
+            if (response.getStatusCode() != 200) {
+                ResourceRetrievalException rde = new ResourceRetrievalException(url, response.getStatusCode());
+                throw rde;
+            }
+            return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
+        } catch (ResourceRetrievalException e) {
+            throw e;
+        } catch (Exception e) {
+            ResourceRetrievalException rre = new ResourceRetrievalException(url, e);
+            throw rre;
+        }
+    }
+
+    @Override
+    public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+        watchedUrlMd5s.put(url,"");
+        consumerForUrls.put(url,consumer);
+        if(httpWatcher == null){
+            httpWatcher = new Thread(httpWatchJob);
+        }
+        if(!httpWatcher.isAlive()){
+            httpWatcher.start();
+        }
+    }
+
+    @Override
+    public List<String> getChildren(String url) {
+        return null;
+    }
+
+    @Override
+    public long getTimestamp(String url) {
+        return 0;
+    }
+
+    public synchronized HttpClientConfiguration getHttpClientConfig() {
+        return httpClientConfig;
+    }
+
+    public synchronized void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
+        httpClient = null;
+    }
 }

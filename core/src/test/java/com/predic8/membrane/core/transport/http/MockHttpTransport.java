@@ -15,12 +15,11 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 
-import com.predic8.membrane.core.transport.SSLContext;
-import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class MockHttpTransport extends HttpTransport {
 
 	@Override
-	public synchronized void openPort(String ip, int port, SSLContext sslContext) throws IOException {
+	public synchronized void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
 	}
 }

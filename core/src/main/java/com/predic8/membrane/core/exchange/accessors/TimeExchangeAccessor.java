@@ -19,9 +19,9 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 public class TimeExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Time";
-	
-//	private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
-	
+
+	//	private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 	public Object get(AbstractExchange exc) {
 		if (exc == null)
 			return 0;

@@ -21,10 +21,10 @@ import java.util.List;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.http.Message;
@@ -42,9 +42,9 @@ class JSONBody extends AbstractXmlElement {
 		out.writeAttribute("type", "json");
 
 		try {
-		
+
 			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
+			final JsonParser jp = jsonFactory.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
 			final List<String> stack = new ArrayList<String>();
 			String name = "root";
 			OUTER:
@@ -61,7 +61,7 @@ class JSONBody extends AbstractXmlElement {
 					case END_OBJECT:
 						out.writeEndElement();
 						name = stack.remove(stack.size()-1);
-						if (stack.size() == 0)
+						if (stack.isEmpty())
 							break OUTER;
 						break;
 					case FIELD_NAME:
@@ -78,7 +78,7 @@ class JSONBody extends AbstractXmlElement {
 					case END_ARRAY:
 						out.writeEndElement();
 						name = stack.remove(stack.size()-1);
-						if (stack.size() == 0)
+						if (stack.isEmpty())
 							break OUTER;
 						break;
 					case VALUE_TRUE:
@@ -98,10 +98,10 @@ class JSONBody extends AbstractXmlElement {
 					case VALUE_NUMBER_INT:
 					case VALUE_NUMBER_FLOAT:
 						out.writeStartElement(name);
-						out.writeAttribute("type", 
-								jp.getCurrentToken() == JsonToken.VALUE_STRING ? "s" : 
-								jp.getCurrentToken() == JsonToken.VALUE_NUMBER_INT ? "i" :
-									"f");
+						out.writeAttribute("type",
+								jp.getCurrentToken() == JsonToken.VALUE_STRING ? "s" :
+									jp.getCurrentToken() == JsonToken.VALUE_NUMBER_INT ? "i" :
+								"f");
 						out.writeCharacters(jp.getText());
 						out.writeEndElement();
 						break;

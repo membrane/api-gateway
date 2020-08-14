@@ -14,17 +14,18 @@
 
 package com.predic8.membrane.core.util;
 
-import org.apache.commons.logging.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Timer {
-	private static Log log = LogFactory.getLog(Timer.class.getName());
-	
+	private static Logger log = LoggerFactory.getLogger(Timer.class.getName());
+
 	static private long time;
-	
+
 	static public void reset() {
 		time = System.currentTimeMillis();
 	}
-	
+
 	static public void log(String txt) {
 		long now = System.currentTimeMillis();
 		log.debug(txt+ ":" + (now-time));

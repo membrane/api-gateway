@@ -20,21 +20,23 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
+import com.predic8.membrane.core.rules.Rule;
 
 public class AbstractInterceptor implements Interceptor {
- 
+
 	protected String name = this.getClass().getName();
-	
+
 	private EnumSet<Flow> flow = Flow.Set.REQUEST_RESPONSE;
-	
+
 	protected String id;
-	
+
 	protected Router router;
-	
+
 	public AbstractInterceptor() {
 		super();
 	}
-	
+
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;
 	}
@@ -42,7 +44,7 @@ public class AbstractInterceptor implements Interceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;
 	}
-	
+
 	public void handleAbort(Exchange exchange) {
 		// do nothing
 	}
@@ -63,12 +65,12 @@ public class AbstractInterceptor implements Interceptor {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public void setFlow(EnumSet<Flow> flow) {
 		this.flow = flow;
 	}
 
-	
+
 	public EnumSet<Flow> getFlow() {
 		return flow;
 	}
@@ -77,7 +79,7 @@ public class AbstractInterceptor implements Interceptor {
 	public String getShortDescription() {
 		return "";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		return getShortDescription();
@@ -90,20 +92,43 @@ public class AbstractInterceptor implements Interceptor {
 			return null;
 		return annotation.name();
 	}
-	
+
 	/**
 	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
 	 */
 	public void init() throws Exception {
 		// do nothing here - override in subclasses.
 	}
-	
+
 	public void init(Router router) throws Exception {
 		this.router = router;
 		init();
 	}
-	
-	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.		
+
+	public <T extends Rule> T getRule(){
+		return (T)getRouter()
+				.getRuleManager()
+				.getRules()
+				.stream()
+				.filter(rule -> rule
+						.getInterceptors() != null)
+				.filter(rule -> rule
+						.getInterceptors()
+						.stream()
+						.filter(interceptor -> hasSameReferenceAs(interceptor))
+						.count() > 0)
+				.findAny()
+				.get();
+	}
+
+	private boolean hasSameReferenceAs(Interceptor i){
+		if(i instanceof AbstractFlowInterceptor){
+			return ((AbstractFlowInterceptor) i).getInterceptors().stream().filter(interceptor -> hasSameReferenceAs(interceptor)).count() > 0;
+		}
+		return i == this;
+	}
+
+	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
 	}
 

@@ -25,6 +25,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.ws.relocator.Relocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @description Rewrites the scheme, hostname and port in the "Location" header in HTTP responses,
@@ -34,10 +36,12 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
  */
 @MCElement(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
+	private static final Logger log = LoggerFactory.getLogger(ReverseProxyingInterceptor.class);
+
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";
 	}
-	
+
 	/**
 	 * handles "Destination" header (see RFC 2518 section 9.3; also used by WebDAV)
 	 */
@@ -51,10 +55,10 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		if (!destination.contains("://"))
 			return Outcome.CONTINUE; // local redirect (illegal by spec)
 		// do not rewrite, if the client does not refer to the same host
-		if (!isSameHost(getProtocol(exc) + "://" + exc.getRequest().getHeader().getHost(), destination))
+		if (!isSameSchemeHostAndPort(getProtocol(exc) + "://" + exc.getRequest().getHeader().getHost(), destination))
 			return Outcome.CONTINUE;
 		// if we cannot determine the target hostname
-		if (exc.getDestinations().size() == 0) {
+		if (exc.getDestinations().isEmpty()) {
 			// just remove the schema/hostname/port. this is illegal (by the spec),
 			// but most clients understand it
 			exc.getRequest().getHeader().setValue(Header.DESTINATION, new URL(destination).getFile());
@@ -62,12 +66,12 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		}
 		URL target = new URL(exc.getDestinations().get(0));
 		// rewrite to our schema, host and port
-		exc.getRequest().getHeader().setValue(Header.DESTINATION, 
-				Relocator.getNewLocation(destination, target.getProtocol(), 
+		exc.getRequest().getHeader().setValue(Header.DESTINATION,
+				Relocator.getNewLocation(destination, target.getProtocol(),
 						target.getHost(), target.getPort() == -1 ? target.getDefaultPort() : target.getPort()));
 		return Outcome.CONTINUE;
 	}
-	
+
 	/**
 	 * Handles "Location" header.
 	 */
@@ -82,7 +86,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE; // local redirect (illegal by spec)
 		// do not rewrite, if the server did a redirect to some other hostname/port
 		// (in which case we have to hope the hostname/port is valid on the client)
-		if (!isSameHost(exc.getDestinations().get(0), location))
+		if (!isSameSchemeHostAndPort(location, exc.getDestinations().get(0)))
 			return Outcome.CONTINUE;
 		// if we cannot determine the hostname we have been reached with (e.g. HTTP/1.0)
 		if (exc.getOriginalHostHeaderHost() == null) {
@@ -92,19 +96,21 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 		}
 		// rewrite to our schema, host and port
-		exc.getResponse().getHeader().setValue(Header.LOCATION, 
-				Relocator.getNewLocation(location, getProtocol(exc), 
+		exc.getResponse().getHeader().setValue(Header.LOCATION,
+				Relocator.getNewLocation(location, getProtocol(exc),
 						exc.getOriginalHostHeaderHost(), getPort(exc)));
 		return Outcome.CONTINUE;
 	}
 
-	private boolean isSameHost(String location2, String location)
+	private boolean isSameSchemeHostAndPort(String location2, String location)
 			throws MalformedURLException {
 		try {
-			if (location.startsWith("/"))
+			if (location.startsWith("/") || location2.startsWith("/"))
 				return false; // no host info available
 			URL loc2 = new URL(location2);
 			URL loc1 = new URL(location);
+			if (loc2.getProtocol() != null && !loc2.getProtocol().equals(loc1.getProtocol()))
+				return false;
 			if (loc2.getHost() != null && !loc2.getHost().equals(loc1.getHost()))
 				return false;
 			int loc2Port = loc2.getPort() == -1 ? loc2.getDefaultPort() : loc2.getPort();
@@ -113,15 +119,17 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 				return false;
 			return true;
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			if (e.getMessage().startsWith("unknown protocol:"))
+				return false;
+			log.warn("Location: " + location + " Location2: " + location2, e); // TODO: fix these cases
 			return false;
 		}
 	}
-	
+
 	int getPort(Exchange exc) {
 		return exc.getHandler().getLocalPort();
 	}
-	
+
 	private String getProtocol(Exchange exc) {
 		Rule r = exc.getRule();
 		return r != null && r instanceof AbstractServiceProxy && ((AbstractServiceProxy)r).getSslInboundContext() != null ? "https" : "http";

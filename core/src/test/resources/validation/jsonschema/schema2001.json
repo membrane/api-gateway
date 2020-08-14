@@ -1,0 +1,37 @@
+   {
+     "required":[ "id", "name", "price", "co2" ],
+     "properties":{
+       "id":{
+         "type":"integer",
+         "description":"Product identifier"
+       },
+       "name":{
+         "description":"Name of the product",
+         "type":"string"
+       },
+       "price":{
+         "type": "number",
+         "minimum":0
+       },
+       "tags":{
+         "type":"array",
+         "items":{
+           "type":"string"
+         }
+       },
+       "weight":{
+         "type":"number",
+         "minimum":700,
+         "maximum":10000
+       },
+       "co2":{
+         "description":"CO2 usage in grams on 100km",
+         "minimum": 30,
+         "maximum": 200
+       },
+       "transmission":{
+         "type":"string",
+         "enum":["manual", "automatic"]
+       }
+     }
+   }

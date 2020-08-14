@@ -16,11 +16,12 @@ package com.predic8.membrane.core.rules;
 
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServiceProxyKey extends AbstractRuleKey {
-	private static Log log = LogFactory.getLog(ServiceProxyKey.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
 
 	private String method = "*";
 	private String host = "*";
@@ -34,7 +35,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	public ServiceProxyKey(int port, String ip) {
 		super(port, ip);
 	}
-	
+
 	public ServiceProxyKey(String host, String method, String path, int port) {
 		this(host, method, path, port, null);
 	}
@@ -46,6 +47,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 		this.method = method;
 	}
 
+	@Override
 	public String getMethod() {
 		return method;
 	}
@@ -54,19 +56,25 @@ public class ServiceProxyKey extends AbstractRuleKey {
 		this.method = method;
 	}
 
+	@Override
 	public boolean isMethodWildcard() {
 		return "*".equals(method.trim());
 	}
 
+	@Override
 	public boolean isHostWildcard() {
 		return isHostWildCard;
 	}
 
+	@Override
 	public String toString() {
-		return host + " " + method + " " + getPath() + ":" + port;
+		return    ( host.equals("*") ? "" : host+" " )
+				+ ( method.equals("*") ? "" : method+" " )
+				+ StringUtils.defaultIfEmpty(getPath(), "")
+				+ ":" + port;
 	}
 
-	
+
 
 	@Override
 	public int hashCode() {
@@ -105,10 +113,11 @@ public class ServiceProxyKey extends AbstractRuleKey {
 		return true;
 	}
 
+	@Override
 	public String getHost() {
 		return host;
 	}
-	
+
 	public void setHost(String host) {
 		this.host = host.trim();
 		this.isHostWildCard = "*".equals(this.host);
@@ -154,7 +163,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 					started = true;
 				}
 				if (c == '\\')
-						regex.append('\\');
+					regex.append('\\');
 				regex.append(c);
 			}
 		}
@@ -166,9 +175,9 @@ public class ServiceProxyKey extends AbstractRuleKey {
 			regex.delete(regex.length()-3, regex.length());
 		}
 		regex.append(")");
-		
+
 		String r = regex.toString();
-		
+
 		return r;
 	}
 
@@ -179,14 +188,14 @@ public class ServiceProxyKey extends AbstractRuleKey {
 
 		if (hostHeader == null)
 			return false;
-		
+
 		String requestHost = hostHeader.split(":")[0];
 
 		log.debug("Rule host: " + host + ";  Request host: " + requestHost);
-			
+
 		return hostPattern.matcher(requestHost).matches();
 	}
-	
+
 	/**
 	 * The pattern used to match the host name, or null if any host name matches.
 	 */

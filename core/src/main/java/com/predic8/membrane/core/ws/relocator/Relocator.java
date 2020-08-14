@@ -36,9 +36,13 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 import com.predic8.membrane.core.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @NotThreadSafe
 public class Relocator {
+	private static Logger log = LoggerFactory.getLogger(Relocator.class.getName());
+
 	private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
 	private final String host;
@@ -48,7 +52,7 @@ public class Relocator {
 	private final PathRewriter pathRewriter;
 
 	private Map<QName, String> relocatingAttributes = new HashMap<QName, String>();
-	
+
 	private boolean wsdlFound;
 
 	private class ReplaceIterator implements Iterator<Attribute> {
@@ -87,7 +91,7 @@ public class Relocator {
 			attrs.remove();
 		}
 	}
-	
+
 	public interface PathRewriter {
 		String rewrite(String path);
 	}
@@ -179,9 +183,13 @@ public class Relocator {
 			if (port == -1) {
 				return new URL(protocol, host, oldURL.getFile()).toString();
 			}
+			if ("http".equals(protocol) && port == 80)
+				port = -1;
+			if ("https".equals(protocol) && port == 443)
+				port = -1;
 			return new URL(protocol, host, port, oldURL.getFile()).toString();
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			log.error("", e);
 		}
 		return "";
 	}

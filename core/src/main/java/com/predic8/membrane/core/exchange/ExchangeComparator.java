@@ -23,19 +23,19 @@ import com.predic8.membrane.core.exchange.accessors.ExchangeAccessor;
 public class ExchangeComparator implements Comparator<AbstractExchange> {
 
 	private List<ExchangeAccessor> accessors = new ArrayList<ExchangeAccessor>();
-	
+
 	private boolean ascending = true;
-	
+
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public int compare(AbstractExchange e1, AbstractExchange e2) {
 		if (e1.getResponse() == null || e2.getResponse() == null)
 			return 0;
-		
+
 		for (ExchangeAccessor accessor : accessors) {
-			
+
 			Comparable comp1 = (Comparable)accessor.get(e1);
 			Comparable comp2 = (Comparable)accessor.get(e2);
-			
+
 			int result = comp1.compareTo(comp2);
 			if (result != 0) {
 				if (ascending) {
@@ -45,25 +45,25 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 				}
 			}
 		}
-		
+
 		return 0;
 	}
-	
+
 	public void addAccessor(ExchangeAccessor acc) {
-		if (acc == null) 
+		if (acc == null)
 			return;
 		accessors.add(acc);
 	}
-	
+
 	public void addAccessors(ExchangeAccessor[] excAccessors) {
-		if (excAccessors == null || excAccessors.length == 0) 
+		if (excAccessors == null || excAccessors.length == 0)
 			return;
 		for (ExchangeAccessor accessor : excAccessors) {
 			if (accessor!= null)
 				accessors.add(accessor);
 		}
 	}
-	
+
 	public void removeAccessor(ExchangeAccessor acc) {
 		if (acc == null)
 			return;
@@ -73,9 +73,9 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 	public void removeAllAccessors() {
 		accessors.clear();
 	}
-	
+
 	public boolean isEmpty() {
-		return accessors.size() == 0;
+		return accessors.isEmpty();
 	}
 
 	public List<ExchangeAccessor> getAccessors() {
@@ -93,7 +93,7 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 	public void setAscending(boolean ascending) {
 		this.ascending = ascending;
 	}
-	
+
 	@Override
 	public String toString() {
 		if (isEmpty())
@@ -101,13 +101,13 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 		if (accessors.size() == 1)
 			return accessors.get(0).getId();
 		StringBuilder buffer = new StringBuilder();
-		
+
 		for (int i = 0; i < accessors.size() - 1; i++) {
 			buffer.append(accessors.get(i).getId() + " and ");
 		}
-		
+
 		buffer.append(accessors.get(accessors.size() - 1).getId());
-		
+
 		return buffer.toString();
 	}
 }

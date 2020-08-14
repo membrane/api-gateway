@@ -1,0 +1,23 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+    xmlns:spring="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+
+    <util:properties id="myProp">
+        <spring:prop key="LISTEN_PORT">2000</spring:prop>               <!-- int -->
+        <spring:prop key="PATH_RE">true</spring:prop>                   <!-- boolean -->
+        <spring:prop key="DEST_HOST">membrane-soa.org</spring:prop>     <!-- string -->
+        <spring:prop key="DEST_PORT">80</spring:prop>                   <!-- int -->
+    </util:properties>
+
+    <router>
+        <serviceProxy name="predic8.com" port="#{myProp.LISTEN_PORT}">
+            <path isRegExp="#{myProp.PATH_RE}">.*</path>
+            <target host="#{myProp.DEST_HOST}" port="#{myProp.DEST_PORT}" />
+        </serviceProxy>
+    </router>
+
+</spring:beans>

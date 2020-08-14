@@ -1,0 +1,27 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+		<serviceProxy port="9999">
+			<!-- Membrane does not support WebSocket Extensions for now, so we remove the header -->
+			<groovy>
+				if(exc.getRequest() != null)
+					exc.getRequest().getHeader().removeFields("Sec-WebSocket-Extensions");
+				if(exc.getResponse() != null)
+					exc.getResponse().getHeader().removeFields("Sec-WebSocket-Extensions");
+			</groovy>
+
+			<!-- WebSocket intercepting starts here -->
+			<webSocket>
+				<!-- logs the content of a WebSocket frame to the console  -->
+				<wsLog/>
+			</webSocket>
+
+			<target port="8080" host="localhost"/>
+		</serviceProxy>
+	</router>
+
+</spring:beans>

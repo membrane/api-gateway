@@ -12,8 +12,8 @@
 -->
 <spring:beans xmlns="http://www.predic8.com/spring/conf/1/"
 	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-					    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
 					    http://www.predic8.com/spring/conf/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
   
 	<router exchangeStore="exchangeStore">

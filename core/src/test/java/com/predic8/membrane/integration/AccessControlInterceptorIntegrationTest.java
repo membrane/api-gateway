@@ -38,113 +38,113 @@ import com.predic8.membrane.core.rules.Rule;
 public class AccessControlInterceptorIntegrationTest {
 
 	public static final String FILE_WITH_VALID_RESOURCE_PARAMS = "src/test/resources/acl/valid-resource.xml";
-	
+
 	public static final String FILE_WITH_URI_MISMATCH = "src/test/resources/acl/uri-mismatch.xml";
-	
+
 	public static final String FILE_WITH_CLIENT_MISMATCH = "src/test/resources/acl/client-mismatch.xml";
-	
+
 	public static final String FILE_CLIENTS_FROM_PREDIC8 = "src/test/resources/acl/clients-from-predic8.de.xml";
-	
+
 	public static final String FILE_CLIENTS_FROM_127_0_0_1 = "src/test/resources/acl/clients-from-127.0.0.1.xml";
-	
+
 	public static final String FILE_CLIENTS_FROM_LOCALHOST = "src/test/resources/acl/clients-from-localhost.xml";
-	
+
 	public static final String FILE_CLIENTS_FROM_192_168_2_STAR = "src/test/resources/acl/clients-from-192.168.2.star.xml";
-	
-	
+
+
 	private static final byte[] LOCALHOST_IP = new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 };
 
 	private static HttpRouter router;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3008), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	@Test
 	public void testValidServiceFile() throws Exception {
 		setInterceptor(FILE_WITH_VALID_RESOURCE_PARAMS);
 		assertEquals(200, new HttpClient().executeMethod(getBLZRequestMethod()));
-		
+
 	}
-	
+
 	@Test
 	public void testUriMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_URI_MISMATCH);
 		assertEquals(403, new HttpClient().executeMethod(getBLZRequestMethod()));
 	}
-	
+
 	@Test
 	public void testClientsMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
 		assertEquals(403, new HttpClient().executeMethod(getBLZRequestMethod()));
 	}
 
-	
-	/* 	 
-	 * This test can only by run on a specific machine.	  
+
+	/*
+	 * This test can only by run on a specific machine.
 	 */
 	/*@Test
 	public void testGlobPattern() throws Exception {
 		setInterceptor(FILE_CLIENTS_FROM_PREDIC8);
 		assertEquals(200, getClient(FIXED_IP).executeMethod(getBLZRequestMethod()));
 	}*/
-	
+
 	@Test
 	public void test127_0_0_1() throws Exception {
 		setInterceptor(FILE_CLIENTS_FROM_127_0_0_1);
 		assertEquals(200, getClient(LOCALHOST_IP).executeMethod(getBLZRequestMethod()));
 	}
-	
-	/* 	 
-	 * This test can only by run on a specific machine.	  
-	 */	
+
+	/*
+	 * This test can only by run on a specific machine.
+	 */
 	/*@Test
 	public void testLocalhost() throws Exception {
 		setInterceptor(FILE_CLIENTS_FROM_LOCALHOST);
-		
+
 		HttpClient client = new HttpClient();
 		HostConfiguration config = new HostConfiguration();
 		config.setLocalAddress(InetAddress.getByName("localhost"));
 		client.setHostConfiguration(config);
-		
+
 		assertEquals(200, client.executeMethod(getBLZRequestMethod()));
 	}*/
-	
-	/* 	 
-	 * This test can only by run on a specific machine.	  
-	 */	
+
+	/*
+	 * This test can only by run on a specific machine.
+	 */
 	/*@Test
 	public void test192_168_2_Star() throws Exception {
 		setInterceptor(FILE_CLIENTS_FROM_192_168_2_STAR);
 		assertEquals(200, getClient(FIXED_IP).executeMethod(getBLZRequestMethod()));
 	}*/
-	
+
 	private void setInterceptor(String fileName) throws Exception {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();
 		interceptor.setFile(fileName);
 		router.addUserFeatureInterceptor(interceptor);
 		router.init();
 	}
-	
+
 	private PostMethod getBLZRequestMethod() {
 		PostMethod post = new PostMethod("http://localhost:3008/axis2/services/BLZService");
 		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
-		
+
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
-		post.setRequestEntity(entity); 
+		post.setRequestEntity(entity);
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 		return post;
 	}
-	
+
 	private HttpClient getClient(byte[] ip) throws UnknownHostException {
 		HttpClient client = new HttpClient();
 		HostConfiguration config = new HostConfiguration();
@@ -152,6 +152,6 @@ public class AccessControlInterceptorIntegrationTest {
 		client.setHostConfiguration(config);
 		return client;
 	}
-	
+
 }
 

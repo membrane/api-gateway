@@ -19,16 +19,17 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.HashMap;
 
+import javax.mail.internet.ParseException;
 import javax.net.ssl.SSLSocket;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 
 import com.predic8.membrane.core.http.Response;
 
 public class Util {
-	
+
 	public static void shutdownOutput(Socket socket) throws IOException {
 		if (!(socket instanceof SSLSocket) &&
 				!socket.isClosed() &&
@@ -39,20 +40,21 @@ public class Util {
 
 	public static void shutdownInput(Socket socket) throws IOException {
 		//SSLSocket does not implement shutdown input and output
-		if (!(socket instanceof SSLSocket) && 
-				!socket.isClosed() && 
+		if (!(socket instanceof SSLSocket) &&
+				!socket.isClosed() &&
 				!socket.isInputShutdown()) {
 			socket.shutdownInput();
 		}
 	}
 
-	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, JsonParseException {
+	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, JsonParseException, ParseException {
 		HashMap<String, String> values = new HashMap<String, String>();
 
+
 		String contentType = g.getHeader().getFirstValue("Content-Type");
-		if (contentType != null && "application/json".equals(contentType)) {
+		if (contentType != null && g.getHeader().getContentTypeObject().match("application/json")) {
 			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
+			final JsonParser jp = jsonFactory.createParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
 			String name = null;
 			while (jp.nextToken() != null) {
 				switch (jp.getCurrentToken()) {
@@ -62,6 +64,8 @@ public class Util {
 				case VALUE_STRING:
 					values.put(name, jp.getText());
 					break;
+				case VALUE_NUMBER_INT:
+					values.put(name, "" + jp.getLongValue());
 				default:
 					break;
 				}

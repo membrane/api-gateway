@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -32,24 +32,24 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class Resource extends AbstractXmlElement {
 
-	private static Log log = LogFactory.getLog(Resource.class.getName());
-	
+	private static Logger log = LoggerFactory.getLogger(Resource.class.getName());
+
 	public static final String ELEMENT_NAME = "resource";
-	
+
 	private Router router;
 	private List<AbstractClientAddress> clientAddresses = new ArrayList<AbstractClientAddress>();
-	
+
 	protected Pattern pattern;
-	
+
 	public Resource(Router router) {
 		this.router = router;
 	}
-	
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Ip.ELEMENT_NAME.equals(child)) {
@@ -62,12 +62,12 @@ public class Resource extends AbstractXmlElement {
 			new GenericComplexElement(this).parse(token);
 		}
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
 		pattern = Pattern.compile(TextUtil.globToRegExp(token.getAttributeValue(null, "uri")));
 	}
-	
+
 	public boolean checkAccess(String hostname, String ip) {
 		if (log.isDebugEnabled()) {
 			log.debug("Hostname: " + hostname + (router.getTransport().isReverseDNS() ? "" : " (reverse DNS is disabled in configuration)"));
@@ -78,23 +78,23 @@ public class Resource extends AbstractXmlElement {
 				log.debug("Failed to get hostname from address: " + e.getMessage());
 			}
 		}
-		
+
 		for (AbstractClientAddress cAdd : clientAddresses) {
 			if (cAdd.matches(hostname, ip))
 				return true;
 		}
-		
+
 		return false;
 	}
-	
+
 	public boolean matches(String str) {
 		return pattern.matcher(str).matches();
 	}
-	
+
 	public String getPattern() {
 		return pattern.pattern();
 	}
-	
+
 	public void init(Router router) {
 		for (AbstractClientAddress ca : clientAddresses)
 			ca.init(router);

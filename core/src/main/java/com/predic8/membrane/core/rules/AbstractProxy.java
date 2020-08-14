@@ -18,14 +18,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.transport.ssl.GeneratingSSLContext;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public abstract class AbstractProxy implements Rule {
+	private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
 	protected String name = "";
 
@@ -40,11 +49,16 @@ public abstract class AbstractProxy implements Rule {
 	 * Used to determine the IP address for outgoing connections
 	 */
 	protected String localHost;
-	
-	/**
-	 * Map<Status Code, StatisticCollector>
-	 */
-	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
+
+	private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
+
+	private boolean active;
+	private String error;
+
+	protected Router router;
+
+	private SSLContext sslInboundContext;
+	private SSLParser sslInboundParser;
 
 	public AbstractProxy() {
 	}
@@ -55,7 +69,7 @@ public abstract class AbstractProxy implements Rule {
 
 	@Override
 	public String toString() { // TODO toString, getName, setName und name=""
-								// Initialisierung vereinheitlichen.
+		// Initialisierung vereinheitlichen.
 		return getName();
 	}
 
@@ -118,83 +132,89 @@ public abstract class AbstractProxy implements Rule {
 		this.blockResponse = blockStatus;
 	}
 
-	public String getLocalHost() {
-		return localHost;
+	protected abstract AbstractProxy getNewInstance();
+
+	public SSLParser getSslInboundParser() {
+		return sslInboundParser;
 	}
 
 	/**
-	 * The host that Membrane is running on can have more then one ip address. Using the localhost element you can specify which ip address Membrane should use for outgoing connections.
+	 * @description Configures the usage of inbound SSL (HTTPS).
 	 */
-	public void setLocalHost(String localHost) {
-		this.localHost = localHost;
+	@MCChildElement(order=75)
+	public void setSslInboundParser(SSLParser sslInboundParser) {
+		this.sslInboundParser = sslInboundParser;
 	}
-
-	private StatisticCollector getStatisticCollectorByStatusCode(int code) {
-		StatisticCollector sc = statusCodes.get(code);
-		if (sc == null) {
-			sc = new StatisticCollector(true);
-			StatisticCollector sc2 = statusCodes.putIfAbsent(code, sc);
-			if (sc2 != null)
-				sc = sc2;
-		}
-		return sc;
-	}
-
-	public void collectStatisticsFrom(Exchange exc) {
-		StatisticCollector sc = getStatisticCollectorByStatusCode(exc
-				.getResponse().getStatusCode());
-		synchronized (sc) {
-			sc.collectFrom(exc);
-		}
-	}
-
-	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
-		return statusCodes;
-	}
-
-	public int getCount() {
-		int c = 0;
-		for (StatisticCollector statisticCollector : statusCodes.values()) {
-			c += statisticCollector.getCount();
-		}
-		return c;
-	}
-
-	protected abstract AbstractProxy getNewInstance();
 
 	@Override
 	public SSLContext getSslInboundContext() {
-		return null;
+		return sslInboundContext;
+	}
+
+	protected void setSslInboundContext(SSLContext sslInboundContext) {
+		this.sslInboundContext = sslInboundContext;
 	}
 
 	@Override
-	public SSLContext getSslOutboundContext() {
+	public SSLProvider getSslOutboundContext() {
 		return null;
 	}
-	
+
 	/**
 	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
 	 */
-	public void init(Router router) throws Exception {
-		init();
-		for (Interceptor i : interceptors)
-			i.init(router);
+	public final void init(Router router) throws Exception {
+		this.router = router;
+		try {
+			init();
+			for (Interceptor i : interceptors)
+				i.init(router);
+			active = true;
+		} catch (Exception e) {
+			if (!router.isRetryInit())
+				throw e;
+			log.error("",e);
+			active = false;
+			error = e.getMessage();
+		}
 	}
-	
+
 	public void init() throws Exception {
+		if (sslInboundParser != null) {
+			if (sslInboundParser.getKeyGenerator() != null)
+				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+			else
+				setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+		}
 	}
-	
+
 	public boolean isTargetAdjustHostHeader() {
 		return false;
 	}
-	
+
 	@Override
 	public boolean isActive() {
-		return true;
+		return active;
 	}
-	
+
 	@Override
 	public String getErrorState() {
-		return null;
+		return error;
+	}
+
+	@Override
+	public AbstractProxy clone() throws CloneNotSupportedException {
+		AbstractProxy clone = (AbstractProxy) super.clone();
+		try {
+			clone.init(router);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		return clone;
+	}
+
+	@Override
+	public RuleStatisticCollector getStatisticCollector() {
+		return ruleStatisticCollector;
 	}
 }

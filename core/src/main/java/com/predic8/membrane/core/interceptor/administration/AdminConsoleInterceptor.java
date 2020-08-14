@@ -38,13 +38,15 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private final RewriteInterceptor r = new RewriteInterceptor();
 	private final DynamicAdminPageInterceptor dapi = new DynamicAdminPageInterceptor();
-	private final RESTInterceptor rai = new AdminRESTInterceptor();
+	private final AdminRESTInterceptor rai = new AdminRESTInterceptor();
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
 
 	// these are the interceptors this interceptor consists of
 	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, rai, dapi, wsi });
 	private final InterceptorFlowController flowController = new InterceptorFlowController();
-	
+
+	private boolean useXForwardedForAsClientAddr = false;
+
 	public AdminConsoleInterceptor() {
 		name = "Administration";
 
@@ -66,7 +68,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public void init(Router router) throws Exception {
 		super.init(router);
 		r.init(router);
+		rai.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 		rai.init(router);
+		dapi.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 		dapi.init(router);
 		wsi.init(router);
 	}
@@ -74,7 +78,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public boolean isReadOnly() {
 		return dapi.isReadOnly();
 	}
-	
+
 	/**
 	 * @description Whether runtime changes to Membrane's configuration can be committed in the admin console.
 	 * @default false
@@ -83,6 +87,19 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public void setReadOnly(boolean readOnly) {
 		rai.setReadOnly(readOnly);
 		dapi.setReadOnly(readOnly);
+	}
+
+	public boolean isUseXForwardedForAsClientAddr() {
+		return useXForwardedForAsClientAddr;
+	}
+
+	/**
+	 * @description whether to show the value of the first "X-Forwarded-For" header instead of the client IP address
+	 * @default false
+	 */
+	@MCAttribute
+	public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
+		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
 	}
 
 	@Override
@@ -94,5 +111,5 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		sb.append("admin console.");
 		return sb.toString();
 	}
-	
+
 }

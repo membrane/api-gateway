@@ -27,9 +27,9 @@ public class Case extends AbstractXmlElement {
 
 	private String url;
 	private String xPath;
-	
+
 	public Case() {}
-	
+
 	public Case(String xPath, String url) {
 		this.url = url;
 		this.xPath = xPath;
@@ -47,13 +47,13 @@ public class Case extends AbstractXmlElement {
 	public void setUrl(String url) {
 		this.url = url;
 	}
-	
+
 	public String getService() {
 		if (url.startsWith("service:"))
 			return url.substring(8);
 		return null;
 	}
-	
+
 	@MCAttribute
 	public void setService(String service) {
 		url = "service:" + service;
@@ -76,23 +76,23 @@ public class Case extends AbstractXmlElement {
 	@Override
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {
-		
+
 		out.writeStartElement("case");
-		
-		out.writeAttribute("xPath", xPath);		
-		out.writeAttribute("url", url);		
+
+		out.writeAttribute("xPath", xPath);
+		out.writeAttribute("url", url);
 
 		out.writeEndElement();
 	}
-		
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token)
 			throws XMLStreamException {
-		
+
 		xPath = token.getAttributeValue("", "xPath");
-		
+
 		url = token.getAttributeValue("", "url");
-		
+
 		if (token.getAttributeValue("", "service") != null ) {
 			url = "service:"+token.getAttributeValue("", "service");
 		}

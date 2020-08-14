@@ -1,0 +1,24 @@
+policies:
+  - policy:
+      id: "TrialAppX"
+      serviceProxy:
+        - "Names API"
+  - policy:
+      id: "Customer"
+      rateLimit:
+        requests: '1000'
+        interval: '3600'
+      serviceProxy:
+        - "Web Page"
+        - "Names API"
+
+
+keys:
+  - key: "abcdefg"
+    expires: "2020-01-01T12:00:00Z"
+    policies:
+      - "TrialAppX"
+      - "Customer"
+  - key: "gfedcba"
+    policies:
+      - "TrialAppX"

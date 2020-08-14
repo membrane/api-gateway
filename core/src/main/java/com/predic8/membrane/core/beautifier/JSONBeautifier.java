@@ -16,37 +16,37 @@ package com.predic8.membrane.core.beautifier;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 
 public class JSONBeautifier {
 
 	private ObjectMapper objectMapper = new ObjectMapper();
-	
+
 	private boolean indentOutput = true;
-	
+
 	private boolean allowedUnquotedFieldNames = true;
-	
+
 	private boolean quoteFieldNames = false;
-	
+
 	private boolean failOnUnknownProperties = true;
-	
+
 	public String beautify(String content) throws IOException {
-	    JsonNode tree = objectMapper.readTree(content);
-	    return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree);
+		JsonNode tree = objectMapper.readTree(content);
+		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree);
 	}
 
 	public void configure() {
-		objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, indentOutput);
-	    objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, allowedUnquotedFieldNames);
-	    objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, quoteFieldNames);
-	    objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
+		objectMapper.configure(SerializationFeature.INDENT_OUTPUT, indentOutput);
+		objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, allowedUnquotedFieldNames);
+		objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, quoteFieldNames);
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
 	}
-	
+
 	public void setIndentOutput(boolean indentOutput) {
 		this.indentOutput = indentOutput;
 	}
@@ -58,9 +58,9 @@ public class JSONBeautifier {
 	public void setQuoteFieldNames(boolean quoteFieldNames) {
 		this.quoteFieldNames = quoteFieldNames;
 	}
-	
+
 	public void setFailOnUnknownProperties(boolean failOnUnknownProperties) {
 		this.failOnUnknownProperties = failOnUnknownProperties;
 	}
-	
+
 }

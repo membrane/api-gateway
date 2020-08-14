@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012, 2015 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core;
 
+import java.io.FileInputStream;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
@@ -32,14 +33,20 @@ public class Constants {
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 
 	public static final String VERSION;
-	
+
 	static {
-		String version = "3.3"; // fallback
+		String version = "4"; // fallback
 		try {
-			Properties p = new Properties();
-			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa.service-proxy/service-proxy-core/pom.properties"));
+			Properties p = new Properties(); // Production
+			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));
 			version = p.getProperty("version");
 		} catch (Exception e) {
+			try {
+				Properties p = new Properties(); // Development
+				p.load(new FileInputStream("target/maven-archiver/pom.properties"));
+				version = p.getProperty("version") + " - DEVELOPMENT";
+			} catch (Exception e2) {
+			}
 		}
 		VERSION = version;
 	}
@@ -78,17 +85,25 @@ public class Constants {
 	public static final String PROTOCOL_HTTP = "HTTP";
 
 	public static final String PRODUCT_NAME = "Membrane Service Proxy";
+	public static final String PRODUCT_WEBSITE = "http://www.membrane-soa.org/service-proxy/";
+	public static final String PRODUCT_WEBSITE_DOC = "http://www.membrane-soa.org/service-proxy-doc/";
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
-	
-	public static final String HTML_FOOTER = "Copyright ©2009-2013 " +
-			  		"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
-			  		". All Rights Reserved. See " +
-			  		"<a href=\"http://membrane-soa.org/esb/\">http://membrane-soa.org/esb/</a>" +
-			  		" for documentation and updates.";
+
+	public static final String HTML_FOOTER =
+			"Copyright ©2009-2016 " +
+					"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
+					". All Rights Reserved. See " +
+					"<a href=\"http://www.membrane-soa.org/service-proxy/\">http://www.membrane-soa.org/service-proxy/</a>" +
+					" for documentation and updates.";
 
 	/**
 	 * Used for {@link Request}-to-XML and XML-to-{@link Response} conversions.
 	 * See {@link REST2SOAPInterceptor}.
 	 */
 	public static final String HTTP_NS = "http://membrane-soa.org/schemas/http/v1/";
+
+	/**
+	 * The user agent string that will be sent when identifying as Membrane
+	 */
+	public static final String USERAGENT = "Membrane " + VERSION;
 }

@@ -17,7 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCChildElement;
@@ -36,16 +37,16 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="headerFilter")
 public class HeaderFilterInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = Logger.getLogger(HeaderFilterInterceptor.class);
-	
+	private static final Logger log = LoggerFactory.getLogger(HeaderFilterInterceptor.class);
+
 	private List<Rule> rules = new ArrayList<Rule>();
-	
+
 	public HeaderFilterInterceptor() {
 		name = "Header Filter";
 	}
 
 	public enum Action { KEEP, REMOVE }
-	
+
 	public static class Rule {
 		private final Action action;
 
@@ -70,17 +71,17 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 			this.pattern = pattern;
 			p = Pattern.compile(pattern);
 		}
-		
+
 		public boolean matches(String header) {
 			return p.matcher(header).matches();
 		}
-		
+
 		public Action getAction() {
 			return action;
 		}
-		
+
 	}
-	
+
 	/**
 	 * @description Contains a Java regex for <i>including</i> message headers.
 	 */
@@ -100,24 +101,24 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 			super(Action.REMOVE);
 		}
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		handleMessage(exc.getResponse());
+		handleMessage(exc.getRequest());
 		return Outcome.CONTINUE;
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		handleMessage(exc.getResponse());
 		return Outcome.CONTINUE;
 	}
-	
+
 	@Override
 	public void handleAbort(Exchange exchange) {
 		handleMessage(exchange.getResponse());
 	}
-	
+
 	private void handleMessage(Message msg) {
 		if (msg == null)
 			return;
@@ -142,7 +143,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 	public List<Rule> getRules() {
 		return rules;
 	}
-	
+
 	/**
 	 * @description List of actions to take (either allowing or removing HTTP headers).
 	 */
@@ -151,5 +152,5 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 	public void setRules(List<Rule> rules) {
 		this.rules = rules;
 	}
-	
+
 }

@@ -24,9 +24,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 public class URLParamUtil {
 	private static Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
-	
-	public static Map<String, String> getParams(Exchange exc) throws Exception {		
-		URI jUri = new URI(exc.getRequest().getUri());
+
+	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc) throws Exception {
+		URI jUri = uriFactory.create(exc.getRequest().getUri());
 		String q = jUri.getRawQuery();
 		if (q == null) {
 			if (hasNoFormParams(exc))
@@ -37,22 +37,22 @@ public class URLParamUtil {
 		return parseQueryString(q);
 	}
 
-	public static String getStringParam(Exchange exc, String name) throws Exception {
-		return getParams(exc).get(name);
+	public static String getStringParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {
+		return getParams(uriFactory, exc).get(name);
 	}
 
-	public static int getIntParam(Exchange exc, String name) throws Exception {
-		return Integer.parseInt(getParams(exc).get(name));
+	public static int getIntParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {
+		return Integer.parseInt(getParams(uriFactory, exc).get(name));
 	}
 
-	
+
 	private static boolean hasNoFormParams(Exchange exc) throws IOException {
 		return !"application/x-www-form-urlencoded".equals(exc.getRequest()
 				.getHeader().getContentType())
 				|| exc.getRequest().isBodyEmpty();
 	}
 
-	
+
 	public static String createQueryString( String... params ) {
 		try {
 			StringBuilder buf = new StringBuilder();
@@ -61,13 +61,13 @@ public class URLParamUtil {
 				buf.append(URLEncoder.encode(params[i], Constants.UTF_8));
 				buf.append('=');
 				buf.append(URLEncoder.encode(params[i+1], Constants.UTF_8));
-			}		
+			}
 			return buf.toString();
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static Map<String, String> parseQueryString(String query) {
 		try {
 			Map<String, String> params = new HashMap<String, String>();
@@ -75,7 +75,7 @@ public class URLParamUtil {
 			for (String p : query.split("&")) {
 				Matcher m = paramsPat.matcher(p);
 				m.matches();
-				params.put(URLDecoder.decode(m.group(1), Constants.UTF_8), 
+				params.put(URLDecoder.decode(m.group(1), Constants.UTF_8),
 						URLDecoder.decode(m.group(2), Constants.UTF_8));
 			}
 			return params;
@@ -104,7 +104,7 @@ public class URLParamUtil {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static class ParamBuilder {
 		HashMap<String, String> params = new HashMap<String, String>();
 
@@ -112,7 +112,7 @@ public class URLParamUtil {
 			params.put(key, value);
 			return this;
 		}
-		
+
 		public String build() {
 			return encode(params);
 		}

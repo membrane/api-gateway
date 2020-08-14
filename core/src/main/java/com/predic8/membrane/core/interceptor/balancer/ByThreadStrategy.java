@@ -65,8 +65,8 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 			}
 			try {
 				Thread.sleep(retryTimeOnBusy);
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
 			}
 		}
 
@@ -85,7 +85,7 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 	public void setRetryTimeOnBusy(int retryTimeOnBusy) {
 		this.retryTimeOnBusy = retryTimeOnBusy;
 	}
-	
+
 	public int getMaxNumberOfThreadsPerEndpoint() {
 		return maxNumberOfThreadsPerEndpoint;
 	}
@@ -109,17 +109,17 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 
 		out.writeEndElement();
 	}
-	
+
 	@Override
-	protected void parseAttributes(XMLStreamReader token) {		
+	protected void parseAttributes(XMLStreamReader token) {
 		retryTimeOnBusy = Integer.parseInt(token.getAttributeValue("", "retryTimeOnBusy"));
 		maxNumberOfThreadsPerEndpoint = Integer.parseInt(token.getAttributeValue("", "maxNumberOfThreadsPerEndpoint"));
 	}
-	
+
 	@Override
-	protected String getElementName() {		
+	protected String getElementName() {
 		return "byThreadStrategy";
 	}
-	
+
 
 }

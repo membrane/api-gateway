@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -39,7 +39,7 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
-	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
 
 	private String wsdl;
 	private String schema;
@@ -47,30 +47,28 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	private String schematron;
 	private String failureHandler;
 	private boolean skipFaults;
-	
+
 	private IValidator validator;
 	private ResolverMap resourceResolver;
 	private ApplicationContext applicationContext;
-	
+
 	private void setValidator(IValidator validator) throws Exception {
 		if (this.validator != null)
 			throw new Exception("<validator> cannot have more than one validator attribute.");
 		this.validator = validator;
 	}
-	
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
 	}
-	
+
+	@Override
 	public void init() throws Exception {
 		validator = null;
-		
-		if (skipFaults && wsdl == null)
-			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
-		
+
 		String baseLocation = router == null ? null : router.getBaseLocation();
-		
+
 		if (wsdl != null) {
 			name="SOAP Validator";
 			setValidator(new WSDLValidator(resourceResolver, ResolverMap.combine(baseLocation, wsdl), createFailureHandler(), skipFaults));
@@ -87,7 +85,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 			name="Schematron Validator";
 			setValidator(new SchematronValidator(resourceResolver, ResolverMap.combine(baseLocation, schematron), createFailureHandler(), router, applicationContext));
 		}
-		
+
 		if (validator == null) {
 			Rule parent = router.getParentProxy(this);
 			if (parent instanceof SOAPProxy) {
@@ -98,24 +96,27 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 			if (validator == null)
 				throw new Exception("<validator> must have an attribute specifying the validator.");
 		}
+
+		if (skipFaults && wsdl == null)
+			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (exc.getRequest().isBodyEmpty()) 
+		if (exc.getRequest().isBodyEmpty())
 			return Outcome.CONTINUE;
-			
+
 		return validator.validateMessage(exc, exc.getRequest(), "request");
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		if (exc.getResponse().isBodyEmpty())
 			return Outcome.CONTINUE;
-		
+
 		return validator.validateMessage(exc, exc.getResponse(), "response");
 	}
-	
+
 	/**
 	 * @description The WSDL (URL or file) to validate against.
 	 * @example http://predic8.com:8080/material/ArticleService?wsdl
@@ -124,7 +125,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
 	}
-	
+
 	public String getWsdl() {
 		return wsdl;
 	}
@@ -141,7 +142,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public void setSchema(String schema) {
 		this.schema = schema;
 	}
-	
+
 	public String getFailureHandler() {
 		return failureHandler;
 	}
@@ -182,7 +183,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public void setSchematron(String schematron) {
 		this.schematron = schematron;
 	}
-	
+
 	public boolean isSkipFaults() {
 		return skipFaults;
 	}
@@ -195,22 +196,22 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public void setSkipFaults(boolean skipFaults) {
 		this.skipFaults = skipFaults;
 	}
-	
+
 	@Override
 	public void init(Router router) throws Exception {
 		resourceResolver = router.getResolverMap();
 		super.init(router);
 	}
-	
+
 	public void setResourceResolver(ResolverMap resourceResolver) {
 		this.resourceResolver = resourceResolver;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages have been invalid.";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		StringBuilder sb = new StringBuilder(getShortDescription());
@@ -235,27 +236,27 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		sb.append(" .");
 		return sb.toString();
 	}
-	
+
 	public static interface FailureHandler {
 		public static final FailureHandler VOID = new FailureHandler(){
 			@Override
 			public void handleFailure(String message, Exchange exc) {
 			}};
-		
-		void handleFailure(String message, Exchange exc);
+
+			void handleFailure(String message, Exchange exc);
 	}
-	
+
 	private FailureHandler createFailureHandler() {
 		if (failureHandler == null || failureHandler.equals("response"))
 			return null;
 		if (failureHandler.equals("log"))
 			return new FailureHandler() {
-				@Override
-				public void handleFailure(String message, Exchange exc) {
-					log.info("Validation failure: " + message);
-				}
-			};
+			@Override
+			public void handleFailure(String message, Exchange exc) {
+				log.info("Validation failure: " + message);
+			}
+		};
 		throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
 	}
-	
+
 }

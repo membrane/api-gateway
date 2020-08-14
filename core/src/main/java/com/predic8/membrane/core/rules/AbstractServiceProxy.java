@@ -14,34 +14,42 @@
 
 package com.predic8.membrane.core.rules;
 
-import org.apache.commons.lang.StringUtils;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
-public abstract class AbstractServiceProxy extends AbstractProxy {
+public abstract class AbstractServiceProxy extends SSLableProxy {
 
 	/**
 	 * @description <p>
 	 *              The destination where the service proxy will send messages to. Use the target element, if you want
 	 *              to send the messages to a static target. If you want to use dynamic destinations have a look at the
-	 *              <a href="http://ms.org:8080/esb-doc/configuration/reference/router.htm">content based router</a>.
+	 *              <a href="https://membrane-soa.org/service-proxy-doc/configuration/reference/router.htm">content based router</a>.
 	 *              </p>
 	 */
 	@MCElement(name="target", topLevel=false)
 	public static class Target {
 		private String host;
-		private int port = 80;
+		private int port = -1;
 		private String url;
 		private boolean adjustHostHeader = true;
-		
+
 		private SSLParser sslParser;
-		
+
+		public Target() {}
+
+		public Target(String host) {
+			setHost(host);
+		}
+
+		public Target(String host, int port) {
+			setHost(host);
+			setPort(port);
+		}
+
 		public String getHost() {
 			return host;
 		}
@@ -54,11 +62,11 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		public void setHost(String host) {
 			this.host = host;
 		}
-		
+
 		public int getPort() {
 			return port;
 		}
-		
+
 		/**
 		 * @description Port number of the target.
 		 * @default 80
@@ -68,11 +76,11 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		public void setPort(int port) {
 			this.port = port;
 		}
-		
+
 		public String getUrl() {
 			return url;
 		}
-		
+
 		/**
 		 * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
 		 * @example http://membrane-soa.org
@@ -81,112 +89,47 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		public void setUrl(String url) {
 			this.url = url;
 		}
-		
+
 		public SSLParser getSslParser() {
 			return sslParser;
 		}
-		
-		
+
+
 		/**
 		 * @description Configures outbound SSL (HTTPS).
 		 */
-		@MCChildElement
+		@MCChildElement(allowForeign = true)
 		public void setSslParser(SSLParser sslParser) {
 			this.sslParser = sslParser;
 		}
-		
+
 		public boolean isAdjustHostHeader() {
 			return adjustHostHeader;
 		}
-		
+
 		@MCAttribute
 		public void setAdjustHostHeader(boolean adjustHostHeader) {
 			this.adjustHostHeader = adjustHostHeader;
 		}
 	}
-	
+
 	protected Target target = new Target();
-	private SSLParser sslInboundParser;
-	private SSLContext sslInboundContext, sslOutboundContext;
 
 	public String getTargetScheme() {
-		return sslOutboundContext != null ? "https" : "http";
-	}
-	
-	@Override
-	public SSLContext getSslInboundContext() {
-		return sslInboundContext;
-	}
-	
-	protected void setSslInboundContext(SSLContext sslInboundContext) {
-		this.sslInboundContext = sslInboundContext;
-	}
-	
-	@Override
-	public SSLContext getSslOutboundContext() {
-		return sslOutboundContext;
-	}
-	
-	protected void setSslOutboundContext(SSLContext sslOutboundContext) {
-		this.sslOutboundContext = sslOutboundContext;
-	}
-
-	public SSLParser getSslInboundParser() {
-		return sslInboundParser;
-	}
-
-	/**
-	 * @description Configures the usage of inbound SSL (HTTPS).
-	 */
-	@MCChildElement(order=75)
-	public void setSslInboundParser(SSLParser sslInboundParser) {
-		this.sslInboundParser = sslInboundParser;
+		return getSslOutboundContext() != null ? "https" : "http";
 	}
 
 	@Override
-	public String getName() {
-		return StringUtils.defaultIfEmpty(name, getKey().toString());
-	}
-
-	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-		if (sslInboundParser != null)
-			setSslInboundContext(new SSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+	public void init() throws Exception {
+		super.init();
+		if(target.port == -1)
+			target.port = target.getSslParser() != null ? 443 : 80;
 		if (target.getSslParser() != null)
-			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
-	}
-	
-	public int getPort() {
-		return ((ServiceProxyKey)key).getPort();
+			setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
 	}
 
-	/**
-	 * @description The port Membrane listens on for incoming connections.
-	 * @default 80
-	 * @example 8080
-	 */
-	@MCAttribute
-	public void setPort(int port) {
-		((ServiceProxyKey)key).setPort(port);
-	}
-	
-	public String getIp() {
-		return ((ServiceProxyKey)key).getIp();
-	}
-	
-	/**
-	 * @description If present, binds the port only on the specified IP. Useful for hosts with multiple IP addresses.
-	 * @default <i>not set</i>
-	 * @example 127.0.0.1
-	 */
-	@MCAttribute
-	public void setIp(String ip) {
-		((ServiceProxyKey)key).setIp(ip);
-	}
-	
 	public String getHost() {
-		return ((ServiceProxyKey)key).getHost();
+		return ((AbstractRuleKey)key).getHost();
 	}
 
 	/**
@@ -203,9 +146,9 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	public void setHost(String host) {
 		((ServiceProxyKey)key).setHost(host);
 	}
-	
+
 	public Path getPath() {
-		ServiceProxyKey k = (ServiceProxyKey)key;
+		AbstractRuleKey k = (AbstractRuleKey)key;
 		if (!k.isUsePathPattern())
 			return null;
 		return new Path(k.isPathRegExp(), k.getPath());
@@ -223,14 +166,14 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	 */
 	@MCChildElement(order=50)
 	public void setPath(Path path) {
-		ServiceProxyKey k = (ServiceProxyKey)key;
+		AbstractRuleKey k = (AbstractRuleKey)key;
 		k.setUsePathPattern(path != null);
 		if (path != null) {
 			k.setPathRegExp(path.isRegExp());
 			k.setPath(path.getValue());
 		}
 	}
-	
+
 	public String getTargetHost() {
 		return target.getHost();
 	}
@@ -242,7 +185,12 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	public String getTargetURL() {
 		return target.getUrl();
 	}
-	
+
+	public SSLParser getTargetSSL() {
+		return target.getSslParser();
+	}
+
+	@Override
 	public boolean isTargetAdjustHostHeader() {
 		return target.isAdjustHostHeader();
 	}

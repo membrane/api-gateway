@@ -31,19 +31,19 @@ import org.junit.Test;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 public class RequestTest {
-	
+
 	private static Request reqPost = new Request();
-	
+
 	private static Request reqChunked = new Request();
-	
+
 	private InputStream inPost;
-	
+
 	private InputStream inChunked;
-	
+
 	private ByteArrayOutputStream tempOut;
-	
+
 	private InputStream tempIn;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		inPost = getClass().getClassLoader().getResourceAsStream("request-post.msg");
@@ -52,25 +52,25 @@ public class RequestTest {
 
 	@After
 	public void tearDown() throws Exception {
-		
+
 		if (inPost != null) {
 			inPost.close();
 		}
-		
+
 		if (inChunked != null) {
 			inChunked.close();
 		}
-		
+
 		if (tempIn != null) {
 			tempIn.close();
 		}
-		
+
 		if (tempOut != null) {
 			tempOut.close();
 		}
-		
+
 	}
-	
+
 
 	@Test
 	public void testParseStartLineChunked() throws IOException, EndOfStreamException {
@@ -79,39 +79,40 @@ public class RequestTest {
 		assertEquals("/axis2/services/BLZService", reqChunked.getUri());
 		assertEquals("1.1", reqChunked.getVersion());
 	}
-	
+
 	@Test
 	public void testReadChunked() throws Exception {
 		reqChunked.read(inChunked, true);
 		assertNotNull(reqChunked.getBodyAsStream());
 	}
-	
+
 	@Test
 	public void testReadPost() throws Exception {
 		reqPost.read(inPost, true);
 		assertEquals(Request.METHOD_POST, reqPost.getMethod());
 		assertEquals("/operation/call", reqPost.getUri());
 		assertNotNull(reqPost.getBody());
-		
+
 		assertEquals(168, reqPost.getBody().getLength());
 	}
-	
+
 	@Test
 	public void testWritePost() throws Exception {
 		reqPost.read(inPost, true);
-		
+		reqPost.getBody().addObserver(new AbstractMessageObserver() {}); // forces the request to retain the body
+
 		tempOut = new ByteArrayOutputStream();
 		reqPost.write(tempOut);
-		
+
 		tempIn = new ByteArrayInputStream(tempOut.toByteArray());
-		
+
 		Request reqTemp = new Request();
 		reqTemp.read(tempIn, true);
-		
+
 		assertEquals(reqPost.getUri(), reqTemp.getUri());
 		assertEquals(reqPost.getMethod(), reqTemp.getMethod());
-		
-		assertTrue(Arrays.equals(reqPost.getBody().getContent(), reqTemp.getBody().getContent()));	
+
+		assertTrue(Arrays.equals(reqPost.getBody().getContent(), reqTemp.getBody().getContent()));
 		assertTrue(Arrays.equals(reqPost.getBody().getRaw(), reqTemp.getBody().getRaw()));
 	}
 
@@ -119,20 +120,20 @@ public class RequestTest {
 	public void testIsHTTP11() throws Exception {
 		assertTrue(reqPost.isHTTP11());
 	}
-	
+
 	@Test
 	public void testIsHTTP11Chunked() throws Exception {
 		assertTrue(reqChunked.isHTTP11());
 	}
-	
+
 	@Test
 	public void testIsKeepAlive() throws Exception {
 		assertTrue(reqPost.isKeepAlive());
 	}
-	
+
 	@Test
 	public void testIsKeepAliveChunked() throws Exception {
 		assertTrue(reqChunked.isKeepAlive());
 	}
-	
+
 }
