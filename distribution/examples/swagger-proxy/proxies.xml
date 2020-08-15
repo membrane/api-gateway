@@ -6,15 +6,15 @@
 
 	<router>
 
-		<swaggerProxy port="7000" url="http://petstore.swagger.io/v2/swagger.json" />
+		<swaggerProxy port="7000" url="https://petstore.swagger.io/v2/swagger.json"/>
 
 		<serviceProxy port="8000">
-			<swaggerRewriter swaggerJson="http://petstore.swagger.io/v2/swagger.json" />
-			<target host="petstore.swagger.io" port="80" />
+			<swaggerRewriter swaggerJson="https://petstore.swagger.io/v2/swagger.json"/>
+			<target host="petstore.swagger.io" port="443"/>
 		</serviceProxy>
 
 		<serviceProxy name="Console" port="9000">
-			<adminConsole />
+			<adminConsole/>
 		</serviceProxy>
 
 	</router>
