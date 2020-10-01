@@ -16,6 +16,7 @@ package com.predic8.membrane.core.exchange.snapshots;
 
 import com.predic8.membrane.core.http.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,7 +27,15 @@ public class MessageSnapshot {
     String body = null;
 
     public MessageSnapshot(Message msg){
-        header = Stream.of(msg.getHeader().getAllHeaderFields()).collect(Collectors.toMap(headerField -> headerField.getHeaderName().toString(), headerField -> headerField.getValue()));
+        header = new HashMap<>();
+        Stream.of(msg.getHeader().getAllHeaderFields()).forEach(headerField -> {
+            String key = headerField.getHeaderName().toString();
+            String value = header.get(key);
+            if (value != null)
+                header.put(key, value + ", " + headerField.getValue());
+            else
+                header.put(key, headerField.getValue());
+        });
         if(!msg.getHeader().isBinaryContentType())
             body = msg.getBodyAsStringDecoded();
     }

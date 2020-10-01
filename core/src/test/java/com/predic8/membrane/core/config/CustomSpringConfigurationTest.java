@@ -45,6 +45,7 @@ public class CustomSpringConfigurationTest {
 		router = Router.init("src/test/resources/custom-spring-beans.xml");
 	}
 
+	@Ignore
 	@Test
 	public void testInit() throws Exception {
 		assertNotNull(router);

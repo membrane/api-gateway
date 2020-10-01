@@ -71,10 +71,12 @@ AOP Alliance Library
 GNU Lesser General Public License Version 3
 -------------------------------------------------
 JSON Schema Validator org.eel.kitchen
+jcifs-ng
 
 MIT License
 -------------------------------------------------
 SLF4J
+OAuth2-OpenID
 
 Mozilla Public License
 -------------------------------------------------

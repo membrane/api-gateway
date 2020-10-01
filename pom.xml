@@ -17,7 +17,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>4.6.3-SNAPSHOT</version>
+	<version>4.7.3-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
 	<description>Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
 	- Service Virtualization layer
@@ -79,8 +79,8 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>1.8</javac.source>
 		<javac.target>1.8</javac.target>
-		<jackson.databind.version>2.8.11.1</jackson.databind.version> <!-- This version is used by google-http-client-jackson2 -->
-		<jackson.version>2.8.11</jackson.version>
+		<jackson.databind.version>2.10.2</jackson.databind.version> <!-- Check google-http-client-jackson2 compatibility. -->
+		<jackson.version>2.10.1</jackson.version>
 		<spring.version>4.3.20.RELEASE</spring.version>
 		<jaxws.version>2.2.10</jaxws.version>
 		<slf4j.version>1.7.13</slf4j.version>
@@ -138,7 +138,7 @@
 			<dependency>
 				<groupId>commons-fileupload</groupId>
 				<artifactId>commons-fileupload</artifactId>
-				<version>1.3.2</version>
+				<version>1.4</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
@@ -267,7 +267,7 @@
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>16.0.1</version>
+				<version>29.0-jre</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.code.findbugs</groupId>
@@ -357,7 +357,7 @@
 			<dependency>
 				<groupId>com.google.http-client</groupId>
 				<artifactId>google-http-client-jackson2</artifactId> <!-- note the 2 at the end -->
-				<version>1.21.0</version>
+				<version>1.34.0</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.mail</groupId>
@@ -387,7 +387,7 @@
 			<dependency>
 				<groupId>io.swagger</groupId>
 				<artifactId>swagger-parser</artifactId>
-				<version>1.0.23</version>
+				<version>1.0.31</version>
 			</dependency>
 			<dependency>
 				<groupId>net.sf.saxon</groupId>
@@ -397,7 +397,7 @@
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
 				<artifactId>bcpkix-jdk15on</artifactId>
-				<version>1.54</version>
+				<version>1.65</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -407,11 +407,11 @@
 		<repository>
 			<id>com.springsource.repository.bundles.external</id>
 			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-			<url>http://repository.springsource.com/maven/bundles/external</url>
+			<url>https://repository.springsource.com/maven/bundles/external</url>
 		</repository>
 		<repository>
 			<id>predic8-releases</id>
-			<url>http://repository.membrane-soa.org/content/groups/public</url>
+			<url>https://repository.membrane-soa.org/content/groups/public</url>
 		</repository>
 	</repositories>
 
@@ -621,7 +621,7 @@
 				<plugin>
 					<groupId>org.apache.felix</groupId>
 					<artifactId>maven-bundle-plugin</artifactId>
-					<version>2.4.0</version>
+					<version>3.5.0</version>
 				</plugin>
 
 				<plugin>

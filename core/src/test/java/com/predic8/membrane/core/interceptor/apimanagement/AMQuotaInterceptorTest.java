@@ -42,7 +42,7 @@ public class AMQuotaInterceptorTest {
         exc.setRule(new ServiceProxy());
         exc.getRule().setName("junit API");
 
-        ApiManagementConfiguration amc = new ApiManagementConfiguration(System.getProperty("user.dir") , "src\\test\\resources\\apimanagement\\api.yaml");
+        ApiManagementConfiguration amc = new ApiManagementConfiguration(System.getProperty("user.dir") , "src/test/resources/apimanagement/api.yaml");
 
         long reqSize = exc.getRequest().getHeader().toString().getBytes().length+exc.getRequest().getHeader().getContentLength();
         long respSize = exc.getResponse().getHeader().toString().getBytes().length+exc.getResponse().getHeader().getContentLength();

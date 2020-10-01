@@ -9,14 +9,14 @@
         <dependency>
             <groupId>org.membrane-soa</groupId>
             <artifactId>service-proxy-core</artifactId>
-            <version>4.6.3-SNAPSHOT</version>
+            <version>4.7.3-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
     <repositories>
         <repository>
             <id>predic8-releases</id>
-            <url>http://repository.membrane-soa.org/content/groups/public</url>
+            <url>https://repository.membrane-soa.org/content/groups/public</url>
         </repository>
     </repositories>
 </project>

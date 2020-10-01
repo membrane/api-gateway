@@ -87,7 +87,10 @@ public class Body extends AbstractBody {
 		chunks.clear();
 		long toSkip = length;
 		while (toSkip > 0) {
-			toSkip -= inputStream.skip(toSkip);
+			long skipped = inputStream.skip(toSkip);
+			if (skipped == 0)
+				break; // EOF
+			toSkip -= skipped;
 		}
 		markAsRead();
 	}

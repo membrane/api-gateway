@@ -166,7 +166,15 @@ public class SSLContextCollection implements SSLProvider {
 			}
 		}
 
-		// no Server Name Indication used by the client: fall back to first sslContext
+		// no Server Name Indication used by the client: fall back to first sslContext marked as 'useAsDefault'
+		// (or the first, if none is marked)
+		if (sslContext == null) {
+			for (SSLContext sc : sslContexts)
+				if (sc.isUseAsDefault()) {
+					sslContext = sc;
+					break;
+				}
+		}
 		if (sslContext == null)
 			sslContext = sslContexts.get(0);
 
@@ -183,6 +191,11 @@ public class SSLContextCollection implements SSLProvider {
 		if (sslContext == null)
 			sslContext = sslContexts.get(0);
 		return sslContext;
+	}
+
+	@Override
+	public Socket createSocket() throws IOException {
+		throw new IllegalStateException("not implemented");
 	}
 
 	@Override

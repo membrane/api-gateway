@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
 import org.junit.Assert;
@@ -102,7 +103,7 @@ public class SSLContextTest {
 		testCombination(server, client);
 	}
 
-	@Test(expected=SSLHandshakeException.class)
+	@Test(expected=SSLException.class)
 	public void serverKeyOnlyWithInvalidClientTrust() throws Exception {
 		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa2.keystore").build();
 		SSLContext client = cb().withTrustStore("classpath:/ssl-rsa-pub.keystore").build();

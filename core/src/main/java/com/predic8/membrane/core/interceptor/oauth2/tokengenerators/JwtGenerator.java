@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwk.JsonWebKeySet;
@@ -147,9 +148,9 @@ public class JwtGenerator {
         return getClaimsFromClaimsMap(claims);
     }
 
-    public static List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud, String jwksUrl, HttpClient hc) throws Exception {
+    public static List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud, String jwksUrl, AuthorizationService as) throws Exception {
         Exchange getJwks = new Request.Builder().get(jwksUrl).buildExchange();
-        JwtClaims claims = processIdTokenToClaims(idToken,iss,aud,new JwksVerificationKeyResolver(new JsonWebKeySet(hc.call(getJwks).getResponse().getBodyAsStringDecoded()).getJsonWebKeys()));
+        JwtClaims claims = processIdTokenToClaims(idToken,iss,aud,new JwksVerificationKeyResolver(new JsonWebKeySet(as.doRequest(getJwks).getBodyAsStringDecoded()).getJsonWebKeys()));
 
         return getClaimsFromClaimsMap(claims);
     }

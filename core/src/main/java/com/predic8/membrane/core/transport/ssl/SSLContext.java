@@ -40,9 +40,11 @@ public abstract class SSLContext implements SSLProvider {
     protected String endpointIdentificationAlgorithm;
 
     private boolean showSSLExceptions = true;
+    private boolean useAsDefault;
 
     public void init(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
         showSSLExceptions = sslParser.isShowSSLExceptions();
+        useAsDefault = sslParser.isUseAsDefault();
         if (sslParser.getCiphers() != null) {
             ciphers = sslParser.getCiphers().split(",");
             Set<String> supportedCiphers = Sets.newHashSet(sslc.getSocketFactory().getSupportedCipherSuites());
@@ -194,6 +196,7 @@ public abstract class SSLContext implements SSLProvider {
                 points = 100;
             points += getAESStrength(cipher) * 5;
             points += getSHAStrength(cipher) * 2;
+            points += getChaChaPoly1305Strength(cipher) * 25;
             if (supportsAESGCM(cipher))
                 points += 15;
 
@@ -202,6 +205,12 @@ public abstract class SSLContext implements SSLProvider {
 
         private boolean supportsAESGCM(String cipher) {
             return cipher.contains("_GCM_");
+        }
+
+        private int getChaChaPoly1305Strength(String cipher) {
+            if (cipher.contains("_CHACHA20_POLY1305_"))
+                return 1;
+            return 0;
         }
 
         private int getAESStrength(String cipher) {
@@ -253,4 +262,7 @@ public abstract class SSLContext implements SSLProvider {
         return showSSLExceptions;
     }
 
+    public boolean isUseAsDefault() {
+        return useAsDefault;
+    }
 }

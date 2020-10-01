@@ -39,6 +39,7 @@ public class SSLParser {
 	private String endpointIdentificationAlgorithm = "HTTPS";
 	private String serverName;
 	private boolean showSSLExceptions = true;
+	private boolean useAsDefault = true;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -229,5 +230,18 @@ public class SSLParser {
 	@MCAttribute
 	public void setShowSSLExceptions(boolean showSSLExceptions) {
 		this.showSSLExceptions = showSSLExceptions;
+	}
+
+	public boolean isUseAsDefault() {
+		return useAsDefault;
+	}
+
+	/**
+	 * @description whether to use the SSLContext built from this SSLParser when no SNI header was transmitted.
+	 * @default true
+	 */
+	@MCAttribute
+	public void setUseAsDefault(boolean useAsDefault) {
+		this.useAsDefault = useAsDefault;
 	}
 }

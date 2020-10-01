@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.predic8.membrane.core.exchange.ExchangeState;
+import com.predic8.membrane.core.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,11 +33,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ClientStatistics;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.rest.JSONContent;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
@@ -47,10 +43,14 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ComparatorFactory;
 import com.predic8.membrane.core.util.TextUtil;
 
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+
 public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@SuppressWarnings("unused")
 	private static Logger log = LoggerFactory.getLogger(AdminRESTInterceptor.class.getName());
+
+	private boolean useXForwardedForAsClientAddr;
 
 	@Mapping("/admin/rest/clients(/?\\?.*)?")
 	public Response getClients(QueryParameter params, String relativeRootPath) throws Exception {
@@ -252,7 +252,10 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		}
 
 		List<AbstractExchange> exchanges;
+		long lm;
 		synchronized (getRouter().getExchangeStore().getAllExchangesAsList()) {
+			lm = getRouter().getExchangeStore().getLastModified();
+
 			exchanges = new ArrayList<AbstractExchange>(
 					getRouter().getExchangeStore().getAllExchangesAsList());
 		}
@@ -280,7 +283,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				}
 				gen.writeEndArray();
 				gen.writeNumberField("total", total);
-				gen.writeNumberField("lastModified", getRouter().getExchangeStore().getLastModified());
+				gen.writeNumberField("lastModified", lm);
 				gen.writeEndObject();
 			}
 		});
@@ -293,7 +296,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		for (AbstractExchange e : exchanges) {
 			if ((!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
 					(!params.has("statuscode") || e.getResponse().getStatusCode() == params.getInt("statuscode")) &&
-					(!params.has("client") || e.getRemoteAddr().equals(params.getString("client"))) &&
+					(!params.has("client") || getClientAddr(useXForwardedForAsClientAddr, e).equals(params.getString("client"))) &&
 					(!params.has("server") || params.getString("server").equals(e.getServer()==null?"":e.getServer())) &&
 					(!params.has("method") || e.getRequest().getMethod().equals(params.getString("method"))) &&
 					(!params.has("reqcontenttype") || e.getRequestContentType().equals(params.getString("reqcontenttype"))) &&
@@ -324,7 +327,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		gen.writeNumberField("listenPort", exc.getRule().getKey().getPort());
 		gen.writeStringField("method", exc.getRequest().getMethod());
 		gen.writeStringField("path", exc.getRequest().getUri());
-		gen.writeStringField("client", exc.getRemoteAddr());
+		gen.writeStringField("client", getClientAddr(useXForwardedForAsClientAddr, exc));
 		gen.writeStringField("server", exc.getServer());
 		gen.writeNumberField("serverPort",  getServerPort(exc));
 		gen.writeStringField("reqContentType", exc.getRequestContentType());
@@ -349,6 +352,21 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		gen.writeEndObject();
 	}
 
+	public static String getClientAddr(boolean useXForwardedForAsClientAddr, AbstractExchange exc) {
+		if (useXForwardedForAsClientAddr) {
+			Request request = exc.getRequest();
+			if (request != null) {
+				Header header = request.getHeader();
+				if (header != null) {
+					String value = header.getFirstValue(X_FORWARDED_FOR);
+					if (value != null)
+						return value;
+				}
+			}
+		}
+		return exc.getRemoteAddr();
+	}
+
 	private int getServerPort(AbstractExchange exc) {
 		return exc.getRule()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getRule()).getTargetPort():-1;
 	}
@@ -360,5 +378,13 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			rules.add((AbstractServiceProxy) r);
 		}
 		return rules;
+	}
+
+	public boolean isUseXForwardedForAsClientAddr() {
+		return useXForwardedForAsClientAddr;
+	}
+
+	public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
+		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
 	}
 }

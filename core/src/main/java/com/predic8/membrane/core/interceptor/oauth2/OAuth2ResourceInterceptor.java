@@ -43,6 +43,7 @@ import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -567,8 +568,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.ACCEPT, "application/json")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
+                        .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
                         .body("code=" + code
-                                + "&client_id=" + auth.getClientId()
+                                + "&client_id=" + auth.getClientId() // it is actually illegal to also include credentials in the body when using basic auth, but we keep it for compatibility
                                 + "&client_secret=" + auth.getClientSecret()
                                 + "&redirect_uri=" + publicURL + "oauth2callback"
                                 + "&grant_type=authorization_code")
@@ -698,7 +700,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private boolean idTokenIsValid(String idToken) throws Exception {
         //TODO maybe change this to return claims and also save them in the oauth2AnswerParameters
         try {
-            JwtGenerator.getClaimsFromSignedIdToken(idToken, getAuthService().getIssuer(), getAuthService().getClientId(), getAuthService().getJwksEndpoint(),auth.getHttpClient());
+            JwtGenerator.getClaimsFromSignedIdToken(idToken, getAuthService().getIssuer(), getAuthService().getClientId(), getAuthService().getJwksEndpoint(), auth);
             return true;
         }catch(Exception e){
             return false;

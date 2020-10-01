@@ -1,5 +1,7 @@
 var membrane = function() {
-			
+
+	runningDataLoadCall = null;
+
 	function createLink(href, content, params) {
 		var i,
 		    url = encodeURI(href);
@@ -155,13 +157,17 @@ var membrane = function() {
 		$('#response-headers').dataTable(getHeaderTableConfiguration(responseHeaderUrl));	
 		loadText('#response-raw', responseRawUrl);
 	}
-	
-	return {
-		createLink:createLink,
-		loadExchange:loadExchange
+
+	function onFilterUpdate() {
+		membrane.lastMod=0;
+		membrane.messageTable.fnDraw();
 	}
 
-	var lastMod;
+	return {
+		createLink:createLink,
+		loadExchange:loadExchange,
+		onFilterUpdate:onFilterUpdate,
+	}
 }();
 
 $(function() {
@@ -372,8 +378,10 @@ $(function() {
         	  addFilterProps('server');
         	  addFilterProps('reqcontenttype');
         	  addFilterProps('respcontenttype');
-        	  
-              $.ajax( {            	  
+
+        	  if (runningDataLoadCall != null)
+        	  	runningDataLoadCall.abort();
+			  runningDataLoadCall = $.ajax( {
                 "dataType": 'json', 
                 "type": "GET", 
                 "url": sSource, 
@@ -413,7 +421,6 @@ $(function() {
 
 	function updateCallsTable() {
 		$('#message-stat-table').dataTable()._fnAjaxUpdate();
-		console.log(membrane.lastMod);
 	}
 
 	function updateCallsTablePeriodically() {

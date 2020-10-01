@@ -48,6 +48,7 @@ public class XMLProtector {
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,false);
 	}
 
 	private XMLEventWriter writer;
@@ -60,6 +61,9 @@ public class XMLProtector {
 		this.removeDTD = removeDTD;
 		this.maxElementNameLength = maxElementNameLength;
 		this.maxAttibuteCount = maxAttibuteCount;
+
+		if(!removeDTD)
+			xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,true);
 	}
 
 	public boolean protect(InputStreamReader isr) {

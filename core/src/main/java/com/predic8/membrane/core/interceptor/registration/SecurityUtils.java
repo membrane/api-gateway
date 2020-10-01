@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.registration;
 
-import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
+import com.google.api.client.util.Base64;
 import org.apache.commons.codec.digest.Crypt;
 
 import java.io.UnsupportedEncodingException;

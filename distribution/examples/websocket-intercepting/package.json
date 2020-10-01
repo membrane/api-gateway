@@ -10,6 +10,6 @@
   "author": "predic8 GmbH",
   "license": "Apache-2.0",
   "dependencies": {
-    "ws": "^2.3.1"
+    "ws": "^7.1.2"
   }
 }

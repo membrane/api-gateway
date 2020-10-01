@@ -29,12 +29,20 @@ import java.util.regex.Pattern;
 
 public class OAuth2Util {
 
-    public static String urlencode(String value) throws UnsupportedEncodingException {
-        return URLEncoder.encode(value, "UTF-8").replaceAll("\\+", "%20");
+    public static String urlencode(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8").replaceAll("\\+", "%20");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static String urldecode(String value) throws UnsupportedEncodingException {
-        return URLDecoder.decode(value, "UTF-8").replaceAll("\\+", "%20");
+    public static String urldecode(String value) {
+        try {
+            return URLDecoder.decode(value, "UTF-8").replaceAll("\\+", "%20");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void removeDuplicateSessionValues(HeaderField header) {
