@@ -95,7 +95,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         log.debug("request: " + uri);
 
-        if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\") || uri.contains("/../") || uri.startsWith("..")) {
+        if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\") //
+           || uri.contains("/../") || uri.contains("..\\") ||  uri.contains("file:/") ||  uri.contains("file:\\") //
+           || uri.startsWith("..")) {
+
             exc.setResponse(Response.badRequest().body("").build());
             return Outcome.ABORT;
         }
