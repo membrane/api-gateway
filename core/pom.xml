@@ -23,7 +23,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>4.7.3-SNAPSHOT</version>
+		<version>4.7.3</version>
 	</parent>
 
 	<dependencies>

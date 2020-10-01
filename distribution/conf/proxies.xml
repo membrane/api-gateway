@@ -28,19 +28,7 @@
 			<index />
 		</serviceProxy>
 
-		<!-- Forwards HTTP requests on port 2001 to some other HTTP server, in this example to www.membrane-soa.org. -->
-		<serviceProxy name="localhost" port="2001" >
-			<target host="www.membrane-soa.org" port="80"/>
 		</serviceProxy>
-	
-		<!-- Sets up the Administration Web Interface on port 9000-->
-		<serviceProxy name="Console" port="9000">
-			<basicAuthentication>
-				<user name="admin" password="membrane" />
-			</basicAuthentication>	
-			<adminConsole />
-		</serviceProxy>
-	 
 	 </router>
 
 </spring:beans>
