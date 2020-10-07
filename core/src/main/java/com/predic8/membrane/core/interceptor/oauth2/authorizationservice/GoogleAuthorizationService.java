@@ -21,8 +21,8 @@ public class GoogleAuthorizationService extends AuthorizationService {
     @Override
     public void init() {
         // for backwards compatibility: adds the suffix to the client id. worked without the suffix before but is now needed
-        if (!clientId.endsWith(".apps.googleusercontent.com"))
-            clientId += ".apps.googleusercontent.com";
+        if (!getClientId().endsWith(".apps.googleusercontent.com"))
+            setClientId(getClientId() + ".apps.googleusercontent.com");
         if(scope == null)
             scope = "openid%20email%20profile";
     }

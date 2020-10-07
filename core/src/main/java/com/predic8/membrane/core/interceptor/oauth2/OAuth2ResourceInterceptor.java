@@ -19,6 +19,7 @@ import com.floreysoft.jmte.message.ParseException;
 import com.floreysoft.jmte.token.Token;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -207,7 +208,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if(firstInitWhenDynamicAuthorizationService){
             firstInitWhenDynamicAuthorizationService = false;
 
-            getAuthService().dynamicRegistration(exc,publicURL);
+            getAuthService().dynamicRegistration(exc, ImmutableList.of(publicURL));
         }
 
         if(isFaviconRequest(exc)){

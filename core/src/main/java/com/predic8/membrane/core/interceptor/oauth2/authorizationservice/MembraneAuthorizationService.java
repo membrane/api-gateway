@@ -30,8 +30,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {
@@ -48,7 +50,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String claims;
     private String claimsIdt;
     private String claimsParameter;
-    private String callbackUri;
 
     private DynamicRegistration dynamicRegistration;
 
@@ -104,28 +105,20 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected void doDynamicRegistration(Exchange exc, String publicURL) throws Exception {
-
-        if(clientId != null && clientSecret != null)
-            return;
+    protected void doDynamicRegistration(Exchange exc, List<String> publicURL) throws Exception {
         if(dynamicRegistration == null || registrationEndpoint == null || registrationEndpoint.isEmpty())
             throw new RuntimeException("A registration bean is required and src needs to specify a registration endpoint");
 
-        createCallbackUri(exc,publicURL);
-        dynamicRegistrationIfNeeded();
+        dynamicRegistrationIfNeeded(createCallbackUris(exc, publicURL));
     }
 
-    private void createCallbackUri(Exchange exc, String publicURL) {
-        callbackUri = publicURL + defaultCallbackUri;
+    private List<String> createCallbackUris(Exchange exc, List<String> publicURLs) {
+        return publicURLs.stream().map(publicURL -> publicURL + defaultCallbackUri).collect(Collectors.toList());
     }
 
-    private void dynamicRegistrationIfNeeded() throws Exception {
-        setClientIdAndSecret(dynamicRegistration.registerWithCallbackAt(callbackUri,registrationEndpoint));
-    }
-
-    private void setClientIdAndSecret(Client client) {
-        clientId = client.getClientId();
-        clientSecret = client.getClientSecret();
+    private void dynamicRegistrationIfNeeded(List<String> callbackUris) throws Exception {
+        Client client = dynamicRegistration.registerWithCallbackAt(callbackUris, registrationEndpoint);
+        setClientIdAndSecret(client.getClientId(), client.getClientSecret());
     }
 
     private void prepareClaimsForLoginUrl() throws IOException {

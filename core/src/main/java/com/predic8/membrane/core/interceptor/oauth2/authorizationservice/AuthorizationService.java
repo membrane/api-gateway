@@ -19,12 +19,16 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.concurrent.GuardedBy;
+import java.util.List;
 
 public abstract class AuthorizationService {
     protected Logger log;
@@ -33,8 +37,11 @@ public abstract class AuthorizationService {
     protected Router router;
 
     protected HttpClientConfiguration httpClientConfiguration;
-    protected String clientId;
-    protected String clientSecret;
+    private final Object lock = new Object();
+    @GuardedBy("lock")
+    private String clientId;
+    @GuardedBy("lock")
+    private String clientSecret;
     protected String scope;
     private SSLParser sslParser;
     private SSLContext sslContext;
@@ -76,17 +83,19 @@ public abstract class AuthorizationService {
 
     public abstract String getRevocationEndpoint();
 
-    protected void doDynamicRegistration(Exchange exc, String publicURL) throws Exception {
+    protected void doDynamicRegistration(Exchange exc, List<String> publicURLs) throws Exception {
     }
 
-    public void dynamicRegistration(Exchange exc, String publicURL) throws Exception {
+    public void dynamicRegistration(Exchange exc, List<String> publicURLs) throws Exception {
         if(supportsDynamicRegistration())
-            doDynamicRegistration(exc,publicURL);
+            doDynamicRegistration(exc,publicURLs);
     }
 
     protected void checkForClientIdAndSecret(){
-        if(clientId == null || clientSecret == null)
-            throw new RuntimeException(this.getClass().getSimpleName() + " cannot work without specified clientId and clientSecret");
+        synchronized (lock) {
+            if (clientId == null || clientSecret == null)
+                throw new RuntimeException(this.getClass().getSimpleName() + " cannot work without specified clientId and clientSecret");
+        }
     }
 
 
@@ -100,22 +109,38 @@ public abstract class AuthorizationService {
     }
 
     public String getClientId() {
-        return clientId;
+        synchronized (lock) {
+            return clientId;
+        }
     }
 
     @MCAttribute
     public void setClientId(String clientId) {
-        this.clientId = clientId;
+        synchronized (lock) {
+            this.clientId = clientId;
+        }
     }
 
     public String getClientSecret() {
-        return clientSecret;
+        synchronized (lock) {
+            return clientSecret;
+        }
     }
 
     @MCAttribute
     public void setClientSecret(String clientSecret) {
-        this.clientSecret = clientSecret;
+        synchronized (lock) {
+            this.clientSecret = clientSecret;
+        }
     }
+
+    protected void setClientIdAndSecret(String clientId, String clientSecret) {
+        synchronized (lock) {
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
+        }
+    }
+
 
     public String getScope() {
         return scope;
