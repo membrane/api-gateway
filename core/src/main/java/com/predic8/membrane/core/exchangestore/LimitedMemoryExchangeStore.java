@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
@@ -83,21 +84,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		else
 			msg = exc.getResponse();
 
-		msg.addObserver(new MessageObserver() {
-			@Override
-			public void bodyRequested(AbstractBody body) {
-
-			}
-
-			@Override
-			public void bodyComplete(AbstractBody body) {
-				try {
-                    cleanSnapshot(Exchange.updateCopy(exc,excCopy));
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
-		});
+		msg.addObserver(new SnapshotTakingObserver(exc, excCopy));
 		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 			@Override
 			public void setExchangeFinished() {
@@ -134,41 +121,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		});
 
 		if (flow == Flow.REQUEST) {
-			exc.getRequest().addObserver(
-					new MessageObserver() {
-						@Override
-						public void bodyRequested(AbstractBody body) {
-						}
-						@Override
-						public void bodyComplete(AbstractBody body) {
-							Response r = exc.getResponse();
-							if (r != null) {
-								AbstractBody b = r.getBody();
-								if (b != null && b.isRead())
-									return; // request-bodyComplete might occur after response-bodyComplete
-							}
-							//System.out.println("Exchange put inflight " + exc.hashCode() + " " + exc.getRequest().getStartLine());
-							inflight.put(exc, exc.getRequest());
-							modify();
-						}
-					}
-					);
+			exc.getRequest().addObserver(new InflightEnqueuingObserver(exc));
 			return;
 		}
 
 		try {
 			Message m = exc.getResponse();
 			if (m != null)
-				m.addObserver(new MessageObserver() {
-					public void bodyRequested(AbstractBody body) {
-					}
-					public void bodyComplete(AbstractBody body) {
-						snapInternal(exc, flow);
-						inflight.remove(exc);
-						modify();
-						//System.out.println("Exchange remove inflight " + exc.hashCode());
-					}
-				});
+				m.addObserver(new InflightRemovingAndSnapshottingObserver(exc, flow));
 			else {
 				inflight.remove(exc);
 				modify();
@@ -380,5 +340,74 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	@MCAttribute
 	public void setNewAlgorithm(boolean newAlgorithm) {
 		this.newAlgorithm = newAlgorithm;
+	}
+
+	private class SnapshotTakingObserver implements MessageObserver {
+		private final AbstractExchange exc;
+		private final AbstractExchange excCopy;
+
+		public SnapshotTakingObserver(AbstractExchange exc, AbstractExchange excCopy) {
+			this.exc = exc;
+			this.excCopy = excCopy;
+		}
+
+		@Override
+		public void bodyRequested(AbstractBody body) {
+
+		}
+
+		@Override
+		public void bodyComplete(AbstractBody body) {
+			try {
+cleanSnapshot(Exchange.updateCopy(exc, excCopy));
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
+
+	private class InflightEnqueuingObserver implements MessageObserver {
+		private final AbstractExchange exc;
+
+		public InflightEnqueuingObserver(AbstractExchange exc) {
+			this.exc = exc;
+		}
+
+		@Override
+		public void bodyRequested(AbstractBody body) {
+		}
+
+		@Override
+		public void bodyComplete(AbstractBody body) {
+			Response r = exc.getResponse();
+			if (r != null) {
+				AbstractBody b = r.getBody();
+				if (b != null && b.isRead())
+					return; // request-bodyComplete might occur after response-bodyComplete
+			}
+			//System.out.println("Exchange put inflight " + exc.hashCode() + " " + exc.getRequest().getStartLine());
+			inflight.put(exc, exc.getRequest());
+			modify();
+		}
+	}
+
+	private class InflightRemovingAndSnapshottingObserver implements MessageObserver {
+		private final AbstractExchange exc;
+		private final Flow flow;
+
+		public InflightRemovingAndSnapshottingObserver(AbstractExchange exc, Flow flow) {
+			this.exc = exc;
+			this.flow = flow;
+		}
+
+		public void bodyRequested(AbstractBody body) {
+		}
+
+		public void bodyComplete(AbstractBody body) {
+			snapInternal(exc, flow);
+			inflight.remove(exc);
+			modify();
+			//System.out.println("Exchange remove inflight " + exc.hashCode());
+		}
 	}
 }

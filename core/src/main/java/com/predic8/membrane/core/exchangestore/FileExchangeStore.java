@@ -27,6 +27,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.predic8.membrane.core.interceptor.Interceptor;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,13 +82,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			// TODO: [fix me] support multi-snap
 			// TODO: [fix me] snap message headers *here*, not in observer
 			if (m != null)
-				m.addObserver(new MessageObserver() {
-					public void bodyRequested(AbstractBody body) {
-					}
-					public void bodyComplete(AbstractBody body) {
-						snapInternal(exc, flow);
-					}
-				});
+				m.addObserver(new SnapshottingObserver(exc, flow));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -340,4 +335,20 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		this.maxDays = maxDays;
 	}
 
+	private class SnapshottingObserver implements MessageObserver {
+		private final AbstractExchange exc;
+		private final Flow flow;
+
+		public SnapshottingObserver(AbstractExchange exc, Flow flow) {
+			this.exc = exc;
+			this.flow = flow;
+		}
+
+		public void bodyRequested(AbstractBody body) {
+		}
+
+		public void bodyComplete(AbstractBody body) {
+			snapInternal(exc, flow);
+		}
+	}
 }

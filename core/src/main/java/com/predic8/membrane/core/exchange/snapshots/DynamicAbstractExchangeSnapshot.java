@@ -35,17 +35,7 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
     }
 
     public static void addObservers(AbstractExchange exc, AbstractExchangeSnapshot excCopy, Consumer<AbstractExchangeSnapshot> callback) {
-        MessageObserver obs = new MessageObserver() {
-            @Override
-            public void bodyRequested(AbstractBody body) {
-
-            }
-
-            @Override
-            public void bodyComplete(AbstractBody body) {
-                update(callback, excCopy, exc);
-            }
-        };
+        MessageObserver obs = new UpdateExchangeCopyObserver(callback, excCopy, exc);
 
         exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
             @Override
@@ -77,6 +67,28 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
                 callback.call(excCopy);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static class UpdateExchangeCopyObserver implements MessageObserver {
+        private final Consumer<AbstractExchangeSnapshot> callback;
+        private final AbstractExchangeSnapshot excCopy;
+        private final AbstractExchange exc;
+
+        public UpdateExchangeCopyObserver(Consumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc) {
+            this.callback = callback;
+            this.excCopy = excCopy;
+            this.exc = exc;
+        }
+
+        @Override
+        public void bodyRequested(AbstractBody body) {
+
+        }
+
+        @Override
+        public void bodyComplete(AbstractBody body) {
+            update(callback, excCopy, exc);
         }
     }
 }

@@ -297,15 +297,7 @@ public class HttpClient {
 
 	private void disableStreamingForRetries(Exchange exc) {
 		if(maxRetries > 1)
-			exc.getRequest().addObserver(new MessageObserver() {
-				@Override
-				public void bodyRequested(AbstractBody body) {
-				}
-
-				@Override
-				public void bodyComplete(AbstractBody body) {
-				}
-			});
+			exc.getRequest().addObserver(new EmptyObserver());
 	}
 
 	private String getSNIServerName(Exchange exc) {
@@ -446,5 +438,15 @@ public class HttpClient {
 
 	ConnectionManager getConnectionManager() {
 		return conMgr;
+	}
+
+	private static class EmptyObserver implements MessageObserver {
+		@Override
+		public void bodyRequested(AbstractBody body) {
+		}
+
+		@Override
+		public void bodyComplete(AbstractBody body) {
+		}
 	}
 }
