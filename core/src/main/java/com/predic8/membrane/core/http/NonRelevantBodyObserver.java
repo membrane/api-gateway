@@ -16,5 +16,11 @@
 
 package com.predic8.membrane.core.http;
 
+/**
+ * Marks {@link MessageObserver}s which do not look at the body after it has been completed.
+ *
+ * If only NonRelevantBodyObservers are present on a body, the body can be transferred using streaming without creating
+ * a local copy.
+ */
 public interface NonRelevantBodyObserver {
 }

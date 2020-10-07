@@ -113,16 +113,11 @@ public abstract class AbstractBody {
 
 	public void write(AbstractBodyTransferrer out) throws IOException {
 		if (!read) {
-			boolean relevantObservers = false;
-			for(MessageObserver obs : observers)
-				if(!(obs instanceof NonRelevantBodyObserver))
-					relevantObservers = true;
-			if(relevantObservers) {
-				for (MessageObserver observer : observers)
-					observer.bodyRequested(this);
-
+			for (MessageObserver observer : observers)
+				observer.bodyRequested(this);
+			if(hasRelevantObservers()) {
 				writeNotRead(out);
-			}else {
+			} else {
 				writeStreamed(out);
 				wasStreamed = true;
 			}

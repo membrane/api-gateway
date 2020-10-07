@@ -28,15 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
+import com.predic8.membrane.core.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MessageObserver;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -306,7 +302,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		return sourceSocket;
 	}
 
-	private class Expect100ContinueObserver implements MessageObserver {
+	private class Expect100ContinueObserver implements MessageObserver, NonRelevantBodyObserver {
 		private final Request request;
 
 		public Expect100ContinueObserver(Request request) {
