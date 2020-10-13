@@ -29,6 +29,8 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http2.Http2ServerHandler;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +97,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 					srcIn.reset();
 				} finally {
 					endpointListener.setIdleStatus(sourceSocket, false);
+				}
+
+				if (Http2TlsSupport.isHttp2(sourceSocket)) {
+					new Http2ServerHandler(sourceSocket, srcIn, srcOut).handle();
+					break;
 				}
 
 				if (boundConnection != null) {

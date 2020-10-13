@@ -19,6 +19,7 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Store;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.TrustManagerWrapper;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -290,6 +291,10 @@ public class StaticSSLContext extends SSLContext {
         }
         sslss.setWantClientAuth(wantClientAuth);
         sslss.setNeedClientAuth(needClientAuth);
+
+        if (sslParser.isUseHttp2())
+            Http2TlsSupport.offerHttp2(sslss);
+
         return sslss;
     }
 

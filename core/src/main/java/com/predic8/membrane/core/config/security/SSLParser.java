@@ -40,6 +40,7 @@ public class SSLParser {
 	private String serverName;
 	private boolean showSSLExceptions = true;
 	private boolean useAsDefault = true;
+	private boolean useHttp2;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -243,5 +244,18 @@ public class SSLParser {
 	@MCAttribute
 	public void setUseAsDefault(boolean useAsDefault) {
 		this.useAsDefault = useAsDefault;
+	}
+
+	public boolean isUseHttp2() {
+		return useHttp2;
+	}
+
+	/**
+	 * @description whether to enable receiving HTTP/2 requests. (experimental)
+	 * @default false
+	 */
+	@MCAttribute
+	public void setUseHttp2(boolean useHttp2) {
+		this.useHttp2 = useHttp2;
 	}
 }
