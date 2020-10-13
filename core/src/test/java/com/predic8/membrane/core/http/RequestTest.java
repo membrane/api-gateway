@@ -99,10 +99,9 @@ public class RequestTest {
 	@Test
 	public void testWritePost() throws Exception {
 		reqPost.read(inPost, true);
-		reqPost.getBody().addObserver(new AbstractMessageObserver() {}); // forces the request to retain the body
 
 		tempOut = new ByteArrayOutputStream();
-		reqPost.write(tempOut);
+		reqPost.write(tempOut, true);
 
 		tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 

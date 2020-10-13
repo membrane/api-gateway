@@ -78,7 +78,7 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
             // this is a heart-beat
             baos.write('\n');
         } else {
-            exc.getRequest().writeSTOMP(baos);
+            exc.getRequest().writeSTOMP(baos, true);
 
             baos.write(0);
         }

@@ -71,10 +71,7 @@ public abstract class Message {
 	}
 
 	public void discardBody() throws IOException {
-		if (body.hasRelevantObservers())
-			body.read();
-		else
-			body.discard();
+		body.discard();
 	}
 
 	public AbstractBody getBody() {
@@ -220,7 +217,7 @@ public abstract class Message {
 		header = srcHeader;
 	}
 
-	public final void write(OutputStream out) throws IOException {
+	public final void write(OutputStream out, boolean retainBody) throws IOException {
 		writeStartLine(out);
 		header.write(out);
 		out.write(Constants.CRLF_BYTES);
@@ -230,7 +227,7 @@ public abstract class Message {
 			return;
 		}
 
-		body.write(getHeader().isChunked() ? new ChunkedBodyTransferrer(out) : new PlainBodyTransferrer(out));
+		body.write(getHeader().isChunked() ? new ChunkedBodyTransferrer(out) : new PlainBodyTransferrer(out), retainBody);
 
 		out.flush();
 	}

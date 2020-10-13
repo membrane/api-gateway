@@ -26,14 +26,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Chunk;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 
@@ -255,10 +252,13 @@ public class HttpUtil {
 		return chunks;
 	}
 
-	public static void readChunksAndDrop(InputStream in) throws IOException {
+	public static void readChunksAndDrop(InputStream in, List<MessageObserver> observers) throws IOException {
 		int chunkSize;
 		while ((chunkSize = readChunkSize(in)) > 0) {
-			ByteUtil.readByteArray(in, chunkSize);
+			byte[] bytes = ByteUtil.readByteArray(in, chunkSize);
+			Chunk chunk = new Chunk(bytes);
+			for (MessageObserver observer : observers)
+				observer.bodyChunk(chunk);
 			in.read(); // CR
 			in.read(); // LF
 		}

@@ -111,16 +111,12 @@ public abstract class AbstractBody {
 		return new BodyInputStream(chunks);
 	}
 
-	public void write(AbstractBodyTransferrer out) throws IOException {
+	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
 		if (!read) {
 			for (MessageObserver observer : observers)
 				observer.bodyRequested(this);
-			if(hasRelevantObservers()) {
-				writeNotRead(out);
-			} else {
-				writeStreamed(out);
-				wasStreamed = true;
-			}
+			writeStreamed(out);
+			wasStreamed = true;
 			return;
 		}
 

@@ -72,7 +72,10 @@ public class Body extends AbstractBody {
 		long l = length;
 		while (l > 0 || l == -1) {
 			int chunkLength = l > MAX_CHUNK_LENGTH ? MAX_CHUNK_LENGTH : (int)l;
-			chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, chunkLength)));
+			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkLength));
+			chunks.add(chunk);
+			for (MessageObserver observer : observers)
+				observer.bodyChunk(chunk);
 			l -= chunkLength;
 		}
 	}
@@ -84,10 +87,23 @@ public class Body extends AbstractBody {
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
 
+		byte[] buffer = null;
+		boolean hasRelevantObserver = hasRelevantObservers();
+		if (hasRelevantObserver)
+			buffer = new byte[BUFFER_SIZE];
+
 		chunks.clear();
 		long toSkip = length;
 		while (toSkip > 0) {
-			long skipped = inputStream.skip(toSkip);
+			long skipped;
+			if (hasRelevantObserver) {
+				skipped = inputStream.read(buffer);
+				if (skipped > 0)
+					for (MessageObserver observer : observers)
+						observer.bodyChunk(buffer, 0, (int)skipped);
+			} else {
+				skipped = inputStream.skip(toSkip);
+			}
 			if (skipped == 0)
 				break; // EOF
 			toSkip -= skipped;
@@ -116,7 +132,10 @@ public class Body extends AbstractBody {
 			out.write(buffer, 0, length);
 			byte[] chunk = new byte[length];
 			System.arraycopy(buffer, 0, chunk, 0, length);
-			chunks.add(new Chunk(chunk));
+			Chunk chunk1 = new Chunk(chunk);
+			chunks.add(chunk1);
+			for (MessageObserver observer : observers)
+				observer.bodyChunk(chunk1);
 		}
 
 		out.finish();
@@ -133,6 +152,8 @@ public class Body extends AbstractBody {
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
 			out.write(buffer, 0, length);
+			for (MessageObserver observer : observers)
+				observer.bodyChunk(buffer, 0, length);
 		}
 		out.finish();
 		markAsRead();

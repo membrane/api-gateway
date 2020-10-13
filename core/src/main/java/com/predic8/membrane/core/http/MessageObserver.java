@@ -33,6 +33,17 @@ public interface MessageObserver {
 	public void bodyRequested(AbstractBody body);
 
 	/**
+	 * Observes a piece of the body.
+	 * @param chunk
+	 */
+	public void bodyChunk(Chunk chunk);
+
+	/**
+	 * Observes a piece of the body. Note that the buffer content may change after the method completes.
+	 */
+	public void bodyChunk(byte[] buffer, int offset, int length);
+
+	/**
 	 * Notification that the body has fully been received.
 	 *
 	 * Note that this event may run instantaneously (during the call to

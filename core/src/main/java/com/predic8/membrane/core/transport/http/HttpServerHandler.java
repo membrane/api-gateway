@@ -269,7 +269,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	protected void writeResponse(Response res) throws Exception{
 		if (res.isRedirect())
 			res.getHeader().setConnection(Header.CLOSE);
-		res.write(srcOut);
+		res.write(srcOut, false);
 		srcOut.flush();
 		exchange.setTimeResSent(System.currentTimeMillis());
 		exchange.collectStatistics();
@@ -302,28 +302,26 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		return sourceSocket;
 	}
 
-	private class Expect100ContinueObserver implements MessageObserver, NonRelevantBodyObserver {
+	private class Expect100ContinueObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {
 		private final Request request;
 
 		public Expect100ContinueObserver(Request request) {
 			this.request = request;
 		}
 
+		@Override
 		public void bodyRequested(AbstractBody body) {
 			try {
 				if (request.getHeader().is100ContinueExpected()) {
 					log.warn("requesting body");
 					// request body from client so that interceptors can handle it
-					Response.continue100().build().write(srcOut);
+					Response.continue100().build().write(srcOut, false);
 					// remove "Expect: 100-continue" since we already sent "100 Continue"
 					request.getHeader().removeFields(Header.EXPECT);
 				}
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
-		}
-
-		public void bodyComplete(AbstractBody body) {
 		}
 	}
 }

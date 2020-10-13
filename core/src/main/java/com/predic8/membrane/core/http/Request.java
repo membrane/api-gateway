@@ -223,13 +223,13 @@ public class Request extends Message {
 		return (T) result;
 	}
 
-	public final void writeSTOMP(OutputStream out) throws IOException {
+	public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
 		out.write(getMethod().getBytes(Constants.UTF_8));
 		out.write(10);
 		for (HeaderField hf : header.getAllHeaderFields())
 			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(Constants.UTF_8));
 		out.write(10);
-		body.write(new PlainBodyTransferrer(out));
+		body.write(new PlainBodyTransferrer(out), retainBody);
 	}
 
 

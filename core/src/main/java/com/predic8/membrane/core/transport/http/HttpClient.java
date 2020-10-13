@@ -177,7 +177,6 @@ public class HttpClient {
 		Exception exception = null;
 		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
 		boolean trackNodeStatus = trackNodeStatusObj != null && trackNodeStatusObj instanceof Boolean && (Boolean)trackNodeStatusObj;
-		disableStreamingForRetries(exc);
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
@@ -295,11 +294,6 @@ public class HttpClient {
 		throw exception;
 	}
 
-	private void disableStreamingForRetries(Exchange exc) {
-		if(maxRetries > 1)
-			exc.getRequest().addObserver(new EmptyObserver());
-	}
-
 	private String getSNIServerName(Exchange exc) {
 		Object sniObject = exc.getProperty(Exchange.SNI_SERVER_NAME);
 		if(sniObject == null)
@@ -349,7 +343,7 @@ public class HttpClient {
 	}
 
 	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-		exc.getRequest().write(con.out);
+		exc.getRequest().write(con.out, maxRetries > 1);
 		exc.setTimeReqSent(System.currentTimeMillis());
 
 		if (exc.getRequest().isHTTP10()) {
@@ -417,7 +411,7 @@ public class HttpClient {
 
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		if (proxy != null) {
-			exc.getRequest().write(con.out);
+			exc.getRequest().write(con.out, maxRetries > 1);
 			Response response = new Response();
 			response.read(con.in, false);
 			log.debug("Status code response on CONNECT request: " + response.getStatusCode());
@@ -426,7 +420,7 @@ public class HttpClient {
 	}
 
 	private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
-		exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out));
+		exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out), maxRetries > 1);
 		con.out.flush();
 		response.read(con.in, !exc.getRequest().isHEADRequest());
 	}
@@ -438,15 +432,5 @@ public class HttpClient {
 
 	ConnectionManager getConnectionManager() {
 		return conMgr;
-	}
-
-	private static class EmptyObserver implements MessageObserver {
-		@Override
-		public void bodyRequested(AbstractBody body) {
-		}
-
-		@Override
-		public void bodyComplete(AbstractBody body) {
-		}
 	}
 }

@@ -114,7 +114,7 @@ public class STOMPClient extends AbstractInterceptor {
 
 		if (isStomp1_0 || isStomp1_1orAbove) {
 			Connection c = connectionManager.getConnection(this.host, port, connectionConfiguration.getLocalAddr(), sslOutboundProvider, connectionConfiguration.getTimeout());
-			exc.getRequest().writeSTOMP(c.out);
+			exc.getRequest().writeSTOMP(c.out, false);
 			HttpClient.setupConnectionForwarding(exc, c, "STOMP", getRouter().getStatistics().getStreamPumpStats());
 		} else {
 			exc.setResponse(Response.badRequest().build());
