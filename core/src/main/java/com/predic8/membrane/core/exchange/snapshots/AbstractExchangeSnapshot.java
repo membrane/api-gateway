@@ -14,27 +14,30 @@
 
 package com.predic8.membrane.core.exchange.snapshots;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.rules.AbstractProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.rules.StatisticCollector;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
-import javax.naming.OperationNotSupportedException;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AbstractExchangeSnapshot {
+
+    @JsonIgnore
+    private final Consumer<AbstractExchangeSnapshot> bodyCopiedCallback;
+    @JsonIgnore
+    private final BodyCollectingMessageObserver.Strategy strategy;
+    @JsonIgnore
+    private final long limit;
 
     RequestSnapshot request;
     ResponseSnapshot response;
@@ -54,18 +57,42 @@ public class AbstractExchangeSnapshot {
 
     long id;
 
-    public AbstractExchangeSnapshot(AbstractExchange exc) {
-        updateFrom(exc);
+    /**
+     * @param exc the exchange to snapshot
+     * @param flow what to copy from the exchange besides general properties
+     * @param bodyCopiedCallback will be called once the {@code flow}'s body has been filled. if null, the body stream will be read
+     *                 into memory immediately.
+     * @param strategy how to handle body lengths exceeding the {@code limit}.
+     * @param limit maximum length of the body.
+     */
+    public AbstractExchangeSnapshot(AbstractExchange exc, Interceptor.Flow flow, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
+        this.bodyCopiedCallback = bodyCopiedCallback;
+        this.strategy = strategy;
+        this.limit = limit;
+        updateFrom(exc, flow);
     }
 
+    /**
+     * called by JSON deserializer
+     */
     public AbstractExchangeSnapshot() {
+        bodyCopiedCallback = null;
+        strategy = BodyCollectingMessageObserver.Strategy.ERROR;
+        limit = -1;
     }
 
-    public <T extends AbstractExchangeSnapshot> T updateFrom(AbstractExchange source){
-        if(source.getRequest() != null)
-            setRequest(new RequestSnapshot(source.getRequest()));
-        if(source.getResponse() != null)
-            setResponse(new ResponseSnapshot(source.getResponse()));
+    public <T extends AbstractExchangeSnapshot> T updateFrom(AbstractExchange source, Interceptor.Flow flow) throws IOException {
+        switch (flow) {
+            case REQUEST:
+                if(source.getRequest() != null)
+                    setRequest(new RequestSnapshot(source.getRequest(), bodyCopiedCallback, this, strategy, limit));
+                break;
+            case RESPONSE:
+            case ABORT:
+                if(source.getResponse() != null)
+                    setResponse(new ResponseSnapshot(source.getResponse(), bodyCopiedCallback, this, strategy, limit));
+                break;
+        }
 
         setOriginalRequestUri(source.getOriginalRequestUri());
         setTime(source.getTime());
@@ -75,7 +102,7 @@ public class AbstractExchangeSnapshot {
         setTimeReqReceived(source.getTimeReqReceived());
         setTimeResSent(source.getTimeResSent());
         setTimeResReceived(source.getTimeResReceived());
-        setDestinations(source.getDestinations().stream().collect(Collectors.toList()));
+        setDestinations(new ArrayList<>(source.getDestinations()));
         setRemoteAddr(source.getRemoteAddr());
         setRemoteAddrIp(source.getRemoteAddrIp());
         setId(source.getId());
@@ -101,7 +128,7 @@ public class AbstractExchangeSnapshot {
         exc.setTimeReqReceived(getTimeReqReceived());
         exc.setTimeResSent(getTimeResSent());
         exc.setTimeResReceived(getTimeResReceived());
-        exc.setDestinations(getDestinations().stream().collect(Collectors.toList()));
+        exc.setDestinations(new ArrayList<>(getDestinations()));
         exc.setRemoteAddr(getRemoteAddr());
         exc.setRemoteAddrIp(getRemoteAddrIp());
         exc.setId(getId());

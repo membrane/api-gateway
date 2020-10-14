@@ -41,6 +41,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	private static Logger log = LoggerFactory.getLogger(LimitedMemoryExchangeStore.class);
 
 	private int maxSize = 1000000;
+	private int maxBodySize = 100000;
 	private int currentSize;
 	private boolean newAlgorithm = false;
 
@@ -84,7 +85,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		else
 			msg = exc.getResponse();
 
-		msg.addObserver(new SnapshotTakingObserver(exc, excCopy));
+		msg.addObserver(new SnapshotTakingObserver(exc, excCopy, maxBodySize));
 		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 			@Override
 			public void setExchangeFinished() {
@@ -121,14 +122,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		});
 
 		if (flow == Flow.REQUEST) {
-			exc.getRequest().addObserver(new InflightEnqueuingObserver(exc));
+			exc.getRequest().addObserver(new InflightEnqueuingObserver(exc, maxBodySize));
 			return;
 		}
 
 		try {
 			Message m = exc.getResponse();
 			if (m != null)
-				m.addObserver(new InflightRemovingAndSnapshottingObserver(exc, flow));
+				m.addObserver(new InflightRemovingAndSnapshottingObserver(exc, flow, maxBodySize));
 			else {
 				inflight.remove(exc);
 				modify();
@@ -342,11 +343,21 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		this.newAlgorithm = newAlgorithm;
 	}
 
-	private class SnapshotTakingObserver implements MessageObserver {
+	public int getMaxBodySize() {
+		return maxBodySize;
+	}
+
+	@MCAttribute
+	public void setMaxBodySize(int maxBodySize) {
+		this.maxBodySize = maxBodySize;
+	}
+
+	private class SnapshotTakingObserver extends BodyCollectingMessageObserver {
 		private final AbstractExchange exc;
 		private final AbstractExchange excCopy;
 
-		public SnapshotTakingObserver(AbstractExchange exc, AbstractExchange excCopy) {
+		public SnapshotTakingObserver(AbstractExchange exc, AbstractExchange excCopy, int limit) {
+			super(Strategy.TRUNCATE, limit);
 			this.exc = exc;
 			this.excCopy = excCopy;
 		}
@@ -358,6 +369,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 		@Override
 		public void bodyComplete(AbstractBody body) {
+			// TODO: handle getBody(body)
 			try {
 cleanSnapshot(Exchange.updateCopy(exc, excCopy));
 			} catch (Exception e) {
@@ -366,10 +378,11 @@ cleanSnapshot(Exchange.updateCopy(exc, excCopy));
 		}
 	}
 
-	private class InflightEnqueuingObserver implements MessageObserver {
+	private class InflightEnqueuingObserver extends BodyCollectingMessageObserver {
 		private final AbstractExchange exc;
 
-		public InflightEnqueuingObserver(AbstractExchange exc) {
+		public InflightEnqueuingObserver(AbstractExchange exc, int limit) {
+			super(Strategy.TRUNCATE, limit);
 			this.exc = exc;
 		}
 
@@ -379,6 +392,7 @@ cleanSnapshot(Exchange.updateCopy(exc, excCopy));
 
 		@Override
 		public void bodyComplete(AbstractBody body) {
+			// TODO: handle getBody(body)
 			Response r = exc.getResponse();
 			if (r != null) {
 				AbstractBody b = r.getBody();
@@ -391,11 +405,12 @@ cleanSnapshot(Exchange.updateCopy(exc, excCopy));
 		}
 	}
 
-	private class InflightRemovingAndSnapshottingObserver implements MessageObserver {
+	private class InflightRemovingAndSnapshottingObserver extends BodyCollectingMessageObserver {
 		private final AbstractExchange exc;
 		private final Flow flow;
 
-		public InflightRemovingAndSnapshottingObserver(AbstractExchange exc, Flow flow) {
+		public InflightRemovingAndSnapshottingObserver(AbstractExchange exc, Flow flow, int limit) {
+			super(Strategy.TRUNCATE, limit);
 			this.exc = exc;
 			this.flow = flow;
 		}
@@ -404,6 +419,7 @@ cleanSnapshot(Exchange.updateCopy(exc, excCopy));
 		}
 
 		public void bodyComplete(AbstractBody body) {
+			// TODO: handle getBody(body)
 			snapInternal(exc, flow);
 			inflight.remove(exc);
 			modify();

@@ -83,6 +83,8 @@ public class Body extends AbstractBody {
 	public void discard() throws IOException {
 		if (read)
 			return;
+		if (wasStreamed())
+			return;
 
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);

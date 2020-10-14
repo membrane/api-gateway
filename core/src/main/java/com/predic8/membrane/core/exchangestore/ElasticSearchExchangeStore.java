@@ -58,6 +58,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     private String documentPrefix;
     private long startTime;
     boolean init = false;
+    private int maxBodySize = 100000;
+    private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
 
     @Override
     public void init() {
@@ -139,13 +141,13 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         AbstractExchangeSnapshot excCopy = null;
         try {
             if (flow == Interceptor.Flow.REQUEST) {
-                excCopy = new DynamicAbstractExchangeSnapshot(exc,this::addForElasticSearch);
+                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForElasticSearch, bodyExceedingMaxSizeStrategy, maxBodySize);
                 addForElasticSearch(excCopy);
             }
             else {
                 excCopy = getExchangeDtoById((int) exc.getId());
-                DynamicAbstractExchangeSnapshot.addObservers(exc,excCopy,this::addForElasticSearch);
-                excCopy = excCopy.updateFrom(exc);
+                DynamicAbstractExchangeSnapshot.addObservers(exc,excCopy,this::addForElasticSearch, flow);
+                excCopy = excCopy.updateFrom(exc, flow);
                 addForElasticSearch(excCopy);
             }
         } catch (Exception e) {
@@ -448,5 +450,23 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     @MCAttribute
     public void setDocumentPrefix(String documentPrefix) {
         this.documentPrefix = documentPrefix;
+    }
+
+    public int getMaxBodySize() {
+        return maxBodySize;
+    }
+
+    @MCAttribute
+    public void setMaxBodySize(int maxBodySize) {
+        this.maxBodySize = maxBodySize;
+    }
+
+    public BodyCollectingMessageObserver.Strategy getBodyExceedingMaxSizeStrategy() {
+        return bodyExceedingMaxSizeStrategy;
+    }
+
+    @MCAttribute
+    public void setBodyExceedingMaxSizeStrategy(BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy) {
+        this.bodyExceedingMaxSizeStrategy = bodyExceedingMaxSizeStrategy;
     }
 }

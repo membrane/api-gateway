@@ -105,7 +105,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		}
 
 		ServletOutputStream out = response.getOutputStream();
-		res.getBody().write(new PlainBodyTransferrer(out));
+		res.getBody().write(new PlainBodyTransferrer(out), false);
 		out.flush();
 
 		response.flushBuffer();

@@ -15,6 +15,8 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
 
+import java.io.IOException;
+
 /**
  * A {@link MessageObserver} may be registered on a HTTP {@link Message} and
  * will be called, when the message's body becomes fully known to Membrane.

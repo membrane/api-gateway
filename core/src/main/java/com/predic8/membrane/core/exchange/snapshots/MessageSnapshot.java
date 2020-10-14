@@ -15,18 +15,31 @@
 package com.predic8.membrane.core.exchange.snapshots;
 
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CountingInputStream;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MessageSnapshot {
 
     Map<String,String> header;
-    String body = null;
+    byte[] body = null;
 
-    public MessageSnapshot(Message msg){
+    /**
+     * @param msg the message to snapshot
+     * @param bodyCopiedCallback will be called once the body has been filled. if null, the body stream will be read
+     *                 into memory immediately.
+     * @param aes parameter for the callback
+     * @param strategy how to handle body lengths exceeding the {@code limit}.
+     * @param limit maximum length of the body.
+     */
+    public MessageSnapshot(Message msg, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
         header = new HashMap<>();
         Stream.of(msg.getHeader().getAllHeaderFields()).forEach(headerField -> {
             String key = headerField.getHeaderName().toString();
@@ -36,8 +49,45 @@ public class MessageSnapshot {
             else
                 header.put(key, headerField.getValue());
         });
-        if(!msg.getHeader().isBinaryContentType())
-            body = msg.getBodyAsStringDecoded();
+        if (bodyCopiedCallback == null) {
+            body = IOUtils.toByteArray(new CountingInputStream(msg.getBodyAsStreamDecoded()) {
+                @Override
+                public int read(byte[] b) throws IOException {
+                    if (limit != -1 && getCount() > limit)
+                        switch (strategy) {
+                            case TRUNCATE:
+                                return -1;
+                            case ERROR:
+                                throw new IOException("Body too large. (limit = " + limit + ")");
+                        }
+                    return super.read(b);
+                }
+            });
+        } else {
+            msg.addObserver(new BodyCollectingMessageObserver(strategy, limit) {
+                @Override
+                public void bodyRequested(AbstractBody body) {
+
+                }
+
+                @Override
+                public void bodyComplete(AbstractBody body2) {
+                    InputStream body1 = getBody(body2);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    try {
+                        IOUtils.copy(body1, baos);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    body = baos.toByteArray();
+                    try {
+                        bodyCopiedCallback.call(aes);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        }
     }
 
     public MessageSnapshot() {
@@ -51,11 +101,11 @@ public class MessageSnapshot {
         this.header = header;
     }
 
-    public String getBody() {
+    public byte[] getBody() {
         return body;
     }
 
-    public void setBody(String body) {
+    public void setBody(byte[] body) {
         this.body = body;
     }
 
@@ -68,6 +118,6 @@ public class MessageSnapshot {
     public AbstractBody convertBody(){
         if(body == null)
             return new EmptyBody();
-        return new Body(body.getBytes());
+        return new Body(body);
     }
 }

@@ -76,6 +76,8 @@ public class ChunkedBody extends AbstractBody {
 	public void discard() throws IOException {
 		if (read)
 			return;
+		if (wasStreamed())
+			return;
 
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
@@ -107,6 +109,8 @@ public class ChunkedBody extends AbstractBody {
 					Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
 					inputStream.read(); // CR
 					inputStream.read(); // LF
+					for (MessageObserver observer : observers)
+						observer.bodyChunk(c);
 					return c;
 				} else {
 					inputStream.read(); // CR
