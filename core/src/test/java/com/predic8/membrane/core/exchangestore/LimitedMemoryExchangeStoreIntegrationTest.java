@@ -1,4 +1,4 @@
-/* Copyright 2017 predic8 GmbH, www.predic8.com
+/* Copyright 2020 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,11 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.http;
+package com.predic8.membrane.core.exchangestore;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.LargeBodyTest;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
 import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.Rule;
@@ -28,26 +32,28 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.Header.CHUNKED;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class LargeBodyTest {
-
+public class LimitedMemoryExchangeStoreIntegrationTest {
+    private LimitedMemoryExchangeStore lmes;
     private HttpRouter router, router2;
     private HttpClientConfiguration hcc;
     private AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
     public void setup() throws Exception {
+        lmes = new LimitedMemoryExchangeStore();
+        lmes.setMaxSize(500000);
+
         // streaming only works for maxRetries = 1
         hcc = new HttpClientConfiguration();
         hcc.setMaxRetries(1);
 
-        Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3040), "thomas-bayer.com", 80);
+        Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3045), "thomas-bayer.com", 80);
         rule.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
@@ -62,7 +68,7 @@ public class LargeBodyTest {
         router.getRuleManager().addProxyAndOpenPortIfNew(rule);
         router.init();
 
-        Rule rule1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
+        Rule rule1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3046), "localhost", 3045);
         rule1.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
@@ -71,8 +77,11 @@ public class LargeBodyTest {
             }
         });
         router2 = new HttpRouter();
+        router2.setExchangeStore(lmes);
 
         ((HTTPClientInterceptor) router2.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+
+        router2.getTransport().getInterceptors().add(3, new ExchangeStoreInterceptor(lmes));
 
         router2.getRuleManager().addProxyAndOpenPortIfNew(rule1);
         router2.init();
@@ -87,15 +96,32 @@ public class LargeBodyTest {
     }
 
     @Test
-    public void large() throws Exception {
+    public void small() throws Exception {
         setup();
-        long len = Integer.MAX_VALUE + 1l;
+        long len = 100;
 
-        Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).buildExchange();
+        Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).buildExchange();
         new HttpClient(hcc).call(e);
 
         assertTrue(e.getRequest().getBody().wasStreamed());
         assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
+
+        assertEquals(1, lmes.getAllExchangesAsList().size());
+        assertEquals(len, lmes.getAllExchangesAsList().get(0).getRequest().getBody().getLength());
+    }
+
+    @Test
+    public void large() throws Exception {
+        setup();
+        long len = Integer.MAX_VALUE + 1l;
+
+        Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).buildExchange();
+        new HttpClient(hcc).call(e);
+
+        assertTrue(e.getRequest().getBody().wasStreamed());
+        assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
+        int snappedLength = lmes.getAllExchangesAsList().get(0).getRequest().getBody().getLength();
+        assertTrue( 100000 <= snappedLength && snappedLength <= 150000);
     }
 
     @Test
@@ -103,47 +129,13 @@ public class LargeBodyTest {
         setup();
         long len = Integer.MAX_VALUE + 1l;
 
-        Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
+        Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
         new HttpClient(hcc).call(e);
 
         assertTrue(e.getRequest().getBody().wasStreamed());
         assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
+        int snappedLength = lmes.getAllExchangesAsList().get(0).getRequest().getBody().getLength();
+        assertTrue( 100000 <= snappedLength && snappedLength <= 150000);
     }
 
-    public static class ConstantInputStream extends InputStream {
-        private final long len;
-        long remaining;
-
-        public ConstantInputStream(long length) {
-            this.len = length;
-            remaining = length;
-        }
-
-        @Override
-        public int read() throws IOException {
-            if (remaining == 0)
-                return -1;
-            remaining--;
-            return 65;
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            if (b == null) {
-                throw new NullPointerException();
-            } else if (off < 0 || len < 0 || len > b.length - off) {
-                throw new IndexOutOfBoundsException();
-            } else if (len == 0) {
-                return 0;
-            }
-
-            if (remaining > len) {
-                Arrays.fill(b, off, off+len, (byte)65);
-                remaining -= len;
-                return len;
-            } else {
-                return super.read(b, off, len);
-            }
-        }
-    }
 }

@@ -182,7 +182,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         return getFromElasticSearchById(id);
     }
 
-    private AbstractExchangeSnapshot getFromElasticSearchById(int id) {
+    private AbstractExchangeSnapshot getFromElasticSearchById(long id) {
         try {
             Exchange exc = new Request.Builder()
                     .post(getElasticSearchExchangesPath() + "_search")
@@ -232,7 +232,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     @Override
-    public AbstractExchange getExchangeById(int id) {
+    public AbstractExchange getExchangeById(long id) {
         return getFromElasticSearchById(id).toAbstractExchange();
     }
 

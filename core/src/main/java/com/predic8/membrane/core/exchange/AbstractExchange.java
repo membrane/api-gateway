@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.exchange;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -33,6 +34,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 public abstract class AbstractExchange {
@@ -396,7 +398,7 @@ public abstract class AbstractExchange {
 
 	@Override
 	public String toString() {
-		return "[time:"+DateFormat.getDateInstance().format(time.getTime())+",requestURI:"+request.getUri()+"]";
+		return "[time:" + DateFormat.getDateInstance().format(time.getTime()) + (request != null ? ",requestURI:"+ request.getUri() : "") + "]";
 	}
 
 	public void pushInterceptorToStack(Interceptor i) {
@@ -414,9 +416,9 @@ public abstract class AbstractExchange {
 		return estimatedHeapSize;
 	}
 
-	protected int resetHeapSizeEstimation() {
+	public int resetHeapSizeEstimation() {
 		int estimatedHeapSize2 = estimatedHeapSize;
-		estimatedHeapSize = 0;
+		estimatedHeapSize = -1;
 		return estimatedHeapSize2;
 	}
 
@@ -427,11 +429,13 @@ public abstract class AbstractExchange {
 				(response != null ? response.estimateHeapSize() : 0);
 	}
 
-	public static <T extends AbstractExchange> T updateCopy(T source, T copy) throws Exception {
-		if(source.getRequest() != null)
-			copy.setRequest(source.getRequest().createSnapshot());
-		if(source.getResponse() != null)
-			copy.setResponse(source.getResponse().createSnapshot());
+	public static <T extends AbstractExchange> T updateCopy(T source, T copy, Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+		if (bodyUpdatedCallback != null) {
+			if (source.getRequest() != null)
+				copy.setRequest(source.getRequest().createSnapshot(bodyUpdatedCallback, strategy, limit));
+			if (source.getResponse() != null)
+				copy.setResponse(source.getResponse().createSnapshot(bodyUpdatedCallback, strategy, limit));
+		}
 
 		copy.setOriginalRequestUri(source.getOriginalRequestUri());
 		copy.setTime(source.getTime());
@@ -480,7 +484,7 @@ public abstract class AbstractExchange {
 		this.properties = properties;
 	}
 
-	public abstract <T extends AbstractExchange> T createSnapshot() throws Exception;
+	public abstract <T extends AbstractExchange> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception;
 
 	public ArrayList<Interceptor> getInterceptorStack() {
 		return interceptorStack;

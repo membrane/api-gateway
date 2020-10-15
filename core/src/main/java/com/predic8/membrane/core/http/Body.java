@@ -48,6 +48,7 @@ public class Body extends AbstractBody {
 	private static Logger log = LoggerFactory.getLogger(Body.class.getName());
 	private final InputStream inputStream;
 	private final long length;
+	private long streamedLength;
 
 
 	public Body(InputStream in) throws IOException {
@@ -153,12 +154,20 @@ public class Body extends AbstractBody {
 		chunks.clear();
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
+			streamedLength += length;
 			out.write(buffer, 0, length);
 			for (MessageObserver observer : observers)
 				observer.bodyChunk(buffer, 0, length);
 		}
 		out.finish();
 		markAsRead();
+	}
+
+	@Override
+	public int getLength() throws IOException {
+		if (wasStreamed())
+			return (int)streamedLength; // TODO: refactor length to long
+		return super.getLength();
 	}
 
 	@Override

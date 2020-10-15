@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.exchangestore;
 
+import com.predic8.io.IOUtil;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -31,14 +32,18 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientUtil;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.util.URIFactory;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 public class AbortExchangeTest {
 
@@ -62,7 +67,7 @@ public class AbortExchangeTest {
 
                     @Override
                     public int read() throws IOException {
-                        if (l >= 2000000)
+                        if (l++ >= 2000000)
                             return -1;
                         return 0;
                     }
@@ -81,17 +86,30 @@ public class AbortExchangeTest {
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
 
+        IOUtils.copy(response.getBodyAsStream(), new ByteArrayOutputStream());
+        Thread.sleep(100);
+
+        assertExchangeStoreHas(router.getExchangeStore(), 1, 1);
+    }
+
+    @Test
+    public void abort() throws Exception {
+        Response response = performRequest();
+        response.getBodyAsStream().read(new byte[4096]);
+
+        assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
+
         BodyUtil.closeConnection(response.getBody());
         Thread.sleep(100);
 
-        assertExchangeStoreHas(router.getExchangeStore(), 0, 0);
+        assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
     }
 
-    private void assertExchangeStoreHas(ExchangeStore exchangeStore, int numberOfExchanges, int responsePresent) {
+    private void assertExchangeStoreHas(ExchangeStore exchangeStore, int numberOfExchanges, int responsePresent) throws IOException {
         List<AbstractExchange> list = exchangeStore.getAllExchangesAsList();
         Assert.assertEquals(numberOfExchanges, list.size());
         for (AbstractExchange e : list) {
-            Assert.assertEquals("Exchange has " + (responsePresent == 1 ? "no " : "") + "response", responsePresent, e.getResponse() != null ? 1 : 0);
+            assertTrue("Exchange has " + (responsePresent == 1 ? "no " : "") + "response", responsePresent == 0 ? e.getResponse().getBody().getLength() == 0 : list.get(0).getResponse().getBody().getLength() >= 1);
         }
 
     }

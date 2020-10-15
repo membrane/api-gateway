@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashSet;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -214,8 +215,8 @@ public class Request extends Message {
 	}
 
 	@Override
-	public <T extends Message> T createSnapshot() throws Exception {
-		Request result = this.createMessageSnapshot(new Request());
+	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+		Request result = this.createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
 
 		result.setUri(this.getUri());
 		result.setMethod(this.getMethod());

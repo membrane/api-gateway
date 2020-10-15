@@ -12,20 +12,18 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
-
-import java.io.IOException;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+package com.predic8.membrane.core.exchangestore;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
 
 public class LimitedMemoryExchangeStoreTest {
 

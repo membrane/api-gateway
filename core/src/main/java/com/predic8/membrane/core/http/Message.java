@@ -15,16 +15,21 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.Callable;
 
 /**
  * A HTTP message (request or response).
@@ -366,13 +371,14 @@ public abstract class Message {
 		}
 	}
 
-    public abstract <T extends Message> T createSnapshot() throws Exception;
+    public abstract <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception;
 
-	public <T extends Message> T createMessageSnapshot(T result) throws IOException {
+	public <T extends Message> T createMessageSnapshot(T result, Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
 		result.setHeader(new Header(this.getHeader()));
-		result.setBody(new Body(this.getBodyAsStream()));
 		result.setErrorMessage(this.getErrorMessage());
 		result.setReleased(this.isReleased());
+
+		addObserver(new SnapshottingObserver(strategy, limit, result, bodyUpdatedCallback));
 
 		return result;
 	}
@@ -387,5 +393,35 @@ public abstract class Message {
 
     public boolean containsObserver(MessageObserver obs){
 		return body.observers.contains(obs);
+	}
+
+	private static class SnapshottingObserver<T extends Message> extends BodyCollectingMessageObserver {
+		private final T result;
+		private final Runnable bodyUpdatedCallback;
+
+		public SnapshottingObserver(Strategy strategy, long limit, T result, Runnable bodyUpdatedCallback) {
+			super(strategy, limit);
+			this.result = result;
+			this.bodyUpdatedCallback = bodyUpdatedCallback;
+		}
+
+		@Override
+		public void bodyRequested(AbstractBody body) {
+
+		}
+
+		@Override
+		public void bodyComplete(AbstractBody body2) {
+			try {
+				result.setBody(getBody(body2));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+			try {
+				bodyUpdatedCallback.run();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 }

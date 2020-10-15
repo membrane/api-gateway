@@ -54,7 +54,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		}
 	}
 
-	public AbstractExchange getExchangeById(int id) {
+	public AbstractExchange getExchangeById(long id) {
 		throw new UnsupportedOperationException("getExchangeById must be implemented in the sub class.");
 	}
 

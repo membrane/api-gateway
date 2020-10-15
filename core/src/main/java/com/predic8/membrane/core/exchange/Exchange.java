@@ -15,10 +15,7 @@
 package com.predic8.membrane.core.exchange;
 
 import com.predic8.membrane.core.TerminateException;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
@@ -228,8 +225,8 @@ public class Exchange extends AbstractExchange {
 	}
 
 	@Override
-	public AbstractExchange createSnapshot() throws Exception {
-		Exchange exc = updateCopy(this,new Exchange(null));
+	public AbstractExchange createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+		Exchange exc = updateCopy(this, new Exchange(null), bodyUpdatedCallback, strategy, limit);
 		exc.setId(this.getId());
 		return exc;
 	}

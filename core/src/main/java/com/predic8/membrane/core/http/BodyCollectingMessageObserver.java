@@ -64,16 +64,11 @@ public abstract class BodyCollectingMessageObserver implements MessageObserver {
         storedSize += chunk.getLength();
     }
 
-    public InputStream getBody(AbstractBody body) {
+    public AbstractBody getBody(AbstractBody body) throws IOException {
         if (!body.wasStreamed()) {
-            try {
-                return body.getContentAsStream();
-            } catch (IOException e) {
-                // the IOException only occurs here, if some interceptor has left the body half-read
-                throw new RuntimeException(e);
-            }
+            return body;
         }
-        return new BodyInputStream(chunks);
+        return new Body(new BodyInputStream(chunks), storedSize);
     }
 
     public boolean isTruncated() {

@@ -36,6 +36,7 @@ public class ChunkedBody extends AbstractBody {
 
 	private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
 	private InputStream inputStream;
+	private long lengthStreamed;
 
 	public ChunkedBody(InputStream in) {
 		log.debug("ChunkedInOutBody constructor");
@@ -158,6 +159,7 @@ public class ChunkedBody extends AbstractBody {
 				observer.bodyChunk(chunk);
 			inputStream.read(); // CR
 			inputStream.read(); // LF
+			lengthStreamed += chunkSize;
 		}
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
@@ -216,4 +218,10 @@ public class ChunkedBody extends AbstractBody {
 		out.finish();
 	}
 
+	@Override
+	public int getLength() throws IOException {
+		if (wasStreamed())
+			return (int)lengthStreamed; // TODO: refactor into long
+		return super.getLength();
+	}
 }

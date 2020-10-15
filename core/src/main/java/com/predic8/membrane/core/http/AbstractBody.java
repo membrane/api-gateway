@@ -51,10 +51,10 @@ public abstract class AbstractBody {
 	private boolean wasStreamed = false;
 
 	public void read() throws IOException {
-		if (read)
-			return;
 		if (wasStreamed)
 			throw new IllegalStateException("Cannot read body after it was streamed.");
+		if (read)
+			return;
 
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);

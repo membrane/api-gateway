@@ -18,6 +18,7 @@ import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
 import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
 import com.predic8.membrane.core.http.BodyTest;
 import com.predic8.membrane.core.http.HeaderTest;
 import com.predic8.membrane.core.http.RequestTest;

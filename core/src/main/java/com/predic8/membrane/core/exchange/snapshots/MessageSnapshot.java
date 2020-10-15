@@ -64,29 +64,7 @@ public class MessageSnapshot {
                 }
             });
         } else {
-            msg.addObserver(new BodyCollectingMessageObserver(strategy, limit) {
-                @Override
-                public void bodyRequested(AbstractBody body) {
-
-                }
-
-                @Override
-                public void bodyComplete(AbstractBody body2) {
-                    InputStream body1 = getBody(body2);
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    try {
-                        IOUtils.copy(body1, baos);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    body = baos.toByteArray();
-                    try {
-                        bodyCopiedCallback.call(aes);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
+            msg.addObserver(new SnapshottingObserver(strategy, limit, bodyCopiedCallback, aes));
         }
     }
 
@@ -119,5 +97,38 @@ public class MessageSnapshot {
         if(body == null)
             return new EmptyBody();
         return new Body(body);
+    }
+
+    private class SnapshottingObserver extends BodyCollectingMessageObserver {
+        private final Consumer<AbstractExchangeSnapshot> bodyCopiedCallback;
+        private final AbstractExchangeSnapshot aes;
+
+        public SnapshottingObserver(Strategy strategy, long limit, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes) {
+            super(strategy, limit);
+            this.bodyCopiedCallback = bodyCopiedCallback;
+            this.aes = aes;
+        }
+
+        @Override
+        public void bodyRequested(AbstractBody body) {
+
+        }
+
+        @Override
+        public void bodyComplete(AbstractBody body2) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try {
+                InputStream body1 = getBody(body2).getContentAsStream();
+                IOUtils.copy(body1, baos);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            body = baos.toByteArray();
+            try {
+                bodyCopiedCallback.call(aes);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

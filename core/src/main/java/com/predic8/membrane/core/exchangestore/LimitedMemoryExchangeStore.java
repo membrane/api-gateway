@@ -19,7 +19,6 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
@@ -43,112 +42,101 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	private int maxSize = 1000000;
 	private int maxBodySize = 100000;
 	private int currentSize;
-	private boolean newAlgorithm = false;
+	private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
 
 	/**
 	 * EVERY time that exchanges or inflight is changed, modify() MUST be called afterwards
 	 */
-	private final Queue<AbstractExchange> exchanges = new LinkedList<AbstractExchange>();
-	private Map<AbstractExchange, Request> inflight = new ConcurrentHashMap<AbstractExchange, Request>();
+	private final Queue<AbstractExchange> exchanges = new LinkedList<>();
+	private final Queue<AbstractExchange> inflight = new LinkedList<>();
 
 	private long lastModification = System.currentTimeMillis();
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
-		if(newAlgorithm) {
-			newSnap(exc, flow);
-		}else
-			oldSnap(exc, flow);
+		newSnap(exc, flow);
 	}
 
 	private void newSnap(AbstractExchange exc, Flow flow) {
-		AbstractExchange excCopy = null;
 		try {
             if (flow == Flow.REQUEST) {
-				excCopy = cleanSnapshot(exc.createSnapshot());
-				snapInternal(excCopy, flow);
+				AbstractExchange excCopy = snapInternal(exc, flow);
+
+				excCopy.setRequest(exc.getRequest().createSnapshot(new Runnable() {
+					@Override
+					public void run() {
+						synchronized (LimitedMemoryExchangeStore.this) {
+							currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+							modify();
+						}
+					}
+				}, bodyExceedingMaxSizeStrategy, maxBodySize));
+
+				exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+					@Override
+					public void setExchangeFinished() {
+						try {
+							snapInternal(exc, Flow.RESPONSE);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+			} else {
+				AbstractExchange excCopy = snapInternal(exc, flow);
+
+				excCopy.setResponse(exc.getResponse().createSnapshot(new Runnable() {
+					@Override
+					public void run() {
+						currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+						modify();
+					}
+				}, bodyExceedingMaxSizeStrategy, maxBodySize));
+
+				modify();
 			}
-            else
-                excCopy = cleanSnapshot(Exchange.updateCopy(exc, getExchangeById((int) exc.getId())));
-			addObservers(exc, excCopy, flow);
-			modify();
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
 	}
 
-	private void addObservers(AbstractExchange exc, AbstractExchange excCopy, Flow flow) throws Exception {
-		Message msg = null;
-		if(flow == Flow.REQUEST) {
-			msg = exc.getRequest();
-		}
-		else
-			msg = exc.getResponse();
+	private synchronized AbstractExchange snapInternal(AbstractExchange orig, Flow flow) throws Exception {
+		AbstractExchange exc = getExchangeById(orig.getId());
 
-		msg.addObserver(new SnapshotTakingObserver(exc, excCopy, maxBodySize));
-		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
-			@Override
-			public void setExchangeFinished() {
-				try {
-                    cleanSnapshot(Exchange.updateCopy(exc,excCopy));
-
-				} catch (Exception e) {
-					e.printStackTrace();
+		if (exc == null) {
+			exc = orig.createSnapshot(null, null, 0);
+			AbstractExchange exc2 = exc;
+			exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+				@Override
+				public void addRequest(Request request) {
+					currentSize += - exc2.resetHeapSizeEstimation() + exc2.getHeapSizeEstimation();
 				}
-			}
-		});
-        cleanSnapshot(Exchange.updateCopy(exc,excCopy));
-	}
 
-	public <T extends AbstractExchange> T cleanSnapshot(T snapshot){
-	    if(snapshot.getRequest() != null)
-	        if(snapshot.getRequest().getHeader().isBinaryContentType())
-	            snapshot.getRequest().setBody(new EmptyBody());
-        if(snapshot.getResponse() != null)
-            if(snapshot.getResponse().getHeader().isBinaryContentType())
-                snapshot.getResponse().setBody(new EmptyBody());
-
-        return snapshot;
-    }
-
-	private void oldSnap(AbstractExchange exc, Flow flow) {
-		// TODO: [fix me] support multi-snap
-		// TODO: [fix me] snap message headers and request *here*, not in observer/response
-		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
-			@Override
-			public void setExchangeFinished() {
-				inflight.remove(exc);
-			}
-		});
-
-		if (flow == Flow.REQUEST) {
-			exc.getRequest().addObserver(new InflightEnqueuingObserver(exc, maxBodySize));
-			return;
+				@Override
+				public void addResponse(Response response) {
+					currentSize += - exc2.resetHeapSizeEstimation() + exc2.getHeapSizeEstimation();
+				}
+			});
 		}
-
-		try {
-			Message m = exc.getResponse();
-			if (m != null)
-				m.addObserver(new InflightRemovingAndSnapshottingObserver(exc, flow, maxBodySize));
-			else {
-				inflight.remove(exc);
-				modify();
-				//System.out.println("Exchange remove inflight " + exc.hashCode() + " (2)");
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private synchronized void snapInternal(AbstractExchange exc, Flow flow) {
-		if (exc.getHeapSizeEstimation() > maxSize)
-			return;
 
 		makeSpaceIfNeeded(exc);
 
-		exchanges.offer(exc);
+		if (flow == Flow.REQUEST) {
+			if (inflight.add(exc))
+				currentSize += exc.getHeapSizeEstimation();
+		} else {
+			if (inflight.remove(exc))
+				currentSize -= exc.getHeapSizeEstimation();
+			if (!exchanges.contains(exc)) {
+				exchanges.add(exc);
+				currentSize += exc.getHeapSizeEstimation();
+			}
+			Exchange.updateCopy(orig, exc, null, null, 0);
+		}
+
 		modify();
-		currentSize += exc.getHeapSizeEstimation();
+		return exc;
 	}
 
 	public synchronized void remove(AbstractExchange exc) {
@@ -163,8 +151,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private synchronized List<AbstractExchange> getExchangeList(RuleKey key) {
 		List<AbstractExchange> c = new ArrayList<AbstractExchange>();
+		for (AbstractExchange exc : inflight) {
+			if (exc.getRule().getKey().equals(key)) {
+				c.add(exc);
+			}
+		}
 		for(AbstractExchange exc : exchanges) {
-			if (exc.getRule().equals(key)) {
+			if (exc.getRule().getKey().equals(key)) {
 				c.add(exc);
 			}
 		}
@@ -198,9 +191,8 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	public synchronized List<AbstractExchange> getAllExchangesAsList() {
 		List<AbstractExchange> ret = new LinkedList<AbstractExchange>();
 
-		for (Map.Entry<AbstractExchange, Request> entry : inflight.entrySet()) {
-			AbstractExchange ex = entry.getKey();
-			Request req = entry.getValue();
+		for (AbstractExchange ex : inflight) {
+			Request req = ex.getRequest();
 			Exchange newEx = new Exchange(null);
 			newEx.setId(ex.getId());
 			newEx.setRequest(req);
@@ -223,17 +215,11 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 
 	@Override
-	public synchronized AbstractExchange getExchangeById(int id) {
-		for (AbstractExchange exc : getAllExchangesAsList()) {
-			if (exc.getId() == id) {
-				return exc;
-			}
-		}
-		for (AbstractExchange exc : inflight.keySet())
-			if (exc.getId() == id) {
-				return exc;
-			}
-		return null;
+	public synchronized AbstractExchange getExchangeById(long id) {
+		return exchanges.stream().filter(exc -> exc.getId() == id).findAny()
+				.orElseGet(() ->
+						inflight.stream().filter(exc -> exc.getId() == id).findAny()
+								.orElse(null));
 	}
 
 	@Override
@@ -258,9 +244,12 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return exc == null ? null : exc.getTimeResSent();
 	}
 
-	private void makeSpaceIfNeeded(AbstractExchange exc) {
+	private synchronized void makeSpaceIfNeeded(AbstractExchange exc) {
 		while (!hasEnoughSpace(exc)) {
-			currentSize -= exchanges.poll().getHeapSizeEstimation();
+			AbstractExchange removedExc = exchanges.poll();
+			if (removedExc == null)
+				break;
+			currentSize -= removedExc.getHeapSizeEstimation();
 		}
 	}
 
@@ -334,15 +323,6 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	public boolean isNewAlgorithm() {
-		return newAlgorithm;
-	}
-
-	@MCAttribute
-	public void setNewAlgorithm(boolean newAlgorithm) {
-		this.newAlgorithm = newAlgorithm;
-	}
-
 	public int getMaxBodySize() {
 		return maxBodySize;
 	}
@@ -352,78 +332,12 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		this.maxBodySize = maxBodySize;
 	}
 
-	private class SnapshotTakingObserver extends BodyCollectingMessageObserver {
-		private final AbstractExchange exc;
-		private final AbstractExchange excCopy;
-
-		public SnapshotTakingObserver(AbstractExchange exc, AbstractExchange excCopy, int limit) {
-			super(Strategy.TRUNCATE, limit);
-			this.exc = exc;
-			this.excCopy = excCopy;
-		}
-
-		@Override
-		public void bodyRequested(AbstractBody body) {
-
-		}
-
-		@Override
-		public void bodyComplete(AbstractBody body) {
-			// TODO: handle getBody(body)
-			try {
-cleanSnapshot(Exchange.updateCopy(exc, excCopy));
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		}
+	public BodyCollectingMessageObserver.Strategy getBodyExceedingMaxSizeStrategy() {
+		return bodyExceedingMaxSizeStrategy;
 	}
 
-	private class InflightEnqueuingObserver extends BodyCollectingMessageObserver {
-		private final AbstractExchange exc;
-
-		public InflightEnqueuingObserver(AbstractExchange exc, int limit) {
-			super(Strategy.TRUNCATE, limit);
-			this.exc = exc;
-		}
-
-		@Override
-		public void bodyRequested(AbstractBody body) {
-		}
-
-		@Override
-		public void bodyComplete(AbstractBody body) {
-			// TODO: handle getBody(body)
-			Response r = exc.getResponse();
-			if (r != null) {
-				AbstractBody b = r.getBody();
-				if (b != null && b.isRead())
-					return; // request-bodyComplete might occur after response-bodyComplete
-			}
-			//System.out.println("Exchange put inflight " + exc.hashCode() + " " + exc.getRequest().getStartLine());
-			inflight.put(exc, exc.getRequest());
-			modify();
-		}
-	}
-
-	private class InflightRemovingAndSnapshottingObserver extends BodyCollectingMessageObserver {
-		private final AbstractExchange exc;
-		private final Flow flow;
-
-		public InflightRemovingAndSnapshottingObserver(AbstractExchange exc, Flow flow, int limit) {
-			super(Strategy.TRUNCATE, limit);
-			this.exc = exc;
-			this.flow = flow;
-		}
-
-		public void bodyRequested(AbstractBody body) {
-		}
-
-		public void bodyComplete(AbstractBody body) {
-			// TODO: handle getBody(body)
-			snapInternal(exc, flow);
-			inflight.remove(exc);
-			modify();
-			//System.out.println("Exchange remove inflight " + exc.hashCode());
-		}
+	@MCAttribute
+	public void setBodyExceedingMaxSizeStrategy(BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy) {
+		this.bodyExceedingMaxSizeStrategy = bodyExceedingMaxSizeStrategy;
 	}
 }

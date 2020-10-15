@@ -83,7 +83,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	private void snapInternal(AbstractExchange exc, Flow flow, InputStream body) {
+	private void snapInternal(AbstractExchange exc, Flow flow, AbstractBody body) {
 		int fileNumber = counter.incrementAndGet();
 
 		StringBuilder buf = getDirectoryNameBuffer(exc.getTime());
@@ -140,7 +140,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return df;
 	}
 
-	private void writeFile(Message msg, String path, InputStream body) throws Exception {
+	private void writeFile(Message msg, String path, AbstractBody body) throws Exception {
 		File file = new File(path);
 		file.createNewFile();
 
@@ -153,15 +153,15 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			}
 
 			if (raw) {
-				IOUtils.copy(body, os);
+				IOUtils.copy(body.getContentAsStream(), os);
 			} else {
 				if (msg.isXML()) {
 					os.write(TextUtil.formatXML(
-							new InputStreamReader(body, msg
+							new InputStreamReader(body.getContentAsStream(), msg
 									.getHeader().getCharset()))
 							.getBytes(Constants.UTF_8));
 				} else
-					IOUtils.copy(body, os);
+					IOUtils.copy(body.getContentAsStream(), os);
 			}
 		} finally {
 			os.close();
@@ -341,7 +341,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		}
 
 		public void bodyComplete(AbstractBody body) {
-			snapInternal(exc, flow, getBody(body));
+			try {
+				snapInternal(exc, flow, getBody(body));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 }

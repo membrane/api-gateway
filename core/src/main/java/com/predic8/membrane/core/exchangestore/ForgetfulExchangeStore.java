@@ -102,7 +102,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 
 	}
 
-	public AbstractExchange getExchangeById(int intParam) {
+	public AbstractExchange getExchangeById(long intParam) {
 		return null;
 	}
 
