@@ -61,15 +61,16 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
             if (flow == Flow.REQUEST) {
 				AbstractExchange excCopy = snapInternal(exc, flow);
 
-				excCopy.setRequest(exc.getRequest().createSnapshot(new Runnable() {
-					@Override
-					public void run() {
-						synchronized (LimitedMemoryExchangeStore.this) {
-							currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
-							modify();
+				if (exc.getRequest() != null)
+					excCopy.setRequest(exc.getRequest().createSnapshot(new Runnable() {
+						@Override
+						public void run() {
+							synchronized (LimitedMemoryExchangeStore.this) {
+								currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+								modify();
+							}
 						}
-					}
-				}, bodyExceedingMaxSizeStrategy, maxBodySize));
+					}, bodyExceedingMaxSizeStrategy, maxBodySize));
 
 				exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 					@Override
@@ -84,18 +85,20 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			} else {
 				AbstractExchange excCopy = snapInternal(exc, flow);
 
-				excCopy.setResponse(exc.getResponse().createSnapshot(new Runnable() {
-					@Override
-					public void run() {
-						currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
-						modify();
-					}
-				}, bodyExceedingMaxSizeStrategy, maxBodySize));
+				if (exc.getResponse() != null)
+					excCopy.setResponse(exc.getResponse().createSnapshot(new Runnable() {
+						@Override
+						public void run() {
+							currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+							modify();
+						}
+					}, bodyExceedingMaxSizeStrategy, maxBodySize));
 
 				modify();
 			}
 
         } catch (Exception e) {
+			log.warn("exception during snapshotting: ", e);
             throw new RuntimeException(e);
         }
 
