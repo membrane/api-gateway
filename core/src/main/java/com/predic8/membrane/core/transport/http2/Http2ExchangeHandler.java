@@ -208,7 +208,7 @@ public class Http2ExchangeHandler implements Runnable {
             public void finish() throws IOException {
 
             }
-        });
+        }, false);
 
         Frame frame = new Frame();
         frame.fill(TYPE_DATA,
