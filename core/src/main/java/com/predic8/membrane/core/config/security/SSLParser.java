@@ -40,7 +40,7 @@ public class SSLParser {
 	private String serverName;
 	private boolean showSSLExceptions = true;
 	private boolean useAsDefault = true;
-	private boolean useHttp2;
+	private boolean useExperimentalHttp2;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -246,8 +246,8 @@ public class SSLParser {
 		this.useAsDefault = useAsDefault;
 	}
 
-	public boolean isUseHttp2() {
-		return useHttp2;
+	public boolean isUseExperimentalHttp2() {
+		return useExperimentalHttp2;
 	}
 
 	/**
@@ -255,7 +255,7 @@ public class SSLParser {
 	 * @default false
 	 */
 	@MCAttribute
-	public void setUseHttp2(boolean useHttp2) {
-		this.useHttp2 = useHttp2;
+	public void setUseExperimentalHttp2(boolean useHttp2) {
+		this.useExperimentalHttp2 = useHttp2;
 	}
 }

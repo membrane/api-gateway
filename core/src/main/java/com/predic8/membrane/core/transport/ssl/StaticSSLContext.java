@@ -292,7 +292,7 @@ public class StaticSSLContext extends SSLContext {
         sslss.setWantClientAuth(wantClientAuth);
         sslss.setNeedClientAuth(needClientAuth);
 
-        if (sslParser.isUseHttp2())
+        if (sslParser.isUseExperimentalHttp2())
             Http2TlsSupport.offerHttp2(sslss);
 
         return sslss;
