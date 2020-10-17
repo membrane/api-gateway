@@ -1,9 +1,8 @@
 Prequisites
 ===========
-* Java Development Kit (Membrane's source is Java 1.6 compatible. But it requires annotation processing features not supported by the Sun JDK 1.6 compiler: Use the Oracle JDK 1.7 instead, setting the target to 1.6, if necessary.)
+* Java Development Kit (Membrane's source is Java 1.8 compatible.)
 * Maven 3
-* Eclipse (3.7, 4.2, ...)
-	* m2e plugin
+* IntelliJ or Eclipse (3.7, 4.2, ...) with the m2e plugin
 * some git client
 
 Meeting the Requirements
