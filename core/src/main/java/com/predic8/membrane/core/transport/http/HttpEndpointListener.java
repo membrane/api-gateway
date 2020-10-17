@@ -16,6 +16,10 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 import java.net.*;
+import java.net.BindException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 import java.security.InvalidParameterException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,19 +72,14 @@ public class HttpEndpointListener extends Thread {
 		}
 	}
 
-	public HttpEndpointListener(String ip, int port, HttpTransport transport, SSLProvider sslProvider) throws IOException {
+	public HttpEndpointListener(IpPort p, HttpTransport transport, SSLProvider sslProvider) throws IOException {
 		this.transport = transport;
 		this.sslProvider = sslProvider;
-
 		try {
 			if (sslProvider != null)
-				serverSocket = sslProvider.createServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
+				serverSocket = sslProvider.createServerSocket(p.getPort(), 50, p.getIp());
 			else
-				serverSocket = new ServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
-
-			setName("Connection Acceptor " + (ip != null ? ip + ":" : ":") + port);
-			log.debug("listening at port "+port + (ip != null ? " ip " + ip : ""));
-
+				serverSocket = new ServerSocket(p.getPort(), 50, p.getIp());
 
 			//TODO: use Spring scheduler
 			new Timer().schedule(new TimerTask() {
@@ -99,8 +98,11 @@ public class HttpEndpointListener extends Thread {
 				}
 			}, 60000, 60000);
 
+			final String s = p.toShortString();
+			setName("Connection Acceptor " + s);
+			log.info("listening at " + s);
 		} catch (BindException e) {
-			throw new PortOccupiedException(port);
+			throw new PortOccupiedException(p);
 		}
 	}
 
@@ -108,6 +110,7 @@ public class HttpEndpointListener extends Thread {
 	public void run() {
 		while (!closed) {
 			try {
+				@SuppressWarnings("resource")
 				Socket socket = serverSocket.accept();
 
 				InetAddress remoteIp = getRemoteIp(socket);
@@ -156,8 +159,9 @@ public class HttpEndpointListener extends Thread {
 				if (message != null && (message.endsWith("socket closed") || message.endsWith("Socket closed"))) {
 					log.debug("socket closed.");
 					break;
-				} else
+				} else {
 					log.error("",e);
+				}
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
 				e.printStackTrace();
