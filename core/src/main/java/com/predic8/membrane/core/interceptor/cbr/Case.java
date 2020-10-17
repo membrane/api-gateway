@@ -59,7 +59,7 @@ public class Case extends AbstractXmlElement {
 		url = "service:" + service;
 	}
 
-	public String getxPath() {
+	public String getXPath() {
 		return xPath;
 	}
 
@@ -69,7 +69,7 @@ public class Case extends AbstractXmlElement {
 	 */
 	@Required
 	@MCAttribute
-	public void setxPath(String xPath) {
+	public void setXPath(String xPath) {
 		this.xPath = xPath;
 	}
 

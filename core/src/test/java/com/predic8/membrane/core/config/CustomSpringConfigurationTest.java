@@ -109,7 +109,7 @@ public class CustomSpringConfigurationTest {
 
 	private void assertXPathCBRInterceptor(XPathCBRInterceptor i) {
 		assertEquals("//convert", i.getCases().get(0)
-				.getxPath());
+				.getXPath());
 		assertEquals("http://www.thomas-bayer.com/axis2/", i.getCases().get(0).getUrl());
 	}
 
