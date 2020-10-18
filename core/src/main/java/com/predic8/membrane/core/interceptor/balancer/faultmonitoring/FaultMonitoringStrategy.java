@@ -1,3 +1,17 @@
+/* Copyright 2015 Fabian Kessler, Optimaize
+   Copyright 2020 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer.faultmonitoring;
 
 import com.predic8.membrane.annot.MCElement;
@@ -146,6 +160,7 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 	 */
 	private final FaultMonitoringState state;
 
+	private final Random random = new Random();
 
 	private FaultMonitoringStrategy() {
 		HttpClientStatusEventBus.getService().registerListener(new HttpClientStatusEventListener() {
@@ -275,26 +290,31 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 	private Node returnByChance(List<Node> endpoints) {
 		assert endpoints.size() >= 2;
 
-		RandomGroup<Node> selector = RandomGroup.create();
-		for (Node endpoint : endpoints) {
+		double scores[] = new double[endpoints.size()];
+		double totalScore = 0;
+		for (int i = 0; i < endpoints.size(); i++) {
+			Node endpoint = endpoints.get(i);
 			double score;
 			NodeFaultProfile nodeFaultProfile = state.getMap().get(makeHostAndPort(endpoint));
-			if (nodeFaultProfile ==null) {
+			if (nodeFaultProfile == null) {
 				score = 1d;
 			} else {
 				score = nodeFaultProfile.getScore();
 				if (score == 0d) {
-					//The number 0 may theoretically occur if there are 10 thousand successive failures
-					//(dividing the number 1.0d by half 10k times results in 0d).
-					//This adjustment is necessary because the selector does not accept zero chance.
-					//Another option would be to exclude it, but then we have to check whether all are excluded, and so on.
-					//That would get complicated also. For now this is good enough.
+					// The number 0 may theoretically occur if there are 10 thousand successive failures
+					// (dividing the number 1.0d by half 10k times results in 0d).
+					// If totalScore sums to 0, we would elsewise always select the last (unavailable) node.
 					score = 0.0001d;
 				}
 			}
-			selector.add(endpoint, score);
+			totalScore += score;
+			scores[i] = totalScore;
 		}
-		return selector.next();
+		double chosen = random.nextDouble() * totalScore;
+		int selected = 0;
+		while (chosen > scores[selected] && selected + 1 < endpoints.size())
+			selected++;
+		return endpoints.get(selected);
 	}
 
 
