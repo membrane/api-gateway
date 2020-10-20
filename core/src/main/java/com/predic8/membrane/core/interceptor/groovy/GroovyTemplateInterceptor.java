@@ -23,6 +23,27 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+/**
+ * @description
+ * Uses the groovy template markup engine to produce HTML-based responses.
+ * <code>
+ * &lt;groovyTemplate&gt;&lt;![CDATA[
+ *   html {
+ *     head {
+ *       title('Resource')
+ *     }
+ *     body {
+ *       p('Hello from Membrane!')
+ *     }
+ *   }
+ * ]]&gt;&lt;/groovyTemplate&gt;
+ * </code>
+ *
+ * The word "spring" refers to the Spring ApplicationContext.
+ * The word "exc" refers to the Membrane Exchange being handled.
+ * The word "flow" refers to the current Membrane Flow (=REQUEST).
+ * @topic 4. Interceptors/Features
+ */
 @MCElement(name = "groovyTemplate", mixed = true)
 public class GroovyTemplateInterceptor extends AbstractInterceptor {
 
