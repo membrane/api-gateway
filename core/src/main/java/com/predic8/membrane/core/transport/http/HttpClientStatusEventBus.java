@@ -37,16 +37,7 @@ public class HttpClientStatusEventBus {
 
     static final Log log = LogFactory.getLog(HttpClientStatusEventBus.class.getName());
 
-
-    private static final HttpClientStatusEventBus INSTANCE = new HttpClientStatusEventBus();
-    /**
-     * Returns the singleton instance.
-     * This should probably be some kind of injectable service instead.
-     */
-    public static HttpClientStatusEventBus getService() {
-        return INSTANCE;
-    }
-
+    public static final String EXCHANGE_PROPERTY_NAME = "HttpClientStatusEventBus";
 
     /**
      * Using the CopyOnWriteArrayList list is appropriate. Modifications are only expected initially, from then on
@@ -54,7 +45,7 @@ public class HttpClientStatusEventBus {
      */
     private final List<HttpClientStatusEventListener> listeners = new CopyOnWriteArrayList<HttpClientStatusEventListener>();
 
-    private HttpClientStatusEventBus() {
+    public HttpClientStatusEventBus() {
     }
 
 

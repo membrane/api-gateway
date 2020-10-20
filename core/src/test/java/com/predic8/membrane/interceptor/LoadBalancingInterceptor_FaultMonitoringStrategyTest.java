@@ -254,7 +254,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
         static class Builder {
             private int numNodes = 1;
-            private DispatchingStrategy dispatchingStrategy = FaultMonitoringStrategy.getInstance();
+            private DispatchingStrategy dispatchingStrategy = new FaultMonitoringStrategy();
             private int numThreads = 6;
             private int numRequests = 100;
             private double successChance = 1d;
@@ -350,6 +350,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
             this.successChance = successChance;
             this.preSubmitCallback = preSubmitCallback;
 
+            dispatchingStrategy.init(null);
             tpe = createThreadPoolExecutor(numThreads);
             runtimes = new long[numRequests];
         }

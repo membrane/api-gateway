@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 import javax.xml.stream.*;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
@@ -34,7 +35,7 @@ public class RoundRobinStrategy extends AbstractXmlElement implements Dispatchin
 	public void done(AbstractExchange exc) {
 	}
 
-	public synchronized Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException {
+	public synchronized Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {
 		//getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
 		List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.
 		if (endpoints.isEmpty()) {
@@ -69,4 +70,8 @@ public class RoundRobinStrategy extends AbstractXmlElement implements Dispatchin
 		return "roundRobinStrategy";
 	}
 
+	@Override
+	public void init(Router router) {
+		// do nothing
+	}
 }

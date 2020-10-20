@@ -78,7 +78,7 @@ public class HttpClient {
 	/**
 	 * TODO make injectable, make it an optional feature, don't pay for what you don't use.
 	 */
-	private HttpClientStatusEventBus httpClientStatusEventBus = HttpClientStatusEventBus.getService();
+//	private HttpClientStatusEventBus httpClientStatusEventBus = HttpClientStatusEventBus.getService();
 
 
 	public HttpClient() {
@@ -179,6 +179,8 @@ public class HttpClient {
 		if (exc.getDestinations().isEmpty())
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
 
+		HttpClientStatusEventBus httpClientStatusEventBus = (HttpClientStatusEventBus) exc.getProperty(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME);
+
 		int counter = 0;
 		Exception exception = null;
 		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
@@ -250,7 +252,8 @@ public class HttpClient {
 
 				responseStatusCode = response.getStatusCode();
 
-				httpClientStatusEventBus.reportResponse(dest, responseStatusCode);
+				if (httpClientStatusEventBus != null)
+					httpClientStatusEventBus.reportResponse(dest, responseStatusCode);
 
 				if (!failOverOn5XX || !is5xx(responseStatusCode) || counter == maxRetries-1) {
 					applyKeepAliveHeader(response, con);
@@ -296,12 +299,14 @@ public class HttpClient {
 				}
 			}
 
-			//we have an error. either in the form of an exception, or as a 5xx response code.
-			if (exception!=null) {
-				httpClientStatusEventBus.reportException(dest, exception);
-			} else {
-				assert responseStatusCode!=null && is5xx(responseStatusCode);
-				httpClientStatusEventBus.reportResponse(dest, responseStatusCode);
+			if (httpClientStatusEventBus != null) {
+				//we have an error. either in the form of an exception, or as a 5xx response code.
+				if (exception != null) {
+					httpClientStatusEventBus.reportException(dest, exception);
+				} else {
+					assert responseStatusCode != null && is5xx(responseStatusCode);
+					httpClientStatusEventBus.reportResponse(dest, responseStatusCode);
+				}
 			}
 
 			if (exception instanceof UnknownHostException) {

@@ -38,15 +38,6 @@ class FaultMonitoringState {
 
 	private static Log log = LogFactory.getLog(FaultMonitoringState.class.getName());
 
-
-	/**
-	 */
-	private static FaultMonitoringState INSTANCE = new FaultMonitoringState();
-	public static FaultMonitoringState getInstance() {
-		return INSTANCE;
-	}
-
-
 	/**
 	 * Key = destination "host:port"
 	 */
@@ -54,7 +45,7 @@ class FaultMonitoringState {
 
 	private Timer timer;
 
-	private FaultMonitoringState() {
+	public FaultMonitoringState() {
 	}
 
 

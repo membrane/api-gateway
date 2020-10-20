@@ -14,7 +14,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer.faultmonitoring;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.interceptor.balancer.*;
@@ -30,6 +32,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 /**
+ * @description
  * Monitors the outcome of requests to each node to quickly disable/re-enable faulty ones.
  *
  * <h2>WHY THIS CLASS</h2>
@@ -96,12 +99,6 @@ import java.util.*;
  * idea... think payment service.
  * </p>
  *
- * <h2>TODO</h2>
- * <p>This class must be used as a singleton. For now it's pretty hacky plugged into the system.
- * Somebody who is familiar with the architecture of Membrane please make it nicer/configurable ;-)
- * </p>
- *
- *
  * @author Fabian Kessler / Optimaize
  */
 @MCElement(name="faultMonitoringStrategy")
@@ -109,126 +106,25 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 
 	private static Log log = LogFactory.getLog(FaultMonitoringStrategy.class.getName());
 
+	private double minFlawlessServerRatioForRoundRobin = 0.5d;
 
-	/**
-	 * If at least this many servers in relation to the total number of servers are "flawless", then only the
-	 * flawless servers are used with a round-robin strategy. The faulty ones are ignored.
-	 * If too many servers had some issues, then it goes back to using all servers (faulty and flawless)
-	 * using the weighted-chance strategy.
-	 *
-	 * TODO make this configurable by XML.
-	 */
-	private static final double MIN_FLAWLESS_SERVER_RATIO_FOR_ROUND_ROBIN = 0.5d;
+	private long clearFaultyProfilesByTimerAfterLastFailureSeconds = 5 * 60 * 1000; //five minutes
 
-	/**
-	 * When this much time has passed, and there was no more fault, then the node is cleared from the bad history.
-	 * It is possible that the node served requests successfully since then, or that it was not called at all.
-	 * If it was not called, it's very possible that the node is still faulty. But we don't know.
-	 * What happens is that the node is used again, but if it fails it will instantly have a fault profile.
-	 *
-	 * TODO make this configurable by XML.
-	 */
-	private static final long CLEAR_FAULTY_PROFILES_BY_TIMER_AFTER_LAST_FAILURE_SECONDS = 5 *60 *1000; //five minutes
-
-	/**
-	 * Every this much time a TimerTask runs to see if there are any fault profiles to clear.
-	 *
-	 * TODO make this configurable by XML.
-	 */
-	private static final long CLEAR_FAULTY_TIMER_INTERVAL_SECONDS = 30 * 1000; //30 seconds
-
-
-
-	/**
-	 * Lazy initialized singleton.
-	 *
-	 * Because the state is externalized in the FaultMonitoringState, it should be safe to refactor this
-	 * to create a new instance on context reloads.
-	 */
-	private static FaultMonitoringStrategy INSTANCE;
-	public static synchronized FaultMonitoringStrategy getInstance() {
-		if (INSTANCE==null) {
-			INSTANCE = new FaultMonitoringStrategy();
-		}
-		return INSTANCE;
-	}
-
-
+	private long clearFaultyTimerIntervalSeconds = 30 * 1000; //30 seconds
 
 	/**
 	 * Key = destination "host:port"
 	 */
-	private final FaultMonitoringState state;
+	private final FaultMonitoringState state = new FaultMonitoringState();
 
 	private final Random random = new Random();
+	private HttpClientStatusEventBus httpClientStatusEventBus;
 
-	private FaultMonitoringStrategy() {
-		HttpClientStatusEventBus.getService().registerListener(new HttpClientStatusEventListener() {
-			@Override
-			public void onResponse(long timestamp, String destination, int responseCode) {
-				log.debug("onResponse for "+destination+" with code "+responseCode+" at time "+timestamp);
-				String hostAndPort = extractHostAndPort(destination);
-				NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
-				boolean is5xx = responseCode >= 500 && responseCode < 600;
-				if (!is5xx) {
-					if (informSuccess(timestamp, nodeFaultProfile)) {
-						//clear from bad history:
-						state.getMap().remove(hostAndPort);
-						log.debug("Self-cleared from bad history: "+hostAndPort);
-					}
-				} else {
-					informFailure(timestamp, hostAndPort, nodeFaultProfile);
-				}
-			}
+	public void init(Router router) {
+		httpClientStatusEventBus = new HttpClientStatusEventBus();
+		httpClientStatusEventBus.registerListener(new MyHttpClientStatusEventListener());
 
-			@Override
-			public void onException(long timestamp, String destination, Exception exception) {
-				log.debug("onException for " + destination + " with ex " + exception.getMessage() + " at time " + timestamp);
-				String hostAndPort = extractHostAndPort(destination);
-				NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
-				//have to inform profile about this failure. if there's no profile yet, create one.
-				informFailure(timestamp, hostAndPort, nodeFaultProfile);
-			}
-
-			/**
-			 * @return true to remove the destinationProfile (to clear him from bad history),
-			 *         false to do nothing (either because there is none or because it's still bad).
-			 */
-			private boolean informSuccess(long timestamp, NodeFaultProfile nodeFaultProfile) {
-				//treat as success (from our side), server handled it well.
-				if (nodeFaultProfile ==null) {
-					//fine, the server still works correctly.
-					return false;
-				} else {
-					//inform about that good result.
-					return nodeFaultProfile.informSuccess(timestamp);
-				}
-			}
-
-			private void informFailure(long timestamp, String hostAndPort, NodeFaultProfile nodeFaultProfile) {
-				//have to inform profile about this failure. if there's no profile yet, create one.
-				if (nodeFaultProfile ==null) {
-                    nodeFaultProfile = new NodeFaultProfile(timestamp);
-					state.getMap().putIfAbsent(hostAndPort, nodeFaultProfile); //worst case we have a race condition, and another thread just set it. then one division/2 got lost. that's fine.
-					log.debug("Created bad history profile for: "+hostAndPort);
-                } else {
-					nodeFaultProfile.informFailure(timestamp);
-				}
-			}
-
-			private String extractHostAndPort(String destination) {
-				URI uri;
-				try {
-					uri = new URI(destination);
-				} catch (URISyntaxException e) {
-					throw new RuntimeException(e);
-				}
-				return uri.getHost() +":"+ uri.getPort();
-			}
-		});
-
-		state = FaultMonitoringState.getInstance();
-		state.scheduleRemoval(CLEAR_FAULTY_PROFILES_BY_TIMER_AFTER_LAST_FAILURE_SECONDS, CLEAR_FAULTY_TIMER_INTERVAL_SECONDS);
+		state.scheduleRemoval(clearFaultyProfilesByTimerAfterLastFailureSeconds, clearFaultyTimerIntervalSeconds);
 	}
 
 	private List<Node> filterBySuccessProfile(List<Node> endpoints) {
@@ -256,7 +152,9 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 	}
 
 
-	public synchronized Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException {
+	public synchronized Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {
+		exc.setProperty(HttpClientStatusEventBus.EXCHANGE_PROPERTY_NAME, httpClientStatusEventBus);
+
 		//getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
 		List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.
 		if (endpoints.isEmpty()) {
@@ -271,7 +169,7 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 
 		if (endpointsFiltered.size() >= 1) {
 			double ratio = endpointsFiltered.size() / (double)endpoints.size();
-			if (ratio >= MIN_FLAWLESS_SERVER_RATIO_FOR_ROUND_ROBIN) {
+			if (ratio >= minFlawlessServerRatioForRoundRobin) {
 				//got enough valid nodes. go into simple round-robin strategy
 				log.trace("Selecting round robin for "+endpointsFiltered.size()+"/"+endpoints.size()+" endpoints.");
 				return applyRoundRobinStrategy(endpointsFiltered);
@@ -352,4 +250,115 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 		return "faultMonitoringStrategy";
 	}
 
+	public double getMinFlawlessServerRatioForRoundRobin() {
+		return minFlawlessServerRatioForRoundRobin;
+	}
+
+	/**
+	 * @description
+	 * If at least this many servers in relation to the total number of servers are "flawless", then only the
+	 * flawless servers are used with a round-robin strategy. The faulty ones are ignored.
+	 * If too many servers had some issues, then it goes back to using all servers (faulty and flawless)
+	 * using the weighted-chance strategy.
+	 * @default 0.5
+	 */
+	@MCAttribute
+	public void setMinFlawlessServerRatioForRoundRobin(double minFlawlessServerRatioForRoundRobin) {
+		this.minFlawlessServerRatioForRoundRobin = minFlawlessServerRatioForRoundRobin;
+	}
+
+	public long getClearFaultyProfilesByTimerAfterLastFailureSeconds() {
+		return clearFaultyProfilesByTimerAfterLastFailureSeconds;
+	}
+
+	/**
+	 * @description
+	 * When this much time [milliseconds] has passed, and there was no more fault, then the node is cleared from the bad history.
+	 * It is possible that the node served requests successfully since then, or that it was not called at all.
+	 * If it was not called, it's very possible that the node is still faulty. But we don't know.
+	 * What happens is that the node is used again, but if it fails it will instantly have a fault profile.
+	 * @default 300000
+	 */
+	@MCAttribute
+	public void setClearFaultyProfilesByTimerAfterLastFailureSeconds(long clearFaultyProfilesByTimerAfterLastFailureSeconds) {
+		this.clearFaultyProfilesByTimerAfterLastFailureSeconds = clearFaultyProfilesByTimerAfterLastFailureSeconds;
+	}
+
+	public long getClearFaultyTimerIntervalSeconds() {
+		return clearFaultyTimerIntervalSeconds;
+	}
+
+	/**
+	 * @description
+	 * Every this much time [milliseconds] a TimerTask runs to see if there are any fault profiles to clear.
+	 * @default 30000
+	 */
+	@MCAttribute
+	public void setClearFaultyTimerIntervalSeconds(long clearFaultyTimerIntervalSeconds) {
+		this.clearFaultyTimerIntervalSeconds = clearFaultyTimerIntervalSeconds;
+	}
+
+	private class MyHttpClientStatusEventListener implements HttpClientStatusEventListener {
+		@Override
+		public void onResponse(long timestamp, String destination, int responseCode) {
+			log.debug("onResponse for " + destination + " with code " + responseCode + " at time " + timestamp);
+			String hostAndPort = extractHostAndPort(destination);
+			NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
+			boolean is5xx = responseCode >= 500 && responseCode < 600;
+			if (!is5xx) {
+				if (informSuccess(timestamp, nodeFaultProfile)) {
+					//clear from bad history:
+					state.getMap().remove(hostAndPort);
+					log.debug("Self-cleared from bad history: " + hostAndPort);
+				}
+			} else {
+				informFailure(timestamp, hostAndPort, nodeFaultProfile);
+			}
+		}
+
+		@Override
+		public void onException(long timestamp, String destination, Exception exception) {
+			log.debug("onException for " + destination + " with ex " + exception.getMessage() + " at time " + timestamp);
+			String hostAndPort = extractHostAndPort(destination);
+			NodeFaultProfile nodeFaultProfile = state.getMap().get(hostAndPort);
+			//have to inform profile about this failure. if there's no profile yet, create one.
+			informFailure(timestamp, hostAndPort, nodeFaultProfile);
+		}
+
+		/**
+		 * @return true to remove the destinationProfile (to clear him from bad history),
+		 *         false to do nothing (either because there is none or because it's still bad).
+		 */
+		private boolean informSuccess(long timestamp, NodeFaultProfile nodeFaultProfile) {
+			//treat as success (from our side), server handled it well.
+			if (nodeFaultProfile == null) {
+				//fine, the server still works correctly.
+				return false;
+			} else {
+				//inform about that good result.
+				return nodeFaultProfile.informSuccess(timestamp);
+			}
+		}
+
+		private void informFailure(long timestamp, String hostAndPort, NodeFaultProfile nodeFaultProfile) {
+			//have to inform profile about this failure. if there's no profile yet, create one.
+			if (nodeFaultProfile == null) {
+				nodeFaultProfile = new NodeFaultProfile(timestamp);
+				state.getMap().putIfAbsent(hostAndPort, nodeFaultProfile); //worst case we have a race condition, and another thread just set it. then one division/2 got lost. that's fine.
+				log.debug("Created bad history profile for: " + hostAndPort);
+			} else {
+				nodeFaultProfile.informFailure(timestamp);
+			}
+		}
+
+		private String extractHostAndPort(String destination) {
+			URI uri;
+			try {
+				uri = new URI(destination);
+			} catch (URISyntaxException e) {
+				throw new RuntimeException(e);
+			}
+			return uri.getHost() + ":" + uri.getPort();
+		}
+	}
 }
