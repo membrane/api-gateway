@@ -271,6 +271,9 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	static final int additionalMemoryToAddInMb = 100;
 
+	/**
+	 * @default 1000000
+	 */
 	@MCAttribute
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
@@ -330,6 +333,9 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return maxBodySize;
 	}
 
+	/**
+	 * @default 100000
+	 */
 	@MCAttribute
 	public void setMaxBodySize(int maxBodySize) {
 		this.maxBodySize = maxBodySize;
@@ -339,6 +345,10 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return bodyExceedingMaxSizeStrategy;
 	}
 
+	/**
+	 * @description The strategy to use (TRUNCATE or ERROR) when a HTTP message body is larger than the <tt>maxBodySize</tt>.
+	 * @default TRUNCATE
+	 */
 	@MCAttribute
 	public void setBodyExceedingMaxSizeStrategy(BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy) {
 		this.bodyExceedingMaxSizeStrategy = bodyExceedingMaxSizeStrategy;

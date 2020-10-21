@@ -456,6 +456,9 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         return maxBodySize;
     }
 
+    /**
+     * @default 100000
+     */
     @MCAttribute
     public void setMaxBodySize(int maxBodySize) {
         this.maxBodySize = maxBodySize;
@@ -465,6 +468,10 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         return bodyExceedingMaxSizeStrategy;
     }
 
+    /**
+     * @description The strategy to use (TRUNCATE or ERROR) when a HTTP message body is larger than the <tt>maxBodySize</tt>.
+     * @default TRUNCATE
+     */
     @MCAttribute
     public void setBodyExceedingMaxSizeStrategy(BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy) {
         this.bodyExceedingMaxSizeStrategy = bodyExceedingMaxSizeStrategy;
