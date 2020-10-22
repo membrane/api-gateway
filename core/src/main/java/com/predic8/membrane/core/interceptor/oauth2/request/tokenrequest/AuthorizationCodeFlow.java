@@ -66,6 +66,11 @@ public class AuthorizationCodeFlow extends TokenRequest {
         if(!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
             return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
 
+        String grantTypes = client.getGrantTypes();
+        if (!grantTypes.contains(getGrantType())) {
+			return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant_type");
+        }
+        
         scope = getScope(session);
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         authServer.getSessionFinder().addSessionForToken(token,session);

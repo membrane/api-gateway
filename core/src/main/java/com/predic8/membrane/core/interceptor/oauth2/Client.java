@@ -22,14 +22,16 @@ public class Client {
     private String clientId;
     private String clientSecret;
     private String callbackUrl;
+    private String grantTypes;
 
     public Client(){
     }
 
-    public Client(String clientId, String clientSecret, String callbackUrl){
+    public Client(String clientId, String clientSecret, String callbackUrl, String grantTypes){
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.callbackUrl = callbackUrl;
+        this.setGrantTypes(grantTypes); 
     }
 
     public boolean verify(String clientId, String clientSecret){
@@ -67,4 +69,15 @@ public class Client {
     public void setCallbackUrl(String callbackUrl) {
         this.callbackUrl = callbackUrl;
     }
+
+	public String getGrantTypes() {
+		return grantTypes;
+	}
+
+    @Required
+    @MCAttribute
+	public void setGrantTypes(String grantTypes) {
+		this.grantTypes = grantTypes;
+	}
+
 }
