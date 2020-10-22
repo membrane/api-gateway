@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core;
 
+import java.io.File;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
@@ -116,9 +118,15 @@ public class RouterCLI {
 	}
 
 	private static String prefix(String dir) {
-		if (dir.startsWith("/"))
-			return "file://" + dir;
-		return dir;
+
+		String result = dir;
+
+		File file = new File(dir);
+		if (file.isAbsolute()) {
+			result = file.toURI().toString();
+		}
+
+		return result;
 	}
 
 }
