@@ -33,6 +33,7 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.slf4j.Logger;
@@ -126,7 +127,7 @@ public class XOPReconstitutor {
 			}
 
 			@Override
-			public <T extends Message> T createSnapshot() {
+			public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 				throw new RuntimeException("not implemented.");
 			}
 		};

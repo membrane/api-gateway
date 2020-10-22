@@ -147,7 +147,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/raw")
 	public Response getRaw(QueryParameter params, String relativeRootPath) throws Exception {
-		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
+		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupLong(1));
 
 		if (exc== null) {
 			return Response.notFound().build();
@@ -163,7 +163,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@Mapping("/admin/web/exchanges/(-?\\d+)/(response|request)/body")
 	public Response getBeautifiedBody(QueryParameter params, String relativeRootPath) throws Exception {
-		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
+		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupLong(1));
 
 		if (exc== null) {
 			return Response.notFound().build();
@@ -179,7 +179,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
 	public Response getRequestBody(QueryParameter params, String relativeRootPath) throws Exception {
-		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
+		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupLong(1));
 
 		if (exc== null) {
 			return Response.notFound().build();
@@ -200,7 +200,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/header")
 	public Response getRequestHeader(QueryParameter params, String relativeRootPath) throws Exception {
-		final AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
+		final AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupLong(1));
 
 		if (exc== null) {
 			return Response.notFound().build();
@@ -231,7 +231,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	@Mapping("/admin/rest/exchanges/(-?\\d+)")
 	public Response getExchange(QueryParameter params, String relativeRootPath) throws Exception {
 
-		final AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
+		final AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupLong(1));
 
 		if (exc== null) {
 			return Response.notFound().build();

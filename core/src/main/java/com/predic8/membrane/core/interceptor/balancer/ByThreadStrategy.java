@@ -19,6 +19,7 @@ import javax.xml.stream.*;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
@@ -44,7 +45,7 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 		}
 	}
 
-	public Node dispatch(LoadBalancingInterceptor interceptor) {
+	public Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) {
 		for (int j = 0; j < 5; j++) {
 			for (Node ep : interceptor.getEndpoints()) {
 				String hostColonPort = getHostColonPort(ep);
@@ -121,5 +122,8 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 		return "byThreadStrategy";
 	}
 
-
+	@Override
+	public void init(Router router) {
+		// do nothing
+	}
 }

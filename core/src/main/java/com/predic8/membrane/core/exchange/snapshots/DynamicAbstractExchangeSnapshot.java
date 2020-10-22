@@ -14,69 +14,97 @@
 
 package com.predic8.membrane.core.exchange.snapshots;
 
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.MessageObserver;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
-import java.util.stream.Stream;
+import java.io.IOException;
 
 public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
 
+    /**
+     * @param exc the exchange to snapshot
+     * @param flow what to copy from the exchange besides general properties
+     * @param bodyCopiedCallback will be called once the {@code flow}'s body has been filled. if null, the body stream will be read
+     *                 into memory immediately.
+     * @param strategy how to handle body lengths exceeding the {@code limit}.
+     * @param limit maximum length of the body.
+     */
+    public DynamicAbstractExchangeSnapshot(AbstractExchange exc, Interceptor.Flow flow, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
+        super(exc, flow, bodyCopiedCallback, strategy, limit);
+        addObservers(exc,this, bodyCopiedCallback, flow);
+    }
+
+    /**
+     * called by JSON deserializer
+     */
     public DynamicAbstractExchangeSnapshot() {
-        this(null,null);
     }
 
-    public DynamicAbstractExchangeSnapshot(AbstractExchange exc, Consumer<AbstractExchangeSnapshot> updateCallback) {
-        super(exc);
-        addObservers(exc,this,updateCallback);
-    }
 
-    public static void addObservers(AbstractExchange exc, AbstractExchangeSnapshot excCopy, Consumer<AbstractExchangeSnapshot> callback) {
-        MessageObserver obs = new MessageObserver() {
-            @Override
-            public void bodyRequested(AbstractBody body) {
-
-            }
-
-            @Override
-            public void bodyComplete(AbstractBody body) {
-                update(callback, excCopy, exc);
-            }
-        };
-
+    public static void addObservers(AbstractExchange exc, AbstractExchangeSnapshot excCopy, Consumer<AbstractExchangeSnapshot> callback, Interceptor.Flow flow) {
         exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
             @Override
             public void addResponse(Response response) {
-                response.addObserver(obs);
+                response.addObserver(new UpdateExchangeCopyObserver(callback, excCopy, exc, Interceptor.Flow.RESPONSE));
             }
 
             @Override
             public void setExchangeFinished() {
-                update(callback, excCopy, exc);
+                update(callback, excCopy, exc, flow);
             }
         });
 
-        Stream.of(exc.getRequest(),exc.getResponse()).forEach(msg -> {
+        ImmutableMap.of(Interceptor.Flow.REQUEST, exc.getRequest(),
+                Interceptor.Flow.RESPONSE, exc.getResponse()).forEach((flow2, msg) -> {
             if(msg == null)
                 return;
-            if(msg.containsObserver(obs))
-                return;
-            msg.addObserver(obs);
+            if (!msg.getBody().getObservers().stream().anyMatch(obs -> obs instanceof UpdateExchangeCopyObserver)) {
+                msg.addObserver(new UpdateExchangeCopyObserver(callback, excCopy, exc, flow2));
+            }
         });
 
-        update(callback,excCopy,exc);
+        update(callback,excCopy,exc,flow);
     }
 
-    public static void update(Consumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc) {
+    public static void update(Consumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc, Interceptor.Flow flow) {
         try {
-            excCopy = excCopy.updateFrom(exc);
+            excCopy = excCopy.updateFrom(exc, flow);
             if(callback != null)
                 callback.call(excCopy);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static class UpdateExchangeCopyObserver extends BodyCollectingMessageObserver {
+        private final Consumer<AbstractExchangeSnapshot> callback;
+        private final AbstractExchangeSnapshot excCopy;
+        private final AbstractExchange exc;
+        private final Interceptor.Flow flow;
+
+        public UpdateExchangeCopyObserver(Consumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc, Interceptor.Flow flow) {
+            super(Strategy.TRUNCATE, -1);
+            this.callback = callback;
+            this.excCopy = excCopy;
+            this.exc = exc;
+            this.flow = flow;
+        }
+
+        @Override
+        public void bodyRequested(AbstractBody body) {
+
+        }
+
+        @Override
+        public void bodyComplete(AbstractBody body) {
+            // TODO: handle getBody(body)
+            update(callback, excCopy, exc, flow);
         }
     }
 }

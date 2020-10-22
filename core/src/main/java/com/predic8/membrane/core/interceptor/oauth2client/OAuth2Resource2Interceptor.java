@@ -48,14 +48,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -73,7 +71,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private final Cache<String, Object> synchronizers = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build();
 
-    private String publicURL;
+    @GuardedBy("publicURLs")
+    private List<String> publicURLs = new ArrayList<>();
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
     private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
@@ -83,7 +82,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
     private boolean firstInitWhenDynamicAuthorizationService;
-    private boolean initPublicURLOnFirstExchange = false;
+    private boolean initPublicURLsOnTheFly = false;
     private OriginalExchangeStore originalExchangeStore;
 
     @Override
@@ -94,12 +93,18 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     public String getPublicURL() {
-        return publicURL;
+        synchronized (publicURLs) {
+            return String.join(" ", publicURLs);
+        }
     }
 
     @MCAttribute
     public void setPublicURL(String publicURL) {
-        this.publicURL = publicURL;
+        synchronized (publicURLs) {
+            publicURLs.clear();
+            for (String url : publicURL.split("[ \t]+"))
+                publicURLs.add(url);
+        }
     }
 
     public AuthorizationService getAuthService() {
@@ -137,10 +142,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         statistics = new OAuth2Statistics();
         uriFactory = router.getUriFactory();
 
-        if(publicURL == null)
-            initPublicURLOnFirstExchange = true;
-        else
-            normalizePublicURL();
+        synchronized (publicURLs) {
+            if (publicURLs.size() == 0)
+                initPublicURLsOnTheFly = true;
+            else for (int i = 0; i < publicURLs.size(); i++)
+                publicURLs.set(i, normalizePublicURL(publicURLs.get(i)));
+        }
 
         firstInitWhenDynamicAuthorizationService = getAuthService().supportsDynamicRegistration();
         if(!getAuthService().supportsDynamicRegistration())
@@ -153,15 +160,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private Outcome handleRequestInternal2(Exchange exc) throws Exception {
-        if(initPublicURLOnFirstExchange)
-            setPublicURL(exc);
-
-        if(firstInitWhenDynamicAuthorizationService){
-            firstInitWhenDynamicAuthorizationService = false;
-
-            getAuthService().dynamicRegistration(exc,publicURL);
-        }
-
         if(isFaviconRequest(exc)){
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
@@ -223,7 +221,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return Outcome.CONTINUE;
         }
 
-        if (handleRequest(exc, publicURL, session)) {
+        if (handleRequest(exc, getPublicURL(exc), session)) {
             if(exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.get().containsKey(OAUTH2_ANSWER)) {
                 exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER)));
                 return Outcome.CONTINUE;
@@ -417,20 +415,47 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return Outcome.CONTINUE;
     }
 
-    private void setPublicURL(Exchange exc) {
+    private String getPublicURL(Exchange exc) throws Exception {
         String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
         boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
-        publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
+        String publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
         RuleKey key = exc.getRule().getKey();
         if (!key.isPathRegExp() && key.getPath() != null)
             publicURL += key.getPath();
-        normalizePublicURL();
-        initPublicURLOnFirstExchange = false;
+        publicURL = normalizePublicURL(publicURL);
+
+        String newURL = null;
+        if(initPublicURLsOnTheFly)
+            newURL = addPublicURL(publicURL);
+
+        if(firstInitWhenDynamicAuthorizationService && newURL != null)
+            getAuthService().dynamicRegistration(exc, getPublicURLs());
+
+        return publicURL;
     }
 
-    private void normalizePublicURL() {
-        if(!publicURL.endsWith("/"))
-            publicURL += "/";
+    /**
+     * @return the new public URL, if a new one was added. null if the URL is not new.
+     */
+    private String addPublicURL(String publicURL) {
+        synchronized (publicURLs) {
+            if (publicURLs.contains(publicURL))
+                return null;
+            publicURLs.add(publicURL);
+        }
+        return publicURL;
+    }
+
+    private List<String> getPublicURLs() {
+        synchronized(publicURLs) {
+            return new ArrayList<>(publicURLs);
+        }
+    }
+
+    private String normalizePublicURL(String url) {
+        if(!url.endsWith("/"))
+            url += "/";
+        return url;
     }
 
     private boolean isFaviconRequest(Exchange exc) {
@@ -448,10 +473,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     }
 
-    private Outcome respondWithRedirect(Exchange exc) throws JsonProcessingException {
+    private Outcome respondWithRedirect(Exchange exc) throws Exception {
         String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()),false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, getPublicURL(exc), exc.getRequestURI()),false).build());
 
         readBodyFromStreamIntoMemory(exc);
 

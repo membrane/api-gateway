@@ -28,15 +28,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http2.Http2ServerHandler;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MessageObserver;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -99,6 +97,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 					srcIn.reset();
 				} finally {
 					endpointListener.setIdleStatus(sourceSocket, false);
+				}
+
+				if (Http2TlsSupport.isHttp2(sourceSocket)) {
+					new Http2ServerHandler(this, sourceSocket, srcIn, srcOut, showSSLExceptions).handle();
+					break;
 				}
 
 				if (boundConnection != null) {
@@ -212,23 +215,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 			if (exchange.getRequest().getHeader().is100ContinueExpected()) {
 				final Request request = exchange.getRequest();
-				request.addObserver(new MessageObserver() {
-					public void bodyRequested(AbstractBody body) {
-						try {
-							if (request.getHeader().is100ContinueExpected()) {
-								// request body from client so that interceptors can handle it
-								Response.continue100().build().write(srcOut);
-								// remove "Expect: 100-continue" since we already sent "100 Continue"
-								request.getHeader().removeFields(Header.EXPECT);
-							}
-						} catch (Exception e) {
-							throw new RuntimeException(e);
-						}
-					}
-
-					public void bodyComplete(AbstractBody body) {
-					}
-				});
+				request.addObserver(new Expect100ContinueObserver(request));
 			}
 
 			invokeHandlers();
@@ -289,7 +276,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	protected void writeResponse(Response res) throws Exception{
 		if (res.isRedirect())
 			res.getHeader().setConnection(Header.CLOSE);
-		res.write(srcOut);
+		res.write(srcOut, false);
 		srcOut.flush();
 		exchange.setTimeResSent(System.currentTimeMillis());
 		exchange.collectStatistics();
@@ -322,4 +309,26 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		return sourceSocket;
 	}
 
+	private class Expect100ContinueObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {
+		private final Request request;
+
+		public Expect100ContinueObserver(Request request) {
+			this.request = request;
+		}
+
+		@Override
+		public void bodyRequested(AbstractBody body) {
+			try {
+				if (request.getHeader().is100ContinueExpected()) {
+					log.warn("requesting body");
+					// request body from client so that interceptors can handle it
+					Response.continue100().build().write(srcOut, false);
+					// remove "Expect: 100-continue" since we already sent "100 Continue"
+					request.getHeader().removeFields(Header.EXPECT);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
 }

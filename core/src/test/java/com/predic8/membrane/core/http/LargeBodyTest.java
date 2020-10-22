@@ -30,14 +30,17 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.Header.CHUNKED;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
+import static org.junit.Assert.assertTrue;
 
 public class LargeBodyTest {
 
     private HttpRouter router, router2;
     private HttpClientConfiguration hcc;
+    private AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
     public void setup() throws Exception {
         // streaming only works for maxRetries = 1
@@ -60,6 +63,13 @@ public class LargeBodyTest {
         router.init();
 
         Rule rule1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
+        rule1.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                middleExchange.set(exc);
+                return super.handleRequest(exc);
+            }
+        });
         router2 = new HttpRouter();
 
         ((HTTPClientInterceptor) router2.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
@@ -83,6 +93,9 @@ public class LargeBodyTest {
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).buildExchange();
         new HttpClient(hcc).call(e);
+
+        assertTrue(e.getRequest().getBody().wasStreamed());
+        assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
     }
 
     @Test
@@ -92,9 +105,12 @@ public class LargeBodyTest {
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
         new HttpClient(hcc).call(e);
+
+        assertTrue(e.getRequest().getBody().wasStreamed());
+        assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
     }
 
-    private static class ConstantInputStream extends InputStream {
+    public static class ConstantInputStream extends InputStream {
         private final long len;
         long remaining;
 

@@ -64,7 +64,7 @@ public interface ExchangeStore {
 
 	public List<AbstractExchange> getAllExchangesAsList();
 
-	public AbstractExchange getExchangeById(int id);
+	public AbstractExchange getExchangeById(long id);
 
 	public void init() throws Exception;
 

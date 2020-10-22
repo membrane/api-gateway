@@ -18,6 +18,7 @@ import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.ZERO;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ public class ChunkedBody extends AbstractBody {
 
 	private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
 	private InputStream inputStream;
+	private long lengthStreamed;
 
 	public ChunkedBody(InputStream in) {
 		log.debug("ChunkedInOutBody constructor");
@@ -49,10 +51,11 @@ public class ChunkedBody extends AbstractBody {
 		super.read();
 	}
 
-	public void write(AbstractBodyTransferrer out) throws IOException {
+	@Override
+	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
 		if (bodyObserved && !bodyComplete)
 			ByteUtil.readStream(getContentAsStream());
-		super.write(out);
+		super.write(out, retainCopy);
 	}
 
 	@Override
@@ -63,18 +66,24 @@ public class ChunkedBody extends AbstractBody {
 
 	@Override
 	protected void readLocal() throws IOException {
-		chunks.addAll(HttpUtil.readChunks(inputStream));
+		List<Chunk> chunkList = HttpUtil.readChunks(inputStream);
+		chunks.addAll(chunkList);
+		for (Chunk chunk : chunkList)
+			for (MessageObserver observer : observers)
+				observer.bodyChunk(chunk);
 	}
 
 	@Override
 	public void discard() throws IOException {
 		if (read)
 			return;
+		if (wasStreamed())
+			return;
 
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
 
-		HttpUtil.readChunksAndDrop(inputStream);
+		HttpUtil.readChunksAndDrop(inputStream, observers);
 		markAsRead();
 	}
 
@@ -101,6 +110,8 @@ public class ChunkedBody extends AbstractBody {
 					Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
 					inputStream.read(); // CR
 					inputStream.read(); // LF
+					for (MessageObserver observer : observers)
+						observer.bodyChunk(c);
 					return c;
 				} else {
 					inputStream.read(); // CR
@@ -126,6 +137,8 @@ public class ChunkedBody extends AbstractBody {
 			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
 			out.write(chunk);
 			chunks.add(chunk);
+			for (MessageObserver observer : observers)
+				observer.bodyChunk(chunk);
 			inputStream.read(); // CR
 			inputStream.read(); // LF
 		}
@@ -142,8 +155,11 @@ public class ChunkedBody extends AbstractBody {
 		while ((chunkSize = HttpUtil.readChunkSize(inputStream)) > 0) {
 			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
 			out.write(chunk);
+			for (MessageObserver observer : observers)
+				observer.bodyChunk(chunk);
 			inputStream.read(); // CR
 			inputStream.read(); // LF
+			lengthStreamed += chunkSize;
 		}
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
@@ -202,4 +218,10 @@ public class ChunkedBody extends AbstractBody {
 		out.finish();
 	}
 
+	@Override
+	public int getLength() throws IOException {
+		if (wasStreamed())
+			return (int)lengthStreamed; // TODO: refactor into long
+		return super.getLength();
+	}
 }

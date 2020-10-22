@@ -58,6 +58,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     private String documentPrefix;
     private long startTime;
     boolean init = false;
+    private int maxBodySize = 100000;
+    private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
 
     @Override
     public void init() {
@@ -139,13 +141,13 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         AbstractExchangeSnapshot excCopy = null;
         try {
             if (flow == Interceptor.Flow.REQUEST) {
-                excCopy = new DynamicAbstractExchangeSnapshot(exc,this::addForElasticSearch);
+                excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForElasticSearch, bodyExceedingMaxSizeStrategy, maxBodySize);
                 addForElasticSearch(excCopy);
             }
             else {
                 excCopy = getExchangeDtoById((int) exc.getId());
-                DynamicAbstractExchangeSnapshot.addObservers(exc,excCopy,this::addForElasticSearch);
-                excCopy = excCopy.updateFrom(exc);
+                DynamicAbstractExchangeSnapshot.addObservers(exc,excCopy,this::addForElasticSearch, flow);
+                excCopy = excCopy.updateFrom(exc, flow);
                 addForElasticSearch(excCopy);
             }
         } catch (Exception e) {
@@ -180,7 +182,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         return getFromElasticSearchById(id);
     }
 
-    private AbstractExchangeSnapshot getFromElasticSearchById(int id) {
+    private AbstractExchangeSnapshot getFromElasticSearchById(long id) {
         try {
             Exchange exc = new Request.Builder()
                     .post(getElasticSearchExchangesPath() + "_search")
@@ -230,7 +232,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     @Override
-    public AbstractExchange getExchangeById(int id) {
+    public AbstractExchange getExchangeById(long id) {
         return getFromElasticSearchById(id).toAbstractExchange();
     }
 
@@ -448,5 +450,30 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     @MCAttribute
     public void setDocumentPrefix(String documentPrefix) {
         this.documentPrefix = documentPrefix;
+    }
+
+    public int getMaxBodySize() {
+        return maxBodySize;
+    }
+
+    /**
+     * @default 100000
+     */
+    @MCAttribute
+    public void setMaxBodySize(int maxBodySize) {
+        this.maxBodySize = maxBodySize;
+    }
+
+    public BodyCollectingMessageObserver.Strategy getBodyExceedingMaxSizeStrategy() {
+        return bodyExceedingMaxSizeStrategy;
+    }
+
+    /**
+     * @description The strategy to use (TRUNCATE or ERROR) when a HTTP message body is larger than the <tt>maxBodySize</tt>.
+     * @default TRUNCATE
+     */
+    @MCAttribute
+    public void setBodyExceedingMaxSizeStrategy(BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy) {
+        this.bodyExceedingMaxSizeStrategy = bodyExceedingMaxSizeStrategy;
     }
 }

@@ -51,6 +51,8 @@ public abstract class AbstractBody {
 	private boolean wasStreamed = false;
 
 	public void read() throws IOException {
+		if (wasStreamed)
+			throw new IllegalStateException("Cannot read body after it was streamed.");
 		if (read)
 			return;
 
@@ -111,21 +113,14 @@ public abstract class AbstractBody {
 		return new BodyInputStream(chunks);
 	}
 
-	public void write(AbstractBodyTransferrer out) throws IOException {
-		if (!read) {
-			boolean relevantObservers = false;
-			for(MessageObserver obs : observers)
-				if(!(obs instanceof NonRelevantBodyObserver))
-					relevantObservers = true;
-			if(relevantObservers) {
-				for (MessageObserver observer : observers)
-					observer.bodyRequested(this);
-
-				writeNotRead(out);
-			}else {
-				writeStreamed(out);
-				wasStreamed = true;
-			}
+	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
+		if (!read && !retainCopy) {
+			if (wasStreamed)
+				log.warn("streaming the body twice will not work.");
+			for (MessageObserver observer : observers)
+				observer.bodyRequested(this);
+			wasStreamed = true;
+			writeStreamed(out);
 			return;
 		}
 
@@ -213,6 +208,8 @@ public abstract class AbstractBody {
 			observer.bodyComplete(this);
 			return;
 		}
+		if (wasStreamed)
+			log.warn("adding body observer after body was streamed.");
 		observers.add(observer);
 	}
 
@@ -222,9 +219,5 @@ public abstract class AbstractBody {
 
 	public boolean wasStreamed() {
 		return wasStreamed;
-	}
-
-	public void setWasStreamed(boolean wasStreamed) {
-		this.wasStreamed = wasStreamed;
 	}
 }

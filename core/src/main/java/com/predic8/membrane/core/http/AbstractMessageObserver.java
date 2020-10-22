@@ -21,6 +21,16 @@ public abstract class AbstractMessageObserver implements MessageObserver {
 	}
 
 	@Override
+	public void bodyChunk(Chunk chunk) {
+		// do nothing
+	}
+
+	@Override
+	public void bodyChunk(byte[] buffer, int offset, int length) {
+		// do nothing
+	}
+
+	@Override
 	public void bodyComplete(AbstractBody body) {
 		// do nothing
 	}

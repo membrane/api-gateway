@@ -15,22 +15,29 @@ package com.predic8.membrane.core.interceptor.oauth2client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.session.Session;
+
+import java.io.IOException;
 
 @MCElement(name = "sessionOriginalExchangeStore")
 public class SessionOriginalExchangeStore extends OriginalExchangeStore {
     public static final String ORIGINAL_REQUEST_PREFIX = "_original_request_for_state_";
+
+    private int maxBodySize = 100000;
 
     private String originalRequestKeyNameInSession(String state) {
         return ORIGINAL_REQUEST_PREFIX + state;
     }
 
     @Override
-    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) {
-        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore);
+    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
+        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore, Interceptor.Flow.REQUEST, null, BodyCollectingMessageObserver.Strategy.ERROR, maxBodySize);
         // trim the exchange as far as possible to save space
         excSnapshot.getRequest().getHeader().remove("Cookie");
         excSnapshot.setResponse(null);
@@ -59,5 +66,14 @@ public class SessionOriginalExchangeStore extends OriginalExchangeStore {
     @Override
     public void postProcess(Exchange exc) {
 
+    }
+
+    public int getMaxBodySize() {
+        return maxBodySize;
+    }
+
+    @MCAttribute
+    public void setMaxBodySize(int maxBodySize) {
+        this.maxBodySize = maxBodySize;
     }
 }

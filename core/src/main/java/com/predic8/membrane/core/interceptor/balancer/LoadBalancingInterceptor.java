@@ -58,6 +58,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public void init(Router router) throws Exception {
 		super.init(router);
 
+		strategy.init(router);
 	}
 
 	@Override
@@ -70,7 +71,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 		Node dispatchedNode;
 		try {
-			dispatchedNode = getDispatchedNode(exc.getRequest());
+			dispatchedNode = getDispatchedNode(exc);
 		} catch (EmptyNodeListException e) {
 			//This can happen for 2 reasons:
 			//1) Initial server misconfiguration. None configured at all.
@@ -146,12 +147,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		n.collectStatisticsFrom(exc);
 	}
 
-	private Node getDispatchedNode(Message msg) throws Exception {
+	private Node getDispatchedNode(Exchange exc) throws Exception {
 		String sessionId;
 		if (sessionIdExtractor == null
-				|| (sessionId = getSessionId(msg)) == null) {
+				|| (sessionId = getSessionId(exc.getRequest())) == null) {
 			log.debug("no session id found.");
-			return strategy.dispatch(this);
+			return strategy.dispatch(this, exc);
 		}
 
 		Session s = getSession(sessionId);
@@ -160,7 +161,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		if (s == null || s.getNode().isDown()) {
 			log.debug("assigning new node for session id " + sessionId
 					+ (s != null ? " (old node was " + s.getNode() + ")" : ""));
-			balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), strategy.dispatch(this));
+			balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), strategy.dispatch(this, exc));
 		}
 		s = getSession(sessionId);
 		s.used();

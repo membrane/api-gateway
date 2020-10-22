@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -443,8 +444,8 @@ public class Response extends Message {
 	}
 
 	@Override
-	public <T extends Message> T createSnapshot() throws Exception {
-		Response result = this.createMessageSnapshot(new Response());
+	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+		Response result = this.createMessageSnapshot(new Response(), bodyUpdatedCallback, strategy, limit);
 
 		result.setStatusCode(this.getStatusCode());
 		result.setStatusMessage(this.getStatusMessage());

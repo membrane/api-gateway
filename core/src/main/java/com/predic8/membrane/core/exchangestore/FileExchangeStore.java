@@ -14,10 +14,7 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,7 +24,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.predic8.membrane.core.http.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -36,9 +35,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -81,19 +77,13 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			// TODO: [fix me] support multi-snap
 			// TODO: [fix me] snap message headers *here*, not in observer
 			if (m != null)
-				m.addObserver(new MessageObserver() {
-					public void bodyRequested(AbstractBody body) {
-					}
-					public void bodyComplete(AbstractBody body) {
-						snapInternal(exc, flow);
-					}
-				});
+				m.addObserver(new SnapshottingObserver(exc, flow));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private void snapInternal(AbstractExchange exc, Flow flow) {
+	private void snapInternal(AbstractExchange exc, Flow flow, AbstractBody body) {
 		int fileNumber = counter.incrementAndGet();
 
 		StringBuilder buf = getDirectoryNameBuffer(exc.getTime());
@@ -113,12 +103,12 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			try {
 				switch (flow) {
 				case REQUEST:
-					writeFile(exc.getRequest(), buf.toString());
+					writeFile(exc.getRequest(), buf.toString(), body);
 					break;
 				case ABORT:
 				case RESPONSE:
 					if (exc.getResponse() != null)
-						writeFile(exc.getResponse(), buf2.toString());
+						writeFile(exc.getResponse(), buf2.toString(), body);
 				}
 			} catch (Exception e) {
 				log.error("{}",e, e);
@@ -150,7 +140,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return df;
 	}
 
-	private void writeFile(Message msg, String path) throws Exception {
+	private void writeFile(Message msg, String path, AbstractBody body) throws Exception {
 		File file = new File(path);
 		file.createNewFile();
 
@@ -162,19 +152,16 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				os.write(Constants.CRLF_BYTES);
 			}
 
-			if (msg.isBodyEmpty())
-				return;
-
-			if (raw)
-				os.write(msg.getBody().getRaw());
-			else {
-				if (msg.isXML())
+			if (raw) {
+				IOUtils.copy(body.getContentAsStream(), os);
+			} else {
+				if (msg.isXML()) {
 					os.write(TextUtil.formatXML(
-							new InputStreamReader(msg.getBodyAsStream(), msg
+							new InputStreamReader(body.getContentAsStream(), msg
 									.getHeader().getCharset()))
-									.getBytes(Constants.UTF_8));
-				else
-					os.write(msg.getBody().getContent());
+							.getBytes(Constants.UTF_8));
+				} else
+					IOUtils.copy(body.getContentAsStream(), os);
 			}
 		} finally {
 			os.close();
@@ -340,4 +327,25 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		this.maxDays = maxDays;
 	}
 
+	private class SnapshottingObserver extends BodyCollectingMessageObserver {
+		private final AbstractExchange exc;
+		private final Flow flow;
+
+		public SnapshottingObserver(AbstractExchange exc, Flow flow) {
+			super(Strategy.ERROR, -1);
+			this.exc = exc;
+			this.flow = flow;
+		}
+
+		public void bodyRequested(AbstractBody body) {
+		}
+
+		public void bodyComplete(AbstractBody body) {
+			try {
+				snapInternal(exc, flow, getBody(body));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
 }

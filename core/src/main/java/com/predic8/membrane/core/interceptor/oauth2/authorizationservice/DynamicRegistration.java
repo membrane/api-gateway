@@ -62,11 +62,11 @@ public class DynamicRegistration {
         return doRequest(new Request.Builder().get(uri).buildExchange()).getBodyAsStream();
     }
 
-    public Client registerWithCallbackAt(String callbackUri, String registrationEndpoint) throws Exception {
+    public Client registerWithCallbackAt(List<String> callbackUris, String registrationEndpoint) throws Exception {
         Exchange exc = new Request.Builder()
                 .post(registrationEndpoint)
                 .header(Header.CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8)
-                .body(getRegistrationBody(callbackUri))
+                .body(getRegistrationBody(callbackUris))
                 .buildExchange();
 
         Response response = doRequest(exc);
@@ -99,11 +99,12 @@ public class DynamicRegistration {
         return response;
     }
 
-    private String getRegistrationBody(String callbackUri) throws IOException {
+    private String getRegistrationBody(List<String> callbackUris) throws IOException {
         JsonGenerator jsonGen = jsonGenerator.resetAndGet();
         jsonGen.writeStartObject();
         jsonGen.writeArrayFieldStart("redirect_uris");
-        jsonGen.writeString(callbackUri);
+        for (String callbackUri : callbackUris)
+            jsonGen.writeString(callbackUri);
         jsonGen.writeEndArray();
         jsonGen.writeEndObject();
         return jsonGenerator.getJson();

@@ -177,6 +177,16 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 	}
 
 	@Override
+	public void bodyChunk(Chunk chunk) {
+		// do nothing
+	}
+
+	@Override
+	public void bodyChunk(byte[] buffer, int offset, int length) {
+		// do nothing
+	}
+
+	@Override
 	public void bodyRequested(AbstractBody body) {
 		// do nothing
 	}

@@ -84,7 +84,7 @@ public class Process2 {
 		}
 
 		public Builder waitForMembrane() {
-			waitAfterStartFor("listening at port");
+			waitAfterStartFor("listening at ");
 			return this;
 		}
 

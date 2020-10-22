@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreIntegrationTest;
 import com.predic8.membrane.core.http.LargeBodyTest;
 import com.predic8.membrane.core.rules.ProxySSLTest;
 import org.junit.runner.RunWith;
@@ -53,6 +54,7 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 	AdjustContentLengthIntegrationTest.class,
 	BoundConnectionTest.class, ExceptionHandlingTest.class,
 	WSDLPublisherTest.class, LimitInterceptorTest.class,
+	LimitedMemoryExchangeStoreIntegrationTest.class,
 	SOAPProxyIntegrationTest.class,
 	SpringReferencesTest.class,
 	ResolverTest.class,

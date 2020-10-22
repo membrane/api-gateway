@@ -78,11 +78,10 @@ public class ByteUtil {
 		Inflater decompressor = new Inflater(true);
 		decompressor.setInput(compressedData);
 
-		byte[] buf = new byte[1024];
-
 		List<Chunk> chunks = new ArrayList<Chunk>();
 
 		while (!decompressor.finished()) {
+			byte[] buf = new byte[1024];
 			int count;
 			try {
 				count = decompressor.inflate(buf);
@@ -94,9 +93,7 @@ public class ByteUtil {
 				chunks.add(chunk);
 			} else if (count < buf.length){
 				byte[] shortContent = new byte[count];
-				for (int j = 0; j < count; j ++) {
-					shortContent[j] = buf[j];
-				}
+				System.arraycopy(buf, 0, shortContent, 0, count);
 				Chunk chunk = new Chunk(shortContent);
 				chunks.add(chunk);
 			}

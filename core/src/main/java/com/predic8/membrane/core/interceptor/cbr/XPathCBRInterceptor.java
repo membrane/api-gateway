@@ -62,7 +62,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		if (r == null) {
 			return Outcome.CONTINUE;
 		}
-		log.debug("match found for {"+r.getxPath()+"} routing to {"+ r.getUrl() + "}");
+		log.debug("match found for {"+r.getXPath()+"} routing to {"+ r.getUrl() + "}");
 
 		updateDestination(exc, r);
 		return Outcome.CONTINUE;
@@ -79,9 +79,9 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 			//TODO getBodyAsStream creates ByteArray each call. That could be a performance issue. Using BufferedInputStream did't work, because stream got closed.
 			InputSource is = new InputSource(request.getBodyAsStreamDecoded());
 			is.setEncoding(request.getCharset());
-			if ( (Boolean) newXPath(namespaces).evaluate(r.getxPath(), is, XPathConstants.BOOLEAN) )
+			if ( (Boolean) newXPath(namespaces).evaluate(r.getXPath(), is, XPathConstants.BOOLEAN) )
 				return r;
-			log.debug("no match found for xpath {"+r.getxPath()+"}");
+			log.debug("no match found for xpath {"+r.getXPath()+"}");
 		}
 		return null;
 	}
@@ -130,7 +130,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 			tbody();
 			for (Case c : cases) {
 				tr();
-				td().text(c.getxPath()).end();
+				td().text(c.getXPath()).end();
 				td().raw(TextUtil.linkURL(c.getUrl())).end();
 				end();
 			}

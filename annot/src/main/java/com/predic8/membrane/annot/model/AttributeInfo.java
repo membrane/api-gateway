@@ -79,6 +79,9 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 		case LONG:
 			xsdType = "spel_number";
 			return;
+		case DOUBLE:
+			xsdType = "xsd:double";
+			return;
 		case BOOLEAN:
 			xsdType = "spel_boolean";
 			return;

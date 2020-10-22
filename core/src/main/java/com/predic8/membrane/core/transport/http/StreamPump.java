@@ -50,7 +50,7 @@ public class StreamPump implements Runnable {
 			return new ArrayList<StreamPump>(pumps);
 		}
 		public synchronized void closeAllStreamPumps() {
-			for (StreamPump p : pumps) {
+			for (StreamPump p : new ArrayList<>(pumps)) {
 				p.close();
 			}
 		}

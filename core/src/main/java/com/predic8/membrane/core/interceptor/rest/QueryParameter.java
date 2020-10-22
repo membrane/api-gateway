@@ -56,6 +56,10 @@ public class QueryParameter {
 		return Integer.parseInt(getGroup(i));
 	}
 
+	public long getGroupLong(int i) {
+		return Integer.parseInt(getGroup(i));
+	}
+
 	public String getGroup(int i) {
 		return matcher.group(i);
 	}

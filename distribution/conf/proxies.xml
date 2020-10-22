@@ -12,35 +12,34 @@
 	
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
-	xmlns:spring="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-					    
-	<router>
-	      	 
-		<!-- Forwards SOAP requests for the BLZService on port 2000 to the Web server on host thomas-bayer.com -->
-		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-		</soapProxy>
 
-		<!-- Displays a list of all configured proxies. -->
-		<serviceProxy>
-			<index />
-		</serviceProxy>
+    <router>
 
-		<!-- Forwards HTTP requests on port 2001 to some other HTTP server, in this example to www.membrane-soa.org. -->
-		<serviceProxy name="localhost" port="2001" >
-			<target host="www.membrane-soa.org" port="80"/>
-		</serviceProxy>
-	
-		<!-- Sets up the Administration Web Interface on port 9000-->
-		<serviceProxy name="Console" port="9000">
-			<basicAuthentication>
-				<user name="admin" password="membrane" />
-			</basicAuthentication>	
-			<adminConsole />
-		</serviceProxy>
-	 
-	 </router>
+        <!-- Forwards SOAP requests for the BLZService on port 2000 to the Web server on host thomas-bayer.com -->
+        <soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+        </soapProxy>
+
+        <!-- Displays a list of all configured proxies. -->
+        <serviceProxy>
+            <index/>
+        </serviceProxy>
+
+        <!-- Forwards HTTP requests on port 2001 to some other HTTP server, in this example to www.membrane-soa.org. -->
+        <serviceProxy name="localhost" port="2001">
+            <target host="www.membrane-soa.org" port="80"/>
+        </serviceProxy>
+
+        <!-- Sets up the Administration Web Interface on port 9000-->
+        <serviceProxy name="Console" port="9000">
+            <basicAuthentication>
+                <user name="admin" password="membrane"/>
+            </basicAuthentication>
+            <adminConsole/>
+        </serviceProxy>
+    </router>
 
 </spring:beans>

@@ -19,16 +19,18 @@ import com.google.common.collect.ImmutableList;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderName;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -86,8 +88,8 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     }
 
     @Override
-    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) {
-        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore);
+    public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
+        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore, Interceptor.Flow.REQUEST, null, BodyCollectingMessageObserver.Strategy.ERROR, 3000);
         // trim the exchange as far as possible to save space
         excSnapshot.getRequest().getHeader().remove("Cookie");
         excSnapshot.setResponse(null);

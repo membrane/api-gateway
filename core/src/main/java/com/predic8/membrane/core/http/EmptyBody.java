@@ -54,7 +54,7 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	public void write(AbstractBodyTransferrer out) throws IOException {
+	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
 		out.finish();
 		markAsRead();
 	}

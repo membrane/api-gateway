@@ -80,7 +80,7 @@ public class BoundConnectionTest {
 	}
 
 	private void doExchange(Connection c, boolean includeAuthorizationHeader) throws IOException, EndOfStreamException {
-		createRequest(includeAuthorizationHeader).write(c.out);
+		createRequest(includeAuthorizationHeader).write(c.out, true);
 		Response r = new Response();
 		r.read(c.in, true);
 	}
