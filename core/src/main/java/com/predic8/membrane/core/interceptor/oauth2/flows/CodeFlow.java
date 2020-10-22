@@ -50,10 +50,11 @@ public class CodeFlow extends OAuth2Flow{
         String rawQuery = URLUtil.getPathQuery(authServer.getRouter().getUriFactory(),exc.getRequestURI());
         if(rawQuery.startsWith("/"))
             rawQuery = rawQuery.substring(1);
-        if(rawQuery.startsWith("?"))
-            rawQuery = rawQuery.substring(1);
-        if(!rawQuery.isEmpty())
-            state = rawQuery;
+        if(rawQuery.contains("?")) {
+            rawQuery = rawQuery.substring(rawQuery.indexOf("?") +1);
+            if(!rawQuery.isEmpty())
+                state = rawQuery;
+        }
 
         synchronized (s) {
             if(state == null) // TODO: always get state through query and not like this

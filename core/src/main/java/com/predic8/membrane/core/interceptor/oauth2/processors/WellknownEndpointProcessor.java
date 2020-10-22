@@ -30,7 +30,7 @@ public class WellknownEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith("/.well-known/openid-configuration");
+        return exc.getRequestURI().contains("/.well-known/openid-configuration");
     }
 
     @Override

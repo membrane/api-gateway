@@ -30,7 +30,7 @@ public class CertsEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/certs");
+        return exc.getRequestURI().contains("/oauth2/certs");
     }
 
     @Override

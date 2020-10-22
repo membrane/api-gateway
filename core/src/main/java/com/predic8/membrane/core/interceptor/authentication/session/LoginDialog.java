@@ -109,7 +109,9 @@ public class LoginDialog {
 			}
 		});
 		Map<String, Object> model = new HashMap<String, Object>();
-		model.put("action", StringEscapeUtils.escapeXml(path));
+		String tempUri = exc.getRequest().getUri();
+        tempUri = tempUri.substring(0,tempUri.indexOf(path));
+		model.put("action", StringEscapeUtils.escapeXml(tempUri + path));
 		model.put("target", StringEscapeUtils.escapeXml(target));
 		if(page == 0)
 			model.put("login", true);
@@ -117,7 +119,7 @@ public class LoginDialog {
 			model.put("token", true);
 		if(page == 2) {
 			model.put("consent", true);
-			model.put("action",StringEscapeUtils.escapeXml(path)+ "consent");
+			model.put("action",StringEscapeUtils.escapeXml(tempUri + path)+ "consent");
 		}
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
@@ -127,8 +129,10 @@ public class LoginDialog {
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
 		Session s = sessionManager.getSession(exc);
-
-		String uri = exc.getRequest().getUri().substring(path.length()-1);
+		
+		String tempUri = exc.getRequest().getUri();
+		tempUri = tempUri.substring(tempUri.indexOf(path));
+		String uri = tempUri.substring(path.length()-1);
 		if (uri.indexOf('?') >= 0)
 			uri = uri.substring(0, uri.indexOf('?'));
 		exc.getDestinations().set(0, uri);
@@ -181,7 +185,7 @@ public class LoginDialog {
 					else {
 						String target = params.get("target");
 						if (StringUtils.isEmpty(target))
-							target = "/";
+						    target = exc.getRequestURI().substring(0, exc.getRequestURI().indexOf("login/"));
 						exc.setResponse(Response.redirectWithout300(target).build());
 					}
 
@@ -220,7 +224,7 @@ public class LoginDialog {
 						accountBlocker.unblock(s.getUserName());
 					String target = URLParamUtil.getParams(uriFactory, exc).get("target");
 					if (StringUtils.isEmpty(target))
-						target = "/";
+					    target = exc.getRequestURI().substring(0, exc.getRequestURI().indexOf("login/"));
 
 					if (this.message != null)
 						exc.setResponse(Response.redirectWithout300(target, message).build());
@@ -240,7 +244,7 @@ public class LoginDialog {
 	private void processConsentPageResult(Exchange exc, Session s) throws Exception {
 		removeConsentPageDataFromSession(s);
 		putConsentInSession(exc, s);
-		redirectAfterConsent(exc);
+		redirectAfterConsent(exc, s.getUserAttributes().get("state"));
 	}
 
 	private void removeConsentPageDataFromSession(Session s) {
@@ -254,11 +258,11 @@ public class LoginDialog {
 		}
 	}
 
-	private void redirectAfterConsent(Exchange exc) throws Exception {
+	private void redirectAfterConsent(Exchange exc, String state) throws Exception {
 		String target = URLParamUtil.getParams(uriFactory, exc).get("target");
 		if (StringUtils.isEmpty(target))
-			target = "/";
-		exc.setResponse(Response.redirectWithout300(target).build());
+		    target = exc.getRequestURI().substring(0, exc.getRequestURI().indexOf("login/"));
+		exc.setResponse(Response.redirectWithout300(target + "?" + state).build());
 	}
 
 	private void putConsentInSession(Exchange exc, Session s) throws Exception {

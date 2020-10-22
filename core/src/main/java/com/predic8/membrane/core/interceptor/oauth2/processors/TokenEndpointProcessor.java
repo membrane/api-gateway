@@ -27,7 +27,7 @@ public class TokenEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/token");
+        return exc.getRequestURI().contains("/oauth2/token");
     }
 
     @Override

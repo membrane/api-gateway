@@ -40,7 +40,7 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
     @Override
     public boolean isResponsible(Exchange exc) {
         URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());
-        return uri.getPath().startsWith(authServer.getPath()) && authServer.getSessionManager().getSession(exc) != null; // TODO: check session for parameters
+        return uri.getPath().contains(authServer.getPath()) && authServer.getSessionManager().getSession(exc) != null; // TODO: check session for parameters
     }
 
     @Override
