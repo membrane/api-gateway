@@ -64,6 +64,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
             dynamicRegistration.init(router);
             supportsDynamicRegistration = true;
         }
+        router.registerForDelayedInitialization(this);
+        //init2();
+
+    }
+
+    public void init2() throws Exception {
         try {
             String[] urls = src.split(Pattern.quote(" "));
             if(urls.length == 1) {
