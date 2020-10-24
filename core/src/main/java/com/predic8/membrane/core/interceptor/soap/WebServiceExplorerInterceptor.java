@@ -150,7 +150,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	private String getClientURL(Exchange exc) {
 		// TODO: move this to some central location
 		try {
-			String uri = exc.getRequestURI();
+			String uri = exc.getHandler().getContextPath(exc) + exc.getRequestURI();
 			String host = exc.getRequest().getHeader().getHost();
 			if (host != null) {
 				if (host.contains(":"))

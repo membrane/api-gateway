@@ -47,6 +47,7 @@ public class Relocator {
 
 	private final String host;
 	private final int port;
+	private final String contextPath;
 	private final String protocol;
 	private final XMLEventWriter writer;
 	private final PathRewriter pathRewriter;
@@ -78,11 +79,12 @@ public class Relocator {
 				if (pathRewriter != null) {
 					value = pathRewriter.rewrite(value);
 					if (value.startsWith("http"))
-						return fac.createAttribute(replace, getNewLocation(value, protocol, host, port));
+						return fac.createAttribute(replace, getNewLocation(value, protocol, host, port, contextPath));
 					return fac.createAttribute(replace, value);
 				}
 				if (value.startsWith("http"))
-					return fac.createAttribute(replace, getNewLocation(value, protocol, host, port));
+
+					return fac.createAttribute(replace, getNewLocation(value, protocol, host, port, contextPath));
 			}
 			return atr;
 		}
@@ -96,21 +98,23 @@ public class Relocator {
 		String rewrite(String path);
 	}
 
-	public Relocator(Writer w, String protocol, String host, int port, PathRewriter pathRewriter)
+	public Relocator(Writer w, String protocol, String host, int port, String contextPath, PathRewriter pathRewriter)
 			throws Exception {
 		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(w);
 		this.host = host;
 		this.port = port;
 		this.protocol = protocol;
+		this.contextPath = contextPath;
 		this.pathRewriter = pathRewriter;
 	}
 
 	public Relocator(OutputStreamWriter osw, String protocol, String host,
-			int port, PathRewriter pathRewriter) throws Exception {
+					 int port, String contextPath, PathRewriter pathRewriter) throws Exception {
 		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
 		this.host = host;
 		this.port = port;
 		this.protocol = protocol;
+		this.contextPath = contextPath;
 		this.pathRewriter = pathRewriter;
 	}
 
@@ -177,17 +181,17 @@ public class Relocator {
 	}
 
 	public static String getNewLocation(String addr, String protocol,
-			String host, int port) {
+			String host, int port, String contextPath) {
 		try {
 			URL oldURL = new URL(addr);
 			if (port == -1) {
-				return new URL(protocol, host, oldURL.getFile()).toString();
+				return new URL(protocol, host, contextPath + oldURL.getFile()).toString();
 			}
 			if ("http".equals(protocol) && port == 80)
 				port = -1;
 			if ("https".equals(protocol) && port == 443)
 				port = -1;
-			return new URL(protocol, host, port, oldURL.getFile()).toString();
+			return new URL(protocol, host, port, contextPath + oldURL.getFile()).toString();
 		} catch (MalformedURLException e) {
 			log.error("", e);
 		}

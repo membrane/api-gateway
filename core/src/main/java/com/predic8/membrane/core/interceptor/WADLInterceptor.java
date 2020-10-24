@@ -50,7 +50,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 
 		Relocator relocator = new Relocator(new OutputStreamWriter(stream,
 				exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
-				getLocationPort(exc), pathRewriter);
+				getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
 
 		relocator.getRelocatingAttributes().put(
 				new QName(WADL_NS, "resources"), "base");
