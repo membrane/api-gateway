@@ -7,7 +7,7 @@
 	for example).
 
 	Have a look at router/conf/proxies.xml or router/conf/proxies-full-sample.xml or
-	http://membrane-soa.org/service-proxy-doc/4.0/configuration/reference/ to be
+	https://membrane-soa.org/service-proxy-doc/current/configuration/reference/ to be
 	inspired on what you can do here. ;)
 	
 -->

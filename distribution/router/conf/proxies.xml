@@ -2,7 +2,7 @@
 
 	Main configuration
 
-	See https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/samples.htm
+	See https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
 	or proxies-full-sample.xml.
 
 	In the examples/* folders are working samples for proxies.xml

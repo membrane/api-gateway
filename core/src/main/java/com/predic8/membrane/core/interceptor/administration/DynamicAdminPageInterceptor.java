@@ -699,7 +699,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				if(!(router.getExchangeStore() instanceof LimitedMemoryExchangeStore))
 					h3().text("Messages").end();
 				if (router.getExchangeStore() instanceof LimitedMemoryExchangeStore) {
-					h3().text(getLimitedMemoryExchangeStoreMessageText()).a().href("http://www.membrane-soa.org/service-proxy-doc/4.2/configuration/reference/limitedMemoryExchangeStore.htm").text("(What is this?)").end(2);
+					h3().text(getLimitedMemoryExchangeStoreMessageText()).a().href("https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/limitedMemoryExchangeStore.htm").text("(What is this?)").end(2);
 				}
 			}
 
