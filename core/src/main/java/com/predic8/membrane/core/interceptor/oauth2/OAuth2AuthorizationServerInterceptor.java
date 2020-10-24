@@ -156,6 +156,10 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return location;
     }
 
+    /**
+     * @description Base path under which the login dialog will be served.
+     * @example logindialog
+     */
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;

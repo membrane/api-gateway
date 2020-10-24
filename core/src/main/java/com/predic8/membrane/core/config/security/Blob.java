@@ -49,6 +49,11 @@ public abstract class Blob {
     public String getLocation() {
         return location;
     }
+
+    /**
+     * @description
+     * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
+     */
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;

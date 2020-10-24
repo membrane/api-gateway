@@ -174,6 +174,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 
 	/**
 	 * @description location of the login dialog template (a directory containing the <i>index.html</i> file as well as possibly other resources)
+	 * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
 	 * @example file:c:/work/login/
 	 */
 	@Required

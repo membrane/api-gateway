@@ -438,6 +438,10 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         return location;
     }
 
+    /**
+     * @description base URL of Elasticsearch
+     * @default http://localhost:9200
+     */
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;
