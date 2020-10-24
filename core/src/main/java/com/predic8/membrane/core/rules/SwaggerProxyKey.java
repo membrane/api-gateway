@@ -79,6 +79,11 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		final String IDENTIFIER = "[-_a-zA-Z0-9]+";
 		specName = specName.replaceAll("\\{" + IDENTIFIER + "\\}", IDENTIFIER);
 		String spec = swagger.getBasePath() + specName;
+		
+		if (calledURI.contains("?")){
+ 			calledURI = calledURI.substring(0,calledURI.indexOf("?"));
+		}
+		
 		return Pattern.matches(spec, calledURI);
 	}
 
