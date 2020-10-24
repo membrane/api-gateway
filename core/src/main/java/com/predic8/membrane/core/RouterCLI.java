@@ -31,6 +31,7 @@ public class RouterCLI {
 	public static void main(String[] args) {
 
 		MembraneCommandLine cl = new MembraneCommandLine();
+		Router router = null;
 		try {
 			cl.parse(args);
 			if (cl.needHelp()) {
@@ -39,7 +40,7 @@ public class RouterCLI {
 			}
 
 			try {
-				Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
+				router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
 			} catch (XmlBeanDefinitionStoreException e) {
 				TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
 			}
@@ -51,12 +52,12 @@ public class RouterCLI {
 			System.exit(1);
 		}
 
-		new RouterCLI().waitForever();
-
-	}
-
-	private synchronized void waitForever() {
-        // DONOTHING, Router has own thread ( Spring HotDeploymentThread )
+		try {
+			if (router != null)
+				router.waitFor();
+		} catch (InterruptedException e) {
+			// do nothing
+		}
 	}
 
 	private static String getRulesFile(MembraneCommandLine line) {
