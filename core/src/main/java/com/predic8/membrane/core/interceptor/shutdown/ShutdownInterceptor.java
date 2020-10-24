@@ -21,8 +21,20 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 /**
  * @description Shutdown interceptor.
- * @explanation Adds the ability to shutdown main router thread via an HTTP request.
- *              Don't forget to setup security for this interceptor.
+ * @explanation <p>
+ *                  Adds the ability to shutdown main router thread via an HTTP request.
+ *                  Don't forget to setup security for this interceptor.
+ *              </p>
+ *              <p>
+ *                  Has undefined behavior when Membrane is <b>not</b> started from command line
+ *                  (=via the RouterCLI class, which <tt>service-proxy.bat</tt>/<tt>service-proxy.sh</tt>
+ *                  do use).
+ *              </p>
+ *              <p>
+ *                  Only actually terminates the running JVM, when used in the first
+ *                  <tt>&lt;router&gt;</tt> bean (which implicitly stands for
+ *                  <tt>&lt;router id="router"&gt;</tt>) called "router".
+ *              </p>
  * @topic 4. Interceptors/Features
  */
 @MCElement(name="shutdown")
