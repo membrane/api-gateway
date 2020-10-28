@@ -18,6 +18,7 @@ import com.google.common.collect.Lists;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 import java.io.*;
+import java.net.*;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,8 +71,8 @@ public class FileSchemaResolver implements SchemaResolver {
 
 	public InputStream resolve(String url) throws ResourceRetrievalException {
 		try {
-			return new FileInputStream(new File(normalize(url)));
-		} catch (FileNotFoundException e) {
+			return new FileInputStream(new File(new URI(url)));
+		} catch (FileNotFoundException | URISyntaxException e) {
 			throw new ResourceRetrievalException(url, e);
 		}
 	}
