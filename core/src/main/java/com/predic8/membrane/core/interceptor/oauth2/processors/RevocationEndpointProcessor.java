@@ -33,7 +33,7 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/revoke");
+        return exc.getRequestURI().contains("/oauth2/revoke");
     }
 
     @Override
