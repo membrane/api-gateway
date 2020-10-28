@@ -18,7 +18,7 @@ import com.google.common.collect.Lists;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 import java.io.*;
-import java.net.*;
+import java.net.URLDecoder;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,8 +71,8 @@ public class FileSchemaResolver implements SchemaResolver {
 
 	public InputStream resolve(String url) throws ResourceRetrievalException {
 		try {
-			return new FileInputStream(new File(new URI(url)));
-		} catch (FileNotFoundException | URISyntaxException e) {
+			return new FileInputStream(new File(normalize(url)));
+		} catch (FileNotFoundException e) {
 			throw new ResourceRetrievalException(url, e);
 		}
 	}
@@ -106,18 +106,18 @@ public class FileSchemaResolver implements SchemaResolver {
 	public static String normalize(String uri) {
 		if(uri.startsWith("file:///")) {
 			if (uri.length() > 9 && uri.charAt(9) == '/')
-				uri = uri.charAt(8) + ":\\" + uri.substring(9);
+				uri = uri.charAt(8) + ":\\" + URLDecoder.decode(uri.substring(9));
 			else
-				uri = "/" + uri.substring(8);
+				uri = "/" + URLDecoder.decode(uri.substring(8));
 		}
 		if(uri.startsWith("file://")) {
 			if (uri.length() > 8 && uri.charAt(8) == '/')
-				uri = uri.charAt(7) + ":\\" + uri.substring(9);
+				uri = uri.charAt(7) + ":\\" + URLDecoder.decode(uri.substring(9));
 			else
-				uri = "/" + uri.substring(7);
+				uri = "/" + URLDecoder.decode(uri.substring(7));
 		}
 		if(uri.startsWith("file:")) {
-			uri = uri.substring(5);
+			uri = URLDecoder.decode(uri.substring(5));
 		}
 		return uri;
 	}
