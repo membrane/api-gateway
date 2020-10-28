@@ -55,8 +55,6 @@ public class CredentialsFlow extends TokenRequest {
         
         token = createTokenForVerifiedClient();
 
-        exc.setResponse(getEarlyResponse());
-        
         SessionManager.Session session = createSessionForAuthorizedClientWithParams();
         synchronized(session) {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
@@ -78,11 +76,11 @@ public class CredentialsFlow extends TokenRequest {
         
         authServer.getSessionFinder().addSessionForToken(token,session);
 
-        idToken = null;
-        refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret());
-        if (OAuth2Util.isOpenIdScope(scope)) {
+        if (authServer.isIssueNonSpecRefreshTokens())
+            refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret());
+
+        if (authServer.isIssueNonSpecIdTokens() && OAuth2Util.isOpenIdScope(scope))
             idToken = createSignedIdToken(session, client.getClientId(), client);
-        }
         
         exc.setResponse(getEarlyResponse());
         

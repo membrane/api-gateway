@@ -59,8 +59,6 @@ public class PasswordFlow extends TokenRequest {
         token = createTokenForVerifiedUserAndClient();
         refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
 
-        exc.setResponse(getEarlyResponse());
-
         SessionManager.Session session = createSessionForAuthorizedUserWithParams();
         synchronized(session) {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
@@ -82,8 +80,9 @@ public class PasswordFlow extends TokenRequest {
 			return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant_type");
         }
 
-        idToken = null;
-        if (OAuth2Util.isOpenIdScope(scope)) {
+        refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret());
+
+        if (authServer.isIssueNonSpecIdTokens() && OAuth2Util.isOpenIdScope(scope)) {
             idToken = createSignedIdToken(session, client.getClientId(), client);
         }
 

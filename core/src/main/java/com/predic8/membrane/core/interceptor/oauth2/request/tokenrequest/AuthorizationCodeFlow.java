@@ -74,7 +74,7 @@ public class AuthorizationCodeFlow extends TokenRequest {
         scope = getScope(session);
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         authServer.getSessionFinder().addSessionForToken(token,session);
-        idToken = null;
+
         refreshToken = authServer.getRefreshTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         if (OAuth2Util.isOpenIdScope(scope)) {
             idToken = createSignedIdToken(session, username, client);

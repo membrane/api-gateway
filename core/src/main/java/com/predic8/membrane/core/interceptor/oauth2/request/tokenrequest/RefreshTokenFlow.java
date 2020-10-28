@@ -83,7 +83,6 @@ public class RefreshTokenFlow extends TokenRequest {
         }
         
         scope = getScope();
-        idToken = null;
         token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret());
         refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
 

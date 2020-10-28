@@ -45,6 +45,8 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private String consentFile;
     private boolean exposeUserCredentialsToSession;
     private boolean loginViewDisabled = false;
+    private boolean issueNonSpecIdTokens = false;
+    private boolean issueNonSpecRefreshTokens = false;
 
     private Router router;
     private UserDataProvider userDataProvider;
@@ -337,5 +339,31 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     public void setLoginViewDisabled(boolean loginViewDisabled) {
         this.loginViewDisabled = loginViewDisabled;
+    }
+
+    public boolean isIssueNonSpecIdTokens() {
+        return issueNonSpecIdTokens;
+    }
+
+    /**
+     * @description Issue id-tokens also in credentials-flow and password-flow . The OIDC specification, which brings in id-tokens, does not handle those flows, which is why the default value is false.
+     * @default false
+     */
+    @MCAttribute
+    public void setIssueNonSpecIdTokens(boolean issueNonSpecIdTokens) {
+        this.issueNonSpecIdTokens = issueNonSpecIdTokens;
+    }
+
+    public boolean isIssueNonSpecRefreshTokens() {
+        return issueNonSpecRefreshTokens;
+    }
+
+    /**
+     * @description Issue refresh-tokens also in credentials-flow. The OAuth2 specification does not issue refresh tokens in the credentials-flow, which is why the default value is false.
+     * @default false
+     */
+    @MCAttribute
+    public void setIssueNonSpecRefreshTokens(boolean issueNonSpecRefreshTokens) {
+        this.issueNonSpecRefreshTokens = issueNonSpecRefreshTokens;
     }
 }
