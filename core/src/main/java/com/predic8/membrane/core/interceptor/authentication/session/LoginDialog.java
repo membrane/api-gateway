@@ -244,7 +244,7 @@ public class LoginDialog {
 	private void processConsentPageResult(Exchange exc, Session s) throws Exception {
 		removeConsentPageDataFromSession(s);
 		putConsentInSession(exc, s);
-		redirectAfterConsent(exc, s.getUserAttributes().get("state"));
+		redirectAfterConsent(exc);
 	}
 
 	private void removeConsentPageDataFromSession(Session s) {
@@ -258,11 +258,11 @@ public class LoginDialog {
 		}
 	}
 
-	private void redirectAfterConsent(Exchange exc, String state) throws Exception {
+	private void redirectAfterConsent(Exchange exc) throws Exception {
 		String target = URLParamUtil.getParams(uriFactory, exc).get("target");
 		if (StringUtils.isEmpty(target))
 		    target = exc.getRequestURI().substring(0, exc.getRequestURI().indexOf("login/"));
-		exc.setResponse(Response.redirectWithout300(target + "?" + state).build());
+		exc.setResponse(Response.redirectWithout300(target).build());
 	}
 
 	private void putConsentInSession(Exchange exc, Session s) throws Exception {

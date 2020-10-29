@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import org.jose4j.lang.JoseException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class IdTokenTokenFlow extends OAuth2Flow {
@@ -51,7 +52,7 @@ public class IdTokenTokenFlow extends OAuth2Flow {
         return respondWithTokensAndRedirect();
     }
 
-    private Outcome respondWithTokensAndRedirect() {
+    private Outcome respondWithTokensAndRedirect() throws IOException {
         tokenFlow.getResponse();
 
         addIdTokenToRedirect();
