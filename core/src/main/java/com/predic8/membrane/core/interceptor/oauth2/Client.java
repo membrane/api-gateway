@@ -22,7 +22,7 @@ public class Client {
     private String clientId;
     private String clientSecret;
     private String callbackUrl;
-    private String grantTypes = "authorization_code,password,client_credentials,refresh_token";
+    private String grantTypes = "authorization_code,password,client_credentials,refresh_token,implicit";
 
     public Client(){
     }
@@ -76,7 +76,7 @@ public class Client {
 
     /**
      * @description Comma separated list of grant types this client can be used with.
-     * @default authorization_code,password,client_credentials,refresh_token
+     * @default authorization_code,password,client_credentials,refresh_token,implicit
      */
     @MCAttribute
 	public void setGrantTypes(String grantTypes) {
