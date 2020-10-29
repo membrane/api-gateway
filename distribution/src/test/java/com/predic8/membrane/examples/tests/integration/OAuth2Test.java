@@ -33,8 +33,12 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,52 +46,75 @@ import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(Parameterized.class)
 public class OAuth2Test {
 
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() throws Exception {
+        return Arrays.asList(new Object[][] {
+                testParams(),
+                testParamsForSubPath()
+        });
+    }
+
+    private static Object[] testParams() {
+        return new Object[] { "proxies.xml", "", ""};
+    }
+
+    private static Object[] testParamsForSubPath() {
+        return new Object[] { "proxies-subpath.xml", "/server", "/client" };
+    }
+
+    @Parameterized.Parameter(value = 0)
+    public String proxies;
+    @Parameterized.Parameter(value = 1)
+    public String serverBasePath;
+    @Parameterized.Parameter(value = 2)
+    public String clientBasePath;
 
     private Router router;
 
     @Before
     public void setUp() throws Exception {
-        router = HttpRouter.init(System.getProperty("user.dir") + "\\src\\test\\resources\\OAuth2\\proxies.xml");
+        router = HttpRouter.init(System.getProperty("user.dir") + "\\src\\test\\resources\\OAuth2\\" + proxies);
     }
 
     @Test
     public void testGoodLoginRequest() throws Exception {
-        AssertUtils.getAndAssert200("http://localhost:2001");
+        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
         String[] headers = new String[2];
         headers[0] = "Content-Type";
         headers[1] = "application/x-www-form-urlencoded";
-        AssertUtils.postAndAssert(200, "http://localhost:2000/login/", headers, "target=&username=john&password=password");
-        assertEquals("Hello john.", AssertUtils.getAndAssert200("http://localhost:2000/"));
+        AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", headers, "target=&username=john&password=password");
+        assertEquals("Hello john.", AssertUtils.getAndAssert200("http://localhost:2000" + serverBasePath + "/"));
     }
 
     @Test
     public void testBadUserCredentials() throws Exception {
-        AssertUtils.getAndAssert200("http://localhost:2001");
+        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
         String[] headers = new String[2];
         headers[0] = "Content-Type";
         headers[1] = "application/x-www-form-urlencoded";
-        assertEquals(true, AssertUtils.postAndAssert(200, "http://localhost:2000/login/", headers, "target=&username=john&password=wrongPassword").contains("Invalid password."));
-        AssertUtils.getAndAssert(400, "http://localhost:2000/");
+        assertEquals(true, AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", headers, "target=&username=john&password=wrongPassword").contains("Invalid password."));
+        AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
     }
 
     @Test
     public void testMissingHeader() throws Exception {
-        AssertUtils.getAndAssert200("http://localhost:2001");
-        assertEquals(true, AssertUtils.postAndAssert(200, "http://localhost:2000/login/", "target=&username=john&password=password").contains("Invalid password."));
-        AssertUtils.getAndAssert(400, "http://localhost:2000/");
+        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
+        assertEquals(true, AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", "target=&username=john&password=password").contains("Invalid password."));
+        AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
     }
 
     @Test
     public void testBypassingAuthorizationService() throws Exception {
-        AssertUtils.getAndAssert(400, "http://localhost:2000/oauth2/auth");
+        AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/oauth2/auth");
     }
 
     @Test
     public void testLogout() throws Exception {
         testGoodLoginRequest();
-        AssertUtils.getAndAssert200("http://localhost:2001/login/logout");
+        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath + "/login/logout");
     }
 
     @After
