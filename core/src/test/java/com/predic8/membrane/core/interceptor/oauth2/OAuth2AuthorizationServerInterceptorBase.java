@@ -275,7 +275,12 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     }
 
     private void initOasi() throws Exception {
-        oasi = new OAuth2AuthorizationServerInterceptor();
+        oasi = new OAuth2AuthorizationServerInterceptor() {
+            @Override
+            public String computeBasePath() {
+                return "";
+            }
+        };
         setOasiUserDataProvider();
         setOasiClientList();
         setOasiClaimList();

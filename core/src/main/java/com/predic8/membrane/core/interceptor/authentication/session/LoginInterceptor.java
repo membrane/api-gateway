@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
+import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -116,7 +117,16 @@ public class LoginInterceptor extends AbstractInterceptor {
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
 		userDataProvider.init(router);
-		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession, message);
+		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, getBasePath(), path, exposeUserCredentialsToSession, message);
+	}
+
+	public String getBasePath() {
+		Rule rule = getRule();
+		if (rule == null)
+			return "";
+		if (rule.getKey().getPath() == null || rule.getKey().isPathRegExp())
+			return "";
+		return rule.getKey().getPath();
 	}
 
 	@Override

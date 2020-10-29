@@ -28,6 +28,7 @@ import com.predic8.membrane.core.interceptor.oauth2.processors.*;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerator;
+import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -40,6 +41,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     private String issuer;
     private String location;
+    private String basePath;
     private String path = "/login/";
     private String message;
     private String consentFile;
@@ -73,6 +75,10 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         setFlow(Flow.Set.REQUEST_RESPONSE);
 
         this.setRouter(router);
+        basePath = computeBasePath();
+        if (basePath.endsWith("/"))
+            throw new RuntimeException("When <oauth2AuthorizationServer> is nested in a <serviceProxy> with a <path>, the path should not end in a '/'.");
+
         addSupportedAuthorizationGrants();
         getWellknownFile().init(router,this);
         getConsentPageFile().init(router,getConsentFile());
@@ -267,6 +273,8 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setIssuer(String issuer) {
         this.issuer = issuer;
+        if (issuer.endsWith("/"))
+            log.warn("In <oauth2authserver>, the 'issuer' attribute ends with a '/'. This should be avoided.");
     }
 
     public ClaimList getClaimList() {
@@ -365,5 +373,18 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setIssueNonSpecRefreshTokens(boolean issueNonSpecRefreshTokens) {
         this.issueNonSpecRefreshTokens = issueNonSpecRefreshTokens;
+    }
+
+    public String computeBasePath() {
+        Rule rule = getRule();
+        if (rule == null)
+            return "";
+        if (rule.getKey().getPath() == null || rule.getKey().isPathRegExp())
+            return "";
+        return rule.getKey().getPath();
+    }
+
+    public String getBasePath() {
+        return basePath;
     }
 }

@@ -67,14 +67,14 @@ public class MembraneAuthorizationService extends AuthorizationService {
         try {
             String[] urls = src.split(Pattern.quote(" "));
             if(urls.length == 1) {
-                String url = urls[0] + "/.well-known/openid-configuration";
+                String url = urls[0] + (urls[0].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
                 parseSrc(dynamicRegistration != null ?
                         dynamicRegistration.retrieveOpenIDConfiguration(url) :
                         router.getResolverMap().resolve(url));
             }
             else if(urls.length == 2){
-                String internalUrl = urls[1] + "/.well-known/openid-configuration";
+                String internalUrl = urls[1] + (urls[1].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
 
                 parseSrc(dynamicRegistration != null ?

@@ -46,10 +46,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest {
         synchronized (session) {
             session.getUserAttributes().put(ParamNames.STATE, getState());
         }
-        String reqUrl = exc.getRequestURI();
-        String basePath = reqUrl.substring(0, reqUrl.indexOf("/oauth2/"));
-        return Response.redirect(basePath + "/login/?" + getState(), false)
-            .build();
+        return Response.redirect(authServer.getBasePath() + "/?" + getState(), false).build();
     }
 
     private Response doOpenIDPrompt() throws IOException {
