@@ -38,6 +38,10 @@ public abstract class Store {
 		return location;
 	}
 
+	/**
+	 * @description A file/resource containing the Java Key Store (JKS).
+	 * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
+	 */
 	@MCAttribute
 	public void setLocation(String location) {
 		this.location = location;

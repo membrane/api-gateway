@@ -36,6 +36,10 @@ public class KeyFileApiKeyValidator implements ApiKeyValidator {
         return location;
     }
 
+    /**
+     * @description A file/resource containing one API key description per line. Lines starting with '#' are ignored. An API key description consists of the API key (string without spaces) followed by a space and possibly arbitrary characters (except newlines), for example a description.
+     * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
+     */
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;
@@ -50,6 +54,9 @@ public class KeyFileApiKeyValidator implements ApiKeyValidator {
             String line = br.readLine();
             if (line == null)
                 break;
+
+            if (line.startsWith("#"))
+                continue;
 
             String key = line.split(" ", 2)[0];
             validKeys.put(key, Boolean.TRUE);

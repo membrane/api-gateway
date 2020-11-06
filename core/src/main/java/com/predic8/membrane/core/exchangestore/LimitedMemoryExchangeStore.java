@@ -32,7 +32,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and new exchanges arrive then old exchanges will be dropped (starting from oldest ascending) until the exchange can be stored. The LimitedMemoryExchangeStore is the default ExchangeStore Membrane uses.
+ * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and
+ * new exchanges arrive then old exchanges will be dropped (starting from oldest ascending) until the exchange can be
+ * stored. The LimitedMemoryExchangeStore is the default ExchangeStore Membrane uses.
  */
 @MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
@@ -260,11 +262,6 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return exc.getHeapSizeEstimation()+getCurrentSize() <= maxSize;
 	}
 
-	/**
-	 * @description Threshold limit in bytes until old exchanges are dropped.
-	 * @example 1048576<i>(1Mb)</i>
-	 * @default 1000000
-	 */
 	public int getMaxSize() {
 		return maxSize;
 	}
@@ -272,6 +269,8 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	static final int additionalMemoryToAddInMb = 100;
 
 	/**
+	 * @description Threshold limit in bytes until old exchanges are dropped.
+	 * @example 1048576<i>(1Mb)</i>
 	 * @default 1000000
 	 */
 	@MCAttribute
@@ -334,6 +333,8 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	/**
+	 * @description <p>Maximum body size limit in bytes. If bodies are collected, which exceed this limit, the
+	 * strategy determines, what happens.</p>
 	 * @default 100000
 	 */
 	@MCAttribute
@@ -347,6 +348,10 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	/**
 	 * @description The strategy to use (TRUNCATE or ERROR) when a HTTP message body is larger than the <tt>maxBodySize</tt>.
+	 * <tt>TRUNCATE</tt> means that only the first bytes are kept in memory. <tt>ERROR</tt> means that HTTP requests
+	 * exceeding this limit will cause an error and not be processed any further: If the request exceeds the limit, it will
+	 * not be processed further; if the response exceeds the limit, it will not be processed further. ("Further processing"
+	 * usually includes transmission over a network.)
 	 * @default TRUNCATE
 	 */
 	@MCAttribute

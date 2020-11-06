@@ -223,7 +223,7 @@ Membrane Service Proxy Change Log
 
 * [bugfix] fixed blueprint local bean parsing. Therefore, the OSGi deployment
   tutorial on
-  http://membrane-soa.org/service-proxy-doc/4.0/deployment/osgi/servicemix-1.htm
+  https://membrane-soa.org/service-proxy-doc/4.0/deployment/osgi/servicemix-1.htm
   Part I (proxies.xml deployment in Karaf 3.0) now works again. Part II
   still needs some work
 

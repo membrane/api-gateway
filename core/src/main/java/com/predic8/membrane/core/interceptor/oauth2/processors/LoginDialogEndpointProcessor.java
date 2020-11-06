@@ -29,7 +29,7 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
             loginDialog = null;
             return;
         }
-        loginDialog = new LoginDialog(authServer.getUserDataProvider(), null, authServer.getSessionManager(), authServer.getAccountBlocker(), authServer.getLocation(), authServer.getPath(), authServer.isExposeUserCredentialsToSession(), authServer.getMessage());
+        loginDialog = new LoginDialog(authServer.getUserDataProvider(), null, authServer.getSessionManager(), authServer.getAccountBlocker(), authServer.getLocation(), authServer.getBasePath(), authServer.getPath(), authServer.isExposeUserCredentialsToSession(), authServer.getMessage());
         try {
             loginDialog.init(authServer.getRouter());
         } catch (Exception e) {
@@ -40,7 +40,7 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
     @Override
     public boolean isResponsible(Exchange exc) {
         URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());
-        return uri.getPath().startsWith(authServer.getPath()) && authServer.getSessionManager().getSession(exc) != null; // TODO: check session for parameters
+        return uri.getPath().startsWith(authServer.getBasePath() + authServer.getPath()) && authServer.getSessionManager().getSession(exc) != null; // TODO: check session for parameters
     }
 
     @Override

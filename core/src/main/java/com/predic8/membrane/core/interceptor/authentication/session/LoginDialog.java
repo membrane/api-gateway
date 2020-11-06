@@ -45,7 +45,9 @@ import com.predic8.membrane.core.util.URLParamUtil;
 public class LoginDialog {
 	private static Logger log = LoggerFactory.getLogger(LoginDialog.class.getName());
 
-	private String path, message;
+	private final String basePath;
+	private String path;
+	private String message;
 	private boolean exposeUserCredentialsToSession;
 	private URIFactory uriFactory;
 
@@ -62,10 +64,16 @@ public class LoginDialog {
 			SessionManager sessionManager,
 			AccountBlocker accountBlocker,
 			String dialogLocation,
+			String basePath,
 			String path,
 			boolean exposeUserCredentialsToSession,
 			String message) {
+		this.basePath = basePath;
 		this.path = path;
+		if (basePath.length() > 0)
+			if ((basePath.endsWith("/") ? 1 : 0) + (path.startsWith("/") ? 1 : 0) != 1)
+				throw new RuntimeException("Login dialog is configured with basePath='\" + basePath + \"' and path='" + path +
+						"'. Please ensure that basePath ends with a '/' xOR path starts with a '/'. (Concatenation '" + basePath + path + "' looks weird.)')");
 		this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
 		this.userDataProvider = userDataProvider;
 		this.tokenProvider = tokenProvider;
@@ -109,7 +117,7 @@ public class LoginDialog {
 			}
 		});
 		Map<String, Object> model = new HashMap<String, Object>();
-		model.put("action", StringEscapeUtils.escapeXml(path));
+		model.put("action", StringEscapeUtils.escapeXml(basePath + path));
 		model.put("target", StringEscapeUtils.escapeXml(target));
 		if(page == 0)
 			model.put("login", true);
@@ -117,7 +125,7 @@ public class LoginDialog {
 			model.put("token", true);
 		if(page == 2) {
 			model.put("consent", true);
-			model.put("action",StringEscapeUtils.escapeXml(path)+ "consent");
+			model.put("action",StringEscapeUtils.escapeXml(basePath + path)+ "consent");
 		}
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
@@ -127,8 +135,8 @@ public class LoginDialog {
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
 		Session s = sessionManager.getSession(exc);
-
-		String uri = exc.getRequest().getUri().substring(path.length()-1);
+		
+		String uri = exc.getRequest().getUri().substring(basePath.length() + path.length()-1);
 		if (uri.indexOf('?') >= 0)
 			uri = uri.substring(0, uri.indexOf('?'));
 		exc.getDestinations().set(0, uri);
@@ -181,7 +189,7 @@ public class LoginDialog {
 					else {
 						String target = params.get("target");
 						if (StringUtils.isEmpty(target))
-							target = "/";
+						    target = basePath + (basePath.endsWith("/") ? "" : "/");
 						exc.setResponse(Response.redirectWithout300(target).build());
 					}
 
@@ -220,7 +228,7 @@ public class LoginDialog {
 						accountBlocker.unblock(s.getUserName());
 					String target = URLParamUtil.getParams(uriFactory, exc).get("target");
 					if (StringUtils.isEmpty(target))
-						target = "/";
+					    target = basePath + (basePath.endsWith("/") ? "" : "/");
 
 					if (this.message != null)
 						exc.setResponse(Response.redirectWithout300(target, message).build());
@@ -257,7 +265,7 @@ public class LoginDialog {
 	private void redirectAfterConsent(Exchange exc) throws Exception {
 		String target = URLParamUtil.getParams(uriFactory, exc).get("target");
 		if (StringUtils.isEmpty(target))
-			target = "/";
+		    target = basePath + (basePath.endsWith("/") ? "" : "/");
 		exc.setResponse(Response.redirectWithout300(target).build());
 	}
 

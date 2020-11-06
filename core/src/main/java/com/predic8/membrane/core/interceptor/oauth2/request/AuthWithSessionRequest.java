@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 
 import java.io.IOException;
 
-public class AuthWithSessionRequest extends ParameterizedRequest{
+public class AuthWithSessionRequest extends ParameterizedRequest {
 
     public AuthWithSessionRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
@@ -35,7 +35,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
 
     @Override
     protected Response processWithParameters() throws Exception {
-        if(getPrompt() != null)
+        if (getPrompt() != null)
             return doOpenIDPrompt();
         return redirectToEmptyEndpoint();
 
@@ -43,18 +43,18 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
 
     private Response redirectToEmptyEndpoint() {
         SessionManager.Session session = authServer.getSessionManager().getOrCreateSession(exc);
-        synchronized(session){
-            session.getUserAttributes().put(ParamNames.STATE,getState());
+        synchronized (session) {
+            session.getUserAttributes().put(ParamNames.STATE, getState());
         }
-        return Response.redirect("/?" + getState(),false).build();
+        return Response.redirect(authServer.getBasePath() + "/?" + getState(), false).build();
     }
 
     private Response doOpenIDPrompt() throws IOException {
-        if(getPrompt().equals("login"))
+        if (getPrompt().equals("login"))
             return clearSessionAndRedirectToAuthEndpoint(exc);
 
-        if(getPrompt().equals("none") && !authServer.getSessionManager().getOrCreateSession(exc).isAuthorized())
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error","login_required");
+        if (getPrompt().equals("none") && !authServer.getSessionManager().getOrCreateSession(exc).isAuthorized())
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "login_required");
         return new NoResponse();
     }
 
@@ -63,7 +63,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
         return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "login_required");
     }
 
-    private Response clearSessionAndRedirectToAuthEndpoint(Exchange exc){
+    private Response clearSessionAndRedirectToAuthEndpoint(Exchange exc) {
         SessionManager.Session session = authServer.getSessionManager().getSession(exc);
         if (session != null)
             session.clear();
@@ -71,6 +71,6 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
     }
 
     private static Response redirectToOAuth2AuthEndpoint(Exchange exc) {
-        return Response.redirect(exc.getRequestURI(),false).dontCache().bodyEmpty().build();
+        return Response.redirect(exc.getRequestURI(), false).dontCache().bodyEmpty().build();
     }
 }

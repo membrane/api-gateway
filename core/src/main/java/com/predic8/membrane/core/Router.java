@@ -60,6 +60,8 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.URIFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+
 /**
  * @description <p>
  *              Membrane Service Proxy's main object.
@@ -109,6 +111,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	protected String jmxRouterName;
 
 	private boolean hotDeploy = true;
+	private final Object lock = new Object();
+	@GuardedBy("lock")
 	private boolean running;
 
 	private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
@@ -287,7 +291,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 		startJmx();
 
-		running = true;
+		synchronized (lock) {
+			running = true;
+		}
 		log.info(Constants.PRODUCT_NAME + " " + Constants.VERSION + " up and running!");
 	}
 
@@ -403,7 +409,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		running = false;
+		synchronized (lock) {
+			running = false;
+			lock.notifyAll();
+		}
 	}
 
 	public void stopAll(){
@@ -414,7 +423,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	@Override
 	public boolean isRunning() {
-		return running;
+		synchronized (lock) {
+			return running;
+		}
 	}
 
 	/**
@@ -430,7 +441,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	 */
 	@MCAttribute
 	public void setHotDeploy(boolean hotDeploy) {
-		if (running) {
+		if (isRunning()) {
 			if (this.hotDeploy && !hotDeploy)
 				stopHotDeployment();
 			if (!this.hotDeploy && hotDeploy)
@@ -532,5 +543,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	public String getId(){
 		return id;
+	}
+
+	/**
+	 * waits until the router has shut down
+	 */
+	public void waitFor() throws InterruptedException {
+		synchronized (lock) {
+			while (isRunning())
+				lock.wait();
+		}
 	}
 }

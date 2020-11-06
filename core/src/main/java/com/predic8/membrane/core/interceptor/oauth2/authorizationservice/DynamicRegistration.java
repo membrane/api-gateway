@@ -76,7 +76,7 @@ public class DynamicRegistration {
         if(!json.containsKey("client_id") || !json.containsKey("client_secret"))
             throw new RuntimeException("Registration endpoint didn't return clientId/clientSecret");
 
-        return new Client(json.get("client_id"),json.get("client_secret"),"");
+        return new Client(json.get("client_id"),json.get("client_secret"),"", json.get("grant_types"));
     }
 
     private Response doRequest(Exchange exc) throws Exception {

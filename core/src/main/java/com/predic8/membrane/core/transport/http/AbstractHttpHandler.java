@@ -165,6 +165,11 @@ public abstract class AbstractHttpHandler  {
 		return true;
 	}
 
+	/**
+	 * @return the context path of our web application, when running as a servlet with removeContextRoot="true"
+	 * (which is the default, when running as a servlet). returns an empty string otherwise (e.g. if not running
+	 * as a servlet or when removeContextRoot="false")
+	 */
 	public String getContextPath(Exchange exc) {
 		return "";
 	}

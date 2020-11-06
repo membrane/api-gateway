@@ -21,7 +21,7 @@ Start `service-proxy.sh` or `service-proxy.bat`.
 
 Have a look at the main configuration file `conf/proxies.xml`. Changes to this file are instantly deployed.
 
-Run the samples in the examples folder, follow the [REST](https://www.membrane-soa.org/service-proxy-doc/4.4/rest-quickstart.htm) or [SOAP](https://www.membrane-soa.org/service-proxy-doc/4.4/soap-quickstart.htm) tutorials, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
+Run the samples in the examples folder, follow the [REST](https://www.membrane-soa.org/service-proxy-doc/current/rest-quickstart.htm) or [SOAP](https://www.membrane-soa.org/service-proxy-doc/4.4/soap-quickstart.htm) tutorials, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
 
 Samples
 -------
@@ -123,7 +123,7 @@ Route and intercept WebSocket traffic:
     <target port="8080" host="localhost"/>
 </serviceProxy>
 ```
-(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)_)
+(_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/current/websocket-routing-intercepting.htm)_)
 
 ### Security
 
@@ -142,7 +142,7 @@ Use the widely adopted OAuth2/OpenID Framework to secure endpoints:
     <target host="thomas-bayer.com" port="80"/>
 </serviceProxy>
 ```
-(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-openid.htm)_)
+(_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/current/oauth2-openid.htm)_)
 
 Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
 ```xml
@@ -162,7 +162,7 @@ Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
     </oauth2authserver>
 </serviceProxy>
 ```
-(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-code-flow-example.htm)_)
+(_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/current/oauth2-code-flow-example.htm)_)
 
 Secure an endpoint with basic authentication:
 ```xml
@@ -220,4 +220,4 @@ Distribute your workload to multiple nodes:
 </serviceProxy>
 ```
 
-See [configuration reference](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/) for much more.
+See [configuration reference](https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/) for much more.

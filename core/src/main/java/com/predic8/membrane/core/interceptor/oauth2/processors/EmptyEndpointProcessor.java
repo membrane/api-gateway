@@ -36,7 +36,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     @Override
     public boolean isResponsible(Exchange exc) {
         SessionManager.Session s = authServer.getSessionManager().getSession(exc);
-        return (exc.getRequestURI().equals("/") || exc.getRequestURI().startsWith("/?")) && s != null && (s.isPreAuthorized() || s.isAuthorized() );
+        return (exc.getRequestURI().equals(authServer.getBasePath() + "/") || exc.getRequestURI().startsWith(authServer.getBasePath() + "/?")) && s != null && (s.isPreAuthorized() || s.isAuthorized() );
     }
 
     @Override
@@ -138,7 +138,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
 
 
     private Outcome redirectToConsentPage(Exchange exc) {
-        exc.setResponse(Response.redirect("/login/consent",false).dontCache().bodyEmpty().build());
+        exc.setResponse(Response.redirect(exc.getRequestURI() + "/login/consent",false).dontCache().bodyEmpty().build());
         return Outcome.RETURN;
     }
 

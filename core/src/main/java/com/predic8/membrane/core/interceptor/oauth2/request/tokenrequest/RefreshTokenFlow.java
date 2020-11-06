@@ -17,12 +17,19 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
+
+import org.jose4j.lang.JoseException;
 
 public class RefreshTokenFlow extends TokenRequest {
 
@@ -61,8 +68,21 @@ public class RefreshTokenFlow extends TokenRequest {
 
         // TODO check if scope is "narrower" than before
 
+        Client client;
+        try {
+            synchronized (authServer.getClientList()) {
+                client = authServer.getClientList().getClient(getClientId());
+            }
+        } catch (Exception e) {
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_client");
+        }
+        
+        String grantTypes = client.getGrantTypes();
+        if (!grantTypes.contains(getGrantType())) {
+			return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant_type");
+        }
+        
         scope = getScope();
-        idToken = null;
         token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret());
         refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
 
@@ -71,10 +91,32 @@ public class RefreshTokenFlow extends TokenRequest {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
         }
         authServer.getSessionFinder().addSessionForToken(token,session);
-
+        if (OAuth2Util.isOpenIdScope(scope)) {
+            idToken = createSignedIdToken(session, username, client);
+        }
+        
         return new NoResponse();
 
     }
+    
+    private String createSignedIdToken(SessionManager.Session session, String username, Client client) throws JoseException {
+        return getSignedIdToken(username, client, getValidIdTokenClaims(session));
+    }
+
+    private String getSignedIdToken(String username, Client client, JwtGenerator.Claim... claims) throws JoseException {
+        return authServer.getJwtGenerator().getSignedIdToken(authServer.getIssuer(),username,client.getClientId(),10*60,claims);
+    }
+
+    private JwtGenerator.Claim[] getValidIdTokenClaims(SessionManager.Session session){
+        ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),session.getUserAttributes().get(ParamNames.CLAIMS));
+        ArrayList<JwtGenerator.Claim> claims = new ArrayList<JwtGenerator.Claim>();
+        if(cp.hasClaims()) {
+            for (String claim : cp.getIdTokenClaims())
+                claims.add(new JwtGenerator.Claim(claim,session.getUserAttributes().get(ClaimRenamer.convert(claim))));
+        }
+        return claims.toArray(new JwtGenerator.Claim[0]);
+    }
+
 
     @Override
     protected Response getResponse() throws Exception {

@@ -22,7 +22,8 @@ import com.predic8.membrane.annot.MCTextContent;
 @MCElement(name="certificate", mixed=true)
 public class Certificate extends Blob {
     /**
-     * @description A file containing the certificate in PEM format.
+     * @description A file/resource containing the certificate in PEM format.
+     * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
      */
     public void setLocation(String location) {
         super.setLocation(location);

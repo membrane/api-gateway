@@ -27,7 +27,7 @@ public class UserinfoEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/userinfo");
+        return exc.getRequestURI().startsWith(authServer.getBasePath() + "/oauth2/userinfo");
     }
 
     @Override

@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core;
 
+import java.io.File;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
@@ -31,6 +33,7 @@ public class RouterCLI {
 	public static void main(String[] args) {
 
 		MembraneCommandLine cl = new MembraneCommandLine();
+		Router router = null;
 		try {
 			cl.parse(args);
 			if (cl.needHelp()) {
@@ -39,7 +42,7 @@ public class RouterCLI {
 			}
 
 			try {
-				Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
+				router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
 			} catch (XmlBeanDefinitionStoreException e) {
 				TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
 			}
@@ -51,13 +54,9 @@ public class RouterCLI {
 			System.exit(1);
 		}
 
-		new RouterCLI().waitForever();
-
-	}
-
-	private synchronized void waitForever() {
 		try {
-			wait();
+			if (router != null)
+				router.waitFor();
 		} catch (InterruptedException e) {
 			// do nothing
 		}
@@ -116,9 +115,15 @@ public class RouterCLI {
 	}
 
 	private static String prefix(String dir) {
-		if (dir.startsWith("/"))
-			return "file://" + dir;
-		return dir;
+
+		String result = dir;
+
+		File file = new File(dir);
+		if (file.isAbsolute()) {
+			result = file.toURI().toString();
+		}
+
+		return result;
 	}
 
 }

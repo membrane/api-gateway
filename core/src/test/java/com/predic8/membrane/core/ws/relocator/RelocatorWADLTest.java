@@ -57,7 +57,7 @@ public class RelocatorWADLTest extends TestCase {
 
 		writer = new StringWriter();
 
-		relocator = new Relocator(writer, "http", "localhost", 3000, null);
+		relocator = new Relocator(writer, "http", "localhost", 3000, "", null);
 		relocator.getRelocatingAttributes().put(
 				new QName(WADL_NS, "resources"), "base");
 		relocator.getRelocatingAttributes().put(new QName(WADL_NS, "include"),

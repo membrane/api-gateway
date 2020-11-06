@@ -1,0 +1,79 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy name="Authorization Server" port="2000">
+
+			<path>/server</path>
+
+			<oauth2authserver path="/login/" location="./auth" consentFile="consentFile.json" issuer="http://localhost:2000/server">
+				<staticUserDataProvider>
+					<user username="john" password="password" email="john@predic8.de" />
+				</staticUserDataProvider>
+				<staticClientList>
+					<client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/client/oauth2callback" />
+				</staticClientList>
+				<bearerToken/>
+				<claims value="aud email iss sub username">
+					<scope id="username" claims="username"/>
+					<scope id="profile" claims="username email password"/>
+				</claims>
+			</oauth2authserver>
+
+		</serviceProxy>
+
+	</router>
+
+	<router>
+		<serviceProxy name="Membrane Resource service" port="2001">
+
+			<path>/client</path>
+
+			<headerFilter>
+				<exclude>X-Authenticated-Username</exclude>
+			</headerFilter>
+
+			<oauth2Resource>
+				<membrane src="http://localhost:2000/server/" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
+			</oauth2Resource>
+
+			<groovy>
+				def name = exc.request.header.getFirstValue("X-Authenticated-Username")
+				exc.response = Response.ok("Hello " + name + ".").build()
+				RETURN
+			</groovy>
+
+		</serviceProxy>
+	</router>
+
+	<router>
+		<serviceProxy name="Race condition client" port="2002">
+
+			<path>/client</path>
+
+			<headerFilter>
+				<exclude>X-Authenticated-Username</exclude>
+			</headerFilter>
+
+			<oauth2Resource>
+				<membrane src="http://localhost:2000/server/" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
+			</oauth2Resource>
+
+			<groovy>
+				if(exc.request.uri.equals("/test1")){
+					exc.response = Response.ok("Test1.").build()
+					RETURN
+				}else{
+					exc.response = Response.ok("Test2.").build()
+					RETURN
+				}
+			</groovy>
+
+		</serviceProxy>
+	</router>
+
+</spring:beans>

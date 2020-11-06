@@ -275,7 +275,12 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     }
 
     private void initOasi() throws Exception {
-        oasi = new OAuth2AuthorizationServerInterceptor();
+        oasi = new OAuth2AuthorizationServerInterceptor() {
+            @Override
+            public String computeBasePath() {
+                return "";
+            }
+        };
         setOasiUserDataProvider();
         setOasiClientList();
         setOasiClaimList();
@@ -303,7 +308,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     private void setOasiClientList() {
         StaticClientList cl = new StaticClientList();
         ArrayList<Client> clients = new ArrayList<Client>();
-        Client john2 = new Client("abc","def","http://localhost:2001/oauth2callback");
+        Client john2 = new Client("abc","def","http://localhost:2001/oauth2callback", "authorization_code,password,client_credentials,refresh_token,implicit");
         clients.add(john2);
         cl.setClients(clients);
         oasi.setClientList(cl);
