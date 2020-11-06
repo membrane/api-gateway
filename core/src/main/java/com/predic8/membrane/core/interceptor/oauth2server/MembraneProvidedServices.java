@@ -14,11 +14,10 @@
 package com.predic8.membrane.core.interceptor.oauth2server;
 
 import com.bornium.http.Exchange;
-import com.bornium.security.oauth2openid.providers.ClientDataProvider;
-import com.bornium.security.oauth2openid.providers.Session;
-import com.bornium.security.oauth2openid.providers.SessionProvider;
-import com.bornium.security.oauth2openid.providers.UserDataProvider;
+import com.bornium.security.oauth2openid.providers.*;
 import com.bornium.security.oauth2openid.server.ProvidedServices;
+import com.bornium.security.oauth2openid.server.TokenContext;
+import com.bornium.security.oauth2openid.token.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.interceptor.oauth2.ClientList;
@@ -26,6 +25,8 @@ import com.predic8.membrane.core.interceptor.session.SessionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -74,18 +75,18 @@ public class MembraneProvidedServices implements ProvidedServices {
                 return new Session() {
 
                     @Override
-                    public String getValue(String s) throws Exception {
-                        return memSession.get(s);
+                    public String getValue(String key) throws Exception {
+                        return memSession.get(key);
                     }
 
                     @Override
-                    public void putValue(String s, String s1) throws Exception {
-                        memSession.put(s,s1);
+                    public void putValue(String key, String value) throws Exception {
+                        memSession.put(key,value);
                     }
 
                     @Override
-                    public void removeValue(String s) throws Exception {
-                        memSession.remove(s);
+                    public void removeValue(String key) throws Exception {
+                        memSession.remove(key);
                     }
 
                     @Override
@@ -101,28 +102,28 @@ public class MembraneProvidedServices implements ProvidedServices {
     public ClientDataProvider getClientDataProvider() {
         return new ClientDataProvider() {
             @Override
-            public boolean clientExists(String s) {
-                return clientList.getClient(s) != null;
+            public boolean clientExists(String clientId) {
+                return clientList.getClient(clientId) != null;
             }
 
             @Override
-            public boolean isConfidential(String s) {
-                if(clientExists(s))
-                    return clientList.getClient(s).getClientSecret() != null;
+            public boolean isConfidential(String clientId) {
+                if(clientExists(clientId))
+                    return clientList.getClient(clientId).getClientSecret() != null;
                 return false;
             }
 
             @Override
-            public boolean verify(String s, String s1) {
-                if(clientExists(s))
-                    return clientList.getClient(s).verify(s,s1);
+            public boolean verify(String clientId, String clientSecret) {
+                if(clientExists(clientId))
+                    return clientList.getClient(clientId).verify(clientId,clientSecret);
                 return false;
             }
 
             @Override
-            public Set<String> getRedirectUris(String s) {
-                if(clientExists(s))
-                    return new HashSet<>(Arrays.asList(clientList.getClient(s).getCallbackUrl()));
+            public Set<String> getRedirectUris(String clientId) {
+                if(clientExists(clientId))
+                    return new HashSet<>(Arrays.asList(clientList.getClient(clientId).getCallbackUrl()));
                 return new HashSet<>();
             }
         };
@@ -147,23 +148,59 @@ public class MembraneProvidedServices implements ProvidedServices {
             }
 
             @Override
-            public Map<String, Object> getClaims(String s, Set<String> set) {
+            public Map<String, Object> getClaims(String username, Set<String> publicClaimNames) {
                 return verifiedUsers
-                        .getIfPresent(s)
+                        .getIfPresent(username)
                         .entrySet()
                         .stream()
-                        .filter(e -> set.contains(e.getKey()))
+                        .filter(e -> publicClaimNames.contains(e.getKey()))
                         .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
             }
 
             @Override
-            public String getSubClaim(String s) {
-                return getClaims(s,new HashSet<>(Arrays.asList(subClaimName))).get(subClaimName).toString();
+            public String getSubClaim(String username) {
+                return getClaims(username,new HashSet<>(Arrays.asList(subClaimName))).get(subClaimName).toString();
             }
 
             @Override
-            public void badLogin(String s) {
-                log.warn("Bad login from " + s);
+            public void badLogin(String username) {
+                log.warn("Bad login from " + username);
+            }
+        };
+    }
+
+    @Override
+    public TokenPersistenceProvider getTokenPersistenceProvider() {
+        return new TokenPersistenceProvider() {
+            @Override
+            public Token createToken(String value, String username, String clientId, LocalDateTime issued, Duration validFor, String claims, String scope, String redirectUri, String nonce) {
+                return new InMemoryToken(value, username, clientId, issued, validFor, claims, scope, redirectUri, nonce) {
+                };
+            }
+
+            @Override
+            public TokenManager createTokenManager(String tokenManagerId) {
+                return new InMemoryTokenManager();
+            }
+        };
+    }
+
+    @Override
+    public TimingProvider getTimingProvider() {
+        return new DefaultTimingProvider();
+    }
+
+    @Override
+    public TokenProvider getTokenProvider() {
+        return new BearerTokenProvider();
+    }
+
+    @Override
+    public ConfigProvider getConfigProvider() {
+        return new ConfigProvider() {
+            @Override
+            public boolean useReusableRefreshTokens(TokenContext tokenContext) {
+                return false;
             }
         };
     }

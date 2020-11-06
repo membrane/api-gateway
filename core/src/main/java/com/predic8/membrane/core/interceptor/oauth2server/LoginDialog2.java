@@ -16,6 +16,7 @@ import com.floreysoft.jmte.Engine;
 import com.floreysoft.jmte.ErrorHandler;
 import com.floreysoft.jmte.message.ParseException;
 import com.floreysoft.jmte.token.Token;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
@@ -111,17 +112,18 @@ public class LoginDialog2 {
                 log.error(arg0);
             }
         });
+        Map pages = ImmutableMap
+                .builder()
+                .put(0, "login")
+                .put(1, "token")
+                .put(2, "consent")
+                .build();
+
         Map<String, Object> model = new HashMap<String, Object>();
-        model.put("action", StringEscapeUtils.escapeXml(path));
+        model.put("action", StringEscapeUtils.escapeXml(path)+ pages.get(page));
         model.put("target", StringEscapeUtils.escapeXml(target));
-        if(page == 0)
-            model.put("login", true);
-        if (page == 1)
-            model.put("token", true);
-        if(page == 2) {
-            model.put("consent", true);
-            model.put("action",StringEscapeUtils.escapeXml(path)+ "consent");
-        }
+        model.put(pages.get(page).toString(),true);
+
         for (int i = 0; i < params.length; i+=2)
             model.put((String)params[i], params[i+1]);
 
@@ -134,7 +136,7 @@ public class LoginDialog2 {
         String uri = exc.getRequest().getUri().substring(path.length()-1);
         if (uri.indexOf('?') >= 0)
             uri = uri.substring(0, uri.indexOf('?'));
-        exc.getDestinations().set(0, uri);
+        exc.getDestinations().add(uri);
 
         if (uri.equals("/logout")) {
             if (s != null)
@@ -145,7 +147,7 @@ public class LoginDialog2 {
                 processConsentPageResult(exc, s);
             else
                 showConsentPage(exc, s);
-        } else if (uri.equals("/")) {
+        } else if (uri.equals("/login")) {
             if (s == null || !s.isVerified()) {
                 if (exc.getRequest().getMethod().equals("POST")) {
                     Map<String, String> userAttributes;
@@ -195,6 +197,8 @@ public class LoginDialog2 {
 
                     s.get().keySet().stream().forEach(conv::remove);
                     conv.entrySet().stream().forEach(e -> s.put(e.getKey(),e.getValue()));
+
+                    s.authorize(username);
                 } else {
                     showPage(exc, 0);
                 }

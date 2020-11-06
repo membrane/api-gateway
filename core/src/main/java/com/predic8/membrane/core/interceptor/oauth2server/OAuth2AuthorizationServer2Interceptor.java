@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import com.predic8.membrane.core.interceptor.oauth2.ClientList;
+import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
 
 import java.util.Arrays;
 import java.util.List;
@@ -41,7 +42,10 @@ public class OAuth2AuthorizationServer2Interceptor extends AbstractInterceptorWi
     private String contextPath = "";
 
     String loginDialogLocation;
-    String loginPath;
+    String loginPath = "/login/";
+    private String consentFile;
+
+    private ConsentPageFile consentPageFile = new ConsentPageFile();
 
     @Override
     public void init() throws Exception {
@@ -55,7 +59,14 @@ public class OAuth2AuthorizationServer2Interceptor extends AbstractInterceptorWi
                 subClaimName,
                 issuer,
                 supportedClaims,
-                contextPath), new IdTokenProvider(), serverServices -> Arrays.asList(new LoginEndpoint(serverServices, userDataProvider, getSessionManager(), loginDialogLocation, loginPath, "/login/login", "/login/consent")));
+                contextPath), new IdTokenProvider(), serverServices -> {
+            try {
+                return Arrays.asList(new LoginEndpoint(router, serverServices, userDataProvider, getSessionManager(), loginDialogLocation, loginPath, consentPageFile,"/login/login", "/login/consent"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        consentPageFile.init(router, consentFile);
     }
 
     @Override
@@ -128,5 +139,21 @@ public class OAuth2AuthorizationServer2Interceptor extends AbstractInterceptorWi
         this.contextPath = contextPath;
     }
 
+    public String getLocation() {
+        return loginDialogLocation;
+    }
 
+    @MCAttribute
+    public void setLocation(String location) {
+        this.loginDialogLocation = location;
+    }
+
+    public String getConsentFile() {
+        return consentFile;
+    }
+
+    @MCAttribute
+    public void setConsentFile(String consentFile) {
+        this.consentFile = consentFile;
+    }
 }

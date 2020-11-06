@@ -19,23 +19,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 public class ClaimsParameter {
     public static final String USERINFO = "userinfo";
     public static final String ID_TOKEN = "id_token";
 
-    private final HashSet<String> supportedClaims;
+    private final Set<String> supportedClaims;
     private Map<String,Object> cleanedJson;
 
     /**
      * @param supportedClaims is the list of claims that are specified in a ClaimsList object
      * @param claimsParameter is a parameter value from the request
      */
-    public ClaimsParameter(HashSet<String> supportedClaims, String claimsParameter){
+    public ClaimsParameter(Set<String> supportedClaims, String claimsParameter){
         this.supportedClaims = supportedClaims;
         if(claimsParameter != null && !claimsParameter.isEmpty())
             parseClaimsParameter(claimsParameter);
