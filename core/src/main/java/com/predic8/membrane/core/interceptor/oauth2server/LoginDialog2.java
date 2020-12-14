@@ -133,7 +133,7 @@ public class LoginDialog2 {
     public void handleLoginRequest(Exchange exc) throws Exception {
         Session s = sessionManager.getSession(exc);
 
-        String uri = exc.getRequest().getUri().substring(path.length()-1);
+        String uri = exc.getRequest().getUri().substring( path.length() > 0 ? path.length()-1 : 0);
         if (uri.indexOf('?') >= 0)
             uri = uri.substring(0, uri.indexOf('?'));
         exc.getDestinations().add(uri);
