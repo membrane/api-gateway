@@ -57,6 +57,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	private boolean idGenerated;
 	private String statString;
 	private String dataSourceBeanId = DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED;
+	boolean createTable = true;
 
 	public StatisticsJDBCInterceptor() {
 		name = "JDBC Logging";
@@ -77,7 +78,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 			idGenerated = JDBCUtil.isIdGenerated(con.getMetaData());
 			statString = JDBCUtil.getPreparedInsertStatement(idGenerated);
 			logDatabaseMetaData(con.getMetaData());
-			createTableIfNecessary(con);
+			if(createTable)
+				createTableIfNecessary(con);
 		} catch (Exception e) {
 			throw new RuntimeException("Init for StatisticsJDBCInterceptor failed: " + e.getMessage());
 		} finally {
@@ -171,6 +173,19 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	@MCAttribute
 	public void setPostMethodOnly(boolean postMethodOnly) {
 		this.postMethodOnly = postMethodOnly;
+	}
+
+	public boolean isCreateTable() {
+		return createTable;
+	}
+
+	/**
+	 * @description toggle to try automatic table creation or disable table creation altogether
+	 * @default true
+	 */
+	@MCAttribute
+	public void setCreateTable(boolean createTable) {
+		this.createTable = createTable;
 	}
 
 	public boolean isSoapOnly() {
