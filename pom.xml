@@ -80,7 +80,7 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>1.8</javac.source>
 		<javac.target>1.8</javac.target>
-		<jackson.databind.version>2.10.2</jackson.databind.version> <!-- Check google-http-client-jackson2 compatibility. -->
+		<jackson.databind.version>2.10.5.1</jackson.databind.version> <!-- Check google-http-client-jackson2 compatibility. -->
 		<jackson.version>2.10.1</jackson.version>
 		<spring.version>4.3.20.RELEASE</spring.version>
 		<jaxws.version>2.2.10</jaxws.version>
