@@ -131,7 +131,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		} catch (Exception ignored) {
 		}
 		if (ssl != null)
-			sslCtx = new StaticSSLContext(ssl, new ResolverMap(), null);
+			sslCtx = new StaticSSLContext(ssl, router.getResolverMap(), router.getBaseLocation());
 
 		if (!nodeRefreshThread.isAlive()) {
 			nodeRefreshThread.start();
