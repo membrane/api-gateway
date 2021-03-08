@@ -556,7 +556,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
                 if (response.getStatusCode() != 200) {
                     response.getBody().read();
-                    throw new RuntimeException("Authentication server returned " + response.getStatusCode() + ".");
+                    throw new RuntimeException("Authorization server returned " + response.getStatusCode() + ".");
                 }
 
                 if (log.isDebugEnabled())
