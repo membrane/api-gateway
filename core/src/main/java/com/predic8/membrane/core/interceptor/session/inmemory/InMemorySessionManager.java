@@ -17,13 +17,12 @@ import java.util.stream.Collectors;
 public class InMemorySessionManager extends SessionManager {
 
     final static String ID_NAME = "_in_memory_session_id";
-    Duration sessionExpiration = Duration.ofMinutes(30);
     Cache<String, Session> sessions;
 
     @Override
     public void init(Router router) throws Exception {
         sessions = CacheBuilder.newBuilder()
-                .expireAfterAccess(sessionExpiration)
+                .expireAfterAccess(Duration.ofSeconds(getExpiresAfterSeconds()))
                 .build();
     }
 
