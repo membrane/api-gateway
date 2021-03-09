@@ -242,6 +242,13 @@ public class Response extends Message {
 				body(htmlMessage("Internal Server Error", ""));
 	}
 
+	public static ResponseBuilder notImplemented() {
+		return ResponseBuilder.newInstance().
+				status(501, "	Not Implemented").
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(htmlMessage("Not Implemented", ""));
+	}
+
 	public static ResponseBuilder internalServerError(String message) {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").

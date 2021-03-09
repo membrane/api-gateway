@@ -40,7 +40,7 @@ public abstract class SessionManager {
     public static final String SESSION = "SESSION";
     public static final String SESSION_COOKIE_ORIGINAL = "SESSION_COOKIE_ORIGINAL";
 
-    String usernameKeyName = "username";
+    protected String usernameKeyName = "username";
     long expiresAfterSeconds = 15 * 60;
     String domain;
     boolean httpOnly = false;
@@ -256,7 +256,7 @@ public abstract class SessionManager {
 
 
     protected Stream<String> getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream);
+        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(c -> c.trim());
     }
 
 
