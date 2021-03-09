@@ -22,9 +22,6 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInt
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
-import org.postgresql.util.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -69,7 +66,7 @@ public abstract class ParameterizedRequest {
     private Map<String, String> parseAuthentication(Exchange exc) {
         try {
             String authHeader = exc.getRequest().getHeader().getAuthorization();
-            String[] creds = new String(Base64.decode(authHeader.split("Basic ")[1])).split(":");
+            String[] creds = new String(Base64.getDecoder().decode(authHeader.split("Basic ")[1])).split(":");
             return Arrays.asList(new AbstractMap.SimpleEntry(ParamNames.CLIENT_ID, creds[0]), new AbstractMap.SimpleEntry<>(ParamNames.CLIENT_SECRET, creds[1])).stream()
                     .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
         }catch (Exception e){
