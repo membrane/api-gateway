@@ -16,17 +16,14 @@ package com.predic8.membrane.core;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
-import com.predic8.membrane.annot.bean.MCUtil;
 import com.predic8.membrane.core.jmx.JmxExporter;
 import com.predic8.membrane.core.jmx.JmxRouter;
+import com.predic8.membrane.core.rules.InternalProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -52,7 +49,6 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http.HttpTransport;
@@ -101,7 +97,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	protected RuleManager ruleManager = new RuleManager();
 	protected ExchangeStore exchangeStore;
 	protected Transport transport;
-	protected ResolverMap resolverMap = new ResolverMap();
+	protected ResolverMap resolverMap;
 	protected DNSCache dnsCache = new DNSCache();
 	protected ExecutorService backgroundInitializator =
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
@@ -122,6 +118,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	public Router() {
 		ruleManager.setRouter(this);
+		resolverMap = new ResolverMap();
+		resolverMap.addRuleResolver(this);
 	}
 
 	public Collection<Rule> getRules() {
@@ -256,9 +254,21 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	public void init() throws Exception {
-		for (Rule rule : getRuleManager().getRules())
-			rule.init(this);
+		initInternalProxies();
+		initRemainingRules();
 		transport.init(this);
+	}
+
+	private void initRemainingRules() throws Exception {
+		List<Rule> otherRules = getRuleManager().getRules().stream().filter(r -> !(r instanceof InternalProxy)).collect(Collectors.toList());
+		for (Rule rule : otherRules)
+			rule.init(this);
+	}
+
+	private void initInternalProxies() throws Exception {
+		List<Rule> internalProxies = getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).collect(Collectors.toList());
+		for (Rule rule : internalProxies)
+			rule.init(this);
 	}
 
 	@Override
