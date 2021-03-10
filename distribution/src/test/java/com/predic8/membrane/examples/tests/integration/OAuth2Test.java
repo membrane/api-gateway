@@ -76,7 +76,12 @@ public class OAuth2Test {
 
     @Before
     public void setUp() throws Exception {
-        router = HttpRouter.init(System.getProperty("user.dir") + "\\src\\test\\resources\\OAuth2\\" + proxies);
+        router = HttpRouter.init(getBasePath() + "/src/test/resources/OAuth2/" + proxies);
+    }
+
+    private String getBasePath() {
+        String basePath = System.getProperty("user.dir");
+        return basePath.startsWith("/") ? "file://" + basePath : basePath;
     }
 
     @Test
