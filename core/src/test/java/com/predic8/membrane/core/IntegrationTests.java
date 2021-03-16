@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreIntegrationTest;
 import com.predic8.membrane.core.http.LargeBodyTest;
 import com.predic8.membrane.core.rules.ProxySSLTest;
+import com.predic8.membrane.integration.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -35,11 +36,6 @@ import com.predic8.membrane.core.transport.ExceptionHandlingTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
 import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
-import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
-import com.predic8.membrane.integration.Http10Test;
-import com.predic8.membrane.integration.Http11Test;
-import com.predic8.membrane.integration.ProxySSLConnectionMethodTest;
-import com.predic8.membrane.integration.ViaProxyTest;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 @RunWith(Suite.class)
@@ -61,7 +57,9 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 	UnavailableSoapProxyTest.class,
 	IllegalCharactersInURLTest.class,
 	ProxySSLTest.class,
-	LargeBodyTest.class})
+	LargeBodyTest.class,
+		SessionManager.class
+})
 public class IntegrationTests {
 	/*
 	@BeforeClass
