@@ -23,8 +23,8 @@ import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class ParameterizedRequest {
 
@@ -58,8 +58,21 @@ public abstract class ParameterizedRequest {
 
     private Map<String, String> getValidParams(Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc);
+        params.putAll(parseAuthentication(exc));
         removeEmptyParams(params);
         return params;
+    }
+
+    private Map<String, String> parseAuthentication(Exchange exc) {
+        try {
+            String authHeader = exc.getRequest().getHeader().getAuthorization();
+            String[] creds = new String(Base64.getDecoder().decode(authHeader.split("Basic ")[1])).split(":");
+            return Arrays.asList(new AbstractMap.SimpleEntry(ParamNames.CLIENT_ID, creds[0]), new AbstractMap.SimpleEntry<>(ParamNames.CLIENT_SECRET, creds[1])).stream()
+                    .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
+        }catch (Exception e){
+            // ignored, as requests without authorization header are expected
+            return new HashMap<>();
+        }
     }
 
     protected void removeEmptyParams(Map<String, String> params) {

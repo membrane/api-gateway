@@ -256,7 +256,7 @@ public abstract class SessionManager {
 
 
     protected Stream<String> getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream);
+        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(c -> c.trim());
     }
 
 
