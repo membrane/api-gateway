@@ -424,6 +424,13 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             publicURL += key.getPath();
         publicURL = normalizePublicURL(publicURL);
 
+        synchronized (publicURLs) {
+            if (publicURLs.contains(publicURL))
+                return publicURL;
+            if (!initPublicURLsOnTheFly)
+                return publicURLs.get(0);
+        }
+
         String newURL = null;
         if(initPublicURLsOnTheFly)
             newURL = addPublicURL(publicURL);
