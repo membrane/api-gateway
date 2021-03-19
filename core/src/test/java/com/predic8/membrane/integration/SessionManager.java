@@ -172,6 +172,24 @@ public class SessionManager {
         httpRouter.stop();
     }
 
+    @Test
+    public void sessionRefresh() throws Exception{
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+
+        HttpClientContext ctx = getHttpClientContext();
+
+        String rememberThis = UUID.randomUUID().toString();
+        try(CloseableHttpClient client = getHttpClient()){
+
+            for(int i = 0; i <= 100; i++)
+                try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+                }
+        }
+
+        httpRouter.stop();
+    }
+
     private CloseableHttpClient getHttpClient() {
         return HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
     }

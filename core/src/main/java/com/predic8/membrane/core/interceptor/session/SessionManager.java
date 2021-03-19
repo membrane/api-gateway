@@ -47,6 +47,10 @@ public abstract class SessionManager {
     String sameSite = null;
 
     String issuer;
+    protected boolean ttlExpiryRefreshOnAccess = true;
+    protected boolean secure = false;
+
+    protected String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
 
     private void initIssuer(Exchange exc) {
         String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
@@ -132,14 +136,19 @@ public abstract class SessionManager {
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
-        if(session.isDirty() || !originalCookieValueAtBeginning.isPresent() || cookieRenewalNeeded(originalCookieValueAtBeginning.get().toString())){
+        if(ttlExpiryRefreshOnAccess || session.isDirty() || !originalCookieValueAtBeginning.isPresent() || cookieRenewalNeeded(originalCookieValueAtBeginning.get().toString())){
             String currentCookieValueOfSession = getCookieValue(session);
-            if (originalCookieValueAtBeginning.isPresent() &&
+            if (!ttlExpiryRefreshOnAccess && originalCookieValueAtBeginning.isPresent() &&
                     originalCookieValueAtBeginning.get().toString().trim().equals(currentCookieValueOfSession))
                 return;
-            setCookieForCurrentSession(exc, currentCookieValueOfSession);
             setCookieForExpiredSessions(exc, currentCookieValueOfSession);
+            setCookieForCurrentSession(exc, currentCookieValueOfSession);
+            mergeSameSetCookieHeaders(exc);
         }
+    }
+
+    private void mergeSameSetCookieHeaders(Exchange exc) {
+        // TODO
     }
 
     private boolean cookieIsAlreadySet(Exchange exc, String currentSessionCookieValue) {
@@ -164,7 +173,7 @@ public abstract class SessionManager {
 
     private List<String> cookiesToExpire(Exchange exc, String currentSessionCookieValue) {
         if (getCookieHeader(exc) != null)
-            return expireCookies(getInvalidCookies(exc, currentSessionCookieValue));
+            return expireCookies(getInvalidCookies(exc, ttlExpiryRefreshOnAccess ? UUID.randomUUID().toString() : currentSessionCookieValue));
 
         return new ArrayList<>();
     }
@@ -235,13 +244,17 @@ public abstract class SessionManager {
                 "Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))),
                 "Path=/",
 
-                exc.getRule().getSslInboundContext() != null ? "Secure" : null,
+                needsSecureAttribute(exc) ? "Secure" : null,
                 domain != null ? "Domain=" + domain + "; " : null,
                 httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(attr -> attr != null)
                 .collect(Collectors.toList());
+    }
+
+    private boolean needsSecureAttribute(Exchange exc) {
+        return exc.getRule().getSslInboundContext() != null || secure;
     }
 
     public List<String> createInvalidationAttributes() {
@@ -312,5 +325,32 @@ public abstract class SessionManager {
     @MCAttribute
     public void setIssuer(String issuer) {
         this.issuer = issuer;
+    }
+
+    public boolean isTtlExpiryRefreshOnAccess() {
+        return ttlExpiryRefreshOnAccess;
+    }
+
+    /**
+     * @description controls if the expiry refreshes to expiresAfterSeconds on access (true) or if it should not refresh (false)
+     * @default true
+     */
+    @MCAttribute
+    public void setTtlExpiryRefreshOnAccess(boolean ttlExpiryRefreshOnAccess) {
+        this.ttlExpiryRefreshOnAccess = ttlExpiryRefreshOnAccess;
+    }
+
+    public boolean isSecure() {
+        return secure;
+    }
+
+    /**
+     * @description override setting secure attribute on cookie even when not using TLS (example usecase: Membrane behind TLS terminating firewall)
+     * @default false
+     */
+    @MCAttribute
+    public SessionManager setSecure(boolean secure) {
+        this.secure = secure;
+        return this;
     }
 }

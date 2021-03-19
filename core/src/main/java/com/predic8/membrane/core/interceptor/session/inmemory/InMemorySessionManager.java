@@ -16,9 +16,13 @@ package com.predic8.membrane.core.interceptor.session.inmemory;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
 
@@ -53,7 +57,7 @@ public class InMemorySessionManager extends SessionManager {
 
     @Override
     protected Map<Session, String> getCookieValues(Session... session) {
-        Arrays.stream(session).filter(s -> s.get(ID_NAME) == null).forEach(s -> s.put(ID_NAME, UUID.randomUUID().toString()));
+        Arrays.stream(session).filter(s -> s.get(ID_NAME) == null).forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID().toString()));
 
         synchronized (sessions) {
             Arrays.stream(session).forEach(s -> sessions.put(s.get(ID_NAME), s));
@@ -65,20 +69,26 @@ public class InMemorySessionManager extends SessionManager {
 
     @Override
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
-        return Arrays.asList();
+        List<HeaderField> values = exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE));
+        return values.stream()
+                .filter(hf -> hf.getValue().startsWith(cookieNamePrefix))
+                .filter(hf -> !hf.getValue().contains(validCookie)).map(hf -> hf.getValue())
+                .collect(Collectors.toList());
     }
 
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
         synchronized (sessions) {
-            return sessions.getIfPresent(cookie.split("=true")[0]) != null;
+            return cookie.startsWith(cookieNamePrefix) && sessions.getIfPresent(cookie.split("=true")[0]) != null;
         }
     }
 
     @Override
     protected boolean cookieRenewalNeeded(String originalCookie) {
         synchronized (sessions) {
-            return sessions.getIfPresent(originalCookie) == null;
+            return sessions.getIfPresent(originalCookie) != null;
         }
     }
+
+
 }
