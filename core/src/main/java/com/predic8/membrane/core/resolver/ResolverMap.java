@@ -23,6 +23,7 @@ import java.util.List;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.cloud.etcd.*;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.w3c.dom.ls.LSInput;
@@ -170,6 +171,10 @@ public class ResolverMap implements Cloneable, Resolver {
 				return resolvers[i];
 		}
 		throw new RuntimeException("No SchemaResolver defined for " + uri);
+	}
+
+	public void addRuleResolver(Router r){
+		addSchemaResolver(new RuleResolver(r));
 	}
 
 	public long getTimestamp(String uri) throws FileNotFoundException {

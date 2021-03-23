@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import com.predic8.membrane.core.rules.InternalProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,6 +159,9 @@ public class RuleManager {
 		}
 
 		for (Rule rule : rules) {
+			if(rule instanceof InternalProxy)
+				continue;
+
 			IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
 			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort));
 		}

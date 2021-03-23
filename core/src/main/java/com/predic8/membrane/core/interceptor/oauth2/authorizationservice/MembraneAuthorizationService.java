@@ -55,6 +55,17 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private static final String defaultCallbackUri = "oauth2callback";
 
+    public static boolean isValidURI(String uri)
+    {
+        try
+        {
+            new URI(uri);
+            return true;
+        } catch (Exception exception)
+        {
+            return false;
+        }
+    }
 
     @Override
     public void init() throws Exception {
@@ -65,7 +76,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
             supportsDynamicRegistration = true;
         }
         try {
-            String[] urls = src.split(Pattern.quote(" "));
+            String[] urls = src.split(Pattern.quote(" "),2);
             if(urls.length == 1) {
                 String url = urls[0] + (urls[0].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
@@ -75,7 +86,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
             }
             else if(urls.length == 2){
                 String internalUrl = urls[1] + (urls[1].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
-
 
                 parseSrc(dynamicRegistration != null ?
                         dynamicRegistration.retrieveOpenIDConfiguration(internalUrl) :
