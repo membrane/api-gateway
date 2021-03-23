@@ -34,10 +34,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -198,6 +197,51 @@ public class SessionManager {
                     Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
                 }
             }
+        }
+
+        httpRouter.stop();
+    }
+
+    @Test
+    public void expiresPartIsRefreshedOnAccess() throws Exception{
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+
+        HttpClientContext ctx = getHttpClientContext();
+
+        String rememberThis = UUID.randomUUID().toString();
+        try(CloseableHttpClient client = getHttpClient()){
+
+            String firstExpires;
+            String secondExpires;
+
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
+                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).collect(Collectors.toList());
+                assertEquals(1, setCookieHeaders.size());
+
+                Header setCookieHeader = setCookieHeaders.stream().findFirst().get();
+                firstExpires = Arrays.stream(setCookieHeader.getValue().split(";")).filter(part -> part.toLowerCase().contains("Expires".toLowerCase())).findFirst().get();
+
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+            }
+
+            Thread.sleep(1000);
+
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
+                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).collect(Collectors.toList());
+                assertEquals(1, setCookieHeaders.size());
+
+                Header setCookieHeader = setCookieHeaders.stream().findFirst().get();
+                secondExpires = Arrays.stream(setCookieHeader.getValue().split(";")).filter(part -> part.toLowerCase().contains("Expires".toLowerCase())).findFirst().get();
+
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+            }
+            System.out.println(firstExpires);
+            System.out.println(secondExpires);
+            assertNotEquals(firstExpires,secondExpires);
+
+            // throws if dates are not parsable - no assert available
+            Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(firstExpires.split("=")[1]));
+            Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(secondExpires.split("=")[1]));
         }
 
         httpRouter.stop();
