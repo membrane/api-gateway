@@ -53,6 +53,7 @@ public abstract class SessionManager {
     String issuer;
     protected boolean ttlExpiryRefreshOnAccess = true;
     protected boolean secure = false;
+    protected boolean sessionCookie = false;
 
     Cache<String,String> cookieExpireCache = CacheBuilder.newBuilder()
             .maximumSize(10000)
@@ -302,8 +303,8 @@ public abstract class SessionManager {
 
     public List<String> createCookieAttributes(Exchange exc) {
         return Stream.of(
-                "Max-Age=" + expiresAfterSeconds,
-                "Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))),
+                sessionCookie ? null : "Max-Age=" + expiresAfterSeconds,
+                sessionCookie ? null : "Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))),
                 "Path=/",
 
                 needsSecureAttribute(exc) ? "Secure" : null,
@@ -406,13 +407,23 @@ public abstract class SessionManager {
         return secure;
     }
 
+
+    public SessionManager setSecure(boolean secure) {
+        this.secure = secure;
+        return this;
+    }
+
+    public boolean isSessionCookie() {
+        return sessionCookie;
+    }
+
     /**
-     * @description override setting secure attribute on cookie even when not using TLS (example usecase: Membrane behind TLS terminating firewall)
+     * @description if true removes the expire part of a set cookie header and thus makes it a session cookie
      * @default false
      */
     @MCAttribute
-    public SessionManager setSecure(boolean secure) {
-        this.secure = secure;
+    public SessionManager setSessionCookie(boolean sessionCookie) {
+        this.sessionCookie = sessionCookie;
         return this;
     }
 }

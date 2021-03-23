@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -88,11 +89,12 @@ public class SessionManager {
         try(CloseableHttpClient client = getHttpClient()){
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
-
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
             try(CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT),ctx)){
                 rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
         }
 
@@ -112,11 +114,12 @@ public class SessionManager {
         try(CloseableHttpClient client = getHttpClient()){
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
-
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
             try(CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT),ctx)){
                 rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
         }
 
@@ -137,7 +140,7 @@ public class SessionManager {
         try(CloseableHttpClient client = getHttpClient()){
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
-
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(),ctx)){
@@ -145,7 +148,8 @@ public class SessionManager {
                     List<Header> collect = Arrays.stream(resp.getHeaders("Set-Cookie")).collect(Collectors.toList());
                     assertEquals(2,collect.size());
 
-                    assertTrue(collect.stream().filter(v -> v.getValue().toLowerCase().contains("Expires=Thu, 01 Jan 1970 00:00:00 GMT".toLowerCase())).count() == 1);
+                    assertTrue(collect.stream().filter(v -> v.getValue().toLowerCase().contains(com.predic8.membrane.core.interceptor.session.SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER.toLowerCase())).count() == 1);
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
                 }
             }
 
@@ -160,8 +164,11 @@ public class SessionManager {
     }
 
     @Test
-    public void sessionRefresh() throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+    public void sessionCookie() throws Exception{
+        AbstractInterceptorWithSession abstractInterceptorWithSession = testInterceptor();
+        abstractInterceptorWithSession.getSessionManager().setSessionCookie(true);
+
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, abstractInterceptorWithSession));
 
         HttpClientContext ctx = getHttpClientContext();
 
@@ -170,13 +177,34 @@ public class SessionManager {
 
             for(int i = 0; i <= 100; i++) {
                 try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
+                    if(resp.getFirstHeader("Set-Cookie") != null) {
+                        allSetCookieHeadersExceptFor1970Expire(resp).forEach(c -> {
+                            assertFalse(c.getValue().toLowerCase().contains("Expire".toLowerCase()));
+                            assertFalse(c.getValue().toLowerCase().contains("Max-Age".toLowerCase()));
+                        });
+                    }
                     Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
                 }
-                Thread.sleep(10);
+            }
+
+            for(int i = 0; i <= 100; i++) {
+                try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, UUID.randomUUID().toString()).build(), ctx)) {
+                    if(resp.getFirstHeader("Set-Cookie") != null) {
+                        allSetCookieHeadersExceptFor1970Expire(resp).forEach(c -> {
+                            assertFalse(c.getValue().toLowerCase().contains("Expire".toLowerCase()));
+                            assertFalse(c.getValue().toLowerCase().contains("Max-Age".toLowerCase()));
+                        });
+                    }
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+                }
             }
         }
 
         httpRouter.stop();
+    }
+
+    private Stream<Header> allSetCookieHeadersExceptFor1970Expire(CloseableHttpResponse resp) {
+        return Arrays.stream(resp.getHeaders("Set-Cookie")).filter(c -> !c.getValue().contains(com.predic8.membrane.core.interceptor.session.SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER));
     }
 
     private CloseableHttpClient getHttpClient() {
