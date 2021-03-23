@@ -15,33 +15,20 @@
 package com.predic8.membrane.integration;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
-import com.predic8.membrane.core.interceptor.session.inmemory.InMemorySessionManager;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import org.apache.http.Header;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.config.Lookup;
-import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.impl.client.*;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -181,10 +168,12 @@ public class SessionManager {
         String rememberThis = UUID.randomUUID().toString();
         try(CloseableHttpClient client = getHttpClient()){
 
-            for(int i = 0; i <= 100; i++)
-                try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
+            for(int i = 0; i <= 100; i++) {
+                try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
                     Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
                 }
+                Thread.sleep(10);
+            }
         }
 
         httpRouter.stop();

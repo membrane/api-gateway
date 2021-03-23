@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.session.inmemory;
+package com.predic8.membrane.core.interceptor.session;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -36,6 +36,8 @@ public class InMemorySessionManager extends SessionManager {
 
     final static String ID_NAME = "_in_memory_session_id";
     Cache<String, Session> sessions;
+
+    protected String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
 
     @Override
     public void init(Router router) throws Exception {

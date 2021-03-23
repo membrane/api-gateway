@@ -13,10 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -35,6 +38,7 @@ import java.util.stream.Stream;
 public abstract class SessionManager {
 
     public static final String SESSION_VALUE_SEPARATOR = ",";
+    public static final String VALUE_TO_EXPIRE_SESSION_IN_BROWSER = "Expires=Thu, 01 Jan 1970 00:00:00 GMT";
     Logger log = LoggerFactory.getLogger(SessionManager.class);
 
     public static final String SESSION = "SESSION";
@@ -50,7 +54,10 @@ public abstract class SessionManager {
     protected boolean ttlExpiryRefreshOnAccess = true;
     protected boolean secure = false;
 
-    protected String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
+    Cache<String,String> cookieExpireCache = CacheBuilder.newBuilder()
+            .maximumSize(10000)
+            .expireAfterWrite(Duration.ofSeconds(10))
+            .build();
 
     private void initIssuer(Exchange exc) {
         String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
@@ -141,14 +148,68 @@ public abstract class SessionManager {
             if (!ttlExpiryRefreshOnAccess && originalCookieValueAtBeginning.isPresent() &&
                     originalCookieValueAtBeginning.get().toString().trim().equals(currentCookieValueOfSession))
                 return;
+
+            // expires old cookies and sets new cookie for the current session
             setCookieForExpiredSessions(exc, currentCookieValueOfSession);
             setCookieForCurrentSession(exc, currentCookieValueOfSession);
-            mergeSameSetCookieHeaders(exc);
+
+            // if old and new session are the same then drop redundant set cookie headers
+            dropRedundantCookieHeaders(exc);
+
+            cacheSetCookie(exc, currentCookieValueOfSession);
         }
     }
 
-    private void mergeSameSetCookieHeaders(Exchange exc) {
-        // TODO
+    private void cacheSetCookie(Exchange exc, String currentSessionCookieValue) {
+        Optional<HeaderField> setCookie = getAllSetCookieHeaders(exc).filter(e -> e.getValue().contains(currentSessionCookieValue)).findFirst();
+        if(setCookie.isPresent())
+            cookieExpireCache.put(currentSessionCookieValue, setCookie.get().getValue());
+    }
+
+    private void dropRedundantCookieHeaders(Exchange exc) {
+        Map<String, List<String>> setCookieHeaders = getAllSetCookieHeaders(exc)
+                .map(hf -> hf.getValue())
+                .filter(v -> isValidCookieForThisSessionManager(Arrays.stream(v.split(";")).filter(s -> s.contains("=true")).findFirst().get()))
+                .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], Arrays.asList(v)))
+                .collect(Collectors.toMap(e -> (String)e.getKey(), e -> (List)e.getValue(), (a,b) -> Stream.concat(a.stream(),b.stream()).collect(Collectors.toList())));
+
+        removeRedundantExpireCookieIfRefreshed(exc, setCookieHeaders);
+        removeRefreshIfNoChangeInExpireTime(exc,setCookieHeaders);
+    }
+
+    private Stream<HeaderField> getAllSetCookieHeaders(Exchange exc) {
+        return Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields())
+                .filter(hf -> hf.getHeaderName().toString().contains(Header.SET_COOKIE));
+    }
+
+    private void removeRefreshIfNoChangeInExpireTime(Exchange exc, Map<String, List<String>> setCookieHeaders) {
+        setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
+                .filter(e -> cookieExpireCache.getIfPresent(e.getKey()+"=true") != null)
+                .forEach(e -> {
+                    e.getValue().stream().forEach(cookieEntry -> {
+                        String cookie = cookieExpireCache.getIfPresent(e.getKey()+"=true");
+                        if(cookieEntry.equals(cookie)){
+                            setCookieHeaders.get(e.getKey()).remove(e.getValue());
+                            exc.getResponse().getHeader().remove(getAllSetCookieHeaders(exc)
+                                    .filter(hf -> hf.getValue().contains(cookieEntry))
+                                    .findFirst().get());
+                        }
+
+
+                    });
+                });
+    }
+
+    private void removeRedundantExpireCookieIfRefreshed(Exchange exc, Map<String, List<String>> setCookieHeaders) {
+        setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
+                .filter(e -> e.getValue().size() > 1)
+                .filter(e -> e.getValue().stream().filter(s -> s.contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER)).count() == 1)
+                .forEach(e -> {
+                    setCookieHeaders.get(e.getKey()).remove(e.getValue());
+                    exc.getResponse().getHeader().remove(getAllSetCookieHeaders(exc)
+                            .filter(hf -> hf.getValue().contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER))
+                            .findFirst().get());
+                });
     }
 
     private boolean cookieIsAlreadySet(Exchange exc, String currentSessionCookieValue) {
@@ -161,9 +222,10 @@ public abstract class SessionManager {
     private void setCookieForCurrentSession(Exchange exc, String currentSessionCookieValue) {
         if (currentSessionCookieValue.length() > 4093)
             log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
+        String setCookieValue = currentSessionCookieValue
+                + ";" + String.join(";", createCookieAttributes(exc));
         exc.getResponse().getHeader()
-                .add(Header.SET_COOKIE, currentSessionCookieValue
-                        + ";" + String.join(";", createCookieAttributes(exc)));
+                .add(Header.SET_COOKIE, setCookieValue);
     }
 
     private void setCookieForExpiredSessions(Exchange exc, String currentSessionCookieValue) {
@@ -259,7 +321,7 @@ public abstract class SessionManager {
 
     public List<String> createInvalidationAttributes() {
         return Stream.of(
-                "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+                VALUE_TO_EXPIRE_SESSION_IN_BROWSER,
                 "Path=/",
                 domain != null ? "Domain=" + domain + "; " : null
         )
