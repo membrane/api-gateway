@@ -141,6 +141,7 @@ public abstract class SessionManager {
             exc.setResponse(Response.ok().build());
     }
 
+
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
@@ -151,8 +152,8 @@ public abstract class SessionManager {
                 return;
 
             // expires old cookies and sets new cookie for the current session
-            setCookieForExpiredSessions(exc, currentCookieValueOfSession);
             setCookieForCurrentSession(exc, currentCookieValueOfSession);
+            setCookieForExpiredSessions(exc, currentCookieValueOfSession);
 
             // if old and new session are the same then drop redundant set cookie headers
             dropRedundantCookieHeaders(exc);
@@ -162,43 +163,48 @@ public abstract class SessionManager {
     }
 
     private void cacheSetCookie(Exchange exc, String currentSessionCookieValue) {
-        Optional<HeaderField> setCookie = getAllSetCookieHeaders(exc).filter(e -> e.getValue().contains(currentSessionCookieValue)).findFirst();
+        Optional<HeaderField> setCookie = getAllRelevantSetCookieHeaders(exc).filter(e -> e.getValue().contains(currentSessionCookieValue)).findFirst();
         if(setCookie.isPresent())
-            cookieExpireCache.put(currentSessionCookieValue, setCookie.get().getValue());
+            synchronized (cookieExpireCache) {
+                cookieExpireCache.put(currentSessionCookieValue, setCookie.get().getValue());
+            }
     }
 
     private void dropRedundantCookieHeaders(Exchange exc) {
-        Map<String, List<String>> setCookieHeaders = getAllSetCookieHeaders(exc)
+        Map<String, List<String>> setCookieHeaders = getAllRelevantSetCookieHeaders(exc)
                 .map(hf -> hf.getValue())
-                .filter(v -> isValidCookieForThisSessionManager(Arrays.stream(v.split(";")).filter(s -> s.contains("=true")).findFirst().get()))
                 .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], Arrays.asList(v)))
                 .collect(Collectors.toMap(e -> (String)e.getKey(), e -> (List)e.getValue(), (a,b) -> Stream.concat(a.stream(),b.stream()).collect(Collectors.toList())));
 
         removeRedundantExpireCookieIfRefreshed(exc, setCookieHeaders);
-        removeRefreshIfNoChangeInExpireTime(exc,setCookieHeaders);
+
+        // TODO - does not work as expected as sometimes a newly issued cookie is removed
+//        removeRefreshIfNoChangeInExpireTime(exc,setCookieHeaders);
     }
 
-    private Stream<HeaderField> getAllSetCookieHeaders(Exchange exc) {
+    private Stream<HeaderField> getAllRelevantSetCookieHeaders(Exchange exc) {
         return Arrays.stream(exc.getResponse().getHeader().getAllHeaderFields())
-                .filter(hf -> hf.getHeaderName().toString().contains(Header.SET_COOKIE));
+                .filter(hf -> hf.getHeaderName().toString().contains(Header.SET_COOKIE))
+                .filter(hf -> hf.getValue().contains("=true"))
+                .filter(hf -> isValidCookieForThisSessionManager(Arrays.stream(hf.getValue().split(";")).filter(s -> s.contains("=true")).findFirst().get()));
     }
 
     private void removeRefreshIfNoChangeInExpireTime(Exchange exc, Map<String, List<String>> setCookieHeaders) {
-        setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
-                .filter(e -> cookieExpireCache.getIfPresent(e.getKey()+"=true") != null)
-                .forEach(e -> {
-                    e.getValue().stream().forEach(cookieEntry -> {
-                        String cookie = cookieExpireCache.getIfPresent(e.getKey()+"=true");
-                        if(cookieEntry.equals(cookie)){
-                            setCookieHeaders.get(e.getKey()).remove(e.getValue());
-                            exc.getResponse().getHeader().remove(getAllSetCookieHeaders(exc)
-                                    .filter(hf -> hf.getValue().contains(cookieEntry))
-                                    .findFirst().get());
-                        }
-
-
+        synchronized (cookieExpireCache) {
+            setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
+                    .filter(e -> cookieExpireCache.getIfPresent(e.getKey() + "=true") != null)
+                    .forEach(e -> {
+                        e.getValue().stream().forEach(cookieEntry -> {
+                            String cookie = cookieExpireCache.getIfPresent(e.getKey() + "=true");
+                            if (cookieEntry.equals(cookie)) {
+                                setCookieHeaders.get(e.getKey()).remove(e.getValue());
+                                exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
+                                        .filter(hf -> hf.getValue().contains(cookieEntry))
+                                        .findFirst().get());
+                            }
+                        });
                     });
-                });
+        }
     }
 
     private void removeRedundantExpireCookieIfRefreshed(Exchange exc, Map<String, List<String>> setCookieHeaders) {
@@ -207,7 +213,7 @@ public abstract class SessionManager {
                 .filter(e -> e.getValue().stream().filter(s -> s.contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER)).count() == 1)
                 .forEach(e -> {
                     setCookieHeaders.get(e.getKey()).remove(e.getValue());
-                    exc.getResponse().getHeader().remove(getAllSetCookieHeaders(exc)
+                    exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
                             .filter(hf -> hf.getValue().contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER))
                             .findFirst().get());
                 });
