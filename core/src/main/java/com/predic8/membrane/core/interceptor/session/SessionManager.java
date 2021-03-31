@@ -413,7 +413,11 @@ public abstract class SessionManager {
         return secure;
     }
 
-
+    /**
+     * @description forces secure cookie attribute even when no ssl context is present (e.g. TLS termination in front of membrane)
+     * @default false
+     */
+    @MCAttribute
     public SessionManager setSecure(boolean secure) {
         this.secure = secure;
         return this;
