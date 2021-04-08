@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -244,6 +245,52 @@ public class SessionManager {
             Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(secondExpires.split("=")[1]));
         }
 
+        httpRouter.stop();
+    }
+
+    @Test
+    public void parallelRequests() throws Exception {
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+
+        HttpClientContext ctx = getHttpClientContext();
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        int limit = 10000;
+
+        CountDownLatch startAllInParallel = new CountDownLatch(1);
+        CountDownLatch allDone = new CountDownLatch(limit);
+
+        CloseableHttpClient client = getHttpClient();
+
+        for(int i = 0; i < limit; i++) {
+            executor.execute(() -> {
+                try {
+                    startAllInParallel.await();
+
+                    try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(), ctx)) {
+                        long wrongCookies = Arrays.stream(resp.getAllHeaders())
+                                .map(h -> h.toString())
+                                .filter(h -> h.toLowerCase().contains("cookie"))
+                                .flatMap(h -> Arrays.stream(h.split(";")))
+                                .filter(e -> e.contains("=true"))
+                                .filter(e -> e.contains(","))
+                                .count();
+
+                        assertEquals(0,wrongCookies);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    allDone.countDown();
+                }
+            });
+        }
+        startAllInParallel.countDown();
+        allDone.await();
+
+        executor.shutdown();
+        executor.awaitTermination(60, TimeUnit.SECONDS);
+        client.close();
         httpRouter.stop();
     }
 

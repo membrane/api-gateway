@@ -59,14 +59,33 @@ public class InMemorySessionManager extends SessionManager {
 
     @Override
     protected Map<Session, String> getCookieValues(Session... session) {
-        Arrays.stream(session).filter(s -> s.get(ID_NAME) == null).forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID().toString()));
+        createSessionIdsForNewSessions(session);
+        fixMergedSessionId(session);
 
         synchronized (sessions) {
-            Arrays.stream(session).forEach(s -> sessions.put(s.get(ID_NAME), s));
+            addSessionToCache(session);
         }
 
+        return mapSessionToName(session);
+    }
+
+    private Map<Session, String> mapSessionToName(Session[] session) {
         return Arrays.stream(session)
                 .collect(Collectors.toMap(s -> s, s -> s.get(ID_NAME)));
+    }
+
+    private void addSessionToCache(Session[] session) {
+        Arrays.stream(session).forEach(s -> sessions.put(s.get(ID_NAME), s));
+    }
+
+    private void createSessionIdsForNewSessions(Session[] session) {
+        Arrays.stream(session).filter(s -> s.get(ID_NAME) == null).forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID().toString()));
+    }
+
+    private void fixMergedSessionId(Session[] session) {
+        Arrays.stream(session)
+                .filter(s -> s.get(ID_NAME).toString().contains(","))
+                .forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID().toString()));
     }
 
     @Override
