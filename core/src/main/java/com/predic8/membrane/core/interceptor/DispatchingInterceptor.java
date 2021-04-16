@@ -13,8 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 
+import com.predic8.membrane.core.rules.InternalProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,19 +68,40 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	}
 
 	public static String getForwardingDestination(Exchange exc) throws Exception {
-		AbstractServiceProxy p = (AbstractServiceProxy)exc.getRule();
-		if (p.getTargetURL()!=null) {
-			log.debug("destination: " + p.getTargetURL());
+		String urlResult = null;
+
+		if(exc.getRule() instanceof InternalProxy)
+			urlResult = handleInternalProxy(exc);
+		if(exc.getRule() instanceof AbstractServiceProxy)
+			urlResult = handleAbstractServiceProxy(exc);
+
+		log.debug("destination: " + urlResult);
+		return urlResult != null ? urlResult : exc.getRequest().getUri();
+	}
+
+	private static String handleInternalProxy(Exchange exc) throws MalformedURLException {
+		InternalProxy ip = (InternalProxy) exc.getRule();
+
+		if(ip.getTarget() == null)
+			return null;
+
+		if(ip.getTarget().getUrl() != null)
+			return ip.getTarget().getUrl();
+		if(ip.getTarget().getHost() != null)
+			return new URL(ip.getTarget().getSslParser() != null ? "https" : "http", ip.getTarget().getHost(), ip.getTarget().getPort(), exc.getRequest().getUri()).toString();
+
+		return null;
+	}
+
+	private static String handleAbstractServiceProxy(Exchange exc) throws MalformedURLException {
+		AbstractServiceProxy p = (AbstractServiceProxy) exc.getRule();
+
+		if (p.getTargetURL() != null)
 			return p.getTargetURL();
-		}
+		if (p.getTargetHost() != null)
+			return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
 
-		if (p.getTargetHost() != null) {
-			String url = new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
-			log.debug("destination: " + url);
-			return url;
-		}
-
-		return exc.getRequest().getUri();
+		return null;
 	}
 
 }

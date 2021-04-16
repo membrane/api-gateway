@@ -15,44 +15,32 @@
 package com.predic8.membrane.integration;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
-import com.predic8.membrane.core.interceptor.session.inmemory.InMemorySessionManager;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import org.apache.http.Header;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.config.Lookup;
-import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.impl.client.*;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -101,11 +89,12 @@ public class SessionManager {
         try(CloseableHttpClient client = getHttpClient()){
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
-
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
             try(CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT),ctx)){
                 rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
         }
 
@@ -125,11 +114,12 @@ public class SessionManager {
         try(CloseableHttpClient client = getHttpClient()){
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
-
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
             try(CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT),ctx)){
                 rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
         }
 
@@ -150,7 +140,7 @@ public class SessionManager {
         try(CloseableHttpClient client = getHttpClient()){
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
-
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(),ctx)){
@@ -158,7 +148,8 @@ public class SessionManager {
                     List<Header> collect = Arrays.stream(resp.getHeaders("Set-Cookie")).collect(Collectors.toList());
                     assertEquals(2,collect.size());
 
-                    assertTrue(collect.stream().filter(v -> v.getValue().toLowerCase().contains("Expires=Thu, 01 Jan 1970 00:00:00 GMT".toLowerCase())).count() == 1);
+                    assertTrue(collect.stream().filter(v -> v.getValue().toLowerCase().contains(com.predic8.membrane.core.interceptor.session.SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER.toLowerCase())).count() == 1);
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
                 }
             }
 
@@ -170,6 +161,141 @@ public class SessionManager {
         assertEquals("rememberThis",rememberThisFromServer);
 
         httpRouter.stop();
+    }
+
+    @Test
+    public void sessionCookie() throws Exception{
+        AbstractInterceptorWithSession abstractInterceptorWithSession = testInterceptor();
+        abstractInterceptorWithSession.getSessionManager().setSessionCookie(true);
+
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, abstractInterceptorWithSession));
+
+        HttpClientContext ctx = getHttpClientContext();
+
+        String rememberThis = UUID.randomUUID().toString();
+        try(CloseableHttpClient client = getHttpClient()){
+
+            for(int i = 0; i <= 100; i++) {
+                try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
+                    if(resp.getFirstHeader("Set-Cookie") != null) {
+                        allSetCookieHeadersExceptFor1970Expire(resp).forEach(c -> {
+                            assertFalse(c.getValue().toLowerCase().contains("Expire".toLowerCase()));
+                            assertFalse(c.getValue().toLowerCase().contains("Max-Age".toLowerCase()));
+                        });
+                    }
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+                }
+            }
+
+            for(int i = 0; i <= 100; i++) {
+                try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, UUID.randomUUID().toString()).build(), ctx)) {
+                    if(resp.getFirstHeader("Set-Cookie") != null) {
+                        allSetCookieHeadersExceptFor1970Expire(resp).forEach(c -> {
+                            assertFalse(c.getValue().toLowerCase().contains("Expire".toLowerCase()));
+                            assertFalse(c.getValue().toLowerCase().contains("Max-Age".toLowerCase()));
+                        });
+                    }
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+                }
+            }
+        }
+
+        httpRouter.stop();
+    }
+
+    @Test
+    public void expiresPartIsRefreshedOnAccess() throws Exception{
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+
+        HttpClientContext ctx = getHttpClientContext();
+
+        String rememberThis = UUID.randomUUID().toString();
+        try(CloseableHttpClient client = getHttpClient()){
+
+            String firstExpires;
+            String secondExpires;
+
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
+                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).collect(Collectors.toList());
+                assertEquals(1, setCookieHeaders.size());
+
+                Header setCookieHeader = setCookieHeaders.stream().findFirst().get();
+                firstExpires = Arrays.stream(setCookieHeader.getValue().split(";")).filter(part -> part.toLowerCase().contains("Expires".toLowerCase())).findFirst().get();
+
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+            }
+
+            Thread.sleep(1000);
+
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
+                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).collect(Collectors.toList());
+                assertEquals(1, setCookieHeaders.size());
+
+                Header setCookieHeader = setCookieHeaders.stream().findFirst().get();
+                secondExpires = Arrays.stream(setCookieHeader.getValue().split(";")).filter(part -> part.toLowerCase().contains("Expires".toLowerCase())).findFirst().get();
+
+                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+            }
+            System.out.println(firstExpires);
+            System.out.println(secondExpires);
+            assertNotEquals(firstExpires,secondExpires);
+
+            // throws if dates are not parsable - no assert available
+            Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(firstExpires.split("=")[1]));
+            Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(secondExpires.split("=")[1]));
+        }
+
+        httpRouter.stop();
+    }
+
+    @Test
+    public void parallelRequests() throws Exception {
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+
+        HttpClientContext ctx = getHttpClientContext();
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        int limit = 10000;
+
+        CountDownLatch startAllInParallel = new CountDownLatch(1);
+        CountDownLatch allDone = new CountDownLatch(limit);
+
+        CloseableHttpClient client = getHttpClient();
+
+        for(int i = 0; i < limit; i++) {
+            executor.execute(() -> {
+                try {
+                    startAllInParallel.await();
+
+                    try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(), ctx)) {
+                        long wrongCookies = Arrays.stream(resp.getAllHeaders())
+                                .map(h -> h.toString())
+                                .filter(h -> h.toLowerCase().contains("cookie"))
+                                .flatMap(h -> Arrays.stream(h.split(";")))
+                                .filter(e -> e.contains("=true"))
+                                .filter(e -> e.contains(","))
+                                .count();
+
+                        assertEquals(0,wrongCookies);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    allDone.countDown();
+                }
+            });
+        }
+        startAllInParallel.countDown();
+        allDone.await();
+
+        executor.shutdown();
+        executor.awaitTermination(60, TimeUnit.SECONDS);
+        client.close();
+        httpRouter.stop();
+    }
+
+    private Stream<Header> allSetCookieHeadersExceptFor1970Expire(CloseableHttpResponse resp) {
+        return Arrays.stream(resp.getHeaders("Set-Cookie")).filter(c -> !c.getValue().contains(com.predic8.membrane.core.interceptor.session.SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER));
     }
 
     private CloseableHttpClient getHttpClient() {

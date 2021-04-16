@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.SSLableProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.lang.StringEscapeUtils;
 
@@ -115,8 +117,13 @@ public class GroovyInterceptor extends AbstractInterceptor {
 
 	private void logGroovyException(Flow flow, Exception e) {
 		try {
-			ServiceProxy sp = getRule();
-			log.error("Exception in Groovy script in service proxy '" + sp.getName() + "' on port " + sp.getPort() + " with path " + (sp.getPath() != null ? sp.getPath().getValue() : "*"));
+			Rule rule = getRule();
+			if(rule instanceof ServiceProxy){
+				ServiceProxy sp = (ServiceProxy) rule;
+				log.error("Exception in Groovy script in service proxy '" + sp.getName() + "' on port " + sp.getPort() + " with path " + (sp.getPath() != null ? sp.getPath().getValue() : "*"));
+			} else
+				log.error("Exception in Groovy script in service proxy '" + rule.getName() + "'");
+
 			if (flow != null)
 				log.error("Flow: " + flow.name());
 			else
