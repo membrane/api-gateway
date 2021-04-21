@@ -1,0 +1,26 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<soapProxy wsdl="http://localhost:8080/ContactService/v20?wsdl" port="2000">
+			<path>/ContactService</path>
+			<switch>
+				<case xPath="//*[contains(namespace-uri(), '/contactService/v11')]"
+					  service="v11-to-v20" />
+			</switch>
+		</soapProxy>
+
+		<soapProxy wsdl="http://localhost:8080/ContactService/v20?wsdl" name="v11-to-v20" port="2000">
+			<path>/ContactService</path>
+			<request>
+				<transform xslt="conf/v11-to-v20.xslt"/>
+			</request>
+		</soapProxy>
+
+	</router>
+
+</spring:beans>

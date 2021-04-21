@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<jobs
+        token="MTMzNzEzMzcxMzM3MTMzNzEzMzcxMzM3MTMzNzEzMzc="
+        user="John Doe"
+>
+    <job type="execute">
+        <info>Preparation</info>
+        <path>John/long_work.txt</path>
+    </job>
+    <job type="all">
+        <info>Presentation</info>
+        <path>John/not_so_long_work.txt</path>
+    </job>
+</jobs>

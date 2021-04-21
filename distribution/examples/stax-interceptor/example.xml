@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<bar xmlns="predic8.de/sample">
+ <foo>42</foo>
+</bar>

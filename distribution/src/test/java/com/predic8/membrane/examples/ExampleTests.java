@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
+import com.predic8.membrane.examples.tests.*;
+import com.predic8.membrane.examples.tests.versioning.RoutingMavenTest;
+import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -22,30 +25,6 @@ import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.env.DefaultConfigTest;
 import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
-import com.predic8.membrane.examples.tests.ACLTest;
-import com.predic8.membrane.examples.tests.BasicAuthTest;
-import com.predic8.membrane.examples.tests.CBRTest;
-import com.predic8.membrane.examples.tests.CustomInterceptorTest;
-import com.predic8.membrane.examples.tests.FileExchangeStoreTest;
-import com.predic8.membrane.examples.tests.GroovyTest;
-import com.predic8.membrane.examples.tests.LoadBalancerBasic1Test;
-import com.predic8.membrane.examples.tests.LoadBalancerClient2Test;
-import com.predic8.membrane.examples.tests.LoadBalancerMultiple4Test;
-import com.predic8.membrane.examples.tests.LoadBalancerSession3Test;
-import com.predic8.membrane.examples.tests.LoadBalancerStaticTest;
-import com.predic8.membrane.examples.tests.LoggingCSVTest;
-import com.predic8.membrane.examples.tests.LoggingJDBCTest;
-import com.predic8.membrane.examples.tests.LoggingTest;
-import com.predic8.membrane.examples.tests.LoginTest;
-import com.predic8.membrane.examples.tests.QuickstartRESTTest;
-import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
-import com.predic8.membrane.examples.tests.REST2SOAPJSONTest;
-import com.predic8.membrane.examples.tests.REST2SOAPTest;
-import com.predic8.membrane.examples.tests.RewriterTest;
-import com.predic8.membrane.examples.tests.SSLClient;
-import com.predic8.membrane.examples.tests.SSLServer;
-import com.predic8.membrane.examples.tests.ThrottleTest;
-import com.predic8.membrane.examples.tests.XSLTTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.SchematronValidationTest;
@@ -89,6 +68,15 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 	JSONSchemaValidationTest.class,
 	SchematronValidationTest.class,
 	XMLValidationTest.class,
+
+	CustomInterceptorMavenTest.class,
+	StaxExampleInterceptorTest.class,
+	AddSoapHeaderTest.class,
+	BasicXmlInterceptorTest.class,
+	RoutingMavenTest.class,
+	XsltExampleTest.class,
+
+
 
 	RoutingTest.class
 })

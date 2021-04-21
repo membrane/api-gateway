@@ -54,7 +54,11 @@ public class ConfigSerializationTest {
 			"custom-interceptor", // has external classpath dependencies
 			"custom-websocket-interceptor", // has external classpath dependencies
 			"logging-jdbc", // contains a reference to a DataSource bean (not serializable)
-			"proxy" // contains more than one <router> (not supported by MCUtil#fromXML())
+			"proxy", // contains more than one <router> (not supported by MCUtil#fromXML())
+			"custom-interceptor-maven", // has external classpath dependencies
+			"stax-interceptor", // has external classpath dependencies
+			"soap11", // has external classpath dependencies
+			"template-interceptor"
 	});
 
 	@Parameters

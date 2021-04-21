@@ -1,0 +1,7 @@
+<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/" s11:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+  <s11:Body>
+    <p8:getArticle xmlns:p8="http://predic8.de/membrane/">
+      <id>112358</id>
+    </p8:getArticle>
+  </s11:Body>
+</s11:Envelope>
