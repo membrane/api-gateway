@@ -69,4 +69,10 @@ public class DNSCache {
 		return hostAddresses.values();
 	}
 
+	public void clear() {
+		hostNames.clear();
+		canonicalHostNames.clear();
+		hostAddresses.clear();
+	}
+
 }
