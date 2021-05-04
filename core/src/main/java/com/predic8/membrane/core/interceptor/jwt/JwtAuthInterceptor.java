@@ -13,7 +13,9 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -24,21 +26,24 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.jose4j.base64url.Base64Url;
 import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @MCElement(name = "jwtAuth")
 public class JwtAuthInterceptor extends AbstractInterceptor {
     private static final Logger LOG = LoggerFactory.getLogger(JwtAuthInterceptor.class);
+    public static final String ERROR_JWT_NOT_FOUND = "Could not retrieve JWT";
+    public static final String ERROR_MALFORMED_COMPACT_SERIALIZATION = "JWTs compact serialization not valid";
+    public static final String ERROR_DECODED_HEADER_NOT_JSON = "JWT header is not valid JSON";
+    public static final String ERROR_NO_KID_GIVEN = "JWT does not contain a kid";
+    public static final String ERROR_UNKNOWN_KEY = "JWT signed by unknown key";
+    public static final String ERROR_VALIDATION_FAILED = "JWT validation failed";
 
     ObjectMapper mapper = new ObjectMapper();
     JwtRetriever jwtRetriever;
@@ -78,42 +83,52 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         String jwt;
         try {
             jwt = jwtRetriever.get(exc);
+
+            if(jwt == null)
+                return setJsonErrorAndReturn(null,exc,400, ERROR_JWT_NOT_FOUND);
         }catch (Exception e){
-            LOG.warn("",e);
-            exc.setResponse(Response.badRequest("Could not retrieve JWT").build());
-            return Outcome.RETURN;
+            return setJsonErrorAndReturn(e,exc,400, ERROR_JWT_NOT_FOUND);
         }
 
         String decode;
         try {
-            decode = new String(Base64Url.decode(jwt.split(Pattern.quote("."))[0]));
+            String[] split = jwt.split(Pattern.quote("."));
+            if(split.length < 3)
+                return setJsonErrorAndReturn(null,exc,400, ERROR_MALFORMED_COMPACT_SERIALIZATION);
+
+            decode = new String(Base64Url.decode(split[0]));
+
         }catch (Exception e){
-            LOG.warn("",e);
-            exc.setResponse(Response.badRequest("JWT does not have a valid header").build());
-            return Outcome.RETURN;
+            return setJsonErrorAndReturn(e,exc,400, ERROR_MALFORMED_COMPACT_SERIALIZATION);
         }
 
         String kid;
+
+        Map map;
         try {
-            Object kidMaybe = mapper.readValue(decode, Map.class).get("kid");
+            map = mapper.readValue(decode, Map.class);
+        }catch (Exception e){
+            return setJsonErrorAndReturn(e,exc,400, ERROR_DECODED_HEADER_NOT_JSON);
+        }
+        
+        
+        try {
+            Object kidMaybe = map.get("kid");
             if(kidMaybe == null)
                 throw new RuntimeException();
 
             kid = kidMaybe.toString();
         }catch (Exception e){
-            LOG.warn("",e);
-            exc.setResponse(Response.badRequest("JWT does not contain a kid").build());
-            return Outcome.RETURN;
+            return setJsonErrorAndReturn(e,exc,400, ERROR_NO_KID_GIVEN);
+
         }
 
         // we could make it possible that every key is checked instead of having the "kid" field mandatory
         // this would then need up to n checks per incoming JWT - could be a performance problem
         RsaJsonWebKey key = kidToKey.get(kid);
-        if(key == null){
-            LOG.warn("JWT signed by unknown key");
-            exc.setResponse(Response.badRequest("JWT signed by unknown key").build());
-            return Outcome.RETURN;
-        }
+        if(key == null)
+            return setJsonErrorAndReturn(null,exc,400, ERROR_UNKNOWN_KEY);
+
 
         JwtConsumer jwtValidator = createValidator(key);
 
@@ -121,9 +136,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         try {
             jwtClaims = jwtValidator.processToClaims(jwt).getClaimsMap();
         }catch (Exception e){
-            LOG.warn("",e);
-            exc.setResponse(Response.badRequest("JWT validation failed").build());
-            return Outcome.RETURN;
+            return setJsonErrorAndReturn(e,exc,400, ERROR_VALIDATION_FAILED);
         }
 
         exc.getProperties().put("jwt",jwtClaims);
@@ -144,6 +157,23 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
         JwtConsumer jwtValidator = jwtConsumerBuilder.build();
         return jwtValidator;
+    }
+
+    private Outcome setJsonErrorAndReturn(Exception e, Exchange exc, int code, String description){
+        if(e != null)
+            LOG.error("",e);
+        try {
+            exc.setResponse(Response.ResponseBuilder.newInstance()
+                    .status(code, "Bad Request")
+                    .body(mapper.writeValueAsString(ImmutableMap.builder()
+                            .put("code", code)
+                            .put("description",description)
+                            .build()))
+                    .build());
+        } catch (JsonProcessingException jsonProcessingException) {
+            throw new RuntimeException(jsonProcessingException);
+        }
+        return Outcome.RETURN;
     }
 
     public JwtRetriever getJwtRetriever() {

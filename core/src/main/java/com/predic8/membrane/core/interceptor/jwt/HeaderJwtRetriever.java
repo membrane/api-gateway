@@ -24,7 +24,6 @@ public class HeaderJwtRetriever implements JwtRetriever{
     String header;
     String removeFromValue;
 
-
     public HeaderJwtRetriever() {
     }
 
@@ -37,6 +36,9 @@ public class HeaderJwtRetriever implements JwtRetriever{
     public String get(Exchange exc) {
         String[] replace = removeFromValue.split(" ");
         String header = exc.getRequest().getHeader().getFirstValue(this.header);
+        if(header == null)
+            return null;
+
         for (String replaceMe : replace) {
             header = header.replace(replaceMe.trim(),"");
         }
