@@ -16,7 +16,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<spring:bean id="myInterceptor" class="com.predic8.myInterceptor.MyInterceptor" />
+	<spring:bean id="myInterceptor" class="com.predic8.MyInterceptor" />
 
 	<router>
 	
@@ -25,14 +25,6 @@
 			<target host="membrane-soa.org" />
 		</serviceProxy>
 
-		<serviceProxy name="benchmark-resty" port="2050">
-      		<target url="http://localhost:1980/hello"/>
-    	</serviceProxy>
-
-		<serviceProxy name="Console" port="9000">
-		<adminConsole />
-		</serviceProxy>
-		
 	</router>
 	
 </spring:beans>

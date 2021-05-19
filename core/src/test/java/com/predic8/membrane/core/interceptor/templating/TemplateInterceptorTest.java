@@ -18,10 +18,12 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.json.JSONObject;
 import org.junit.*;
 import org.mockito.Mockito;
 import org.w3c.dom.NodeList;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -105,6 +107,12 @@ public class TemplateInterceptorTest {
         ti.init(router);
     }
 
+    @Test(expected = ResourceRetrievalException.class)
+    public void notFoundTemplateException() throws Exception {
+        ti.setLocation("./not_existent_file");
+        ti.init(router);
+    }
+
     @Test
     public void innerTagTest() throws Exception {
         ti.setTextTemplate("${title}");
@@ -132,6 +140,16 @@ public class TemplateInterceptorTest {
         setAndHandleRequest("./template_test.json");
         Assert.assertNull(exc.getRequest().getHeader().getContentType());
     }
+
+//    @Test
+//    public void extractorAndTemplateTest() throws Exception{
+//        XmlPathExtractorInterceptor xpe = new XmlPathExtractorInterceptor();
+//        xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/part[2]/item", "items"));
+//        xpe.handleRequest(exc);
+//
+//        assertEquals("25", ((List)exc.getProperty("items")).get(1));
+//
+//    }
 
     private void setAndHandleRequest(String location) throws Exception {
         ti.setLocation(location);

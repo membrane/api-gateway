@@ -14,42 +14,26 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.*;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
+import com.predic8.membrane.examples.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.BufferLogger;
+import org.junit.Assert;
+import org.junit.Test;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import com.predic8.membrane.examples.util.WaitableConsoleEvent;
-import com.predic8.membrane.test.AssertUtils;
-import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 
 public class AddSoapHeaderTest extends DistributionExtractingTestcase {
     @Test
     public void test() throws IOException, InterruptedException, ParserConfigurationException, SAXException {
-        File baseDir = getExampleDir("/soap11/add-soap-header");
+        File baseDir = getExampleDir("/soap/add-soap-header");
 
         BufferLogger b = new BufferLogger();
         Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(b).start();
@@ -61,23 +45,17 @@ public class AddSoapHeaderTest extends DistributionExtractingTestcase {
             mvn.killScript();
         }
 
-        FileUtils.copyDirectoryToDirectory(new File(baseDir, "target/classes"), getMembraneHome());
-
-        Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
+        BufferLogger proxyWatcher = new BufferLogger();
+        Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(proxyWatcher).start();
         try {
             String body = new String(Files.readAllBytes(Paths.get(baseDir + FileSystems.getDefault().getSeparator()
                     + "soap-message-without-header.xml")));
             String[] headers = {"Content-Type", "application/xml"};
-            String response = postAndAssert(200,"http://localhost:2050/", headers, body);
+            String response = postAndAssert(200,"http://localhost:2000/", headers, body);
+            Thread.sleep(1000);
 
 
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(new InputSource(new StringReader(response)));
-            NodeList answer = document.getElementsByTagName("wss:Security");
-
-
-            Assert.assertTrue(answer.getLength() == 1);
+            Assert.assertTrue(proxyWatcher.toString().contains("wss:Security"));
         } finally {
             sl.killScript();
         }

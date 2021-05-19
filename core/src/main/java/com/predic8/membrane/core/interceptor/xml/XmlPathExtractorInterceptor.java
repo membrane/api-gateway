@@ -13,6 +13,7 @@
    limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.xml;
+
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -20,21 +21,23 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
-import java.io.*;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @description Based on xpath it takes values from xml in request and puts them in exchange as properties
@@ -84,9 +87,8 @@ public class XmlPathExtractorInterceptor extends AbstractInterceptor{
     }
 
     private void setProperties(Exchange exc, InputStream body) throws XPathExpressionException, ParserConfigurationException, SAXException, IOException {
-        Document doc = getDocument(body);
         for (Property m : properties) {
-            NodeList list = getEvaluate(doc, m);
+            NodeList list = getEvaluate(getDocument(body), m);
             if(list.getLength() > 1){
                 exc.setProperty(m.getName(), getPropertyAsList(list));
             }
@@ -97,11 +99,8 @@ public class XmlPathExtractorInterceptor extends AbstractInterceptor{
     }
 
     private List<String> getPropertyAsList(NodeList list) {
-        List<String> temp = new ArrayList<>();
-        for(int i = 0; i < list.getLength(); i++){
-            temp.add(list.item(i).getTextContent());
-        }
-        return temp;
+        return IntStream.range(0, list.getLength())
+                .mapToObj(i -> list.item(i).getTextContent()).collect(Collectors.toList());
     }
 
     private Document getDocument(InputStream body ) throws ParserConfigurationException, SAXException, IOException {

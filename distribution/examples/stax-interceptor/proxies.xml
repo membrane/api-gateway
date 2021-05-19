@@ -16,29 +16,20 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<spring:bean id="staxInterceptor" class="com.predic8.myInterceptor.StaxConverterInterceptor" />
+	<spring:bean id="staxInterceptor" class="com.predic8.StaxConverterInterceptor" />
 
 	<router>
 	
 		
-		<serviceProxy name="echo" port="2050">
+		<serviceProxy name="echo" port="2000">
 			<request>
 				<interceptor refid="staxInterceptor"/>
 			</request>
 			<log headerOnly="false"/>
-			<response>
-				<groovy>
-					exc.setResponse(Response.ok(exc.request.getBodyAsStringDecoded()).build())
-					RETURN
-				</groovy>
-			</response>
-      		<target url="http://localhost:5000/hello"/>
+			<groovy>
+				Response.ok("Look at the output of Membrane!\n").build()
+			</groovy>
     	</serviceProxy>
-
-		<serviceProxy name="Console" port="9000">
-		<adminConsole />
-		</serviceProxy>
-		
 	</router>
 	
 </spring:beans>

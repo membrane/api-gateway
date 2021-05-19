@@ -13,12 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
@@ -27,13 +28,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+import static org.junit.Assert.assertEquals;
 
 public class AccessControlInterceptorIntegrationTest {
 

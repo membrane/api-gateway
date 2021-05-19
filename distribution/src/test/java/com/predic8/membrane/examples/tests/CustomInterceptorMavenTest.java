@@ -14,19 +14,17 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.Test;
-
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+
+import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static org.junit.Assert.assertTrue;
 
 public class CustomInterceptorMavenTest extends DistributionExtractingTestcase {
     @Test
@@ -43,7 +41,6 @@ public class CustomInterceptorMavenTest extends DistributionExtractingTestcase {
             mvn.killScript();
         }
 
-        FileUtils.copyDirectoryToDirectory(new File(baseDir, "target/classes"), getMembraneHome());
 
         Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
         try {

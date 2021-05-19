@@ -13,23 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
+import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
-import com.predic8.membrane.examples.tests.versioning.RoutingMavenTest;
-import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
-
-import com.predic8.membrane.examples.env.AntInPath;
-import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
-import com.predic8.membrane.examples.env.DefaultConfigTest;
-import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
-import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.SchematronValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
+import com.predic8.membrane.examples.tests.versioning.RoutingMavenTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
+import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses({
@@ -73,6 +68,8 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 	StaxExampleInterceptorTest.class,
 	AddSoapHeaderTest.class,
 	BasicXmlInterceptorTest.class,
+	Xml2JsonTest.class,
+	Json2XmlTest.class,
 	RoutingMavenTest.class,
 	XsltExampleTest.class,
 

@@ -19,7 +19,6 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -27,8 +26,6 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -73,10 +70,7 @@ public class XmlPathExtractorInterceptorTest {
     @Test(expected = NullPointerException.class)
     public void nonExistentPathTest() throws Exception {
         //TODO maybe throw exception here null pointer is not that clear
-        XmlPathExtractorInterceptor.Property prop = new XmlPathExtractorInterceptor.Property();
-        prop.setXpath("/project/project[5]/title");
-        prop.setName("title");
-        xpe.getMappings().add(prop);
+        xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/project[5]/title", "title"));
         xpe.handleRequest(exc);
     }
 
@@ -111,6 +105,7 @@ public class XmlPathExtractorInterceptorTest {
         xpe.handleRequest(exc);
 
         assertEquals("25", ((List)exc.getProperty("items")).get(1));
+        assertEquals("value value", ((List)exc.getProperty("items")).get(3));
 
     }
 

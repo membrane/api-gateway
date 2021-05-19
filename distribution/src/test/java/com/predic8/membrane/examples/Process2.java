@@ -14,18 +14,12 @@
 
 package com.predic8.membrane.examples;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
-
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
@@ -208,12 +202,12 @@ public class Process2 {
 
 		ProcessStuff ps = new ProcessStuff(p);
 		stuff = ps;
-		consoleWatchers.add(new AbstractConsoleWatcher() {
-			@Override
-			public void outputLine(boolean error, String line) {
-				System.out.println(line);
-			}
-		});
+//		consoleWatchers.add(new AbstractConsoleWatcher() {
+//			@Override
+//			public void outputLine(boolean error, String line) {
+//				System.out.println(line);
+//			}
+//		});
 
 
 		for (AbstractConsoleWatcher acw : consoleWatchers)
