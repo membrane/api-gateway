@@ -107,7 +107,7 @@ public class Body extends AbstractBody {
 			} else {
 				skipped = inputStream.skip(toSkip);
 			}
-			if (skipped == 0)
+			if (skipped <= 0)
 				break; // EOF
 			toSkip -= skipped;
 		}
