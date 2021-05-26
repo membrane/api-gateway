@@ -14,9 +14,11 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
@@ -34,6 +36,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
@@ -42,7 +45,7 @@ import java.util.Map;
 @MCElement(name="basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
-	private StaticUserDataProvider userDataProvider = new StaticUserDataProvider();
+	private UserDataProvider userDataProvider = new StaticUserDataProvider();
 
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";
@@ -60,8 +63,15 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private boolean validUser(Exchange exc) throws Exception {
-		return userDataProvider.getUsersByName().containsKey(getUsername(exc)) &&
-				userDataProvider.getUsersByName().get(getUsername(exc)).getPassword().equals(getPassword(exc));
+		try {
+			userDataProvider.verify(ImmutableMap.of(
+					"username", getUsername(exc),
+					"password", getPassword(exc)
+			));
+			return true;
+		} catch (NoSuchElementException e) {
+			return false;
+		}
 	}
 
 	private String getUsername(Exchange exc) throws Exception {
@@ -91,20 +101,15 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	public List<User> getUsers() {
-		return userDataProvider.getUsers();
-	}
-
-	public Map<String, User> getUsersByName() {
-		return userDataProvider.getUsersByName();
+		return ((StaticUserDataProvider)userDataProvider).getUsers();
 	}
 
 	/**
 	 * @description A list of username/password combinations to accept.
 	 */
-	@Required
-	@MCChildElement
+	@MCChildElement(order = 20)
 	public void setUsers(List<User> users) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		userDataProvider.setUsers(users);
+		((StaticUserDataProvider)userDataProvider).setUsers(users);
 	}
 
 	public UserDataProvider getUserDataProvider() {
@@ -114,24 +119,24 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	/**
 	 * @description The <i>user data provider</i> verifying a combination of a username with a password.
 	 */
-	public void setUserDataProvider(StaticUserDataProvider userDataProvider) {
+	@MCChildElement(order = 10)
+	public void setUserDataProvider(UserDataProvider userDataProvider) {
 		this.userDataProvider = userDataProvider;
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init(Router router) throws Exception {
 		//to not alter the interface of "BasicAuthenticationInterceptor" in the config file the "name" attribute is renamed to "username" in code
-		for(User user : getUsers()){
-			if(user.getAttributes().containsKey("name")){
-				String username = user.getAttributes().get("name");
-				user.getAttributes().remove("name");
-				user.getAttributes().put("username", username);
+		if (userDataProvider instanceof StaticUserDataProvider)
+			for(User user : getUsers()){
+				if(user.getAttributes().containsKey("name")){
+					String username = user.getAttributes().get("name");
+					user.getAttributes().remove("name");
+					user.getAttributes().put("username", username);
+				}
 			}
-		}
 
-		userDataProvider.getUsersByName().clear();
-		for (User user : userDataProvider.getUsers())
-			userDataProvider.getUsersByName().put(user.getUsername(), user);
+		userDataProvider.init(router);
 	}
 
 	@Override
@@ -144,13 +149,15 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getShortDescription());
 		sb.append("<br/>");
-		sb.append("Users: ");
-		for (User user : userDataProvider.getUsers()) {
-			sb.append(StringEscapeUtils.escapeHtml(user.getUsername()));
-			sb.append(", ");
+		if (userDataProvider instanceof StaticUserDataProvider) {
+			sb.append("Users: ");
+			for (User user : ((StaticUserDataProvider)userDataProvider).getUsers()) {
+				sb.append(StringEscapeUtils.escapeHtml(user.getUsername()));
+				sb.append(", ");
+			}
+			sb.delete(sb.length()-2, sb.length());
+			sb.append("<br/>Passwords are not shown.");
 		}
-		sb.delete(sb.length()-2, sb.length());
-		sb.append("<br/>Passwords are not shown.");
 		return sb.toString();
 	}
 
