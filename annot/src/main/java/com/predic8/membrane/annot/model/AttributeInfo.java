@@ -23,6 +23,9 @@ import com.predic8.membrane.annot.AnnotUtils;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.ProcessingException;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Mirrors {@link MCAttribute}.
  */
@@ -48,6 +51,18 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 			throw new ProcessingException("Setter method name is supposed to start with 'set'.", getE());
 		s = s.substring(3);
 		return AnnotUtils.dejavaify(s);
+	}
+
+	public String getSchemaType(Types typeUtils) {
+		String xsdType = getXSDType(typeUtils);
+
+		Map<String, String> mapping = new HashMap<>();
+		mapping.put("spel_number", "integer");
+		mapping.put("xsd:double", "number");
+		mapping.put("spel_boolean", "boolean");
+		mapping.put("xsd:string", "string");
+
+		return mapping.get(xsdType);
 	}
 
 	public String getXSDType(Types typeUtils) {
