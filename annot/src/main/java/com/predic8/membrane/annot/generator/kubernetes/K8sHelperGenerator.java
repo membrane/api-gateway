@@ -13,8 +13,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Autogenerates a helper file for Json de/serialising
- * which contains mappings from MCElement names to Java classes.
+ * Autogenerates a helper file for JSON parsing
  */
 public class K8sHelperGenerator extends AbstractK8sGenerator {
 
@@ -89,17 +88,13 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 "  */",
                 "public class " + fileName() + " {",
                 "    public static Map<String, Class<?>> elementMapping = new HashMap<>();",
-//                "    public static Map<String, Class<? extends Rule>> ruleMapping = new HashMap<>();",
-//                "    public static Map<String, Class<? extends Interceptor>> interceptorMapping = new HashMap<>();",
                 "    public static List<String> crdPluralNames = new ArrayList<>();",
                 "",
                 "    static {",
-//                        assembleRuleMappings(mainInfo),
                         "",
                         assembleCrdPluralNames(mainInfo),
                         "",
                         assembleElementMapping(mainInfo),
-//                        assembleInterceptorMappings(mainInfo),
                 "    }",
                 "}"
         );
@@ -117,26 +112,6 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
         return getRulesStream(main)
                 .map(ei -> pluralize(ei.getAnnotation().name().toLowerCase()))
                 .map(ei -> "        crdPluralNames.add(\"" + ei + "\");")
-                .collect(Collectors.joining(System.lineSeparator()));
-    }
-
-    private String assembleInterceptorMappings(MainInfo main) {
-        return getInterceptorsStream(main)
-                .map(ei -> {
-                    String name = ei.getAnnotation().name();
-                    String className = ei.getElement().getQualifiedName().toString();
-                    return "        interceptorMapping.put(\"" + name + "\", " + className + ".class);";
-                })
-                .collect(Collectors.joining(System.lineSeparator()));
-    }
-
-    public String assembleRuleMappings(MainInfo main) {
-        return getRulesStream(main)
-                .map(ei -> {
-                    String name = ei.getAnnotation().name();
-                    String className = ei.getElement().getQualifiedName().toString();
-                    return "        ruleMapping.put(\"" + name + "\", " + className + ".class);";
-                })
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 }
