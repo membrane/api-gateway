@@ -8,8 +8,11 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,12 +62,6 @@ public abstract class AbstractK8sGenerator {
                 .collect(Collectors.toList());
     }
 
-    protected Stream<ElementInfo> getInterceptorsStream(MainInfo main) {
-        return main.getElements().values().stream()
-                .filter(ei -> ei.getElement().getQualifiedName().toString().startsWith("com.predic8.membrane.core.interceptor"))
-                .filter(ei -> ei.getElement().getSuperclass().toString().equals("com.predic8.membrane.core.interceptor.AbstractInterceptor"));
-    }
-
     protected FileObject createFileObject(MainInfo main, String fileName) throws IOException {
         List<Element> sources = new ArrayList<>(main.getInterceptorElements());
         sources.add(main.getElement());
@@ -77,8 +74,9 @@ public abstract class AbstractK8sGenerator {
                         sources.toArray(new Element[0])
                 );
     }
-    protected FileObject createFileObject(MainInfo main) throws IOException {
-        return createFileObject(main, fileName());
+
+    protected BufferedWriter createFileInDistribution(String fileName) throws IOException {
+        return Files.newBufferedWriter(Paths.get("../distribution/router/conf/kubernetes/" + fileName));
     }
 
     public String pluralize(String singular) {

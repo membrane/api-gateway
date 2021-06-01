@@ -6,7 +6,6 @@ import com.predic8.membrane.annot.model.MainInfo;
 import com.predic8.membrane.annot.model.Model;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.tools.FileObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -34,8 +33,7 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
     protected void write(Model m) {
         m.getMains().forEach(main -> {
             try {
-                FileObject fo = createFileObject(main);
-                try (BufferedWriter bw = new BufferedWriter(fo.openWriter())) {
+                try (BufferedWriter bw = new BufferedWriter(createFileInDistribution(fileName()))) {
                     assemble(bw, main);
                 }
             } catch (IOException e) {
@@ -45,12 +43,15 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
     }
 
     private void assemble(Writer w, MainInfo main) throws IOException {
+
         for (ElementInfo element : getRules(main)) {
             writeCRD(w, element);
             appendLine(w, "---");
         }
 
         assembleRBAC(w);
+        appendLine(w, "---");
+        assembleVAW(w);
     }
 
     private void assembleRBAC(Writer writer) throws IOException {
@@ -81,8 +82,41 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
         );
     }
 
-    private void writeCRD(Writer w, ElementInfo ei) throws IOException {
+    private void assembleVAW(Writer w) throws IOException {
+        String name = "membrane-validator";
+        String hookName = name + ".default.svc.cluster.local";
 
+        appendLine(w,
+                "apiVersion: admissionregistration.k8s.io/v1",
+                "kind: ValidatingWebhookConfiguration",
+                "metadata:",
+                "  name: " + hookName,
+                "webhooks:",
+                "  - name: " + hookName,
+                "    rules:",
+                "      - apiGroups: [\"\"]",
+                "        apiVersions: [\"v1\"]",
+                "        operations: [\"CREATE\", \"UPDATE\"]",
+                "        resources: [" + allResources() + "]",//
+                "        scope: Cluster",
+                "    clientConfig:",
+                "      service:",
+                "        namespace: membrane-soa",
+                "        name: " + name,
+                "      caBundle: ${CA_BUNDLE}",
+                "    admissionReviewVersions: [\"v1\", \"v1beta1\"]",
+                "    sideEffects: None",
+                "    timeoutSeconds: 5"
+        );
+    }
+
+    private String allResources() {
+        return crdPlurals.stream()
+                .map(crd -> "\"" + crd + "\"")
+                .collect(Collectors.joining(","));
+    }
+
+    private void writeCRD(Writer w, ElementInfo ei) throws IOException {
         if (ei.getAnnotation().mixed() && ei.getCeis().size() > 0)
             throw new ProcessingException(
                     "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
