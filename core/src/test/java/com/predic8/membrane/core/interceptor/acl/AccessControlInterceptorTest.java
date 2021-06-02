@@ -13,18 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert;
-import static org.junit.Assert.assertNotNull;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
+import static com.predic8.membrane.test.AssertUtils.getAndAssert;
+import static org.junit.Assert.assertNotNull;
+
+@Ignore
 public class AccessControlInterceptorTest {
 
 	private static final String BASE_URL = "http://localhost:4000";

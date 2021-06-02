@@ -16,21 +16,15 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<spring:bean id="myInterceptor" class="com.predic8.membrane.core.interceptor.custom.MyInterceptor" />
+	<spring:bean id="myInterceptor" class="com.predic8.MyInterceptor" />
 
 	<router>
 	
 		<serviceProxy port="2000">
-			<!--
-			For SOAP proxying, you probably want <wsdlRewriter /> . See also
-			http://membrane-soa.org/service-proxy-doc/current/url-rewriting-wsdl.htm .
-			-->
-		
 			<interceptor refid="myInterceptor" />
-			
 			<target host="membrane-soa.org" />
 		</serviceProxy>
-		
+
 	</router>
 	
 </spring:beans>

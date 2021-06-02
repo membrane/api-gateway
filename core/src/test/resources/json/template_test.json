@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "count": 22,
+    "limit": 10,
+    "page": 2,
+    "previous_url": "/shop/products/?page=1&limit=10",
+    "next_url": "/shop/products/?page=3&limit=10",
+    "title": "${title}"
+  },
+  "orders": [
+    {
+      "createdAt": "2021-04-12",
+      "state": "created",
+      "order_url": "/shop/orders/7832",
+      "items": [${items.join(",")}]
+    }
+  ]
+}

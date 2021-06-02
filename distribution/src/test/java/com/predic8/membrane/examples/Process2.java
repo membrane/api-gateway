@@ -14,20 +14,12 @@
 
 package com.predic8.membrane.examples;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.TimeoutException;
-
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
@@ -172,6 +164,8 @@ public class Process2 {
 
 		ArrayList<String> command = new ArrayList<String>();
 		Charset charset;
+		Map<String, String> envVarAdditions = new HashMap<>();
+
 		if (isWindows()) {
 			File ps1 = new File(exampleDir, id + ".ps1");
 			FileWriter fw = new FileWriter(ps1);
@@ -186,19 +180,21 @@ public class Process2 {
 		} else {
 			File ps1 = new File(exampleDir, id + "_launcher.sh");
 			FileWriter fw = new FileWriter(ps1);
-			fw.write("#!/bin/bash\n"+
-					"echo $$ > \""+pidFile+"\"\n" +
-					startCommand);
+			fw.write("#!/bin/bash\n");
+			fw.write("echo $$ > \""+pidFile+"\"\n" + startCommand);
 			fw.close();
 			ps1.setExecutable(true);
 			charset = Charset.defaultCharset(); // on Linux, the file is probably using some 8-bit charset
-
 			command.add("setsid"); // start new process group so we can kill it at once
 			command.add(ps1.getAbsolutePath());
+
+			envVarAdditions.put("PATH", System.getProperty("java.home") +"/bin:" + System.getenv("PATH"));
+			envVarAdditions.put("JAVA_HOME", System.getProperty("java.home"));
 		}
 
 		ProcessBuilder pb = new ProcessBuilder(command).directory(exampleDir);
 		pb.environment().remove("MEMBRANE_HOME");
+		pb.environment().putAll(envVarAdditions);
 		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
 		final Process p = pb.start();
 
@@ -206,6 +202,13 @@ public class Process2 {
 
 		ProcessStuff ps = new ProcessStuff(p);
 		stuff = ps;
+//		consoleWatchers.add(new AbstractConsoleWatcher() {
+//			@Override
+//			public void outputLine(boolean error, String line) {
+//				System.out.println(line);
+//			}
+//		});
+
 
 		for (AbstractConsoleWatcher acw : consoleWatchers)
 			ps.watchers.add(acw);

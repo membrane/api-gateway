@@ -13,14 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.examples.config;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import com.predic8.beautifier.PlainBeautifierFormatter;
+import com.predic8.beautifier.XMLBeautifier;
+import com.predic8.membrane.annot.bean.MCUtil;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.test.AssertUtils;
 import org.apache.commons.io.FileUtils;
 import org.custommonkey.xmlunit.XMLAssert;
 import org.junit.Test;
@@ -28,11 +25,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.predic8.beautifier.PlainBeautifierFormatter;
-import com.predic8.beautifier.XMLBeautifier;
-import com.predic8.membrane.annot.bean.MCUtil;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.test.AssertUtils;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Tests {@link MCUtil#fromXML(Class, String)} and {@link MCUtil#toXML(Object)} on every
@@ -54,7 +53,12 @@ public class ConfigSerializationTest {
 			"custom-interceptor", // has external classpath dependencies
 			"custom-websocket-interceptor", // has external classpath dependencies
 			"logging-jdbc", // contains a reference to a DataSource bean (not serializable)
-			"proxy" // contains more than one <router> (not supported by MCUtil#fromXML())
+			"proxy", // contains more than one <router> (not supported by MCUtil#fromXML())
+			"custom-interceptor-maven", // has external classpath dependencies
+			"stax-interceptor", // has external classpath dependencies
+			"soap", // has external classpath dependencies
+			"basic-xml-interceptor", // has external classpath dependencies
+			"template-interceptor"
 	});
 
 	@Parameters
