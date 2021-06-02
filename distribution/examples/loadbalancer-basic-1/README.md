@@ -1,4 +1,4 @@
-###SIMPLE LOAD BALANCING
+### SIMPLE LOAD BALANCING
 
 By using the `LoadBalancerInterceptor` you can balance requests to a number of different nodes.
 
@@ -6,7 +6,7 @@ The nodes can be organized in clusters. A Web based administration interface all
 clusters. In addition a simple URL based interface can be used to add clusters and nodes. 
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In this example we will use the `LoadBalancerInterceptor` to distribute requests to 3 different nodes. 
 

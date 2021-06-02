@@ -1,8 +1,9 @@
-###JSON 2 JSON TRANSFORMATION
+### JSON 2 JSON TRANSFORMATION
 
 Transforms a JSON object into another JSON object with help of Javascript.
 
-####RUNNING THE EXAMPLE
+
+#### RUNNING THE EXAMPLE
 
 In this example we will use Javascript to transform a JSON object response into another JSON object. For the date transformation an external library ( "moment.js" ) is used.
 
@@ -18,7 +19,8 @@ Execute the following steps in the `$MEMBRANE_HOME/examples/json2json-transforma
 
 5. Observe the transformed JSON object
 
-####NOTES
+
+#### NOTES
 
 To see the Javascript implementation of this example take a look at the `proxies.xml`.
 

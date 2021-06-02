@@ -1,8 +1,9 @@
-###STATISTICS JDBC INTERCEPTOR
+### STATISTICS JDBC INTERCEPTOR
 
 Using the `StatisticsJDBCInterceptor`, Membrane Monitor and Service Proxy can log metadata about service invocation to any database that can be accessed via JDBC.
     
-####RUNNING THE EXAMPLE
+
+#### RUNNING THE EXAMPLE
 
 In this example we will configure Membrane to log to the Apache Derby database. 
 

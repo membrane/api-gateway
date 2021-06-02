@@ -1,4 +1,4 @@
-###XML Schema Validation
+### XML Schema Validation
 
 To run this example you should install Curl from http://curl.haxx.se/download.html , if
 you have not done so already. Let us assume it is in your PATH.

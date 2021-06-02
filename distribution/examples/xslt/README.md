@@ -1,10 +1,9 @@
-###XSLT INTERCEPTOR
+### XSLT INTERCEPTOR
 
 With the XSLTInterceptor you can apply XSLT stylesheets to requests and responses.
 
 
-
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 At the following URL you will get a REST representation of a customer resource.
 
@@ -26,8 +25,7 @@ Execute the following steps:
 3. Compare it with the response of http://localhost:2000/samples/sqlrest/CUSTOMER/7/
 
 
-
-HOW IT IS DONE
+### HOW IT IS DONE
 
 The following part describes the example in detail.  
 
@@ -44,7 +42,6 @@ First take a look at the proxies.xml file.
 	</serviceProxy>
 </proxies>
 ```
-
 
 You will see that there is a `<serviceProxy>` that directs calls to the port `2000` to www.thomas-bayer.com. Additionally, the `XSLTInterceptor` is set for the rule. The interceptor will be called while processing each request and response.
 
@@ -101,6 +98,7 @@ We will use the stylesheet to transform the REST resource into another represent
 ```
 
 When we open http://localhost:2000/samples/sqlrest/CUSTOMER/7/ in a browser the response is transformed by Membrane and the browser will show the following document:
+
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <person>

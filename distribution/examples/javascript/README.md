@@ -1,8 +1,9 @@
-###JAVASCRIPT INTERCEPTOR
+### JAVASCRIPT INTERCEPTOR
 
 The Javascript interceptor runs Javascript scripts to manipulate and monitor messages.
 
-####RUNNING THE EXAMPLE
+
+#### RUNNING THE EXAMPLE
 
 In this example we will use Javascript to manipulate a request and monitor the response of it. We will also use Javascript to serve static responses for requests.
 
@@ -18,7 +19,8 @@ Execute the following steps:
 
 5. Now you can see a custom response from the Javascript interceptor
 
-####NOTES
+
+#### NOTES
 
 To see the Javascript implementation of this example take a look at the proxies.xml.
 

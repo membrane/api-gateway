@@ -1,10 +1,9 @@
-###RATE LIMITER
+### RATE LIMITER
 
 The `RateLimiter` limits the number of requests in a given interval.
 
 
-
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In this example we will send 4 requests to the service with a rate limit of 3 requests per 30 seconds. The first 3 requests will go through while the last one will be blocked with code `429`. NOTICE: The RateLimiter limits in a given interval and then resets the interval. That means you could send 3 requests, the interval is reset, you send the fourth request and the RateLimiter doesn't block because it is in a new interval. Just repeat the requests if this happens. 
 
@@ -19,8 +18,7 @@ In this example we will send 4 requests to the service with a rate limit of 3 re
 5. Repeat 4 times within 30 seconds: Request the header of localhost:2000 with `curl localhost:2000 -I`
 
 
-
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 This section describes the example in detail.  
 
@@ -37,6 +35,6 @@ You will see that there is a `serviceProxy` on port `2000`. Additionally, the `R
 
 The rateLimiter element has 2 values that you can set and by default it is set to 1000 requests per hour.
 
-`requestLimit="x"` can be any positive number. Specifies the number of requests per interval.
-`requestLimitDuration="PTxS"` can be any duration in seconds. Specifies the interval in which `requestLimit` requests can be done. Format is "PTxS" where x is the duration in seconds.
+* `requestLimit="x"` can be any positive number. Specifies the number of requests per interval.
+* `requestLimitDuration="PTxS"` can be any duration in seconds. Specifies the interval in which `requestLimit` requests can be done. Format is "PTxS" where x is the duration in seconds.
  

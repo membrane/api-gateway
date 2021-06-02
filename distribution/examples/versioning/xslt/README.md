@@ -1,4 +1,4 @@
-###VERSIONING WEBSERVICES BY PERFORMING XSLT
+### VERSIONING WEBSERVICES BY PERFORMING XSLT
 
 In this example we investigate how web services can be versioned by transforming
 old requests using XSLT.
@@ -17,7 +17,7 @@ service version), and using them in any client (e.g. SoapUI) therefore
 bypasses the proxy.)
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 To run the example execute the following steps: 
 
@@ -42,17 +42,16 @@ Execute the following steps:
    You should see a response containing `<h1>404 Not Found</h1>`, `No context found for request`.
 
 4. Now run below command. You should see a response containing `Hello ... version 2.0`.
-   ```
+```
      curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:9000/ContactService/v20
-   ```
+```
    
 
 5. If you now send a `1.1` response to a `2.0` endpoint using below, you get
+
 ```
  curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:9000/ContactService/v20
 ```
-   
-
 
 6. We now start Membrane: Execute `examples/versioning/xslt-maven/service-proxy.bat` .
 

@@ -1,10 +1,9 @@
-###THROTTLE INTERCEPTOR
+### THROTTLE INTERCEPTOR
 
 With the `ThrottleInterceptor` you can delay and limit parallel requests.
 
 
-
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In this example we will throttle down access to a web page.
 

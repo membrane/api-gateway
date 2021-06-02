@@ -1,10 +1,9 @@
-### ADD SOAP HEADER INTERCEPTOR
+###  ADD SOAP HEADER INTERCEPTOR
 
 This interceptor adds a SOAP header to incoming request using the Java DOM API.
 
 
-
-#### RUNNING THE EXAMPLE
+####  RUNNING THE EXAMPLE
 
 To run the example execute the following steps:
 
@@ -24,8 +23,7 @@ curl -d @soap-message-without-header.xml http://localhost:2000 -H "Content-Type:
 6. On the console you will see that a security XML-element gets added to the request of the body
 
 
-
-#### HOW IT IS DONE
+####  HOW IT IS DONE
 
 Using maven, we create a jar file and copy the compiled jar file into the libs directory of membrane to make the new interceptor available to the router. 
 

@@ -1,4 +1,4 @@
-###STOMP OVER WEBSOCKET INTERCEPTING
+### STOMP OVER WEBSOCKET INTERCEPTING
 
 In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane Service Proxy.
 Additionally regular interceptors can be run on those messages (with limitations) in addition to all WebSocket
@@ -11,26 +11,33 @@ supported by ActiveMQ. You will find more information on STOMP on https://stomp.
 HTTP connection by sending specific WebSocket HTTP headers. You will find more information on WebSockets on
 https://tools.ietf.org/html/rfc6455
 
-####PREPARATIONS
+
+#### PREPARATIONS
 
 1. Download the latest ActiveMQ release at https://github.com/apache/activemq/releases (v5.14.5 as of now)
+   
 2. Navigate to the `bin/activemq` folder in a console
+   
 3. Start ActiveMQ by running `activemq start` in the console. This window will remain open
 
-####RUNNING THE EXAMPLE
+
+
+#### RUNNING THE EXAMPLE
 
 To run the example execute the following steps:
 
 1. Start Membrane Service proxy by running the `service-proxy.[bat|sh]` in this folder
+   
 2. Look at the console window and wait until `Membrane ... up and running!`. This window will remain open
+   
 3. Open http://localhost:9998
+   
 4. Observe a message appearing on the website
+   
 5. Look at the console window of Membrane Service Proxy and observe the changed `STOMP` message
 
 
-
-
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 The following part describes the example in detail.
 

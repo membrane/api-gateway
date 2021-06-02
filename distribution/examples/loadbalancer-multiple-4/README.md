@@ -1,17 +1,17 @@
-###MULTIPLE LOAD BALANCERS
+### MULTIPLE LOAD BALANCERS
 
 This example shows how to use multiple load balancers (LBs) within the same Membrane Service Proxy instance, and how to statically
 configure your nodes within. You should be familiar with loadbalancer-basic-1 and loadbalancer-static.
 
 The LBs are distinguished by giving them different names ("balancer1" and "balancer2" in the example).
 
-When using the URL based interface to create/remove/... nodes, simply append "&balancer="+name to the URL.
+When using the URL based interface to create/remove/... nodes, simply append `"&balancer="+name` to the URL.
 
 
 (In the previous examples -basic-1 and -static, an implicit name called "Default" was given to the only existing LB.)
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In this example we will use two `LoadBalancerInterceptors` to distribute requests to different nodes. 
 
@@ -48,8 +48,7 @@ To run the example execute the following steps:
 10. Open again the URL http://localhost:8080/service and repeatedly refresh. Note that you now stay on Mock Node 1.
 
 
-
-####NOTE:
+#### NOTE:
 
 The names of <balancer> and <cluster> elements have to be simple (e.g. no spaces or special characters)
 for the web administration interface and LB client (see load-balancer-client-2) to work. 

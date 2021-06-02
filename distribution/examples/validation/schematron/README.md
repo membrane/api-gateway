@@ -1,4 +1,4 @@
-###Schematron Validation
+### Schematron Validation
 
 To run this example you should install Curl from http://curl.haxx.se/download.html , if you have not done so already.
 
@@ -15,8 +15,6 @@ Execute the following steps:
 5. Run `curl -d @car.xml http://localhost:2000/` from the command line. Observe that you get a successful response.
 
 6. Run `curl -d @invalid-car.xml http://localhost:2000/`. Observe that you get a validation error response.
-
-
 
 
 

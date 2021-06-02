@@ -1,4 +1,4 @@
-###SWAGGER REWRITER EXAMPLE
+### SWAGGER REWRITER EXAMPLE
 
 In this example we will run a proxy for Swagger using Membrane.
 Swagger is a specification for standardized REST APIs (http://swagger.io/).
@@ -6,14 +6,13 @@ Specification for Version 2.0 is available at
   https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md
 
 
-
-####PREPARATIONS
+#### PREPARATIONS
 
 1.	Go to the `examples/swagger` directory.
 2.	Execute `service-proxy.sh` or `service-proxy.bat`
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 Let's proxy some Swagger!
 
@@ -35,7 +34,7 @@ To run the example execute the following steps:
 	`curl -X GET --header "Accept: application/json" "http://localhost:7000/v2/pets/8"`
 
 
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 The following part describes the example in detail.
 

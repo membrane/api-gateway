@@ -1,8 +1,9 @@
-####FILE EXCHANGE STORE
+#### FILE EXCHANGE STORE
 
 Membrane Service Proxy uses exchange stores to save requests and responses. Using the ExchangeStoreInterceptor you can plugin different exchange stores. Each exchange store implements a different storing strategy. The `FileExchangeStore` saves exchanges into the file system.
+
      
-###RUNNING THE EXAMPLE
+### RUNNING THE EXAMPLE
 
 In this example we will configure an `ExchangeStoreInterceptor` with a `FileExchangeStore`. 
 

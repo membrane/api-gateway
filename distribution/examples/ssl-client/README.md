@@ -1,13 +1,13 @@
-###SSL for Unsecured Servers
+### SSL for Unsecured Servers
 
 Using the Membrane Service Proxy, we can enable clients that do not support SSL to communicate with a SSL secured server.  
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In the example we will connect to the following SVN repository without using SSL.
  
- 
+
 https://www.google.de/
 
 

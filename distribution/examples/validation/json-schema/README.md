@@ -1,4 +1,4 @@
-###JSON Schema Validation
+### JSON Schema Validation
 
 To run this example you should install Curl from http://curl.haxx.se/download.html , if
 you have not done so already.

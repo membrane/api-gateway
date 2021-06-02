@@ -1,4 +1,4 @@
-###VERSIONING WEBSERVICES BY ROUTING TO DIFFERENT ENDPOINTS
+### VERSIONING WEBSERVICES BY ROUTING TO DIFFERENT ENDPOINTS
 
 In this example we investigate how web services can be versioned by running
 each version on its own seperate end point.
@@ -16,7 +16,7 @@ service version), and using them in any client (e.g. SoapUI) therefore
 bypasses the proxy.)
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 To run the example execute the following steps: 
 

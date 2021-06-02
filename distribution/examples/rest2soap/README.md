@@ -1,8 +1,9 @@
-###REST 2 SOAP CONVERSION
+### REST 2 SOAP CONVERSION
 
 With the REST2SOAP Converter you can make a SOAP Web Service as a REST resource accessible.
 
-####RUNNING THE EXAMPLE
+
+#### RUNNING THE EXAMPLE
 
 In this example we will call a SOAP Web Service by using a simple HTTP GET request. We will use a service that identifies the name, zip code and region of a bank by its banking code. You can take a look at the WSDL at 
 
@@ -22,7 +23,7 @@ To run the example execute the following steps:
 
 
 
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 The following part describes the example in detail.  
 

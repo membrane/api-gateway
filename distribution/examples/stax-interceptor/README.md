@@ -1,10 +1,9 @@
-###CUSTOM STAX INTERCEPTOR
+### CUSTOM STAX INTERCEPTOR
 
 In this example we will install an interceptor called StaxConverterInterceptor that changes tag name from `<foo>` to `<bar>` using Java STAX API.
 
 
-     
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 To run the example execute the following steps:
 
@@ -26,8 +25,7 @@ curl -d @example.xml http://localhost:2000 -H "Content-Type: application/xml"
 6. In the console you can see tht`<foo>` got changed to `<bar>`
 
 
-
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 Using maven, we create a jar file and copy the compiled jar file into the libs directory of membrane to make the new interceptor available to the router.
 

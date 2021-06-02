@@ -1,11 +1,11 @@
-###ACCESS CONTROL INTERCEPTOR
+### ACCESS CONTROL INTERCEPTOR
 
 With the AccessControlInterceptor you can restrict access to services and resources.
 
 An ACL file allows a fine-grained configuration of permissions. Access can be restricted based on the ip address,  hostname and the URI of the requested resource.
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In this example we will make an HTTP GET request call to secured resources. 
 
@@ -27,7 +27,7 @@ To run the example execute the following steps:
 6. If you access the service from other computers, all URIs will be available except the URIs starting with `/contact/` or `/open-source/`. 	
 
 
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 The following part describes the example in detail.  
 

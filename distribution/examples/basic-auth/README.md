@@ -1,21 +1,17 @@
-###BASIC AUTHENTICATION INTERCEPTOR
+### BASIC AUTHENTICATION INTERCEPTOR
 
 With the BasicAuthenticationInterceptor you can secure your services or web pages by HTTP Basic Authentication.
 
 
-
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 At the following URL you will get a REST representation of a customer resource.
 
-
 http://www.thomas-bayer.com/samples/sqlrest/CUSTOMER/7/ 
-
 
 In this example we will secure this resource with HTTP Basic Authentication.
 
 To run the example execute the following steps: 
-
 
 1. Go to the `examples/basic-auth` directory.
 
@@ -26,8 +22,7 @@ To run the example execute the following steps:
 4. Login with the username `alice` and the password `membrane`.
 
 
-
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 The following part describes the example in detail.  
 

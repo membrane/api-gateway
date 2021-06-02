@@ -1,31 +1,40 @@
 **NOTICE: THIS IS A DRAFT**
 
-###Service Discovery With Etcd
+### Service Discovery With Etcd
 
 The publisher publishes endpoint details for services to "the cloud". The configurator reads those details from "the cloud" and dynamically forwards to those services
  
- 
- 
-####RUNNING THE EXAMPLE
+
+#### RUNNING THE EXAMPLE
 
 In this example we will start a self-publishing service that responds with "hello" that can be called from another service without knowledge of the endpoint
 
 1. Download etcd: go to "https://github.com/coreos/etcd/releases/", scroll down to the "Downloads" section and pick the version for your operating system
+   
 2. Extract etcd in any directory and start etcd
+   
 3. In the membrane folder go to `examples/service-discovery-with-etcd/`
+   
 4. Execute `configurator/start.bat`
+   
 5. Open your favorite browser and go to `localhost:9001`, this opens the admin console of the configurator
+   
 6. Notice that "Console" is the only available service, "Console" is the admin console
-7. Execute the `publisher/start.bat` 
+   
+7. Execute the `publisher/start.bat`
+   
 8. Open another tab in your browser and go to `localhost:8081/myService` and receive "hello" as response, this is a service from the publisher
+   
 9. Go back to the admin console window and refresh the page, another service should appear
+   
 10. Open another tab in your browser and go to `localhost:8080/myService` and receive `hello` as response, this is a service from the configurator
+    
 11. Exit the `publisher.bat` and wait 20 seconds.
+    
 12. Go back to the admin console window and refresh the page, the second service should disappear
 
 
-
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 This section describes the example in detail.  
 

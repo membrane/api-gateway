@@ -1,9 +1,9 @@
-###LOAD BALANCING CLIENT
+### LOAD BALANCING CLIENT
 
 In the previous example we set up a load balancer with 3 nodes. We used a URL based interface to register the nodes with the balancer. That interface can be called from a simple client that optionally supports encrypted parameters.    
 
 
-###RUNNING THE EXAMPLE
+### RUNNING THE EXAMPLE
 
 In this example we will use a simple client to communicate with the URL interface. We also will encrypt the parameters
 that are sent.

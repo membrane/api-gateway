@@ -1,10 +1,9 @@
-###REGEX URL REWRITE INTERCEPTOR
+### REGEX URL REWRITE INTERCEPTOR
 
 With the `RewriteInterceptor` you can rewrite URLs by regular expressions. 
 
 
-
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In this example we will rewrite a simple URL. Take a look at the WSDL located at
 
@@ -19,8 +18,7 @@ We want to hide that this service is hosted by axis2. To do this we have to repl
 2. Open the URL http://localhost:2000/bank/services/BLZService?wsdl in your browser.
 
 
-
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 This section describes the example in detail.  
 
@@ -36,15 +34,16 @@ First take a look at the `proxies.xml` file.
 </proxies>
 ```
 
-
 You will see that there is a `<serviceProxy>` that directs calls to the port `2000` to www.thomas-bayer.com:80. Additionally, the `RewriteInterceptor` is added to the proxy. The interceptor will be called while processing each request and response.
 
 Now take a closer look at the <rewriter> element:
+
 ```
 <rewriter>
 	<map from="^/bank/(.*)" to="/axis2/$1" />
 </rewriter>
 ```
+
 The interceptor is configured with one regular expression `^/bank/(.*)` . This will match the following path-query parts of URIs:
 ```
 /bank/services/BLZService?wsdl

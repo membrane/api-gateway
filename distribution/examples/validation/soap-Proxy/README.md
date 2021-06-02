@@ -1,8 +1,8 @@
-###SOAP Message Validation
+### SOAP Message Validation
 
 To run this example execute the following steps
 
-####PREREQUISITES:
+#### PREREQUISITES:
 
 - Install Curl from http://curl.haxx.se/download.html , if you have not done so already. Let us assume it is in your PATH.
 

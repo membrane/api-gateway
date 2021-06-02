@@ -1,13 +1,11 @@
-###Xml2json INTERCEPTOR
+### Xml2json INTERCEPTOR
 
-Using xml2json interceptor you can convert XML content to JSON in both requests and responses.
+Using `xml2json` interceptor you can convert XML content to JSON in both requests and responses.
 
 
-
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 To run the example execute the following steps: 
-
 
 1. Go to the examples/xml-2-json directory.
 
@@ -22,12 +20,11 @@ curl -d @jobs.xml http://localhost:2000 -H "Content-Type: application/xml"
 4. You can see converted json content on the console
 
 
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 The following part describes the example in detail.  
 
 Let's take a look at the proxies.xml file.
-
 
 ```
 <router>

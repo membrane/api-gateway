@@ -1,20 +1,18 @@
-###CUSTOM WEBSOCKET INTERCEPTOR WITH EMBEDDED MEMBRANE
+### CUSTOM WEBSOCKET INTERCEPTOR WITH EMBEDDED MEMBRANE
 
 In this example a custom WebSocket interceptor is created and then added to Membrane Service Proxy through configuration
 of the proxies.xml file.
 
 
-####PREREQUISITES
+#### PREREQUISITES
 
 1. Prepare a WebSocket client and server. The server should listen on port 8080. The client should connect through port 9999.
    (Membrane Service Proxy already ships with an example WebSocket client and server (requiring NodeJS). Take a look at
    the "websocket-intercepting" example and run the startWebsocket.[bat|sh]. This will startup a server and client and
    do some communication.)
 
-
-
-
-####RUNNING THE EXAMPLE
+   
+#### RUNNING THE EXAMPLE
 
 1. Run the `compile-and-copy.[bat|sh]`. Wait until the console window closes
 2. Start Membrane Service proxy by running the `service-proxy.[bat|sh]` in this folder
@@ -24,8 +22,7 @@ of the proxies.xml file.
 6. Observe your custom interceptor in action (the example custom interceptor should log to the console)
 
 
-
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 The custom interceptor is found in the  `src/main/java/com/predic8/membrane/core/interceptor/websocket/custom` folder. This
 is the WebSocket log interceptor of the custom WebSocket interceptor tutorial at `<LINK TO CUSTOM WEBSOCKET INTERCEPTOR>`.

@@ -1,15 +1,15 @@
-###CUSTOM INTERCEPTOR
+### CUSTOM INTERCEPTOR
 
-You can create custom interceptors by extending the AbstractInterceptor class.
+You can create custom interceptors by extending the `AbstractInterceptor` class.
 
 
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
-In this example we will install a custom interceptor called MyInterceptor that prints a message to the console when it is invoked. 
+In this example we will install a custom interceptor called `MyInterceptor` that prints a message to the console when it is invoked. 
 
 To run the example execute the following steps:
 
-1. Goto the examples/custom-interceptor-maven/ directory
+1. Goto the `examples/custom-interceptor/` directory
 
 2. Run below command
 
@@ -24,7 +24,7 @@ To run the example execute the following steps:
 5. Take a look at the console.
 
 
-####HOW IT IS DONE
+#### HOW IT IS DONE
 
 Using maven, we create a jar file and copy the compiled jar file into the libs directory of membrane to make the new interceptor available to the router.
 

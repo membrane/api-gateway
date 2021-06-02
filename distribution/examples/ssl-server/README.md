@@ -1,10 +1,9 @@
-###SSL for Unsecured Servers
+### SSL for Unsecured Servers
 
 This example describes how to secure an unsecured Web Service with encryption using SSL.  
 
 
-
-####RUNNING THE EXAMPLE
+#### RUNNING THE EXAMPLE
 
 In the example we use a public sample service for banking codes. 
 
