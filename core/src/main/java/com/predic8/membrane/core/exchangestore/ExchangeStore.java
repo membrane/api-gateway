@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -78,4 +79,6 @@ public interface ExchangeStore {
 	 * Otherwise it waits until a modification occurs.
 	 */
 	void waitForModification(long lastKnownModification) throws InterruptedException;
+
+    ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception;
 }
