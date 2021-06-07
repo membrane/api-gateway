@@ -31,11 +31,8 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import javax.tools.Diagnostic.Kind;
 
-import com.predic8.membrane.annot.generator.BlueprintParsers;
-import com.predic8.membrane.annot.generator.HelpReference;
-import com.predic8.membrane.annot.generator.NamespaceInfo;
-import com.predic8.membrane.annot.generator.Parsers;
-import com.predic8.membrane.annot.generator.Schemas;
+import com.predic8.membrane.annot.generator.*;
+import com.predic8.membrane.annot.generator.kubernetes.KubernetesBootstrapper;
 import com.predic8.membrane.annot.model.AttributeInfo;
 import com.predic8.membrane.annot.model.ChildElementDeclarationInfo;
 import com.predic8.membrane.annot.model.ChildElementInfo;
@@ -273,7 +270,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					processingEnv.getMessager().printMessage(Kind.ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
 					return true;
 				}
-
 				process(m);
 			}
 
@@ -375,6 +371,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 	public void process(Model m) throws IOException {
 		new Schemas(processingEnv).writeXSD(m);
+		new KubernetesBootstrapper(processingEnv).boot(m);
 		new Parsers(processingEnv).writeParsers(m);
 		new Parsers(processingEnv).writeParserDefinitior(m);
 		new HelpReference(processingEnv).writeHelp(m);

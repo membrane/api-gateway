@@ -51,7 +51,7 @@
   </binding>
   <service name="ContactService">
     <port name="ContactServicePort" binding="tns:ContactServicePortBinding">
-      <soap:address location="http://localhost:8080/ContactService/v20"/>
+      <soap:address location="http://localhost:9000/ContactService/v20"/>
     </port>
   </service>
 </definitions>

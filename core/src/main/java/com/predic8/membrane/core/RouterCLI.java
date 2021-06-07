@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 
 import java.io.File;
 
+import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
@@ -43,6 +44,7 @@ public class RouterCLI {
 
 			try {
 				router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
+				new KubernetesWatcher(router).start();
 			} catch (XmlBeanDefinitionStoreException e) {
 				TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
 			}

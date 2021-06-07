@@ -10,21 +10,21 @@ Creates an image with Membrane and copies over the proxies.xml configuration fil
 
 ## Open Example Proxies
 
-### REST Names
+###   REST Names
 	http://<<docker-machine>>:8080/restnames/name.groovy?name=Franz
 
-### Membrane Web Console
+###   Membrane Web Console
 	http://<<docker-machine>>:9000/
 
-### Whole Web Site
+###   Whole Web Site
 	http://<<docker-machine>>:9000/
 
 ## Troubleshooting
 
-### Display Logs
+###   Display Logs
 	docker logs membrane
 
-### Open shell in container and take a look at the Membrane log
+###   Open shell in container and take a look at the Membrane log
 	docker exec -it membrane /bin/bash
 	less /opt/membrane/memrouter.log
 

@@ -30,6 +30,7 @@ import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
+import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
@@ -40,6 +41,10 @@ import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidat
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPUtilTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.soap.SoapOperationExtractorTest;
+import com.predic8.membrane.core.interceptor.templating.TemplateInterceptorTest;
+import com.predic8.membrane.core.interceptor.xml.Json2XmlInterceptorTest;
+import com.predic8.membrane.core.interceptor.xml.Xml2JsonInterceptorTest;
+import com.predic8.membrane.core.interceptor.xml.XmlPathExtractorInterceptorTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathAnalyzerTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
@@ -103,6 +108,9 @@ import org.junit.runners.Suite.SuiteClasses;
         RewriteInterceptorTest.class,
         AbortExchangeTest.class, RateLimitInterceptorTest.class,
         OAuth2UnitTests.class, SessionResumptionTest.class,
+		Xml2JsonInterceptorTest.class, Json2XmlInterceptorTest.class, TemplateInterceptorTest.class,
+		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class
+
 
 })
 public class UnitTests {

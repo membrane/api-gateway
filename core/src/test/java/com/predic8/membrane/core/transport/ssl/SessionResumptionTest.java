@@ -31,6 +31,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.StreamPump;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Closeable;
@@ -80,6 +81,7 @@ public class SessionResumptionTest {
         router2.shutdown();
     }
 
+    @Ignore
     @Test
     public void doit() throws Exception {
         HttpClient hc = new HttpClient();

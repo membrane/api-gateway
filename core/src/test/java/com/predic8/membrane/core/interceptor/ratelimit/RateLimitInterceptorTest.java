@@ -64,27 +64,23 @@ public class RateLimitInterceptorTest {
 		int rateLimitSeconds = 1;
 		final RateLimitInterceptor rli = new RateLimitInterceptor(Duration.standardSeconds(rateLimitSeconds), tryLimit);
 		
-		ArrayList<Thread> threads = new ArrayList<Thread>();
+		ArrayList<Thread> threads = new ArrayList<>();
 		final AtomicInteger continues = new AtomicInteger();
 		final AtomicInteger returns = new AtomicInteger();
 		for(int i = 0; i < 1000; i++)
 		{
-			Thread t = new Thread(new Runnable() {
-				
-				@Override
-				public void run() {
-					try {
-						Outcome out = rli.handleRequest(exc);
-						if(out == Outcome.CONTINUE)
-						{
-							continues.incrementAndGet();
-						}
-						else if(out == Outcome.RETURN)
-						{
-							returns.incrementAndGet();
-						}
-					} catch (Exception e) {
+			Thread t = new Thread(() -> {
+				try {
+					Outcome out = rli.handleRequest(exc);
+					if(out == Outcome.CONTINUE)
+					{
+						continues.incrementAndGet();
 					}
+					else if(out == Outcome.RETURN)
+					{
+						returns.incrementAndGet();
+					}
+				} catch (Exception ignored) {
 				}
 			});
 			threads.add(t);

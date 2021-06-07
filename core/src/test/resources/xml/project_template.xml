@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<project
+        title="Sample Project"
+        date="01.01.2000"
+        author="${title}"
+>
+
+    <part type="all">
+        <title>Preparation</title>
+    </part>
+
+    <part type="all">
+        <title>${title}</title>
+        <item>Stuff about project</item>
+        <item/>
+        <item>More introductory stuff about project</item>
+    </part>
+</project>
