@@ -136,7 +136,8 @@ public class Exchange extends AbstractExchange {
 	@Override
 	public void setRequest(Request req) {
 		super.setRequest(req);
-		setOriginalHostHeader(req.getHeader().getHost());
+		if (req != null)
+			setOriginalHostHeader(req.getHeader().getHost());
 	}
 
 	public Connection getTargetConnection() {

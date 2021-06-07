@@ -325,20 +325,26 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		gen.writeStringField("time", ExchangesUtil.getTime(exc));
 		gen.writeStringField("proxy", exc.getRule().toString());
 		gen.writeNumberField("listenPort", exc.getRule().getKey().getPort());
-		gen.writeStringField("method", exc.getRequest().getMethod());
-		gen.writeStringField("path", exc.getRequest().getUri());
+		if (exc.getRequest() != null) {
+			gen.writeStringField("method", exc.getRequest().getMethod());
+			gen.writeStringField("path", exc.getRequest().getUri());
+			gen.writeStringField("reqContentType", exc.getRequestContentType());
+		} else {
+			gen.writeNullField("method");
+			gen.writeNullField("path");
+			gen.writeNullField("reqContentType");
+		}
 		gen.writeStringField("client", getClientAddr(useXForwardedForAsClientAddr, exc));
 		gen.writeStringField("server", exc.getServer());
 		gen.writeNumberField("serverPort",  getServerPort(exc));
-		gen.writeStringField("reqContentType", exc.getRequestContentType());
-		if (exc.getRequestContentLength()!=-1) {
+		if (exc.getRequest() != null && exc.getRequestContentLength()!=-1) {
 			gen.writeNumberField("reqContentLength", exc.getRequestContentLength());
 		} else {
 			gen.writeNullField("reqContentLength");
 		}
 		gen.writeStringField("respContentType", exc.getResponseContentType());
 		if(exc.getStatus() == ExchangeState.RECEIVED || exc.getStatus() == ExchangeState.COMPLETED)
-			if (exc.getResponseContentLength()!=-1) {
+			if (exc.getResponse() != null && exc.getResponseContentLength()!=-1) {
 				gen.writeNumberField("respContentLength", exc.getResponseContentLength());
 			} else {
 				gen.writeNullField("respContentLength");
