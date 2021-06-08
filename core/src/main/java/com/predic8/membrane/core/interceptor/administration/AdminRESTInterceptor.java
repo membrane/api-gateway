@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.predic8.membrane.core.exchange.ExchangeState;
+import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
 import com.predic8.membrane.core.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -251,60 +252,21 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			getRouter().getExchangeStore().waitForModification(params.getLong("waitForModification"));
 		}
 
-		List<AbstractExchange> exchanges;
-		long lm;
-		synchronized (getRouter().getExchangeStore().getAllExchangesAsList()) {
-			lm = getRouter().getExchangeStore().getLastModified();
-
-			exchanges = new ArrayList<AbstractExchange>(
-					getRouter().getExchangeStore().getAllExchangesAsList());
-		}
-
-		exchanges = filter(params, exchanges);
-
-		Collections.sort(
-				exchanges,
-				ComparatorFactory.getAbstractExchangeComparator(params.getString("sort", "time"),
-						params.getString("order", "desc")));
-
-		int offset = params.getInt("offset", 0);
-		int max = params.getInt("max", exchanges.size());
-
-		final int total = exchanges.size();
-		final List<AbstractExchange> paginated = exchanges.subList(offset,
-				Math.min(offset + max, exchanges.size()));
+		ExchangeQueryResult res = getRouter().getExchangeStore().getFilteredSortedPaged(params, useXForwardedForAsClientAddr);
 
 		return json( new JSONContent() {
 			public void write(JsonGenerator gen) throws Exception {
 				gen.writeStartObject();
 				gen.writeArrayFieldStart("exchanges");
-				for (AbstractExchange e : paginated) {
+				for (AbstractExchange e : res.getExchanges()) {
 					writeExchange(e, gen);
 				}
 				gen.writeEndArray();
-				gen.writeNumberField("total", total);
-				gen.writeNumberField("lastModified", lm);
+				gen.writeNumberField("total", res.getCount());
+				gen.writeNumberField("lastModified", res.getLastModified());
 				gen.writeEndObject();
 			}
 		});
-	}
-
-	private List<AbstractExchange> filter(QueryParameter params,
-			List<AbstractExchange> exchanges) throws Exception {
-
-		List<AbstractExchange> list = new ArrayList<AbstractExchange>();
-		for (AbstractExchange e : exchanges) {
-			if ((!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
-					(!params.has("statuscode") || e.getResponse().getStatusCode() == params.getInt("statuscode")) &&
-					(!params.has("client") || getClientAddr(useXForwardedForAsClientAddr, e).equals(params.getString("client"))) &&
-					(!params.has("server") || params.getString("server").equals(e.getServer()==null?"":e.getServer())) &&
-					(!params.has("method") || e.getRequest().getMethod().equals(params.getString("method"))) &&
-					(!params.has("reqcontenttype") || e.getRequestContentType().equals(params.getString("reqcontenttype"))) &&
-					(!params.has("respcontenttype") || e.getResponseContentType().equals(params.getString("respcontenttype")))) {
-				list.add(e);
-			}
-		}
-		return list;
 	}
 
 	private void writeExchange(AbstractExchange exc, JsonGenerator gen)
@@ -325,20 +287,26 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		gen.writeStringField("time", ExchangesUtil.getTime(exc));
 		gen.writeStringField("proxy", exc.getRule().toString());
 		gen.writeNumberField("listenPort", exc.getRule().getKey().getPort());
-		gen.writeStringField("method", exc.getRequest().getMethod());
-		gen.writeStringField("path", exc.getRequest().getUri());
+		if (exc.getRequest() != null) {
+			gen.writeStringField("method", exc.getRequest().getMethod());
+			gen.writeStringField("path", exc.getRequest().getUri());
+			gen.writeStringField("reqContentType", exc.getRequestContentType());
+		} else {
+			gen.writeNullField("method");
+			gen.writeNullField("path");
+			gen.writeNullField("reqContentType");
+		}
 		gen.writeStringField("client", getClientAddr(useXForwardedForAsClientAddr, exc));
 		gen.writeStringField("server", exc.getServer());
 		gen.writeNumberField("serverPort",  getServerPort(exc));
-		gen.writeStringField("reqContentType", exc.getRequestContentType());
-		if (exc.getRequestContentLength()!=-1) {
+		if (exc.getRequest() != null && exc.getRequestContentLength()!=-1) {
 			gen.writeNumberField("reqContentLength", exc.getRequestContentLength());
 		} else {
 			gen.writeNullField("reqContentLength");
 		}
 		gen.writeStringField("respContentType", exc.getResponseContentType());
 		if(exc.getStatus() == ExchangeState.RECEIVED || exc.getStatus() == ExchangeState.COMPLETED)
-			if (exc.getResponseContentLength()!=-1) {
+			if (exc.getResponse() != null && exc.getResponseContentLength()!=-1) {
 				gen.writeNumberField("respContentLength", exc.getResponseContentLength());
 			} else {
 				gen.writeNullField("respContentLength");

@@ -14,13 +14,15 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.util.ComparatorFactory;
+
+import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.getClientAddr;
 
 public abstract class AbstractExchangeStore implements ExchangeStore {
 
@@ -82,4 +84,50 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		// nothing
 	}
 
+	@Override
+	public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception {
+		List<AbstractExchange> exchanges;
+		long lm;
+		synchronized (getAllExchangesAsList()) {
+			lm = getLastModified();
+
+			exchanges = new ArrayList<AbstractExchange>(
+					getAllExchangesAsList());
+		}
+
+		exchanges = filter(params, useXForwardedForAsClientAddr, exchanges);
+
+		Collections.sort(
+				exchanges,
+				ComparatorFactory.getAbstractExchangeComparator(params.getString("sort", "time"),
+						params.getString("order", "desc")));
+
+		int offset = params.getInt("offset", 0);
+		int max = params.getInt("max", exchanges.size());
+
+		final int total = exchanges.size();
+		final List<AbstractExchange> paginated = exchanges.subList(offset,
+				Math.min(offset + max, exchanges.size()));
+
+		return new ExchangeQueryResult(paginated, total, lm);
+	}
+
+	private List<AbstractExchange> filter(QueryParameter params,
+										  boolean useXForwardedForAsClientAddr,
+										  List<AbstractExchange> exchanges) throws Exception {
+
+		List<AbstractExchange> list = new ArrayList<AbstractExchange>();
+		for (AbstractExchange e : exchanges) {
+			if ((!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
+					(!params.has("statuscode") || e.getResponse().getStatusCode() == params.getInt("statuscode")) &&
+					(!params.has("client") || getClientAddr(useXForwardedForAsClientAddr, e).equals(params.getString("client"))) &&
+					(!params.has("server") || params.getString("server").equals(e.getServer()==null?"":e.getServer())) &&
+					(!params.has("method") || e.getRequest().getMethod().equals(params.getString("method"))) &&
+					(!params.has("reqcontenttype") || e.getRequestContentType().equals(params.getString("reqcontenttype"))) &&
+					(!params.has("respcontenttype") || e.getResponseContentType().equals(params.getString("respcontenttype")))) {
+				list.add(e);
+			}
+		}
+		return list;
+	}
 }
