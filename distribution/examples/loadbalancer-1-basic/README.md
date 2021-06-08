@@ -24,9 +24,9 @@ To run the example execute the following steps:
 
 5. Click on the "Load Balancing" tab.
 
-6. Click on the link called "Default". On the next page, again click on "Default".
+6. Click on the list entry "Default". On the next page, set "Default" as Name and click on "add Cluster" just below the List.
 
-7. Nodes are identified by host name and port. Fill in the formular with `localhost` as host and `4000` as port and
+7. Nodes are identified by host name and port. Fill in the form with `localhost` as host and `4000` as port and
    press "Add Node".
 
 8. Add another node with host name `localhost` and port `4001`.
@@ -39,7 +39,7 @@ To run the example execute the following steps:
 
     http://localhost:9010/clustermanager/up?host=localhost&port=4002
 
-    This will create another node.
+    This will create another node. You won't get a response to this call from membrane.
 
 12. Open the URL 
 
