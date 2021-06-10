@@ -36,13 +36,13 @@ public class Json2XmlInterceptorTest {
 
     @Test
     public void validJSONTest() throws Exception {
-        assertEquals("sonooüöüö", getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
+        assertEquals("sonoo\u00fc\u00f6\u00fc\u00f6", getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
                 parse(processThroughInterceptor(loadResource("/json/convert.json")))));
     }
 
     @Test
     public void validJSONResponseTest() throws Exception {
-        assertEquals("sonooüöüö", getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
+        assertEquals("sonoo\u00fc\u00f6\u00fc\u00f6", getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
                 parse(processThroughInterceptorResponse(loadResource("/json/convert.json")))));
     }
 
