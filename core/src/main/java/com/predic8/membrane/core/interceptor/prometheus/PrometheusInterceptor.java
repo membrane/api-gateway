@@ -162,7 +162,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         sb.append(prometheusName);
         sb.append("{rule=\"");
         sb.append(prometheusCompatibleName(ruleName));
-        sb.append("\"}");
+        sb.append("\"} ");
         sb.append(value);
         sb.append("\n");
     }
