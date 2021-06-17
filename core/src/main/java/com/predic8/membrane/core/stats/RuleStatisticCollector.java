@@ -17,8 +17,10 @@ package com.predic8.membrane.core.stats;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class RuleStatisticCollector {
 
@@ -40,6 +42,13 @@ public class RuleStatisticCollector {
 
     public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
         return statusCodes;
+    }
+
+    public List<Integer> getAllExchangeTimes() {
+
+        return statusCodes.values().stream()
+                .flatMap(sc -> sc.getTimes().stream())
+                .collect(Collectors.toList());
     }
 
     public void collect(Exchange exc) {

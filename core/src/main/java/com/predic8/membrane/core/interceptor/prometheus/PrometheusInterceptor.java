@@ -16,28 +16,32 @@
 
 package com.predic8.membrane.core.interceptor.prometheus;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.stats.histogram.FreedmanDiaconis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @MCElement(name = "prometheus")
 public class PrometheusInterceptor extends AbstractInterceptor {
 
     static final Logger LOG = LoggerFactory.getLogger(PrometheusInterceptor.class);
     static volatile boolean issuedDuplicateRuleNameWarning = false;
+
+    private String bucketFormat = "milliseconds";
+    private List<Double> buckets = new ArrayList<>();
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -94,9 +98,49 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             }
 
             buildStatuscodeLines(ctx, r);
+            buildBuckets(ctx, r);
         }
         ctx.collect();
 
+    }
+
+    private void buildBuckets(Context ctx, Rule rule) {
+        ctx.sb.setLength(0);
+
+        List<Integer> allExchangeTimes = rule.getStatisticCollector().getAllExchangeTimes();
+
+        if (allExchangeTimes.isEmpty())
+            return;
+
+        if (this.buckets.isEmpty())
+            setBuckets(new FreedmanDiaconis(allExchangeTimes).getXmlNotation());
+
+        Map<String, Long> collect = allExchangeTimes.stream()
+                .map(this::formatTime)
+                .collect(Collectors.groupingBy(i -> {
+                    for (double bucket : this.buckets) {
+                        if (i <= bucket) return String.valueOf(bucket);
+                    }
+                    return "+Inf";
+                }, Collectors.counting()));
+
+        collect.forEach((le, count) ->
+                buildBucketLine(ctx.sb, rule.getName(), le, count, "exchange_time"));
+
+        buildBucketLine(ctx.sb, rule.getName(), "exchange_time_sum",
+                allExchangeTimes.stream().reduce(0, Integer::sum));
+        buildBucketLine(ctx.sb, rule.getName(), "exchange_time_count", allExchangeTimes.size());
+    }
+
+    private double formatTime(int time) {
+        switch (this.bucketFormat) {
+            case "seconds":
+                return time / 1000.0;
+            case "minutes":
+                return time / (1000.0 * 60.0);
+            default:
+                return time;
+        }
     }
 
     private void buildStatuscodeLines(Context ctx, Rule rule) {
@@ -109,6 +153,34 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             buildLine(ctx.s4, rule.getName(), stats.get(code).getGoodTotalBytesSent(), "code", code, "good_bytes_req_body");
             buildLine(ctx.s5, rule.getName(), stats.get(code).getGoodTotalBytesReceived(), "code", code, "good_bytes_res_body");
         }
+
+    }
+
+    private void buildBucketLine(StringBuilder sb, String ruleName, String label, long value) {
+        String prometheusName = prometheusCompatibleName("membrane_" + label);
+
+        sb.append(prometheusName);
+        sb.append("{rule=\"");
+        sb.append(prometheusCompatibleName(ruleName));
+        sb.append("\"}");
+        sb.append(value);
+        sb.append("\n");
+    }
+
+    private void buildBucketLine(StringBuilder sb, String ruleName, String le, long valueCount, String infix) {
+        String prometheusName = prometheusCompatibleName("membrane_" + infix + "_bucket");
+        if (sb.length() == 0) {
+            sb.append("# TYPE " + prometheusName + " histogram\n");
+        }
+
+        sb.append(prometheusName);
+        sb.append("{rule=\"");
+        sb.append(prometheusCompatibleName(ruleName));
+        sb.append("\",le=\"");
+        sb.append(le);
+        sb.append("\"} ");
+        sb.append(valueCount);
+        sb.append("\n");
 
     }
 
@@ -160,5 +232,27 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         sb.setLength(sb.length() - 1);
         return sb.toString();
 
+    }
+
+    public String getBucketFormat() {
+        return bucketFormat;
+    }
+
+    @MCAttribute
+    public void setBucketFormat(String bucketFormat) {
+        this.bucketFormat = bucketFormat;
+    }
+
+    public List<Double> getBuckets() {
+        return buckets;
+    }
+
+    @MCAttribute
+    public void setBuckets(String buckets) {
+        this.buckets = Arrays.stream(buckets
+                .replaceAll("\\s+", "")
+                .split(","))
+                .map(Double::parseDouble)
+                .collect(Collectors.toList());
     }
 }
