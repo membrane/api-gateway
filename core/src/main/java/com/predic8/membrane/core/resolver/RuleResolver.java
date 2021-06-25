@@ -63,7 +63,7 @@ public class RuleResolver implements SchemaResolver {
         InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
         try {
             String pathAndQuery = "/" + url.substring(8).split("/", 2)[1];
-            Exchange exchange = new Request.Builder().get(pathAndQuery).header(Header.HOST,"localhost").buildExchange();
+            Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
             exchange.setRule(p);
             List<Interceptor> additionalInterceptors = new ArrayList<>();
 
@@ -71,10 +71,12 @@ public class RuleResolver implements SchemaResolver {
                 if (p instanceof AbstractServiceProxy) {
                     AbstractServiceProxy asp = (AbstractServiceProxy) p;
                     exchange.setDestinations(Stream.of(toUrl(asp.getTargetSSL() != null ? "https" : "http", asp.getHost(), asp.getTargetPort()).toString() + pathAndQuery).collect(Collectors.toList()));
+                    exchange.getRequest().getHeader().setHost(asp.getHost());
                 }
                 if (p instanceof InternalProxy) {
                     InternalProxy ip = (InternalProxy) p;
                     exchange.setDestinations(Stream.of(toUrl(ip.getTarget()).toString() + pathAndQuery).collect(Collectors.toList()));
+                    exchange.getRequest().getHeader().setHost(ip.getTarget().getHost());
                 }
 
                 HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
