@@ -13,12 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.Rule;
+
+import static com.predic8.membrane.core.util.URLUtil.getHost;
 
 /**
  * Handles features that are user-configured in proxies.xml .
@@ -50,7 +54,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 			Rule newRule = getRuleByDest(destination);
 			if (newRule == null)
 				throw new Exception("No proxy found for destination " + destination);
-			exc.setRule(newRule);
+			RuleMatchingInterceptor.assignRule(exc, newRule);
 			// dispatching
 			exc.getDestinations().clear();
 			exc.getDestinations().add(DispatchingInterceptor.getForwardingDestination(exc));
@@ -71,7 +75,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRuleByDest(String dest) {
-		return router.getRuleManager().getRuleByName(dest.substring(8));
+		return router.getRuleManager().getRuleByName(getHost(dest));
 	}
 
 }

@@ -19,10 +19,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import io.opencensus.common.Internal;
@@ -64,7 +61,7 @@ public class RuleResolver implements SchemaResolver {
         try {
             String pathAndQuery = "/" + url.substring(8).split("/", 2)[1];
             Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
-            exchange.setRule(p);
+            RuleMatchingInterceptor.assignRule(exchange, p);
             List<Interceptor> additionalInterceptors = new ArrayList<>();
 
             if(p instanceof AbstractServiceProxy || p instanceof InternalProxy) {

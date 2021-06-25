@@ -18,6 +18,14 @@ import java.net.URISyntaxException;
 
 public class URLUtil {
 
+	public static String getHost(String uri) {
+		int i = uri.indexOf(":") + 1;
+		while (uri.charAt(i) == '/')
+			i++;
+		int j = uri.indexOf("/", i);
+		return j == -1 ? uri.substring(i) : uri.substring(i, j);
+	}
+
 	public static String getPathQuery(URIFactory uriFactory, String uri) throws URISyntaxException {
 		URI u = uriFactory.create(uri);
 		String query = u.getRawQuery();

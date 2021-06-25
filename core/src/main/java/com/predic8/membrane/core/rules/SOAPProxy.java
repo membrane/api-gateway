@@ -111,11 +111,15 @@ public class SOAPProxy extends AbstractServiceProxy {
 					throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
 				try {
 					URL url = new URL(location);
-					target.setHost(url.getHost());
-					if (url.getPort() != -1)
-						target.setPort(url.getPort());
-					else
-						target.setPort(url.getDefaultPort());
+					if (wsdl.startsWith("service:")) {
+						target.setUrl(wsdl.substring(0, wsdl.indexOf('/')));
+					} else {
+						target.setHost(url.getHost());
+						if (url.getPort() != -1)
+							target.setPort(url.getPort());
+						else
+							target.setPort(url.getDefaultPort());
+					}
 					if (key.getPath() == null) {
 						key.setUsePathPattern(true);
 						key.setPathRegExp(false);

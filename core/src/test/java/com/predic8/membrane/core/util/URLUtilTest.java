@@ -16,6 +16,7 @@
 package com.predic8.membrane.core.util;
 
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.util.URLUtil.getHost;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -23,6 +24,16 @@ import java.io.IOException;
 import org.junit.Test;
 
 public class URLUtilTest {
+
+	@Test
+	public void testHost() {
+		assertEquals(getHost("service:a"), "a");
+		assertEquals(getHost("service://a"), "a");
+		assertEquals(getHost("a"), "a");
+		assertEquals(getHost("a/b"), "a");
+		assertEquals(getHost("service:a/b"), "a");
+		assertEquals(getHost("service://a/b"), "a");
+	}
 
 	@Test
 	public void testCreateQueryString() throws IOException {
