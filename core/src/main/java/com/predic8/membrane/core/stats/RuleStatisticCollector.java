@@ -16,18 +16,18 @@ package com.predic8.membrane.core.stats;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.rules.TimeCollector;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class RuleStatisticCollector {
 
     /**
      * Map<Status Code, StatisticCollector>
      */
-    private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
+    private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, TimeCollector> timeCollector = new ConcurrentHashMap<>();
 
     private StatisticCollector getStatisticCollectorByStatusCode(int code) {
         StatisticCollector sc = statusCodes.get(code);
@@ -40,15 +40,27 @@ public class RuleStatisticCollector {
         return sc;
     }
 
+    private TimeCollector getTimeCollectorByStatusCode(int code) {
+        code /= 100;
+
+        TimeCollector tc = timeCollector.get(code);
+
+        if (tc == null) {
+            tc = new TimeCollector(true);
+            TimeCollector tc2 = timeCollector.putIfAbsent(code, tc);
+            if (tc2 != null)
+                tc = tc2;
+        }
+
+        return tc;
+    }
+
     public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
         return statusCodes;
     }
 
-    public List<Integer> getAllExchangeTimes() {
-
-        return statusCodes.values().stream()
-                .flatMap(sc -> sc.getTimes().stream())
-                .collect(Collectors.toList());
+    public Map<Integer, TimeCollector> getTimeStatisticsByStatusCodeRange() {
+        return timeCollector;
     }
 
     public void collect(Exchange exc) {
@@ -56,6 +68,12 @@ public class RuleStatisticCollector {
                 .getResponse().getStatusCode());
         synchronized (sc) {
             sc.collectFrom(exc);
+        }
+
+        TimeCollector tc = getTimeCollectorByStatusCode(exc
+                .getResponse().getStatusCode());
+        synchronized (tc) {
+            tc.collectFrom(exc);
         }
     }
 

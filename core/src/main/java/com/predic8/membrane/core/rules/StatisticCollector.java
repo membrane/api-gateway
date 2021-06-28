@@ -17,9 +17,7 @@ package com.predic8.membrane.core.rules;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Locale;
-import java.util.Queue;
 
-import com.google.common.collect.EvictingQueue;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
@@ -51,9 +49,6 @@ public class StatisticCollector {
 	private long totalBytesSent = 0;
 	private long totalBytesReceived = 0;
 
-	// ~100 status codes * 100_000 exchange times * 4 bytes ~ 40mb for all
-	private Queue<Integer> times = EvictingQueue.create(100_000);
-
 	/**
 	 * @param countErrorExchanges whether to count failed Exchange objects. Since
 	 * {@link AbstractHttpHandler} counts Exchanges before their state is set to completed
@@ -69,8 +64,6 @@ public class StatisticCollector {
 
 	public void collectFrom(AbstractExchange exc) {
 		totalCount++;
-
-		times.add((int) (exc.getTimeResSent() - exc.getTimeReqReceived()));
 
 		if (exc.getStatus() == ExchangeState.FAILED) {
 			errorCount++;
@@ -114,10 +107,6 @@ public class StatisticCollector {
 		totalTime += s.totalTime;
 		totalBytesSent += s.totalBytesSent;
 		totalBytesReceived += s.totalBytesReceived;
-	}
-
-	public Queue<Integer> getTimes() {
-		return times;
 	}
 
 	public int getCount() {

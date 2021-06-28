@@ -25,7 +25,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
-import com.predic8.membrane.core.stats.histogram.FreedmanDiaconis;
+import com.predic8.membrane.core.rules.TimeCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +40,6 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     static final Logger LOG = LoggerFactory.getLogger(PrometheusInterceptor.class);
     static volatile boolean issuedDuplicateRuleNameWarning = false;
 
-    private String bucketFormat = "milliseconds";
-    private List<Double> buckets = new ArrayList<>();
-
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         Context ctx = new Context();
@@ -54,6 +51,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private class Context {
         StringBuilder sb = new StringBuilder();
 
+        List<StringBuilder> dynamic = new ArrayList<>();
+
         StringBuilder s1 = new StringBuilder();
         StringBuilder s2 = new StringBuilder();
         StringBuilder s3 = new StringBuilder();
@@ -62,12 +61,20 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
         HashSet<String> seenRules = new HashSet<>();
 
+        private StringBuilder getNew() {
+            StringBuilder b = new StringBuilder();
+            dynamic.add(b);
+            return b;
+        }
+
         private void reset() {
             s1.setLength(0);
             s2.setLength(0);
             s3.setLength(0);
             s4.setLength(0);
             s5.setLength(0);
+
+            dynamic.forEach(s -> s.setLength(0));
         }
 
         private void resetAll() {
@@ -81,6 +88,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             sb.append(s3);
             sb.append(s4);
             sb.append(s5);
+
+            dynamic.forEach(s -> sb.append(s));
         }
     }
 
@@ -105,42 +114,22 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private void buildBuckets(Context ctx, Rule rule) {
-        ctx.sb.setLength(0);
+        rule.getStatisticCollector().getTimeStatisticsByStatusCodeRange().forEach((code, tc) -> {
+            tc.getTrackedTimes().forEach((name, tt) -> {
+                if (tt.isEmpty())
+                    return;
 
-        List<Integer> allExchangeTimes = rule.getStatisticCollector().getAllExchangeTimes();
+                StringBuilder sb = ctx.getNew();
+                tt.forEach((le, count) -> {
+                    if (le.equals("SUM") || le.equals("COUNT"))
+                        return;
 
-        if (allExchangeTimes.isEmpty())
-            return;
-
-        if (this.buckets.isEmpty())
-            setBuckets(new FreedmanDiaconis(allExchangeTimes).getXmlNotation());
-
-        Map<String, Long> collect = allExchangeTimes.stream()
-                .map(this::formatTime)
-                .collect(Collectors.groupingBy(i -> {
-                    for (double bucket : this.buckets) {
-                        if (i <= bucket) return String.valueOf(bucket);
-                    }
-                    return "+Inf";
-                }, Collectors.counting()));
-
-        collect.forEach((le, count) ->
-                buildBucketLine(ctx.sb, rule.getName(), le, count, "exchange_time"));
-
-        buildBucketLine(ctx.sb, rule.getName(), "exchange_time_sum",
-                allExchangeTimes.stream().reduce(0, Integer::sum));
-        buildBucketLine(ctx.sb, rule.getName(), "exchange_time_count", allExchangeTimes.size());
-    }
-
-    private double formatTime(int time) {
-        switch (this.bucketFormat) {
-            case "seconds":
-                return time / 1000.0;
-            case "minutes":
-                return time / (1000.0 * 60.0);
-            default:
-                return time;
-        }
+                    buildBucketLine(sb, rule.getName(), le, count, name);
+                });
+                buildBucketLine(sb, rule.getName(), name + "_sum", tt.get("SUM"));
+                buildBucketLine(sb, rule.getName(), name + "_count", tt.get("COUNT"));
+            });
+        });
     }
 
     private void buildStatuscodeLines(Context ctx, Rule rule) {
@@ -234,25 +223,16 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     }
 
-    public String getBucketFormat() {
-        return bucketFormat;
-    }
-
-    @MCAttribute
-    public void setBucketFormat(String bucketFormat) {
-        this.bucketFormat = bucketFormat;
-    }
-
-    public List<Double> getBuckets() {
-        return buckets;
+    public List<Long> getBuckets() {
+        return TimeCollector.getBuckets();
     }
 
     @MCAttribute
     public void setBuckets(String buckets) {
-        this.buckets = Arrays.stream(buckets
+        TimeCollector.setBuckets(Arrays.stream(buckets
                 .replaceAll("\\s+", "")
                 .split(","))
-                .map(Double::parseDouble)
-                .collect(Collectors.toList());
+                .map(Long::parseLong)
+                .collect(Collectors.toList()));
     }
 }
