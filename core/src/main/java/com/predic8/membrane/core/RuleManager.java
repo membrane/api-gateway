@@ -159,8 +159,11 @@ public class RuleManager {
 		}
 
 		for (Rule rule : rules) {
-			if(rule instanceof InternalProxy)
+			if(rule instanceof InternalProxy) {
+				if (rule.getName().contains("/"))
+					throw new RuntimeException("<internalProxy> names must not contain a '/'.");
 				continue;
+			}
 
 			IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
 			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort));
