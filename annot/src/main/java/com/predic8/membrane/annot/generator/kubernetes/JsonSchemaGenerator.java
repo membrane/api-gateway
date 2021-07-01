@@ -141,8 +141,6 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         }
     }
 
-
-
     @Override
     protected String fileName() {
         return "";

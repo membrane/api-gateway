@@ -6,6 +6,7 @@ import com.predic8.membrane.annot.model.MainInfo;
 import com.predic8.membrane.annot.model.Model;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.tools.FileObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -31,15 +32,16 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
 
     @Override
     protected void write(Model m) {
-        m.getMains().forEach(main -> {
-            try {
-                try (BufferedWriter bw = new BufferedWriter(createFileInDistribution(fileName()))) {
-                    assemble(bw, main);
+        try {
+            for (MainInfo main : m.getMains()) {
+                FileObject fo = createFileObject(main, fileName());
+                try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {
+                    assemble(w, main);
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void assemble(Writer w, MainInfo main) throws IOException {

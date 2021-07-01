@@ -8,11 +8,8 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,10 +70,6 @@ public abstract class AbstractK8sGenerator {
                         fileName,
                         sources.toArray(new Element[0])
                 );
-    }
-
-    protected BufferedWriter createFileInDistribution(String fileName) throws IOException {
-        return Files.newBufferedWriter(Paths.get("../distribution/router/conf/kubernetes/" + fileName));
     }
 
     public String pluralize(String singular) {
