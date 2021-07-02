@@ -17,6 +17,7 @@ package com.predic8.membrane.core.exchangestore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -25,11 +26,14 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.snapshots.DynamicAbstractExchangeSnapshot;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +64,15 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     boolean init = false;
     private int maxBodySize = 100000;
     private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
+    ImmutableMap<String, String> queryToElasticMap = ImmutableMap.<String, String>builder().putAll(Stream.of(new String[][] {
+            {"method", "request.method"},
+            {"server", "server" },
+            {"client", "remoteAddr" },
+            {"respContentType", "response.header.Content-Type" },
+            {"reqContentType", "request.header.Content-Type" },
+            {"statusCode", "response.statusCode" }})
+            .collect(Collectors.toMap(data -> (String) data[0], data -> data[1]))).build();
+
 
     @Override
     public void init() {
@@ -399,21 +412,85 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             if(!exc.getResponse().isOk())
                 return new ArrayList<>();
 
-            List sources = getSourceElementFromElasticSearchResponse(responseToMap(exc));
-            return (List)sources.stream().map(source -> {
-                try {
-                    return mapper.readValue(mapper.writeValueAsString(source),AbstractExchangeSnapshot.class).toAbstractExchange();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }).collect(Collectors.toList());
+            return getAbstractExchangeListFromExchange(exc);
         }catch (Exception e){
             throw new RuntimeException(e);
         }
     }
 
+    private List<AbstractExchange> getAbstractExchangeListFromExchange(Exchange exc) throws IOException {
+        List<Map> sources = getSourceElementFromElasticSearchResponse(responseToMap(exc));
+
+        return sources.stream().map(source -> {
+            try {
+                return mapper.readValue(mapper.writeValueAsString(source),AbstractExchangeSnapshot.class).toAbstractExchange();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception {
+        JSONObject req = getJsonElasticQuery(params);
+
+        Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search").
+                header("Content-Type","application/json").body(req.toString()).buildExchange();
+        exc = client.call(exc);
+
+
+        return new ExchangeQueryResult(getAbstractExchangeListFromExchange(exc), getTotalHitCountFromExchange(exc),
+                this.getLastModified());
+    }
+
+    private JSONObject getJsonElasticQuery(QueryParameter params) {
+        JSONObject req = new JSONObject();
+        req.put("from", params.getString("offset"));
+        req.put("size", params.getString("max"));
+
+        JSONObject query = new JSONObject();
+        req.put("query", query);
+
+        JSONObject bool = new JSONObject();
+        query.put("bool", bool);
+
+        JSONArray must = new JSONArray();
+        bool.put("must", must);
+
+        req.put("sort", getSortJSONArray(queryToElasticMap.getOrDefault(params.getString("sort"), params.getString("sort")),
+                params.getString("order") ));
+
+        List<String> existingFields = queryToElasticMap.keySet().stream().filter(params::has).collect(Collectors.toList());
+
+        existingFields.forEach( eF -> {
+            bool.put("must", getMatchJSON( queryToElasticMap.get(eF), params.getString(eF)));
+        });
+
+        must.put(new JSONObject().put("wildcard", new JSONObject().put("issuer", documentPrefix)));
+
+
+        return req;
+    }
+
+    private JSONObject getMatchJSON(String key, String value){
+        return new JSONObject().put("match", new JSONObject().put(key, value));
+    }
+    //note sort by duration is bit problematic ask
+    private JSONArray getSortJSONArray(String key, String sortOrder){
+
+        sortOrder = sortOrder == "asc" ? "asc" : "desc";
+
+        return new JSONArray().put(new JSONObject().put(key, sortOrder));
+    }
+
+
     private Map responseToMap(Exchange exc) throws IOException {
         return mapper.readValue(exc.getResponse().getBodyAsStringDecoded(),Map.class);
+    }
+
+    private int getTotalHitCountFromExchange(Exchange exc){
+        return new JSONObject(exc.getResponse().getBodyAsStringDecoded()).getJSONObject("hits")
+                .getJSONObject("total").getInt("value");
     }
 
     public HttpClient getClient() {

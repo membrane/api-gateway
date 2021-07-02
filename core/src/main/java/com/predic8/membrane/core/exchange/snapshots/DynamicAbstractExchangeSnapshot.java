@@ -18,12 +18,16 @@ import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import groovy.lang.Tuple2;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
 
@@ -60,14 +64,26 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
             }
         });
 
-        ImmutableMap.of(Interceptor.Flow.REQUEST, exc.getRequest(),
-                Interceptor.Flow.RESPONSE, exc.getResponse()).forEach((flow2, msg) -> {
-            if(msg == null)
-                return;
-            if (!msg.getBody().getObservers().stream().anyMatch(obs -> obs instanceof UpdateExchangeCopyObserver)) {
-                msg.addObserver(new UpdateExchangeCopyObserver(callback, excCopy, exc, flow2));
-            }
+
+        Stream.of(new Tuple2<>(Interceptor.Flow.REQUEST, exc.getRequest()),
+                new Tuple2<>(Interceptor.Flow.RESPONSE, exc.getResponse())).forEach( t -> {
+                    Interceptor.Flow flow2 = t.getFirst();
+                    Message msg = t.getSecond();
+                    if(msg == null)
+                        return;
+                    if (!msg.getBody().getObservers().stream().anyMatch(obs -> obs instanceof UpdateExchangeCopyObserver)) {
+                        msg.addObserver(new UpdateExchangeCopyObserver(callback, excCopy, exc, flow2));
+                    }
         });
+
+//        ImmutableMap.of(Interceptor.Flow.REQUEST, exc.getRequest(),
+//                Interceptor.Flow.RESPONSE, exc.getResponse()).forEach((flow2, msg) -> {
+//            if(msg == null)
+//                return;
+//            if (!msg.getBody().getObservers().stream().anyMatch(obs -> obs instanceof UpdateExchangeCopyObserver)) {
+//                msg.addObserver(new UpdateExchangeCopyObserver(callback, excCopy, exc, flow2));
+//            }
+//        });
 
         update(callback,excCopy,exc,flow);
     }
