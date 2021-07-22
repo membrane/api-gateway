@@ -475,10 +475,11 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     private JSONObject getMatchJSON(String key, String value){
         return new JSONObject().put("match", new JSONObject().put(key, value));
     }
+
     //note sort by duration is bit problematic ask
     private JSONArray getSortJSONArray(String key, String sortOrder){
 
-        sortOrder = sortOrder == "asc" ? "asc" : "desc";
+        sortOrder = sortOrder.equals("asc") ? "asc" : "desc";
 
         return new JSONArray().put(new JSONObject().put(key, sortOrder));
     }
