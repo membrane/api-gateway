@@ -65,12 +65,16 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     private int maxBodySize = 100000;
     private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
     ImmutableMap<String, String> queryToElasticMap = ImmutableMap.<String, String>builder().putAll(Stream.of(new String[][] {
-            {"method", "request.method"},
-            {"server", "server" },
-            {"client", "remoteAddr" },
-            {"respContentType", "response.header.Content-Type" },
-            {"reqContentType", "request.header.Content-Type" },
-            {"statusCode", "response.statusCode" }})
+            {"method", "request.method.keyword"},
+            {"server", "server.keyword" },
+            {"client", "remoteAddr.keyword" },
+            {"respcontenttype", "response.header.Content-Type.keyword" },
+            {"reqcontenttype", "request.header.Content-Type.keyword" },
+            {"reqcontentlength", "request.header.Content-Length.keyword"},
+            {"respcontentlength", "response.header.Content-Length.keyword"},
+            {"statuscode", "response.statusCode" },
+            {"path", "request.uri.keyword" },
+            {"proxy", "rule.name.keyword" }})
             .collect(Collectors.toMap(data -> (String) data[0], data -> data[1]))).build();
 
 
@@ -374,6 +378,11 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         }
     }
 
+    private void setUpFields(){
+
+
+    }
+
     @Override
     public int getNumberOfExchanges(RuleKey ruleKey) {
         return getExchanges(ruleKey).length;
@@ -457,8 +466,13 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         JSONArray must = new JSONArray();
         bool.put("must", must);
 
-        req.put("sort", getSortJSONArray(queryToElasticMap.getOrDefault(params.getString("sort"), params.getString("sort")),
-                params.getString("order") ));
+        if(!params.getString("sort").equals("duration")) {
+            req.put("sort", getSortJSONArray(queryToElasticMap.getOrDefault(params.getString("sort").toLowerCase(), params.getString("sort")),
+                    params.getString("order")));
+        }
+        else{
+            req.put("sort",getDurationScriptObject(params.getString("order")));
+        }
 
         List<String> existingFields = queryToElasticMap.keySet().stream().filter(params::has).collect(Collectors.toList());
 
@@ -472,6 +486,21 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         return req;
     }
 
+    private JSONObject getDurationScriptObject(String sortOrder){
+        JSONObject main = new JSONObject();
+        JSONObject _script = new JSONObject();
+        _script.put("type", "number");
+
+        JSONObject script = new JSONObject();
+        script.put("lang", "painless");
+        script.put("source", "doc['timeResReceived'].value - doc['timeReqSent'].value");
+
+        _script.put("order", getElasticSortOrder(sortOrder));
+        _script.put("script", script);
+        main.put("_script", _script);
+        return main;
+    }
+
     private JSONObject getMatchJSON(String key, String value){
         return new JSONObject().put("match", new JSONObject().put(key, value));
     }
@@ -479,9 +508,15 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     //note sort by duration is bit problematic ask
     private JSONArray getSortJSONArray(String key, String sortOrder){
 
-        sortOrder = sortOrder.equals("asc") ? "asc" : "desc";
+        sortOrder = getElasticSortOrder(sortOrder);
 
         return new JSONArray().put(new JSONObject().put(key, sortOrder));
+    }
+
+    private String getElasticSortOrder(String sortOrder) {
+        sortOrder = sortOrder.equals("asc") ? "asc" : "desc";
+        return sortOrder;
+
     }
 
 
