@@ -19,7 +19,6 @@ import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.SchematronValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
-import com.predic8.membrane.examples.tests.versioning.RoutingMavenTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
 import org.junit.runner.RunWith;
@@ -37,7 +36,6 @@ import org.junit.runners.Suite.SuiteClasses;
 	ACLTest.class,
 	BasicAuthTest.class,
 	CBRTest.class,
-	CustomInterceptorTest.class,
 	FileExchangeStoreTest.class,
 	GroovyTest.class,
 	LoadBalancerBasic1Test.class,
@@ -64,13 +62,13 @@ import org.junit.runners.Suite.SuiteClasses;
 	SchematronValidationTest.class,
 	XMLValidationTest.class,
 
-	CustomInterceptorMavenTest.class,
+	CustomInterceptorTest.class,
 	StaxExampleInterceptorTest.class,
 	AddSoapHeaderTest.class,
 	BasicXmlInterceptorTest.class,
 	Xml2JsonTest.class,
 	Json2XmlTest.class,
-	RoutingMavenTest.class,
+	RoutingTest.class,
 	XsltExampleTest.class,
 
 

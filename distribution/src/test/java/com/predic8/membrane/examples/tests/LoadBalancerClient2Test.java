@@ -34,7 +34,7 @@ public class LoadBalancerClient2Test extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		File base = getExampleDir("loadbalancer-client-2");
+		File base = getExampleDir("loadbalancer-2-client");
 
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
 		AssertUtils.replaceInFile(new File(base, "lb-client-secured.proxies.xml"), "8080", "3023");

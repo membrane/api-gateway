@@ -29,7 +29,7 @@ public class XsltExampleTest extends DistributionExtractingTestcase {
 
     @Test
     public void test() throws IOException, InterruptedException {
-        File base = getExampleDir("versioning/xslt-maven");
+        File base = getExampleDir("versioning/xslt");
 
         String header[] = new String[] { "Content-Type", "text/xml" };
         String request_v11 = FileUtils.readFileToString(new File(base, "request_v11.xml"));
