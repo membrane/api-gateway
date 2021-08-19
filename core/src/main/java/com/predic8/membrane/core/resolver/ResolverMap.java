@@ -86,7 +86,10 @@ public class ResolverMap implements Cloneable, Resolver {
 			}
 		} else if (parent.startsWith("/")) {
 			try {
-				return new URI("file:" + parent).resolve(relativeChild).toString().substring(5);
+				String uri = new URI("file:" + parent).resolve(relativeChild).toString();
+				if (uri.startsWith("file:"))
+					return uri.substring(5);
+				return uri;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
