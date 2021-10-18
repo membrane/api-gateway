@@ -17,12 +17,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import com.predic8.membrane.core.rules.InternalProxy;
+import com.predic8.membrane.core.util.URLUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
+
+import static com.predic8.membrane.core.util.URLUtil.getHost;
 
 /**
  * @description This interceptor adds the destination specified in the target
@@ -96,8 +99,12 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	private static String handleAbstractServiceProxy(Exchange exc) throws MalformedURLException {
 		AbstractServiceProxy p = (AbstractServiceProxy) exc.getRule();
 
-		if (p.getTargetURL() != null)
+		if (p.getTargetURL() != null) {
+			if (p.getTargetURL().startsWith("service:") && !p.getTargetURL().contains("/")) {
+				return "service://" + getHost(p.getTargetURL()) + exc.getRequest().getUri();
+			}
 			return p.getTargetURL();
+		}
 		if (p.getTargetHost() != null)
 			return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
 

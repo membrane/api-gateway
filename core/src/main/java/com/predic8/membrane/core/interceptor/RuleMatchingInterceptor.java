@@ -51,10 +51,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		if (exc.getRule() != null ) return Outcome.CONTINUE;
 
 		Rule rule = getRule(exc);
-		exc.setRule(rule);
-		if(exc.getRule().getSslOutboundContext() != null){
-			exc.setProperty(Exchange.SSL_CONTEXT, exc.getRule().getSslOutboundContext());
-		}
+		assignRule(exc, rule);
 
 		if (rule instanceof NullRule) {
 			handleNoRuleFound(exc);
@@ -65,6 +62,13 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			insertXForwardedFor(exc);
 
 		return Outcome.CONTINUE;
+	}
+
+	public static void assignRule(Exchange exc, Rule rule) {
+		exc.setRule(rule);
+		if(exc.getRule().getSslOutboundContext() != null){
+			exc.setProperty(Exchange.SSL_CONTEXT, exc.getRule().getSslOutboundContext());
+		}
 	}
 
 	private void handleNoRuleFound(Exchange exc) throws IOException {

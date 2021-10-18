@@ -15,15 +15,26 @@ package com.predic8.membrane.core.rules;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
 @MCElement(name="internalProxy")
 public class InternalProxy extends AbstractProxy{
     private AbstractServiceProxy.Target target;
+    private SSLContext sslOutboundContext;
 
     public InternalProxy() {
         key = new AbstractRuleKey(-1,null){
 
         };
+    }
+
+    @Override
+    public void init() throws Exception {
+        super.init();
+        if (target.getSslParser() != null)
+            setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
     }
 
     @Override
@@ -39,4 +50,14 @@ public class InternalProxy extends AbstractProxy{
     public AbstractServiceProxy.Target getTarget() {
         return target;
     }
+
+    @Override
+    public SSLProvider getSslOutboundContext() {
+        return sslOutboundContext;
+    }
+
+    protected void setSslOutboundContext(SSLContext sslOutboundContext) {
+        this.sslOutboundContext = sslOutboundContext;
+    }
+
 }

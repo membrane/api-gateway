@@ -19,10 +19,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import io.opencensus.common.Internal;
@@ -63,18 +60,20 @@ public class RuleResolver implements SchemaResolver {
         InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
         try {
             String pathAndQuery = "/" + url.substring(8).split("/", 2)[1];
-            Exchange exchange = new Request.Builder().get(pathAndQuery).header(Header.HOST,"localhost").buildExchange();
-            exchange.setRule(p);
+            Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
+            RuleMatchingInterceptor.assignRule(exchange, p);
             List<Interceptor> additionalInterceptors = new ArrayList<>();
 
             if(p instanceof AbstractServiceProxy || p instanceof InternalProxy) {
                 if (p instanceof AbstractServiceProxy) {
                     AbstractServiceProxy asp = (AbstractServiceProxy) p;
                     exchange.setDestinations(Stream.of(toUrl(asp.getTargetSSL() != null ? "https" : "http", asp.getHost(), asp.getTargetPort()).toString() + pathAndQuery).collect(Collectors.toList()));
+                    exchange.getRequest().getHeader().setHost(asp.getHost());
                 }
                 if (p instanceof InternalProxy) {
                     InternalProxy ip = (InternalProxy) p;
                     exchange.setDestinations(Stream.of(toUrl(ip.getTarget()).toString() + pathAndQuery).collect(Collectors.toList()));
+                    exchange.getRequest().getHeader().setHost(ip.getTarget().getHost());
                 }
 
                 HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();

@@ -58,7 +58,8 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 	IllegalCharactersInURLTest.class,
 	ProxySSLTest.class,
 	LargeBodyTest.class,
-		SessionManager.class
+	SessionManager.class,
+	SoapAndInternalProxyTest.class
 })
 public class IntegrationTests {
 	/*
