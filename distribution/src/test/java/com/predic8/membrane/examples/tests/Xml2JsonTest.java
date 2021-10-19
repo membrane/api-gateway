@@ -38,6 +38,7 @@ public class Xml2JsonTest extends DistributionExtractingTestcase {
             String body = new String(Files.readAllBytes(Paths.get(baseDir + FileSystems.getDefault().getSeparator()
                     + "jobs.xml")));
             String[] headers = {"Content-Type", "application/xml"};
+            Thread.sleep(2000);
             String response = postAndAssert(200,"http://localhost:2000/", headers, body);
             Thread.sleep(1000);
 

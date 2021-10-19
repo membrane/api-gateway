@@ -32,6 +32,7 @@ public class SchematronValidationTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("validation" + File.separator + "schematron");
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
+			Thread.sleep(2000);
 			postAndAssert(200, "http://localhost:2000/", readFileToString(new File(baseDir, "car.xml")));
 			postAndAssert(400, "http://localhost:2000/", readFileToString(new File(baseDir, "invalid-car.xml")));
 		} finally {

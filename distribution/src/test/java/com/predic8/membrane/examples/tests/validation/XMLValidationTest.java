@@ -33,6 +33,7 @@ public class XMLValidationTest extends DistributionExtractingTestcase {
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			String url = "http://localhost:2000/";
+			Thread.sleep(2000);
 			postAndAssert(200, url, readFileToString(new File(baseDir, "year.xml")));
 			postAndAssert(400, url, readFileToString(new File(baseDir, "invalid-year.xml")));
 		} finally {

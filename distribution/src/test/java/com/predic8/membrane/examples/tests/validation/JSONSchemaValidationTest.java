@@ -33,6 +33,7 @@ public class JSONSchemaValidationTest extends DistributionExtractingTestcase {
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			for (int port : new int[] { 2000, 2001 }) {
+				Thread.sleep(1000);
 				postAndAssert(200, "http://localhost:" + port + "/", readFileToString(new File(baseDir, "good" + port + ".json")));
 				postAndAssert(400, "http://localhost:" + port + "/", readFileToString(new File(baseDir, "bad" + port + ".json")));
 			}

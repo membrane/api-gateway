@@ -32,6 +32,7 @@ public class CBRTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("cbr");
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
+			Thread.sleep(2000);
 			String result = postAndAssert200("http://localhost:2000/shop", FileUtils.readFileToString(new File(baseDir, "order.xml")));
 			assertContains("Normal order received.", result);
 
