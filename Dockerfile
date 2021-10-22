@@ -1,11 +1,11 @@
-FROM ubuntu:xenial
+FROM ubuntu:focal
 
 RUN apt-get update && \
     apt-get install -y openjdk-8-jdk-headless zip curl
 
 RUN rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/oracle-jdk8-installer
 
-RUN curl -o /maven.tar.gz http://ftp.halifax.rwth-aachen.de/apache/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.tar.gz && \
+RUN curl -o /maven.tar.gz https://dlcdn.apache.org/maven/maven-3/3.8.3/binaries/apache-maven-3.8.3-bin.tar.gz && \
   mkdir /maven && \
   cd /maven && \
   tar -xvf /maven.tar.gz && \
