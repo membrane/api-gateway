@@ -23,11 +23,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.XML;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -42,8 +39,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @MCElement(name="json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
 
-    private final String root = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-    private static Logger log = LoggerFactory.getLogger(Json2XmlInterceptor.class.getName());
+    private static final String ROOT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -55,7 +51,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         return handleInternal(exc.getResponse());
     }
 
-    private Outcome handleInternal(Message msg) throws IOException {
+    private Outcome handleInternal(Message msg){
         if(!msg.isJSON())
             return CONTINUE;
         msg.getHeader().setContentType(MimeType.TEXT_XML);
@@ -65,13 +61,13 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     }
 
 
-    private byte[] json2Xml(InputStream body) throws IOException {
-        return (root + XML.toString(convertToJsonObject(body))).getBytes(UTF_8);
+    private byte[] json2Xml(InputStream body) {
+        return (ROOT + XML.toString(convertToJsonObject(body))).getBytes(UTF_8);
 
     }
 
-    private JSONObject convertToJsonObject(InputStream body) {
-        return new JSONObject(new JSONTokener(body));
+    private JSONObject convertToJsonObject(InputStream body){
+        return new JSONObject(new JSONTokener(new InputStreamReader(body, UTF_8)));
     }
 
 }
