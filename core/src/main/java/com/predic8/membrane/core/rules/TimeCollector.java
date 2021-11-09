@@ -93,7 +93,6 @@ public class TimeCollector {
         for (long bucket : TimeCollector.buckets) {
             if (value <= bucket) {
                 buckets.merge(String.valueOf(bucket), 1L, Long::sum);
-                return;
             }
         }
         buckets.merge("+Inf", 1L, Long::sum);
