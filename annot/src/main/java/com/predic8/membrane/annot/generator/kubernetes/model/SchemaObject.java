@@ -77,6 +77,8 @@ public class SchemaObject implements ISchema {
     }
 
     public String entryToJson(Map.Entry<String, Object> entry) {
+        if (entry.getValue() instanceof SchemaObject)
+            return entry.getValue().toString();
         if (entry.getValue() instanceof String) {
             return "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"";
         }

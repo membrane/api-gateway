@@ -85,20 +85,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
     private void collectProperties(MainInfo main, ElementInfo i, Schema schema) {
         collectAttributes(i, schema);
-
-        for (ChildElementInfo cei : i.getCeis()) {
-            boolean isInterceptor = cei.isList() && cei.getTypeDeclaration().getSimpleName().toString().equals("Interceptor");
-
-            for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-                SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
-                sop.setRequired(cei.isRequired());
-                sop.addAttribute("$ref", "#/definitions/" + ei.getAnnotation().name());
-                if (isInterceptor)
-                    schema.addInterceptor(sop);
-                else
-                    schema.addProperty(sop);
-            }
-        }
+        collectChildElements(main, i, schema);
     }
 
     private void collectDefinitions(MainInfo main, ElementInfo i, Schema schema) {
@@ -143,13 +130,34 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
         so.addProperty(sop);
     }
 
-    private void collectChildElements(MainInfo main, ElementInfo i, SchemaObject so) {
+    private void collectChildElements(MainInfo main, ElementInfo i, ISchema so) {
         for (ChildElementInfo cei : i.getCeis()) {
+            boolean isList = cei.isList();
+
+            ISchema parent2 = so;
+
+            if (isList) {
+                SchemaObject items = new SchemaObject("items");
+                items.addAttribute("type", "object");
+                items.addAttribute("additionalProperties", false);
+
+
+                SchemaObject sop = new SchemaObject(cei.getPropertyName());
+                sop.setRequired(cei.isRequired());
+                sop.addAttribute("type", "array");
+                sop.addAttribute("additionalItems", false);
+                sop.addAttribute("items", items);
+
+                so.addProperty(sop);
+
+                parent2 = items;
+            }
+
             for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                 SchemaObject sop = new SchemaObject(ei.getAnnotation().name());
                 sop.setRequired(cei.isRequired());
                 sop.addAttribute("$ref", "#/definitions/" + ei.getAnnotation().name());
-                so.addProperty(sop);
+                parent2.addProperty(sop);
             }
         }
     }
