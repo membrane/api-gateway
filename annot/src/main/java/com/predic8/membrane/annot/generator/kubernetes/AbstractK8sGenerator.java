@@ -61,10 +61,7 @@ public abstract class AbstractK8sGenerator {
 
     protected Stream<ElementInfo> getRulesStream(MainInfo main) {
         return main.getElements().values().stream()
-                .filter(ei -> {
-                    String[] packages = ei.getElement().getQualifiedName().toString().split("\\.");
-                    return packages[packages.length - 2].equals("rules") && !packages[packages.length - 1].startsWith("Abstract");
-                });
+                .filter(ei -> ei.getAnnotation().topLevel());
     }
 
     protected List<ElementInfo> getRules(MainInfo main) {

@@ -101,4 +101,9 @@ public class SchemaObject implements ISchema {
     public void addAttribute(String key, Object value) {
         attributes.put(key, value);
     }
+
+    @Override
+    public void setAdditionalProperties(boolean additionalProperties) {
+        addAttribute("additionalProperties", additionalProperties);
+    }
 }
