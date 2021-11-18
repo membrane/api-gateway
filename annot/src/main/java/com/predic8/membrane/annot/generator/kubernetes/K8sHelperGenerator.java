@@ -115,8 +115,11 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
 
     private String assembleElementMapping(MainInfo main) {
         return main.getIis().stream()
-                .map(ei -> String.format("        elementMapping.put(\"%s\", %s.class);",
+                .map(ei -> String.format("        elementMapping.put(\"%s\", %s.class);" + System.lineSeparator()
+                                + "        elementMapping.put(\"%s\", %s.class);",
                         ei.getAnnotation().name(),
+                        ei.getElement().getQualifiedName(),
+                        ei.getAnnotation().name().toLowerCase(),
                         ei.getElement().getQualifiedName()))
                 .collect(Collectors.joining(System.lineSeparator()));
     }
