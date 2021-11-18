@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.kubernetes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -32,13 +33,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @MCElement(name="kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private IValidator validator;
     private ResolverMap resourceResolver;
+    private List<String> resources;
 
     @Override
     public void init(Router router) throws Exception {
@@ -67,8 +72,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private void setValidator(String schema) throws IOException {
         String baseLocation = router == null ? null : router.getBaseLocation();
-        validator = new JSONValidator(resourceResolver,
-                ResolverMap.combine(baseLocation, "kubernetes/" + schema + ".schema.json"), null);
+        validator = new JSONValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null);
     }
 
     private void setExchangeResponse(Exchange exc, ObjectMapper mapper, AdmissionReview review) throws Exception {
@@ -93,5 +97,18 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         exc.setResponse(Response.ok(
                 mapper.writeValueAsString(review)
         ).build());
+    }
+
+    @MCAttribute
+    public void setResources(String resources) {
+        this.resources = Arrays.asList(resources.split(","));
+    }
+
+    public String getResources() {
+        return String.join(",", resources);
+    }
+
+    public List<String> getResourcesList() {
+        return resources;
     }
 }
