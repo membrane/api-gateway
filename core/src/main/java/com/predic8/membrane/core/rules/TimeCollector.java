@@ -24,12 +24,14 @@ public class TimeCollector {
 
     private final boolean countErrorExchanges;
 
-    private static List<Long> buckets = new ArrayList<>();
+    private static List<Long> buckets = Stream.of(500L, 1000L, 2000L, 4000L, 10_000L)
+            .collect(Collectors.toList());
 
     private Map<String, Map<String, Long>> trackedTimes;
     private Map<String, Long> membraneReqProcess;
     private Map<String, Long> membraneResProcess;
     private Map<String, Long> responseProcess;
+    private Map<String, Long> totalTimeProcess;
 
     public TimeCollector(boolean countErrorExchanges) {
         this.countErrorExchanges = countErrorExchanges;
@@ -38,22 +40,14 @@ public class TimeCollector {
         membraneReqProcess = new HashMap<>();
         membraneReqProcess = new HashMap<>();
         membraneResProcess = new HashMap<>();
+        totalTimeProcess = new HashMap<>();
 
         responseProcess = new HashMap<>();
         trackedTimes.put("process_req_time", membraneReqProcess);
         trackedTimes.put("process_res_time", membraneResProcess);
         trackedTimes.put("response_time", responseProcess);
+        trackedTimes.put("total_time", totalTimeProcess);
 
-        handleEmptyBuckets();
-    }
-
-    private void handleEmptyBuckets() {
-        if (!buckets.isEmpty())
-            return;
-
-        TimeCollector.buckets =
-                Stream.of(500L, 1000L, 2000L, 4000L, 10_000L)
-                        .collect(Collectors.toList());
     }
 
     public Map<String, Map<String, Long>> getTrackedTimes() {
@@ -84,6 +78,10 @@ public class TimeCollector {
         // 4-3
         long timeMembraneResProcess = exc.getTimeResSent() - exc.getTimeResReceived();
         addToBucket(timeMembraneResProcess, membraneResProcess);
+
+
+        long totalTime = timeMembraneReqProcess + timeResponseProcess + timeMembraneResProcess;
+        addToBucket(totalTime, totalTimeProcess);
     }
 
     private void addToBucket(long value, Map<String, Long> buckets) {
