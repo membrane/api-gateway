@@ -24,14 +24,14 @@ public class Schema implements ISchema {
 
     private final List<SchemaObject> definitions = new ArrayList<>();
     private final List<SchemaObject> properties = new ArrayList<>();
-    private final List<SchemaObject> interceptors = new ArrayList<>();
+    private boolean additionalProperties;
 
     public Schema(String name) {
         this.name = name;
     }
 
-    public void addInterceptor(SchemaObject interceptor) {
-        interceptors.add(interceptor);
+    public void setAdditionalProperties(boolean additionalProperties) {
+        this.additionalProperties = additionalProperties;
     }
 
     public void addDefinition(SchemaObject definition) {
@@ -57,22 +57,8 @@ public class Schema implements ISchema {
         if (properties.isEmpty())
             return "";
 
-        return "\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":false,\"properties\":{" +
+        return "\"properties\":{\"spec\":{\"type\":\"object\",\"additionalProperties\":"+additionalProperties+",\"properties\":{" +
                 properties.stream()
-                        .map(Objects::toString)
-                        .collect(Collectors.joining(",")) +
-                printInterceptors() +
-                "}}}";
-    }
-
-    private String printInterceptors() {
-        if (interceptors.isEmpty())
-            return "";
-
-        return ",\"interceptors\":{\"type\": \"array\"," +
-                "\"additionalItems\": false,\"items\":{" +
-                "\"type\":\"object\",\"additionalProperties\": false,\"properties\":{" +
-                interceptors.stream()
                         .map(Objects::toString)
                         .collect(Collectors.joining(",")) +
                 "}}}";

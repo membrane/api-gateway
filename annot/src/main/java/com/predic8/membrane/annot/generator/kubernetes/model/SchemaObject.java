@@ -77,6 +77,8 @@ public class SchemaObject implements ISchema {
     }
 
     public String entryToJson(Map.Entry<String, Object> entry) {
+        if (entry.getValue() instanceof SchemaObject)
+            return entry.getValue().toString();
         if (entry.getValue() instanceof String) {
             return "\"" + entry.getKey() + "\": \"" + entry.getValue() + "\"";
         }
@@ -98,5 +100,10 @@ public class SchemaObject implements ISchema {
 
     public void addAttribute(String key, Object value) {
         attributes.put(key, value);
+    }
+
+    @Override
+    public void setAdditionalProperties(boolean additionalProperties) {
+        addAttribute("additionalProperties", additionalProperties);
     }
 }

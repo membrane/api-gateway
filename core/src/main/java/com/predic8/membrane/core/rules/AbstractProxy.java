@@ -141,7 +141,7 @@ public abstract class AbstractProxy implements Rule {
 	/**
 	 * @description Configures the usage of inbound SSL (HTTPS).
 	 */
-	@MCChildElement(order=75)
+	@MCChildElement(order=75, allowForeign = true)
 	public void setSslInboundParser(SSLParser sslInboundParser) {
 		this.sslInboundParser = sslInboundParser;
 	}

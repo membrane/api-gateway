@@ -61,10 +61,7 @@ public abstract class AbstractK8sGenerator {
 
     protected Stream<ElementInfo> getRulesStream(MainInfo main) {
         return main.getElements().values().stream()
-                .filter(ei -> {
-                    String[] packages = ei.getElement().getQualifiedName().toString().split("\\.");
-                    return packages[packages.length - 2].equals("rules") && !packages[packages.length - 1].startsWith("Abstract");
-                });
+                .filter(ei -> ei.getAnnotation().topLevel());
     }
 
     protected List<ElementInfo> getRules(MainInfo main) {
@@ -86,13 +83,21 @@ public abstract class AbstractK8sGenerator {
     }
 
     public String pluralize(String singular) {
-        if (singular.endsWith("s")) {
-            return singular;
+        if (singular.endsWith("s") || singular.endsWith("sh") || singular.endsWith("ch") || singular.endsWith("x") || singular.endsWith("z") ) {
+            return singular + "es";
         }
 
-        if (singular.endsWith("y")) {
-            singular = singular.substring(0, singular.length() - 1) + "ie";
-        }
+        if (singular.endsWith("ao") || singular.endsWith("oo") || singular.endsWith("uo") || singular.endsWith("eo") || singular.endsWith("io"))
+            return singular + "s";
+
+        if (singular.endsWith("o"))
+            return singular + "es"; // could also just be "s" - but who knows
+
+        if (singular.endsWith("ay") || singular.endsWith("oy") || singular.endsWith("uy") || singular.endsWith("ey") || singular.endsWith("iy"))
+            return singular + "s";
+
+        if (singular.endsWith("y"))
+            return singular.substring(0, singular.length() - 1) + "ies";
 
         return singular + "s";
     }
