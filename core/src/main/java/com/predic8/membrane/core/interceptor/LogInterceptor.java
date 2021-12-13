@@ -25,7 +25,7 @@ import com.predic8.membrane.core.http.Message;
  * @description The log feature logs request and response messages to the log4j
  *              framework. The messages will appear either on the console or in
  *              a log file depending on the configuration of the
- *              <i>conf/log4j.properties</i> file.
+ *              <i>conf/log4j2.xml</i> file.
  * @topic 5. Monitoring, Logging and Statistics
  */
 @MCElement(name="log")

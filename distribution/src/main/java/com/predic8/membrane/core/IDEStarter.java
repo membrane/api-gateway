@@ -13,12 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 public class IDEStarter {
 	public static void main(String[] args) {
 		// TODO for testing purposes - do not commit
-		PropertyConfigurator.configure("conf/log4j.properties");
+		try {
+			File file = new File("conf/log4j2.xml");
+			Configurator.initialize(null, new ConfigurationSource(new FileInputStream(file)));
+		} catch (IOException e) {
+			LoggerFactory.getLogger(IDEStarter.class).error("Error loading log configuration.");
+		}
+
 		RouterCLI.main(args);
 	}
 

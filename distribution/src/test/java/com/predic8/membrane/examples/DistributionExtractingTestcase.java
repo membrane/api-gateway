@@ -82,20 +82,26 @@ public class DistributionExtractingTestcase {
 	}
 
 	private void replaceLog4JConfig() throws IOException {
-		File log4jproperties = new File(membraneHome, "conf" + File.separator + "log4j.properties");
+		File log4jproperties = new File(membraneHome, "conf" + File.separator + "log4j2.xml");
 		if (!log4jproperties.exists())
-			throw new RuntimeException("log4j.properties does not exits.");
+			throw new RuntimeException("log4j2.xml does not exits.");
 
 		FileUtils.writeStringToFile(
 				log4jproperties,
-				"log4j.appender.stdout=org.apache.log4j.ConsoleAppender\r\n" +
-						"log4j.appender.stdout.Target=System.out\r\n" +
-						"log4j.appender.stdout.layout=org.apache.log4j.PatternLayout\r\n" +
-						"log4j.appender.stdout.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n\r\n" +
-						"\r\n" +
-						"log4j.rootLogger=warn\r\n" +
-						"\r\n" +
-				"log4j.logger.com.predic8=debug, stdout");
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+						"<Configuration>\n" +
+						"    <Appenders>\n" +
+						"        <Console name=\"STDOUT\" target=\"SYSTEM_OUT\">\n" +
+						"            <PatternLayout pattern=\"%d{ABSOLUTE} %5p %c{1}:%L - %m%n\" />\n" +
+						"        </Console>\n" +
+						"    </Appenders>\n" +
+						"    <Loggers>\n" +
+						"        <Logger name=\"com.predic8\" level=\"debug\" />\n" +
+						"        <Root level=\"warn\">\n" +
+						"            <AppenderRef ref=\"STDOUT\" />\n" +
+						"        </Root>\n" +
+						"    </Loggers>\n" +
+						"</Configuration>");
 	}
 
 	public File getExampleDir(String name) {
