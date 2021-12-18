@@ -85,7 +85,7 @@
 		<spring.version>4.3.30.RELEASE</spring.version>
 		<jaxws.version>2.2.10</jaxws.version>
 		<slf4j.version>1.7.30</slf4j.version>
-		<log4j.version>2.16.0</log4j.version>
+		<log4j.version>2.17.0</log4j.version>
 		<felix.osgi.version>1.4.0</felix.osgi.version>
 	</properties>
 
