@@ -15,14 +15,17 @@
 package com.predic8.membrane.osgi;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URLClassLoader;
 
+import com.predic8.membrane.core.*;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.PropertyConfigurator;
+import org.apache.logging.log4j.core.config.ConfigurationSource;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.ILogListener;
 import org.eclipse.core.runtime.Platform;
@@ -30,10 +33,6 @@ import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
-import com.predic8.membrane.core.ClassloaderUtil;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.MembraneCommandLine;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.osgi.logger.MembraneLogListener;
 
 /**
@@ -59,8 +58,9 @@ public class CoreActivator extends Plugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 
-		if (new File("configuration/log4j.properties").exists())
-			PropertyConfigurator.configure("configuration/log4j.properties");
+		File logConfig = new File("configuration/log4j2.xml");
+		if (logConfig.exists())
+			Configurator.initialize(null, new ConfigurationSource(new FileInputStream(logConfig)));
 
 		Platform.addLogListener(logListener);
 
