@@ -19,10 +19,8 @@ import com.google.common.collect.ImmutableList;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,13 +87,8 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
 
     @Override
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
-        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore, Interceptor.Flow.REQUEST, null, BodyCollectingMessageObserver.Strategy.ERROR, 3000);
-        // trim the exchange as far as possible to save space
-        excSnapshot.getRequest().getHeader().remove("Cookie");
-        excSnapshot.setResponse(null);
-
         try {
-            String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=" + escapeForCookie(new ObjectMapper().writeValueAsString(excSnapshot));
+            String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=" + escapeForCookie(new ObjectMapper().writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, 3000)));
 
             if (currentSessionCookieValue.length() > 4093)
                 log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");

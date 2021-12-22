@@ -37,13 +37,8 @@ public class SessionOriginalExchangeStore extends OriginalExchangeStore {
 
     @Override
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
-        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore, Interceptor.Flow.REQUEST, null, BodyCollectingMessageObserver.Strategy.ERROR, maxBodySize);
-        // trim the exchange as far as possible to save space
-        excSnapshot.getRequest().getHeader().remove("Cookie");
-        excSnapshot.setResponse(null);
-
         try {
-            session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(excSnapshot));
+            session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)));
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

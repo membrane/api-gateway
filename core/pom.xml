@@ -134,7 +134,11 @@
 			<groupId>javax.mail</groupId>
 			<artifactId>mail</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>redis.clients</groupId>
+			<artifactId>jedis</artifactId>
+			<version>3.6.3</version>
+		</dependency>
 		<dependency>
 			<groupId>com.bornium</groupId>
 			<artifactId>oauth2-openid</artifactId>

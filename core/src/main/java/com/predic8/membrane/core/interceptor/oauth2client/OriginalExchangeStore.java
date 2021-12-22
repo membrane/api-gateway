@@ -15,12 +15,22 @@ package com.predic8.membrane.core.interceptor.oauth2client;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.session.Session;
 
 import java.io.IOException;
 
 public abstract class OriginalExchangeStore {
     public abstract void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException;
+
+    protected AbstractExchangeSnapshot getTrimmedAbstractExchangeSnapshot(Exchange exchangeToStore, int limit) throws IOException {
+        AbstractExchangeSnapshot excSnapshot = new AbstractExchangeSnapshot(exchangeToStore, Interceptor.Flow.REQUEST, null, BodyCollectingMessageObserver.Strategy.ERROR, limit);
+        // trim the exchange as far as possible to save space
+        excSnapshot.getRequest().getHeader().remove("Cookie");
+        excSnapshot.setResponse(null);
+        return excSnapshot;
+    }
 
     public abstract AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, String state);
 
