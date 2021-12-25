@@ -73,7 +73,7 @@ public abstract class AuthorizationService {
 
     public abstract String getJwksEndpoint() throws Exception;
 
-    public abstract String getLoginURL(String securityToken, String publicURL, String pathQuery);
+    public abstract String getLoginURL(String securityToken, String callbackURL, String callbackPath);
 
     public abstract String getUserInfoEndpoint();
 
@@ -83,12 +83,12 @@ public abstract class AuthorizationService {
 
     public abstract String getRevocationEndpoint();
 
-    protected void doDynamicRegistration(Exchange exc, List<String> publicURLs) throws Exception {
+    protected void doDynamicRegistration(List<String> callbackURLs) throws Exception {
     }
 
-    public void dynamicRegistration(Exchange exc, List<String> publicURLs) throws Exception {
+    public void dynamicRegistration(List<String> callbackURLs) throws Exception {
         if(supportsDynamicRegistration())
-            doDynamicRegistration(exc,publicURLs);
+            doDynamicRegistration(callbackURLs);
     }
 
     protected void checkForClientIdAndSecret(){

@@ -53,8 +53,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private DynamicRegistration dynamicRegistration;
 
-    private static final String defaultCallbackUri = "oauth2callback";
-
     public static boolean isValidURI(String uri)
     {
         try
@@ -115,15 +113,11 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected void doDynamicRegistration(Exchange exc, List<String> publicURL) throws Exception {
+    protected void doDynamicRegistration(List<String> callbackURLs) throws Exception {
         if(dynamicRegistration == null || registrationEndpoint == null || registrationEndpoint.isEmpty())
             throw new RuntimeException("A registration bean is required and src needs to specify a registration endpoint");
 
-        dynamicRegistrationIfNeeded(createCallbackUris(exc, publicURL));
-    }
-
-    private List<String> createCallbackUris(Exchange exc, List<String> publicURLs) {
-        return publicURLs.stream().map(publicURL -> publicURL + defaultCallbackUri).collect(Collectors.toList());
+        dynamicRegistrationIfNeeded(callbackURLs);
     }
 
     private void dynamicRegistrationIfNeeded(List<String> callbackUris) throws Exception {
@@ -168,7 +162,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
+    public String getLoginURL(String securityToken, String callbackURL, String pathQuery) {
         String endpoint = publicAuthorizationEndpoint;
         if(endpoint == null)
             endpoint = authorizationEndpoint;
@@ -176,7 +170,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
-                "redirect_uri=" + publicURL + "oauth2callback&"+
+                "redirect_uri=" + callbackURL + "&"+
                 "state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(pathQuery) +
                 getClaimsParameter();
     }

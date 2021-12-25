@@ -208,7 +208,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if(firstInitWhenDynamicAuthorizationService){
             firstInitWhenDynamicAuthorizationService = false;
 
-            getAuthService().dynamicRegistration(exc, ImmutableList.of(publicURL));
+            getAuthService().dynamicRegistration(ImmutableList.of(publicURL + "oauth2callback"));
         }
 
         if(isFaviconRequest(exc)){
@@ -419,7 +419,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if (loginLocation == null) {
             String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-            exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()),false).build());
+            exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL + "oauth2callback", exc.getRequestURI()),false).build());
 
             stateToOriginalUrl.put(state,exc);
 
@@ -465,7 +465,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         Map<String, Object> model = new HashMap<String, Object>();
         model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
         String pathQuery = "/"; // TODO: save original request and restore it when authorized
-        String url = auth.getLoginURL(state, publicURL, pathQuery);
+        String url = auth.getLoginURL(state, publicURL + "oauth2callback", pathQuery);
         model.put("loginURL", url);
         model.put("target", StringEscapeUtils.escapeXml(target));
         model.put("authid", state);

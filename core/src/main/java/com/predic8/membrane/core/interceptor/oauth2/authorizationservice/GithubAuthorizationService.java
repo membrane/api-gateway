@@ -34,12 +34,12 @@ public class GithubAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
+    public String getLoginURL(String securityToken, String callbackURL, String pathQuery) {
         return "https://github.com/login/oauth/authorize?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
-                "redirect_uri=" + publicURL + "oauth2callback&"+
+                "redirect_uri=" + callbackURL + "&"+
                 "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
                 //+"&login_hint=jsmith@example.com"
                 ;

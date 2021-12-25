@@ -70,7 +70,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         return new Callable<Exchange>() {
             @Override
             public Exchange call() throws Exception {
-                Exchange exc = new Request.Builder().get(mas.getLoginURL("123security","http://localhost:2001/", "/")).buildExchange();
+                Exchange exc = new Request.Builder().get(mas.getLoginURL("123security","http://localhost:2001/oauth2callback", "/")).buildExchange();
                 exc.getRequest().getHeader().add("Cookie",oasi.getSessionManager().getCookieName() + "=" + OAuth2TestUtil.sessionId);
                 return exc;
             }

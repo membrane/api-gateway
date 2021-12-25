@@ -38,13 +38,13 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
+    public String getLoginURL(String securityToken, String callbackURL, String pathQuery) {
         // This is the URL that is called by the user's web browser
         return "https://accounts.google.com/o/oauth2/auth?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
-                "redirect_uri=" + publicURL + "oauth2callback&"+
+                "redirect_uri=" + callbackURL + "&"+
                 "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
                 //+"&login_hint=jsmith@example.com"
                 ;

@@ -56,6 +56,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -84,6 +85,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private boolean firstInitWhenDynamicAuthorizationService;
     private boolean initPublicURLsOnTheFly = false;
     private OriginalExchangeStore originalExchangeStore;
+    private String callbackPath = "oauth2callback";
 
     @Override
     public void init() throws Exception {
@@ -129,6 +131,19 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setRevalidateTokenAfter(int revalidateTokenAfter) {
         this.revalidateTokenAfter = revalidateTokenAfter;
+    }
+
+    public String getCallbackPath() {
+        return callbackPath;
+    }
+
+    /**
+     * @description the path used for the OAuth2 callback. ensure that it does not collide with any path used by the application
+     * @default oauth2callback
+     */
+    @MCAttribute
+    public void setCallbackPath(String callbackPath) {
+        this.callbackPath = callbackPath;
     }
 
     @Override
@@ -436,7 +451,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             newURL = addPublicURL(publicURL);
 
         if(firstInitWhenDynamicAuthorizationService && newURL != null)
-            getAuthService().dynamicRegistration(exc, getPublicURLs());
+            getAuthService().dynamicRegistration(getPublicURLs().stream().map(url -> url + callbackPath).collect(Collectors.toList()));
 
         return publicURL;
     }
@@ -483,7 +498,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private Outcome respondWithRedirect(Exchange exc) throws Exception {
         String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, getPublicURL(exc), exc.getRequestURI()),false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, getPublicURL(exc) + callbackPath, exc.getRequestURI()),false).build());
 
         readBodyFromStreamIntoMemory(exc);
 
@@ -513,7 +528,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return false;
 
 
-        if(path.endsWith("/oauth2callback")) {
+        if(path.endsWith("/" + callbackPath)) {
 
             try {
                 Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
@@ -548,7 +563,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                         .header(Header.USER_AGENT, Constants.USERAGENT)
                         .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
                         .body("code=" + code
-                                + "&redirect_uri=" + publicURL + "oauth2callback"
+                                + "&redirect_uri=" + publicURL + callbackPath
                                 + "&grant_type=authorization_code")
                         .buildExchange();
 
