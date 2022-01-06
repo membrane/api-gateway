@@ -71,6 +71,7 @@ public class HttpClient {
 	private final int connectTimeout;
 	private final String localAddr;
 	private final SSLContext sslContext;
+	private final boolean useHttp2;
 
 	private final ConnectionManager conMgr;
 	private StreamPump.StreamPumpStats streamPumpStats;
@@ -80,6 +81,7 @@ public class HttpClient {
 	 */
 //	private HttpClientStatusEventBus httpClientStatusEventBus = HttpClientStatusEventBus.getService();
 
+	private static final String[] HTTP2_PROTOCOLS = new String[] { "h2" };
 
 	public HttpClient() {
 		this(new HttpClientConfiguration());
@@ -104,6 +106,8 @@ public class HttpClient {
 		localAddr = configuration.getConnection().getLocalAddr();
 
 		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
+
+		useHttp2 = configuration.isUseExperimentalHttp2();
 	}
 
 	public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
@@ -206,7 +210,17 @@ public class HttpClient {
 				}
 				SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
 				if (con == null) {
-					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout, getSNIServerName(exc), proxy, proxySSLContext);
+					String applicationProtocols[] = null;
+					if (useHttp2)
+						applicationProtocols = HTTP2_PROTOCOLS;
+					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout,
+							getSNIServerName(exc), proxy, proxySSLContext, applicationProtocols);
+					if (useHttp2) {
+						String[] ap = con.getApplicationProtocols();
+						if (ap != null && ap.length > 0 && HTTP2_PROTOCOLS[0].equals(ap[0]))
+							throw new RuntimeException("HTTP/2 was selected by the server. Handling is not yet implemented.");
+					}
+
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}

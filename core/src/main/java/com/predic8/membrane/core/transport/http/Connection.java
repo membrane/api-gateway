@@ -74,7 +74,7 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
 								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
-								  @Nullable SSLProvider proxySSLProvider) throws UnknownHostException, IOException {
+								  @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) throws UnknownHostException, IOException {
 		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy);
 
 		String origHost = host;
@@ -90,9 +90,10 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 
 		if (sslProvider != null) {
 			if (isNullOrEmpty(localHost))
-				con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername);
+				con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername, applicationProtocols);
 			else
-				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout, sniServername);
+				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0,
+						connectTimeout, sniServername, applicationProtocols);
 		} else {
 			if (isNullOrEmpty(localHost)) {
 				con.socket = new Socket();
@@ -105,7 +106,7 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 
 		if (proxy != null && origSSLProvider != null) {
 			con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
-			con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername);
+			con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername, applicationProtocols);
 		}
 
 		log.debug("Opened connection on localPort: " + con.socket.getLocalPort());
@@ -117,7 +118,7 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
-		return open(host,port,localHost,sslProvider,mgr,connectTimeout,null,null,null);
+		return open(host, port, localHost, sslProvider, mgr, connectTimeout, null, null, null, null);
 	}
 
 	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy) {
@@ -388,5 +389,9 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 
 	public SSLProvider getSslProvider() {
 		return sslProvider;
+	}
+
+	public String[] getApplicationProtocols() {
+		return sslProvider == null ? null : sslProvider.getApplicationProtocols(socket);
 	}
 }

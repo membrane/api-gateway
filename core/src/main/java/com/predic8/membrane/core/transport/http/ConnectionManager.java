@@ -140,7 +140,7 @@ public class ConnectionManager {
 	}
 
 	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, @Nullable String sniServerName,
-		@Nullable ProxyConfiguration proxy, @Nullable SSLContext proxySSLContext) throws UnknownHostException, IOException {
+		@Nullable ProxyConfiguration proxy, @Nullable SSLContext proxySSLContext, @Nullable String[] applicationProtocols) throws UnknownHostException, IOException {
 
 		log.debug("connection requested for " + host + ":" + port + (proxy != null ? " via " + proxy.getHost() + ":" + proxy.getPort() : ""));
 
@@ -174,13 +174,14 @@ public class ConnectionManager {
 			}
 		}
 
-		Connection result = Connection.open(host, port, localHost, sslProvider, this, connectTimeout,sniServerName,proxy,proxySSLContext);
+		Connection result = Connection.open(host, port, localHost, sslProvider, this, connectTimeout,
+				sniServerName, proxy, proxySSLContext, applicationProtocols);
 		numberInPool.incrementAndGet();
 		return result;
 	}
 
 	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
-		return getConnection(host,port,localHost,sslProvider,connectTimeout,null,null,null);
+		return getConnection(host,port,localHost,sslProvider,connectTimeout,null,null,null,null);
 	}
 
 	public void releaseConnection(Connection connection) {
