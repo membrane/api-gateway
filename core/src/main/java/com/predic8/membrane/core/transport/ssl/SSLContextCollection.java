@@ -200,8 +200,9 @@ public class SSLContextCollection implements SSLProvider {
 
 	@Override
 	public Socket createSocket(String host, int port, InetAddress addr,
-			int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
-		return getSSLContextForHostname(host).createSocket(host, port, addr, localPort, connectTimeout,sniServerName);
+			int localPort, int connectTimeout, @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException {
+		return getSSLContextForHostname(host).createSocket(host, port, addr, localPort, connectTimeout, sniServerName,
+				applicationProtocols);
 	}
 
 	@Override
@@ -213,14 +214,22 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	@Override
-	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName)
+	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName,
+							   @Nullable String[] applicationProtocols)
 			throws IOException {
-		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout, sniServerName);
+		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout, sniServerName,
+				applicationProtocols);
+	}
+
+	public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName,
+							   @Nullable String[] applicationProtocols)
+			throws IOException {
+		return getSSLContextForHostname(host).createSocket(s, host, port, connectTimeout, sniServerName,
+				applicationProtocols);
 	}
 
 	@Override
-	public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName)
-			throws IOException {
-		return getSSLContextForHostname(host).createSocket(s, host, port, connectTimeout, sniServerName);
+	public String[] getApplicationProtocols(Socket socket) {
+		return sslContexts.get(0).getApplicationProtocols(socket);
 	}
 }

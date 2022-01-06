@@ -29,6 +29,8 @@ import javax.net.ssl.*;
 import javax.validation.constraints.NotNull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -43,10 +45,10 @@ import java.util.*;
 public class StaticSSLContext extends SSLContext {
 
     private static final String DEFAULT_CERTIFICATE_SHA256 = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
+    private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
     private static boolean default_certificate_warned = false;
     private static boolean limitedStrength;
-
-    private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
+    private static Method getApplicationProtocols, setApplicationProtocols;
 
     static {
         String dhKeySize = System.getProperty("jdk.tls.ephemeralDHKeySize");
@@ -63,6 +65,12 @@ public class StaticSSLContext extends SSLContext {
         String enableStatusRequestExtension = System.getProperty("jdk.tls.server.enableStatusRequestExtension");
         if (enableStatusRequestExtension == null)
             System.setProperty("jdk.tls.server.enableStatusRequestExtension", "true");
+
+        try {
+            getApplicationProtocols = SSLParameters.class.getDeclaredMethod("getApplicationProtocols", new Class[]{});
+            setApplicationProtocols = SSLParameters.class.getDeclaredMethod("setApplicationProtocols", new Class[]{String[].class});
+        } catch (NoSuchMethodException e) {
+        }
     }
 
 
@@ -326,25 +334,29 @@ public class StaticSSLContext extends SSLContext {
         return ssls;
     }
 
-    public Socket createSocket(Socket socket, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(Socket socket, String host, int port, int connectTimeout, @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException {
         SSLSocketFactory sslsf = sslc.getSocketFactory();
         SSLSocket ssls = (SSLSocket) sslsf.createSocket(socket, host, port, true);
         applySNI(ssls, sniServerName,host);
+        if (applicationProtocols != null)
+            setApplicationProtocols(ssls, applicationProtocols);
         prepare(ssls);
         return ssls;
     }
 
-    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName,
+                               @Nullable String[] applicationProtocols) throws IOException {
         Socket s = new Socket();
         s.connect(new InetSocketAddress(host, port), connectTimeout);
-        return createSocket(s, host, port, connectTimeout, sniServerName);
+        return createSocket(s, host, port, connectTimeout, sniServerName, applicationProtocols);
     }
 
-    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout,
+                               @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException {
         Socket s = new Socket();
         s.bind(new InetSocketAddress(addr, localPort));
         s.connect(new InetSocketAddress(host, port), connectTimeout);
-        return createSocket(s, host, port, connectTimeout, sniServerName);
+        return createSocket(s, host, port, connectTimeout, sniServerName, applicationProtocols);
     }
 
     private void applySNI(@NotNull SSLSocket ssls, @Nullable String sniServerName, @NotNull String defaultHost) {
@@ -360,6 +372,33 @@ public class StaticSSLContext extends SSLContext {
         SSLParameters params = ssls.getSSLParameters();
         params.setServerNames(serverNames);
         ssls.setSSLParameters(params);
+    }
+
+    private void setApplicationProtocols(@NotNull SSLSocket ssls, @NotNull String[] applicationProtocols) {
+        if (setApplicationProtocols == null || getApplicationProtocols == null) {
+            log.debug("Could not call setApplicationProtocols(), as method is not available. We will not be using ALPN.");
+            return;
+        }
+        SSLParameters sslp = ssls.getSSLParameters();
+        try {
+            setApplicationProtocols.invoke(sslp, new Object[] { applicationProtocols });
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        ssls.setSSLParameters(sslp);
+    }
+
+    @Override
+    public String[] getApplicationProtocols(Socket socket) {
+        if (!(socket instanceof SSLSocket))
+            return null;
+        if (setApplicationProtocols == null || getApplicationProtocols == null)
+            return null;
+        try {
+            return (String[]) getApplicationProtocols.invoke(((SSLSocket) socket).getSSLParameters(), new Object[0]);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     SSLSocketFactory getSocketFactory() {

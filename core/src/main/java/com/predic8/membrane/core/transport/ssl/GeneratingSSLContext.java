@@ -254,17 +254,20 @@ public class GeneratingSSLContext extends SSLContext {
     }
 
     @Override
-    public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName,
+                               @Nullable String[] applicationProtocols) throws IOException {
         throw new IllegalStateException("not implemented");
     }
 
     @Override
-    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName,
+                               @Nullable String[] applicationProtocols) throws IOException {
         throw new IllegalStateException("not implemented");
     }
 
     @Override
-    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout,
+                               @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException {
         throw new IllegalStateException("not implemented");
     }
 
@@ -286,5 +289,10 @@ public class GeneratingSSLContext extends SSLContext {
     @Override
     SSLSocketFactory getSocketFactory() {
         throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public String[] getApplicationProtocols(Socket socket) {
+        return null;
     }
 }

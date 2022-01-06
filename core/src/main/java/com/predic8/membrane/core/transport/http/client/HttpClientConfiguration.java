@@ -33,6 +33,7 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	private AuthenticationConfiguration authentication;
 	private SSLParser sslParser;
 	private String baseLocation;
+	private boolean useExperimentalHttp2;
 
 
 
@@ -104,5 +105,14 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 
 	public void setBaseLocation(String baseLocation) {
 		this.baseLocation = baseLocation;
+	}
+
+	public boolean isUseExperimentalHttp2() {
+		return useExperimentalHttp2;
+	}
+
+	@MCAttribute
+	public void setUseExperimentalHttp2(boolean useExperimentalHttp2) {
+		this.useExperimentalHttp2 = useExperimentalHttp2;
 	}
 }

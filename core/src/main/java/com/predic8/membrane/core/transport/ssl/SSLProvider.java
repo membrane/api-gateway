@@ -28,9 +28,17 @@ public interface SSLProvider {
 	 * @param host relevant to verify the server cert only
 	 * @param port relevant to verify the server cert only
 	 */
-	public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException;
-	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException;
-	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException;
+	public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName,
+							   @Nullable String[] applicationProtocols) throws IOException;
+	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName,
+							   @Nullable String[] applicationProtocols) throws IOException;
+	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout,
+							   @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException;
 
 	public boolean showSSLExceptions();
+
+	/**
+	 * @return the application protocols selected by the TLS server, or null elsewise (not a TLS connection, ALPN not supported, ...)
+	 */
+	public String[] getApplicationProtocols(Socket socket);
 }
