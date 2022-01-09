@@ -23,6 +23,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.http2.Http2Client;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
@@ -208,6 +209,7 @@ public class HttpClient {
 						}
 					}
 				}
+				boolean usingHttp2 = false;
 				SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
 				if (con == null) {
 					String applicationProtocols[] = null;
@@ -218,50 +220,57 @@ public class HttpClient {
 					if (useHttp2) {
 						String[] ap = con.getApplicationProtocols();
 						if (ap != null && ap.length > 0 && HTTP2_PROTOCOLS[0].equals(ap[0]))
-							throw new RuntimeException("HTTP/2 was selected by the server. Handling is not yet implemented.");
+							usingHttp2 = true;
 					}
-
-					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
+					con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
 				if (proxy != null && sslProvider == null)
 					// if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
 					exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 				Response response;
-				String newProtocol = null;
 
-				if (exc.getRequest().isCONNECTRequest()) {
-					handleConnectRequest(exc, con);
-					response = Response.ok().build();
-					newProtocol = "CONNECT";
-					//TODO should we report to the httpClientStatusEventBus here somehow?
+				if (usingHttp2) {
+					Http2Client h2c = new Http2Client(con.socket, con.in, con.out, sslProvider.showSSLExceptions());
+					response = h2c.doCall(exc, con);
+					// TODO: handle CONNECT / AllowWebSocket / etc
 				} else {
-					response = doCall(exc, con);
-					if (trackNodeStatus)
-						exc.setNodeStatusCode(counter, response.getStatusCode());
 
-					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToResponse(response, "websocket")) {
-						log.debug("Upgrading to WebSocket protocol.");
-						newProtocol = "WebSocket";
+					String newProtocol = null;
+
+					if (exc.getRequest().isCONNECTRequest()) {
+						handleConnectRequest(exc, con);
+						response = Response.ok().build();
+						newProtocol = "CONNECT";
 						//TODO should we report to the httpClientStatusEventBus here somehow?
-					}
-					if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
-						log.debug("Upgrading to TCP protocol.");
-						newProtocol = "TCP";
-					}
-					if (exc.getProperty(Exchange.ALLOW_SPDY) == Boolean.TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
-						log.debug("Upgrading to SPDY/3.1 protocol.");
-						newProtocol = "SPDY/3.1";
-					}
-				}
+					} else {
+						response = doCall(exc, con);
+						if (trackNodeStatus)
+							exc.setNodeStatusCode(counter, response.getStatusCode());
 
-				if (newProtocol != null) {
-					setupConnectionForwarding(exc, con, newProtocol, streamPumpStats);
-					exc.getDestinations().clear();
-					exc.getDestinations().add(dest);
-					con.setExchange(exc);
-					exc.setResponse(response);
-					return exc;
+						if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToResponse(response, "websocket")) {
+							log.debug("Upgrading to WebSocket protocol.");
+							newProtocol = "WebSocket";
+							//TODO should we report to the httpClientStatusEventBus here somehow?
+						}
+						if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
+							log.debug("Upgrading to TCP protocol.");
+							newProtocol = "TCP";
+						}
+						if (exc.getProperty(Exchange.ALLOW_SPDY) == Boolean.TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
+							log.debug("Upgrading to SPDY/3.1 protocol.");
+							newProtocol = "SPDY/3.1";
+						}
+					}
+
+					if (newProtocol != null) {
+						setupConnectionForwarding(exc, con, newProtocol, streamPumpStats);
+						exc.getDestinations().clear();
+						exc.getDestinations().add(dest);
+						con.setExchange(exc);
+						exc.setResponse(response);
+						return exc;
+					}
 				}
 
 				responseStatusCode = response.getStatusCode();
