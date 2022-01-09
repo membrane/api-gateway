@@ -33,7 +33,7 @@ public class PriorityTree {
 
     private static final Logger log = LoggerFactory.getLogger(PriorityTree.class);
 
-    private StreamInfo root = new StreamInfo(0, null);
+    private StreamInfo root = new StreamInfo(0, null, null, null);
 
     public void reprioritize(@NotNull StreamInfo stream, int weight, @Null StreamInfo parent, boolean exclusive) throws IOException {
         if (parent == stream)

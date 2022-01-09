@@ -46,14 +46,14 @@ public class StreamInfo {
     private StreamState state = StreamState.IDLE;
     private int weight;
 
-    public StreamInfo(int streamId, Http2ServerHandler h2sh) {
+    public StreamInfo(int streamId, FrameSender sender, Settings peerSettings, Settings ourSettings) {
         this.streamId = streamId;
         if (streamId == 0) {
             peerFlowControl = null;
             flowControl = null;
         } else {
-            peerFlowControl = new PeerFlowControl(streamId, h2sh.getSender(), h2sh.getPeerSettings());
-            flowControl = new FlowControl(streamId, h2sh.getSender(), h2sh.getOurSettings());
+            peerFlowControl = new PeerFlowControl(streamId, sender, peerSettings);
+            flowControl = new FlowControl(streamId, sender, ourSettings);
         }
 
     }
