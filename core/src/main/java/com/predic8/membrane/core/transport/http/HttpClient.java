@@ -46,8 +46,10 @@ import java.nio.ByteBuffer;
  * Instances are thread-safe.
  */
 public class HttpClient {
+	public static final String HTTP2 = "h2";
 
 	private static Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
+
 	@GuardedBy("HttpClient.class")
 	private static SSLProvider defaultSSLProvider;
 
@@ -233,6 +235,7 @@ public class HttpClient {
 				if (usingHttp2) {
 					Http2Client h2c = new Http2Client(con.socket, con.in, con.out, sslProvider.showSSLExceptions());
 					response = h2c.doCall(exc, con);
+					exc.setProperty(HTTP2, true);
 					// TODO: handle CONNECT / AllowWebSocket / etc
 				} else {
 
