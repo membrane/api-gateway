@@ -107,7 +107,7 @@ public class StreamInfo {
     }
 
     public synchronized void receivedHeaders() throws IOException {
-        if (state != StreamState.IDLE && state != StreamState.RESERVED_REMOTE && state != StreamState.RESERVED_LOCAL && state != StreamState.OPEN)
+        if (state != StreamState.IDLE && state != StreamState.RESERVED_REMOTE && state != StreamState.RESERVED_LOCAL && state != StreamState.OPEN && state != StreamState.HALF_CLOSED_LOCAL)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         if (state == StreamState.IDLE)

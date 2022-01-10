@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.google.common.collect.Lists;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
@@ -27,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLException;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
@@ -35,7 +33,6 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.generateErrorResponse;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -188,6 +185,13 @@ public class Http2ExchangeHandler implements Runnable {
     protected void writeResponse(Response res) throws Exception {
         sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(res, streamId, encoder, peerSettings, false));
 
+        writeMessageBody(streamId, streamInfo, sender, peerSettings, peerFlowControl, res);
+
+        exchange.setTimeResSent(System.currentTimeMillis());
+        exchange.collectStatistics();
+    }
+
+    public static void writeMessageBody(final int streamId, final StreamInfo streamInfo, final FrameSender sender, final Settings peerSettings, final PeerFlowControl peerFlowControl, Message res) throws IOException {
         res.getBody().write(new AbstractBodyTransferrer() {
             @Override
             public void write(byte[] content, int i, int length) throws IOException {
@@ -237,9 +241,6 @@ public class Http2ExchangeHandler implements Runnable {
                 0);
 
         sender.send(frame);
-
-        exchange.setTimeResSent(System.currentTimeMillis());
-        exchange.collectStatistics();
     }
 
     public static List<Frame> createHeadersFrames(Message res, int streamId, Encoder encoder, Settings peerSettings, boolean isAtEof) throws IOException {

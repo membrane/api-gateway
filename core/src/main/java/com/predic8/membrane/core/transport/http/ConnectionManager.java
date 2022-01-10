@@ -56,6 +56,11 @@ public class ConnectionManager {
 
 	private final long keepAliveTimeout;
 	private final long autoCloseInterval;
+	private final Timer timer;
+	private final AtomicInteger numberInPool = new AtomicInteger();
+	private final HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
+			new HashMap<ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
+	private volatile boolean shutdownWhenDone = false;
 
 	private static class OldConnection {
 		public final Connection connection;
@@ -78,12 +83,6 @@ public class ConnectionManager {
 			this.deathTime = lastUse + delta;
 		}
 	}
-
-	private AtomicInteger numberInPool = new AtomicInteger();
-	private HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
-			new HashMap<ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
-	private Timer timer;
-	private volatile boolean shutdownWhenDone = false;
 
 	public ConnectionManager(long keepAliveTimeout) {
 		this.keepAliveTimeout = keepAliveTimeout;

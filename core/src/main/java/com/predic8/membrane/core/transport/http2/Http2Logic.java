@@ -4,6 +4,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http2.frame.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
 import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 import com.twitter.hpack.HeaderListener;
@@ -11,10 +12,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -22,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
@@ -47,6 +46,8 @@ public class Http2Logic {
     private final ExecutorService executor;
     private final Http2MessageHandler messageHandler;
     final AtomicInteger nextClientStreamId = new AtomicInteger(1);
+    volatile boolean receiving = true;
+    Future<?> senderFuture;
 
     public Http2Logic(ExecutorService executor, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions, Http2MessageHandler messageHandler) {
         this.executor = executor;
@@ -67,7 +68,7 @@ public class Http2Logic {
     }
 
     public void init() throws IOException {
-        executor.submit(sender);
+        senderFuture = executor.submit(sender);
 
         Settings newSettings = new Settings();
         newSettings.copyFrom(ourSettings);
@@ -85,13 +86,15 @@ public class Http2Logic {
         return sb.toString();
     }
 
-    public void handle() throws IOException {
+    public void handle() throws IOException, EndOfStreamException {
         try {
-            while (true) {
+            while (receiving) {
                 Frame frame = new Frame(ourSettings);
                 frame.read(srcIn);
                 handleFrame(frame);
             }
+        } catch(EOFException eof) {
+            throw new EndOfStreamException("");
         } finally {
             sender.stop();
         }
@@ -147,7 +150,7 @@ public class Http2Logic {
     private void handleFrame(GoawayFrame goawayFrame) throws IOException {
         int streamId = goawayFrame.getFrame().getStreamId();
 
-        if (streamId == 0)
+        if (streamId != 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         // TODO: implement this, once sending PUSH_PROMISE is implemented

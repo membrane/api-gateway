@@ -114,7 +114,7 @@ public class HttpClient {
 
 		useHttp2 = configuration.isUseExperimentalHttp2();
 		if (useHttp2)
-			http2ClientPool = new Http2ClientPool();
+			http2ClientPool = new Http2ClientPool(configuration.getConnection().getKeepAliveTimeout());
 		else
 			http2ClientPool = null;
 	}
@@ -126,6 +126,8 @@ public class HttpClient {
 	@Override
 	protected void finalize() throws Throwable {
 		conMgr.shutdownWhenDone();
+		if (http2ClientPool != null)
+			http2ClientPool.shutdownWhenDone();
 	}
 
 	private void setRequestURI(Request req, String dest) throws MalformedURLException {
