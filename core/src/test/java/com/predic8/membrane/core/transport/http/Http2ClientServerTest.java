@@ -12,21 +12,23 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.util.URIFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.transport.http.HttpClient.HTTP2;
 import static org.junit.Assert.*;
 
 public class Http2ClientServerTest {
     private volatile Response response;
+    private volatile Consumer<Request> requestAsserter;
     private HttpClient hc;
     private HttpRouter router;
 
@@ -47,6 +49,8 @@ public class Http2ClientServerTest {
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
+                if (requestAsserter != null)
+                    requestAsserter.accept(exc.getRequest());
                 exc.setResponse(response);
                 return Outcome.RETURN;
             }
@@ -79,6 +83,12 @@ public class Http2ClientServerTest {
         test200("here");
     }
 
+
+    @Test
+    public void emptyBody() throws Exception {
+        test200("");
+    }
+
     @Test
     public void longBody() throws Exception {
         StringBuilder sb = new StringBuilder();
@@ -88,15 +98,67 @@ public class Http2ClientServerTest {
         test200(sb.toString());
     }
 
+    @Test
+    public void testQuery() throws Exception {
+        Response r = test("GET", "/abc?def=ghi&jkl=mno", null, Response.ok().build());
+        assertEquals(200, r.getStatusCode());
+        assertEquals("", r.getBodyAsStringDecoded());
+    }
+
+    @Test
+    public void testParallelStreams() throws Exception {
+        CountDownLatch cdl = new CountDownLatch(2);
+        CountDownLatch cdl1 = new CountDownLatch(1);
+        this.response = Response.ok().build();
+        this.requestAsserter = req -> {
+            cdl1.countDown();
+            cdl.countDown();
+            try {
+                cdl.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        };
+
+        ExecutorService es = Executors.newFixedThreadPool(2);
+        Exchange e[] = new Exchange[2];
+        for (int i = 0; i < 2; i++) {
+            if (i == 1)
+                cdl1.await();
+            e[i] = new Request.Builder().get("https://localhost:3049").buildExchange();
+            int j = i;
+            es.submit(() -> {
+                Thread.currentThread().setName("Requestor "  + j);
+                try {
+                    hc.call(e[j]);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            });
+        }
+
+        es.awaitTermination(20, TimeUnit.SECONDS);
+        es.shutdown();
+
+        for (int i = 0; i < 2; i++) {
+            assertNotNull(e[i].getProperty(HTTP2));
+
+            Response r = e[i].getResponse();
+            assertEquals(200, r.getStatusCode());
+            assertEquals("", r.getBodyAsStringDecoded());
+        }
+    }
+
     private void test200(String body) throws Exception {
-        Response r = transferViaHttp2(Response.ok(body).build());
+        Response r = testGet(Response.ok(body).build());
 
         assertEquals(200, r.getStatusCode());
         assertEquals(body, r.getBodyAsStringDecoded());
     }
 
-    private Response transferViaHttp2(Response response) throws Exception {
+    private Response testGet(Response response) throws Exception {
         this.response = response;
+        this.requestAsserter = null;
 
         Exchange e = new Request.Builder().get("https://localhost:3049").buildExchange();
         hc.call(e);
@@ -105,4 +167,32 @@ public class Http2ClientServerTest {
 
         return e.getResponse();
     }
+
+    private Response test(String method, String path, String body, Response response) throws Exception {
+        this.response = response;
+        this.requestAsserter = req -> {
+            try {
+                assertEquals(method, req.getMethod());
+                assertEquals(path, req.getUri());
+                if (body != null)
+                    assertEquals(body, req.getBodyAsStringDecoded());
+                // TODO: if body is null, assert empty request body
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw e;
+            }
+        };
+
+        Request.Builder b = new Request.Builder().url(new URIFactory(), "https://localhost:3049" + path).method(method);
+        if (body != null) {
+            b.body(body);
+        }
+        Exchange e = b.buildExchange();
+        hc.call(e);
+
+        assertNotNull(e.getProperty(HTTP2));
+
+        return e.getResponse();
+    }
+
 }

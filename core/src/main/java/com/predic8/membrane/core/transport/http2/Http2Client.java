@@ -25,17 +25,15 @@ public class Http2Client implements Runnable {
 
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
-    private final Socket sourceSocket;
-    private final OutputStream srcOut;
-    private final Http2Logic logic;
+    private final Connection con;
     private final CountDownLatch cdl;
+    private final Http2Logic logic;
     private Response response;
 
-    public Http2Client(Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions) {
-        this.sourceSocket = sourceSocket;
-        this.srcOut = srcOut;
+    public Http2Client(Connection con, boolean showSSLExceptions) {
+        this.con = con;
         this.cdl = new CountDownLatch(1);
-        this.logic = new Http2Logic(executor, sourceSocket, srcIn, srcOut, showSSLExceptions, new Http2MessageHandler() {
+        this.logic = new Http2Logic(executor, con.socket, con.in, con.out, showSSLExceptions, new Http2MessageHandler() {
             @Override
             public Message createMessage() {
                 return new Response();
@@ -52,7 +50,8 @@ public class Http2Client implements Runnable {
     }
 
     public Response doCall(Exchange exc, Connection con) throws IOException, InterruptedException {
-        int streamId = 1; // TODO: choose next open
+        int streamId = logic.nextClientStreamId.getAndAccumulate(2, Integer::sum);
+        // TODO: check number of concurrent streams
         StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
         logic.streams.put(streamId, streamInfo);
 
@@ -69,7 +68,7 @@ public class Http2Client implements Runnable {
         try {
             updateThreadName(true);
             LOG.debug("sending PREFACE.");
-            srcOut.write(PREFACE);
+            con.out.write(PREFACE);
 
             logic.init();
 
@@ -86,11 +85,19 @@ public class Http2Client implements Runnable {
         if (fromConnection) {
             StringBuilder sb = new StringBuilder();
             sb.append("HTTP2 Client ");
-            sb.append(getRemoteAddr(sourceSocket));
+            sb.append(getRemoteAddr(con.socket));
             Thread.currentThread().setName(sb.toString());
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
         }
     }
 
+    public Connection getConnection() {
+        return con;
+    }
+
+    public boolean reserveStream() {
+        // TODO
+        return true;
+    }
 }

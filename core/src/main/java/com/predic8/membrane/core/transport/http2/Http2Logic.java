@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -45,6 +46,7 @@ public class Http2Logic {
     private final PriorityTree priorityTree = new PriorityTree();
     private final ExecutorService executor;
     private final Http2MessageHandler messageHandler;
+    final AtomicInteger nextClientStreamId = new AtomicInteger(1);
 
     public Http2Logic(ExecutorService executor, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions, Http2MessageHandler messageHandler) {
         this.executor = executor;

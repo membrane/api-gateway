@@ -28,7 +28,6 @@ import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Objects;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 import javax.annotation.Nullable;
@@ -58,46 +57,6 @@ public class ConnectionManager {
 	private final long keepAliveTimeout;
 	private final long autoCloseInterval;
 
-	private static class ConnectionKey {
-		// SSLProvider and ProxyConfiguration do not override equals() or hashCode(), but this is OK, as only a few will exist and are used read-only
-
-		public final String host;
-		public final int port;
-		@Nullable private SSLProvider sslProvider;
-		@Nullable public String serverName;
-		@Nullable public ProxyConfiguration proxy;
-
-		public ConnectionKey(String host, int port, SSLProvider sslProvider, String serverName, ProxyConfiguration proxy) {
-			this.host = host;
-			this.port = port;
-			this.sslProvider = sslProvider;
-			this.serverName = serverName;
-			this.proxy = proxy;
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hashCode(host, port, sslProvider, serverName, proxy);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof ConnectionKey) || obj == null)
-				return false;
-			ConnectionKey other = (ConnectionKey)obj;
-			return host.equals(other.host)
-					&& port == other.port
-					&& Objects.equal(sslProvider,other.sslProvider)
-					&& Objects.equal(serverName, other.serverName)
-					&& Objects.equal(proxy,other.proxy);
-		}
-
-		@Override
-		public String toString() {
-			return host + ":" + port + (sslProvider != null ? " with SSL" : "") + (proxy != null ? " via proxy" : "");
-		}
-	}
-
 	private static class OldConnection {
 		public final Connection connection;
 		public final long deathTime;
@@ -122,7 +81,7 @@ public class ConnectionManager {
 
 	private AtomicInteger numberInPool = new AtomicInteger();
 	private HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
-			new HashMap<ConnectionManager.ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
+			new HashMap<ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
 	private Timer timer;
 	private volatile boolean shutdownWhenDone = false;
 
@@ -155,7 +114,7 @@ public class ConnectionManager {
 			cachePort = 0;
 		}
 
-		ConnectionKey key = new ConnectionKey(cacheHost, cachePort, sslProvider, sniServerName, proxy);
+		ConnectionKey key = new ConnectionKey(cacheHost, cachePort, sslProvider, sniServerName, proxy, proxySSLContext, applicationProtocols);
 		long now = System.currentTimeMillis();
 
 		synchronized(this) {
@@ -193,7 +152,9 @@ public class ConnectionManager {
 			return;
 		}
 
-		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort(), connection.getSslProvider(), connection.getSniServerName(),connection.getProxyConfiguration());
+		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort(),
+				connection.getSslProvider(), connection.getSniServerName(), connection.getProxyConfiguration(),
+				connection.getProxySSLProvider(), connection.getApplicationProtocols());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
 		synchronized(this) {

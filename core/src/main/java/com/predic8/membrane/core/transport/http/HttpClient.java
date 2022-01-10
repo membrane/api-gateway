@@ -24,6 +24,7 @@ import com.predic8.membrane.core.transport.http.client.AuthenticationConfigurati
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.transport.http2.Http2Client;
+import com.predic8.membrane.core.transport.http2.Http2ClientPool;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
@@ -77,6 +78,7 @@ public class HttpClient {
 	private final boolean useHttp2;
 
 	private final ConnectionManager conMgr;
+	private final Http2ClientPool http2ClientPool;
 	private StreamPump.StreamPumpStats streamPumpStats;
 
 	/**
@@ -111,6 +113,10 @@ public class HttpClient {
 		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
 
 		useHttp2 = configuration.isUseExperimentalHttp2();
+		if (useHttp2)
+			http2ClientPool = new Http2ClientPool();
+		else
+			http2ClientPool = null;
 	}
 
 	public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
@@ -212,13 +218,23 @@ public class HttpClient {
 					}
 				}
 				boolean usingHttp2 = false;
+				Http2Client h2c = null;
 				SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
+				String sniServerName = getSNIServerName(exc);
+				if (con == null && useHttp2) {
+					h2c = http2ClientPool.reserveStream(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext);
+					if (h2c != null) {
+						con = h2c.getConnection();
+						usingHttp2 = true;
+					}
+				}
 				if (con == null) {
-					String applicationProtocols[] = null;
-					if (useHttp2)
+					String[] applicationProtocols = null;
+					if (useHttp2) {
 						applicationProtocols = HTTP2_PROTOCOLS;
+					}
 					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout,
-							getSNIServerName(exc), proxy, proxySSLContext, applicationProtocols);
+							sniServerName, proxy, proxySSLContext, applicationProtocols);
 					if (useHttp2) {
 						String[] ap = con.getApplicationProtocols();
 						if (ap != null && ap.length > 0 && HTTP2_PROTOCOLS[0].equals(ap[0]))
@@ -233,10 +249,14 @@ public class HttpClient {
 				Response response;
 
 				if (usingHttp2) {
-					Http2Client h2c = new Http2Client(con.socket, con.in, con.out, sslProvider.showSSLExceptions());
+					if (h2c == null) {
+						h2c = new Http2Client(con, sslProvider.showSSLExceptions());
+						http2ClientPool.share(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext, h2c);
+					}
 					response = h2c.doCall(exc, con);
 					exc.setProperty(HTTP2, true);
 					// TODO: handle CONNECT / AllowWebSocket / etc
+					// TODO: connection should only be closed by the Http2Client
 				} else {
 
 					String newProtocol = null;
