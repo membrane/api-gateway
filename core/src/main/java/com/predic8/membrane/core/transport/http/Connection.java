@@ -27,6 +27,8 @@ import javax.net.ssl.SSLSocket;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.http2.Http2Client;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,12 +55,14 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 
 	public final ConnectionManager mgr;
 	public final String host;
+	private final SSLProvider sslProvider;
+    private final String sniServerName;
+	private final ProxyConfiguration proxyConfiguration;
+	private final SSLProvider proxySSLProvider;
+	private final String[] applicationProtocols;
 	public Socket socket;
 	public InputStream in;
 	public OutputStream out;
-	private SSLProvider sslProvider;
-    private String sniServerName;
-	private ProxyConfiguration proxyConfiguration;
 
 	private long lastUse;
 	private long timeout;
@@ -75,7 +79,7 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
 								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
 								  @Nullable SSLProvider proxySSLProvider, @Nullable String[] applicationProtocols) throws UnknownHostException, IOException {
-		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy);
+		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy, proxySSLProvider, applicationProtocols);
 
 		String origHost = host;
 		int origPort = port;
@@ -121,12 +125,14 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 		return open(host, port, localHost, sslProvider, mgr, connectTimeout, null, null, null, null);
 	}
 
-	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy) {
+	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy, SSLProvider proxySSLProvider, String[] applicationProtocols) {
 		this.mgr = mgr;
 		this.host = host;
 		this.sslProvider = sslProvider;
         this.sniServerName = sniServerName;
 		this.proxyConfiguration = proxy;
+		this.proxySSLProvider = proxySSLProvider;
+		this.applicationProtocols = applicationProtocols;
 	}
 
 	public boolean isSame(String host, int port) {
@@ -268,6 +274,9 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 		return proxyConfiguration;
 	}
 
+	public SSLProvider getProxySSLProvider() {
+		return proxySSLProvider;
+	}
 
 	// From https://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/samples/sockets/client/SSLSocketClientWithTunneling.java
 	/*
