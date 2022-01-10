@@ -11,6 +11,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
 import org.junit.After;
@@ -70,12 +71,18 @@ public class Http2ClientServerTest {
         configuration.setUseExperimentalHttp2(true);
         configuration.setSslParser(sslParser2);
         configuration.setBaseLocation("/");
+        ConnectionConfiguration connection = new ConnectionConfiguration();
+        connection.setKeepAliveTimeout(100);
+        configuration.setConnection(connection);
         hc = new HttpClient(configuration);
     }
 
     @After
-    public void done() {
+    public void done() throws Throwable {
+        hc.finalize();
         router.stop();
+
+        Thread.sleep(100000);
     }
 
     @Test
@@ -137,8 +144,8 @@ public class Http2ClientServerTest {
             });
         }
 
-        es.awaitTermination(20, TimeUnit.SECONDS);
         es.shutdown();
+        es.awaitTermination(20, TimeUnit.SECONDS);
 
         for (int i = 0; i < 2; i++) {
             assertNotNull(e[i].getProperty(HTTP2));

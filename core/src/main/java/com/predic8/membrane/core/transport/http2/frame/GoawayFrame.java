@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.transport.http2.frame;
 
+import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_DATA;
+import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_GOAWAY;
+
 public class GoawayFrame {
     private final Frame frame;
 
@@ -32,6 +35,29 @@ public class GoawayFrame {
                 (frame.content[5] & 0xFF) << 16 |
                 (frame.content[6] & 0xFF) << 8 |
                 (frame.content[7] & 0xFF);
+    }
+
+    public static Frame construct(int streamId, int lastStreamId, int errorCode) {
+        byte[] buf = new byte[8];
+
+        buf[0] = (byte) ((lastStreamId >> 24) & 0x7F);
+        buf[1] = (byte) (lastStreamId >> 16);
+        buf[2] = (byte) (lastStreamId >> 8);
+        buf[3] = (byte) (lastStreamId);
+
+        buf[4] = (byte) ((errorCode >> 24) & 0x7F);
+        buf[5] = (byte) (errorCode >> 16);
+        buf[6] = (byte) (errorCode >> 8);
+        buf[7] = (byte) (errorCode);
+
+        Frame frame = new Frame();
+        frame.fill(TYPE_GOAWAY,
+                0,
+                streamId,
+                buf,
+                0,
+                8);
+        return frame;
     }
 
     public String toString() {

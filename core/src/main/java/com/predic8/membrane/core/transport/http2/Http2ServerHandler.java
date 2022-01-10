@@ -21,6 +21,7 @@ import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.EndOfStreamException;
 import org.apache.commons.lang.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
         });
     }
 
-    public void handle() throws IOException {
+    public void handle() throws IOException, EndOfStreamException {
         byte[] preface = ByteUtil.readByteArray(logic.srcIn, 24);
 
         if (!isCorrectPreface(preface))

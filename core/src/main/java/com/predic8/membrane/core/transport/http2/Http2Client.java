@@ -5,18 +5,16 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
+import com.predic8.membrane.core.transport.http2.frame.GoawayFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.createHeadersFrames;
+import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.writeMessageBody;
 import static com.predic8.membrane.core.transport.http2.Http2Logic.getRemoteAddr;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.PREFACE;
 
@@ -28,7 +26,10 @@ public class Http2Client implements Runnable {
     private final Connection con;
     private final CountDownLatch cdl;
     private final Http2Logic logic;
+    private final Thread thread;
     private Response response;
+    @GuardedBy("this")
+    private int reserved;
 
     public Http2Client(Connection con, boolean showSSLExceptions) {
         this.con = con;
@@ -46,16 +47,24 @@ public class Http2Client implements Runnable {
             }
         });
 
-        executor.submit(this);
+        thread = new Thread(this);
+        thread.start();
     }
 
     public Response doCall(Exchange exc, Connection con) throws IOException, InterruptedException {
-        int streamId = logic.nextClientStreamId.getAndAccumulate(2, Integer::sum);
+        int streamId;
+        synchronized(this) {
+            if (reserved > 0)
+                reserved--;
+            streamId = logic.nextClientStreamId.getAndAccumulate(2, Integer::sum);
+        }
         // TODO: check number of concurrent streams
         StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
         logic.streams.put(streamId, streamInfo);
 
         logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), streamId, encoder, peerSettings, false));
+
+        writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest());
 
         // TODO: handle error/exception
         cdl.await();
@@ -74,7 +83,8 @@ public class Http2Client implements Runnable {
 
             logic.handle();
         } catch (Exception e) {
-            e.printStackTrace();
+            if (logic.receiving)
+                e.printStackTrace();
             // TODO: notify threads waiting on responses
         } finally {
             updateThreadName(false);
@@ -97,7 +107,43 @@ public class Http2Client implements Runnable {
     }
 
     public boolean reserveStream() {
-        // TODO
+        int max = logic.peerSettings.getMaxConcurrentStreams();
+        if (max == -1)
+            max = Integer.MAX_VALUE;
+
+        synchronized(this) {
+            int current = logic.streams.size() + reserved;
+            if (current < 0 || current >= max)
+                return false;
+            reserved += 1;
+            return true;
+        }
+    }
+
+    public void close() {
+        try {
+            LOG.debug("stop receiving frames.");
+            logic.receiving = false;
+            logic.sender.send(GoawayFrame.construct(0, logic.nextClientStreamId.get(), 0));
+            LOG.debug("terminating frame sender.");
+            logic.sender.stop();
+            try {
+                logic.senderFuture.get();
+            } catch (InterruptedException | ExecutionException e) {
+                // do nothing
+            }
+
+            con.close();
+        } catch (IOException e) {
+            // do nothing
+        }
+    }
+
+    public boolean isIdle() {
+        for (StreamInfo value : logic.streams.values()) {
+            if (value.getState() != StreamState.CLOSED)
+                return false;
+        }
         return true;
     }
 }
