@@ -43,6 +43,7 @@ public class HttpEndpointListener extends Thread {
 	private final ConcurrentHashMap<Socket, Boolean> idleSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private final ConcurrentHashMap<InetAddress, ClientInfo> ipConnectionCount = new ConcurrentHashMap<>();
+	private final Timer timer;
 
 	private volatile boolean closed;
 
@@ -82,7 +83,8 @@ public class HttpEndpointListener extends Thread {
 				serverSocket = new ServerSocket(p.getPort(), 50, p.getIp());
 
 			//TODO: use Spring scheduler
-			new Timer().schedule(new TimerTask() {
+			timer = new Timer();
+			timer.schedule(new TimerTask() {
 				@Override
 				public void run() {
 					Collection<ClientInfo> values = ipConnectionCount.values();
@@ -188,6 +190,7 @@ public class HttpEndpointListener extends Thread {
 		for (Socket s : (onlyIdle ? idleSockets : openSockets).keySet())
 			if (!s.isClosed())
 				s.close();
+		timer.cancel();
 		return openSockets.isEmpty();
 	}
 
