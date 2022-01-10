@@ -145,23 +145,28 @@ public class Connection implements MessageObserver, NonRelevantBodyObserver {
 
 		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());
 
-		if (in != null)
-			in.close();
+		try {
+			if (in != null)
+				in.close();
 
-		if (out != null) {
-			out.flush();
-			out.close();
+			if (out != null) {
+				try {
+					out.flush();
+					out.close();
+				} catch (IOException e) {}
+			}
+
+			// Test for isClosed() is needed!
+			if (!(socket instanceof SSLSocket) && !socket.isClosed())
+				socket.shutdownInput();
+
+			socket.close();
+			socket = null;
+
+		} finally {
+			if (mgr != null)
+				mgr.releaseConnection(this); // this.isClosed() == true, but mgr keeps track of number of connections
 		}
-
-		// Test for isClosed() is needed!
-		if (!(socket instanceof SSLSocket) && !socket.isClosed())
-			socket.shutdownInput();
-
-		socket.close();
-		socket = null;
-
-		if (mgr != null)
-			mgr.releaseConnection(this); // this.isClosed() == true, but mgr keeps track of number of connections
 	}
 
 	@Override
