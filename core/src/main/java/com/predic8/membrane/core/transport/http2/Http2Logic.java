@@ -331,7 +331,7 @@ public class Http2Logic {
         messageHandler.handleExchange(streamInfo, request, showSSLExceptions, remoteAddr);
 
         if (headers.isEndStream())
-            streamInfo.receivedEndStream();
+            streamInfo.receivedEndStream(false);
     }
 
     public InputStream getPackedHeaderStream(List<HeaderBlockFragment> headerFrames) {
