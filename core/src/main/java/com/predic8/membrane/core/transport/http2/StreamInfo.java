@@ -31,6 +31,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_PROTOCOL_ERROR;
+import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_DATA;
+import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_STREAM;
 
 public class StreamInfo {
     private static final Logger log = LoggerFactory.getLogger(StreamInfo.class);
@@ -63,7 +65,7 @@ public class StreamInfo {
         flowControl.received(df.getFrame().getLength());
 
         if (df.isEndStream()) {
-            receivedEndStream();
+            receivedEndStream(true);
         }
     }
 
@@ -99,11 +101,23 @@ public class StreamInfo {
         // TODO: stop sending frames
     }
 
-    public synchronized void receivedEndStream() {
+    public synchronized void receivedEndStream(boolean fromDataFrame) {
         if (state == StreamState.OPEN)
             setState(StreamState.HALF_CLOSED_REMOTE);
         if (state == StreamState.HALF_CLOSED_LOCAL)
             setState(StreamState.CLOSED);
+
+        if (!fromDataFrame) {
+            // fake 0-length data frame so that the body is terminated
+            Frame frame = new Frame();
+            frame.fill(TYPE_DATA,
+                    FLAG_END_STREAM,
+                    streamId,
+                    null,
+                    0,
+                    0);
+            dataFramesReceived.add(frame.asData());
+        }
     }
 
     public synchronized void receivedHeaders() throws IOException {
@@ -165,7 +179,8 @@ public class StreamInfo {
         private byte[] createByteArray(DataFrame df) {
             // TODO this has bad performance, can be avoided by subclassing Chunk
             byte[] buf = new byte[df.getDataLength()];
-            System.arraycopy(df.getContent(), df.getDataStartIndex(), buf, 0, df.getDataLength());
+            if (df.getDataLength() > 0)
+                System.arraycopy(df.getContent(), df.getDataStartIndex(), buf, 0, df.getDataLength());
             return buf;
         }
 
