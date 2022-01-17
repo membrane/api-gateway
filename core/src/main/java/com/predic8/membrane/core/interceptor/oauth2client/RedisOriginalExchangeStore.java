@@ -20,16 +20,13 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.interceptor.session.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Required;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import java.io.IOException;
-import java.util.Optional;
 
+//ask till about postprocess method maybe make it interface and check if instance or maybe another gucci way?
 /**
  * @description  Used for storing exchanges temporarily in Redis. Supports authentication with or without password and username
  */
@@ -100,7 +97,7 @@ public class RedisOriginalExchangeStore extends OriginalExchangeStore implements
 
     @Override
     public void postProcess(Exchange exchange) {
-        throw new UnsupportedOperationException();
+        //Nothing to do
     }
 
     public String getHost() {

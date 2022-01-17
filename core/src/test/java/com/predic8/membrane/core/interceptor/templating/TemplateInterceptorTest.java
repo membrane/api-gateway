@@ -42,18 +42,20 @@ public class TemplateInterceptorTest {
     static Path copiedJson;
     static Router router;
     static ResolverMap map;
+    static final String separator = FileSystems.getDefault().getSeparator();
 
     @BeforeClass
     public static void setupFiles() throws IOException {
+        //user.dir returns current working directory
         copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir") +
-                FileSystems.getDefault().getSeparator() + "project_template.xml") );
+                separator + "project_template.xml") );
         copyFiles(Paths.get("src/test/resources/json/template_test.json"), Paths.get(System.getProperty("user.dir") +
-                FileSystems.getDefault().getSeparator() + "template_test.json"));
+                separator + "template_test.json"));
         
         copiedXml = Paths.get(System.getProperty("user.dir") +
-                FileSystems.getDefault().getSeparator() + "project_template.xml");
+                separator + "project_template.xml");
         copiedJson = Paths.get(System.getProperty("user.dir") +
-                FileSystems.getDefault().getSeparator() + "template_test.json");
+                separator + "template_test.json");
         router = Mockito.mock(Router.class);
         map = new ResolverMap();
         Mockito.when(router.getResolverMap()).thenReturn(map);
@@ -67,7 +69,7 @@ public class TemplateInterceptorTest {
         exc.setRequest(req);
 
         exc.setProperty("title", "minister");
-        List<String> lst = new ArrayList<String>();
+        List<String> lst = new ArrayList<>();
         lst.add("food1");
         lst.add("food2");
         exc.setProperty("items", lst);
@@ -140,16 +142,6 @@ public class TemplateInterceptorTest {
         setAndHandleRequest("./template_test.json");
         Assert.assertNull(exc.getRequest().getHeader().getContentType());
     }
-
-//    @Test
-//    public void extractorAndTemplateTest() throws Exception{
-//        XmlPathExtractorInterceptor xpe = new XmlPathExtractorInterceptor();
-//        xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/part[2]/item", "items"));
-//        xpe.handleRequest(exc);
-//
-//        assertEquals("25", ((List)exc.getProperty("items")).get(1));
-//
-//    }
 
     private void setAndHandleRequest(String location) throws Exception {
         ti.setLocation(location);

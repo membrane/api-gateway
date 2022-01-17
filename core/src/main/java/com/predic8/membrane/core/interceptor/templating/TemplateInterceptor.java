@@ -81,24 +81,23 @@ public class TemplateInterceptor extends AbstractInterceptor{
 
     @Override
     public void init() throws Exception {
-        if(this.getLocation() != null && !StringUtils.isBlank(this.getTextTemplate())){
-            throw new IllegalStateException("On <"+getName()+">, ./text() and ./@location cannot be set at the same time.");
+        if (this.getLocation() != null && !StringUtils.isBlank(this.getTextTemplate())) {
+            throw new IllegalStateException("On <" + getName() + ">, ./text() and ./@location cannot be set at the same time.");
         }
-
-        if(location != null){
-            if(FilenameUtils.getExtension(getLocation()).equals("xml")){
-                template = new XmlTemplateEngine().createTemplate(new InputStreamReader(getRouter().getResolverMap()
-                        .resolve(ResolverMap.combine(router.getBaseLocation(), location))));
-
-                if(contentType == null){
-                    setContentType("application/xml");
+        if (location != null) {
+            try (InputStreamReader reader = new InputStreamReader(getRouter().getResolverMap()
+                    .resolve(ResolverMap.combine(router.getBaseLocation(), location)))) {
+                if (FilenameUtils.getExtension(getLocation()).equals("xml")) {
+                    template = new XmlTemplateEngine().createTemplate(reader);
+                    if (contentType == null) {
+                        setContentType("application/xml");
+                    }
                 }
+                else{
+                    template = new StreamingTemplateEngine().createTemplate(reader);
+                }
+                return;
             }
-            else{
-                template = new StreamingTemplateEngine().createTemplate(new InputStreamReader(getRouter().getResolverMap()
-                        .resolve(ResolverMap.combine(router.getBaseLocation(), location))));
-            }
-            return;
         }
         if(!StringUtils.isBlank(textTemplate)){
             template = new StreamingTemplateEngine().createTemplate(this.getTextTemplate());
