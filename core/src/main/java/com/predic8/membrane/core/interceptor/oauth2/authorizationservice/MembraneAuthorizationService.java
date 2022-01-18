@@ -104,6 +104,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     @Override
     public String getIssuer() {
+        int p = src.indexOf(' ');
+        if (p != -1) {
+            String[] urls = src.split(Pattern.quote(" "),2);
+            p = urls[1].indexOf('/');
+            return urls[0] + (p == -1 ? "" : urls[1].substring(p));
+        }
         return src;
     }
 
