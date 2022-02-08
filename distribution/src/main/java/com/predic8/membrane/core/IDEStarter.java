@@ -23,7 +23,8 @@ import java.io.IOException;
 
 public class IDEStarter {
 	public static void main(String[] args) {
-		// TODO for testing purposes - do not commit
+		// for testing or development purposes
+		// Start in "distribution" folder
 		try {
 			File file = new File("conf/log4j2.xml");
 			Configurator.initialize(null, new ConfigurationSource(new FileInputStream(file)));
