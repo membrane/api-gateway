@@ -64,13 +64,13 @@ public class RedisOriginalExchangeStore extends OriginalExchangeStore implements
     }
 
     private String originalRequestKeyNameInSession(String state) {
-        return prefix != null ? prefix + state : "";
+        return prefix != null ? prefix + state : state;
     }
 
     @Override
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
         try(Jedis jedis = getJedisWithDb()){
-            jedis.set(originalRequestKeyNameInSession(state), objMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)) );
+            jedis.setex(originalRequestKeyNameInSession(state), 3600, objMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)) );
         }
     }
 
