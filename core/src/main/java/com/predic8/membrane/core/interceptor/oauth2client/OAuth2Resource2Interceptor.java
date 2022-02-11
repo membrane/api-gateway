@@ -739,7 +739,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return originalExchangeStore;
     }
 
-    @MCChildElement(order=20)
+    @MCChildElement(order=20, allowForeign = true)
     public void setOriginalExchangeStore(OriginalExchangeStore originalExchangeStore) {
         this.originalExchangeStore = originalExchangeStore;
     }
