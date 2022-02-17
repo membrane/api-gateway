@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +41,8 @@ public class Session {
             setAuthorization(AuthorizationLevel.ANONYMOUS);
         isDirty = false;
     }
+
+    public Session(){};
 
     public Session(Map<String, Object> content) {
         this("username",content);
@@ -87,10 +92,12 @@ public class Session {
         content.clear();
     }
 
+
     public void setUsername(String username){
         put(usernameKeyName,username);
     }
 
+    @JsonIgnore
     public <T> T getUsername(){
         return get(usernameKeyName);
     }
@@ -114,6 +121,7 @@ public class Session {
         }
     }
 
+    @JsonIgnore
     public boolean isVerified(){
         return getAuthorization() == AuthorizationLevel.VERIFIED && getUsername() != null;
     }
@@ -145,5 +153,21 @@ public class Session {
 
     public void setDirty(boolean dirty) {
         isDirty = dirty;
+    }
+
+    public Map<String, Object> getContent() {
+        return content;
+    }
+
+    public void setContent(Map<String, Object> content) {
+        this.content = content;
+    }
+
+    public String getUsernameKeyName() {
+        return usernameKeyName;
+    }
+
+    public void setUsernameKeyName(String usernameKeyName) {
+        this.usernameKeyName = usernameKeyName;
     }
 }
