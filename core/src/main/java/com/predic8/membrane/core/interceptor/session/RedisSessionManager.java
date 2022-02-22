@@ -24,34 +24,27 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.util.RedisConnector;
-import org.springframework.beans.factory.InitializingBean;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.params.GetExParams;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @MCElement(name = "redisSessionManager")
-public class RedisSessionManager extends SessionManager implements InitializingBean {
-    private ObjectMapper objMapper;
-    private RedisConnector connector;
-    private GetExParams params;
-    final static String ID_NAME = "_in_memory_session_id";
+public class RedisSessionManager extends SessionManager{
 
     protected String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
+    private ObjectMapper objMapper;
+    private RedisConnector connector;
+    static final String ID_NAME = "_in_memory_session_id";
+
 
     public RedisSessionManager(){
         objMapper = new ObjectMapper();
     }
 
+
     @Override
     public void init(Router router) throws Exception {
-
-    }
-
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-
+        //Nothing to do
     }
 
     @Override
@@ -92,13 +85,13 @@ public class RedisSessionManager extends SessionManager implements InitializingB
     }
 
     private void createSessionIdsForNewSessions(Session[] session) {
-        Arrays.stream(session).filter(s -> s.get(ID_NAME) == null).forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID().toString()));
+        Arrays.stream(session).filter(s -> s.get(ID_NAME) == null).forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID()));
     }
 
     private void fixMergedSessionId(Session[] session) {
         Arrays.stream(session)
                 .filter(s -> s.get(ID_NAME).toString().contains(","))
-                .forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID().toString()));
+                .forEach(s -> s.put(ID_NAME, cookieNamePrefix + "-" +UUID.randomUUID()));
     }
 
     private String sessionToJsonString(Session session) throws JsonProcessingException {
@@ -113,8 +106,8 @@ public class RedisSessionManager extends SessionManager implements InitializingB
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
         List<HeaderField> values = exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE));
         return values.stream()
-                .filter(hf -> hf.getValue().startsWith(cookieNamePrefix))
-                .filter(hf -> !hf.getValue().contains(validCookie)).map(HeaderField::getValue)
+                .map(HeaderField::getValue)
+                .filter(value -> value.startsWith(cookieNamePrefix)).filter(value -> !value.contains(validCookie))
                 .collect(Collectors.toList());
     }
 
