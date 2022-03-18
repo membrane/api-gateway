@@ -598,7 +598,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             }
 
             log.info("Setting up elastic search mappings");
-            String mapping = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("elasticSearchJson/mapping.json"), StandardCharsets.UTF_8);
+            String mapping = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("com.predic8.membrane.core.exchangestore/mapping.json"), StandardCharsets.UTF_8);
 
             Exchange currentMappingExc = client.call(new Request.Builder().get(getElasticSearchIndexPath() + "_mapping")
                     .buildExchange());
