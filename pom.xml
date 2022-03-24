@@ -80,8 +80,8 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>1.8</javac.source>
 		<javac.target>1.8</javac.target>
-		<jackson.databind.version>2.10.5.1</jackson.databind.version> <!-- Check google-http-client-jackson2 compatibility. -->
-		<jackson.version>2.10.1</jackson.version>
+		<jackson.databind.version>2.13.2</jackson.databind.version> <!-- Check google-http-client-jackson2 compatibility. -->
+		<jackson.version>2.13.2</jackson.version>
 		<spring.version>4.3.30.RELEASE</spring.version>
 		<jaxws.version>2.2.10</jaxws.version>
 		<slf4j.version>1.7.30</slf4j.version>
@@ -364,7 +364,7 @@
 			<dependency>
 				<groupId>com.google.http-client</groupId>
 				<artifactId>google-http-client-jackson2</artifactId> <!-- note the 2 at the end -->
-				<version>1.34.0</version>
+				<version>1.41.4</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.mail</groupId>
