@@ -26,6 +26,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanNotOfRequiredTypeException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
@@ -101,6 +102,11 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	}
 
 	@Override
+	public <A extends Annotation> A findAnnotationOnBean(String s, Class<A> aClass, boolean b) throws NoSuchBeanDefinitionException {
+		return null;
+	}
+
+	@Override
 	public int getBeanDefinitionCount() {
 		throw new RuntimeException("not implemented");
 	}
@@ -111,7 +117,22 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	}
 
 	@Override
+	public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass, boolean b) {
+		return null;
+	}
+
+	@Override
+	public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType, boolean b) {
+		return null;
+	}
+
+	@Override
 	public String[] getBeanNamesForType(ResolvableType resolvableType) {
+		return new String[0];
+	}
+
+	@Override
+	public String[] getBeanNamesForType(ResolvableType resolvableType, boolean b, boolean b1) {
 		return new String[0];
 	}
 
@@ -169,8 +190,23 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	}
 
 	@Override
+	public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass) {
+		return null;
+	}
+
+	@Override
+	public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType) {
+		return null;
+	}
+
+	@Override
 	public Class<?> getType(String arg0) throws NoSuchBeanDefinitionException {
 		throw new RuntimeException("not implemented");
+	}
+
+	@Override
+	public Class<?> getType(String s, boolean b) throws NoSuchBeanDefinitionException {
+		return null;
 	}
 
 	@Override
