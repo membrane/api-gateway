@@ -1,0 +1,26 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+		<serviceProxy port="2000" name="example_main">
+			<switch>
+				<case xPath="//order[@express='yes']" service="mybackend" />
+			</switch>
+			<groovy>
+				println("Inside proxy example_main.")
+			</groovy>
+			<target url="http://www.predic8.de"/>
+		</serviceProxy>
+
+		<internalProxy name="mybackend">
+			<groovy>
+				println("Inside proxy mybackend.")
+			</groovy>
+			<target url="http://www.predic8.de"/>
+		</internalProxy>
+	</router>
+
+</spring:beans>

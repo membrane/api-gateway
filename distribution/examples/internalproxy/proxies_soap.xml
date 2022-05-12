@@ -1,0 +1,39 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+
+    <router>
+        <soapProxy wsdl="service:mysoapbackend/axis2/services/BLZService?wsdl" port="2000">
+            <response>
+                <groovy>
+                    println "Request headers:"
+                    exc.request.header.allHeaderFields.each {
+                    println it
+                    }
+                    CONTINUE
+                </groovy>
+            </response>
+        </soapProxy>
+
+        <internalProxy name="mysoapbackend">
+            <request>
+                <groovy>
+                    exc.request.header.add("X-Example-Header", "true")
+                    CONTINUE
+                </groovy>
+            </request>
+            <response>
+                <groovy>
+                    exc.response.header.add("X-Example-Header-3", "true")
+                    CONTINUE
+                </groovy>
+            </response>
+            <target host="www.thomas-bayer.com" />
+        </internalProxy>
+
+    </router>
+
+</spring:beans>

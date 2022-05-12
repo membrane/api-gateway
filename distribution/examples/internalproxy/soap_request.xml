@@ -1,0 +1,8 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:blz="http://thomas-bayer.com/blz/">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <blz:getBank>
+            <blz:blz>37050198</blz:blz>
+        </blz:getBank>
+    </soapenv:Body>
+</soapenv:Envelope>
