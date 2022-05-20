@@ -224,4 +224,9 @@ public class ChunkedBody extends AbstractBody {
 			return (int)lengthStreamed; // TODO: refactor into long
 		return super.getLength();
 	}
+
+	@Override
+	public boolean isRead() {
+		return super.isRead() && bodyComplete;
+	}
 }
