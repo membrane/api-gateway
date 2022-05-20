@@ -72,6 +72,6 @@ public class HeaderField {
 	}
 
 	public int estimateHeapSize() {
-		return 2*(4 + headerName.toString().length() + value.length());
+		return 2*(4 + headerName.toString().length() + (value == null ? 0 : value.length()));
 	}
 }
