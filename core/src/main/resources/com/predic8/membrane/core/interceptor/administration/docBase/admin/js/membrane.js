@@ -355,7 +355,6 @@ $(function() {
         	  var queryData = [{name:'offset', value:getParam('iDisplayStart')}, 
                           {name:'max', value:getParam('iDisplayLength')},
                           {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
-                          {name:'waitForModification', value:membrane.lastMod},
                           {name:'order', value:getParam('sSortDir_0')}];
         	  
         	  function addFilterProps(name) {
@@ -379,8 +378,16 @@ $(function() {
         	  addFilterProps('reqcontenttype');
         	  addFilterProps('respcontenttype');
 
-        	  if (runningDataLoadCall != null)
-        	  	runningDataLoadCall.abort();
+        	  var queryKey = JSON.stringify(queryData)
+        	  if (membrane.lastQuery && queryKey != membrane.lastQuery) {
+        	      membrane.lastMod = 0; // if the queryKey changed, we need to reload the page immediately
+        	  }
+        	  membrane.lastQuery = queryKey;
+        	  queryData.push({name:'waitForModification', value:membrane.lastMod});
+
+        	  if (runningDataLoadCall != null) {
+        	      runningDataLoadCall.abort();
+        	  }
 			  runningDataLoadCall = $.ajax( {
                 "dataType": 'json', 
                 "type": "GET", 
