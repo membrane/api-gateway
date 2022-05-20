@@ -21,7 +21,7 @@ import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
 @MCElement(name="internalProxy")
 public class InternalProxy extends AbstractProxy{
-    private AbstractServiceProxy.Target target;
+    private AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
     private SSLContext sslOutboundContext;
 
     public InternalProxy() {
