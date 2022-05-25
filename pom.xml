@@ -82,7 +82,7 @@
 		<javac.target>1.8</javac.target>
 		<jackson.databind.version>2.13.2.2</jackson.databind.version> <!-- Check google-http-client-jackson2 compatibility. -->
 		<jackson.version>2.13.2</jackson.version>
-		<spring.version>5.3.19</spring.version>
+		<spring.version>5.3.20</spring.version>
 		<jaxws.version>2.2.10</jaxws.version>
 		<slf4j.version>1.7.36</slf4j.version>
 		<log4j.version>2.17.2</log4j.version>
