@@ -14,15 +14,20 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.io.IOException;
+
 import java.net.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +52,10 @@ public class NodeOnlineChecker {
         private AtomicInteger failsOn5XX = new AtomicInteger(0);
         private HashSet<Cluster> nodeClusters = new HashSet<Cluster>();
 
+        private String protocol;
+
+        private SSLProvider sslProvider;
+
         public BadNode(Node node) {
             this.node = node;
         }
@@ -59,10 +68,25 @@ public class NodeOnlineChecker {
             this.node = node;
         }
 
+        public String getProtocol() {
+            return protocol;
+        }
+
+        public void setProtocol(String protocol) {
+            this.protocol = protocol;
+        }
+
+        public SSLProvider getSslContext() {
+            return sslProvider;
+        }
+
+        public void setSslProvider(SSLProvider sslProvider) {
+            this.sslProvider = sslProvider;
+        }
+
         public AtomicInteger getFailsOn5XX() {
             return failsOn5XX;
         }
-
         public void setFailsOn5XX(AtomicInteger failsOn5XX) {
             this.failsOn5XX = failsOn5XX;
         }
@@ -70,6 +94,8 @@ public class NodeOnlineChecker {
         public HashSet<Cluster> getNodeClusters() {
             return nodeClusters;
         }
+
+
 
         public void setNodeClusters(HashSet<Cluster> nodeClusters) {
             this.nodeClusters = nodeClusters;
@@ -90,6 +116,8 @@ public class NodeOnlineChecker {
         public int hashCode() {
             return node.hashCode();
         }
+
+
     }
 
     private static Logger log = LoggerFactory.getLogger(NodeOnlineChecker.class.getName());
@@ -101,11 +129,14 @@ public class NodeOnlineChecker {
     private int pingTimeoutInSeconds = 1;
     private DateTime lastCheck = DateTime.now();
 
+    private HttpClient client;
+
 
     public NodeOnlineChecker() {
+        client = new HttpClient();
     }
 
-    public void handle(Exchange exc) {
+    public void handle(Exchange exc){
         if (exc.getNodeExceptions() != null) {
             for (int i = 0; i < exc.getDestinations().size(); i++) {
                 if (exc.getNodeExceptions()[i] != null) {
@@ -141,15 +172,30 @@ public class NodeOnlineChecker {
             }
         }
     }
-
-    public void handleNodeException(Exchange exc, int destination) {
-        badNodesForDestinations.put(getDestinationAsString(exc, destination), new BadNode(getNodeFromExchange(exc, destination)));
+    //TODO fix wrong node getting down because of indexing of node exception
+    public void handleNodeException(Exchange exc, int destination){
+        badNodesForDestinations.put(getDestinationAsString(exc, destination), createBadNodeWithSSLandProtocol(exc, destination));
         setNodeDown(exc, destination);
+    }
+
+    public BadNode createBadNodeWithSSLandProtocol(Exchange exc, int destination){
+        BadNode badNode = new BadNode(getNodeFromExchange(exc, destination));
+        try {
+            badNode.protocol = new URL(getDestinationAsString(exc, destination)).getProtocol();
+            if(exc.getRule().getSslOutboundContext() != null){
+                badNode.setSslProvider(exc.getRule().getSslOutboundContext());
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return badNode;
     }
 
     public Node getNodeFromExchange(Exchange exc, int destination) {
         URL destUrl = getUrlObjectFromDestination(exc, destination);
-        return new Node(destUrl.getProtocol() + "://" +destUrl.getHost(), destUrl.getPort());
+//        return new Node(destUrl.getProtocol() + "://" +destUrl.getHost(), destUrl.getPort());
+        return new Node(destUrl.getHost(), destUrl.getPort());
     }
 
     public String getDestinationAsString(Exchange exc, int destination) {
@@ -181,17 +227,19 @@ public class NodeOnlineChecker {
         }
         return u;
     }
-
-
     public void putNodesBackUp() {
         if(retryTimeInSeconds < 0) {
             return;
         }
         if(retryTimeInSeconds > 0) {
             if (DateTime.now().isBefore(lastCheck.plusSeconds(retryTimeInSeconds))) {
+
                 return;
             }
+
         }
+//        lastCheck = DateTime.now();
+        log.debug("Last check is changed to: {}", lastCheck);
         List<BadNode> onlineNodes = pingOfflineNodes();
         for(BadNode node : onlineNodes){
             putNodeUp(node);
@@ -212,18 +260,20 @@ public class NodeOnlineChecker {
         for(BadNode node : offlineNodes){
             URL url = null;
             try {
-                url = new URL(node.getNode().getHost());
+                url = new URL(node.getProtocol(),node.getNode().getHost(), node.getNode().getPort(), "");
             } catch (MalformedURLException ignored) {
                 continue;
             }
             try {
-                HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-                urlConn.setConnectTimeout(pingTimeoutInSeconds*1000);
-                urlConn.connect();
-                if(urlConn.getResponseCode() == HttpURLConnection.HTTP_OK)
+                Exchange exc = new Request.Builder().get(url.toString()).buildExchange();
+                Optional.ofNullable(node.getSslContext()).ifPresent(c -> {
+                    exc.setProperty(Exchange.SSL_CONTEXT, c);
+                });
+                Exchange e = client.call(exc);
+                if(e.getResponse().getStatusCode() < 400){
                     onlineNodes.add(node);
-            } catch (IOException ignored) {
-                continue;
+                }
+            } catch (Exception ignored) {
             }
         }
 
