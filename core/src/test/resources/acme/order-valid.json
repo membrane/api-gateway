@@ -1,0 +1,15 @@
+{
+  "status": "valid",
+  "expires": "2022-02-05T21:01:47Z",
+  "identifiers": [
+    {
+      "type": "dns",
+      "value": "localhost"
+    }
+  ],
+  "authorizations": [
+    "http://localhost:3050/acme/authz-v3/151234567"
+  ],
+  "finalize": "http://localhost:3050/acme/finalize/42212345/1661234567",
+  "certificate": "http://localhost:3050/acme/cert/fab123456789abcdef0123456789abcdef12"
+}

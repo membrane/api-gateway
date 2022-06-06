@@ -1,0 +1,16 @@
+{
+  "_assIotCiXj": "http://localhost:3050/t/adding-random-entries-to-the-directory/12345",
+  "keyChange": "http://localhost:3050/acme/key-change",
+  "meta": {
+    "caaIdentities": [
+      "localhost:3050"
+    ],
+    "termsOfService": "http://localhost:3050/documents/non-existent.pdf",
+    "website": "http://localhost:3050/docs/staging-environment/"
+  },
+  "newAccount": "http://localhost:3050/acme/new-acct",
+  "newNonce": "http://localhost:3050/acme/new-nonce",
+  "newOrder": "http://localhost:3050/acme/new-order",
+  "renewalInfo": "http://localhost:3050/get/draft-aaron-ari/renewalInfo/",
+  "revokeCert": "http://localhost:3050/acme/revoke-cert"
+}

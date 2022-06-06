@@ -177,6 +177,8 @@ public class HttpEndpointListener extends Thread {
 		closed = true;
 		if (!serverSocket.isClosed())
 			serverSocket.close();
+		if (sslProvider != null)
+			sslProvider.stop();
 	}
 
 	/**

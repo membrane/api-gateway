@@ -48,7 +48,6 @@ public class StaticSSLContext extends SSLContext {
     private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
     private static boolean default_certificate_warned = false;
     private static boolean limitedStrength;
-    private static Method getApplicationProtocols, setApplicationProtocols;
 
     static {
         String dhKeySize = System.getProperty("jdk.tls.ephemeralDHKeySize");
@@ -65,12 +64,6 @@ public class StaticSSLContext extends SSLContext {
         String enableStatusRequestExtension = System.getProperty("jdk.tls.server.enableStatusRequestExtension");
         if (enableStatusRequestExtension == null)
             System.setProperty("jdk.tls.server.enableStatusRequestExtension", "true");
-
-        try {
-            getApplicationProtocols = SSLParameters.class.getDeclaredMethod("getApplicationProtocols", new Class[]{});
-            setApplicationProtocols = SSLParameters.class.getDeclaredMethod("setApplicationProtocols", new Class[]{String[].class});
-        } catch (NoSuchMethodException e) {
-        }
     }
 
 
@@ -131,12 +124,7 @@ public class StaticSSLContext extends SSLContext {
                 checkChainValidity(certs);
                 Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
                 Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
-                if (k instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
-                    RSAPrivateCrtKey privkey = (RSAPrivateCrtKey)k;
-                    RSAPublicKey pubkey = (RSAPublicKey) certs.get(0).getPublicKey();
-                    if (!(privkey.getModulus().equals(pubkey.getModulus()) && privkey.getPublicExponent().equals(pubkey.getPublicExponent())))
-                        log.warn("Certificate does not fit to key.");
-                }
+                checkKeyMatchesCert(k, certs);
 
                 ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
 
@@ -386,19 +374,6 @@ public class StaticSSLContext extends SSLContext {
             throw new RuntimeException(e);
         }
         ssls.setSSLParameters(sslp);
-    }
-
-    @Override
-    public String[] getApplicationProtocols(Socket socket) {
-        if (!(socket instanceof SSLSocket))
-            return null;
-        if (setApplicationProtocols == null || getApplicationProtocols == null)
-            return null;
-        try {
-            return (String[]) getApplicationProtocols.invoke(((SSLSocket) socket).getSSLParameters(), new Object[0]);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     SSLSocketFactory getSocketFactory() {

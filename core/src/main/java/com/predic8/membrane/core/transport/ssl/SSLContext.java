@@ -14,9 +14,12 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.google.common.base.*;
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.config.security.SSLParser;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.math.ec.ECMultiplier;
+import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,14 +28,32 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.InvalidParameterException;
+import java.security.Key;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECFieldFp;
 import java.util.*;
 
 public abstract class SSLContext implements SSLProvider {
     private static final Logger log = LoggerFactory.getLogger(SSLContext.class.getName());
+
+    protected static Method getApplicationProtocols, setApplicationProtocols;
+
+    static {
+        try {
+            getApplicationProtocols = SSLParameters.class.getDeclaredMethod("getApplicationProtocols", new Class[]{});
+            setApplicationProtocols = SSLParameters.class.getDeclaredMethod("setApplicationProtocols", new Class[]{String[].class});
+        } catch (NoSuchMethodException e) {
+        }
+    }
 
     protected String[] ciphers;
     protected String[] protocols;
@@ -264,5 +285,71 @@ public abstract class SSLContext implements SSLProvider {
 
     public boolean isUseAsDefault() {
         return useAsDefault;
+    }
+
+    @Override
+    public String[] getApplicationProtocols(Socket socket) {
+        if (!(socket instanceof SSLSocket))
+            return null;
+        if (setApplicationProtocols == null || getApplicationProtocols == null)
+            return null;
+        try {
+            return (String[]) getApplicationProtocols.invoke(((SSLSocket) socket).getSSLParameters(), new Object[0]);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void checkKeyMatchesCert(Key key, List<Certificate> certs) {
+        if (key instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
+            RSAPrivateCrtKey privkey = (RSAPrivateCrtKey)key;
+            RSAPublicKey pubkey = (RSAPublicKey) certs.get(0).getPublicKey();
+            if (!(privkey.getModulus().equals(pubkey.getModulus()) && privkey.getPublicExponent().equals(pubkey.getPublicExponent())))
+                throw new RuntimeException("Certificate does not fit to key: " + getLocation());
+        }
+
+        if (key instanceof ECPrivateKey && certs.get(0).getPublicKey() instanceof ECPublicKey) {
+            ECPrivateKey privkey = (ECPrivateKey) key;
+            ECPublicKey pubkey = (ECPublicKey) certs.get(0).getPublicKey();
+
+            if (pubkey.getParams().getCurve().getField() instanceof ECFieldFp) {
+                ECFieldFp pubfield = (ECFieldFp) pubkey.getParams().getCurve().getField();
+                if (!(privkey.getParams().getCurve().getField() instanceof ECFieldFp))
+                    throw new RuntimeException("Elliptic curve differs between private key and public key (ECFieldFp vs ECFieldF2m).");
+                ECFieldFp privfield = (ECFieldFp) privkey.getParams().getCurve().getField();
+                if (!pubfield.getP().equals(privfield.getP()))
+                    throw new RuntimeException("Elliptic curve differs between private key and public key (p).");
+            }
+            // "pubkey.getParams().getCurve().getField() instanceof ECFieldF2m" is not handled
+
+            if (!pubkey.getParams().getCurve().getA().equals(privkey.getParams().getCurve().getA()))
+                throw new RuntimeException("Elliptic curve differs between private key and public key (a).");
+            if (!pubkey.getParams().getCurve().getB().equals(privkey.getParams().getCurve().getB()))
+                throw new RuntimeException("Elliptic curve differs between private key and public key (b).");
+            if (!pubkey.getParams().getGenerator().equals(privkey.getParams().getGenerator())) // = G = (x,y)
+                throw new RuntimeException("Elliptic curve differs between private key and public key (generator).");
+            if (!pubkey.getParams().getOrder().equals(privkey.getParams().getOrder())) // = n
+                throw new RuntimeException("Elliptic curve differs between private key and public key (order).");
+            if (pubkey.getParams().getCofactor() != privkey.getParams().getCofactor()) // = h
+                throw new RuntimeException("Elliptic curve differs between private key and public key (cofactor).");
+
+            ECMultiplier ecMultiplier = new FixedPointCombMultiplier();
+
+            ECPoint correspondingPubKey = ecMultiplier.multiply(((BCECPublicKey) pubkey).getParameters().getG(), privkey.getS()).normalize();
+
+            // check 'pubKey = privKey * generator'
+            if (!correspondingPubKey.getAffineXCoord().toBigInteger().equals(pubkey.getW().getAffineX()) ||
+                !correspondingPubKey.getAffineYCoord().toBigInteger().equals(pubkey.getW().getAffineY()))
+                throw new RuntimeException("Elliptic curve private key does not match public key.");
+        }
+    }
+
+    public static long getMinimumValidity(List<Certificate> certs) {
+        return certs.stream().map(cert -> ((X509Certificate)cert).getNotAfter().getTime()).min(Long::compare).get();
+    }
+
+    @Override
+    public void stop() {
+        // do nothing
     }
 }

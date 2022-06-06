@@ -61,6 +61,8 @@ import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
 import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
 import com.predic8.membrane.core.transport.ssl.SSLContextTest;
 import com.predic8.membrane.core.transport.ssl.SessionResumptionTest;
+import com.predic8.membrane.core.transport.ssl.acme.AcmeRenewTest;
+import com.predic8.membrane.core.transport.ssl.acme.AcmeStepTest;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorWADLTest;
@@ -109,8 +111,8 @@ import org.junit.runners.Suite.SuiteClasses;
         AbortExchangeTest.class, RateLimitInterceptorTest.class,
         OAuth2UnitTests.class, SessionResumptionTest.class,
 		Xml2JsonInterceptorTest.class, Json2XmlInterceptorTest.class, TemplateInterceptorTest.class,
-		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class
-
+		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
+		AcmeStepTest.class, AcmeRenewTest.class
 
 })
 public class UnitTests {

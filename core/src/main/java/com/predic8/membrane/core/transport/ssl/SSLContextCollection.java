@@ -85,7 +85,7 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException {
-		return new ServerSocket(port, 50, bindAddress);
+		return new ServerSocket(port, backlog, bindAddress);
 	}
 
 	@Override
@@ -231,5 +231,12 @@ public class SSLContextCollection implements SSLProvider {
 	@Override
 	public String[] getApplicationProtocols(Socket socket) {
 		return sslContexts.get(0).getApplicationProtocols(socket);
+	}
+
+	@Override
+	public void stop() {
+		for (SSLContext sslContext : sslContexts) {
+			sslContext.stop();
+		}
 	}
 }

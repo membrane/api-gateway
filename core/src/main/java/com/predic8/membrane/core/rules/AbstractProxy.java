@@ -19,19 +19,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import com.predic8.membrane.core.transport.ssl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.ssl.GeneratingSSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public abstract class AbstractProxy implements Rule {
 	private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
@@ -181,7 +178,12 @@ public abstract class AbstractProxy implements Rule {
 
 	public void init() throws Exception {
 		if (sslInboundParser != null) {
-			if (sslInboundParser.getKeyGenerator() != null)
+			if (sslInboundParser.getAcme() != null) {
+				if (!(key instanceof AbstractRuleKey))
+					throw new RuntimeException("<acme> only be used inside of <serviceProxy> and similar rules.");
+				String[] host = ((AbstractRuleKey) key).getHost().split(" +");
+				setSslInboundContext(new AcmeSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation(), host));
+			} else if (sslInboundParser.getKeyGenerator() != null)
 				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
 			else
 				setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));

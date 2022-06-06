@@ -17,6 +17,7 @@ import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.acme.Acme;
 
 /**
  * @description <p>Configures inbound or outbound SSL connections.</p>
@@ -25,6 +26,7 @@ import com.predic8.membrane.annot.MCElement;
 @MCElement(name="ssl")
 public class SSLParser {
 
+	private Acme acme;
 	private KeyStore keyStore;
 	private Key key;
 	private KeyGenerator keyGenerator;
@@ -257,5 +259,14 @@ public class SSLParser {
 	@MCAttribute
 	public void setUseExperimentalHttp2(boolean useHttp2) {
 		this.useExperimentalHttp2 = useHttp2;
+	}
+
+	public Acme getAcme() {
+		return acme;
+	}
+
+	@MCChildElement(order=6)
+	public void setAcme(Acme acme) {
+		this.acme = acme;
 	}
 }

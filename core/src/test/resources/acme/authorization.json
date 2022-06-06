@@ -1,0 +1,28 @@
+{
+  "identifier": {
+    "type": "dns",
+    "value": "localhost"
+  },
+  "status": "pending",
+  "expires": "2022-02-05T21:01:47Z",
+  "challenges": [
+    {
+      "type": "http-01",
+      "status": "pending",
+      "url": "http://localhost:3050/acme/chall-v3/1555123456/abCd1E",
+      "token": "79123-1234itunehnhtudixnhudindih-34hty5dn74"
+    },
+    {
+      "type": "dns-01",
+      "status": "pending",
+      "url": "http://localhost:3050/acme/chall-v3/1555123456/abCd1F",
+      "token": "79123-1234itunehnhtudixnhudindih-34hty5dn74"
+    },
+    {
+      "type": "tls-alpn-01",
+      "status": "pending",
+      "url": "http://localhost:3050/acme/chall-v3/1555123456/abCd1G",
+      "token": "79123-1234itunehnhtudixnhudindih-34hty5dn74"
+    }
+  ]
+}

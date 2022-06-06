@@ -1,0 +1,220 @@
+package com.predic8.membrane.core.transport.ssl;
+
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
+import com.predic8.membrane.core.transport.ssl.acme.AcmeKeyCert;
+import com.predic8.membrane.core.transport.ssl.acme.AcmeRenewal;
+import org.jose4j.lang.JoseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import javax.net.ssl.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyStore;
+import java.security.cert.*;
+import java.util.*;
+
+public class AcmeSSLContext extends SSLContext {
+    public static final long RENEW_PERIOD = 5 * 60 * 1000;
+    private static final long RETRY_PERIOD = 10 * 1000;
+
+    private static final Logger log = LoggerFactory.getLogger(AcmeSSLContext.class);
+
+    private final AcmeClient client;
+    private final String[] hosts;
+    private final Timer timer;
+
+    private volatile AcmeKeyCert keyCert;
+
+
+    public AcmeSSLContext(SSLParser parser, ResolverMap resolverMap, String baseLocation, String[] hosts) throws JoseException, IOException {
+        this.hosts = hosts;
+        client = new AcmeClient(parser.getAcme());
+        timer = new Timer("ACME timer " + constructHostsString());
+
+        initAndSchedule();
+    }
+
+    @Override
+    String getLocation() {
+        return "ACME certificate from " + constructHostsString();
+    }
+
+    @Override
+    List<String> getDnsNames() {
+        return Arrays.asList(hosts);
+    }
+
+    @Override
+    SSLSocketFactory getSocketFactory() {
+        AcmeKeyCert context = this.keyCert;
+        if (context == null)
+            throw new RuntimeException("ACME has not yet acquired a certificate.");
+        return context.getSslContext().getSocketFactory();
+    }
+
+    public AcmeClient getClient() {
+        return client;
+    }
+
+    public String[] getHosts() {
+        return hosts;
+    }
+
+    @Override
+    public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException {
+        return new ServerSocket(port, backlog, bindAddress);
+    }
+
+    @Override
+    public Socket createSocket() throws IOException {
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException {
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException {
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException {
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public Socket wrapAcceptedSocket(Socket socket) throws IOException {
+        byte[] buffer = new byte[0x0];
+        int position = 0;
+
+        return wrap(socket, buffer, position);
+    }
+
+    @Override
+    public Socket wrap(Socket socket, byte[] buffer, int position) throws IOException {
+        check(socket);
+        return super.wrap(socket, buffer, position);
+    }
+
+    private void check(Socket socket) throws IOException {
+        if (getSocketFactory() == null) {
+            byte[] certificate_unknown = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+                    2 /* fatal */, 46 /* certificate_unknown */ };
+
+            try {
+                socket.getOutputStream().write(certificate_unknown);
+            } finally {
+                socket.close();
+            }
+
+            throw new RuntimeException("no ACME certificate available for " + constructHostsString());
+        }
+    }
+
+    private String constructHostsString() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < hosts.length; i++) {
+            if (i > 0)
+                sb.append(",");
+            sb.append(hosts[i]);
+        }
+        return sb.toString();
+    }
+
+    private void initAndSchedule() {
+        // called from main and timer thread
+        try {
+            tryLoad();
+        } catch (Exception e) {
+            log.info("ACME: do not yet have a certificate for " + constructHostsString(), e);
+        }
+        schedule();
+    }
+
+    private void tryLoad() {
+        javax.net.ssl.SSLContext sslc;
+
+        String keyS = client.getKey(hosts);
+        String certsS = client.getCertificates(hosts);
+        if (keyS == null) {
+            log.debug("ACME: do not yet have a key for " + constructHostsString());
+            return;
+        }
+        if (certsS == null) {
+            log.debug("ACME: do not yet have a certificate for " + constructHostsString());
+            return;
+        }
+        AcmeKeyCert existing = this.keyCert;
+        if (existing != null && keyS.equals(existing.getKey()) && certsS.equals(existing.getCerts()))
+            // reloading would not change anything
+            return;
+        long validUntil;
+
+        try {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(null, "".toCharArray());
+
+            List<Certificate> certs = new ArrayList<>(PEMSupport.getInstance().parseCertificates(certsS));
+            if (certs.size() == 0)
+                throw new RuntimeException("At least one certificate is required.");
+
+            checkChainValidity(certs);
+            validUntil = getMinimumValidity(certs);
+            Object key = PEMSupport.getInstance().parseKey(keyS);
+            Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+            checkKeyMatchesCert(k, certs);
+
+            ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, "".toCharArray());
+
+            sslc = javax.net.ssl.SSLContext.getInstance("TLS");
+            sslc.init(kmf.getKeyManagers(), null,null);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        init(new SSLParser(), sslc);
+
+        this.keyCert = new AcmeKeyCert(keyS, certsS, validUntil, sslc);
+        log.info("ACME: installed key and certificate for " + constructHostsString());
+    }
+
+    public void schedule() {
+        long nextRun = RETRY_PERIOD;
+        AcmeKeyCert keyCert = this.keyCert;
+        if (keyCert != null)
+            nextRun = Math.max(keyCert.getValidUntil() - System.currentTimeMillis() - RENEW_PERIOD, RETRY_PERIOD);
+
+
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                new AcmeRenewal(client, hosts).doWork();
+                initAndSchedule();
+            }
+        }, nextRun);
+    }
+
+    @Override
+    public void stop() {
+        timer.cancel();
+    }
+
+    public boolean isReady() {
+        return keyCert != null;
+    }
+}

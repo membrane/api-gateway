@@ -1,0 +1,28 @@
+{
+  "identifier": {
+    "type": "dns",
+    "value": "localhost"
+  },
+  "status": "valid",
+  "expires": "2022-03-01T12:17:49Z",
+  "challenges": [
+    {
+      "type": "http-01",
+      "status": "valid",
+      "url": "http://localhost:3050/acme/chall-v3/1555123456/abCd1E",
+      "token": "79123-1234itunehnhtudixnhudindih-34hty5dn74",
+      "validationRecord": [
+        {
+          "url": "http://localhost/.well-known/acme-challenge/79123-1234itunehnhtudixnhudindih-34hty5dn74",
+          "hostname": "localhost",
+          "port": "80",
+          "addressesResolved": [
+            "127.0.0.1"
+          ],
+          "addressUsed": "127.0.0.1"
+        }
+      ],
+      "validated": "2022-01-30T12:17:48Z"
+    }
+  ]
+}

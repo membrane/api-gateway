@@ -1,0 +1,6 @@
+{
+  "type": "http-01",
+  "status": "pending",
+  "url": "http://localhost:3050/acme/chall-v3/1555123456/abCd1E",
+  "token": "79123-1234itunehnhtudixnhudindih-34hty5dn74"
+}

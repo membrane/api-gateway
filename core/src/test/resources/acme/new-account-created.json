@@ -1,0 +1,17 @@
+{
+  "key": {
+    "use": "sig",
+    "kty": "EC",
+    "kid": "s3ds1is17rhnetlnlndnsbho4l",
+    "crv": "P-256",
+    "alg": "ES256",
+    "x": "loB_k1eR0gvcTGDMKjFZjyKXxE4D8A3NPTsUWWxpOc0",
+    "y": "bYr2E9NQSXD23hqWw-8eYEpvltXjVv5Kbczd7d1lYIg"
+  },
+  "contact": [
+    "mailto:jsmith@example.com"
+  ],
+  "initialIp": "127.0.0.1",
+  "createdAt": "2022-01-29T15:41:33.25410905Z",
+  "status": "valid"
+}

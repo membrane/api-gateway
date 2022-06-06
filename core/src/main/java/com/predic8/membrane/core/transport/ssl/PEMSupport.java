@@ -15,25 +15,30 @@
 package com.predic8.membrane.core.transport.ssl;
 
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.jose4j.base64url.Base64;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.security.InvalidParameterException;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.Security;
+import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public abstract class PEMSupport {
 
     public abstract X509Certificate parseCertificate(String pemBlock) throws IOException;
+    public abstract List<? extends Certificate> parseCertificates(String certificates) throws IOException;
     public abstract Key getPrivateKey(String content) throws IOException;
     public abstract Object parseKey(String content) throws IOException;
 
@@ -48,6 +53,7 @@ public abstract class PEMSupport {
             }
         return instance;
     }
+
 
     private static class PEMSupportImpl extends PEMSupport {
 
@@ -83,6 +89,27 @@ public abstract class PEMSupport {
                 throw new IOException(e);
             }
         }
+        public List<X509Certificate> parseCertificates(String pemBlock) throws IOException {
+            List<X509Certificate> res = new ArrayList<>();
+            PEMParser p2 = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
+            JcaX509CertificateConverter certconv = new JcaX509CertificateConverter().setProvider("BC");
+            while(true) {
+                Object o2 = p2.readObject();
+                if (o2 == null)
+                    break;
+                if (!(o2 instanceof X509CertificateHolder))
+                    throw new InvalidParameterException("Expected X509CertificateHolder, got " + o2.getClass().getName());
+
+                try {
+                    res.add(certconv.getCertificate((X509CertificateHolder) o2));
+                } catch (CertificateException e) {
+                    throw new IOException(e);
+                }
+            }
+            if (res.size() == 0)
+                throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
+            return res;
+        }
 
         public Key getPrivateKey(String pemBlock) throws IOException {
             PEMParser p = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
@@ -105,7 +132,23 @@ public abstract class PEMSupport {
             Object o = p.readObject();
             if (o == null)
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
+            if (o instanceof X9ECParameters) {
+                o = p.readObject();
+            }
             if (o instanceof PEMKeyPair) {
+                if (((PEMKeyPair)o).getPublicKeyInfo() == null) {
+                    // bouncycastle has failed to dereference well-known curve OIDs, e.g. '1.3.132.0.34', to fill
+                    // the algorithm parameters
+                    try {
+                        Pattern p1 = Pattern.compile("^.*-----BEGIN EC PRIVATE KEY-----\r?\n", Pattern.DOTALL);
+                        Pattern p2 = Pattern.compile("-----END EC PRIVATE KEY-----\r?\n?.*", Pattern.DOTALL);
+                        String s = p2.matcher(p1.matcher(pemBlock).replaceAll("")).replaceAll("");
+                        return KeyFactory.getInstance("EC", "SunEC")
+                                .generatePrivate(new PKCS8EncodedKeySpec(Base64.decode(s)));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
                 return converter.getKeyPair((PEMKeyPair) o);
             }

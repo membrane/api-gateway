@@ -41,4 +41,11 @@ public interface SSLProvider {
 	 * @return the application protocols selected by the TLS server, or null elsewise (not a TLS connection, ALPN not supported, ...)
 	 */
 	public String[] getApplicationProtocols(Socket socket);
+
+	/**
+	 * Advises the SSL Provider to stop providing its services. (For most providers this will be a no-op.)
+	 *
+	 * No guarantee that this is only called once.
+	 */
+    void stop();
 }

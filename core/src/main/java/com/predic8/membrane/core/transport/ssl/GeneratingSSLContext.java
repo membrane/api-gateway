@@ -83,13 +83,9 @@ public class GeneratingSSLContext extends SSLContext {
             checkChainValidity(certs);
             Object key = PEMSupport.getInstance().parseKey(sslParser.getKeyGenerator().getKey().getPrivate().get(resourceResolver, baseLocation));
             Key k = key instanceof Key ? (Key) key : ((KeyPair) key).getPrivate();
+            checkKeyMatchesCert(k, certs);
             if (k instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
-                RSAPrivateCrtKey privkey = (RSAPrivateCrtKey) k;
-                RSAPublicKey pubkey = (RSAPublicKey) certs.get(0).getPublicKey();
-                if (!(privkey.getModulus().equals(pubkey.getModulus()) && privkey.getPublicExponent().equals(pubkey.getPublicExponent())))
-                    log.warn("Certificate does not fit to key.");
-
-                caPrivate = privkey;
+                caPrivate = (RSAPrivateCrtKey) k;
                 caPublic = (X509Certificate) certs.get(0);
             } else {
                 throw new RuntimeException("Key is a " + k.getClass().getName() + ", which is not yet supported.");
@@ -118,7 +114,7 @@ public class GeneratingSSLContext extends SSLContext {
 
     @Override
     public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException {
-        return new ServerSocket(port, 50, bindAddress);
+        return new ServerSocket(port, backlog, bindAddress);
     }
 
     @Override
@@ -289,10 +285,5 @@ public class GeneratingSSLContext extends SSLContext {
     @Override
     SSLSocketFactory getSocketFactory() {
         throw new IllegalStateException("not implemented");
-    }
-
-    @Override
-    public String[] getApplicationProtocols(Socket socket) {
-        return null;
     }
 }

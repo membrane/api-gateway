@@ -31,4 +31,11 @@ public class MimeType {
 
 	public static final String APPLICATION_JSON_UTF8 = "application/json;charset=utf-8";
 
+	public static final String APPLICATION_JOSE_JSON = "application/jose+json";
+
+	public static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
+
+	public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
+	public static final String APPLICATION_APPLY_PATCH_YAML = "application/apply-patch+yaml";
+
 }
