@@ -43,6 +43,9 @@ public class KubernetesClientBuilder {
         this.namespace = namespace;
     }
 
+    public static KubernetesClientBuilder baseURL(String baseURL) {
+        return new KubernetesClientBuilder(baseURL, null, null, null, null, null);
+    }
 
     public static KubernetesClientBuilder auto() throws ParsingException {
         if (new File(TOKEN_FILE).exists())
@@ -110,6 +113,9 @@ public class KubernetesClientBuilder {
     public KubernetesClient build() {
         HttpClient hc = new HttpClient();
         Consumer<Exchange> client = hc::call;
+
+        if (baseURL.endsWith("/"))
+            baseURL = baseURL.substring(0, baseURL.length() - 1);
 
         if (baseURL.startsWith("https")) {
             SSLParser sslParser = new SSLParser();

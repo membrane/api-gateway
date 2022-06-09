@@ -50,6 +50,7 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserT
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLElementFinderTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
 import com.predic8.membrane.core.resolver.SingleResolverTest;
@@ -112,7 +113,7 @@ import org.junit.runners.Suite.SuiteClasses;
         OAuth2UnitTests.class, SessionResumptionTest.class,
 		Xml2JsonInterceptorTest.class, Json2XmlInterceptorTest.class, TemplateInterceptorTest.class,
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
-		AcmeStepTest.class, AcmeRenewTest.class
+		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class
 
 })
 public class UnitTests {

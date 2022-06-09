@@ -47,7 +47,7 @@ public class KubernetesClient {
         }
     }
 
-    public String version() throws HttpException, IOException {
+    public Map version() throws HttpException, IOException {
         Exchange e;
         try {
             e = new Request.Builder().get(baseURL + "/version").buildExchange();
@@ -59,7 +59,7 @@ public class KubernetesClient {
             throw new HttpException(
                     e.getResponse().getStatusCode(),
                     e.getResponse().getStatusMessage() + " " + e.getResponse().getBodyAsStringDecoded());
-        return e.getResponse().getBodyAsStringDecoded();
+        return (Map) new JsonSlurper().parseText(e.getResponse().getBodyAsStringDecoded());
     }
 
     public Consumer<Exchange> getClient() {
