@@ -2,13 +2,10 @@ package com.predic8.membrane.core.kubernetes.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import groovy.json.JsonOutput;
-import groovy.json.JsonSlurper;
 import org.bouncycastle.util.Arrays;
 
 
@@ -59,7 +56,7 @@ public class KubernetesClient {
             throw new HttpException(
                     e.getResponse().getStatusCode(),
                     e.getResponse().getStatusMessage() + " " + e.getResponse().getBodyAsStringDecoded());
-        return (Map) new JsonSlurper().parseText(e.getResponse().getBodyAsStringDecoded());
+        return om.readValue(e.getResponse().getBodyAsStringDecoded(), Map.class);
     }
 
     public Consumer<Exchange> getClient() {
@@ -124,7 +121,7 @@ public class KubernetesClient {
                             .buildExchange();
                     doCall(new int[]{200}, e);
 
-                    Map map = (Map) new JsonSlurper().parseText(e.getResponse().getBodyAsStringDecoded());
+                    Map map = om.readValue(e.getResponse().getBodyAsStringDecoded(), Map.class);
                     first = false;
                     _continue = (String) ((Map) map.get("metadata")).get("continue");
                     action.accept(map);
@@ -231,7 +228,7 @@ public class KubernetesClient {
                     .buildExchange();
             doCall(new int[] { 200 }, e);
 
-            return (Map) new JsonSlurper().parseText(e.getResponse().getBodyAsStringDecoded());
+            return om.readValue(e.getResponse().getBodyAsStringDecoded(), Map.class);
         } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
         }
@@ -251,7 +248,7 @@ public class KubernetesClient {
                 (String) ((Map)resource.get("metadata")).get("namespace"),
                 null);
 
-        String body = JsonOutput.toJson(resource);
+        String body = om.writeValueAsString(resource);
         try {
             Exchange e = new Request.Builder()
                     .post(baseURL + path + "?fieldManager=membrane")
@@ -259,7 +256,7 @@ public class KubernetesClient {
                     .body(body).buildExchange();
             doCall(new int[] { 201 }, e);
 
-            return (Map) new JsonSlurper().parseText(e.getResponse().getBodyAsStringDecoded());
+            return om.readValue(e.getResponse().getBodyAsStringDecoded(), Map.class);
         } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
         }
@@ -306,7 +303,7 @@ public class KubernetesClient {
             throws IOException, KubernetesApiException {
         String path = getPath("patch", apiVersion, kind, namespace, name);
 
-        String bodyJ = JsonOutput.toJson(body);
+        String bodyJ = om.writeValueAsString(body);
         try {
             doCall(new int[] { 200 }, new Request.Builder()
                     .header(CONTENT_TYPE, contentType)
@@ -333,7 +330,7 @@ public class KubernetesClient {
                 (String) ((Map) resource.get("metadata")).get("namespace"),
                 (String) ((Map) resource.get("metadata")).get("name"));
 
-        String body = JsonOutput.toJson(resource);
+        String body = om.writeValueAsString(resource);
         try {
             doCall(new int[] { 200, 201 }, new Request.Builder()
                     .url(new URIFactory(), baseURL + path + "?fieldManager=membrane&force=false")
