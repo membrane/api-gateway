@@ -125,8 +125,8 @@ class Schema {
                 if (!apiVersion.contains("/"))
                     apiv = "core/" + apiv;
                 apiv = apiv.replaceAll("/", "")
-                        .replaceAll(".k8s.io", "")
-                        .replaceAll("\\.", "");
+                        .replaceAll("\\.k8s\\.io", "")
+                        .replaceAll("[.-]", "");
 
                 String operationId = (String) ((Map) data).get("operationId");
                 if (forAllNamespaces && operationId.equalsIgnoreCase(verb + apiv + kind + "ForAllNamespaces")) {
@@ -163,7 +163,7 @@ class Schema {
         }
 
         if (thepath.get() == null)
-            throw new RuntimeException("Could not determine path for ${apiVersion}/${kind} .");
+            throw new RuntimeException("Could not determine path for " + apiVersion + "/" + kind + " .");
 
         return thepath.get();
     }

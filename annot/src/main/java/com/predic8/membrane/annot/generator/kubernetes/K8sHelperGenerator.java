@@ -101,11 +101,11 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 "  */",
                 "public class " + fileName() + " {",
                 "    public static Map<String, Class<?>> elementMapping = new HashMap<>();",
-                "    public static List<String> crdPluralNames = new ArrayList<>();",
+                "    public static List<String> crdSingularNames = new ArrayList<>();",
                 "",
                 "    static {",
                         "",
-                        assembleCrdPluralNames(mainInfo),
+                        assembleCrdSingularNames(mainInfo),
                         "",
                         assembleElementMapping(mainInfo),
                 "    }",
@@ -124,10 +124,10 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
-    private String assembleCrdPluralNames(MainInfo main) {
+    private String assembleCrdSingularNames(MainInfo main) {
         return getRulesStream(main)
-                .map(ei -> pluralize(ei.getAnnotation().name().toLowerCase()))
-                .map(ei -> "        crdPluralNames.add(\"" + ei + "\");")
+                .map(ei -> ei.getAnnotation().name().toLowerCase())
+                .map(s -> "        crdSingularNames.add(\"" + s + "\");")
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 }

@@ -35,15 +35,133 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @description
+ * Kubernetes Integration is still experimental.
+ *
+ * To create the CustomResourceDefinitions, apply kubernetes-config.yaml from
+ * core/target/classes/com/predic8/membrane/core/config/kubernetes/ or a part (e.g. the 'serviceproxies' CRD) of the file.
+ *
+ * Create a key and certificate for TLS for https://membrane-validator.membrane-soa.svc:444/ and setup Membrane to serve
+ * this address. The configuration shown below configures Membrane on a fixed IP address outside of the Kubernetes cluster,
+ * but this is no requirement.
+ *
+ * Embed the following serviceProxy and adjust the 'resources' attribute to a comma-separated list of CRDs that you applied.
+ * Note that while the CRDs have plural names, here you need to use the corresponding singular. Configure the "ssl" section
+ * using your key and certificate.
+ * <code>
+ *    &gt;serviceProxy port="444">
+ *      &gt;ssl>
+ *        &gt;key>
+ *          &gt;private>
+ *            -----BEGIN RSA PRIVATE KEY-----
+ *            ...
+ *            -----END RSA PRIVATE KEY-----
+ *          &gt;/private>
+ *          &gt;certificate>
+ *            -----BEGIN CERTIFICATE-----
+ *            ...
+ *            -----END CERTIFICATE-----
+ *          &gt;/certificate>
+ *        &gt;/key>
+ *      &gt;/ssl>
+ *      &gt;kubernetesValidation resources="serviceproxy" />
+ *    &gt;/serviceProxy>
+ * </code>
+ *
+ * Now register a Webhook to validate the new CRDs. (A note to the experts: Membrane's validation schemas are too
+ * complex to fit into the CRD, because they are highly nestable and self-referencing. We therefore use webhooks.)
+ *
+ * <code>
+ * apiVersion: admissionregistration.k8s.io/v1
+ * kind: ValidatingWebhookConfiguration
+ * metadata:
+ *   name: membrane
+ * webhooks:
+ *   - name: membrane.membrane-soa.org
+ *     admissionReviewVersions: ["v1", "v1beta1"]
+ *     failurePolicy: Fail
+ *     rules:
+ *       - operations: [ "*" ]
+ *         apiGroups: [ "membrane-soa.org" ]
+ *         apiVersions: [ "v1", "v1beta1" ]
+ *         resources: [ "*" ]
+ *         scope: "*"
+ *     clientConfig:
+ *       service:
+ *         name: membrane-validator
+ *         namespace: membrane-soa
+ *         port: 444
+ *       caBundle: LS0t...LQ0K        # base64 encoded, PEM-formatted CA certificate
+ *     sideEffects: None
+ *
+ * ---
+ *
+ * apiVersion: v1
+ * kind: Namespace
+ * metadata:
+ *   name: membrane-soa
+ *
+ * ---
+ *
+ * apiVersion: v1
+ * kind: Service
+ * metadata:
+ *   namespace: membrane-soa
+ *   name: membrane-validator
+ * spec:
+ *   ports:
+ *     - port: 444
+ *
+ * ---
+ *
+ * apiVersion: v1
+ * kind: Endpoints
+ * metadata:
+ *   namespace: membrane-soa
+ *   name: membrane-validator
+ * subsets:
+ *   - addresses:
+ *       - ip: 192.168.0.1   # Membrane's IP
+ *     ports:
+ *       - port: 444
+ * </code>
+ *
+ * Once this setup is complete, you can enable serviceProxies like this:
+ *
+ * <code>
+ * apiVersion: membrane-soa.org/v1beta1
+ * kind: serviceproxy
+ * metadata:
+ *   name: demo
+ *   namespace: membrane-soa
+ * spec:
+ *   host: demo.predic8.de
+ *   path:
+ *     value: /some-path/
+ *   interceptors:
+ *     - response:
+ *         interceptors:
+ *         - groovy:
+ *             src: |
+ *               println "Hello!"
+ *   target:
+ *     host: thomas-bayer.com
+ * </code>
+ *
+ */
 @MCElement(name="kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
-    private IValidator validator;
     private ResolverMap resourceResolver;
     private List<String> resources;
+    private ConcurrentMap<String, IValidator> validators = new ConcurrentHashMap<>();
 
     @Override
     public void init(Router router) throws Exception {
@@ -60,20 +178,24 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         AdmissionReview review = mapper.readValue(new BufferedReader(new InputStreamReader(
                         exc.getRequest().getBodyAsStreamDecoded(), Charset.forName(exc.getRequest().getCharset())))
                 , AdmissionReview.class);
-        String requestKind = (String) review.getRequest().getObject().get("kind");
-        setValidator(requestKind.toLowerCase());
+        Map<String, Object> object = review.getRequest().getObject();
+        if (object != null) { // DELETE requests do not carry an object
+            String requestKind = (String) object.get("kind");
 
-        validator.validateMessage(exc, exc.getRequest(), "request");
-
+            IValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> {
+                try {
+                    return new JSONValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            validator.validateMessage(exc, exc.getRequest(), "request");
+        }
         setExchangeResponse(exc, mapper, review);
 
         return Outcome.RETURN;
     }
 
-    private void setValidator(String schema) throws IOException {
-        String baseLocation = router == null ? null : router.getBaseLocation();
-        validator = new JSONValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null);
-    }
 
     private void setExchangeResponse(Exchange exc, ObjectMapper mapper, AdmissionReview review) throws Exception {
         AdmissionResponse response = new AdmissionResponse(review.getRequest().getUid());
