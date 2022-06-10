@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,8 +43,6 @@ import java.util.stream.Collectors;
  */
 public class KubernetesWatcher {
     private static final Logger LOG = LoggerFactory.getLogger(KubernetesWatcher.class);
-
-    private final String NAMESPACE = "membrane-soa";
 
     private final Router router;
     private KubernetesClient client;
@@ -68,7 +67,10 @@ public class KubernetesWatcher {
             crds = crds.stream().filter(s -> kvi.get().getResourcesList().contains(s)).collect(Collectors.toList());
         if (crds.size() > 0)
             this.executors = Executors.newFixedThreadPool(crds.size());
-        crds.forEach(this::createWatcher);
+        List<String> namespaces = new ArrayList<>(kvi.get().getNamespacesList());
+        if (namespaces.size() == 1 && "*".equals(namespaces.get(0)))
+            namespaces.set(0, null);
+        crds.forEach(crd -> namespaces.forEach(ns -> createWatcher(ns, crd)));
     }
 
     private KubernetesClient getClient() {
@@ -94,9 +96,9 @@ public class KubernetesWatcher {
     }
 
     @SuppressWarnings("rawtypes")
-    private void createWatcher(String crd) {
+    private void createWatcher(String namespace, String crd) {
         try {
-            client.watch("membrane-soa.org/v1beta1", crd, NAMESPACE, null, executors, new Watcher() {
+            client.watch("membrane-soa.org/v1beta1", crd, namespace, null, executors, new Watcher() {
                 @Override
                 public void onEvent(WatchAction action, Map m) {
                     try {
@@ -142,7 +144,7 @@ public class KubernetesWatcher {
                 @Override
                 public void onClosed(@Nullable Throwable t) {
                     LOG.error("Watcher for "+crd+" closed unexpectedly, restarting...", t);
-                    createWatcher(crd);
+                    createWatcher(namespace, crd);
                 }
             });
             LOG.debug("Added Watcher for {}", crd);

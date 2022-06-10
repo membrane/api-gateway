@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.kubernetes;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -162,6 +163,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
     private ResolverMap resourceResolver;
     private List<String> resources;
     private ConcurrentMap<String, IValidator> validators = new ConcurrentHashMap<>();
+    private List<String> namespaces = ImmutableList.of("membrane-soa");
 
     @Override
     public void init(Router router) throws Exception {
@@ -221,6 +223,10 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         ).build());
     }
 
+    /**
+     * @description The resources (CustomResourceDefinition Kinds, singular) to watch in the Kubernetes API, comma separated.
+     * @example serviceproxy,ssl
+     */
     @MCAttribute
     public void setResources(String resources) {
         this.resources = Arrays.asList(resources.split(","));
@@ -232,5 +238,23 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     public List<String> getResourcesList() {
         return resources;
+    }
+
+    public List<String> getNamespacesList() {
+        return namespaces;
+    }
+
+    public String getNamespaces() {
+        return String.join(",", namespaces);
+    }
+
+    /**
+     * @description The list of namespaces to watch, comma separated. A single '*' means "watch all namespaces".
+     * @example *
+     * @default membrane-soa
+     */
+    @MCAttribute
+    public void setNamespaces(String namespaces) {
+        this.namespaces = Arrays.asList(namespaces.split(","));
     }
 }
