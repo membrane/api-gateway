@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.annot.MCChildElement;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -35,7 +36,6 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	 * @description Spring bean id of the referenced interceptor.
 	 * @example myInterceptor
 	 */
-	@Required
 	@MCAttribute(attributeName="refid")
 	public void setRefId(String refid) {
 		this.refid = refid;
@@ -96,6 +96,11 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 
 	public Interceptor getInner() {
 		return i;
+	}
+
+	@MCChildElement
+	public void setInner(Interceptor i) {
+		this.i = i;
 	}
 
 }

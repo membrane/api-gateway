@@ -24,6 +24,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Stream.concat;
 
 /**
  * Autogenerates a helper file for JSON parsing
@@ -101,7 +104,26 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 "  */",
                 "public class " + fileName() + " {",
                 "    public static Map<String, Class<?>> elementMapping = new HashMap<>();",
+                "    public static Map<String, Map<String, Class<?>>> localElementMapping = new HashMap<>();",
                 "    public static List<String> crdSingularNames = new ArrayList<>();",
+                "",
+                "    private static void localElementMappingPut(String context, String name, Class<?> clazz) {",
+                "        Map<String, Class<?>> local = localElementMapping.get(context);",
+                "        if (local == null) {",
+                "            local = new HashMap<>();",
+                "            localElementMapping.put(context, local);",
+                "            localElementMapping.put(context.toLowerCase(), local);",
+                "        }",
+                "        local.put(name, clazz);",
+                "        local.put(name.toLowerCase(), clazz);",
+                "    }",
+                "",
+                "    public static Class<?> getLocal(String context, String key) {",
+                "        Map<String, Class<?>> local = localElementMapping.get(context);",
+                "        if (local == null)",
+                "            return null;",
+                "        return local.get(key);",
+                "    }",
                 "",
                 "    static {",
                         "",
@@ -114,13 +136,26 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
     }
 
     private String assembleElementMapping(MainInfo main) {
-        return main.getIis().stream()
+        return concat(
+                // global
+                main.getIis().stream()
+                .filter(ei -> ei.getAnnotation().topLevel())
                 .map(ei -> String.format("        elementMapping.put(\"%s\", %s.class);" + System.lineSeparator()
                                 + "        elementMapping.put(\"%s\", %s.class);",
                         ei.getAnnotation().name(),
                         ei.getElement().getQualifiedName(),
                         ei.getAnnotation().name().toLowerCase(),
-                        ei.getElement().getQualifiedName()))
+                        ei.getElement().getQualifiedName())),
+                // non-global
+                main.getIis().stream()
+                        .flatMap(ei -> ei.getCeis().stream().map(cei -> Pair.of(ei, cei)))
+                        .flatMap(p -> main.getChildElementDeclarations().get(p.y.getTypeDeclaration())
+                                .getElementInfo().stream().map(ei -> Pair.of(p.x, ei)))
+                        .filter(p -> !p.y.getAnnotation().topLevel())
+                        .map(p -> String.format("        localElementMappingPut(\"%s\", \"%s\", %s.class);",
+                                p.x.getAnnotation().name(),
+                                p.y.getAnnotation().name(),
+                                p.y.getElement().getQualifiedName())))
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
@@ -129,5 +164,26 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 .map(ei -> ei.getAnnotation().name().toLowerCase())
                 .map(s -> "        crdSingularNames.add(\"" + s + "\");")
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    private static class Pair<X, Y> {
+        X x;
+        Y y;
+        public Pair(X x, Y y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public static <X, Y> Pair<X, Y> of(X x, Y y) {
+            return new Pair<X, Y>(x, y);
+        }
+
+        public X getX() {
+            return x;
+        }
+
+        public Y getY() {
+            return y;
+        }
     }
 }

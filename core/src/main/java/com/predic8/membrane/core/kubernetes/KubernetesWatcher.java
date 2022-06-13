@@ -50,6 +50,8 @@ public class KubernetesWatcher {
     private ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
     private ExecutorService executors;
 
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+
     public KubernetesWatcher(Router router) {
         this.router = router;
     }
@@ -116,7 +118,7 @@ public class KubernetesWatcher {
                             try {
                                 newRule.init(router);
                             } catch (Exception e) {
-                                throw new RuntimeException("Could not init rule.");
+                                throw new RuntimeException("Could not init rule.", e);
                             }
 
                             Rule oldRule = null;
@@ -136,7 +138,7 @@ public class KubernetesWatcher {
                                 uuidMap.remove(envelope.getMetadata().getUid());
                         }
 
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
