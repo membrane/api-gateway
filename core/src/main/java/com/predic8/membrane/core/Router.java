@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import com.predic8.membrane.core.jmx.JmxExporter;
 import com.predic8.membrane.core.jmx.JmxRouter;
+import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
 import com.predic8.membrane.core.rules.InternalProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,6 +116,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	private boolean retryInit;
 	private Timer reinitializator;
 	private String id;
+	private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
 
 	public Router() {
 		ruleManager.setRouter(this);
@@ -280,6 +282,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 				exchangeStore = new LimitedMemoryExchangeStore();
 			if (transport == null)
 				transport = new HttpTransport();
+			kubernetesWatcher.start();
 
 			init();
 			initJmx();
@@ -413,6 +416,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	@Override
 	public void stop() {
 		try {
+			kubernetesWatcher.stop();
 			if (hdt != null)
 				stopHotDeployment();
 			shutdown();

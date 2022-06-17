@@ -9,10 +9,7 @@ import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.bouncycastle.util.Arrays;
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
@@ -156,10 +153,11 @@ public class KubernetesClient {
      * @param namespace the namespace to watch (or null to watch all namespaces)
      * @throws IOException an underlaying communication problem
      * @throws KubernetesApiException on a Kubernetes API problem
+     * @return the watch, which can be closed
      */
     @SuppressWarnings({"rawtypes"})
-    public void watch(String apiVersion, String kind, String namespace, Long resourceVersion, ExecutorService executors,
-                      Watcher watcher) throws IOException, KubernetesApiException {
+    public Closeable watch(String apiVersion, String kind, String namespace, Long resourceVersion, ExecutorService executors,
+                           Watcher watcher) throws IOException, KubernetesApiException {
         String path = getPath("list", apiVersion, kind, namespace, null);
         try {
             Exchange e = new Request.Builder()
@@ -187,6 +185,8 @@ public class KubernetesClient {
                     watcher.onClosed(throwable);
                 }
             });
+
+            return e.getTargetConnection();
         } catch (URISyntaxException ex) {
             throw new RuntimeException(ex);
         }

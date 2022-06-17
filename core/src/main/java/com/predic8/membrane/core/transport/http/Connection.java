@@ -49,7 +49,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
  * response body has fully been read and it should deassociate itself from the
  * exchange.
  */
-public class Connection implements MessageObserver, NonRelevantBodyObserver {
+public class Connection implements Closeable, MessageObserver, NonRelevantBodyObserver {
 
 	private static Logger log = LoggerFactory.getLogger(Connection.class.getName());
 

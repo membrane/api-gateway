@@ -112,7 +112,8 @@ public class RuleManager {
 		if (exists(rule.getKey()))
 			return;
 
-		router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
+		if (!(rule instanceof InternalProxy))
+			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
 
 		rules.add(rule);
 		ruleSources.add(source);

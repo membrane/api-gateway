@@ -25,6 +25,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.cloud.etcd.*;
+import com.predic8.membrane.core.kubernetes.KubernetesSchemaResolver;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
@@ -112,6 +113,7 @@ public class ResolverMap implements Cloneable, Resolver {
 		// the default config
 		addSchemaResolver(new ClasspathSchemaResolver());
 		addSchemaResolver(new HTTPSchemaResolver());
+		addSchemaResolver(new KubernetesSchemaResolver());
 		addSchemaResolver(new FileSchemaResolver());
 	}
 
@@ -243,6 +245,10 @@ public class ResolverMap implements Cloneable, Resolver {
 	public void setEtcdResolver(EtcdResolver etcdResolver) {
 		this.etcdResolver = etcdResolver;
 		addSchemaResolver(etcdResolver);
+	}
+
+	public KubernetesSchemaResolver getKubernetesSchemaResolver() {
+		return (KubernetesSchemaResolver) getSchemaResolver("kubernetes:");
 	}
 
 	public class ExternalResolverConverter {

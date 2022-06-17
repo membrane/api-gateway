@@ -44,7 +44,6 @@ public class RouterCLI {
 
 			try {
 				router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
-				new KubernetesWatcher(router).start();
 			} catch (XmlBeanDefinitionStoreException e) {
 				TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
 			}

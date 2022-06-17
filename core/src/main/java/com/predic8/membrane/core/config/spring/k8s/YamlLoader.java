@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.config.spring.k8s;
 
 import com.google.common.io.Resources;
+import com.predic8.membrane.core.kubernetes.BeanRegistry;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.events.*;
 
@@ -24,18 +25,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class YamlLoader {
-    public Envelope loadResource(String resource) throws IOException {
+    public Envelope loadResource(String resource, BeanRegistry registry) throws IOException {
         BufferedReader br = Resources.asCharSource(Resources.getResource(resource), StandardCharsets.UTF_8).openBufferedStream();
-        return load(br);
+        return load(br, registry);
     }
 
-    public Envelope load(Reader reader) throws IOException {
+    public Envelope load(Reader reader, BeanRegistry registry) throws IOException {
         Yaml yaml = new Yaml();
         Iterable<Event> iterable = yaml.parse(reader);
         Iterator<Event> i = iterable.iterator();
 
         Envelope e = new Envelope();
-        e.parse(i);
+        e.parse(i, registry);
         return e;
     }
 
