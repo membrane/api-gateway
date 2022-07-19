@@ -21,13 +21,14 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.Map;
 
 public class OAuth2AnswerParameters {
 
     private String accessToken;
     private String tokenType;
     private String idToken;
-    private HashMap<String,String> userinfo = new HashMap<String, String>();
+    private Map<String, ?> userinfo = new HashMap<String, Object>();
     private String expiration;
     private LocalDateTime receivedAt;
     private String refreshToken;
@@ -48,11 +49,11 @@ public class OAuth2AnswerParameters {
         this.idToken = idToken;
     }
 
-    public HashMap<String, String> getUserinfo() {
+    public Map<String, ?> getUserinfo() {
         return userinfo;
     }
 
-    public void setUserinfo(HashMap<String, String> userinfo) {
+    public void setUserinfo(Map<String, ?> userinfo) {
         this.userinfo = userinfo;
     }
 

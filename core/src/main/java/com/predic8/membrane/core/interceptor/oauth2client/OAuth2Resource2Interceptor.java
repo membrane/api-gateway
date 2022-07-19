@@ -47,8 +47,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.concurrent.GuardedBy;
+import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -86,6 +88,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private boolean initPublicURLsOnTheFly = false;
     private OriginalExchangeStore originalExchangeStore;
     private String callbackPath = "oauth2callback";
+
+    private final ObjectMapper om = new ObjectMapper();
 
     @Override
     public void init() throws Exception {
@@ -194,7 +198,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
                 oauth2Answer.setAccessToken(auth.substring(7));
                 oauth2Answer.setTokenType("Bearer");
-                HashMap<String, String> userinfo = revalidateToken(oauth2Answer);
+                Map<String, Object> userinfo = revalidateToken(oauth2Answer);
                 if (userinfo == null) {
                     log.debug("userinfo is null, redirecting.");
                     return respondWithRedirect(exc);
@@ -364,26 +368,48 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             refreshTokenResponse.getBody().read();
             throw new RuntimeException("Statuscode from authorization server for refresh token request: " + refreshTokenResponse.getStatusCode());
         }
+        if (!isJson(refreshTokenResponse))
+            throw new RuntimeException("Refresh Token response is no JSON.");
 
-        HashMap<String, String> json = Util.parseSimpleJSONResponse(refreshTokenResponse);
+        Map<String, Object> json = om.readValue(refreshTokenResponse.getBodyAsStreamDecoded(), Map.class);
         if (json.get("access_token") == null || json.get("refresh_token") == null) {
             refreshTokenResponse.getBody().read();
             throw new RuntimeException("Statuscode was ok but no access_token and refresh_token was received: " + refreshTokenResponse.getStatusCode());
         }
-        oauth2Params.setAccessToken(json.get("access_token"));
-        oauth2Params.setRefreshToken(json.get("refresh_token"));
-        oauth2Params.setExpiration(json.get("expires_in"));
+        oauth2Params.setAccessToken((String)json.get("access_token"));
+        oauth2Params.setRefreshToken((String)json.get("refresh_token"));
+        oauth2Params.setExpiration(numberToString(json.get("expires_in")));
         LocalDateTime now = LocalDateTime.now();
         oauth2Params.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
         if (json.containsKey("id_token")) {
-            if (idTokenIsValid(json.get("id_token")))
-                oauth2Params.setIdToken(json.get("id_token"));
+            if (idTokenIsValid((String)json.get("id_token")))
+                oauth2Params.setIdToken((String)json.get("id_token"));
             else
                 oauth2Params.setIdToken("INVALID");
         }
 
         session.put(OAUTH2_ANSWER, oauth2Params.serialize());
 
+    }
+
+    private String numberToString(Object number) {
+        if (number == null)
+            return null;
+        if (number instanceof Integer)
+            return ((Integer)number).toString();
+        if (number instanceof Long)
+            return ((Long)number).toString();
+        if (number instanceof Double)
+            return ((Double)number).toString();
+        log.warn("Unhandled number type " + number.getClass().getName());
+        return null;
+    }
+
+    private boolean isJson(Response g) throws ParseException {
+        String contentType = g.getHeader().getFirstValue("Content-Type");
+        if (contentType == null)
+            return false;
+        return g.getHeader().getContentTypeObject().match("application/json");
     }
 
     private boolean refreshingOfAccessTokenIsNeeded(Session session) throws IOException {
@@ -397,7 +423,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return LocalDateTime.now().isAfter(oauth2Params.getReceivedAt().plusSeconds(Long.parseLong(oauth2Params.getExpiration())).minusSeconds(5)); // refresh token 5 seconds before expiration
     }
 
-    private HashMap<String, String> revalidateToken(OAuth2AnswerParameters params) throws Exception {
+    private Map<String, Object> revalidateToken(OAuth2AnswerParameters params) throws Exception {
 
         Exchange e2 = new Request.Builder()
                 .get(auth.getUserInfoEndpoint())
@@ -414,7 +440,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return null;
         } else {
             statistics.accessTokenValid();
-            return Util.parseSimpleJSONResponse(response2);
+            if (!isJson(response2))
+                throw new RuntimeException("Response is no JSON.");
+            return om.readValue(response2.getBodyAsStreamDecoded(), Map.class);
         }
     }
 
@@ -584,7 +612,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 if (log.isDebugEnabled())
                     logi.handleResponse(e);
 
-                HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
+                if (!isJson(response))
+                    throw new RuntimeException("Token response is no JSON.");
+
+                Map<String, Object> json = om.readValue(response.getBodyAsStreamDecoded(), Map.class);
 
                 if (!json.containsKey("access_token"))
                     throw new RuntimeException("No access_token received.");
@@ -596,14 +627,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 session.put("access_token",token); // saving for logout
 
                 oauth2Answer.setAccessToken(token);
-                oauth2Answer.setTokenType(json.get("token_type"));
-                oauth2Answer.setExpiration(json.get("expires_in"));
-                oauth2Answer.setRefreshToken(json.get("refresh_token"));
+                oauth2Answer.setTokenType((String)json.get("token_type"));
+                oauth2Answer.setExpiration(numberToString(json.get("expires_in")));
+                oauth2Answer.setRefreshToken((String)json.get("refresh_token"));
                 LocalDateTime now = LocalDateTime.now();
                 oauth2Answer.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
                 if(json.containsKey("id_token")) {
-                    if (idTokenIsValid(json.get("id_token")))
-                        oauth2Answer.setIdToken(json.get("id_token"));
+                    if (idTokenIsValid((String)json.get("id_token")))
+                        oauth2Answer.setIdToken((String)json.get("id_token"));
                     else
                         oauth2Answer.setIdToken("INVALID");
                 }
@@ -634,7 +665,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
                 statistics.accessTokenValid();
 
-                HashMap<String, String> json2 = Util.parseSimpleJSONResponse(response2);
+                if (!isJson(response2))
+                    throw new RuntimeException("Userinfo response is no JSON.");
+                Map<String, Object> json2 = om.readValue(response2.getBodyAsStreamDecoded(), Map.class);
 
                 oauth2Answer.setUserinfo(json2);
 
@@ -708,13 +741,13 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         exc.setOriginalHostHeader(xForwardedHost);
     }
 
-    private void processUserInfo(Map<String, String> userInfo, Session session) {
+    private void processUserInfo(Map<String, Object> userInfo, Session session) {
         if (!userInfo.containsKey(auth.getSubject()))
             throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
 
         Map<String, Object> userAttributes = session.get();
         String userIdPropertyFixed = auth.getSubject().substring(0, 1).toUpperCase() + auth.getSubject().substring(1);
-        String username = userInfo.get(auth.getSubject());
+        String username = (String) userInfo.get(auth.getSubject());
         userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, username);
 
         session.authorize(username);
