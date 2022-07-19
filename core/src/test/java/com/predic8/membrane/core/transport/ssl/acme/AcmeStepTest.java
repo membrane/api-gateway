@@ -57,6 +57,7 @@ public class AcmeStepTest {
     @Test
     public void all() throws Exception {
         Acme acme = new Acme();
+        acme.setExperimental(true);
         acme.setDirectoryUrl(baseUrl);
         acme.setTermsOfServiceAgreed(true);
         acme.setContacts("mailto:jsmith@example.com");
@@ -82,79 +83,82 @@ public class AcmeStepTest {
         sp2.getInterceptors().add(acmeHttpChallengeInterceptor);
         router.setRules(ImmutableList.of(sp1, sp2));
         router.start();
+        try {
 
-        AcmeSSLContext acmeSSLContext = (AcmeSSLContext) sp1.getSslInboundContext();
-        AcmeClient acmeClient = acmeSSLContext.getClient();
-        String[] hosts = acmeSSLContext.getHosts();
+            AcmeSSLContext acmeSSLContext = (AcmeSSLContext) sp1.getSslInboundContext();
+            AcmeClient acmeClient = acmeSSLContext.getClient();
+            String[] hosts = acmeSSLContext.getHosts();
 
-        // ---
+            // ---
 
-        acmeClient.loadDirectory();
+            acmeClient.loadDirectory();
 
-        String accountUrl = acmeClient.createAccount();
+            String accountUrl = acmeClient.createAccount();
 
-        OrderAndLocation ol = acmeClient.createOrder(accountUrl, Arrays.asList(hosts));
+            OrderAndLocation ol = acmeClient.createOrder(accountUrl, Arrays.asList(hosts));
 
-        assertTrue(ol.getOrder().getAuthorizations().size() > 0);
-        for (String authorization : ol.getOrder().getAuthorizations()) {
+            assertTrue(ol.getOrder().getAuthorizations().size() > 0);
+            for (String authorization : ol.getOrder().getAuthorizations()) {
 
-            Authorization auth = acmeClient.getAuth(accountUrl, authorization);
+                Authorization auth = acmeClient.getAuth(accountUrl, authorization);
 
-            assertEquals(AUTHORIZATION_STATUS_PENDING, auth.getStatus());
-            String challengeUrl = acmeClient.provision(auth);
+                assertEquals(AUTHORIZATION_STATUS_PENDING, auth.getStatus());
+                String challengeUrl = acmeClient.provision(auth);
 
-            acmeClient.readyForChallenge(accountUrl, challengeUrl);
+                acmeClient.readyForChallenge(accountUrl, challengeUrl);
+
+                long wait = 100;
+                while (AUTHORIZATION_STATUS_PENDING.equals(auth.getStatus())) {
+                    Thread.sleep(wait);
+                    if (wait < 300 * 1000)
+                        wait *= 2;
+                    auth = acmeClient.getAuth(accountUrl, authorization);
+                }
+
+                assertEquals(AUTHORIZATION_STATUS_VALID, auth.getStatus());
+            }
+
+            AcmeKeyPair key = acmeClient.generateCertificateKey(hosts);
+            acmeClient.getAsse().setKeyPair(hosts, key);
+
+
+            String csr = acmeClient.generateCSR(hosts, key.getPrivateKey());
+            ol = new OrderAndLocation(acmeClient.finalizeOrder(accountUrl, ol.getOrder().getFinalize(), csr), ol.getLocation());
 
             long wait = 100;
-            while(AUTHORIZATION_STATUS_PENDING.equals(auth.getStatus())) {
+            while (ORDER_STATUS_READY.equals(ol.getOrder().getStatus()) || ORDER_STATUS_PROCESSING.equals(ol.getOrder().getStatus())) {
                 Thread.sleep(wait);
                 if (wait < 300 * 1000)
                     wait *= 2;
-                auth = acmeClient.getAuth(accountUrl, authorization);
+                ol = acmeClient.getOrder(accountUrl, ol.getLocation());
             }
 
-            assertEquals(AUTHORIZATION_STATUS_VALID, auth.getStatus());
+
+            assertEquals(Order.ORDER_STATUS_VALID, ol.getOrder().getStatus());
+
+            acmeClient.getAsse().setCertChain(hosts, acmeClient.downloadCertificate(accountUrl, hosts, ol.getOrder().getCertificate()));
+
+            // ---
+
+            while (!acmeSSLContext.isReady()) {
+                Thread.sleep(100);
+            }
+
+            HttpClient hc = new HttpClient();
+            Exchange e = new Request.Builder().get("https://localhost:3051/").buildExchange();
+            SSLParser sslParser1 = new SSLParser();
+            Trust trust = new Trust();
+            Certificate certificate = new Certificate();
+            certificate.setContent(sim.getCA().getCertificate());
+            trust.setCertificateList(ImmutableList.of(certificate));
+            sslParser1.setTrust(trust);
+            e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
+            hc.call(e);
+
+            assertEquals(234, e.getResponse().getStatusCode());
+        } finally {
+            router.stop();
         }
-
-        AcmeKeyPair key = acmeClient.generateCertificateKey(hosts);
-        acmeClient.getAsse().setKeyPair(hosts, key);
-
-
-        String csr = acmeClient.generateCSR(hosts, key.getPrivateKey());
-        ol = new OrderAndLocation(acmeClient.finalizeOrder(accountUrl, ol.getOrder().getFinalize(), csr), ol.getLocation());
-
-        long wait = 100;
-        while (ORDER_STATUS_READY.equals(ol.getOrder().getStatus()) || ORDER_STATUS_PROCESSING.equals(ol.getOrder().getStatus())) {
-            Thread.sleep(wait);
-            if (wait < 300 * 1000)
-                wait *= 2;
-            ol = acmeClient.getOrder(accountUrl, ol.getLocation());
-        }
-
-
-        assertEquals(Order.ORDER_STATUS_VALID, ol.getOrder().getStatus());
-
-        acmeClient.getAsse().setCertChain(hosts, acmeClient.downloadCertificate(accountUrl, hosts, ol.getOrder().getCertificate()));
-
-        // ---
-
-        while (!acmeSSLContext.isReady()) {
-            Thread.sleep(100);
-        }
-
-        HttpClient hc = new HttpClient();
-        Exchange e = new Request.Builder().get("https://localhost:3051/").buildExchange();
-        SSLParser sslParser1 = new SSLParser();
-        Trust trust = new Trust();
-        Certificate certificate = new Certificate();
-        certificate.setContent(sim.getCA().getCertificate());
-        trust.setCertificateList(ImmutableList.of(certificate));
-        sslParser1.setTrust(trust);
-        e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
-        hc.call(e);
-
-        assertEquals(234, e.getResponse().getStatusCode());
-
 
     }
 

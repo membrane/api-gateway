@@ -65,6 +65,7 @@ public class AcmeRenewTest {
 
 
         Acme acme = new Acme();
+        acme.setExperimental(true);
         acme.setDirectoryUrl(baseUrl);
         acme.setTermsOfServiceAgreed(true);
         acme.setContacts("mailto:jsmith@example.com");
@@ -91,27 +92,31 @@ public class AcmeRenewTest {
         router.setRules(ImmutableList.of(sp1, sp2));
         router.start();
 
-        AcmeSSLContext acmeSSLContext = (AcmeSSLContext) sp1.getSslInboundContext();
+        try {
 
-        // ---
+            AcmeSSLContext acmeSSLContext = (AcmeSSLContext) sp1.getSslInboundContext();
 
-        while (!acmeSSLContext.isReady()) {
-            Thread.sleep(100);
+            // ---
+
+            while (!acmeSSLContext.isReady()) {
+                Thread.sleep(100);
+            }
+
+            HttpClient hc = new HttpClient();
+            Exchange e = new Request.Builder().get("https://localhost:3051/").buildExchange();
+            SSLParser sslParser1 = new SSLParser();
+            Trust trust = new Trust();
+            Certificate certificate = new Certificate();
+            certificate.setContent(sim.getCA().getCertificate());
+            trust.setCertificateList(ImmutableList.of(certificate));
+            sslParser1.setTrust(trust);
+            e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
+            hc.call(e);
+
+            assertEquals(234, e.getResponse().getStatusCode());
+        } finally {
+            router.stop();
         }
-
-        HttpClient hc = new HttpClient();
-        Exchange e = new Request.Builder().get("https://localhost:3051/").buildExchange();
-        SSLParser sslParser1 = new SSLParser();
-        Trust trust = new Trust();
-        Certificate certificate = new Certificate();
-        certificate.setContent(sim.getCA().getCertificate());
-        trust.setCertificateList(ImmutableList.of(certificate));
-        sslParser1.setTrust(trust);
-        e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
-        hc.call(e);
-
-        assertEquals(234, e.getResponse().getStatusCode());
-
 
     }
 
