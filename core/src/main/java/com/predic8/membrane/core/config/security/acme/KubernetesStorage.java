@@ -6,10 +6,20 @@ import org.springframework.beans.factory.annotation.Required;
 
 @MCElement(name = "kubernetesStorage", topLevel = false)
 public class KubernetesStorage implements AcmeSynchronizedStorage {
+    String baseURL;
     String namespace;
     String masterLease;
     String accountSecret;
     String prefix;
+
+    public String getBaseURL() {
+        return baseURL;
+    }
+
+    @MCAttribute
+    public void setBaseURL(String baseURL) {
+        this.baseURL = baseURL;
+    }
 
     public String getNamespace() {
         return namespace;

@@ -88,14 +88,14 @@ public class KubernetesClientTest {
 
     @Test(expected = KubernetesApiException.class)
     public void read_nonExistent() throws IOException, KubernetesApiException {
-        KubernetesClient kc = KubernetesClientBuilder.baseURL("http://localhost:3053/").build();
+        KubernetesClient kc = KubernetesClientBuilder.newBuilder().baseURL("http://localhost:3053/").build();
 
         kc.read("v1", "Secret", "default", "non-existent");
     }
 
     @Test
     public void read() throws IOException, KubernetesApiException {
-        KubernetesClient kc = KubernetesClientBuilder.baseURL("http://localhost:3053/").build();
+        KubernetesClient kc = KubernetesClientBuilder.newBuilder().baseURL("http://localhost:3053/").build();
 
         Map secret = kc.read("v1", "Secret", "default", "existent");
 
@@ -104,7 +104,7 @@ public class KubernetesClientTest {
 
     @Test
     public void version() throws KubernetesClientBuilder.ParsingException, HttpException, IOException {
-        KubernetesClient kc = KubernetesClientBuilder.baseURL("http://localhost:3053/").build();
+        KubernetesClient kc = KubernetesClientBuilder.newBuilder().baseURL("http://localhost:3053/").build();
 
         assertEquals("v1.23.7", kc.version().get("gitVersion"));
     }

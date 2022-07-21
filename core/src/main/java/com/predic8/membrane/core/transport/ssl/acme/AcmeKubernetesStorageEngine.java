@@ -30,7 +30,10 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
 
     public AcmeKubernetesStorageEngine(KubernetesStorage ks) {
         try {
-            client = KubernetesClientBuilder.auto().build();
+            KubernetesClientBuilder builder = KubernetesClientBuilder.auto();
+            if (ks.getBaseURL() != null)
+                builder.baseURL(ks.getBaseURL());
+            client = builder.build();
         } catch (KubernetesClientBuilder.ParsingException e) {
             throw new RuntimeException(e);
         }

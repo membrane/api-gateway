@@ -43,8 +43,8 @@ public class KubernetesClientBuilder {
         this.namespace = namespace;
     }
 
-    public static KubernetesClientBuilder baseURL(String baseURL) {
-        return new KubernetesClientBuilder(baseURL, null, null, null, null, null);
+    public static KubernetesClientBuilder newBuilder() {
+        return new KubernetesClientBuilder(null, null, null, null, null, null);
     }
 
     public static KubernetesClientBuilder auto() throws ParsingException {
@@ -108,6 +108,11 @@ public class KubernetesClientBuilder {
         } catch (IOException e) {
             throw new ParsingException("while parsing ~/.kube/config", e);
         }
+    }
+
+    public KubernetesClientBuilder baseURL(String baseURL) {
+        this.baseURL = baseURL;
+        return this;
     }
 
     public KubernetesClient build() {
