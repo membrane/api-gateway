@@ -41,9 +41,9 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
         lease = ks.getMasterLease();
         LOG.info("acme: using identity " + identity + " for master election");
 
-        sdf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS000'Z'");
+        sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS000'Z'");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        sdf2 = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SSS'Z'");
+        sdf2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         sdf2.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         accountSecret = ks.getAccountSecret();
