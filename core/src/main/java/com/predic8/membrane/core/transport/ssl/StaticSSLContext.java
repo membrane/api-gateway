@@ -218,7 +218,7 @@ public class StaticSSLContext extends SSLContext {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SSLContext))
+        if (!(obj instanceof StaticSSLContext))
             return false;
         StaticSSLContext other = (StaticSSLContext)obj;
         return Objects.equal(sslParser, other.sslParser);
