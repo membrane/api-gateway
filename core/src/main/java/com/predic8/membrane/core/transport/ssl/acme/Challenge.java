@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class Challenge {
     public static final String TYPE_HTTP_01 = "http-01";
+    public static final String TYPE_DNS_01 = "dns-01";
 
     public static final String CHALLENGE_STATUS_PENDING = "pending";
     public static final String CHALLENGE_STATUS_VALID = "valid";

@@ -151,10 +151,10 @@ public class AcmeRenewal {
 
             if (CHALLENGE_STATUS_PENDING.equals(challenge.get().getStatus())) {
                 if (LOG.isDebugEnabled())
-                    LOG.debug("acme ("+id()+"): provisioning challenge");
+                    LOG.debug("acme ("+id()+"): provisioning challenge " + auth.get().getIdentifier().getValue());
                 String challengeUrl = client.provision(auth.get());
                 if (LOG.isDebugEnabled())
-                    LOG.debug("acme ("+id()+"): triggering challenge check");
+                    LOG.debug("acme ("+id()+"): triggering challenge check " + auth.get().getIdentifier().getValue());
                 client.readyForChallenge(getAccountURL(), challengeUrl);
             }
             waitFor(
@@ -189,7 +189,7 @@ public class AcmeRenewal {
     }
 
     private Challenge getChallenge(Authorization auth) throws JsonProcessingException, FatalAcmeException {
-        Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> TYPE_HTTP_01.equals(c.getType())).findAny();
+        Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> client.getChallengeType().equals(c.getType())).findAny();
         if (!challenge.isPresent())
             throw new FatalAcmeException("Could not find challenge of type http01: " + om.writeValueAsString(auth));
         return challenge.get();

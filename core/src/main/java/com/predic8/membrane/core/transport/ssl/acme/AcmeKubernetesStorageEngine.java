@@ -8,12 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.google.common.collect.Lists.newArrayList;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngine {
@@ -348,7 +348,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
         int i = Arrays.hashCode(hosts);
         if (i < 0)
             i = Integer.MAX_VALUE + i + 1;
-        return hosts[0] + (hosts.length > 1 ? "-" + i : "");
+        return hosts[0].replaceAll("\\*\\.", "") + (hosts.length > 1 ? "-" + i : "");
     }
 
     private static class LeaseException extends RuntimeException {
@@ -358,6 +358,48 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
 
         public LeaseException(Throwable cause) {
             super(cause);
+        }
+    }
+
+    public void provisionDns(String domain, String record) {
+        Map wantedRecord = of("type", "TXT",
+                "timeout", 300,
+                "value", "\"" + record + "\"");
+        Map dnsRecord = of("apiVersion", "dns.predic8.de/v1beta1",
+                "kind", "DnsRecord",
+                "metadata", of(
+                        "name", domain + "-acme-challenge",
+                        "namespace", namespace),
+                "spec", of(
+                        "hostnames", newArrayList("_acme-challenge." + domain),
+                        "values", newArrayList(wantedRecord)));
+        try {
+            try {
+                client.read(dnsRecord);
+                client.delete(dnsRecord);
+            } catch (KubernetesApiException e) {
+                if (e.getCode() != 404)
+                    throw new RuntimeException(e);
+            }
+            client.apply(dnsRecord);
+            for (int i = 0; i < 60; i++) {
+                Thread.sleep(500);
+                dnsRecord = client.read(dnsRecord);
+                Object status = dnsRecord.get("status");
+                if (status != null) {
+                    Object success = ((Map) status).get("success");
+                    if (success != null && success.equals(true)) break;
+                }
+                if (i == 59)
+                    throw new RuntimeException("DNS challenge did not become successful within one minute.");
+            }
+            Thread.sleep(10 * 1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (KubernetesApiException e) {
+            throw new RuntimeException(e);
         }
     }
 }

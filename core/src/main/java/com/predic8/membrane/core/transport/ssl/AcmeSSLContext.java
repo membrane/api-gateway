@@ -35,11 +35,41 @@ public class AcmeSSLContext extends SSLContext {
 
 
     public AcmeSSLContext(SSLParser parser, ResolverMap resolverMap, String baseLocation, String[] hosts) throws JoseException, IOException {
-        this.hosts = hosts;
+        this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
         client = new AcmeClient(parser.getAcme());
         timer = new Timer("ACME timer " + constructHostsString());
 
         initAndSchedule();
+    }
+
+    private String[] computeHostList(String[] hostsWantedByRule, String hostsRequestedForCertificate) {
+        if (hostsRequestedForCertificate == null)
+            return hostsWantedByRule;
+        String[] cs = hostsRequestedForCertificate.split(" +");
+        for (String h : hostsWantedByRule) {
+            boolean fulfilled = false;
+            for (String c : cs)
+                if (hostMatches(h, c))
+                    fulfilled = true;
+            if (!fulfilled)
+                throw new RuntimeException("Hostname " + h + " seems not to be fulfillable by a certificate issued for " + hostsRequestedForCertificate);
+        }
+        return cs;
+    }
+
+    private boolean hostMatches(String host, String certificateHost) {
+        if (host.equals(certificateHost))
+            return true;
+        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.codePointAt(host.length() - certificateHost.length() + 1) == 46 && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
+            return true;
+        return false;
+    }
+
+    private boolean isHostname(String expr) {
+        for (int i = 0; i < expr.length(); i++)
+            if (! (Character.isDigit(expr.codePointAt(i)) || Character.isLetter(expr.codePointAt(i)) || (expr.codePointAt(i) == 45)))
+                return false;
+        return true;
     }
 
     @Override

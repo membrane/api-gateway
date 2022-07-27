@@ -51,7 +51,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
-import java.net.URISyntaxException;
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
@@ -63,8 +62,10 @@ import java.util.stream.Collectors;
 import static com.predic8.membrane.core.http.Header.LOCATION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JOSE_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_DNS_01;
 import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_HTTP_01;
 import static com.predic8.membrane.core.transport.ssl.acme.Identifier.TYPE_DNS;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.jose4j.lang.HashUtil.SHA_256;
 
 public class AcmeClient {
@@ -81,6 +82,7 @@ public class AcmeClient {
     private final HttpClient hc;
     private final ObjectMapper om = new ObjectMapper();
     private final List<String> nonces = new ArrayList<>();
+    private final String challengeType;
     private String keyChangeUrl;
     private String newAccountUrl;
     private String newNonceUrl;
@@ -100,6 +102,7 @@ public class AcmeClient {
         contacts = Arrays.asList(acme.getContacts().split(" +"));
         hc = new HttpClient(acme.getHttpClientConfiguration() == null ? new HttpClientConfiguration() : acme.getHttpClientConfiguration());
         validity = acme.getValidityDuration();
+        challengeType = acme.getValidationMethod() != null && acme.getValidationMethod() instanceof DnsOperatorAcmeValidation ? TYPE_DNS_01 : TYPE_HTTP_01;
 
         om.registerModule(new JodaModule());
 
@@ -178,7 +181,7 @@ public class AcmeClient {
             KeyPair kp = kpg.generateKeyPair();
 
             String key = "-----BEGIN EC PRIVATE KEY-----\n"
-                    + org.jose4j.base64url.Base64.encode(kp.getPrivate().getEncoded()) +
+                    + Base64.encode(kp.getPrivate().getEncoded()) +
                     "\n-----END EC PRIVATE KEY-----\n";
 
             String pkey = "-----BEGIN PUBLIC KEY-----\n"
@@ -253,16 +256,39 @@ public class AcmeClient {
         return asse.getToken(host);
     }
 
-    public String provision(Authorization auth) throws JsonProcessingException {
-        Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> TYPE_HTTP_01.equals(c.getType())).findAny();
+    public String provision(Authorization auth) throws Exception {
+        Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> challengeType.equals(c.getType())).findAny();
         if (!challenge.isPresent())
-            throw new RuntimeException("Could not find challenge of type http01: " + om.writeValueAsString(auth));
+            throw new RuntimeException("Could not find challenge of type "+challengeType+": " + om.writeValueAsString(auth));
 
         if (!TYPE_DNS.equals(auth.getIdentifier().getType()))
             throw new RuntimeException("Identifier type is not DNS: " + om.writeValueAsString(auth));
 
-        asse.setToken(auth.getIdentifier().getValue(), challenge.get().token);
+        if (TYPE_HTTP_01.equals(challengeType))
+            provisionHttp(auth, challenge.get());
+        else if (TYPE_DNS_01.equals(challengeType))
+            provisionDns(auth, challenge.get());
+        else
+            throw new RuntimeException("Unimplemented challenge type handling " + challengeType);
+
         return challenge.get().getUrl();
+    }
+
+    private void provisionDns(Authorization auth, Challenge challenge) throws JoseException, NoSuchAlgorithmException {
+        String keyAuth = challenge.getToken() + "." + getThumbprint();
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        String record = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest(keyAuth.getBytes(UTF_8)));
+
+        ((AcmeKubernetesStorageEngine)asse).provisionDns(auth.getIdentifier().getValue(), record);
+    }
+
+    private void provisionHttp(Authorization auth, Challenge challenge) {
+        asse.setToken(auth.getIdentifier().getValue(), challenge.token);
+    }
+
+    public String getChallengeType() {
+        return challengeType;
     }
 
     public interface JWSParametrizer {

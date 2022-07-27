@@ -71,6 +71,8 @@ public class Acme {
     Duration validity;
     AcmeSynchronizedStorage acmeSynchronizedStorage;
     boolean experimental;
+    String hosts;
+    AcmeValidation validationMethod;
 
     public String getDirectoryUrl() {
         return directoryUrl;
@@ -143,5 +145,23 @@ public class Acme {
     @MCAttribute
     public void setExperimental(boolean experimental) {
         this.experimental = experimental;
+    }
+
+    public String getHosts() {
+        return hosts;
+    }
+
+    @MCAttribute
+    public void setHosts(String hosts) {
+        this.hosts = hosts;
+    }
+
+    public AcmeValidation getValidationMethod() {
+        return validationMethod;
+    }
+
+    @MCChildElement(order=20)
+    public void setValidationMethod(AcmeValidation validationMethod) {
+        this.validationMethod = validationMethod;
     }
 }
