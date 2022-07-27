@@ -60,14 +60,17 @@ public class AcmeSSLContext extends SSLContext {
     private boolean hostMatches(String host, String certificateHost) {
         if (host.equals(certificateHost))
             return true;
-        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.codePointAt(host.length() - certificateHost.length() + 1) == 46 && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
+        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.length() >= certificateHost.length() && host.codePointAt(host.length() - certificateHost.length() + 1) == 46 && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
             return true;
         return false;
     }
 
+    /**
+     * Note that we not only allow digits, letters and hyphens, but also the asterisk, as this will translate to a hostname pattern.
+     */
     private boolean isHostname(String expr) {
         for (int i = 0; i < expr.length(); i++)
-            if (! (Character.isDigit(expr.codePointAt(i)) || Character.isLetter(expr.codePointAt(i)) || (expr.codePointAt(i) == 45)))
+            if (! (Character.isDigit(expr.codePointAt(i)) || Character.isLetter(expr.codePointAt(i)) || (expr.codePointAt(i) == 45) || (expr.codePointAt(i) == 42)))
                 return false;
         return true;
     }
