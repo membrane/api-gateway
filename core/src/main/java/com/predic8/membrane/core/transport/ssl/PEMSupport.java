@@ -49,7 +49,7 @@ public abstract class PEMSupport {
             try {
                 instance = new PEMSupportImpl();
             } catch (NoClassDefFoundError e) {
-                throw new RuntimeException("Bouncycastle support classes not found. Please download http://central.maven.org/maven2/org/bouncycastle/bcpkix-jdk15on/1.54/bcpkix-jdk15on-1.54.jar and http://central.maven.org/maven2/org/bouncycastle/bcprov-jdk15on/1.54/bcprov-jdk15on-1.54.jar and put them into the 'lib' directory.");
+                throw new RuntimeException("Bouncycastle support classes not found. Please download http://central.maven.org/maven2/org/bouncycastle/bcpkix-jdk18on/1.71/bcpkix-jdk18on-1.71.jar and http://central.maven.org/maven2/org/bouncycastle/bcprov-jdk18on/1.71/bcprov-jdk18on-1.71.jar and put them into the 'lib' directory.");
             }
         return instance;
     }
