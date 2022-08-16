@@ -67,7 +67,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
+		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient(router.getTimerManager());
 	}
 
 	@Override

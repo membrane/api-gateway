@@ -218,7 +218,7 @@ public class SSLProxy implements Rule {
     @Override
     public void init(Router router) throws Exception {
         this.router = router;
-        cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout());
+        cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
         for (SSLInterceptor i : sslInterceptors)
             i.init(router);
     }

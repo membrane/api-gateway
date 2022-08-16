@@ -11,6 +11,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.URIFactory;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -96,11 +97,11 @@ public class AcmeClient {
     private Duration validity;
     private AcmeSynchronizedStorageEngine asse;
 
-    public AcmeClient(Acme acme) {
+    public AcmeClient(Acme acme, @Nullable TimerManager timerManager) {
         directoryUrl = acme.getDirectoryUrl();
         termsOfServiceAgreed = acme.isTermsOfServiceAgreed();
         contacts = Arrays.asList(acme.getContacts().split(" +"));
-        hc = new HttpClient(acme.getHttpClientConfiguration() == null ? new HttpClientConfiguration() : acme.getHttpClientConfiguration());
+        hc = new HttpClient(acme.getHttpClientConfiguration() == null ? new HttpClientConfiguration() : acme.getHttpClientConfiguration(), timerManager);
         validity = acme.getValidityDuration();
         challengeType = acme.getValidationMethod() != null && acme.getValidationMethod() instanceof DnsOperatorAcmeValidation ? TYPE_DNS_01 : TYPE_HTTP_01;
 

@@ -21,10 +21,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,11 +60,11 @@ public class ConnectionManager {
 
 	private final long keepAliveTimeout;
 	private final long autoCloseInterval;
-	private final Timer timer;
 	private final AtomicInteger numberInPool = new AtomicInteger();
 	private final HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
 			new HashMap<ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
 	private volatile boolean shutdownWhenDone = false;
+	private TimerManager selfCreatedTimerManager;
 
 	private static class OldConnection {
 		public final Connection connection;
@@ -84,17 +88,28 @@ public class ConnectionManager {
 		}
 	}
 
-	public ConnectionManager(long keepAliveTimeout) {
+	/**
+	 * @param keepAliveTimeout milliseconds to keep idle connections around for
+	 * @param timerManager a TimerManager instance to use to close idle connections. Providing a TimerManager instance
+	 *                     prevents the ConnectionManager from creating its own Timer (and TimerManager). Can be null.
+	 */
+	public ConnectionManager(long keepAliveTimeout, @Nullable TimerManager timerManager) {
 		this.keepAliveTimeout = keepAliveTimeout;
 		this.autoCloseInterval = keepAliveTimeout * 2;
-		timer = new Timer("Connection Closer", true);
-		timer.schedule(new TimerTask() {
+		if (timerManager == null) {
+			selfCreatedTimerManager = timerManager = new TimerManager();
+		}
+
+		timerManager.schedulePeriodicTask(new TimerTask() {
 			@Override
 			public void run() {
-				if (closeOldConnections() == 0 && shutdownWhenDone)
-					timer.cancel();
+				if (closeOldConnections() == 0 && shutdownWhenDone) {
+					cancel();
+					if (selfCreatedTimerManager != null)
+						selfCreatedTimerManager.shutdown();
+				}
 			}
-		}, autoCloseInterval, autoCloseInterval);
+		}, autoCloseInterval, "Connection Closer");
 	}
 
 	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, @Nullable String sniServerName,

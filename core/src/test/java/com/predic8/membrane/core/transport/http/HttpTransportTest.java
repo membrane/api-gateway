@@ -43,7 +43,7 @@ public class HttpTransportTest {
 
 	@Before
 	public void before() throws Exception {
-		when(httpSchemaResolver.getHttpClient()).thenReturn(httpClient);
+		when(httpSchemaResolver.getHttpClient(null)).thenReturn(httpClient);
 		when(resolverMap.getHTTPSchemaResolver()).thenReturn(httpSchemaResolver);
 		when(router.getResolverMap()).thenReturn(resolverMap);
 		when(router.getRuleManager()).thenReturn(ruleManager);

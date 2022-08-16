@@ -61,7 +61,7 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
         if (httpClientConfiguration == null) {
             httpClientConfiguration = new HttpClientConfiguration();
         }
-        httpClient = new HttpClient(httpClientConfiguration);
+        httpClient = new HttpClient(httpClientConfiguration, router.getTimerManager());
     }
 
     Cache<String, Map> cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();

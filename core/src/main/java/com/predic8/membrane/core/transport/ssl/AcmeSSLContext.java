@@ -5,6 +5,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeKeyCert;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeRenewal;
+import com.predic8.membrane.core.util.TimerManager;
 import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.cert.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AcmeSSLContext extends SSLContext {
     public static final long RENEW_PERIOD = 5 * 60 * 1000;
@@ -29,15 +31,18 @@ public class AcmeSSLContext extends SSLContext {
 
     private final AcmeClient client;
     private final String[] hosts;
-    private final Timer timer;
+    private final boolean selfCreatedTimerManager;
+    private final TimerManager timerManager;
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     private volatile AcmeKeyCert keyCert;
 
 
-    public AcmeSSLContext(SSLParser parser, ResolverMap resolverMap, String baseLocation, String[] hosts) throws JoseException, IOException {
+    public AcmeSSLContext(SSLParser parser, ResolverMap resolverMap, String baseLocation, String[] hosts, @Nullable TimerManager timerManager) throws JoseException, IOException {
         this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
-        client = new AcmeClient(parser.getAcme());
-        timer = new Timer("ACME timer " + constructHostsString());
+        client = new AcmeClient(parser.getAcme(), timerManager);
+        selfCreatedTimerManager = timerManager == null;
+        this.timerManager = timerManager != null ? timerManager : new TimerManager();
 
         initAndSchedule();
     }
@@ -232,19 +237,23 @@ public class AcmeSSLContext extends SSLContext {
         if (keyCert != null)
             nextRun = Math.max(keyCert.getValidUntil() - System.currentTimeMillis() - RENEW_PERIOD, RETRY_PERIOD);
 
+        if (shutdown.get())
+            return;
 
-        timer.schedule(new TimerTask() {
+        timerManager.schedule(new TimerTask() {
             @Override
             public void run() {
                 new AcmeRenewal(client, hosts).doWork();
                 initAndSchedule();
             }
-        }, nextRun);
+        }, nextRun, "ACME timer " + constructHostsString());
     }
 
     @Override
     public void stop() {
-        timer.cancel();
+        shutdown.set(true);
+        if (selfCreatedTimerManager)
+            timerManager.shutdown();
     }
 
     public boolean isReady() {

@@ -30,6 +30,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,10 +90,14 @@ public class HttpClient {
 	private static final String[] HTTP2_PROTOCOLS = new String[] { "h2" };
 
 	public HttpClient() {
-		this(new HttpClientConfiguration());
+		this(new HttpClientConfiguration(), null);
 	}
 
 	public HttpClient(HttpClientConfiguration configuration) {
+		this(configuration, null);
+	}
+
+	public HttpClient(HttpClientConfiguration configuration, TimerManager timerManager) {
 		proxy = configuration.getProxy();
 		if (proxy != null && proxy.getSslParser() != null)
 			proxySSLContext = new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
@@ -110,7 +115,7 @@ public class HttpClient {
 		connectTimeout = configuration.getConnection().getTimeout();
 		localAddr = configuration.getConnection().getLocalAddr();
 
-		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
+		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout(), timerManager);
 
 		useHttp2 = configuration.isUseExperimentalHttp2();
 		if (useHttp2)

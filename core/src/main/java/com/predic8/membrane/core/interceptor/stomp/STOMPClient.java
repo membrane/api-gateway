@@ -14,6 +14,7 @@ limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.stomp;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -96,8 +97,9 @@ public class STOMPClient extends AbstractInterceptor {
 	}
 
 	@Override
-	public void init() throws Exception {
-		connectionManager = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout());
+	public void init(Router router) throws Exception {
+		super.init(router);
+		connectionManager = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
 		if (sslOutboundParser != null)
 			sslOutboundProvider = new StaticSSLContext(sslOutboundParser, router.getResolverMap(), router.getBaseLocation());
 	}

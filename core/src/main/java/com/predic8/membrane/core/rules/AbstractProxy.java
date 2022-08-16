@@ -182,7 +182,7 @@ public abstract class AbstractProxy implements Rule {
 				if (!(key instanceof AbstractRuleKey))
 					throw new RuntimeException("<acme> only be used inside of <serviceProxy> and similar rules.");
 				String[] host = ((AbstractRuleKey) key).getHost().split(" +");
-				setSslInboundContext(new AcmeSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation(), host));
+				setSslInboundContext(new AcmeSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation(), host, router.getTimerManager()));
 			} else if (sslInboundParser.getKeyGenerator() != null)
 				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
 			else

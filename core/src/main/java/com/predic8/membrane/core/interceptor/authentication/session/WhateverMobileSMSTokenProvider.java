@@ -70,7 +70,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 
 	@Override
 	public void init(Router router) {
-		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
+		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient(router.getTimerManager());
 	}
 
 	@Override

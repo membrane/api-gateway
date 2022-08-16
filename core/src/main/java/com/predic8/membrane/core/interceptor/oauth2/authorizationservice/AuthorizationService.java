@@ -57,8 +57,8 @@ public abstract class AuthorizationService {
         log = LoggerFactory.getLogger(this.getClass().getName());
 
         setHttpClient(getHttpClientConfiguration() == null ? router.getResolverMap()
-                .getHTTPSchemaResolver().getHttpClient() : new HttpClient(
-                getHttpClientConfiguration()));
+                .getHTTPSchemaResolver().getHttpClient(router.getTimerManager()) : new HttpClient(
+                getHttpClientConfiguration(), router.getTimerManager()));
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         this.router = router;

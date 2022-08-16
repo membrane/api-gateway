@@ -25,6 +25,7 @@ import com.predic8.membrane.core.jmx.JmxExporter;
 import com.predic8.membrane.core.jmx.JmxRouter;
 import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
 import com.predic8.membrane.core.rules.InternalProxy;
+import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -117,6 +118,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	private Timer reinitializator;
 	private String id;
 	private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
+	private final TimerManager timerManager = new TimerManager();
 
 	public Router() {
 		ruleManager.setRouter(this);
@@ -218,6 +220,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		backgroundInitializator.shutdown();
 		if (transport != null)
 			transport.closeAll();
+		timerManager.shutdown();
 	}
 
 	public void shutdownAll() throws IOException{
@@ -567,5 +570,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			while (isRunning())
 				lock.wait();
 		}
+	}
+
+	public TimerManager getTimerManager() {
+		return timerManager;
 	}
 }

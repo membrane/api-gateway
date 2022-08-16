@@ -63,6 +63,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
+        // TODO: this creates a new connection pool on each request
         httpClient = createClient();
 
         String originalRequestUrl = buildRequestUrl(exc);

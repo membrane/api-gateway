@@ -65,7 +65,7 @@ public class SwaggerProxy extends ServiceProxy {
 	public void init() throws Exception {
 		super.init();
 		// download swaggerUrl
-		HttpClient hc = new HttpClient(router.getHttpClientConfig());
+		HttpClient hc = new HttpClient(router.getHttpClientConfig(), router.getTimerManager());
 		Exchange ex = hc.call(new Request.Builder().get(swaggerUrl).buildExchange());
 		if (ex.getResponse().getStatusCode() != 200) {
 		log.error("Couldn't fetch Swagger URL!");
