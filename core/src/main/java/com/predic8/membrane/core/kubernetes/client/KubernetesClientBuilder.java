@@ -11,6 +11,7 @@ import com.predic8.membrane.core.config.security.Trust;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
@@ -27,6 +28,7 @@ public class KubernetesClientBuilder {
 
     private boolean logHttp = false;
 
+    HttpClientFactory httpClientFactory;
     String baseURL;
     String ca;
     String cert;
@@ -116,7 +118,9 @@ public class KubernetesClientBuilder {
     }
 
     public KubernetesClient build() {
-        HttpClient hc = new HttpClient();
+        if (httpClientFactory == null)
+            httpClientFactory = new HttpClientFactory(null);
+        HttpClient hc = httpClientFactory.createClient(null);
         Consumer<Exchange> client = hc::call;
 
         if (baseURL.endsWith("/"))
@@ -186,6 +190,11 @@ public class KubernetesClientBuilder {
 
     public KubernetesClientBuilder log(boolean log) {
         this.logHttp = log;
+        return this;
+    }
+
+    public KubernetesClientBuilder httpClientFactory(HttpClientFactory httpClientFactory) {
+        this.httpClientFactory = httpClientFactory;
         return this;
     }
 

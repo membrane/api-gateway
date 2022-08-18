@@ -35,6 +35,7 @@ import com.predic8.membrane.core.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -90,14 +91,16 @@ public class HttpClient {
 	private static final String[] HTTP2_PROTOCOLS = new String[] { "h2" };
 
 	public HttpClient() {
-		this(new HttpClientConfiguration(), null);
+		this(null, null);
 	}
 
-	public HttpClient(HttpClientConfiguration configuration) {
+	public HttpClient(@Nullable HttpClientConfiguration configuration) {
 		this(configuration, null);
 	}
 
-	public HttpClient(HttpClientConfiguration configuration, TimerManager timerManager) {
+	public HttpClient(@Nullable HttpClientConfiguration configuration, @Nullable TimerManager timerManager) {
+		if (configuration == null)
+			configuration = new HttpClientConfiguration();
 		proxy = configuration.getProxy();
 		if (proxy != null && proxy.getSslParser() != null)
 			proxySSLContext = new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);

@@ -20,6 +20,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -90,10 +91,10 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
 
     @Override
-    public void init() {
-        super.init();
+    public void init(Router router) {
+        super.init(router);
         if(client == null)
-            client = new HttpClient();
+            client = router.getHttpClientFactory().createClient(null);
         if(mapper == null)
             mapper = new ObjectMapper();
 

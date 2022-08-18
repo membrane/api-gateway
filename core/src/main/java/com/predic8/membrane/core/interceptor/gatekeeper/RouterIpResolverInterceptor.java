@@ -52,7 +52,7 @@ public class RouterIpResolverInterceptor extends AbstractInterceptor {
 
     private List<String> routerIps = new ArrayList<>();
     private ObjectMapper om = new ObjectMapper();
-    private HttpClientConfiguration httpClientConfiguration = new HttpClientConfiguration();
+    private HttpClientConfiguration httpClientConfiguration;
     private SSLParser sslParser;
     private HttpClient httpClient;
     private SSLContext sslContext;
@@ -114,7 +114,7 @@ public class RouterIpResolverInterceptor extends AbstractInterceptor {
     public void init(Router router) throws Exception {
         super.init(router);
 
-        httpClient = new HttpClient(httpClientConfiguration, router.getTimerManager());
+        httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
     }

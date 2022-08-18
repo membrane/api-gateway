@@ -26,6 +26,7 @@ import com.predic8.membrane.core.jmx.JmxRouter;
 import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.rules.InternalProxy;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,11 +121,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	private String id;
 	private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
 	private final TimerManager timerManager = new TimerManager();
-	private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory();
+	private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
+	private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
 
 	public Router() {
 		ruleManager.setRouter(this);
-		resolverMap = new ResolverMap();
+		resolverMap = new ResolverMap(timerManager, httpClientFactory, kubernetesClientFactory);
 		resolverMap.addRuleResolver(this);
 	}
 
@@ -580,5 +582,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	public KubernetesClientFactory getKubernetesClientFactory() {
 		return kubernetesClientFactory;
+	}
+
+	public HttpClientFactory getHttpClientFactory() {
+		return httpClientFactory;
 	}
 }

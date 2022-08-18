@@ -16,6 +16,7 @@ package com.predic8.membrane.core.exchangestore;
 
 import java.util.*;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
@@ -65,7 +66,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		throw new UnsupportedOperationException("getClientStatistics must be implemented in the sub class.");
 	}
 
-	public void init() {
+	public void init(Router router) {
 	}
 
 	public synchronized void collect(ExchangeCollector collector) {

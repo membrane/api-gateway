@@ -175,7 +175,7 @@ public class HttpEndpointListener extends Thread {
 
 	public void closePort() throws IOException {
 		closed = true;
-		if (!serverSocket.isClosed())
+		if (serverSocket != null && !serverSocket.isClosed())
 			serverSocket.close();
 		if (sslProvider != null)
 			sslProvider.stop();

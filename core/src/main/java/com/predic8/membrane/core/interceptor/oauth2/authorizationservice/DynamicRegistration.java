@@ -49,13 +49,14 @@ public class DynamicRegistration {
     private SSLParser sslParser;
     private SSLContext sslContext;
     private InterceptorFlowController flowController = new InterceptorFlowController();
-    private HttpClient client = new HttpClient();
+    private HttpClient client;
 
     public void init(Router router) throws Exception {
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         for(Interceptor i : interceptors)
             i.init(router);
+        client = router.getHttpClientFactory().createClient(null);
     }
 
     public InputStream retrieveOpenIDConfiguration(String uri) throws Exception {

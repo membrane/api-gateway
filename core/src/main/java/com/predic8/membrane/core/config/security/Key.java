@@ -64,6 +64,11 @@ public class Key {
                 && Objects.equal(certificates, other.certificates);
     }
 
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(password, private_, certificates);
+    }
+
     public String getPassword() {
         return password;
     }

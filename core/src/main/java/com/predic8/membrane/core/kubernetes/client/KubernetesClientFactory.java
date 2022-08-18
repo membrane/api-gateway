@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.kubernetes.client;
 
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
+
 import java.util.WeakHashMap;
 
 /**
@@ -15,6 +17,11 @@ import java.util.WeakHashMap;
  */
 public class KubernetesClientFactory {
     private WeakHashMap<String, KubernetesClient> clients;
+    private final HttpClientFactory httpClientFactory;
+
+    public KubernetesClientFactory(HttpClientFactory httpClientFactory) {
+        this.httpClientFactory = httpClientFactory;
+    }
 
     public synchronized KubernetesClient createClient(String baseUrl) {
         if (clients == null)
@@ -22,7 +29,8 @@ public class KubernetesClientFactory {
         KubernetesClient client = clients.get(baseUrl);
         if (client == null)
             try {
-                KubernetesClientBuilder builder = KubernetesClientBuilder.auto();
+                KubernetesClientBuilder builder = KubernetesClientBuilder.auto()
+                        .httpClientFactory(httpClientFactory);
                 if (baseUrl != null)
                     builder.baseURL(baseUrl);
                 client = builder.build();

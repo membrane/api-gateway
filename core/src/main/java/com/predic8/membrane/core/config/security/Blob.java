@@ -38,6 +38,11 @@ public abstract class Blob {
                 && Objects.equal(location, other.location);
     }
 
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(content, location);
+    }
+
     public String getContent() {
         return content;
     }

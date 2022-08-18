@@ -29,6 +29,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.TimerManager;
@@ -40,6 +41,7 @@ import javax.annotation.Nullable;
 @MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
 
+    private HttpClientFactory httpClientFactory;
     private ConcurrentHashMap<String,String> watchedUrlMd5s = new ConcurrentHashMap<String,String>();
     private ConcurrentHashMap<String,Consumer<InputStream>> consumerForUrls = new ConcurrentHashMap<String, Consumer<InputStream>>();
     int httpWatchIntervalInSeconds = 1;
@@ -52,7 +54,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
                 md5 = MessageDigest.getInstance("MD5");
             } catch (NoSuchAlgorithmException ignored) {
             }
-            HttpClient client = new HttpClient();
+            HttpClient client = httpClientFactory.createClient(null);
             while (watchedUrlMd5s.size() > 0) {
                 try {
                     for (String url : watchedUrlMd5s.keySet()) {
@@ -92,9 +94,15 @@ public class HTTPSchemaResolver implements SchemaResolver {
     private HttpClient httpClient;
     private URIFactory uriFactory = new URIFactory(false);
 
-    public synchronized HttpClient getHttpClient(@Nullable TimerManager timerManager) {
+    public HTTPSchemaResolver(@Nullable HttpClientFactory httpClientFactory) {
+        this.httpClientFactory = httpClientFactory;
+    }
+
+    private synchronized HttpClient getHttpClient() {
         if (httpClient == null) {
-            httpClient = new HttpClient(httpClientConfig, timerManager);
+            if (httpClientFactory == null)
+                httpClientFactory = new HttpClientFactory(null);
+            httpClient = httpClientFactory.createClient(httpClientConfig);
         }
         return httpClient;
     }
@@ -107,7 +115,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     public InputStream resolve(String url) throws ResourceRetrievalException {
         try {
             Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
-            Response response = getHttpClient(null).call(exc).getResponse();
+            Response response = getHttpClient().call(exc).getResponse();
             response.readBody();
 
             if (response.getStatusCode() != 200) {

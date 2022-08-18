@@ -49,20 +49,31 @@ public class SSLParser {
 		if (!(obj instanceof SSLParser))
 			return false;
 		SSLParser other = (SSLParser)obj;
-		return Objects.equal(keyStore, other.keyStore)
+		return Objects.equal(acme, other.acme)
+				&& Objects.equal(keyStore, other.keyStore)
 				&& Objects.equal(key, other.key)
+				&& Objects.equal(keyGenerator, other.keyGenerator)
 				&& Objects.equal(trustStore, other.trustStore)
 				&& Objects.equal(trust, other.trust)
 				&& Objects.equal(algorithm, other.algorithm)
 				&& Objects.equal(protocol, other.protocol)
+				&& Objects.equal(protocols, other.protocols)
 				&& Objects.equal(ciphers, other.ciphers)
 				&& Objects.equal(clientAuth, other.clientAuth)
 				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure)
 				&& Objects.equal(endpointIdentificationAlgorithm, other.endpointIdentificationAlgorithm)
 				&& Objects.equal(serverName, other.serverName)
-				&& Objects.equal(showSSLExceptions, other.showSSLExceptions);
+				&& Objects.equal(showSSLExceptions, other.showSSLExceptions)
+				&& Objects.equal(useAsDefault, other.useAsDefault)
+				&& Objects.equal(useExperimentalHttp2, other.useExperimentalHttp2);
 	}
 
+	@Override
+	public int hashCode() {
+		return java.util.Objects.hash(acme, keyStore, key, keyGenerator, trustStore, trust, algorithm, protocol,
+				protocols, ciphers, clientAuth, ignoreTimestampCheckFailure, endpointIdentificationAlgorithm,
+				serverName, showSSLExceptions, useAsDefault, useExperimentalHttp2);
+	}
 
 	public KeyStore getKeyStore() {
 		return keyStore;

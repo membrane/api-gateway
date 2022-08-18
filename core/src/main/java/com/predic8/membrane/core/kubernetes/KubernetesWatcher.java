@@ -82,7 +82,7 @@ public class KubernetesWatcher {
     }
 
     private KubernetesClient getClient() {
-        return router.getResolverMap().getKubernetesSchemaResolver().getClient();
+        return router.getKubernetesClientFactory().createClient(null);
     }
 
     private Optional<KubernetesValidationInterceptor> findK8sValidatingInterceptor() {

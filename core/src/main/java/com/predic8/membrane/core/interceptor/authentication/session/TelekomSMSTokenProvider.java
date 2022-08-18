@@ -24,6 +24,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
 import org.apache.commons.codec.binary.Base64;
@@ -100,7 +101,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 
 	@Override
 	public void init(Router router) {
-		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient(router.getTimerManager());
+		hc = router.getHttpClientFactory().createClient(null);
 	}
 
 	@Override
@@ -169,7 +170,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 					body(new URLParamUtil.ParamBuilder().add("grant_type", "client_credentials").add("scope", scope).build()).
 					buildExchange();
 
-			new HttpClient().call(exc, false, true);
+			hc.call(exc, false, true);
 			if (exc.getResponse().getStatusCode() != 200)
 				throw new RuntimeException("Telekom Authentication Server returned: " + exc.getResponse());
 

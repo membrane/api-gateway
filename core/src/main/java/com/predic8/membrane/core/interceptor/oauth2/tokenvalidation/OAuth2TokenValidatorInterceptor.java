@@ -32,12 +32,13 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
 
     private String endpoint;
 
-    HttpClient client = new HttpClient();
+    HttpClient client;
 
     @Override
     public void init(Router router) throws Exception {
         setFlow(Flow.Set.REQUEST);
         name = "Token validator";
+        client = router.getHttpClientFactory().createClient(null);
     }
 
     @Override

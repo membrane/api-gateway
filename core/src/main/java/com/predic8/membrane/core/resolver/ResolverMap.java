@@ -26,6 +26,9 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.cloud.etcd.*;
 import com.predic8.membrane.core.kubernetes.KubernetesSchemaResolver;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
@@ -107,13 +110,17 @@ public class ResolverMap implements Cloneable, Resolver {
 	private SchemaResolver[] resolvers;
 
 	public ResolverMap() {
+		this(null, null, null);
+	}
+
+	public ResolverMap(TimerManager timerManager, HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory) {
 		schemas = new String[10];
 		resolvers = new SchemaResolver[10];
 
 		// the default config
 		addSchemaResolver(new ClasspathSchemaResolver());
-		addSchemaResolver(new HTTPSchemaResolver());
-		addSchemaResolver(new KubernetesSchemaResolver());
+		addSchemaResolver(new HTTPSchemaResolver(httpClientFactory));
+		addSchemaResolver(new KubernetesSchemaResolver(kubernetesClientFactory));
 		addSchemaResolver(new FileSchemaResolver());
 	}
 

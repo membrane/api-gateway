@@ -18,11 +18,26 @@ import org.springframework.beans.factory.annotation.Required;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
+import java.util.Objects;
+
 @MCElement(name="authentication", topLevel=false)
 public class AuthenticationConfiguration {
 
 	private String username;
 	private String password;
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		AuthenticationConfiguration that = (AuthenticationConfiguration) o;
+		return Objects.equals(username, that.username) && Objects.equals(password, that.password);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(username, password);
+	}
 
 	public String getUsername() {
 		return username;
@@ -43,5 +58,4 @@ public class AuthenticationConfiguration {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
 }

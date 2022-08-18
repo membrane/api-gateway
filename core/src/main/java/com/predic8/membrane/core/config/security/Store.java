@@ -34,6 +34,11 @@ public abstract class Store {
 				&& Objects.equal(provider, other.provider);
 	}
 
+	@Override
+	public int hashCode() {
+		return java.util.Objects.hash(location, password, type, provider);
+	}
+
 	public String getLocation() {
 		return location;
 	}

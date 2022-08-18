@@ -269,7 +269,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 		resolverMap = router.getResolverMap();
 		if (httpClientConfig != null) {
-			HTTPSchemaResolver httpSR = new HTTPSchemaResolver();
+			HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory());
 			httpSR.setHttpClientConfig(httpClientConfig);
 			resolverMap = resolverMap.clone();
 			resolverMap.addSchemaResolver(httpSR);

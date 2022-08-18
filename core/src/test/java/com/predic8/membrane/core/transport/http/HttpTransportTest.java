@@ -16,6 +16,8 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 
+import com.predic8.membrane.core.Statistics;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,14 +41,18 @@ public class HttpTransportTest {
 	private SSLProvider sslProvider = mock(SSLProvider.class);
 	private RuleManager ruleManager = mock(RuleManager.class);
 	private Router router = mock(Router.class);
+	private ExchangeStore exchangeStore = mock(ExchangeStore.class);
+	private Statistics statistics = new Statistics();
 	private HttpTransport transport;
 
 	@Before
 	public void before() throws Exception {
-		when(httpSchemaResolver.getHttpClient(null)).thenReturn(httpClient);
 		when(resolverMap.getHTTPSchemaResolver()).thenReturn(httpSchemaResolver);
 		when(router.getResolverMap()).thenReturn(resolverMap);
 		when(router.getRuleManager()).thenReturn(ruleManager);
+		when(router.getExchangeStore()).thenReturn(exchangeStore);
+		when(router.getHttpClientFactory()).thenReturn(new HttpClientFactory(null));
+		when(router.getStatistics()).thenReturn(statistics);
 
 		transport = new HttpTransport();
 		transport.init(router);

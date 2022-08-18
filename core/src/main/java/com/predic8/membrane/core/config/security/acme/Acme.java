@@ -7,6 +7,8 @@ import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.joda.time.Duration;
 
+import java.util.Objects;
+
 /**
  * @description
  * <p>Configures an ACME (RFC 8555) client, e.g. to retrieve TLS certificates from
@@ -73,6 +75,35 @@ public class Acme {
     boolean experimental;
     String hosts;
     AcmeValidation validationMethod;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Acme acme = (Acme) o;
+        return termsOfServiceAgreed == acme.termsOfServiceAgreed
+                && experimental == acme.experimental
+                && Objects.equals(directoryUrl, acme.directoryUrl)
+                && Objects.equals(contacts, acme.contacts)
+                && Objects.equals(httpClientConfiguration, acme.httpClientConfiguration)
+                && Objects.equals(validity, acme.validity)
+                && Objects.equals(acmeSynchronizedStorage, acme.acmeSynchronizedStorage)
+                && Objects.equals(hosts, acme.hosts)
+                && Objects.equals(validationMethod, acme.validationMethod);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(directoryUrl,
+                termsOfServiceAgreed,
+                contacts,
+                httpClientConfiguration,
+                validity,
+                acmeSynchronizedStorage,
+                experimental,
+                hosts,
+                validationMethod);
+    }
 
     public String getDirectoryUrl() {
         return directoryUrl;

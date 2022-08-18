@@ -56,10 +56,7 @@ public class GateKeeperClientInterceptor implements SSLInterceptor {
 
     @Override
     public void init(Router router) throws Exception {
-        if (httpClientConfiguration == null) {
-            httpClientConfiguration = new HttpClientConfiguration();
-        }
-        httpClient = new HttpClient(httpClientConfiguration, router.getTimerManager());
+        httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
     }
 
     Cache<String, Map> cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();

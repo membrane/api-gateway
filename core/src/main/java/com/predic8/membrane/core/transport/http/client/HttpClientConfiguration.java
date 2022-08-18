@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.transport.http.client;
 
 import java.security.InvalidParameterException;
+import java.util.Objects;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -35,7 +36,30 @@ public class HttpClientConfiguration implements ApplicationContextAware {
 	private String baseLocation;
 	private boolean useExperimentalHttp2;
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		HttpClientConfiguration that = (HttpClientConfiguration) o;
+		return maxRetries == that.maxRetries
+				&& useExperimentalHttp2 == that.useExperimentalHttp2
+				&& Objects.equals(connection, that.connection)
+				&& Objects.equals(proxy, that.proxy)
+				&& Objects.equals(authentication, that.authentication)
+				&& Objects.equals(sslParser, that.sslParser)
+				&& Objects.equals(baseLocation, that.baseLocation);
+	}
 
+	@Override
+	public int hashCode() {
+		return Objects.hash(maxRetries,
+				connection,
+				proxy,
+				authentication,
+				sslParser,
+				baseLocation,
+				useExperimentalHttp2);
+	}
 
 	public ConnectionConfiguration getConnection() {
 		return connection;

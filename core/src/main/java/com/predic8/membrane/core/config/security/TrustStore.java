@@ -32,6 +32,10 @@ public class TrustStore extends Store {
 				&& Objects.equal(algorithm, other.algorithm);
 	}
 
+	@Override
+	public int hashCode() {
+		return java.util.Objects.hash(super.hashCode(), algorithm, checkRevocation);
+	}
 
 	public String getAlgorithm() {
 		return algorithm;

@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.config.security;
 
-import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @description Experimental.
@@ -35,11 +35,18 @@ public class Trust {
     List<Certificate> certificateList = new ArrayList<Certificate>();
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Trust))
-            return false;
-        Trust other = (Trust)obj;
-        return Objects.equal(certificateList, other.certificateList);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Trust trust = (Trust) o;
+        return Objects.equals(algorithm, trust.algorithm)
+                && Objects.equals(checkRevocation, trust.checkRevocation)
+                && Objects.equals(certificateList, trust.certificateList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(algorithm, checkRevocation, certificateList);
     }
 
     public List<Certificate> getCertificateList() {

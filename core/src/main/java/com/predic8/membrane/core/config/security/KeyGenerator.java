@@ -17,6 +17,8 @@ package com.predic8.membrane.core.config.security;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
+import java.util.Objects;
+
 /**
  * @description Experimental.
  * <p>Allows to dynamically generate keys/certificates for arbitrary domain names on the fly, signed by a specified
@@ -35,5 +37,18 @@ public class KeyGenerator {
     @MCChildElement
     public void setKey(Key key) {
         this.key = key;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KeyGenerator that = (KeyGenerator) o;
+        return Objects.equals(key, that.key);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key);
     }
 }

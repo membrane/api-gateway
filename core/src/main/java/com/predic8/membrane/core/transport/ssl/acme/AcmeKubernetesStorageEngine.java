@@ -32,7 +32,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
 
     public AcmeKubernetesStorageEngine(KubernetesStorage ks, @Nullable KubernetesClientFactory kubernetesClientFactory) {
         if (kubernetesClientFactory == null)
-            kubernetesClientFactory = new KubernetesClientFactory();
+            kubernetesClientFactory = new KubernetesClientFactory(null);
         client = kubernetesClientFactory.createClient(ks.getBaseURL());
         namespace = ks.getNamespace() != null ? ks.getNamespace() : client.getNamespace();
         lease = ks.getMasterLease();

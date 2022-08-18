@@ -22,6 +22,8 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 
+import java.util.Objects;
+
 @MCElement(name="proxy", topLevel=false, id="proxy-configuration")
 public class ProxyConfiguration {
 
@@ -40,6 +42,24 @@ public class ProxyConfiguration {
 	private String password;
 
 	private SSLParser sslParser;
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ProxyConfiguration that = (ProxyConfiguration) o;
+		return port == that.port
+				&& authentication == that.authentication
+				&& Objects.equals(host, that.host)
+				&& Objects.equals(username, that.username)
+				&& Objects.equals(password, that.password)
+				&& Objects.equals(sslParser, that.sslParser);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(host, port, authentication, username, password, sslParser);
+	}
 
 	public String getHost() {
 		return host;

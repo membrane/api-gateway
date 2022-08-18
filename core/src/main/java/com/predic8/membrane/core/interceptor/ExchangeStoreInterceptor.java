@@ -52,7 +52,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) throws Exception {
 		this();
-		exchangeStore.init();
 		setExchangeStore(exchangeStore);
 	}
 
@@ -116,6 +115,8 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 	@Override
 	public void init() throws Exception {
+		store.init(router);
+
 		if (exchangeStoreBeanId == BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
 			; // do nothing as "store" was already set via #setExchangeStore(ExchangeStore)
 		else if (exchangeStoreBeanId != null)

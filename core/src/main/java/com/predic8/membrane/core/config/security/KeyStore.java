@@ -34,6 +34,10 @@ public class KeyStore extends Store {
 				&& Objects.equal(keyAlias, other.keyAlias);
 	}
 
+	@Override
+	public int hashCode() {
+		return java.util.Objects.hash(super.hashCode(), keyPassword, keyAlias);
+	}
 
 	public String getKeyPassword() {
 		return keyPassword;

@@ -23,14 +23,17 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientBuilder;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -43,15 +46,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class KubernetesSchemaResolver implements SchemaResolver {
 
+    KubernetesClientFactory kubernetesClientFactory;
     KubernetesClient kc;
 
-    synchronized KubernetesClient getClient() {
-        if (kc == null)
-            try {
-                kc = KubernetesClientBuilder.auto().build();
-            } catch (KubernetesClientBuilder.ParsingException e) {
-                throw new RuntimeException(e);
-            }
+    public KubernetesSchemaResolver(@Nullable KubernetesClientFactory kubernetesClientFactory) {
+        this.kubernetesClientFactory = kubernetesClientFactory;
+    }
+
+    private synchronized KubernetesClient getClient() {
+        if (kc == null) {
+            if (kubernetesClientFactory == null)
+                kubernetesClientFactory = new KubernetesClientFactory(null);
+            kc = kubernetesClientFactory.createClient(null);
+        }
         return kc;
     }
 

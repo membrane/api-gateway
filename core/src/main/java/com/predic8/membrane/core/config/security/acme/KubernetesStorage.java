@@ -4,6 +4,8 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.util.Objects;
+
 @MCElement(name = "kubernetesStorage", topLevel = false)
 public class KubernetesStorage implements AcmeSynchronizedStorage {
     String baseURL;
@@ -59,5 +61,18 @@ public class KubernetesStorage implements AcmeSynchronizedStorage {
     @MCAttribute
     public void setPrefix(String prefix) {
         this.prefix = prefix;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KubernetesStorage that = (KubernetesStorage) o;
+        return Objects.equals(baseURL, that.baseURL) && Objects.equals(namespace, that.namespace) && Objects.equals(masterLease, that.masterLease) && Objects.equals(accountSecret, that.accountSecret) && Objects.equals(prefix, that.prefix);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(baseURL, namespace, masterLease, accountSecret, prefix);
     }
 }

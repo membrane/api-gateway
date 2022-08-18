@@ -17,6 +17,7 @@ package com.predic8.membrane.core.exchangestore;
 import java.util.List;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
@@ -108,7 +109,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	@Override
-	public void init() throws Exception {
+	public void init(Router router) throws Exception {
 	}
 
 	public List<? extends ClientStatistics> getClientStatistics() {

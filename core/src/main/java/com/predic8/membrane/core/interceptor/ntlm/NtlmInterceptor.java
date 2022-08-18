@@ -58,14 +58,11 @@ public class NtlmInterceptor extends AbstractInterceptor {
         if(NTLMRetriever == null)
             NTLMRetriever = new HeaderNTLMRetriever(userHeaderName,passwordHeaderName, domainHeaderName,workstationHeaderName);
 
-
+        httpClient = router.getHttpClientFactory().createClient(null);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        // TODO: this creates a new connection pool on each request
-        httpClient = createClient();
-
         String originalRequestUrl = buildRequestUrl(exc);
         Connection stableConnection = exc.getTargetConnection();
 
@@ -128,11 +125,6 @@ public class NtlmInterceptor extends AbstractInterceptor {
         } catch (IOException e) {
             LOG.warn("",e);
         }
-    }
-
-    private HttpClient createClient() {
-        HttpClientConfiguration configuration = new HttpClientConfiguration();
-        return new HttpClient(configuration);
     }
 
     @MCChildElement(order = 1)

@@ -19,6 +19,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -70,7 +71,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 
 	@Override
 	public void init(Router router) {
-		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient(router.getTimerManager());
+		hc = router.getHttpClientFactory().createClient(null);
 	}
 
 	@Override

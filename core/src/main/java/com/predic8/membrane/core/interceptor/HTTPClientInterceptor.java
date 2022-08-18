@@ -77,10 +77,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	public void init(Router router) throws Exception {
 		super.init(router);
 
-		if (httpClientConfig == null)
-			hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient(router.getTimerManager());
-		else
-			hc = new HttpClient(httpClientConfig, router.getTimerManager());
+		hc = router.getHttpClientFactory().createClient(httpClientConfig);
 		hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
 	}
 

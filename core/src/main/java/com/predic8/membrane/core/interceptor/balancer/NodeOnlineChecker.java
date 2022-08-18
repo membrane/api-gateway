@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -45,6 +46,10 @@ public class NodeOnlineChecker {
 
     public void setPingTimeoutInSeconds(int pingTimeoutInSeconds) {
         this.pingTimeoutInSeconds = pingTimeoutInSeconds;
+    }
+
+    public void init(Router router) {
+        client = router.getHttpClientFactory().createClient(null);
     }
 
     private class BadNode {
@@ -130,11 +135,6 @@ public class NodeOnlineChecker {
     private DateTime lastCheck = DateTime.now();
 
     private HttpClient client;
-
-
-    public NodeOnlineChecker() {
-        client = new HttpClient();
-    }
 
     public void handle(Exchange exc){
         if (exc.getNodeExceptions() != null) {

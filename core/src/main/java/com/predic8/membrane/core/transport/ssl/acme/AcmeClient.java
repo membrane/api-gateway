@@ -12,6 +12,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.URIFactory;
@@ -99,11 +100,13 @@ public class AcmeClient {
     private Duration validity;
     private AcmeSynchronizedStorageEngine asse;
 
-    public AcmeClient(Acme acme, @Nullable TimerManager timerManager, @Nullable KubernetesClientFactory kubernetesClientFactory) {
+    public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory, @Nullable KubernetesClientFactory kubernetesClientFactory) {
         directoryUrl = acme.getDirectoryUrl();
         termsOfServiceAgreed = acme.isTermsOfServiceAgreed();
         contacts = Arrays.asList(acme.getContacts().split(" +"));
-        hc = new HttpClient(acme.getHttpClientConfiguration() == null ? new HttpClientConfiguration() : acme.getHttpClientConfiguration(), timerManager);
+        if (httpClientFactory == null)
+            httpClientFactory = new HttpClientFactory(null);
+        hc = httpClientFactory.createClient(acme.getHttpClientConfiguration());
         validity = acme.getValidityDuration();
         challengeType = acme.getValidationMethod() != null && acme.getValidationMethod() instanceof DnsOperatorAcmeValidation ? TYPE_DNS_01 : TYPE_HTTP_01;
 
