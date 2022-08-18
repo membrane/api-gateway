@@ -1,12 +1,14 @@
 package com.predic8.membrane.core.transport.ssl.acme;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.acme.KubernetesStorage;
 import com.predic8.membrane.core.kubernetes.client.KubernetesApiException;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
-import com.predic8.membrane.core.kubernetes.client.KubernetesClientBuilder;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,15 +30,10 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
     private final String accountSecret;
     private final String prefix;
 
-    public AcmeKubernetesStorageEngine(KubernetesStorage ks) {
-        try {
-            KubernetesClientBuilder builder = KubernetesClientBuilder.auto();
-            if (ks.getBaseURL() != null)
-                builder.baseURL(ks.getBaseURL());
-            client = builder.build();
-        } catch (KubernetesClientBuilder.ParsingException e) {
-            throw new RuntimeException(e);
-        }
+    public AcmeKubernetesStorageEngine(KubernetesStorage ks, @Nullable KubernetesClientFactory kubernetesClientFactory) {
+        if (kubernetesClientFactory == null)
+            kubernetesClientFactory = new KubernetesClientFactory();
+        client = kubernetesClientFactory.createClient(ks.getBaseURL());
         namespace = ks.getNamespace() != null ? ks.getNamespace() : client.getNamespace();
         lease = ks.getMasterLease();
         LOG.info("acme: using identity " + identity + " for master election");

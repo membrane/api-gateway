@@ -1,7 +1,7 @@
 package com.predic8.membrane.core.transport.ssl;
 
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeKeyCert;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeRenewal;
@@ -38,9 +38,12 @@ public class AcmeSSLContext extends SSLContext {
     private volatile AcmeKeyCert keyCert;
 
 
-    public AcmeSSLContext(SSLParser parser, ResolverMap resolverMap, String baseLocation, String[] hosts, @Nullable TimerManager timerManager) throws JoseException, IOException {
+    public AcmeSSLContext(SSLParser parser,
+                          String[] hosts,
+                          @Nullable TimerManager timerManager,
+                          @Nullable KubernetesClientFactory kubernetesClientFactory) throws JoseException, IOException {
         this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
-        client = new AcmeClient(parser.getAcme(), timerManager);
+        client = new AcmeClient(parser.getAcme(), timerManager, kubernetesClientFactory);
         selfCreatedTimerManager = timerManager == null;
         this.timerManager = timerManager != null ? timerManager : new TimerManager();
 

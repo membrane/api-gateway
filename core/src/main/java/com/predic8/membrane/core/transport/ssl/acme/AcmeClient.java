@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.acme.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.TimerManager;
@@ -97,7 +99,7 @@ public class AcmeClient {
     private Duration validity;
     private AcmeSynchronizedStorageEngine asse;
 
-    public AcmeClient(Acme acme, @Nullable TimerManager timerManager) {
+    public AcmeClient(Acme acme, @Nullable TimerManager timerManager, @Nullable KubernetesClientFactory kubernetesClientFactory) {
         directoryUrl = acme.getDirectoryUrl();
         termsOfServiceAgreed = acme.isTermsOfServiceAgreed();
         contacts = Arrays.asList(acme.getContacts().split(" +"));
@@ -113,7 +115,7 @@ public class AcmeClient {
         } else if (ass instanceof FileStorage) {
             asse = new AcmeFileStorageEngine((FileStorage)ass);
         } else if (ass instanceof KubernetesStorage) {
-            asse = new AcmeKubernetesStorageEngine((KubernetesStorage) ass);
+            asse = new AcmeKubernetesStorageEngine((KubernetesStorage) ass, kubernetesClientFactory);
         } else if (ass instanceof MemoryStorage) {
             asse = new AcmeMemoryStorageEngine();
         } else {
