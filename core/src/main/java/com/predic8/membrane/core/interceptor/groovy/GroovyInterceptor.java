@@ -21,7 +21,7 @@ import java.util.NoSuchElementException;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SSLableProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.google.common.base.Function;
 import com.predic8.membrane.annot.MCElement;
@@ -154,7 +154,7 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		StringBuilder sb = new StringBuilder();
 		sb.append(TextUtil.removeFinalChar(getShortDescription()));
 		sb.append(":<br/><pre style=\"overflow-x:auto\">");
-		sb.append(StringEscapeUtils.escapeHtml(TextUtil.removeCommonLeadingIndentation(src)));
+		sb.append(StringEscapeUtils.escapeHtml4(TextUtil.removeCommonLeadingIndentation(src)));
 		sb.append("</pre>");
 		return sb.toString();
 	}

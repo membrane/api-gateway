@@ -22,7 +22,7 @@ import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,7 +93,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
 
     @Override
     public void shutdownInput() throws IOException {
-        throw new NotImplementedException();
+        throw new NotImplementedException("");
     }
 
     @Override

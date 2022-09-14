@@ -29,7 +29,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDa
 import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import com.predic8.membrane.core.util.HttpUtil;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.UnsupportedEncodingException;
@@ -152,7 +152,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		if (userDataProvider instanceof StaticUserDataProvider) {
 			sb.append("Users: ");
 			for (User user : ((StaticUserDataProvider)userDataProvider).getUsers()) {
-				sb.append(StringEscapeUtils.escapeHtml(user.getUsername()));
+				sb.append(StringEscapeUtils.escapeHtml4(user.getUsername()));
 				sb.append(", ");
 			}
 			sb.delete(sb.length()-2, sb.length());

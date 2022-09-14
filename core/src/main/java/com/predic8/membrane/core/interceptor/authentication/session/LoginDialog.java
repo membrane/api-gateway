@@ -21,8 +21,8 @@ import java.util.*;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

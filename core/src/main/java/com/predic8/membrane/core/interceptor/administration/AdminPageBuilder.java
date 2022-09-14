@@ -16,7 +16,7 @@ limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
-import static org.apache.commons.lang.time.DurationFormatUtils.formatDurationHMS;
+import static org.apache.commons.lang3.time.DurationFormatUtils.formatDurationHMS;
 //import static org.apache.log4j.Level.ALL;
 //import static org.apache.log4j.Level.DEBUG;
 //import static org.apache.log4j.Level.ERROR;
@@ -33,7 +33,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import com.predic8.membrane.core.rules.*;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,7 +148,7 @@ public class AdminPageBuilder extends Html {
 		script().attr("type","text/javascript").src("/admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
 		script().attr("type","text/javascript").src("/admin/formValidator/jquery.validationEngine-en.js").end();
 		script().attr("type","text/javascript").src("/admin/formValidator/jquery.validationEngine.js").end();
-		script().attr("type","text/javascript").raw("var relativeRootPath=\"" + StringEscapeUtils.escapeJavaScript(relativeRootPath) + "\";").end();
+		script().attr("type","text/javascript").raw("var relativeRootPath=\"" + StringEscapeUtils.escapeEcmaScript(relativeRootPath) + "\";").end();
 		script().attr("type","text/javascript").src("/admin/js/membrane.js").end();
 		createMetaElements();
 		end();
@@ -633,12 +633,12 @@ public class AdminPageBuilder extends Html {
 			boolean same = longDescription.equals(shortDescription);
 
 			if (!TextUtil.isValidXMLSnippet(shortDescription)) {
-				shortDescription = StringEscapeUtils.escapeHtml(shortDescription).replace("\n", "<br/>");
+				shortDescription = StringEscapeUtils.escapeHtml4(shortDescription).replace("\n", "<br/>");
 				if (same)
 					longDescription = shortDescription;
 			}
 			if (!same && !TextUtil.isValidXMLSnippet(longDescription)) {
-				longDescription = StringEscapeUtils.escapeHtml(longDescription).replace("\n", "<br/>");
+				longDescription = StringEscapeUtils.escapeHtml4(longDescription).replace("\n", "<br/>");
 			}
 
 			shortDescription = shortDescription.replaceAll("\"/admin", "\"" + relativeRootPath + "/admin");

@@ -21,7 +21,7 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 import com.twitter.hpack.Decoder;
 import com.twitter.hpack.Encoder;
 import com.twitter.hpack.HeaderListener;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

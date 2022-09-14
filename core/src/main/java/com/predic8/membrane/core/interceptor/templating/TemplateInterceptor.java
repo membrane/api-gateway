@@ -25,7 +25,7 @@ import groovy.text.StreamingTemplateEngine;
 import groovy.text.Template;
 import groovy.text.XmlTemplateEngine;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 

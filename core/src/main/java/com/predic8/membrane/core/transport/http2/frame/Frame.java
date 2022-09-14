@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport.http2.frame;
 
 import com.predic8.membrane.core.transport.http2.Settings;
 import com.predic8.membrane.core.util.ByteUtil;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.io.EOFException;
 import java.io.IOException;

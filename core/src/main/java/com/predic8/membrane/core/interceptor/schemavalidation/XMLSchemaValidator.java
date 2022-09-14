@@ -23,7 +23,7 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

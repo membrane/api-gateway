@@ -15,8 +15,7 @@
 package com.predic8.membrane.core.transport.http2.frame;
 
 import com.predic8.membrane.core.transport.http2.Settings;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -73,7 +72,7 @@ public class SettingsFrame {
             case ID_SETTINGS_INITIAL_WINDOW_SIZE: return "SETTINGS_INITIAL_WINDOW_SIZE";
             case ID_SETTINGS_MAX_FRAME_SIZE : return "SETTINGS_MAX_FRAME_SIZE ";
             case ID_SETTINGS_MAX_HEADER_LIST_SIZE : return "SETTINGS_MAX_HEADER_LIST_SIZE ";
-            default: throw new NotImplementedException();
+            default: throw new NotImplementedException("i=" + i);
         }
     }
 

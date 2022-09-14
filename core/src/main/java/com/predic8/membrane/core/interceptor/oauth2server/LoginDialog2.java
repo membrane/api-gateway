@@ -35,8 +35,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

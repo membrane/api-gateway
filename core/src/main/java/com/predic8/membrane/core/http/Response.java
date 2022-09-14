@@ -20,7 +20,7 @@ import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoResponseException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -224,8 +224,8 @@ public class Response extends Message {
 
 	private static String htmlMessage(String caption, String text) {
 		return unescapedHtmlMessage(
-				StringEscapeUtils.escapeHtml(caption),
-				StringEscapeUtils.escapeHtml(text));
+				StringEscapeUtils.escapeHtml4(caption),
+				StringEscapeUtils.escapeHtml4(text));
 	}
 
 	public static ResponseBuilder serverUnavailable(String message) {

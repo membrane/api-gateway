@@ -28,7 +28,7 @@ import java.util.TimeZone;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
@@ -128,7 +128,7 @@ public class HttpUtil {
 		buf.append(comment);
 		buf.append("</p>\r\n");
 		buf.append("<pre id=\"msg\">");
-		buf.append(StringEscapeUtils.escapeHtml(text));
+		buf.append(StringEscapeUtils.escapeHtml4(text));
 		buf.append("</pre>");
 		buf.append("<p class=\"footer\">");
 		buf.append(Constants.HTML_FOOTER);

@@ -24,7 +24,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.javascript.JavascriptLanguageSupport;
 import com.predic8.membrane.core.util.ClassFinder;
 import com.predic8.membrane.core.util.TextUtil;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -161,7 +161,7 @@ public class JavascriptInterceptor extends AbstractInterceptor {
         StringBuilder sb = new StringBuilder();
         sb.append(TextUtil.removeFinalChar(getShortDescription()));
         sb.append(":<br/><pre style=\"overflow-x:auto\">");
-        sb.append(StringEscapeUtils.escapeHtml(TextUtil.removeCommonLeadingIndentation(src)));
+        sb.append(StringEscapeUtils.escapeHtml4(TextUtil.removeCommonLeadingIndentation(src)));
         sb.append("</pre>");
         return sb.toString();
     }

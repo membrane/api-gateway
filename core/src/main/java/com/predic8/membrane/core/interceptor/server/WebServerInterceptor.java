@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.TextUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;

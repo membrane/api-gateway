@@ -18,7 +18,7 @@ import java.io.IOException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -115,7 +115,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getShortDescription() {
-		return "Authenticates incoming requests based on the file " + StringEscapeUtils.escapeHtml(file) + " .";
+		return "Authenticates incoming requests based on the file " + StringEscapeUtils.escapeHtml4(file) + " .";
 	}
 
 }

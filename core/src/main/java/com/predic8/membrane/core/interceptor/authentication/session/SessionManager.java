@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import javax.xml.stream.XMLStreamReader;
 
 import com.github.fge.jsonschema.core.keyword.syntax.checkers.common.ExclusiveMaximumSyntaxChecker;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;

@@ -26,7 +26,7 @@ import org.junit.Assert;
 import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.custommonkey.xmlunit.XMLAssert;
 import org.junit.Test;
 import org.xml.sax.SAXException;
