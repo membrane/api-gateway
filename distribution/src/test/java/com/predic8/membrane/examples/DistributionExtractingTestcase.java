@@ -140,7 +140,11 @@ public class DistributionExtractingTestcase {
 				// This is not robust, just for demonstration purposes.
 				new File(target, entry.getName()).mkdir();
 			} else {
-				FileOutputStream fos = new FileOutputStream(new File(target, entry.getName()));
+				final File zipEntryFile = new File(target, entry.getName());
+				if (!zipEntryFile.toPath().normalize().startsWith(target.toPath().normalize())) {
+					throw new IOException("Bad zip entry");
+				}
+				FileOutputStream fos = new FileOutputStream(zipEntryFile);
 				try {
 					copyInputStream(zipFile.getInputStream(entry),
 							new BufferedOutputStream(fos));
