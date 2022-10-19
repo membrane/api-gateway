@@ -50,6 +50,8 @@ import com.predic8.wsdl.Service;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
+import javax.xml.namespace.QName;
+
 /**
  * @description <p>
  *              A SOAP proxy can be deployed on front of a SOAP Web Service. It conceals the server and offers the same
@@ -185,7 +187,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 				AbstractBinding binding = port.getBinding().getBinding();
 				if (!"http://schemas.xmlsoap.org/soap/http".equals(binding.getProperty("transport")))
 					continue;
-				if (!namespace.equals(binding.getElementName().getNamespaceURI()))
+				if (!namespace.equals(((QName)binding.getElementName()).getNamespaceURI()))
 					continue;
 				return port;
 			} catch (Exception e) {

@@ -82,7 +82,7 @@
 			<artifactId>jatl</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.github.fge</groupId>
+			<groupId>com.github.java-json-tools</groupId>
 			<artifactId>json-schema-validator</artifactId>
 			<exclusions>
 				<exclusion>
@@ -244,7 +244,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.codehaus.groovy</groupId>
+			<groupId>org.apache.groovy</groupId>
 			<artifactId>groovy-templates</artifactId>
 		</dependency>
 

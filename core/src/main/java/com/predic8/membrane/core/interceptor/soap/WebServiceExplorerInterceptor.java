@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
+import com.predic8.wsdl.*;
 import groovy.xml.MarkupBuilder;
 
 import java.io.StringWriter;
@@ -40,16 +41,6 @@ import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.SOAPProxy;
-import com.predic8.wsdl.Binding;
-import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.Documentation;
-import com.predic8.wsdl.Operation;
-import com.predic8.wsdl.Part;
-import com.predic8.wsdl.Port;
-import com.predic8.wsdl.PortType;
-import com.predic8.wsdl.Service;
-import com.predic8.wsdl.WSDLParser;
-import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.wstool.creator.RequestTemplateCreator;
 import com.predic8.wstool.creator.SOARequestCreator;
 
@@ -328,7 +319,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	private String getProtocolVersion(Binding binding) {
-		String transport = binding.getBinding().getElementName().getNamespaceURI();
+		String transport = ((javax.xml.namespace.QName) binding.getBinding().getElementName()).getNamespaceURI();
 		if (Constants.WSDL_SOAP11_NS.equals(transport))
 			transport = "SOAP 1.1";
 		if (Constants.WSDL_SOAP12_NS.equals(transport))
