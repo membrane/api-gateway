@@ -340,7 +340,8 @@ public class Http2Logic {
                     request.getHeader().add(key, val);
             }
         });
-        decoder.endHeaderBlock();
+        if (decoder.endHeaderBlock())
+            log.warn("dropped header exceeding configured maximum size of " + MAX_LINE_LENGTH + ".");
 
         if (sb != null)
             log.debug(sb.toString());
