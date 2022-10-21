@@ -163,6 +163,9 @@ public class StreamInfo {
     }
 
     private class Http2Body extends AbstractBody {
+
+        int streamedLength = 0;
+
         @Override
         protected void readLocal() throws IOException {
             while(true) {
@@ -219,6 +222,7 @@ public class StreamInfo {
                 if (df == null)
                     continue;
                 out.write(df.getContent(), df.getDataStartIndex(), df.getDataLength());
+                streamedLength += df.getDataLength();
 
                 if (df.isEndStream())
                     break;
@@ -236,6 +240,13 @@ public class StreamInfo {
             }
 
             return getContent();
+        }
+
+        @Override
+        public int getLength() throws IOException {
+            if (wasStreamed())
+                return streamedLength;
+            return super.getLength();
         }
     }
 
