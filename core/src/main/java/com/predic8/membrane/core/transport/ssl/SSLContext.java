@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.ssl;
 
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.math.ec.ECMultiplier;
 import org.bouncycastle.math.ec.ECPoint;
@@ -62,6 +63,7 @@ public abstract class SSLContext implements SSLProvider {
 
     private boolean showSSLExceptions = true;
     private boolean useAsDefault;
+    private boolean useHttp2;
 
     public void init(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
         showSSLExceptions = sslParser.isShowSSLExceptions();
@@ -108,6 +110,7 @@ public abstract class SSLContext implements SSLProvider {
         }
 
         endpointIdentificationAlgorithm = sslParser.getEndpointIdentificationAlgorithm();
+        useHttp2 = sslParser.isUseExperimentalHttp2();
     }
 
     abstract String getLocation();
@@ -136,6 +139,8 @@ public abstract class SSLContext implements SSLProvider {
         }
         serviceSocket.setWantClientAuth(isWantClientAuth());
         serviceSocket.setNeedClientAuth(isNeedClientAuth());
+        if (useHttp2)
+            Http2TlsSupport.offerHttp2(serviceSocket);
         return serviceSocket;
     }
 

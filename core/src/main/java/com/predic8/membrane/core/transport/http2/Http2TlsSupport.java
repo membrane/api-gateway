@@ -52,6 +52,19 @@ public class Http2TlsSupport {
         sslss.setSSLParameters(sslp);
     }
 
+    public static void offerHttp2(SSLSocket ssls) {
+        if (setApplicationProtocols == null)
+            throw new RuntimeException("Support for HTTP/2 is only available when using newer JDKs.");
+
+        SSLParameters sslp = ssls.getSSLParameters();
+        try {
+            setApplicationProtocols.invoke(sslp, new Object[] { new String[]{"h2", "http/1.1"} });
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        ssls.setSSLParameters(sslp);
+    }
+
     /**
      * whether the usage of HTTP/2 was negotiated on this socket. only returns a valid response after the first byte has been read (=the TLS handshake completed).
      */

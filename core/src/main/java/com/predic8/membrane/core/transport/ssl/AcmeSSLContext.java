@@ -43,6 +43,7 @@ public class AcmeSSLContext extends SSLContext {
 
     private static final Logger log = LoggerFactory.getLogger(AcmeSSLContext.class);
 
+    private final SSLParser parser;
     private final AcmeClient client;
     private final String[] hosts;
     private final boolean selfCreatedTimerManager;
@@ -57,6 +58,7 @@ public class AcmeSSLContext extends SSLContext {
                           @Nullable HttpClientFactory httpClientFactory,
                           @Nullable TimerManager timerManager,
                           @Nullable KubernetesClientFactory kubernetesClientFactory) throws JoseException, IOException {
+        this.parser = parser;
         this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
         client = new AcmeClient(parser.getAcme(), httpClientFactory, kubernetesClientFactory);
         selfCreatedTimerManager = timerManager == null;
@@ -243,7 +245,7 @@ public class AcmeSSLContext extends SSLContext {
             throw new RuntimeException(e);
         }
 
-        init(new SSLParser(), sslc);
+        init(parser, sslc);
 
         this.keyCert = new AcmeKeyCert(keyS, certsS, validUntil, sslc);
         log.info("ACME: installed key and certificate for " + constructHostsString());
