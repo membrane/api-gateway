@@ -44,6 +44,13 @@ import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.ID_S
 public class Http2Logic {
     private static final Logger log = LoggerFactory.getLogger(Http2Logic.class.getName());
 
+    private final static int MAX_LINE_LENGTH;
+
+    static {
+        String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
+        MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
+    }
+
     final InputStream srcIn;
     final FrameSender sender;
     private final boolean showSSLExceptions;
@@ -71,8 +78,8 @@ public class Http2Logic {
 
         log.info("started HTTP2 connection " + remoteAddr);
 
-        int maxHeaderSize = 4096; // TODO: update this value, when a SETTINGS frame arrives
-        int maxHeaderTableSize = 4096;
+        int maxHeaderSize = MAX_LINE_LENGTH;
+        int maxHeaderTableSize = 4096; // TODO: update with SETTINGS_HEADER_TABLE_SIZE https://datatracker.ietf.org/doc/html/rfc9113#section-4.3.1
         decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
         Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
         this.sender = new FrameSender(srcOut, encoder, peerSettings, streams, remoteAddr);

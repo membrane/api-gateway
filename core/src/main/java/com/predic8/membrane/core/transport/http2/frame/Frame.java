@@ -217,6 +217,7 @@ public class Frame {
         switch (type) {
             case TYPE_DATA: return "DATA";
             case TYPE_HEADERS: return "HEADERS";
+            case TYPE_PRIORITY: return "PRIORITY";
             case TYPE_RST_STREAM: return "RST_STREAM";
             case TYPE_SETTINGS: return "SETTINGS";
             case TYPE_PUSH_PROMISE: return "PUSH_PROMISE";
