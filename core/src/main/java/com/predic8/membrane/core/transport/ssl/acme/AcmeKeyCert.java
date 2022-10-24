@@ -18,14 +18,20 @@ import javax.net.ssl.SSLContext;
 public class AcmeKeyCert {
     final String key;
     final String certs;
+    final long validFrom;
     final long validUntil;
     final javax.net.ssl.SSLContext sslc;
 
-    public AcmeKeyCert(String keyS, String certsS, long validUntil, javax.net.ssl.SSLContext sslc) {
+    public AcmeKeyCert(String keyS, String certsS, long validFrom, long validUntil, javax.net.ssl.SSLContext sslc) {
         this.key = keyS;
         this.certs = certsS;
+        this.validFrom = validFrom;
         this.validUntil = validUntil;
         this.sslc = sslc;
+    }
+
+    public long getValidFrom() {
+        return validFrom;
     }
 
     public long getValidUntil() {

@@ -38,7 +38,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AcmeSSLContext extends SSLContext {
-    public static final long RENEW_PERIOD = 5 * 60 * 1000;
     private static final long RETRY_PERIOD = 10 * 1000;
 
     private static final Logger log = LoggerFactory.getLogger(AcmeSSLContext.class);
@@ -217,7 +216,7 @@ public class AcmeSSLContext extends SSLContext {
         if (existing != null && keyS.equals(existing.getKey()) && certsS.equals(existing.getCerts()))
             // reloading would not change anything
             return;
-        long validUntil;
+        long validFrom, validUntil;
 
         try {
             KeyStore ks = KeyStore.getInstance("JKS");
@@ -228,6 +227,7 @@ public class AcmeSSLContext extends SSLContext {
                 throw new RuntimeException("At least one certificate is required.");
 
             checkChainValidity(certs);
+            validFrom = getValidFrom(certs);
             validUntil = getMinimumValidity(certs);
             Object key = PEMSupport.getInstance().parseKey(keyS);
             Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
@@ -247,7 +247,7 @@ public class AcmeSSLContext extends SSLContext {
 
         init(parser, sslc);
 
-        this.keyCert = new AcmeKeyCert(keyS, certsS, validUntil, sslc);
+        this.keyCert = new AcmeKeyCert(keyS, certsS, validFrom, validUntil, sslc);
         log.info("ACME: installed key and certificate for " + constructHostsString());
     }
 
@@ -255,7 +255,7 @@ public class AcmeSSLContext extends SSLContext {
         long nextRun = RETRY_PERIOD;
         AcmeKeyCert keyCert = this.keyCert;
         if (keyCert != null)
-            nextRun = Math.max(keyCert.getValidUntil() - System.currentTimeMillis() - RENEW_PERIOD, RETRY_PERIOD);
+            nextRun = Math.max(renewAt(keyCert.getValidFrom(), keyCert.getValidUntil()) - System.currentTimeMillis(), RETRY_PERIOD);
 
         if (shutdown.get())
             return;
@@ -263,10 +263,15 @@ public class AcmeSSLContext extends SSLContext {
         timerManager.schedule(new TimerTask() {
             @Override
             public void run() {
-                new AcmeRenewal(client, hosts).doWork();
+                if (!"never".equals(parser.getAcme().getRenewal()))
+                    new AcmeRenewal(client, hosts).doWork();
                 initAndSchedule();
             }
         }, nextRun, "ACME timer " + constructHostsString());
+    }
+
+    public static long renewAt(long validFrom, long validUntil) {
+        return validUntil - (validUntil - validFrom) / 3;
     }
 
     @Override

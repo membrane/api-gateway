@@ -349,6 +349,10 @@ public abstract class SSLContext implements SSLProvider {
         }
     }
 
+    public static long getValidFrom(List<Certificate> certs) {
+        return certs.stream().map(cert -> ((X509Certificate)cert).getNotBefore().getTime()).max(Long::compare).get();
+    }
+
     public static long getMinimumValidity(List<Certificate> certs) {
         return certs.stream().map(cert -> ((X509Certificate)cert).getNotAfter().getTime()).min(Long::compare).get();
     }

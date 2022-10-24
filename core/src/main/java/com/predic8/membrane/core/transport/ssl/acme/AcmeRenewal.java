@@ -27,8 +27,9 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.transport.ssl.AcmeSSLContext.RENEW_PERIOD;
+import static com.predic8.membrane.core.transport.ssl.AcmeSSLContext.renewAt;
 import static com.predic8.membrane.core.transport.ssl.SSLContext.getMinimumValidity;
+import static com.predic8.membrane.core.transport.ssl.SSLContext.getValidFrom;
 import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_PENDING;
 import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_VALID;
 import static com.predic8.membrane.core.transport.ssl.acme.Challenge.*;
@@ -256,9 +257,10 @@ public class AcmeRenewal {
             if (certs.size() == 0)
                 return true;
 
+            long validFrom = getValidFrom(certs);
             long validUntil = getMinimumValidity(certs);
 
-            return System.currentTimeMillis() > validUntil - RENEW_PERIOD;
+            return System.currentTimeMillis() > renewAt(validFrom, validUntil);
         } catch (IOException e) {
             LOG.warn("Error parsing ACME certificate " + Arrays.toString(hosts), e);
             return true;

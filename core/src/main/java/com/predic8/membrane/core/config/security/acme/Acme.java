@@ -88,6 +88,7 @@ public class Acme {
     boolean experimental;
     String hosts;
     AcmeValidation validationMethod;
+    String renewal = "1/3";
 
     @Override
     public boolean equals(Object o) {
@@ -102,7 +103,8 @@ public class Acme {
                 && Objects.equals(validity, acme.validity)
                 && Objects.equals(acmeSynchronizedStorage, acme.acmeSynchronizedStorage)
                 && Objects.equals(hosts, acme.hosts)
-                && Objects.equals(validationMethod, acme.validationMethod);
+                && Objects.equals(validationMethod, acme.validationMethod)
+                && Objects.equals(renewal, acme.renewal);
     }
 
     @Override
@@ -115,7 +117,8 @@ public class Acme {
                 acmeSynchronizedStorage,
                 experimental,
                 hosts,
-                validationMethod);
+                validationMethod,
+                renewal);
     }
 
     public String getDirectoryUrl() {
@@ -198,6 +201,21 @@ public class Acme {
     @MCAttribute
     public void setHosts(String hosts) {
         this.hosts = hosts;
+    }
+
+    public String getRenewal() {
+        return renewal;
+    }
+
+    /**
+     * When to renew the certificate. Can be "1/3" (meaning that the certificate will be renewed when 1/3 of the
+     * validity period is left) or "never" (meaning that renewal will never be attempted). If you choose "never",
+     * someone else should take care of renewing the key and certificate and update the storage accordingly.
+     * @default 1/3
+     */
+    @MCAttribute
+    public void setRenewal(String renewal) {
+        this.renewal = renewal;
     }
 
     public AcmeValidation getValidationMethod() {
