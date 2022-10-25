@@ -71,6 +71,7 @@ public class StaticSSLContext extends SSLContext {
     private List<String> dnsNames;
 
     private javax.net.ssl.SSLContext sslc;
+    private long validFrom, validUntil;
 
 
     public StaticSSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
@@ -102,6 +103,9 @@ public class StaticSSLContext extends SSLContext {
                     if (ks.isKeyEntry(alias)) {
                         // first key is used by the KeyManagerFactory
                         dnsNames = getDNSNames(ks.getCertificate(alias));
+                        List<Certificate> certs = Arrays.asList(ks.getCertificateChain(alias));
+                        validUntil = getMinimumValidity(certs);
+                        validFrom = getValidFrom(certs);
                         break;
                     }
                 }
@@ -133,6 +137,8 @@ public class StaticSSLContext extends SSLContext {
                 if (sslParser.getKey().getPassword() != null)
                     keyPassword = sslParser.getKey().getPassword();
                 kmf.init(ks, keyPassword.toCharArray());
+                validUntil = getMinimumValidity(certs);
+                validFrom = getValidFrom(certs);
             }
 
             TrustManagerFactory tmf = null;
@@ -392,4 +398,23 @@ public class StaticSSLContext extends SSLContext {
         return sslParser.getKeyStore() != null ? sslParser.getKeyStore().getLocation() : "null";
     }
 
+    @Override
+    public String getPrometheusContextTypeName() {
+        return "static";
+    }
+
+    @Override
+    public boolean hasKeyAndCertificate() {
+        return validUntil != 0 && validFrom != 0;
+    }
+
+    @Override
+    public long getValidFrom() {
+        return validFrom;
+    }
+
+    @Override
+    public long getValidUntil() {
+        return validUntil;
+    }
 }

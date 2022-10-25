@@ -361,4 +361,12 @@ public abstract class SSLContext implements SSLProvider {
     public void stop() {
         // do nothing
     }
+
+    /**
+     * @return whether this context has a working certificate and key
+     */
+    public abstract boolean hasKeyAndCertificate();
+    public abstract long getValidFrom();
+    public abstract long getValidUntil();
+    public abstract String getPrometheusContextTypeName();
 }

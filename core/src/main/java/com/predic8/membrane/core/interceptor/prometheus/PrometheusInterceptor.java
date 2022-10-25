@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.rules.TimeCollector;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +59,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         StringBuilder s3 = new StringBuilder();
         StringBuilder s4 = new StringBuilder();
         StringBuilder s5 = new StringBuilder();
+        StringBuilder s6 = new StringBuilder();
+        StringBuilder s7 = new StringBuilder();
+        StringBuilder s8 = new StringBuilder();
+        StringBuilder s9 = new StringBuilder();
 
         HashSet<String> seenRules = new HashSet<>();
 
@@ -73,6 +78,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             s3.setLength(0);
             s4.setLength(0);
             s5.setLength(0);
+            s6.setLength(0);
+            s7.setLength(0);
+            s8.setLength(0);
+            s9.setLength(0);
 
             dynamic.forEach(s -> s.setLength(0));
         }
@@ -88,6 +97,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             sb.append(s3);
             sb.append(s4);
             sb.append(s5);
+            sb.append(s6);
+            sb.append(s7);
+            sb.append(s8);
+            sb.append(s9);
 
             dynamic.forEach(s -> sb.append(s));
         }
@@ -108,9 +121,56 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
             buildStatuscodeLines(ctx, r);
             buildBuckets(ctx, r);
+            buildActive(ctx, r);
+
+            if (r.isActive()) {
+                SSLContext sslib = r.getSslInboundContext();
+                if (sslib != null)
+                    buildSSLLines(ctx, r, sslib);
+            }
+
         }
+        buildDuplicateRuleNameWarning(ctx, issuedDuplicateRuleNameWarning);
         ctx.collect();
 
+    }
+
+    private void buildSSLLines(Context ctx, Rule r, SSLContext sslib) {
+        boolean hasKeyAndCert = sslib.hasKeyAndCertificate();
+        buildSSLLine(ctx.s7, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_haskeyandcert", hasKeyAndCert ? 1 : 0);
+        if (hasKeyAndCert) {
+            buildSSLLine(ctx.s8, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_validfrom_ms", sslib.getValidFrom());
+            buildSSLLine(ctx.s9, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_validuntil_ms", sslib.getValidUntil());
+        }
+    }
+
+    private void buildSSLLine(StringBuilder sb, String ruleName, String prometheusContextTypeName, String metric, long value) {
+        String prometheusName = prometheusCompatibleName("membrane_" + metric);
+
+        if (sb.length() == 0)
+            sb.append("# TYPE "+prometheusName+" gauge\n");
+
+        sb.append(prometheusName);
+        sb.append("{rule=\"");
+        sb.append(prometheusCompatibleName(ruleName));
+        sb.append("\",type=\"");
+        sb.append(prometheusCompatibleName(prometheusContextTypeName));
+        sb.append("\"} ");
+        sb.append(value);
+        sb.append("\n");
+    }
+
+    private void buildDuplicateRuleNameWarning(Context ctx, boolean hasDuplicateRuleName) {
+        ctx.s6.append("# TYPE membrane_duplicate_rule_name gauge\n");
+
+        buildLine(ctx.s6,  "duplicate_rule_name", hasDuplicateRuleName ? 1 : 0);
+    }
+
+    private void buildActive(Context ctx, Rule r) {
+        if (ctx.s6.length() == 0)
+            ctx.s6.append("# TYPE membrane_rule_active gauge\n");
+
+        buildBucketLine(ctx.s6, r.getName(), "rule_active", r.isActive() ? 1 : 0);
     }
 
     private void buildBuckets(Context ctx, Rule rule) {
@@ -143,6 +203,15 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             buildLine(ctx.s5, rule.getName(), stats.get(code).getGoodTotalBytesReceived(), "code", code, "good_bytes_res_body");
         }
 
+    }
+
+    private void buildLine(StringBuilder sb, String label, long value) {
+        String prometheusName = prometheusCompatibleName("membrane_" + label);
+
+        sb.append(prometheusName);
+        sb.append(" ");
+        sb.append(value);
+        sb.append("\n");
     }
 
     private void buildBucketLine(StringBuilder sb, String ruleName, String label, long value) {

@@ -66,6 +66,7 @@ public class GeneratingSSLContext extends SSLContext {
     private final X509Certificate caPublic;
 
     LoadingCache<String, SSLContext> cache;
+    private long validFrom, validUntil;
 
     public GeneratingSSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
         this.sslParser = sslParser;
@@ -106,6 +107,8 @@ public class GeneratingSSLContext extends SSLContext {
                     return getSSLContextForHostname(s);
                 }
             });
+            validUntil = getMinimumValidity(certs);
+            validFrom = getValidFrom(certs);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -285,5 +288,25 @@ public class GeneratingSSLContext extends SSLContext {
     @Override
     SSLSocketFactory getSocketFactory() {
         throw new IllegalStateException("not implemented");
+    }
+
+    @Override
+    public String getPrometheusContextTypeName() {
+        return "generating";
+    }
+
+    @Override
+    public boolean hasKeyAndCertificate() {
+        return validUntil != 0 && validFrom != 0;
+    }
+
+    @Override
+    public long getValidFrom() {
+        return validFrom;
+    }
+
+    @Override
+    public long getValidUntil() {
+        return validUntil;
     }
 }

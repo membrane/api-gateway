@@ -284,4 +284,24 @@ public class AcmeSSLContext extends SSLContext {
     public boolean isReady() {
         return keyCert != null;
     }
+
+    @Override
+    public boolean hasKeyAndCertificate() {
+        return keyCert != null;
+    }
+
+    @Override
+    public long getValidFrom() {
+        return keyCert.getValidFrom();
+    }
+
+    @Override
+    public long getValidUntil() {
+        return keyCert.getValidUntil();
+    }
+
+    @Override
+    public String getPrometheusContextTypeName() {
+        return "acme";
+    }
 }

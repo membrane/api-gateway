@@ -442,6 +442,16 @@ public class SSLProxy implements Rule {
         public SSLProxy getSSLProxy() {
             return SSLProxy.this;
         }
+
+        @Override
+        public String getPrometheusContextTypeName() {
+            return "forwarding";
+        }
+
+        @Override
+        public boolean hasKeyAndCertificate() {
+            return false;
+        }
     }
 
     public boolean isUseAsDefault() {
