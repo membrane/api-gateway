@@ -38,8 +38,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AcmeSSLContext extends SSLContext {
-    private static final long RETRY_PERIOD = 10 * 1000;
-
     private static final Logger log = LoggerFactory.getLogger(AcmeSSLContext.class);
 
     private final SSLParser parser;
@@ -252,10 +250,12 @@ public class AcmeSSLContext extends SSLContext {
     }
 
     public void schedule() {
-        long nextRun = RETRY_PERIOD;
+        long nextRun = parser.getAcme().getRetry();
         AcmeKeyCert keyCert = this.keyCert;
         if (keyCert != null)
-            nextRun = Math.max(renewAt(keyCert.getValidFrom(), keyCert.getValidUntil()) - System.currentTimeMillis(), RETRY_PERIOD);
+            nextRun = Math.max(
+                    renewAt(keyCert.getValidFrom(), keyCert.getValidUntil()) - System.currentTimeMillis(),
+                    parser.getAcme().getRetry());
 
         if (shutdown.get())
             return;

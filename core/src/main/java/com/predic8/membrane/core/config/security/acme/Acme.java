@@ -89,6 +89,7 @@ public class Acme {
     String hosts;
     AcmeValidation validationMethod;
     String renewal = "1/3";
+    int retry = 10000;
 
     @Override
     public boolean equals(Object o) {
@@ -208,6 +209,7 @@ public class Acme {
     }
 
     /**
+     * @description
      * When to renew the certificate. Can be "1/3" (meaning that the certificate will be renewed when 1/3 of the
      * validity period is left) or "never" (meaning that renewal will never be attempted). If you choose "never",
      * someone else should take care of renewing the key and certificate and update the storage accordingly.
@@ -216,6 +218,21 @@ public class Acme {
     @MCAttribute
     public void setRenewal(String renewal) {
         this.renewal = renewal;
+    }
+
+    public int getRetry() {
+        return retry;
+    }
+
+    /**
+     * @description
+     * Number of milliseconds after which a retry should be attempted. (in case of any error, e.g. in case the
+     * ACME server cannot be reached or validation failed.)
+     * @default 10000
+     */
+    @MCAttribute
+    public void setRetry(int retry) {
+        this.retry = retry;
     }
 
     public AcmeValidation getValidationMethod() {
