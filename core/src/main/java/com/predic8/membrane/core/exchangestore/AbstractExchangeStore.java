@@ -22,10 +22,14 @@ import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ComparatorFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.getClientAddr;
 
 public abstract class AbstractExchangeStore implements ExchangeStore {
+
+	private static final Logger log = LoggerFactory.getLogger(AbstractExchangeStore.class);
 
 	protected Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<IExchangesStoreListener>();
 
@@ -71,7 +75,11 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	public synchronized void collect(ExchangeCollector collector) {
 		for (AbstractExchange exc: getAllExchangesAsList()) {
-			collector.collect(exc);
+			try {
+				collector.collect(exc);
+			} catch (Exception e) {
+				log.debug("Error while collecting properties from Exchange.", e);
+			}
 		}
 	}
 
