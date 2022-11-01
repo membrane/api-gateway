@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -95,9 +96,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         log.debug("request: " + uri);
 
-        if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\") //
-           || uri.contains("/../") || uri.contains("..\\") ||  uri.contains("file:/") ||  uri.contains("file:\\") //
-           || uri.startsWith("..")) {
+        if (escapesPath(uri) || escapesPath(router.getUriFactory().create(uri).getPath())) {
 
             exc.setResponse(Response.badRequest().body("").build());
             return Outcome.ABORT;
@@ -167,6 +166,12 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         exc.setResponse(Response.notFound().build());
         return Outcome.ABORT;
+    }
+
+    private boolean escapesPath(String uri) {
+        return uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\") //
+                || uri.contains("/../") || uri.contains("..\\") || uri.contains(":/") || uri.contains("file:\\") //
+                || uri.startsWith("..");
     }
 
     public static Response createResponse(ResolverMap rr, String resPath) throws IOException {
