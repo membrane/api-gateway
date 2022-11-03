@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http2.frame.GoawayFrame;
+import com.predic8.membrane.core.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.PREFA
 public class Http2Client implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(Http2Client.class);
 
-    private static final ExecutorService executor = Executors.newCachedThreadPool();
+    private static final ExecutorService executor = Util.createNewThreadPool();
 
     private final Connection con;
     private final CountDownLatch cdl;
