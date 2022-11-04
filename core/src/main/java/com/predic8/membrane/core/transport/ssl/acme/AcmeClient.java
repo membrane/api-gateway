@@ -100,6 +100,7 @@ public class AcmeClient {
     private final ObjectMapper om = new ObjectMapper();
     private final List<String> nonces = new ArrayList<>();
     private final String challengeType;
+    private final AcmeSynchronizedStorage ass;
     private String keyChangeUrl;
     private String newAccountUrl;
     private String newNonceUrl;
@@ -113,9 +114,10 @@ public class AcmeClient {
     private Duration validity;
     private AcmeSynchronizedStorageEngine asse;
 
-    public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory, @Nullable KubernetesClientFactory kubernetesClientFactory) {
+    public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory) {
         directoryUrl = acme.getDirectoryUrl();
         termsOfServiceAgreed = acme.isTermsOfServiceAgreed();
+        ass = acme.getAcmeSynchronizedStorage();
         contacts = Arrays.asList(acme.getContacts().split(" +"));
         if (httpClientFactory == null)
             httpClientFactory = new HttpClientFactory(null);
@@ -125,7 +127,12 @@ public class AcmeClient {
 
         om.registerModule(new JodaModule());
 
-        AcmeSynchronizedStorage ass = acme.getAcmeSynchronizedStorage();
+
+        if (!acme.isExperimental())
+            throw new RuntimeException("The ACME client is still experimental, please set <acme experimental=\"true\" ... /> to acknowledge.");
+    }
+
+    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory) {
         if (ass == null) {
             throw new RuntimeException("<acme> is used, but to storage is configured.");
         } else if (ass instanceof FileStorage) {
@@ -137,9 +144,6 @@ public class AcmeClient {
         } else {
             throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
         }
-
-        if (!acme.isExperimental())
-            throw new RuntimeException("The ACME client is still experimental, please set <acme experimental=\"true\" ... /> to acknowledge.");
     }
 
     public void loadDirectory() throws Exception {

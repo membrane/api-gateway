@@ -53,14 +53,16 @@ public class AcmeSSLContext extends SSLContext {
     public AcmeSSLContext(SSLParser parser,
                           String[] hosts,
                           @Nullable HttpClientFactory httpClientFactory,
-                          @Nullable TimerManager timerManager,
-                          @Nullable KubernetesClientFactory kubernetesClientFactory) throws JoseException, IOException {
+                          @Nullable TimerManager timerManager) throws JoseException, IOException {
         this.parser = parser;
         this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
-        client = new AcmeClient(parser.getAcme(), httpClientFactory, kubernetesClientFactory);
+        client = new AcmeClient(parser.getAcme(), httpClientFactory);
         selfCreatedTimerManager = timerManager == null;
         this.timerManager = timerManager != null ? timerManager : new TimerManager();
+    }
 
+    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory) {
+        client.init(kubernetesClientFactory);
         initAndSchedule();
     }
 

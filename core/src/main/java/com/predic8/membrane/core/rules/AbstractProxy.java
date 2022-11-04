@@ -182,7 +182,12 @@ public abstract class AbstractProxy implements Rule {
 				if (!(key instanceof AbstractRuleKey))
 					throw new RuntimeException("<acme> only be used inside of <serviceProxy> and similar rules.");
 				String[] host = ((AbstractRuleKey) key).getHost().split(" +");
-				setSslInboundContext(new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager(), router.getKubernetesClientFactory()));
+				AcmeSSLContext acmeCtx = (AcmeSSLContext) getSslInboundContext(); // TODO: remove this.
+				// getSslInboundContext() of an inactive rule should not be called in the first place.
+				if (acmeCtx == null)
+					acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
+				setSslInboundContext(acmeCtx);
+				acmeCtx.init(router.getKubernetesClientFactory());
 			} else if (sslInboundParser.getKeyGenerator() != null)
 				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
 			else
