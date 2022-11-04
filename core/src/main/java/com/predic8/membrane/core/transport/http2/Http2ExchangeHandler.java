@@ -14,12 +14,15 @@
 
 package com.predic8.membrane.core.transport.http2;
 
+import com.google.common.collect.ImmutableList;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http2.frame.Frame;
+import com.predic8.membrane.core.transport.http2.frame.RstStreamFrame;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.twitter.hpack.Encoder;
 import org.slf4j.Logger;
@@ -35,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.generateErrorResponse;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_INTERNAL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
 import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_STREAM;
@@ -356,7 +360,15 @@ public class Http2ExchangeHandler implements Runnable {
     }
 
     private void closeConnections() {
-        // TODO: close stream
+        // TODO: improve condition for RST_STREAM
+        if (exchange.getStatus() != ExchangeState.COMPLETED) {
+            try {
+                sender.send(streamId, (encoder, peerSettings) -> ImmutableList.of(RstStreamFrame.construct(streamId,
+                        ERROR_INTERNAL_ERROR)));
+            } catch (IOException e) {
+                // do nothing
+            }
+        }
     }
 
 

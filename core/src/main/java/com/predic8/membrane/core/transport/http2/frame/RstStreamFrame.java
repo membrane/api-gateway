@@ -16,6 +16,8 @@ package com.predic8.membrane.core.transport.http2.frame;
 
 import java.io.IOException;
 
+import static com.predic8.membrane.core.transport.http2.frame.Frame.TYPE_RST_STREAM;
+
 public class RstStreamFrame {
     private final Frame frame;
     private final int errorCode;
@@ -26,6 +28,24 @@ public class RstStreamFrame {
                 ((frame.content[1] & 0xFF) << 16) |
                 ((frame.content[2] & 0xFF) << 8 ) |
                 ((frame.content[3] & 0xFF));
+    }
+
+    public static Frame construct(int streamId, int errorCode) {
+        byte[] buf = new byte[4];
+
+        buf[0] = (byte) ((errorCode >> 24) & 0x7F);
+        buf[1] = (byte) (errorCode >> 16);
+        buf[2] = (byte) (errorCode >> 8);
+        buf[3] = (byte) (errorCode);
+
+        Frame frame = new Frame();
+        frame.fill(TYPE_RST_STREAM,
+                0,
+                streamId,
+                buf,
+                0,
+                4);
+        return frame;
     }
 
     public String toString() {
