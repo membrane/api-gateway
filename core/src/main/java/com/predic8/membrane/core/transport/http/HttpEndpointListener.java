@@ -26,11 +26,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.transport.PortOccupiedException;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
+
+import javax.annotation.Nullable;
 
 public class HttpEndpointListener extends Thread {
 
@@ -43,7 +46,7 @@ public class HttpEndpointListener extends Thread {
 	private final ConcurrentHashMap<Socket, Boolean> idleSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private final ConcurrentHashMap<InetAddress, ClientInfo> ipConnectionCount = new ConcurrentHashMap<>();
-	private final Timer timer;
+	private TimerManager timerManager; // a TimerManager we have created ourselves
 
 	private volatile boolean closed;
 
@@ -73,7 +76,7 @@ public class HttpEndpointListener extends Thread {
 		}
 	}
 
-	public HttpEndpointListener(IpPort p, HttpTransport transport, SSLProvider sslProvider) throws IOException {
+	public HttpEndpointListener(IpPort p, HttpTransport transport, SSLProvider sslProvider, @Nullable TimerManager timerManager) throws IOException {
 		this.transport = transport;
 		this.sslProvider = sslProvider;
 		try {
@@ -82,9 +85,9 @@ public class HttpEndpointListener extends Thread {
 			else
 				serverSocket = new ServerSocket(p.getPort(), 50, p.getIp());
 
-			//TODO: use Spring scheduler
-			timer = new Timer();
-			timer.schedule(new TimerTask() {
+			if (timerManager == null)
+				timerManager = this.timerManager = new TimerManager();
+			timerManager.schedulePeriodicTask(new TimerTask() {
 				@Override
 				public void run() {
 					Collection<ClientInfo> values = ipConnectionCount.values();
@@ -98,7 +101,7 @@ public class HttpEndpointListener extends Thread {
 						values.remove(v);
 					}
 				}
-			}, 60000, 60000);
+			}, 60000, "HttpEndpointListener removing old IPs");
 
 			final String s = p.toShortString();
 			setName("Connection Acceptor " + s);
@@ -192,7 +195,8 @@ public class HttpEndpointListener extends Thread {
 		for (Socket s : (onlyIdle ? idleSockets : openSockets).keySet())
 			if (!s.isClosed())
 				s.close();
-		timer.cancel();
+		if (timerManager != null)
+			timerManager.shutdown();
 		return openSockets.isEmpty();
 	}
 

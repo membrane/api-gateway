@@ -71,21 +71,21 @@ public class HttpTransportTest {
 
 	@Test
 	public final void testOpenPortOK_NoSSL() throws IOException {
-		transport.openPort("localhost", 80, null);
-		transport.openPort("127.0.0.1", 80, null);
+		transport.openPort("localhost", 80, null, null);
+		transport.openPort("127.0.0.1", 80, null, null);
 	}
 
 	@Test
 	public final void testOpenPortOK_SSL() throws IOException {
-		transport.openPort("localhost", 80, sslProvider);
-		transport.openPort("127.0.0.1", 80, sslProvider);
+		transport.openPort("localhost", 80, sslProvider, null);
+		transport.openPort("127.0.0.1", 80, sslProvider, null);
 	}
 
 	@Test
 	public final void testOpenPortErr_SSL() throws IOException {
-		transport.openPort("localhost", 80, sslProvider);
+		transport.openPort("localhost", 80, sslProvider, null);
 		try {
-			transport.openPort("127.0.0.1", 80, null);
+			transport.openPort("127.0.0.1", 80, null, null);
 			fail("Should throw RuntimeException");
 		} catch (RuntimeException e) {
 			assertEquals("Lister thread on '/127.0.0.1:80' should use the same SSL config", e.getMessage());
@@ -94,9 +94,9 @@ public class HttpTransportTest {
 
 	@Test
 	public final void testOpenPortErr_0() throws IOException {
-		transport.openPort("localhost", 80, sslProvider);
+		transport.openPort("localhost", 80, sslProvider, null);
 		try {
-			transport.openPort(null, 80, sslProvider);
+			transport.openPort(null, 80, sslProvider, null);
 			fail("Should throw RuntimeException");
 		} catch (RuntimeException e) {
 			assertEquals("Conflict with listening on the same net interfaces ['*:80', 'localhost/127.0.0.1:80']",
@@ -106,9 +106,9 @@ public class HttpTransportTest {
 
 	@Test
 	public final void testOpenPortErr_1() throws IOException {
-		transport.openPort(null, 80, sslProvider);
+		transport.openPort(null, 80, sslProvider, null);
 		try {
-			transport.openPort("127.0.0.1", 80, sslProvider);
+			transport.openPort("127.0.0.1", 80, sslProvider, null);
 			fail("Should throw RuntimeException");
 		} catch (RuntimeException e) {
 			assertEquals("Conflict with listening on the same net interfaces ['/127.0.0.1:80', '*:80']",
@@ -123,8 +123,8 @@ public class HttpTransportTest {
 
 	@Test
 	public final void testClosePort() throws IOException {
-		transport.openPort("localhost", 80, sslProvider);
-		transport.openPort("127.0.0.1", 80, sslProvider);
+		transport.openPort("localhost", 80, sslProvider, null);
+		transport.openPort("127.0.0.1", 80, sslProvider, null);
 		transport.closePort(new IpPort("192.1.1.1", 80));
 		transport.closePort(new IpPort("localhost", 80));
 	}

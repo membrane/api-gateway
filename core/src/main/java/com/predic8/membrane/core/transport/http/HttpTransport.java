@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Objects;
+import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,8 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
+
+import javax.annotation.Nullable;
 
 /**
  * @description <p>
@@ -150,10 +153,11 @@ public class HttpTransport extends Transport {
 
 	/**
 	 * @param port
+	 * @param timerManager
 	 * @throws IOException
 	 */
 	@Override
-	public synchronized void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
+	public synchronized void openPort(String ip, int port, SSLProvider sslProvider, @Nullable TimerManager timerManager) throws IOException {
 	    if (port == -1)
 	        throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 
@@ -176,7 +180,7 @@ public class HttpTransport extends Transport {
 	        throw new RuntimeException(createDiffInterfacesErrorMsg(p,mih));
 	    }
 
-		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider);
+		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider, timerManager);
 		mih.put(p, portListenerThread);
 		portListenerThread.start();
 

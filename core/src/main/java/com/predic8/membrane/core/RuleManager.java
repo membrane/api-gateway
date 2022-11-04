@@ -113,7 +113,8 @@ public class RuleManager {
 			return;
 
 		if (!(rule instanceof InternalProxy))
-			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
+			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext(),
+					router.getTimerManager());
 
 		rules.add(rule);
 		ruleSources.add(source);
@@ -167,7 +168,8 @@ public class RuleManager {
 			}
 
 			IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
-			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort));
+			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort),
+					router.getTimerManager());
 		}
 	}
 

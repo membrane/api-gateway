@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptor;
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.util.TimerManager;
 
 public abstract class Transport {
 
@@ -90,7 +91,7 @@ public abstract class Transport {
 	}
 
 	public void closeAll(boolean waitForCompletion) throws IOException {}
-	public void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {}
+	public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {}
 
 	public abstract boolean isOpeningPorts();
 
