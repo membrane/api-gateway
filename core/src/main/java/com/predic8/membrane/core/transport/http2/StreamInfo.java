@@ -134,7 +134,7 @@ public class StreamInfo {
     private void setState(StreamState state) {
         this.state = state;
 
-        log.info("streamId=" + streamId + " changed state to " + state);
+        log.debug("streamId=" + streamId + " changed state to " + state);
     }
 
     public void receivedPriority() {

@@ -118,10 +118,10 @@ public class FrameSender implements Runnable {
                 Frame frame = getNextFrame();
                 if (frame == null) {
                     out.flush();
-                    log.info("found no frame to send, starting wait loop.");
+                    log.debug("found no frame to send, starting wait loop.");
                     while (frame == null)
                         frame = waitForNextFrame();
-                    log.info("found found another frame to send.");
+                    log.debug("found another frame to send.");
                 }
 
                 if (frame.getType() == TYPE_STOP)
