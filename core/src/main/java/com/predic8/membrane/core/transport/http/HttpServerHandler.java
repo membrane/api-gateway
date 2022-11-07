@@ -46,6 +46,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private static final AtomicInteger counter = new AtomicInteger();
 
 	private final HttpEndpointListener endpointListener;
+	private final Socket rawSourceSocket;
 	private Socket sourceSocket;
 	private InputStream srcIn;
 	private OutputStream srcOut;
@@ -57,6 +58,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		super(endpointListener.getTransport());
 		this.endpointListener = endpointListener;
 		this.sourceSocket = socket;
+		this.rawSourceSocket = socket;
 	}
 
 	@Override
@@ -166,7 +168,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		}
 
 		finally {
-			endpointListener.setOpenStatus(sourceSocket, false);
+			endpointListener.setOpenStatus(rawSourceSocket, false);
 
 			if (boundConnection != null)
 				try {
