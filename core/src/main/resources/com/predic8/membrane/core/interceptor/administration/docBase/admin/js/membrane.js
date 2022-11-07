@@ -312,6 +312,12 @@ $(function() {
 	$('.hovericon').click(function(){ $(this).toggleClass('ui-state-active'); });
 	$('.icons').append(' <a href="#">Toggle text</a>').find('a').click(function(){ $('.icon-collection li span.text').toggle(); return false; }).trigger('click');
 
+	function shorten(s) {
+		if (s.length < 80)
+			return s;
+		return s.replaceAll(new RegExp("(.{1,80})", "g"), "$1<wbr/>");
+	}
+
 	membrane.messageTable = $('#message-stat-table').dataTable({
 		  "aaSorting": [[0,'desc']],
 		  "bFilter": false,		  
@@ -393,7 +399,12 @@ $(function() {
                 "type": "GET", 
                 "url": sSource, 
                 "data": queryData, 
-                "success": function(data) {   
+                "success": function(data) {
+					if (data.exchanges) {
+						for (var i = 0; i < data.exchanges.length; i++) {
+							data.exchanges[i].path = shorten(data.exchanges[i].path);
+						}
+					}
                 	data.sEcho = aoData.sEcho;
                 	data.iTotalRecords = data.total;
                 	data.iTotalDisplayRecords = data.total;
