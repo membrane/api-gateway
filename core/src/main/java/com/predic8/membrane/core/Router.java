@@ -251,9 +251,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	public Rule getParentProxy(Interceptor interceptor) {
 		for (Rule r : getRuleManager().getRules()) {
-			for (Interceptor i : r.getInterceptors())
-				if (i == interceptor)
-					return r;
+			if (r.getInterceptors() != null)
+				for (Interceptor i : r.getInterceptors())
+					if (i == interceptor)
+						return r;
 		}
 		throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
 	}
