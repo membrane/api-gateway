@@ -35,10 +35,13 @@ public class BalancerUtil {
 
 	public static List<LoadBalancingInterceptor> collectBalancers(Router router) {
 		ArrayList<LoadBalancingInterceptor> result = new ArrayList<LoadBalancingInterceptor>();
-		for (Rule r : router.getRuleManager().getRules())
-			for (Interceptor i : r.getInterceptors())
-				if (i instanceof LoadBalancingInterceptor)
-					result.add((LoadBalancingInterceptor)i);
+		for (Rule r : router.getRuleManager().getRules()) {
+			List<Interceptor> interceptors = r.getInterceptors();
+			if (interceptors != null)
+				for (Interceptor i : interceptors)
+					if (i instanceof LoadBalancingInterceptor)
+						result.add((LoadBalancingInterceptor)i);
+		}
 		return result;
 	}
 
