@@ -14,26 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URLEncoder;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-
-import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
-import com.predic8.membrane.core.http.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ClientStatistics;
+import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.rest.JSONContent;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
@@ -43,8 +31,19 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ComparatorFactory;
 import com.predic8.membrane.core.util.TextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URLEncoder;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
 
 public class AdminRESTInterceptor extends RESTInterceptor {
 
@@ -291,10 +290,15 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			gen.writeStringField("method", exc.getRequest().getMethod());
 			gen.writeStringField("path", exc.getRequest().getUri());
 			gen.writeStringField("reqContentType", exc.getRequestContentType());
+			gen.writeStringField("protocol", exc.getProperty(HTTP2) != null? "2" : exc.getRequest().getVersion());
 		} else {
 			gen.writeNullField("method");
 			gen.writeNullField("path");
 			gen.writeNullField("reqContentType");
+			if (exc.getProperty(HTTP2) != null)
+				gen.writeStringField("protocol", "2");
+			else
+				gen.writeNullField("protocol");
 		}
 		gen.writeStringField("client", getClientAddr(useXForwardedForAsClientAddr, exc));
 		gen.writeStringField("server", exc.getServer());

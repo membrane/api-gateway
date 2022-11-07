@@ -347,6 +347,7 @@ $(function() {
 		                { "mDataProp": "time" },
 		                { "mDataProp": "statusCode" },
 		                { "mDataProp": "proxy" },
+		                { "mDataProp": "protocol" },
 		                { "mDataProp": "method" },
 		                { "mDataProp": "path" },
 		                { "mDataProp": "client" },
