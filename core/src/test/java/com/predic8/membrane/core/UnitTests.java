@@ -113,7 +113,8 @@ import org.junit.runners.Suite.SuiteClasses;
         OAuth2UnitTests.class, SessionResumptionTest.class,
 		Xml2JsonInterceptorTest.class, Json2XmlInterceptorTest.class, TemplateInterceptorTest.class,
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
-		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class
+		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class,
+		ProxyTest.class
 
 })
 public class UnitTests {
