@@ -15,6 +15,9 @@ package com.predic8.membrane.core.http;
 
 import static org.junit.Assert.assertTrue;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.junit.After;
@@ -32,7 +35,17 @@ public class MethodTest {
 
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "predic8.de", 80);
+		rule.getInterceptors().add(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) throws Exception {
+				if (exc.getRequest().getMethod().equals("DELETE")) {
+					exc.setResponse(Response.ok().build());
+					return Outcome.RETURN;
+				}
+				return super.handleRequest(exc);
+			}
+		});
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
