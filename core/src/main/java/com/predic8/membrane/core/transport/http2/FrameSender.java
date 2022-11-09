@@ -51,7 +51,7 @@ public class FrameSender implements Runnable {
         this.remoteAddr = remoteAddr;
     }
 
-    public void send(Frame frame) throws IOException {
+    public void send(Frame frame) {
         if (frame.getType() == Frame.TYPE_DATA) {
             StreamInfo streamInfo = streams.get(frame.getStreamId());
             try {

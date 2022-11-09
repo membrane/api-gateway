@@ -85,15 +85,15 @@ public class Http2Logic {
         this.sender = new FrameSender(srcOut, encoder, peerSettings, streams, remoteAddr);
         flowControl = new FlowControl(0, sender, ourSettings);
         peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
-    }
-
-    public void init() throws IOException {
-        senderFuture = executor.submit(sender);
 
         Settings newSettings = new Settings();
         newSettings.copyFrom(ourSettings);
         newSettings.setMaxConcurrentStreams(50);
         updateSettings(newSettings);
+    }
+
+    public void init() throws IOException {
+        senderFuture = executor.submit(sender);
     }
 
     public static String getRemoteAddr(Socket sourceSocket) {
@@ -120,7 +120,7 @@ public class Http2Logic {
         }
     }
 
-    private void updateSettings(Settings newSettings) throws IOException {
+    private void updateSettings(Settings newSettings) {
         wantedSettings.add(newSettings);
         sender.send(SettingsFrame.diff(ourSettings, newSettings));
     }
