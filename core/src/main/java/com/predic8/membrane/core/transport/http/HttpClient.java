@@ -25,6 +25,7 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.transport.http2.Http2Client;
 import com.predic8.membrane.core.transport.http2.Http2ClientPool;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
@@ -245,11 +246,8 @@ public class HttpClient {
 					}
 					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout,
 							sniServerName, proxy, proxySSLContext, applicationProtocols);
-					if (useHttp2) {
-						String[] ap = con.getApplicationProtocols();
-						if (ap != null && ap.length > 0 && HTTP2_PROTOCOLS[0].equals(ap[0]))
-							usingHttp2 = true;
-					}
+					if (useHttp2 && Http2TlsSupport.isHttp2(con.socket))
+						usingHttp2 = true;
 					con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
