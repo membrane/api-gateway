@@ -94,8 +94,6 @@ public class Http2ClientServerTest {
     public void done() throws Throwable {
         hc.finalize();
         router.stop();
-
-        Thread.sleep(100000);
     }
 
     @Test

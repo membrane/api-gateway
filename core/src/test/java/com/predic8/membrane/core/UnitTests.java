@@ -58,6 +58,7 @@ import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
 import com.predic8.membrane.core.transport.ExchangeTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
+import com.predic8.membrane.core.transport.http.Http2ClientServerTest;
 import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
 import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
 import com.predic8.membrane.core.transport.ssl.SSLContextTest;
@@ -114,7 +115,7 @@ import org.junit.runners.Suite.SuiteClasses;
 		Xml2JsonInterceptorTest.class, Json2XmlInterceptorTest.class, TemplateInterceptorTest.class,
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
 		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class,
-		ProxyTest.class
+		ProxyTest.class, Http2ClientServerTest.class
 
 })
 public class UnitTests {
