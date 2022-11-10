@@ -314,7 +314,8 @@ public class HttpClient {
 					exc.getDestinations().clear();
 					exc.getDestinations().add(dest);
 					con.setExchange(exc);
-					response.addObserver(con);
+					if (!usingHttp2)
+						response.addObserver(con);
 					exc.setResponse(response);
 					//TODO should we report to the httpClientStatusEventBus here somehow?
 					return exc;

@@ -37,17 +37,21 @@ public class Http2Client implements Runnable {
 
     private static final ExecutorService executor = Util.createNewThreadPool();
 
+    private final ConcurrentHashMap<Integer, ResponseInfo> responses = new ConcurrentHashMap<>();
     private final Connection con;
-    private final CountDownLatch cdl;
     private final Http2Logic logic;
     private final Thread thread;
-    private Response response;
     @GuardedBy("this")
     private int reserved;
 
+    private static class ResponseInfo {
+        private final CountDownLatch cdl = new CountDownLatch(1);
+        private Response response;
+    }
+
+
     public Http2Client(Connection con, boolean showSSLExceptions) {
         this.con = con;
-        this.cdl = new CountDownLatch(1);
         this.logic = new Http2Logic(executor, con.socket, con.in, con.out, showSSLExceptions, new Http2MessageHandler() {
             @Override
             public Message createMessage() {
@@ -56,8 +60,11 @@ public class Http2Client implements Runnable {
 
             @Override
             public void handleExchange(StreamInfo streamInfo, Message message, boolean showSSLExceptions, String remoteAddr) {
-                response = (Response)message;
-                cdl.countDown();
+                ResponseInfo ri = responses.get(streamInfo.getStreamId());
+                if (ri != null) {
+                    ri.response = (Response) message;
+                    ri.cdl.countDown();
+                }
             }
         });
 
@@ -73,17 +80,23 @@ public class Http2Client implements Runnable {
             streamId = logic.nextClientStreamId.getAndAccumulate(2, Integer::sum);
         }
         // TODO: check number of concurrent streams
-        StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
-        logic.streams.put(streamId, streamInfo);
+        ResponseInfo ri = new ResponseInfo();
+        responses.put(streamId, ri);
+        try {
+            StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
+            logic.streams.put(streamId, streamInfo);
 
-        logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), streamId, encoder, peerSettings, false));
+            logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), streamId, encoder, peerSettings, false));
 
-        writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest());
+            writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest());
 
-        // TODO: handle error/exception
-        cdl.await();
+            // TODO: handle error/exception
+            ri.cdl.await();
 
-        return response;
+            return ri.response;
+        } finally {
+            responses.remove(streamId);
+        }
     }
 
     @Override
