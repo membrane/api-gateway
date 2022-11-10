@@ -61,13 +61,7 @@ public class FrameSender implements Runnable {
             }
             streamInfo.getDataFramesToBeSent().add(frame);
         } else {
-            if (!queue.offer(frame)) {
-                long now = System.nanoTime();
-                queue.put(frame);
-                long enter = System.nanoTime();
-                if (enter - now > 10 * 1000 * 1000)
-                    log.info("waited " + (enter - now) / 1000000 + "ms for queue");
-            }
+            queue.put(frame);
         }
         totalBufferedFrames.incrementAndGet();
     }
