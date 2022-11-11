@@ -188,10 +188,8 @@ public abstract class SSLContext implements SSLProvider {
             }
         });
 
-        for (int i = 0; i < ciphers.size(); i++) {
-            System.err.println(cipherInfos.get(i).cipher);
+        for (int i = 0; i < ciphers.size(); i++)
             ciphers.set(i, cipherInfos.get(i).cipher);
-        }
     }
 
     public String constructHostNamePattern() {
