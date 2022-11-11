@@ -188,8 +188,10 @@ public abstract class SSLContext implements SSLProvider {
             }
         });
 
-        for (int i = 0; i < ciphers.size(); i++)
+        for (int i = 0; i < ciphers.size(); i++) {
+            System.err.println(cipherInfos.get(i).cipher);
             ciphers.set(i, cipherInfos.get(i).cipher);
+        }
     }
 
     public String constructHostNamePattern() {
@@ -225,12 +227,18 @@ public abstract class SSLContext implements SSLProvider {
             points += getChaChaPoly1305Strength(cipher) * 25;
             if (supportsAESGCM(cipher))
                 points += 15;
+            if (!supportsAESCBC(cipher))
+                points += 150;
 
             this.points = points;
         }
 
         private boolean supportsAESGCM(String cipher) {
             return cipher.contains("_GCM_");
+        }
+
+        private boolean supportsAESCBC(String cipher) {
+            return cipher.contains("_CBC_");
         }
 
         private int getChaChaPoly1305Strength(String cipher) {
