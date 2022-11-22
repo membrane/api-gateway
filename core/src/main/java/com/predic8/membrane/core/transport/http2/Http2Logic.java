@@ -89,6 +89,7 @@ public class Http2Logic {
         Settings newSettings = new Settings();
         newSettings.copyFrom(ourSettings);
         newSettings.setMaxConcurrentStreams(50);
+        newSettings.setInitialWindowSize(65535 * 2);
         updateSettings(newSettings);
     }
 
