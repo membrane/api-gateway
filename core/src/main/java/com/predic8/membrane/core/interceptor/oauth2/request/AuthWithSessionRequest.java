@@ -64,9 +64,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest {
     }
 
     private Response clearSessionAndRedirectToAuthEndpoint(Exchange exc) {
-        SessionManager.Session session = authServer.getSessionManager().getSession(exc);
-        if (session != null)
-            session.clear();
+        authServer.getSessionManager().removeSession(exc);
         return redirectToOAuth2AuthEndpoint(exc);
     }
 
