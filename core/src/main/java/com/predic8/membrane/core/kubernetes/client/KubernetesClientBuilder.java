@@ -25,6 +25,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
@@ -133,7 +134,9 @@ public class KubernetesClientBuilder {
     public KubernetesClient build() {
         if (httpClientFactory == null)
             httpClientFactory = new HttpClientFactory(null);
-        HttpClient hc = httpClientFactory.createClient(null);
+        HttpClientConfiguration config = new HttpClientConfiguration();
+        config.setUseExperimentalHttp2(true);
+        HttpClient hc = httpClientFactory.createClient(config);
         Consumer<Exchange> client = hc::call;
 
         if (baseURL.endsWith("/"))
