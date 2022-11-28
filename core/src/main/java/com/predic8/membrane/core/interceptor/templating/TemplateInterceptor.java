@@ -29,6 +29,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 /**
  * @description If enabled fills given template from exchange properties and replaces the body. The template can be put between
  * tags or can be loaded from file using location attribute. If the extension of the given file is XML it will use
@@ -51,7 +53,7 @@ public class TemplateInterceptor extends AbstractInterceptor{
 
     private Template template;
 
-    private String contentType;
+    private String contentType = "text/plain";
 
     public TemplateInterceptor() {
         name = "Template";
@@ -60,14 +62,13 @@ public class TemplateInterceptor extends AbstractInterceptor{
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         handleInternal(exc.getRequest(), exc);
-        return Outcome.CONTINUE;
-
+        return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
         handleInternal(exc.getResponse(), exc);
-        return Outcome.CONTINUE;
+        return CONTINUE;
     }
 
     private void handleInternal(Message msg, Exchange exc){
@@ -76,7 +77,12 @@ public class TemplateInterceptor extends AbstractInterceptor{
     }
 
     private byte[] fillAndGetBytes(Exchange exc) {
-        return template.make(exc.getProperties()).toString().getBytes(StandardCharsets.UTF_8);
+        String payload = template.make(exc.getProperties()).toString();
+
+        // *Todo if contentType == application/json
+        // om.writerWithDefaultPrettyPrinter().writeValueAsString(wrapper);
+
+        return payload.getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
