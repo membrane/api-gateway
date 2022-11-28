@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.templating;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.core.beautifier.JSONBeautifier;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -28,6 +29,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -55,6 +57,10 @@ public class TemplateInterceptor extends AbstractInterceptor{
 
     private String contentType = "text/plain";
 
+    private Boolean pretty = false;
+
+    private JSONBeautifier jsonBeautifier = new JSONBeautifier();
+
     public TemplateInterceptor() {
         name = "Template";
     }
@@ -76,13 +82,24 @@ public class TemplateInterceptor extends AbstractInterceptor{
         msg.setBodyContent(fillAndGetBytes(exc));
     }
 
-    private byte[] fillAndGetBytes(Exchange exc) {
+    private String prettifyJson(String text) {
+        try {
+            return jsonBeautifier.beautify(text);
+        } catch (IOException e) {
+            return text;
+        }
+    }
+
+    private String fillTemplate(Exchange exc) {
         String payload = template.make(exc.getProperties()).toString();
+        if (contentType.equals("application/json") && pretty) {
+            return prettifyJson(payload);
+        }
+        return payload;
+    }
 
-        // *Todo if contentType == application/json
-        // om.writerWithDefaultPrettyPrinter().writeValueAsString(wrapper);
-
-        return payload.getBytes(StandardCharsets.UTF_8);
+    private byte[] fillAndGetBytes(Exchange exc) {
+        return fillTemplate(exc).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
@@ -161,5 +178,14 @@ public class TemplateInterceptor extends AbstractInterceptor{
     @MCAttribute
     public void setContentType(String contentType) {
         this.contentType = contentType;
+    }
+
+    public Boolean getPretty() {
+        return pretty;
+    }
+
+    @MCAttribute
+    public void setPretty(String pretty) {
+        this.pretty = Boolean.valueOf(pretty);
     }
 }
