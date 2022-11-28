@@ -198,7 +198,7 @@ public class JwtSessionManager extends SessionManager {
     @Override
     public void removeSession(Exchange exc) {
         Session s = (Session) exc.getProperty(SESSION);
-        if (s != null)
+        if (s == null)
             return;
         s.clear();
     }

@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The FrameSender instance synchronized access to the OutputStream as well as the Encoder.
@@ -42,6 +44,8 @@ public class FrameSender implements Runnable {
     private final String remoteAddr;
     private final LinkedTransferQueue<Frame> queue = new LinkedTransferQueue<>();
     private final AtomicInteger totalBufferedFrames = new AtomicInteger(0);
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition hasFrame = lock.newCondition();
 
     public FrameSender(OutputStream out, Encoder encoder, Settings peerSettings, Map<Integer, StreamInfo> streams, String remoteAddr) {
         this.out = out;
@@ -51,7 +55,7 @@ public class FrameSender implements Runnable {
         this.remoteAddr = remoteAddr;
     }
 
-    public void send(Frame frame) throws IOException {
+    public void send(Frame frame) {
         if (frame.getType() == Frame.TYPE_DATA) {
             StreamInfo streamInfo = streams.get(frame.getStreamId());
             try {
@@ -61,15 +65,10 @@ public class FrameSender implements Runnable {
             }
             streamInfo.getDataFramesToBeSent().add(frame);
         } else {
-            if (!queue.offer(frame)) {
-                long now = System.nanoTime();
-                queue.put(frame);
-                long enter = System.nanoTime();
-                if (enter - now > 10 * 1000 * 1000)
-                    log.info("waited " + (enter - now) / 1000000 + "ms for queue");
-            }
+            queue.put(frame);
         }
         totalBufferedFrames.incrementAndGet();
+        fire();
     }
 
     public void send(int streamId, FrameProducer frameProducer) throws IOException {
@@ -104,8 +103,12 @@ public class FrameSender implements Runnable {
     }
 
     private Frame waitForNextFrame() throws InterruptedException {
-        // TODO: improve waiting logic
-        Thread.sleep(100);
+        lock.lock();
+        try {
+            hasFrame.await(1000, TimeUnit.MILLISECONDS);
+        } finally {
+            lock.unlock();
+        }
         Frame frame = getNextFrame();
         return frame;
     }
@@ -118,10 +121,10 @@ public class FrameSender implements Runnable {
                 Frame frame = getNextFrame();
                 if (frame == null) {
                     out.flush();
-                    log.info("found no frame to send, starting wait loop.");
+                    log.debug("found no frame to send, starting wait loop.");
                     while (frame == null)
                         frame = waitForNextFrame();
-                    log.info("found found another frame to send.");
+                    log.debug("found another frame to send.");
                 }
 
                 if (frame.getType() == TYPE_STOP)
@@ -157,6 +160,7 @@ public class FrameSender implements Runnable {
         Frame e = new Frame();
         e.fill(TYPE_STOP, 0, 0, null, 0, 0);
         queue.add(e);
+        fire();
     }
 
     private void updateThreadName(boolean fromConnection) {
@@ -167,6 +171,15 @@ public class FrameSender implements Runnable {
             Thread.currentThread().setName(sb.toString());
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
+        }
+    }
+
+    private void fire() {
+        lock.lock();
+        try {
+            hasFrame.signal();
+        } finally {
+            lock.unlock();
         }
     }
 

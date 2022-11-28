@@ -335,6 +335,8 @@ public class StaticSSLContext extends SSLContext {
         if (applicationProtocols != null)
             setApplicationProtocols(ssls, applicationProtocols);
         prepare(ssls);
+        if (applicationProtocols != null)
+            ssls.startHandshake();
         return ssls;
     }
 

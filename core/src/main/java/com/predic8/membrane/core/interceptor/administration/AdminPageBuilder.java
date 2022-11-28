@@ -955,7 +955,7 @@ public class AdminPageBuilder extends Html {
 				"class", "display", "id", "message-stat-table");
 		thead();
 		tr();
-		createThs("Time", "Status Code", "Proxy", "Method", "Path", "Client",
+		createThs("Time", "Status Code", "Proxy", "Protocol", "Method", "Path", "Client",
 				"Server", "Request Content-Type", "Request Content-Length",
 				"Response Content-Type", "Response Content-Length", "Duration ms");
 		end();

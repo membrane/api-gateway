@@ -191,9 +191,11 @@ public class HttpTransport extends Transport {
 
 	@Override
 	public String getOpenBackendConnections(int port) {
-		for (IpPort ipPort : portListenerMapping.get(port).keySet())
-			if (ipPort.port == port)
-				return Integer.toString(portListenerMapping.get(port).get(ipPort).getNumberOfOpenConnections());
+		Map<IpPort, HttpEndpointListener> pl = portListenerMapping.get(port);
+		if (pl != null)
+			for (IpPort ipPort : pl.keySet())
+				if (ipPort.port == port)
+					return Integer.toString(pl.get(ipPort).getNumberOfOpenConnections());
 		return "N/A";
 	}
 

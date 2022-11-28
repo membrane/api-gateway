@@ -423,7 +423,7 @@ public abstract class AbstractExchange {
 	}
 
 	protected int estimateHeapSize() {
-		return 2000 +
+		return 2600 +
 				(originalRequestUri != null ? originalRequestUri.length() : 0) +
 				(request != null ? request.estimateHeapSize() : 0) +
 				(response != null ? response.estimateHeapSize() : 0);

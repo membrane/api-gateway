@@ -76,7 +76,7 @@ public class Http2Logic {
         this.messageHandler = messageHandler;
         this.remoteAddr = getRemoteAddr(sourceSocket);
 
-        log.info("started HTTP2 connection " + remoteAddr);
+        log.debug("started HTTP2 connection " + remoteAddr);
 
         int maxHeaderSize = MAX_LINE_LENGTH;
         int maxHeaderTableSize = 4096; // TODO: update with SETTINGS_HEADER_TABLE_SIZE https://datatracker.ietf.org/doc/html/rfc9113#section-4.3.1
@@ -85,15 +85,16 @@ public class Http2Logic {
         this.sender = new FrameSender(srcOut, encoder, peerSettings, streams, remoteAddr);
         flowControl = new FlowControl(0, sender, ourSettings);
         peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
-    }
-
-    public void init() throws IOException {
-        senderFuture = executor.submit(sender);
 
         Settings newSettings = new Settings();
         newSettings.copyFrom(ourSettings);
         newSettings.setMaxConcurrentStreams(50);
+        newSettings.setInitialWindowSize(65535 * 2);
         updateSettings(newSettings);
+    }
+
+    public void init() throws IOException {
+        senderFuture = executor.submit(sender);
     }
 
     public static String getRemoteAddr(Socket sourceSocket) {
@@ -120,7 +121,7 @@ public class Http2Logic {
         }
     }
 
-    private void updateSettings(Settings newSettings) throws IOException {
+    private void updateSettings(Settings newSettings) {
         wantedSettings.add(newSettings);
         sender.send(SettingsFrame.diff(ourSettings, newSettings));
     }
@@ -332,7 +333,7 @@ public class Http2Logic {
                     request.getHeader().setHost(val);
                 else if (":path".equals(key) && request instanceof Request) {
                     ((Request) request).setUri(val);
-                    log.info("streamId=" + streamId1 + " uri=" + val);
+                    log.debug("streamId=" + streamId1 + " uri=" + val);
                 } else if (":status".equals(key) && request instanceof Response) {
                     ((Response) request).setStatusCode(Integer.parseInt(val));
                     log.debug("streamId=" + streamId1 + " status=" + val);
