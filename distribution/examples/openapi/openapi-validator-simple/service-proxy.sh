@@ -1,6 +1,7 @@
 #!/bin/bash
 homeSet() {
  echo "MEMBRANE_HOME variable is now set"
+ echo $MEMBRANE_HOME
  CLASSPATH="$MEMBRANE_HOME/conf"
  CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
  export CLASSPATH

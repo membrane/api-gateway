@@ -25,11 +25,7 @@ import java.net.URLClassLoader;
 public class Starter {
 
 	public static void main(String[] args) throws Exception {
-		try {
-			getMainMethod().invoke(null, new Object[]{args});
-		} catch (UserInformationException e) {
-			System.err.print(e.getMessage());
-		}
+		getMainMethod().invoke(null, new Object[]{args});
 	}
 
 	private static Method getMainMethod() throws NoSuchMethodException,

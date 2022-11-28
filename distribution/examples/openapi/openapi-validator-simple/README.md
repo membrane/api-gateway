@@ -1,4 +1,6 @@
-# Validate Requests and Responses against OpenAPI Specification
+# Validate Requests and Responses against OpenAPI Specifications
+
+The **OpenAPIProxy** can validate requests and responses against OpenAPI specifications. The specifications can be in YAML or JSON format on disk or reachable over the network.
 
 
 ## RUNNING THE EXAMPLE
@@ -7,21 +9,29 @@
 
 2. Start Membrane with the script inside this directory:
 
-    ./service-proxy.sh
+```
+./service-proxy.sh
+```
 
-or
+or:
 
-    service.proxy.bat
+```
+service.proxy.bat
+```
 
 3. Send a valid request using curl:
 
-    curl -X POST http://localhost:2000/persons  -d '{"name": "Johannes Gutenberg","age": 78}'
+```
+curl -X POST http://localhost:2000/persons  -d '{"name": "Johannes Gutenberg","age": 78}'
+```
 
 You should get an answer.
 
 4. Now send an invalid request:
 
+```
     curl -X POST http://localhost:2000/persons   -d '{"name": "Bo","email": "mailatme","age": "old"}'
+```
 
 5. Have a look at the error messages in the response.
 
@@ -31,9 +41,9 @@ You should get an answer.
 1. In the _proxies.xml_ configuration there is an OpenAPIProxy that reads the OpenAPI document and creates the APIs in Membrane.   
 
 ```
-    <OpenAPIProxy port="2000">
-        <spec location="contacts-api-v1.yml" validate="requests"/>
-    </OpenAPIProxy>
+<OpenAPIProxy port="2000">
+    <spec location="contacts-api-v1.yml" validate="requests"/>
+</OpenAPIProxy>
 ```
 
 2. Incomming requests are validated against the definitions in the OpenAPI specification.

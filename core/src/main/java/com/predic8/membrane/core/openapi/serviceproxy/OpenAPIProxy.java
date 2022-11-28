@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.util.*;
@@ -22,8 +23,6 @@ import static java.lang.String.format;
 public class OpenAPIProxy extends AbstractServiceProxy {
 
     private static Logger log = LoggerFactory.getLogger(OpenAPIProxy.class.getName());
-
-
 
     private String dir;
     private List<OpenAPI> apis = new ArrayList<>();
@@ -106,7 +105,7 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         ((OpenAPIProxyServiceKey)key).setBasePaths(basePathsThatMatch);
     }
 
-    private void readSpecs() throws ResourceRetrievalException, FileNotFoundException {
+    private void readSpecs() throws ResourceRetrievalException, FileNotFoundException, CheckableBeanFactory.InvalidConfigurationException {
         for (Spec spec: specs) {
             if (spec.location != null) {
                 log.info("Parsing spec " + spec.location);
@@ -119,7 +118,7 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         }
     }
 
-    private void addOpenAPISpecsFromDirectory(Spec spec) throws FileNotFoundException {
+    private void addOpenAPISpecsFromDirectory(Spec spec) throws FileNotFoundException, CheckableBeanFactory.InvalidConfigurationException {
         File[] oasFile = getOpenAPIFiles(spec.dir);
         for (int i = 0; i < oasFile.length; i++) {
             log.info("Parsing spec " + oasFile[i]);
@@ -134,16 +133,16 @@ public class OpenAPIProxy extends AbstractServiceProxy {
                 null, null).getOpenAPI();
     }
 
-    private OpenAPI parseLocationAsOpenAPI(Spec spec) throws ResourceRetrievalException {
+    private OpenAPI parseLocationAsOpenAPI(Spec spec) throws ResourceRetrievalException, CheckableBeanFactory.InvalidConfigurationException {
         OpenAPI api = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(spec.location)),
                         null, null).getOpenAPI();
         setValidationOnAPI(spec, api);
         return api;
     }
 
-    private void setValidationOnAPI(Spec spec, OpenAPI api) {
+    private void setValidationOnAPI(Spec spec, OpenAPI api) throws CheckableBeanFactory.InvalidConfigurationException {
         if (!isValidationOptionCorrect(spec)) {
-            throw new UserInformationException(format("The value %s is not a valid option for the validation attribute. Please use a value of %s", spec.validate, VALIDATE_OPTIONS.getValues() ));
+            throw new CheckableBeanFactory.InvalidConfigurationException(format("The value %s is not a valid option for the validation attribute. Please use a value of %s", spec.validate, VALIDATE_OPTIONS.getValues() ));
         }
 
         if (api.getExtensions() == null) {
