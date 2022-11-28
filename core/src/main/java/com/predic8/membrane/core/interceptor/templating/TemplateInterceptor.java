@@ -29,9 +29,12 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
 
 /**
  * @description If enabled fills given template from exchange properties and replaces the body. The template can be put between
@@ -187,5 +190,14 @@ public class TemplateInterceptor extends AbstractInterceptor{
     @MCAttribute
     public void setPretty(String pretty) {
         this.pretty = Boolean.valueOf(pretty);
+    }
+
+    private String formatAsHtml(String plaintext) {
+        return String.join("<br />", escapeHtml4(plaintext).split("\n"));
+    }
+
+    @Override
+    public String getShortDescription() {
+        return formatAsHtml(textTemplate);
     }
 }
