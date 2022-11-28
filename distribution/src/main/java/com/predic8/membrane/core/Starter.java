@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.util.*;
+
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 
@@ -23,7 +25,11 @@ import java.net.URLClassLoader;
 public class Starter {
 
 	public static void main(String[] args) throws Exception {
-		getMainMethod().invoke(null, new Object[] { args });
+		try {
+			getMainMethod().invoke(null, new Object[]{args});
+		} catch (UserInformationException e) {
+			System.err.print(e.getMessage());
+		}
 	}
 
 	private static Method getMainMethod() throws NoSuchMethodException,

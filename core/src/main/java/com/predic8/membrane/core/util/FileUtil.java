@@ -14,7 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
-import java.io.File;
+import java.io.*;
+import java.util.stream.*;
 
 public class FileUtil {
 	public static File prefixMembraneHomeIfNeeded(File f) {
@@ -24,4 +25,12 @@ public class FileUtil {
 		return new File(System.getenv("MEMBRANE_HOME"), f.getPath());
 
 	}
+
+	public static String readInputStream(InputStream is) {
+		InputStreamReader in = new InputStreamReader(is);
+		Stream<String> lines = new BufferedReader(in).lines();
+		return lines.collect(Collectors.joining("\n"));
+	}
+
+
 }

@@ -97,7 +97,7 @@ public class LoadBalancingInterceptorTest {
 
 		balancer = new HttpRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", 7000), "thomas-bayer.com", 80);
+				"POST", ".*", 3054), "thomas-bayer.com", 80);
 		balancingInterceptor = new LoadBalancingInterceptor();
 		balancingInterceptor.setName("Default");
 		sp3.getInterceptors().add(balancingInterceptor);
@@ -205,7 +205,7 @@ public class LoadBalancingInterceptorTest {
 
 	private PostMethod getPostMethod() {
 		PostMethod post = new PostMethod(
-				"http://localhost:7000/axis2/services/BLZService");
+				"http://localhost:3054/axis2/services/BLZService");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass()
 				.getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);

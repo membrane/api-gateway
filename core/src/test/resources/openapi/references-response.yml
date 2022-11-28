@@ -1,0 +1,30 @@
+openapi: '3.0.1'
+info:
+  title: References Response Test
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /ref-response:
+    get:
+      responses:
+        200:
+          $ref: "#/components/responses/CustomerResponse"
+
+components:
+  responses:
+    CustomerResponse:
+        description: Ok
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Customer"
+
+  schemas:
+    Customer:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 5
+    

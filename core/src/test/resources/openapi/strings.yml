@@ -1,0 +1,90 @@
+openapi: '3.0.2'
+info:
+  title: Strings Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /strings:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Strings"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Strings:
+      type: object
+      properties:
+        normal:
+          type: string
+        uuid:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        uri:
+          type: string
+          format: uri
+        uri-reference:
+          type: string
+          format: uri-reference
+        iri:
+          type: string
+          format: uri
+        iri-reference:
+          type: string
+          format: uri-reference
+        uri-template:
+          type: string
+          format: uri-template
+        json-pointer:
+          type: string
+          format: json-pointer
+        relative-json-pointer:
+          type: string
+          format: relative-json-pointer
+        date:
+          type: string
+          format: date
+        time:
+          type: string
+          format: time
+        date-time:
+          type: string
+          format: date-time
+        duration:
+          type: string
+          format: duration
+        hostname:
+          type: string
+          format: hostname
+        ipv4:
+          type: string
+          format: ipv4
+        ipv6:
+          type: string
+          format: ipv4
+        regex:
+          type: string
+          pattern: "[A-Z]{3}\\d{2}"
+
+        enum:
+          type: string
+          enum:
+            - Bonn
+            - Berlin
+            - Hamburg
+        maxLength:
+          type: string
+          maxLength: 5
+        minLength:
+          type: string
+          minLength: 3
+          

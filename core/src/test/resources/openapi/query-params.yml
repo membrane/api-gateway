@@ -1,0 +1,30 @@
+openapi: '3.0.2'
+info:
+  title: Query Params Test API
+  version: '1.0'
+paths:
+  /cities:
+    parameters:
+      - in: query
+        name: foo
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+    get:
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+          required: true
+        - in: query
+          name: start
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: OK

@@ -1,0 +1,103 @@
+openapi: '3.0.2'
+info:
+  title: API Title
+  version: '1.0'
+servers:
+  - url: http://localhost:4567
+paths:
+  /customers:
+    get:
+      responses:
+        '200':
+          description: OK
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Customer"
+      responses:
+        '200':
+          description: OK 
+    put:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        '404':
+          description: Not Found
+  /customers/{cid}:
+    parameters:
+      - in: path
+        name: cid
+        schema:
+          type: number
+        required: true
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+  /images/{iid}:
+    parameters:
+      - in: path
+        name: iid
+        schema:
+          type: integer
+          minimum: 0
+        required: true
+    get:
+      responses:
+        '200':
+          description: OK
+  /contracts/{cid}:
+    parameters:
+      - in: path
+        name: cid
+        schema:
+          type: string
+          maxLength: 5
+        required: true
+    get:
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Contact:
+      type: object
+    Customer:
+      type: object
+      required: ["id","firstName"]
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+          maxLength: 10
+        age:
+          type: integer
+          minimum: 0
+          maximum: 99
+        address:
+          type: object
+          required: ["street","city"]
+          properties:
+            street:
+              type: string
+              maxLength: 25
+            city:
+              type: string
+        tags:
+          type: array
+          description: Tags
+          items:
+            type: string

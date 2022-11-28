@@ -1,0 +1,35 @@
+openapi: '3.0.2'
+info:
+  title: Strings Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /boolean:
+    get:
+      parameters:
+        - in: query
+          name: truth
+          schema:
+            type: boolean
+          required: false      
+      responses:
+        '200':
+          description: OK
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Boolean"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Boolean:
+      type: object
+      properties:
+        good:
+          type: boolean

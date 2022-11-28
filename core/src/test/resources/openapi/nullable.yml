@@ -1,0 +1,29 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /composition:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  nullable: true
+                telefon:
+                  type: string
+                  nullable: false
+                contact:
+                  nullable: true
+                address:
+                  type: object
+                  nullable: true

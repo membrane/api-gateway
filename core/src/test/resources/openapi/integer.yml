@@ -1,0 +1,59 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /integer:
+    get:
+      parameters:
+        - in: query
+          name: minimum
+          schema:
+            type: number
+            minimum: 5
+          required: false    
+        - in: query
+          name: maximum
+          schema:
+            type: number
+            maximum: 5
+          required: false    
+      responses:
+        '200':
+          description: OK
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Numbers"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Numbers:
+      type: object
+      properties:
+        minimum:
+          type: number
+          minimum: 5
+        maximum:
+          type: number
+          maximum: 5
+        min-max:
+          type: number
+          minimum: 0
+          maximum: 5
+        exclusiveMinimum:
+          type: number
+          exclusiveMinimum: true
+          minimum: 5
+        exclusiveMaximum:
+          type: number
+          exclusiveMaximum: true
+          maximum: 5
+          

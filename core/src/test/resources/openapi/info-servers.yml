@@ -1,0 +1,12 @@
+openapi: '3.0.2'
+info:
+  title: Strings Test API
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de
+paths:
+  /foo:
+    get:
+      responses:
+        '200':
+          description: OK

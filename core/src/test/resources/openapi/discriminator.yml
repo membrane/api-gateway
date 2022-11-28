@@ -1,0 +1,53 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /public-transports:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicTransport"
+
+components:
+  schemas:
+    Train:
+      allOf:
+        - $ref: "#/components/schemas/PublicTransport"
+        - type: object
+          required: [kind]
+          properties:
+            kind:
+              type: string
+            length:
+              type: number
+    Bus:
+      allOf:
+        - $ref: "#/components/schemas/PublicTransport"
+        - type: object
+          required: [kind,wheels]
+          properties:
+            kind:
+              type: string
+            wheels:
+              type: integer
+    PublicTransport:
+      type: object
+      discriminator:
+        propertyName: kind
+      required: [ name, seats ]
+      properties:
+        name:
+          type: string
+        seats:
+          type: integer
+
+          
+              

@@ -1,0 +1,8 @@
+{
+  "id": "CO134",
+  "firstName": "Gustav",
+  "age": 31,
+  "address": {
+    "street": "Unter den Linden"
+  }
+}

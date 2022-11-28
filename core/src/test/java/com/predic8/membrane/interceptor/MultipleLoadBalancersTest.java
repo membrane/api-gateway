@@ -87,7 +87,7 @@ public class MultipleLoadBalancersTest {
 
 		balancer = new HttpRouter();
 
-		balancingInterceptor1 = createBalancingInterceptor(7000, "Default");
+		balancingInterceptor1 = createBalancingInterceptor(3054, "Default");
 		balancingInterceptor2 = createBalancingInterceptor(7001, "Balancer2");
 
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service1.port);
@@ -126,19 +126,19 @@ public class MultipleLoadBalancersTest {
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
 				HttpVersion.HTTP_1_1);
 
-		PostMethod vari = getPostMethod(7000);
+		PostMethod vari = getPostMethod(3054);
 		int status = client.executeMethod(vari);
 
 		assertEquals(200, status);
 		assertMockCounters(1, 0, 0, 0);
 
-		assertEquals(200, client.executeMethod(getPostMethod(7000)));
+		assertEquals(200, client.executeMethod(getPostMethod(3054)));
 		assertMockCounters(1, 1, 0, 0);
 
-		assertEquals(200, client.executeMethod(getPostMethod(7000)));
+		assertEquals(200, client.executeMethod(getPostMethod(3054)));
 		assertMockCounters(2, 1, 0, 0);
 
-		assertEquals(200, client.executeMethod(getPostMethod(7000)));
+		assertEquals(200, client.executeMethod(getPostMethod(3054)));
 		assertMockCounters(2, 2, 0, 0);
 
 		assertEquals(200, client.executeMethod(getPostMethod(7001)));

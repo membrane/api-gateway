@@ -1,0 +1,63 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+  description: |
+
+    # Maybe not supported
+
+    - patternProperties 
+
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /array:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Array"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Array:
+      type: object
+      properties:
+        no-type:
+          type: array
+        only-numbers:
+          type: array
+          items:
+            type: number
+        prefixed:
+          type: array
+          prefixItems:   # As of 2022-11-20 parser does not support OpenAPI 3.1.0
+            - type: string
+            - type: string
+              enum: ["DE","FR","IT","PL"]
+            - type: integer
+            - type: boolean
+        min-max:
+          type: array
+          minItems: 2
+          maxItems: 4
+        uniqueItems:
+          type: array
+          uniqueItems: true
+    Complex:
+      type: object
+      required:
+        - a
+        - b
+      properties:
+        a: 
+          type: string
+        b: 
+          type: integer
+
+ 
+            

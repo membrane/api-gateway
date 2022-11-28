@@ -1,0 +1,69 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /composition:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  allOf:
+                    - type: string
+                    - maxLength: 5
+                    - minLength: 3
+                contact:
+                  anyOf:
+                    - type: string
+                      format: email
+                    - type: string
+                      pattern: "\\d+"
+                multiple:
+                  oneOf:
+                    - type: number
+                      multipleOf: 3
+                    - type: number
+                      multipleOf: 5
+                factored-out:
+                  type: number
+                  oneOf:
+                    - multipleOf: 3
+                    - multipleOf: 5
+                not-string:
+                  not:
+                    type: string
+                inheritance:
+                  allOf:
+                    - $ref: "#/components/schemas/Address"
+                    - type: object
+                      required:
+                        - country
+                      properties:
+                        country:
+                          type: string
+                          enum:
+                            - FR
+                            - IN
+                            - CN
+                            - US
+
+components:
+  schemas:
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+
+

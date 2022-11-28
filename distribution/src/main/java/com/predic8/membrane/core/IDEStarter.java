@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+/**
+ * Intellij Fix: Run Config/add distribution to working directory
+ */
 public class IDEStarter {
 	public static void main(String[] args) {
 		// for testing or development purposes

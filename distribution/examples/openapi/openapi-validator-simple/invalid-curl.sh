@@ -1,0 +1,1 @@
+curl -X POST http://localhost:2000/persons   --data '{"name": "Bo","email": "mailatme","age": "old"}'

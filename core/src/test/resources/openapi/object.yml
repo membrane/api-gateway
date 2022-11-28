@@ -1,0 +1,77 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+  description: |
+
+    # Maybe not supported
+
+    - patternProperties 
+
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /object:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Object"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Object:
+      type: object
+      properties:
+        object:
+          type: object
+        additionalPropertiesTrue:
+          type: object
+          properties:
+            a:
+              type: string
+        additionalPropertiesFalse:
+          type: object
+          additionalProperties: false
+          properties:
+            a:
+              type: string
+        additionalPropertiesString:
+          type: object
+          required:
+            - foo
+          properties:
+            foo:
+              type: string
+          additionalProperties:
+            type: string  
+        additionalPropertiesComplex:
+          type: object
+          required:
+            - foo
+          properties:
+            foo:
+              type: string
+          additionalProperties:
+            $ref: "#/components/schemas/Complex"
+        minMaxProperties:
+          type: object
+          minProperties: 2
+          maxProperties: 5
+    Complex:
+      type: object
+      required:
+        - a
+        - b
+      properties:
+        a: 
+          type: string
+        b: 
+          type: integer
+
+ 
+            

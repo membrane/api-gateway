@@ -1,0 +1,67 @@
+openapi: '3.0.2'
+info:
+  title: References Test
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /references/{rid}:
+    get:
+      parameters:
+        - in: path
+          name: rid
+          required: true
+          schema:
+            $ref: "#/components/schemas/Rid"
+        - in: query
+          name: limit
+          required: false
+          schema:
+            $ref: "#/components/schemas/Limit"
+
+      responses:
+        '200':
+          description: OK
+  /body-as-ref-primitive:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Rid"
+      responses:
+        '200':
+          description: OK 
+  /obj-ref-obj:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Customer"
+      responses:
+        '200':
+          description: OK  
+
+components:
+  schemas:
+    Rid:
+      type: integer
+      minimum: 0
+    Limit:
+      type: integer
+      maximum: 100
+    Customer:
+      type: object
+      properties:
+        contract:
+          $ref: "#/components/schemas/Contract"
+    Contract:
+      type: object
+      properties:
+        details:
+          $ref: "#/components/schemas/Details"
+    Details:
+      type: string
+      maxLength: 5
+    

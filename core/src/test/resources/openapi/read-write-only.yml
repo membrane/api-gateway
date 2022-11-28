@@ -1,0 +1,44 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /read-only:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"            
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Person"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        link:
+          type: string
+          format: uri
+          readOnly: true
+        name:
+          type: string
+        role:
+          type: string
+          writeOnly: true
+    

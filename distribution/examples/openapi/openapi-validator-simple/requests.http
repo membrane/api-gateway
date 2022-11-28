@@ -1,0 +1,31 @@
+#
+# Request samples can be executed:
+#
+# a.) In Visual Studio Code with the HTTP Client Plugin
+#     See: https://marketplace.visualstudio.com/items?itemName=mkloubert.vscode-http-client
+#
+# b.) In IntelliJ with the HTTP Client Plugin
+#     See: https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html
+#
+
+
+### Valid request, should work
+
+POST /persons
+Host: localhost:2000
+
+{
+    "name": "Johannes Gutenberg",
+    "age": 78
+}
+
+### Invalid request, should fail
+
+POST /persons
+Host: localhost:2000
+
+{
+    "name": "Bo",
+    "email": "mailatme"
+    "age": -1
+}

@@ -1,0 +1,69 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /required:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  write-only-response:
+                    type: object
+                    required: # Should have no effect on a
+                      - a
+                      - b
+                      - c
+                    properties:
+                      a:
+                        type: integer
+                        writeOnly: true
+                      b: 
+                        type: integer
+                      c:
+                        type: integer   
+    post: 
+      responses:
+        '200':
+          description: OK   
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                normal:
+                  type: object
+                  required:
+                    - a
+                    - b
+                    - c
+                  properties:
+                    a:
+                      type: integer
+                    b: 
+                      type: integer
+                    c:
+                      type: integer
+                read-only-request:
+                  type: object
+                  required: # Should have no effect on a
+                    - a
+                    - b
+                    - c
+                  properties:
+                    a:
+                      type: integer
+                      readOnly: true
+                    b: 
+                      type: integer
+                    c:
+                      type: integer
+       

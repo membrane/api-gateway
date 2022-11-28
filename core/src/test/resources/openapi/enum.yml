@@ -1,0 +1,27 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /enum:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  # See https://json-schema.org/understanding-json-schema/reference/generic.html
+                  # enum without type
+                  enum:
+                    - red
+                    - amber
+                    - gree
+                    - 42
+                    - null
+      responses:
+        '200':
+          description: OK

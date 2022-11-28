@@ -1,0 +1,41 @@
+#
+# Request samples can be executed:
+#
+# a.) In Visual Studio Code with the HTTP Client Plugin
+#     See: https://marketplace.visualstudio.com/items?itemName=mkloubert.vscode-http-client
+#
+# b.) In IntelliJ with the HTTP Client Plugin
+#     See: https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html
+#
+
+
+GET localhost:3000
+
+### Valid request, should work
+GET /contacts/persons
+Host: localhost:2000
+
+### Wrong paht => 404 
+GET /wrong
+Host: localhost:2000
+
+###
+GET /customers?limit=-10
+Host: localhost:2000
+
+###
+
+POST /customers
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "id": "123",
+    "name": "Herbert"
+}
+
+
+###
+
+GET /shop/products/kkk
+Host: localhost:2000

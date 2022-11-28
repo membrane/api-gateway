@@ -1,0 +1,37 @@
+openapi: '3.0.2'
+info:
+  title: Array Test
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /different-types:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DifferentTypes"
+
+      responses:
+        '200':
+          description: OK
+  /different-types-invalid:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SameType"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    DifferentTypes:
+      type: array
+    SameType:
+      type: array
+      items:
+        type: string
