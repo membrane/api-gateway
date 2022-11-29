@@ -24,9 +24,11 @@ import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRe
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
     Map<String, OpenAPI> apisByBasePath;
+    OpenAPIProxy proxy;
 
-    public OpenAPIInterceptor(Map<String, OpenAPI> apisByBasePath) {
+    public OpenAPIInterceptor(Map<String, OpenAPI> apisByBasePath, OpenAPIProxy proxy) {
         this.apisByBasePath = apisByBasePath;
+        this.proxy = proxy;
     }
 
     @Override
@@ -42,8 +44,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             }
         }
 
-        if (errors != null && errors.size() > 0)
+        if (errors != null && errors.size() > 0) {
+            proxy.statisticCollector.collect(errors);
             return returnErrors(exc, errors);
+        }
 
         return CONTINUE;
     }
@@ -84,7 +88,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (extenstions == null)
             return false;
         Map<String, Boolean> xValidation = getxValidation(extenstions);
-        return xValidation != null && xValidation.get(VALIDATE_OPTIONS.requests.name());
+        return xValidation != null && xValidation.get(direction);
     }
 
     private Map<String, Boolean> getxValidation(Map<String, Object> extenstions) {

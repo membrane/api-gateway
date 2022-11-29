@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.rules.TimeCollector;
@@ -63,6 +64,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         StringBuilder s7 = new StringBuilder();
         StringBuilder s8 = new StringBuilder();
         StringBuilder s9 = new StringBuilder();
+        StringBuilder s10 = new StringBuilder();
 
         HashSet<String> seenRules = new HashSet<>();
 
@@ -82,6 +84,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             s7.setLength(0);
             s8.setLength(0);
             s9.setLength(0);
+            s10.setLength(0);
 
             dynamic.forEach(s -> s.setLength(0));
         }
@@ -101,6 +104,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             sb.append(s7);
             sb.append(s8);
             sb.append(s9);
+            sb.append(s10);
 
             dynamic.forEach(s -> sb.append(s));
         }
@@ -129,10 +133,44 @@ public class PrometheusInterceptor extends AbstractInterceptor {
                     buildSSLLines(ctx, r, sslib);
             }
 
+            if (r instanceof OpenAPIProxy) {
+                buildOpenAPIValidatorLines(ctx, (OpenAPIProxy) r);
+            }
+
         }
         buildDuplicateRuleNameWarning(ctx, issuedDuplicateRuleNameWarning);
         ctx.collect();
 
+    }
+
+    private void buildOpenAPIValidatorLines(Context ctx, OpenAPIProxy proxy) {
+        for (Map.Entry<ValidationStatsKey, Integer> e : proxy.getValidationStatisticCollector().getStats().entrySet()) {
+            buildLine(ctx.s10, proxy.getName(), e.getValue(), e.getKey().getLabels(), "openapi_validation");
+        }
+    }
+
+    private StringBuilder buildLine(StringBuilder sb, String ruleName, long value, Map<String, String> labels, String postFix) {
+        String prometheusName = prometheusCompatibleName("membrane_" + postFix);
+        if (sb.length() == 0) {
+            sb.append("# TYPE ");
+            sb.append(prometheusName);
+            sb.append(" counter\n");
+        }
+        sb.append(prometheusName);
+        sb.append("{rule=\"");
+        sb.append(prometheusCompatibleName(ruleName));
+        sb.append("\",");
+
+        for (Map.Entry<String, String> e : labels.entrySet()) {
+            sb.append(e.getKey());
+            sb.append("=\"");
+            sb.append(e.getValue());
+            sb.append("\",");
+        }
+        sb.append("} ");
+        sb.append(value);
+        sb.append("\n");
+        return sb;
     }
 
     private void buildSSLLines(Context ctx, Rule r, SSLContext sslib) {
@@ -147,8 +185,11 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private void buildSSLLine(StringBuilder sb, String ruleName, String prometheusContextTypeName, String metric, long value) {
         String prometheusName = prometheusCompatibleName("membrane_" + metric);
 
-        if (sb.length() == 0)
-            sb.append("# TYPE "+prometheusName+" gauge\n");
+        if (sb.length() == 0) {
+            sb.append("# TYPE ");
+            sb.append(prometheusName);
+            sb.append(" gauge\n");
+        }
 
         sb.append(prometheusName);
         sb.append("{rule=\"");
@@ -163,7 +204,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private void buildDuplicateRuleNameWarning(Context ctx, boolean hasDuplicateRuleName) {
         ctx.s6.append("# TYPE membrane_duplicate_rule_name gauge\n");
 
-        buildLine(ctx.s6,  "duplicate_rule_name", hasDuplicateRuleName ? 1 : 0);
+        buildLine(ctx.s6, "duplicate_rule_name", hasDuplicateRuleName ? 1 : 0);
     }
 
     private void buildActive(Context ctx, Rule r) {
@@ -228,7 +269,9 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private void buildBucketLine(StringBuilder sb, String ruleName, String le, long valueCount, String infix) {
         String prometheusName = prometheusCompatibleName("membrane_" + infix + "_bucket");
         if (sb.length() == 0) {
-            sb.append("# TYPE " + prometheusName + " histogram\n");
+            sb.append("# TYPE ");
+            sb.append(prometheusName);
+            sb.append(" histogram\n");
         }
 
         sb.append(prometheusName);
@@ -248,8 +291,11 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private StringBuilder buildLine(StringBuilder sb, String ruleName, long value, String labelName, int labelValue, String postFix) {
         String prometheusName = prometheusCompatibleName("membrane_" + postFix);
         if (sb.length() == 0) {
-            sb.append("# TYPE " + prometheusName + " counter\n");
+            sb.append("# TYPE ");
+            sb.append(prometheusName);
+            sb.append(" counter\n");
         }
+
         sb.append(prometheusName);
         sb.append("{rule=\"");
         sb.append(prometheusCompatibleName(ruleName));
@@ -299,8 +345,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setBuckets(String buckets) {
         TimeCollector.setBuckets(Arrays.stream(buckets
-                .replaceAll("\\s+", "")
-                .split(","))
+                        .replaceAll("\\s+", "")
+                        .split(","))
                 .map(Long::parseLong)
                 .collect(Collectors.toList()));
     }

@@ -2,12 +2,9 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import org.slf4j.*;
@@ -30,6 +27,8 @@ public class OpenAPIProxy extends AbstractServiceProxy {
     public OpenAPIProxy() {
         key = new OpenAPIProxyServiceKey(4000);
     }
+
+    ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
     @Override
     protected AbstractProxy getNewInstance() {
@@ -96,11 +95,11 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         configureBasePaths(basePaths);
 
         interceptors.add(new OpenAPIAPIInterceptor(apis));
-        interceptors.add(new OpenAPIInterceptor(basePaths));
+        interceptors.add(new OpenAPIInterceptor(basePaths, this));
     }
 
     private void configureBasePaths(Map<String, OpenAPI> basePaths) {
-        ArrayList<String> basePathsThatMatch = new ArrayList<String>(basePaths.keySet());
+        ArrayList<String> basePathsThatMatch = new ArrayList<>(basePaths.keySet());
         basePathsThatMatch.add("/openapi/");
         ((OpenAPIProxyServiceKey)key).setBasePaths(basePathsThatMatch);
     }
@@ -119,10 +118,9 @@ public class OpenAPIProxy extends AbstractServiceProxy {
     }
 
     private void addOpenAPISpecsFromDirectory(Spec spec) throws FileNotFoundException, CheckableBeanFactory.InvalidConfigurationException {
-        File[] oasFile = getOpenAPIFiles(spec.dir);
-        for (int i = 0; i < oasFile.length; i++) {
-            log.info("Parsing spec " + oasFile[i]);
-            OpenAPI api = parseFileAsOpenAPI(oasFile[i]);
+        for (File file : getOpenAPIFiles(spec.dir)) {
+            log.info("Parsing spec " + file);
+            OpenAPI api = parseFileAsOpenAPI(file);
             setValidationOnAPI(spec, api);
             apis.add(api);
         }
@@ -146,14 +144,14 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         }
 
         if (api.getExtensions() == null) {
-            api.setExtensions(new HashMap<String,Object>());
+            api.setExtensions(new HashMap<>());
         }
 
         api.getExtensions().put("x-validation", getValidationOptions(spec));
     }
 
-    private Map getValidationOptions(Spec spec) {
-        Map validationOptions = new HashMap();
+    private Map<String,Boolean> getValidationOptions(Spec spec) {
+        Map<String,Boolean> validationOptions = new HashMap<>();
         validationOptions.put("requests",false);
         validationOptions.put("responses",false);
         switch (spec.validate) {
@@ -178,11 +176,7 @@ public class OpenAPIProxy extends AbstractServiceProxy {
 
     private Map<String,OpenAPI> getOpenAPIMap() {
         Map<String,OpenAPI> basePaths = new HashMap<>();
-        apis.forEach(api -> {
-            api.getServers().forEach(server -> {
-                basePaths.put(Utils.getPathFromURL(server.getUrl()), api);
-            });
-        });
+        apis.forEach(api -> api.getServers().forEach(server -> basePaths.put(Utils.getPathFromURL(server.getUrl()), api)));
         return basePaths;
     }
 
@@ -199,11 +193,15 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         this.dir = dir;
     }
 
+    public ValidationStatisticsCollector getValidationStatisticCollector() {
+        return statisticCollector;
+    }
+
     private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
         return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(),  location));
     }
 
-    public static enum VALIDATE_OPTIONS { all, requests, responses, none;
+    public enum VALIDATE_OPTIONS { all, requests, responses, none;
 
         public static List<String> getValues() {
             return Stream.of(values())
