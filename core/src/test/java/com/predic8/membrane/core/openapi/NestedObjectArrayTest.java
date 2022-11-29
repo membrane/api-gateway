@@ -19,17 +19,17 @@ public class NestedObjectArrayTest {
     }
 
     @Test
-    public void nestedOk() throws FileNotFoundException {
+    public void nestedOk()  {
 
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").body(getResourceAsStream("/openapi/nested-objects-arrays.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/nested-objects-arrays.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void nestedInvalid() throws FileNotFoundException {
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").body(getResourceAsStream("/openapi/nested-objects-arrays-invalid.json")));
-        System.out.println("errors = " + errors);
+    public void nestedInvalid() {
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/nested-objects-arrays-invalid.json")));
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/b/2/c/1",e.getValidationContext().getJSONpointer());

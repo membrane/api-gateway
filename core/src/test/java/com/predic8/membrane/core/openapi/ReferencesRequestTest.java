@@ -21,17 +21,15 @@ public class ReferencesRequestTest {
 
     @Test
     public void refRequestOk()  {
-        InputStream fis = getResourceAsStream("/openapi/references-requests-responses-customer.json");
-        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").body(fis));
+        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/references-requests-responses-customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void refRequestInvalid()  {
-        InputStream fis = getResourceAsStream("/openapi/references-requests-responses-customer-invalid.json");
-        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").body(fis));
-        System.out.println("errors = " + errors);
+        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/references-requests-responses-customer-invalid.json")));
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getValidationContext().getValidatedEntityType());

@@ -101,8 +101,7 @@ public class OpenAPIValidator {
     private ValidationErrors validateMethods(ValidationContext ctx, Request req, Response response, PathItem pathItem) {
         ValidationErrors errors = new ValidationErrors();
         try {
-            OperationValidator operationValidator = new OperationValidator(api);
-            return errors.add(operationValidator.validateOperation(ctx, req, response, pathItem));
+            return errors.add(new OperationValidator(api).validateOperation(ctx, req, response, pathItem));
         } catch (MethodNotAllowException e) {
             return errors.add(ctx.statusCode(405)
                     .validatedEntity(req.getMethod())

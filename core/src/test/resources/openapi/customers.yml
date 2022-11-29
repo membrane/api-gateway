@@ -29,6 +29,18 @@ paths:
                 $ref: "#/components/schemas/Customer"
         '404':
           description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ "code","message" ]
+                properties:
+                  code:
+                    type: integer
+                    minimum: 100
+                  message:
+                    type: string
+                minLength: 3
   /customers/{cid}:
     parameters:
       - in: path

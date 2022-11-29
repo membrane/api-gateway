@@ -24,12 +24,12 @@ public class RequiredTest {
     @Test
     public void normalValid() {
 
-        Map props = new HashMap();
+        Map<String,Integer> props = new HashMap<>();
         props.put("a",5);
         props.put("b",3);
         props.put("c",6);
 
-        Map o = new HashMap();
+        Map<String,Map<String,Integer>> o = new HashMap<>();
         o.put("normal", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(o)));
@@ -40,11 +40,11 @@ public class RequiredTest {
     @Test
     public void normalMissingRequiredInvalid() {
 
-        Map props = new HashMap();
+        Map<String,Integer> props = new HashMap<>();
         props.put("a",5);
         props.put("c",6);
 
-        Map o = new HashMap();
+        Map<String,Map<String,Integer>> o = new HashMap<>();
         o.put("normal", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(o)));
@@ -58,10 +58,10 @@ public class RequiredTest {
     @Test
     public void normalMissingMoreRequiredInvalid() {
 
-        Map props = new HashMap();
+        Map<String,Integer> props = new HashMap<>();
         props.put("c",6);
 
-        Map o = new HashMap();
+        Map<String,Map<String,Integer>> o = new HashMap<>();
         o.put("normal", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(o)));
@@ -76,11 +76,11 @@ public class RequiredTest {
     @Test
     public void requestRequiredReadOnlyValid() {
 
-        Map props = new HashMap();
+        Map<String,Integer> props = new HashMap<>();
         props.put("b",3);
         props.put("c",6);
 
-        Map readOnlyRequest = new HashMap();
+        Map<String,Map<String,Integer>> readOnlyRequest = new HashMap<>();
         readOnlyRequest.put("read-only-request", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(readOnlyRequest)));
@@ -91,14 +91,14 @@ public class RequiredTest {
     @Test
     public void responseRequiredWriteOnlyValid() {
 
-        Map props = new HashMap();
+        Map<String,Integer> props = new HashMap<>();
         props.put("b",3);
         props.put("c",6);
 
-        Map writeOnlyResponse = new HashMap();
+        Map<String,Map<String,Integer>> writeOnlyResponse = new HashMap<>();
         writeOnlyResponse.put("write-only-response", props);
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200).body(mapToJson(writeOnlyResponse)));
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200, "application/json").body(mapToJson(writeOnlyResponse)));
         System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }

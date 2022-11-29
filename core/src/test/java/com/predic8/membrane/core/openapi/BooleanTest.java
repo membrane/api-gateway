@@ -43,8 +43,8 @@ public class BooleanTest {
     @Test
     public void validInQuery() {
         ValidationErrors errors = validator.validate(Request.get().path("/boolean?truth=true"));
-//        System.out.println("errors = " + errors);
-        assertEquals(0,errors.size());;
+        System.out.println("errors = " + errors);
+        assertEquals(0,errors.size());
     }
 
     @Test

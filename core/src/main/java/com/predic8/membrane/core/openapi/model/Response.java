@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.*;
 
 import java.io.*;
 
-public class Response extends Message {
+public class Response extends Message<Response> {
 
     private int statusCode;
 
@@ -12,8 +12,17 @@ public class Response extends Message {
         this.statusCode = statusCode;
     }
 
+    public Response(int statusCode, String mediaType) {
+        this.statusCode = statusCode;
+        this.mediaType = mediaType;
+    }
+
     public static Response statusCode(int statusCode) {
         return new Response(statusCode);
+    }
+
+    public static Response statusCode(int statusCode, String mediaType) {
+        return new Response(statusCode, mediaType);
     }
 
     public Response body(Body body) {

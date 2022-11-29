@@ -8,7 +8,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.PathUtils.*;
 
-public class Request extends Message {
+public class Request extends Message<Request> {
 
     private String method;
     private String path;
@@ -51,31 +51,16 @@ public class Request extends Message {
     /**
      * Method is not in base class so the "builder" still works
      */
-    public Request body(Body body) {
-        this.body = body;
-        return this;
-    }
-
-    /**
-     * Method is not in base class so the "builder" still works
-     */
-    public Request body(InputStream inputStream) {
-        this.body = new InputStreamBody(inputStream);
-        return this;
-    }
-
-    /**
-     * Method is not in base class so the "builder" still works
-     */
-    public Request body(String s) {
-        this.body = new StringBody(s);
-        return this;
-    }
-
-    public Request body(JsonNode n) {
-        this.body = new JsonBody(n);
-        return this;
-    }
+//    public Request body(String s) {
+//        this.body = new StringBody(s);
+//        return this;
+//    }
+//
+//    public Request body(JsonNode n) {
+//        this.body = new JsonBody(n);
+//        this.mediaType("application/json");
+//        return this;
+//    }
 
     public String getMethod() {
         return method;

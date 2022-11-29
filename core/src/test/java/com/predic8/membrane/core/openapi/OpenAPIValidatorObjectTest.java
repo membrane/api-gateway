@@ -3,6 +3,7 @@ package com.predic8.membrane.core.openapi;
 
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
+import com.sun.mail.imap.protocol.*;
 import org.junit.*;
 
 import java.io.*;
@@ -21,11 +22,11 @@ public class OpenAPIValidatorObjectTest {
     }
 
     @Test
-    public void invalidJSON() throws FileNotFoundException {
+    public void invalidJSON() {
 
         InputStream is = getResourceAsStream("/openapi/invalid.json");
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").body(is));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         assertEquals(400, errors.get(0).getValidationContext().getStatusCode());
@@ -36,22 +37,22 @@ public class OpenAPIValidatorObjectTest {
     }
 
     @Test
-    public void validateRequestBody() throws FileNotFoundException {
+    public void validateRequestBody() {
 
         InputStream is = getResourceAsStream("/openapi/customer.json");
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").body(is));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
 
     }
 
     @Test
-    public void invalidRequestBody() throws FileNotFoundException {
+    public void invalidRequestBody() {
 
         InputStream is = getResourceAsStream("/openapi/invalid-customer.json");
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").body(is));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 
         System.out.println("errors = " + errors);
 
@@ -67,11 +68,11 @@ public class OpenAPIValidatorObjectTest {
     }
 
     @Test
-    public void requiredPropertyMissing() throws FileNotFoundException {
+    public void requiredPropertyMissing() {
 
         InputStream is = getResourceAsStream("/openapi/missing-required-property.json");
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").body(is));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
         System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError error = errors.get(0);
@@ -83,11 +84,11 @@ public class OpenAPIValidatorObjectTest {
     }
 
     @Test
-    public void requiredPropertiesMissing() throws FileNotFoundException {
+    public void requiredPropertiesMissing() {
 
         InputStream is = getResourceAsStream("/openapi/missing-required-properties.json");
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").body(is));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError error = errors.get(0);
@@ -100,18 +101,12 @@ public class OpenAPIValidatorObjectTest {
     }
 
     @Test
-    public void additionalPropertiesInvalid() throws FileNotFoundException {
+    public void additionalPropertiesInvalid() {
 
         InputStream is = getResourceAsStream("/openapi/customer-additional-properties-invalid.json");
 
-        ValidationErrors errors = null;
-//        long t1 = System.currentTimeMillis();
-//        for (int i = 0; i < 1_000_000; i++) {
-             errors = validator.validate(Request.post().path("/customers").body(is));
-//        }
-//        System.out.println("((System.currentTimeMillis() - t1)/1000 = " + ((System.currentTimeMillis() - t1)/1000));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 
-        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError error = errors.get(0);
 

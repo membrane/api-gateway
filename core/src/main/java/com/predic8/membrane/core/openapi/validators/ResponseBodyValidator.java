@@ -7,6 +7,7 @@ import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.MEDIA_TYPE;
 
 public class ResponseBodyValidator {
 
@@ -22,12 +23,12 @@ public class ResponseBodyValidator {
         if (operation.getResponses() == null)
             throw new RuntimeException("An operation should always have at least one response declared.");
 
-        operation.getResponses().entrySet().forEach(responseEntry -> {
-            if (response.sameStatusCode(responseEntry.getKey())) {
-                if (responseEntry.getValue().getContent() != null) {
-                    validateResponseBodyInternal(ctx, response, responseEntry.getValue());
+        operation.getResponses().forEach((key, value) -> {
+            if (response.sameStatusCode(key)) {
+                if (value.getContent() != null) {
+                    validateResponseBodyInternal(ctx, response, value);
                 } else {
-                    String ref = responseEntry.getValue().get$ref();
+                    String ref = value.get$ref();
                     if (ref != null) {
                         validateResponseBodyInternal(ctx, response, api.getComponents().getResponses().get(getComponentLocalNameFromRef(ref)));
                     }
@@ -37,24 +38,26 @@ public class ResponseBodyValidator {
         return errors;
     }
 
-    private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Body body) {
-        // TODO Prüfung MediaType gegen header einbauen.
+    private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) {
+
+        if (!response.getMediaType().equalsIgnoreCase(mediaType)) {
+            errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE).validatedEntity(response.getMediaType()), String.format("Response with status code %d has mediatype %s instead of the expected type %s.",response.getStatusCode(),response.getMediaType(),mediaType));
+            return;
+        }
+
         if (mediaType.equals("application/json")) {
             if (mediaTypeObj.getSchema().get$ref() != null) {
                 ctx.schemaType(mediaTypeObj.getSchema().get$ref());
             }
-            errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx.statusCode(400), body));
+            errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx.statusCode(500), response.getBody()));
         }
     }
 
-    private void validateResponseBodyInternal(ValidationContext ctx, Message message, ApiResponse apiResponse) {
+    private void validateResponseBodyInternal(ValidationContext ctx, Response response, ApiResponse apiResponse) {
 
         if (apiResponse.getContent() == null)
             return;
 
-        ValidationErrors errors = new ValidationErrors();
-        apiResponse.getContent().forEach((s, mediaType) -> {
-            validateMediaType(ctx, s, mediaType, message.getBody());
-        });
+        apiResponse.getContent().forEach((s, mediaType) -> validateMediaType(ctx, s, mediaType, response));
     }
 }

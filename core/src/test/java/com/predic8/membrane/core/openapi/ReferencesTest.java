@@ -59,14 +59,14 @@ public class ReferencesTest {
 
     @Test
     public void bodyAsRefPrimitiveOk() {
-        ValidationErrors errors = validator.validate(Request.post().path("/body-as-ref-primitive").body("42"));
+        ValidationErrors errors = validator.validate(Request.post().path("/body-as-ref-primitive").json().body("42"));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void bodyAsRefPrimitiveInvalid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/body-as-ref-primitive").body("-1"));
+        ValidationErrors errors = validator.validate(Request.post().path("/body-as-ref-primitive").json().body("-1"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -77,17 +77,15 @@ public class ReferencesTest {
     }
 
     @Test
-    public void objRefsObjOK() throws FileNotFoundException {
-        InputStream fis = getResourceAsStream("/openapi/references-customer-ok.json");
-        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").body(fis));
+    public void objRefsObjOK() {
+        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream("/openapi/references-customer-ok.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void objRefsObjOKInvalid() throws FileNotFoundException {
-        InputStream fis = getResourceAsStream("/openapi/references-customer-invalid.json");
-        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").body(fis));
+    public void objRefsObjOKInvalid() {
+        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream("/openapi/references-customer-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationContext e = errors.get(0).getValidationContext();

@@ -22,6 +22,8 @@ public class OperationValidator {
     public ValidationErrors validateOperation(ValidationContext ctx, Request req, Response response, PathItem pathItem) throws MethodNotAllowException {
 
         Operation operation = getOperation(req.getMethod(), pathItem);
+        if (operation == null)
+            throw new MethodNotAllowException();
 
         isMethodDeclaredInAPI(ctx, req.getMethod(), operation);
 
@@ -29,41 +31,29 @@ public class OperationValidator {
         if (response == null) {
             validatePathParameters(ctx, req, operation.getParameters());
 
-            QueryParameterValidator queryParameterValidator = new QueryParameterValidator(api,pathItem);
-            errors.add(queryParameterValidator.validateQueryParameters(ctx, req, operation));
+            errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
 
-            RequestBodyValidator requestBodyValidator = new RequestBodyValidator(api);
-
-            return errors.add(requestBodyValidator.validateRequestBody(ctx.validatedEntityType(BODY).validatedEntity("REQUEST"), operation, req));
+            return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.validatedEntityType(BODY).validatedEntity("REQUEST"), operation, req));
         } else {
             return errors.add(new ResponseBodyValidator(api).validateResponseBody(ctx.validatedEntityType(BODY).validatedEntity("RESPONSE"), response, operation));
         }
     }
 
     private Operation getOperation(String method, PathItem pathItem) throws MethodNotAllowException {
-        Operation op = null;
         switch (method.toUpperCase()) {
             case "GET":
-                op = pathItem.getGet();
-                break;
+                return pathItem.getGet();
             case "POST":
-                op = pathItem.getPost();
-                break;
+                return pathItem.getPost();
             case "PUT":
-                op = pathItem.getPut();
-                break;
+                return pathItem.getPut();
             case "DELETE":
-                op = pathItem.getDelete();
-                break;
+                return pathItem.getDelete();
             case "PATCH":
-                op = pathItem.getPatch();
-                break;
+                return pathItem.getPatch();
             default:
                 throw new MethodNotAllowException();
         }
-        if (op != null)
-            return op;
-        throw new MethodNotAllowException();
     }
 
     private void isMethodDeclaredInAPI(ValidationContext ctx, String method, Object apiMethod) {

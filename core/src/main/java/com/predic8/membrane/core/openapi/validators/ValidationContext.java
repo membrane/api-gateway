@@ -135,8 +135,8 @@ public class ValidationContext {
     }
 
     public enum ValidatedEntityType {
-        PATH, METHOD, PATH_PARAMETER, QUERY_PARAMETER, BODY, FIELD, PROPERTY;
-    };
+        PATH, METHOD, PATH_PARAMETER, QUERY_PARAMETER, BODY, FIELD, PROPERTY, MEDIA_TYPE
+    }
 
     @Override
     public String toString() {
