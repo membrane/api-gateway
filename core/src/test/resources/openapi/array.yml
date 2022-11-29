@@ -6,7 +6,7 @@ info:
 
     # Maybe not supported
 
-    - patternProperties 
+    - patternProperties
 
 servers:
   - url: https://api.server.test/v1
@@ -48,6 +48,10 @@ components:
         uniqueItems:
           type: array
           uniqueItems: true
+        objects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Complex"
     Complex:
       type: object
       required:

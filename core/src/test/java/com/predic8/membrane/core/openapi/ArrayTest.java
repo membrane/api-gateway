@@ -138,6 +138,54 @@ public class ArrayTest {
         assertEquals(0,errors.size());
     }
 
+    @Test
+    public void validateObjectInArrayValid() {
+
+        Map o1 = new HashMap();
+        o1.put("a","foo");
+        o1.put("b",7);
+
+        Map o2 = new HashMap();
+        o2.put("a","baz");
+        o2.put("b",3);
+
+        Map o3 = new HashMap();
+        o3.put("a","bar");
+        o3.put("b",11);
+
+        Map m = new HashMap();
+        m.put("objects", Arrays.asList(o1,o2,o3));
+
+        ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
+//        System.out.println("errors = " + errors);
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    public void validateObjectInArrayInvalid() {
+
+        Map o1 = new HashMap();
+        o1.put("a","foo");
+        o1.put("b",7);
+
+        Map o2 = new HashMap();
+        o2.put("a","baz");
+
+        Map o3 = new HashMap();
+        o3.put("a","bar");
+        o3.put("b",11);
+
+        Map m = new HashMap();
+        m.put("objects", Arrays.asList(o1,o2,o3));
+
+        ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
+//        System.out.println("errors = " + errors);
+        assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals("/objects/1/b",e.getValidationContext().getJSONpointer());
+        assertTrue(e.getMessage().contains("missing"));
+    }
+
 
     private List listWithDifferentTypes() {
         List l = new ArrayList();

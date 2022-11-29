@@ -30,10 +30,12 @@ You should get an answer.
 4. Now send an invalid request:
 
 ```
-    curl -X POST http://localhost:2000/persons   -d '{"name": "Bo","email": "mailatme","age": "old"}'
+curl -X POST http://localhost:2000/persons   -d '{"name": "Bo","email": "mailatme","age": "old"}'
 ```
 
 5. Have a look at the error messages in the response.
+
+You can also execute the requests in the _requests.http_ file.
 
 
 #### HOW IT IS DONE
@@ -46,6 +48,17 @@ You should get an answer.
 </OpenAPIProxy>
 ```
 
-2. Incomming requests are validated against the definitions in the OpenAPI specification.
+2. Incomming requests are validated against the definitions in the OpenAPI specification. In case of an validation failure an error message is returned. 
+
+3. The request is sent to the backend server with the server url from the OpenAPI definition:
+
+```
+info:
+  ...
+servers:
+  - url: http://localhost:3000
+```
+
+4. The answer is returned to the client.
 
 For a more detailed example have a look at the _examples/openapi/openapi-validator_ folder.

@@ -11,9 +11,16 @@
             <spec location="contacts-api-v1.yml" validate="requests"/>
         </OpenAPIProxy>
 
-		<!-- This proxy provides a mock backend implementation for the API -->
+		<!-- This proxy provides a mock backend implementation for the API for this demo. Instead
+			 of this mock use the backend for your API.
+		-->
 		<serviceProxy port="3000">
-			<path isRegExp="true">/persons</path>
+			<path>/persons</path>
+			<response>
+				<template pretty="true" contentType="application/json">
+					{ "success": true }
+				</template>
+			</response>
             <return statusCode="201"/>
         </serviceProxy>
 

@@ -47,7 +47,7 @@ public class Utils {
             matcher.find();
             return matcher.group(1);
         } catch (Exception e) {
-            log.info("Cannot get Path from URL " + url);
+            log.trace("Cannot get Path from URL " + url);
             return "";
         }
     }
