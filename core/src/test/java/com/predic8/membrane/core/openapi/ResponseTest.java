@@ -25,7 +25,7 @@ public class ResponseTest {
 
         InputStream is = getResourceAsStream("/openapi/customer.json");
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200, "application/json").body(is));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(is));
         System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
@@ -35,7 +35,7 @@ public class ResponseTest {
 
         InputStream is = getResourceAsStream("/openapi/invalid-customer.json");
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200,"application/json").body(is));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(is));
 
 //        System.out.println("errors = " + errors);
 
@@ -54,7 +54,7 @@ public class ResponseTest {
 
         InputStream is = getResourceAsStream("/openapi/customer.json");
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(404, "application/json").body(is));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(404).mediaType("application/json").body(is));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -71,7 +71,7 @@ public class ResponseTest {
 
         InputStream is = getResourceAsStream("/openapi/customer.json");
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200,"application/xml").body(is));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/xml").body(is));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -81,19 +81,38 @@ public class ResponseTest {
         assertTrue(e.getMessage().toLowerCase().contains("mediatype"));
     }
 
+    /**
+     * The OpenAPI does not specify a content for a response, but der backend is sending a body.
+     */
     @Test
-    public void wrongMediaTypeRequest() {
+    public void noContentInResponseSendPayload() {
 
         InputStream is = getResourceAsStream("/openapi/customer.json");
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType("text/plain").body(is));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(is), Response.statusCode(200).mediaType("application/json").body("{ }"));
+//        System.out.println("errors = " + errors);
+        assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals(BODY,e.getValidationContext().getValidatedEntityType());
+        assertEquals("RESPONSE",e.getValidationContext().getValidatedEntity());
+        assertEquals(500,e.getValidationContext().getStatusCode());
+        assertTrue(e.getMessage().toLowerCase().contains("body"));
+    }
+
+    @Test
+    public void statusCodeNotInResponse() {
+
+        InputStream is = getResourceAsStream("/openapi/customer.json");
+
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(is), Response.statusCode(202).mediaType("application/json").body("{ }"));
         System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals(MEDIA_TYPE,e.getValidationContext().getValidatedEntityType());
-        assertEquals("text/plain",e.getValidationContext().getValidatedEntity());
-        assertEquals(415,e.getValidationContext().getStatusCode());
-        assertTrue(e.getMessage().toLowerCase().contains("mediatype"));
+        assertEquals("POST",e.getValidationContext().getMethod());
+        assertEquals(BODY,e.getValidationContext().getValidatedEntityType());
+        assertEquals("RESPONSE",e.getValidationContext().getValidatedEntity());
+        assertEquals(500,e.getValidationContext().getStatusCode());
+        assertTrue(e.getMessage().toLowerCase().contains("status"));
     }
 
 

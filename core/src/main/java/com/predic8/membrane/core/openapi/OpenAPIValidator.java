@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
@@ -45,7 +46,12 @@ public class OpenAPIValidator {
         if (api.getServers() != null) {
             String url = api.getServers().get(0).getUrl();
             log.debug("Found server " + url);
-            basePath = getPathFromURL(url);
+            try {
+                basePath = getPathFromURL(url);
+            } catch (MalformedURLException e) {
+                // @TODO
+                throw new RuntimeException("Config Error" + e);
+            }
         }
     }
 

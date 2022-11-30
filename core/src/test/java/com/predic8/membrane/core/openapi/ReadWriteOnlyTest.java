@@ -54,7 +54,7 @@ public class ReadWriteOnlyTest {
         m.put("name","Jack");
         m.put("role","admin");
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/read-only"), Response.statusCode(200,"application/json").body(mapToJson(m)));
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/read-only"), Response.statusCode(200).mediaType("application/json").body(mapToJson(m)));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/role",e.getValidationContext().getJSONpointer());

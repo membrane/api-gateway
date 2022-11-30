@@ -21,10 +21,6 @@ public class Response extends Message<Response> {
         return new Response(statusCode);
     }
 
-    public static Response statusCode(int statusCode, String mediaType) {
-        return new Response(statusCode, mediaType);
-    }
-
     public Response body(Body body) {
         this.body = body;
         return this;

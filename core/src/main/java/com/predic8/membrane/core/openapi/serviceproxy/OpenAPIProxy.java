@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 import java.util.stream.*;
 
@@ -176,7 +177,15 @@ public class OpenAPIProxy extends AbstractServiceProxy {
 
     private Map<String,OpenAPI> getOpenAPIMap() {
         Map<String,OpenAPI> basePaths = new HashMap<>();
-        apis.forEach(api -> api.getServers().forEach(server -> basePaths.put(Utils.getPathFromURL(server.getUrl()), api)));
+        apis.forEach(api -> api.getServers().forEach(server -> {
+            try {
+                basePaths.put(Utils.getPathFromURL(server.getUrl()), api);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                // @TODO
+                throw new RuntimeException();
+            }
+        }));
         return basePaths;
     }
 

@@ -1,13 +1,19 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.*;
 
+import java.util.*;
+import java.util.concurrent.atomic.*;
+
 import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
+import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.MEDIA_TYPE;
+import static java.lang.String.format;
 
 public class ResponseBodyValidator {
 
@@ -23,25 +29,39 @@ public class ResponseBodyValidator {
         if (operation.getResponses() == null)
             throw new RuntimeException("An operation should always have at least one response declared.");
 
-        operation.getResponses().forEach((key, value) -> {
-            if (response.sameStatusCode(key)) {
-                if (value.getContent() != null) {
-                    validateResponseBodyInternal(ctx, response, value);
+        AtomicBoolean foundMatchingResponse = new AtomicBoolean();
+        operation.getResponses().forEach((statusCode, responseSpec) -> {
+            if (response.sameStatusCode(statusCode)) {
+                foundMatchingResponse.set(true);
+                if (responseSpec.getContent() != null) {
+                    validateResponseBodyInternal(ctx, response, responseSpec);
                 } else {
-                    String ref = value.get$ref();
+                    String ref = responseSpec.get$ref();
                     if (ref != null) {
                         validateResponseBodyInternal(ctx, response, api.getComponents().getResponses().get(getComponentLocalNameFromRef(ref)));
+                    } else {
+                        if (response.hasBody()) {
+                            errors.add(ctx.statusCode(500),"Response should't have a body. There is no content described in the API specification.");
+                        }
                     }
                 }
             }
         });
+
+        if (!foundMatchingResponse.get()) {
+
+            Set<String> statusCodesInSpec = operation.getResponses().keySet();
+
+            errors.add(ctx.statusCode(500),String.format("Server returned a status code of %d but allowed are only %s",response.getStatusCode(), joinByComma(statusCodesInSpec)));
+        }
+
         return errors;
     }
 
     private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) {
 
         if (!response.getMediaType().equalsIgnoreCase(mediaType)) {
-            errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE).validatedEntity(response.getMediaType()), String.format("Response with status code %d has mediatype %s instead of the expected type %s.",response.getStatusCode(),response.getMediaType(),mediaType));
+            errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE).validatedEntity(response.getMediaType()), format("Response with status code %d has mediatype %s instead of the expected type %s.",response.getStatusCode(),response.getMediaType(),mediaType));
             return;
         }
 

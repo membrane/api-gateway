@@ -98,7 +98,7 @@ public class RequiredTest {
         Map<String,Map<String,Integer>> writeOnlyResponse = new HashMap<>();
         writeOnlyResponse.put("write-only-response", props);
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200, "application/json").body(mapToJson(writeOnlyResponse)));
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200).mediaType("application/json").body(mapToJson(writeOnlyResponse)));
         System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }

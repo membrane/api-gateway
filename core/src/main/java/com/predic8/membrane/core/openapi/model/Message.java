@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.openapi.model;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.openapi.util.*;
 
 import java.io.*;
 
@@ -40,9 +41,9 @@ public class Message<T> {
 //        return null;
 //    }
 
-    public Message<T> mediaType(String mediaType) {
-        this.mediaType = mediaType;
-        return this;
+    public T mediaType(String mediaType) {
+        this.mediaType = Utils.getMediaTypeFromContentTypeHeader(mediaType);
+        return (T) this;
     }
 
     public boolean hasBody() {

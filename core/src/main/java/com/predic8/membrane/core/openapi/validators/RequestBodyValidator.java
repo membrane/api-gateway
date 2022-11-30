@@ -24,7 +24,7 @@ public class RequestBodyValidator {
             if (!request.hasBody())
                 return errors;
             else
-                return errors.add(ctx,"Request has a body although it should't.");
+                return errors.add(ctx.statusCode(400),"Request has a body although it should't.");
         }
 
         if (operation.getRequestBody().getContent() != null) {

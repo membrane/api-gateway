@@ -29,7 +29,7 @@ public class ReferencesResponseTest {
     @Test
     public void refResponseInvalid()  {
         InputStream fis = getResourceAsStream("/openapi/references-requests-responses-customer-invalid.json");
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200, "application/json").body(fis));
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200).mediaType("application/json").body(fis));
         System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
