@@ -9,33 +9,36 @@
 #
 
 
-GET localhost:3000
 
-### Valid request, should work
-GET /contacts/persons
+### Valid request, should work => 200 Ok
+GET /demo-api/v2/persons?limit=10
 Host: localhost:2000
 
-### Wrong paht => 404 
-GET /wrong
+### Wrong path => 404 Not Found
+GET /demo-api/v2/wrong
 Host: localhost:2000
 
-###
-GET /customers?limit=-10
+### Limit greater than 100 => 400 Bad Request
+GET /demo-api/v2/persons?limit=200
 Host: localhost:2000
 
-###
-
-POST /customers
+### Valid => 200 Ok
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Host: localhost:2000
 Content-Type: application/json
 
 {
-    "id": "123",
-    "name": "Herbert"
+    "name": "Jan Vermeer"
 }
 
-
-###
-
-GET /shop/products/kkk
+### Invalid UUID, email and enum => 400 Bad Request
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1
 Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer",
+    "email": "jan(at)schilderei.nl",
+    "type": "ARTIST"
+}
+

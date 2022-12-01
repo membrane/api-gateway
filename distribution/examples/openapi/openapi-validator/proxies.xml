@@ -6,26 +6,49 @@
 
 	<router>
 
-		<!-- Configures Membrane as an API Gateway for the specified OpenAPI specifications -->
+		<!-- Configures Membrane as an API Gateway for the given OpenAPI specifications -->
 		<OpenAPIProxy port="2000">
             <spec location="contacts-api-v1.yml" validate="requests"/>
         </OpenAPIProxy>
 
-		<!-- This proxy provides a mock backend implementation for the API for this demo. Instead
-			 of this mock use the backend for your API.
+		<!-- These proxies provides mock backend implementations for the API in this demo. Instead
+			 of mocks use the backends for your API.
 		-->
 		<serviceProxy port="3000">
-			<path>/persons</path>
+			<path isRegExp="true">/demo-api/v2/persons/.*</path>
 			<response>
 				<template pretty="true" contentType="application/json">
-					{ "success": true }
+						{
+							"id": "12358",
+							"name": "Bo",
+							"email": "foo@baz.org"
+						}
 				</template>
 			</response>
             <return statusCode="201"/>
         </serviceProxy>
 
-		<!-- See examples/openapi-validator for a more detailed example -->
+		<serviceProxy port="3000" method="GET">
+			<path>/demo-api/v2/persons</path>
+			<response>
+				<template pretty="true" contentType="application/json">
+					{ "persons": [
+						{
+							"id": "12358",
+							"name": "Bo",
+							"email": "foo@baz.org"
+						}
+					] }
+				</template>
+			</response>
+            <return statusCode="201"/>
+        </serviceProxy>
 
+		<serviceProxy port="9000">
+			<adminConsole />
+		</serviceProxy>
+
+	
 	</router>
 	
 </spring:beans>

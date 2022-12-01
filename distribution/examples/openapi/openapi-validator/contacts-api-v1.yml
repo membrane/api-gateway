@@ -3,7 +3,7 @@ info:
   title: Person API to demo OpenAPI Validation
   version: '1.0'
 servers:
-  - url: http://localhost:3000/contacts/
+  - url: http://localhost:3000/demo-api/v2/
 paths:
   /persons:
     parameters:
@@ -16,7 +16,7 @@ paths:
           minimum: 0
     get:
       responses:
-        '200':
+        201:
           description: OK
           content:
             application/json:
@@ -59,7 +59,7 @@ components:
         name:
           type: string
           minLength: 3
-          maxLength: 10
+          maxLength: 12
         email:
           type: string
           format: email
