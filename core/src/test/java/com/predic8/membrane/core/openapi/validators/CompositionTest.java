@@ -1,5 +1,6 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
@@ -12,6 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class CompositionTest {
 
     OpenAPIValidator validator;
@@ -24,7 +26,7 @@ public class CompositionTest {
     @Test
     public void allOfValid() {
 
-        Map m = new HashMap();
+        Map<String,String> m = new HashMap<>();
         m.put("firstname","Otto");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -35,7 +37,7 @@ public class CompositionTest {
     @Test
     public void allOfTooLongInvalid() {
 
-        Map m = new HashMap();
+        Map<String,String> m = new HashMap<>();
         m.put("firstname","123456");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -54,7 +56,7 @@ public class CompositionTest {
     @Test
     public void allOfTooShortInvalid() {
 
-        Map m = new HashMap();
+        Map<String,String> m = new HashMap<>();
         m.put("firstname","12");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -72,7 +74,7 @@ public class CompositionTest {
     @Test
     public void anyOfeMailValid() {
 
-        Map m = new HashMap();
+        Map<String,String> m = new HashMap<>();
         m.put("contact","membrane@predic8.de");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -83,7 +85,7 @@ public class CompositionTest {
     @Test
     public void anyOfTelValid() {
 
-        Map m = new HashMap();
+        Map<String,String> m = new HashMap<>();
         m.put("contact","123");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -94,7 +96,7 @@ public class CompositionTest {
     @Test
     public void anyOfInvalid() {
 
-        Map m = new HashMap();
+        Map<String,String> m = new HashMap<>();
         m.put("contact","Bonn");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -108,7 +110,7 @@ public class CompositionTest {
     @Test
     public void oneOfNoneInvalid() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("multiple",7);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -122,7 +124,7 @@ public class CompositionTest {
     @Test
     public void oneOfTwoInvalid() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("multiple",15);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -136,7 +138,7 @@ public class CompositionTest {
     @Test
     public void oneOfValid() {
 
-        Map m = new HashMap();
+        Map<String,Integer> m = new HashMap<>();
         m.put("multiple",21);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -147,7 +149,7 @@ public class CompositionTest {
     @Test
     public void factoredOutInvalid() {
 
-        Map m = new HashMap();
+        Map<String,Integer> m = new HashMap<>();
         m.put("factored-out",15);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -162,7 +164,7 @@ public class CompositionTest {
     @Test
     public void factoredOutValid() {
 
-        Map m = new HashMap();
+        Map<String,Integer> m = new HashMap<>();
         m.put("factored-out",21);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -173,7 +175,7 @@ public class CompositionTest {
     @Test
     public void notStringValid() {
 
-        Map m = new HashMap();
+        Map<String,Boolean> m = new HashMap<>();
         m.put("not-string",true);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -184,7 +186,7 @@ public class CompositionTest {
     @Test
     public void notStringInvalid() {
 
-        Map m = new HashMap();
+        Map<String,String> m = new HashMap<>();
         m.put("not-string","abc");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -198,12 +200,12 @@ public class CompositionTest {
     @Test
     public void inheritanceValid() {
 
-        Map address = new HashMap();
+        Map<String,String> address = new HashMap<>();
         address.put("street","Koblenzer Str. 65");
         address.put("city","Bonn");
         address.put("country","IN"); // DE is not valid
 
-        Map inheritance = new HashMap();
+        Map<String,Map<String,String>> inheritance = new HashMap<>();
         inheritance.put("inheritance",address);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(inheritance)));
@@ -214,12 +216,12 @@ public class CompositionTest {
     @Test
     public void inheritanceWrongPlaceInvalid() {
 
-        Map address = new HashMap();
+        Map<String,String> address = new HashMap<>();
         address.put("street","Koblenzer Str. 65");
         address.put("city","Bonn");
         address.put("country","DE"); // DE is not valid
 
-        Map inheritance = new HashMap();
+        Map<String,Map<String,String>> inheritance = new HashMap<>();
         inheritance.put("inheritance",address);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(inheritance)));
@@ -237,11 +239,11 @@ public class CompositionTest {
     @Test
     public void inheritanceInvalid() {
 
-        Map address = new HashMap();
+        Map<String,String> address = new HashMap<>();
         address.put("street","Koblenzer Str. 65");
         address.put("city","Bonn");
 
-        Map inheritance = new HashMap();
+        Map<String,Map<String,String>> inheritance = new HashMap<>();
         inheritance.put("inheritance",address);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(inheritance)));

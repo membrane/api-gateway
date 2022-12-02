@@ -23,7 +23,7 @@ public class Utils {
     final static Pattern componentSchemaPattern = compile("#/components/\\w+/(.*)");
 
     //noinspection
-    final static Pattern urlPathPattern = compile("\\w*:?/?/?/?.*(/.*)");
+    final static Pattern urlPathPattern = compile("\\w*:?/?/?/?.*?(/.*)");
 
     final static Pattern uuidPattern = compile("^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$");
 
@@ -34,6 +34,8 @@ public class Utils {
     final static Pattern uriPattern = compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
 
     final static Pattern datePattern = compile("\\d{4}-\\d{2}-\\d{2}");
+
+    final static Pattern ipPattern = compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
     // DateTimeFormatter is thread safe!
     final static DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
@@ -113,6 +115,10 @@ public class Utils {
         }
     }
 
+    public static boolean isValidIp(String s) {
+        return ipPattern.matcher(s).matches();
+    }
+
     public static boolean isValidDateTime(String s) {
         try {
             LocalDate.parse(s, dateTimeFormat);
@@ -156,6 +162,9 @@ public class Utils {
      *
      */
     public static String getMediaTypeFromContentTypeHeader(String str) {
+        if (str == null)
+            return null;
+
         if (str.indexOf(';') == -1)
             return str;
 

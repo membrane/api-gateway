@@ -62,8 +62,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             }
         }
 
-        if (errors != null && errors.size() > 0)
+        if (errors != null && errors.size() > 0) {
+            exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
             return returnErrors(exc, errors);
+        }
 
         return CONTINUE;
     }
@@ -157,7 +159,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
 
     private Outcome returnErrors(Exchange exc, ValidationErrors errors) {
-        exc.setResponse(com.predic8.membrane.core.http.Response.ResponseBuilder.newInstance().status(400, "Bad Request").body(errors.toString()).contentType(APPLICATION_JSON_UTF8).build());
+        exc.setResponse(com.predic8.membrane.core.http.Response.ResponseBuilder.newInstance().status(errors.get(0).getValidationContext().getStatusCode(), "Bad Request").body(errors.toString()).contentType(APPLICATION_JSON_UTF8).build());
         return RETURN;
     }
 

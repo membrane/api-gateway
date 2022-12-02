@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.validators;
 
 
 
@@ -11,7 +11,7 @@ import java.util.*;
 import static com.predic8.membrane.core.util.MapUtils.stringMap;
 import static org.junit.Assert.*;
 
-
+@SuppressWarnings("CatchMayIgnoreException")
 public class UriTemplateMatcherTest {
 
     UriTemplateMatcher matcher;

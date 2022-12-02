@@ -86,11 +86,15 @@ public class Request extends Message<Request> {
     }
 
     public void ajustPathAccordingToBasePath(String basePath) {
-        if (basePath.length() == 0)
-            return;
-
-        path =  normalizeUri(path.replace(basePath, "/"));
+        path = PathUtils.ajustPathAccordingToBasePath(basePath,path);
     }
+
+//    public void ajustPathAccordingToBasePath(String basePath) {
+//        if (basePath.length() == 0)
+//            return;
+//
+//        path =  normalizeUri(path.replace(basePath, "/"));
+//    }
 
 
     @Override

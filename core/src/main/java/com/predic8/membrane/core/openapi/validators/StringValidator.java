@@ -2,8 +2,6 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
@@ -28,16 +26,15 @@ public class StringValidator implements IJSONSchemaValidator {
         ValidationErrors errors = new ValidationErrors();
 
         if (obj == null) {
-            String suffix = ""; // WTF?
-            errors.add(new ValidationError(ctx, format("String expected but got null" + suffix)));
+            errors.add(new ValidationError(ctx, "String expected but got null."));
             return errors;
         }
 
-        String value = "";
+        String value;
         if (obj instanceof JsonNode) {
             JsonNode node = ((JsonNode) obj);
             if (!JsonNodeType.STRING.equals(node.getNodeType())) {
-                errors.add(ctx, format("String expected but got %s of type %s", node.toString(), node.getNodeType()));
+                errors.add(ctx, format("String expected but got %s of type %s", node, node.getNodeType()));
                 return errors;
             }
             value = node.textValue();
@@ -46,19 +43,6 @@ public class StringValidator implements IJSONSchemaValidator {
         } else {
             throw new RuntimeException("Should not happen! " + obj.getClass());
         }
-
-//        errors.add(new RestrictionValidator(schema).validate(ctx,value));
-
-//        if (schema.getMaxLength() != null) {
-//            if (value.length() > schema.getMaxLength()) {
-//                errors.add(new ValidationError(ctx, format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", value, value.length(), schema.getMaxLength())));
-//            }
-//        }
-//        if (schema.getMinLength() != null) {
-//            if (value.length() < schema.getMinLength()) {
-//                errors.add(new ValidationError(ctx, format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", value, value.length(), schema.getMinLength())));
-//            }
-//        }
 
         if (schema.getFormat() != null) {
             switch (schema.getFormat()) {
@@ -92,8 +76,13 @@ public class StringValidator implements IJSONSchemaValidator {
                     }
                     break;
                 }
+                case "ip": {
+                    if (!isValidIp(value)) {
+                        errors.add(ctx,format("The string '%s' is not a valid ip address.",value));
+                    }
+                }
                 default:
-                    log.warn("Unkown string format of ", schema.getFormat());
+                    log.warn("Unkown string format of {}.", schema.getFormat());
             }
         }
 

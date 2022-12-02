@@ -51,6 +51,11 @@ public class RequestBodyValidator {
 
     private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Request request) {
 
+        if (request.getMediaType() == null) {
+            errors.add(ctx.statusCode(400),"The request has a body, but no Content-Type header.");
+            return;
+        }
+
         if (!request.getMediaType().equalsIgnoreCase(mediaType)) {
             errors.add(ctx.statusCode(415).validatedEntityType(MEDIA_TYPE).validatedEntity(request.getMediaType()), String.format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
             return;

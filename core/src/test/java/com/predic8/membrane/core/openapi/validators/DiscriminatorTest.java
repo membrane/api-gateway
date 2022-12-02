@@ -1,5 +1,6 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
@@ -23,7 +24,7 @@ public class DiscriminatorTest {
     @Test
     public void discriminatorLengthWrong() {
 
-        Map publicTransport = new HashMap();
+        Map<String,Object> publicTransport = new HashMap<>();
         publicTransport.put("kind","Train");
         publicTransport.put("name","Bimmelbahn");
         publicTransport.put("seats",254);
@@ -33,17 +34,23 @@ public class DiscriminatorTest {
         System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
-        ValidationError numberError = errors.stream().filter(e -> e.getMessage().contains("number")).findAny().get();
+        ValidationError numberError = errors.stream().filter(e -> e.getMessage().contains("number")).findFirst().orElseThrow(() -> {
+            throw new RuntimeException("No number error!");
+        });
+
         assertEquals("/length", numberError.getValidationContext().getJSONpointer());
 
-        ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
+        ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findFirst().orElseThrow(() -> {
+            throw new RuntimeException("Does not contain allOf Message!");
+        });
         assertTrue(allOf.getMessage().contains("subschemas"));
     }
 
     @Test
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void discriminatorNoWheels() {
 
-        Map publicTransport = new HashMap();
+        Map<String,Object> publicTransport = new HashMap<>();
         publicTransport.put("kind","Bus");
         publicTransport.put("name","Postbus");
         publicTransport.put("seats",45);
@@ -52,7 +59,9 @@ public class DiscriminatorTest {
         System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
+
         ValidationError requiredError = errors.stream().filter(e -> e.getMessage().toLowerCase().contains("required")).findAny().get();
+
         assertEquals("/wheels", requiredError.getValidationContext().getJSONpointer());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();

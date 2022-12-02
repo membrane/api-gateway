@@ -29,6 +29,7 @@ public class OpenAPIValidationInterceptorTest {
     @Before
     public void setUp() {
         interceptor = new OpenAPIValidationInterceptor();
+        interceptor.setValidateResponse(true);
         interceptor.validator = new OpenAPIValidator(getResourceAsStream("/openapi/customers.yml"));
     }
 
@@ -63,7 +64,7 @@ public class OpenAPIValidationInterceptorTest {
         assertEquals(RETURN, interceptor.handleRequest(exc));
         JsonNode node = om.readTree(exc.getResponse().getBody().getContent());
 //        System.out.println("node.toPrettyString() = " + node.toPrettyString());
-        assertEquals(3, node.size());
+        assertEquals(3, node.get("validationErrors").size());
     }
 
     @Test
@@ -75,19 +76,21 @@ public class OpenAPIValidationInterceptorTest {
         exc.setResponse(Response.ok().contentType(APPLICATION_JSON_UTF8)
                 .body( getResourceAsString("/openapi/invalid-customer.json")).build());
 
+        //        System.out.println("node.toPrettyString() = " + node.toPrettyString());
+
         assertEquals(RETURN, interceptor.handleResponse(exc));
         JsonNode node = om.readTree(exc.getResponse().getBody().getContent());
 
-        assertEquals(3, node.size());
+        assertEquals(3, node.get("validationErrors").size());
     }
 
     @Test
-    public void matchEmptyBasePath() throws Exception {
+    public void matchBasePath() throws Exception {
 
         OpenAPIValidationInterceptor interceptor = new OpenAPIValidationInterceptor();
         interceptor.validator = new OpenAPIValidator(getResourceAsStream("/openapi/info-servers.yml"));
         Exchange exc = new Exchange(null);
-        exc.setOriginalRequestUri("/foo");
+        exc.setOriginalRequestUri("/base/v2/foo");
         exc.setRequest(new Request.Builder().method("GET").build());
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));

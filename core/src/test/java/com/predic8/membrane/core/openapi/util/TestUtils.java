@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.util;
 
 import com.fasterxml.jackson.databind.*;
 

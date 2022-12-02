@@ -1,5 +1,6 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
@@ -38,11 +39,11 @@ public class ObjectTest {
     @Test
     public void additionalPropertiesTrue() {
 
-        Map nm = new HashMap();
+        Map<String,String> nm = new HashMap<>();
         nm.put("a","foo");
         nm.put("b","bar");
 
-        Map m = new HashMap();
+        Map<String,Map<String,String>> m = new HashMap<>();
         m.put("additionalPropertiesTrue",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
@@ -53,11 +54,11 @@ public class ObjectTest {
     @Test
     public void additionalPropertiesFalse() {
 
-        Map nm = new HashMap();
+        Map<String,String> nm = new HashMap<>();
         nm.put("a","foo");
         nm.put("b","bar");
 
-        Map m = new HashMap();
+        Map<String,Map<String,String>> m = new HashMap<>();
         m.put("additionalPropertiesFalse",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
@@ -68,11 +69,11 @@ public class ObjectTest {
     @Test
     public void additionalPropertiesStringValid() {
 
-        Map nm = new HashMap();
+        Map<String,String> nm = new HashMap<>();
         nm.put("foo", "bar");
         nm.put("unbekannt1","abc");
 
-        Map m = new HashMap();
+        Map<String,Map<String,String>> m = new HashMap<>();
         m.put("additionalPropertiesString",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
@@ -83,15 +84,13 @@ public class ObjectTest {
     @Test
     public void additionalPropertiesStringInvalid() {
 
-        Map nm = new HashMap();
+        Map<String,Object> nm = new HashMap<>();
         nm.put("foo", "bar");
         nm.put("illegal", 7);
         nm.put("unbekannt1","abc");
 
-        Map m = new HashMap();
+        Map<String,Map<String,Object>> m = new HashMap<>();
         m.put("additionalPropertiesString",nm);
-
-        System.out.println("m = " + m);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
 //        System.out.println("errors = " + errors);
@@ -103,15 +102,15 @@ public class ObjectTest {
     @Test
     public void additionalPropertiesObjectValid() {
 
-        Map unbekannt = new HashMap();
+        Map<String,Object> unbekannt = new HashMap<>();
         unbekannt.put("a","foo");
         unbekannt.put("b",7);
 
-        Map nm = new HashMap();
+        Map<String,Object> nm = new HashMap<>();
         nm.put("foo", "bar");
         nm.put("unbekannt",unbekannt);
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("additionalPropertiesComplex",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
@@ -122,16 +121,16 @@ public class ObjectTest {
     @Test
     public void additionalPropertiesObjectInvalid() {
 
-        Map unbekannt = new HashMap();
+        Map<String,Object> unbekannt = new HashMap<>();
         unbekannt.put("a","foo");
         unbekannt.put("b",7);
 
-        Map nm = new HashMap();
+        Map<String,Object> nm = new HashMap<>();
         nm.put("foo", "bar");
         nm.put("unbekannt",unbekannt);
         nm.put("illegal",3);
 
-        Map m = new HashMap();
+        Map<String,Map<String,Object>> m = new HashMap<>();
         m.put("additionalPropertiesComplex",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
@@ -145,10 +144,10 @@ public class ObjectTest {
     @Test
     public void minMaxPropertiesTooLessInvalid() {
 
-        Map nm = new HashMap();
+        Map<String,String> nm = new HashMap<>();
         nm.put("a", "bar");
 
-        Map m = new HashMap();
+        Map<String,Map<String,String>> m = new HashMap<>();
         m.put("minMaxProperties",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
@@ -161,7 +160,7 @@ public class ObjectTest {
     @Test
     public void minMaxPropertiesTooMuchInvalid() {
 
-        Map nm = new HashMap();
+        Map<String,String> nm = new HashMap<>();
         nm.put("a", "bar");
         nm.put("b", "bar");
         nm.put("c", "bar");
@@ -169,7 +168,7 @@ public class ObjectTest {
         nm.put("e", "bar");
         nm.put("f", "bar");
 
-        Map m = new HashMap();
+        Map<String,Map<String,String>> m = new HashMap<>();
         m.put("minMaxProperties",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));

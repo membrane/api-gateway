@@ -60,6 +60,11 @@ public class ResponseBodyValidator {
 
     private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) {
 
+        if (response.getMediaType() == null) {
+            errors.add(ctx.statusCode(500),"The response has a body, but no Content-Type header.");
+            return;
+        }
+
         if (!response.getMediaType().equalsIgnoreCase(mediaType)) {
             errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE).validatedEntity(response.getMediaType()), format("Response with status code %d has mediatype %s instead of the expected type %s.",response.getStatusCode(),response.getMediaType(),mediaType));
             return;

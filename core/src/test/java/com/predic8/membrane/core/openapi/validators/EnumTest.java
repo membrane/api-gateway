@@ -1,5 +1,6 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 

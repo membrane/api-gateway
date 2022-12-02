@@ -1,5 +1,6 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
@@ -23,7 +24,7 @@ public class NullableTest {
     @Test
     public void emailNullValid() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("email",null);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -34,7 +35,7 @@ public class NullableTest {
     @Test
     public void addressObjectNullValid() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("address",null);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -45,7 +46,7 @@ public class NullableTest {
     @Test
     public void contactNullableWithoutTypeInvalid() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("contact",null);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
@@ -59,7 +60,7 @@ public class NullableTest {
     @Test
     public void telefonNotNullableInvalid() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("telefon",null);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));

@@ -1,5 +1,6 @@
-package com.predic8.membrane.core.openapi;
+package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
@@ -9,6 +10,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static java.lang.Boolean.*;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 
 
@@ -24,7 +26,7 @@ public class ArrayTest {
     @Test
     public void noType() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("no-type", listWithDifferentTypes());
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -35,12 +37,12 @@ public class ArrayTest {
     @Test
     public void onlyNumbersValid() {
 
-        List l = new ArrayList();
+        List<Number> l = new ArrayList<>();
         l.add(7);
         l.add(0.5);
         l.add(10000000);
 
-        Map m = new HashMap();
+        Map<String,List<Number>> m = new HashMap<>();
         m.put("only-numbers", l);
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -50,7 +52,7 @@ public class ArrayTest {
     @Test
     public void onlyNumbersInvalid() {
 
-        Map m = new HashMap();
+        Map<String , Object> m = new HashMap<>();
         m.put("only-numbers", listWithDifferentTypes());
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -77,7 +79,7 @@ public class ArrayTest {
     @Test
     public void minMaxValid() {
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("min-max", Arrays.asList("foo",7));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -88,8 +90,8 @@ public class ArrayTest {
     @Test
     public void minMaxTooLessInvalid() {
 
-        Map m = new HashMap();
-        m.put("min-max", Arrays.asList("foo"));
+        Map<String,List<String>> m = new HashMap<>();
+        m.put("min-max", singletonList("foo"));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
 //        System.out.println("errors = " + errors);
@@ -102,7 +104,7 @@ public class ArrayTest {
     @Test
     public void minMaxTooManyInvalid() {
 
-        Map m = new HashMap();
+        Map<String,List<Object>> m = new HashMap<>();
         m.put("min-max", Arrays.asList("foo",7,true,8,"bar"));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -117,7 +119,7 @@ public class ArrayTest {
     @Test
     public void uniqueItemsInvalid() {
 
-        Map m = new HashMap();
+        Map<String,List<Integer>> m = new HashMap<>();
         m.put("uniqueItems", Arrays.asList(4,5,2,3,9,1,2,0));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -131,7 +133,7 @@ public class ArrayTest {
     @Test
     public void uniqueItemsValid() {
 
-        Map m = new HashMap();
+        Map<String,List<Integer>> m = new HashMap<>();
         m.put("uniqueItems", Arrays.asList(4,5,2,3,9,1,0));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -141,19 +143,19 @@ public class ArrayTest {
     @Test
     public void validateObjectInArrayValid() {
 
-        Map o1 = new HashMap();
+        Map<String,Object> o1 = new HashMap<>();
         o1.put("a","foo");
         o1.put("b",7);
 
-        Map o2 = new HashMap();
+        Map<String,Object> o2 = new HashMap<>();
         o2.put("a","baz");
         o2.put("b",3);
 
-        Map o3 = new HashMap();
+        Map<String,Object> o3 = new HashMap<>();
         o3.put("a","bar");
         o3.put("b",11);
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("objects", Arrays.asList(o1,o2,o3));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -164,18 +166,18 @@ public class ArrayTest {
     @Test
     public void validateObjectInArrayInvalid() {
 
-        Map o1 = new HashMap();
+        Map<String,Object> o1 = new HashMap<>();
         o1.put("a","foo");
         o1.put("b",7);
 
-        Map o2 = new HashMap();
+        Map<String,String> o2 = new HashMap<>();
         o2.put("a","baz");
 
-        Map o3 = new HashMap();
+        Map<String,Object> o3 = new HashMap<>();
         o3.put("a","bar");
         o3.put("b",11);
 
-        Map m = new HashMap();
+        Map<String,Object> m = new HashMap<>();
         m.put("objects", Arrays.asList(o1,o2,o3));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
@@ -188,7 +190,7 @@ public class ArrayTest {
 
 
     private List listWithDifferentTypes() {
-        List l = new ArrayList();
+        List<Object> l = new ArrayList<>();
         l.add(7);
         l.add("foo");
         l.add(TRUE);
