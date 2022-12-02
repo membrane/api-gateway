@@ -236,8 +236,7 @@ public class Header {
 		}
 		if (found)
 			return;
-		HeaderField newField = new HeaderField(name, value);
-		fields.add(newField);
+		fields.add(new HeaderField(name, value));
 		return;
 	}
 

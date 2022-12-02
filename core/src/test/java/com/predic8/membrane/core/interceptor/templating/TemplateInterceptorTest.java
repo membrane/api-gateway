@@ -140,7 +140,7 @@ public class TemplateInterceptorTest {
     @Test
     public void contentTypeTestNoXml() throws Exception {
         setAndHandleRequest("./template_test.json");
-        Assert.assertNull(exc.getRequest().getHeader().getContentType());
+        Assert.assertEquals("text/plain",exc.getRequest().getHeader().getContentType());
     }
 
     private void setAndHandleRequest(String location) throws Exception {

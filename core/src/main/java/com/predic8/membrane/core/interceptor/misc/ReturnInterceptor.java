@@ -26,9 +26,17 @@ public class ReturnInterceptor extends AbstractInterceptor {
         this.statusCode = statusCode;
     }
 
+    public int getStatusCode() {
+        return statusCode;
+    }
+
     @MCAttribute
     public void setContentType(String contentType) {
         this.contentType = contentType;
+    }
+
+    public String getContentType() {
+        return contentType;
     }
 
     @Override

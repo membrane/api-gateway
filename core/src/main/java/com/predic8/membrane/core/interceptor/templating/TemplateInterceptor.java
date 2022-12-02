@@ -115,9 +115,7 @@ public class TemplateInterceptor extends AbstractInterceptor{
                     .resolve(ResolverMap.combine(router.getBaseLocation(), location)))) {
                 if (FilenameUtils.getExtension(getLocation()).equals("xml")) {
                     template = new XmlTemplateEngine().createTemplate(reader);
-                    if (contentType == null) {
-                        setContentType("application/xml");
-                    }
+                    setContentType("application/xml");
                 }
                 else{
                     template = new StreamingTemplateEngine().createTemplate(reader);

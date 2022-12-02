@@ -12,6 +12,7 @@ import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static org.junit.Assert.*;
 
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class DiscriminatorTest {
 
     OpenAPIValidator validator;
@@ -22,7 +23,7 @@ public class DiscriminatorTest {
     }
 
     @Test
-    public void discriminatorLengthWrong() {
+    public void discriminatorLengthWrong() throws RuntimeException{
 
         Map<String,Object> publicTransport = new HashMap<>();
         publicTransport.put("kind","Train");
@@ -34,15 +35,12 @@ public class DiscriminatorTest {
         System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
-        ValidationError numberError = errors.stream().filter(e -> e.getMessage().contains("number")).findFirst().orElseThrow(() -> {
-            throw new RuntimeException("No number error!");
-        });
+        ValidationError numberError = errors.stream().filter(e -> e.getMessage().contains("number")).findFirst().get();
 
         assertEquals("/length", numberError.getValidationContext().getJSONpointer());
 
-        ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findFirst().orElseThrow(() -> {
-            throw new RuntimeException("Does not contain allOf Message!");
-        });
+        ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findFirst().get();
+
         assertTrue(allOf.getMessage().contains("subschemas"));
     }
 
@@ -56,7 +54,7 @@ public class DiscriminatorTest {
         publicTransport.put("seats",45);
 
         ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(publicTransport)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
 
@@ -67,26 +65,6 @@ public class DiscriminatorTest {
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
         assertTrue(allOf.getMessage().contains("subschemas"));
     }
-
-//    @Test
-//    public void allOfTooLongInvalid() {
-//
-//        Map m = new HashMap();
-//        m.put("firstname","123456");
-//
-//        ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-////        System.out.println("errors = " + errors);
-//        assertEquals(2,errors.size());
-//
-//        ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("axLength")).findAny().get();
-//        assertEquals("/firstname", enumError.getValidationContext().getJSONpointer());
-//
-//        ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
-//        assertEquals("/firstname", allOf.getValidationContext().getJSONpointer());
-//        assertTrue(allOf.getMessage().contains("subschemas"));
-//
-//    }
-
 
     private InputStream getResourceAsStream(String fileName) {
         return this.getClass().getResourceAsStream(fileName);
