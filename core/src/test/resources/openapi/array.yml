@@ -2,14 +2,8 @@ openapi: '3.0.2'
 info:
   title: Test API
   version: '1.0'
-  description: |
-
-    # Maybe not supported
-
-    - patternProperties
-
 servers:
-  - url: https://api.server.test/v1
+  - url: https://api.server.test/
 paths:
   /array:
     post:

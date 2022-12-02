@@ -23,7 +23,8 @@ public class Utils {
     final static Pattern componentSchemaPattern = compile("#/components/\\w+/(.*)");
 
     //noinspection
-    final static Pattern urlPathPattern = compile("\\w*:?/?/?/?.*?(/.*)");
+//    final static Pattern urlPathPattern = compile("\\w*:?/?/?/?.*?(/.*)");
+    final static Pattern urlPathPattern = compile("(http://|https://)?.*?(/.*)");
 
     final static Pattern uuidPattern = compile("^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$");
 
@@ -55,15 +56,11 @@ public class Utils {
     }
 
     public static String getPathFromURL(String str) throws MalformedURLException {
-
         try {
-            Matcher matcher = urlPathPattern.matcher(str);
-            if (matcher.matches())
-                return matcher.group(1);
+            return new URL(str).getPath();
         } catch (Exception e) {
-            e.printStackTrace();
+            return new URL("http://" + str).getPath();
         }
-        throw  new RuntimeException("Cannot get Path from URL " + str);
     }
 
     public static InputStream stringToInputStream(String s) {

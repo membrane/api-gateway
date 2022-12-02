@@ -42,27 +42,6 @@ public class PathUtils {
         return qparams;
     }
 
-    public static String ajustPathAccordingToBasePath(String basePath, String path) {
-        if (basePath.length() == 0)
-            return path;
-        if (basePath.equals("/"))
-            return path;
-
-        String normalizedBasePath = normalizeBasePath(basePath);
-        if (!path.startsWith(normalizedBasePath))
-            return path;
-
-        return path.substring(normalizedBasePath.length() - 1);
-    }
-
-    public static String normalizeBasePath(String p) {
-        if (p.length() == 0)
-            return p;
-        if (p.endsWith("/"))
-            return p;
-        return p + "/";
-    }
-
     public static String getUrlWithoutPath(URL url) {
         StringBuilder urlWithoutPath = new StringBuilder();
 

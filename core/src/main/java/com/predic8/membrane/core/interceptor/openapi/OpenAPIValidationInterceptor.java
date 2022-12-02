@@ -31,13 +31,11 @@ public class OpenAPIValidationInterceptor extends AbstractInterceptor {
     }
 
     public OpenAPIValidationInterceptor() {
-        System.out.println("location = " + location);
     }
 
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-
         validator = new OpenAPIValidator(location );
     }
 
@@ -91,21 +89,4 @@ public class OpenAPIValidationInterceptor extends AbstractInterceptor {
 
         return RETURN;
     }
-
-//    private Request getOpenapiValidatorRequest(Exchange exc) throws IOException {
-//        Request request = new Request(exc.getRequest().getMethod()).path(exc.getRequestURI());
-//        if (!exc.getRequest().isBodyEmpty()) {
-//            request.body(exc.getRequest().getBodyAsStream());
-//        }
-//        return request;
-//    }
-//
-//    private com.predic8.membrane.core.openapi.model.Response getOpenapiValidatorResponse(Exchange exc) throws IOException {
-//        com.predic8.membrane.core.openapi.model.Response response = com.predic8.membrane.core.openapi.model.Response.statusCode(exc.getResponse().getStatusCode());
-//
-//        if (!exc.getResponse().isBodyEmpty()) {
-//            response.body(exc.getResponse().getBodyAsStream());
-//        }
-//        return response;
-//    }
 }

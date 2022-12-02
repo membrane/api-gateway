@@ -96,6 +96,18 @@ public class OpenAPIValidationInterceptorTest {
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
     }
 
+    @Test
+    public void serverWithoutTrailingSlash() throws Exception {
+
+        OpenAPIValidationInterceptor interceptor = new OpenAPIValidationInterceptor();
+        interceptor.validator = new OpenAPIValidator(getResourceAsStream("/openapi/servers-without-slash.yml"));
+        Exchange exc = new Exchange(null);
+        exc.setOriginalRequestUri("/foo");
+        exc.setRequest(new Request.Builder().method("GET").build());
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
     private String getResourceAsString(String filename) throws Exception {
 
 

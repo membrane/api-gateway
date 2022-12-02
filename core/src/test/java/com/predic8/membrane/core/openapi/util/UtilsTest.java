@@ -4,6 +4,7 @@ import org.junit.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.util.Utils.isValidDateTime;
@@ -32,16 +33,60 @@ public class UtilsTest {
     }
 
     @Test
-    public void getPathFromURLTest() throws MalformedURLException {
-        assertEquals("/foo",    getPathFromURL("localhost/foo"));
-        assertEquals("/foo",    getPathFromURL("http://localhost/foo"));
-        assertEquals("/foo",    getPathFromURL("localhost/foo"));
-        assertEquals("/foo",    getPathFromURL("localhost.de/foo"));
-        assertEquals("/foo",    getPathFromURL("localhost.de:3000/foo"));
-        assertEquals("/demo-api/v2/",    getPathFromURL("http://localhost:3000/demo-api/v2/"));
-        assertEquals("/demo-api/v2",    getPathFromURL("http://localhost:3000/demo-api/v2"));
+    public void getPathFromURLHostAndPath() throws MalformedURLException {
+        assertEquals("/foo", getPathFromURL("localhost/foo"));
     }
 
+    @Test
+    public void getPathFromURLSchemeHostPath() throws MalformedURLException {
+        assertEquals("/foo", getPathFromURL("http://localhost/foo"));
+    }
+
+    @Test
+    public void getPathFromURLHostToplevelPath() throws MalformedURLException {
+        assertEquals("/foo", getPathFromURL("localhost.de/foo"));
+    }
+
+    @Test
+    public void getPathFromURLHostToplevelPortPath() throws MalformedURLException {
+        assertEquals("/foo", getPathFromURL("localhost.de:3000/foo"));
+    }
+
+    @Test
+    public void getPathFromURLHostToplevelPortPathComponents() throws MalformedURLException {
+        assertEquals("/demo-api/v2/", getPathFromURL("http://localhost:3000/demo-api/v2/"));
+    }
+
+    @Test
+    public void getPathFromURLHostToplevelPortPathComponentsNoTrailingSlash() throws MalformedURLException {
+        assertEquals("/demo-api/v2", getPathFromURL("http://localhost:3000/demo-api/v2"));
+    }
+
+    @Test
+    public void getPathFromURLHTTPS() throws MalformedURLException {
+        assertEquals("/demo-api/v2", getPathFromURL("https://localhost:3000/demo-api/v2"));
+    }
+
+    @Test
+    public void getPathFromURLNoPath() throws MalformedURLException {
+        assertEquals("", getPathFromURL("http://localhost:4567"));
+    }
+
+    @Test
+    public void reTest() {
+        String regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
+        Pattern p = Pattern.compile(regex);
+        
+        Matcher m = p.matcher("https://localhost:3000/demo-api/v2");
+        
+        if (m.matches()) {
+            System.out.println("m.groupCount() = " + m.groupCount());
+            for (int i = 0; i < m.groupCount(); i++) {
+                System.out.println("m.group(i) = " + m.group(i));
+            }
+        }
+    }
+    
     @Test
     public void getMediaTypeFromContentTypeHeader() {
         assertEquals("application/json",    Utils.getMediaTypeFromContentTypeHeader("application/json; charset=utf-8"));

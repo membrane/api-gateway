@@ -51,29 +51,6 @@ public class PathUtilsTest {
     }
 
     @Test
-    public void ajustPathAccordingToBasePathTest() {
-        assertEquals("/shop/products/", ajustPathAccordingToBasePath("/foo", "/shop/products/"));
-        assertEquals("/products/", ajustPathAccordingToBasePath("/shop", "/shop/products/"));
-        assertEquals("/products/", ajustPathAccordingToBasePath("/shop/", "/shop/products/"));
-        assertEquals("/shop/products/", ajustPathAccordingToBasePath("/", "/shop/products/"));
-        assertEquals("/shop/products/", ajustPathAccordingToBasePath("", "/shop/products/"));
-        assertEquals("/products/shop/", ajustPathAccordingToBasePath("/shop/", "/products/shop/"));
-    }
-
-    @Test
-    public void ajustPathAccordingToBasePathAbvancedTest() {
-        assertEquals("/baz", ajustPathAccordingToBasePath("/foo/bar", "/foo/bar/baz"));
-        assertEquals("/baz", ajustPathAccordingToBasePath("/foo/bar/", "/foo/bar/baz"));
-    }
-
-    @Test
-    public void normalizeBasePathTest() {
-        assertEquals("/foo/",normalizeBasePath("/foo"));
-        assertEquals("",normalizeBasePath(""));
-        assertEquals("/foo/",normalizeBasePath("/foo/"));
-    }
-
-    @Test
     public void getUrlWithoutPathTest() throws MalformedURLException {
         assertEquals("http://foo",getUrlWithoutPath(new URL("http://foo")));
         assertEquals("http://foo.de",getUrlWithoutPath(new URL("http://foo.de/bar")));

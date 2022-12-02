@@ -9,7 +9,7 @@ info:
     - patternProperties 
 
 servers:
-  - url: https://api.server.test/v1
+  - url: https://api.server.test/
 paths:
   /object:
     post:

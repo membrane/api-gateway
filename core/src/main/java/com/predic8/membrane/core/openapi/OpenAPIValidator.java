@@ -65,7 +65,7 @@ public class OpenAPIValidator {
 
     private ValidationErrors validateMessage(Request req, Response response) {
 
-        req.ajustPathAccordingToBasePath(basePath);
+        //req.ajustPathAccordingToBasePath(basePath);
 
         ValidationContext ctx = ValidationContext.fromRequest(req);
 
@@ -74,16 +74,25 @@ public class OpenAPIValidator {
         AtomicBoolean pathFound = new AtomicBoolean(false);
         api.getPaths().forEach((uriTemplate, pathItem) -> {
 
+
             // Path was already found so we do not need to check this uriTemplate
             if (pathFound.get()) {
                 return;
             }
 
+            String referenz = PathUtils.normalizeUri(basePath + uriTemplate);
+
             try {
-                req.parsePathParameters(uriTemplate);
+                req.parsePathParameters(referenz);
             } catch (PathDoesNotMatchException e) {
                 return;
             }
+
+//            try {
+//                req.parsePathParameters(uriTemplate);
+//            } catch (PathDoesNotMatchException e) {
+//                return;
+//            }
 
             pathFound.set(true);
 

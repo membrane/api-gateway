@@ -3,7 +3,7 @@ info:
   title: References Test
   version: '1.0'
 servers:
-  - url: https://api.server.test/v1
+  - url: https://api.server.test/
 paths:
   /references/{rid}:
     get:

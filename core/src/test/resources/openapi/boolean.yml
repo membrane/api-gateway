@@ -3,7 +3,7 @@ info:
   title: Strings Test API
   version: '1.0'
 servers:
-  - url: https://api.server.test/v1
+  - url: https://api.server.test/
 paths:
   /boolean:
     get:
