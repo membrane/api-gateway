@@ -2,11 +2,9 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
-
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static org.junit.Assert.*;
 
@@ -17,7 +15,7 @@ public class QueryParamsTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/query-params.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/query-params.yml"));
     }
 
     @Test
@@ -33,8 +31,9 @@ public class QueryParamsTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("limit",e.getValidationContext().getValidatedEntity());
-        assertEquals(QUERY_PARAMETER,e.getValidationContext().getValidatedEntityType());
+        assertEquals("limit",e.getContext().getValidatedEntity());
+        assertEquals(QUERY_PARAMETER,e.getContext().getValidatedEntityType());
+        assertEquals("REQUEST/QUERY_PARAMETER/limit", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -42,6 +41,8 @@ public class QueryParamsTest {
         ValidationErrors errors = validator.validate(Request.get().path("/cities?unknown=3&limit=10"));
         System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals("REQUEST/QUERY_PARAMETER", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -55,18 +56,13 @@ public class QueryParamsTest {
     @Test
     public void queryParamAtPathLevel()  {
         ValidationErrors errors = validator.validate(Request.get().path("/cities?foo=-1&limit=10"));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals(QUERY_PARAMETER,e.getValidationContext().getValidatedEntityType());
-        assertEquals("foo",e.getValidationContext().getValidatedEntity());
-        assertEquals("integer",e.getValidationContext().getSchemaType());
-        assertEquals(400,e.getValidationContext().getStatusCode());
-
+        assertEquals(QUERY_PARAMETER,e.getContext().getValidatedEntityType());
+        assertEquals("foo",e.getContext().getValidatedEntity());
+        assertEquals("integer",e.getContext().getSchemaType());
+        assertEquals(400,e.getContext().getStatusCode());
+        assertEquals("REQUEST/QUERY_PARAMETER/foo", e.getContext().getLocationForRequest());
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

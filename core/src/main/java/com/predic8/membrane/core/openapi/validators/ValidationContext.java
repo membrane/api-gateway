@@ -2,6 +2,8 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+
 public class ValidationContext {
 
     private String method;
@@ -66,6 +68,42 @@ public class ValidationContext {
 
     public String getComplexType() {
         return complexType;
+    }
+
+    public String getLocationForRequest() {
+        return getLocation("REQUEST");
+    }
+
+    public String getLocationForResponse() {
+        return getLocation("RESPONSE");
+    }
+
+    private String getLocation(String message) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(message);
+        sb.append("/");
+
+        if (validatedEntityType.equals(QUERY_PARAMETER)) {
+            sb.append(validatedEntityType.name());
+            appendValidatedEntity(sb);
+        } else if (validatedEntityType.equals(PATH_PARAMETER)) {
+            sb.append(validatedEntityType.name());
+            appendValidatedEntity(sb);
+        } else if (validatedEntityType.equals(MEDIA_TYPE)) {
+            sb.append("HEADER/Content-Type");
+        } else {
+            sb.append(validatedEntityType.name());
+            sb.append(getJSONpointer());
+        }
+
+        return sb.toString();
+    }
+
+    private void appendValidatedEntity(StringBuilder sb) {
+        if (validatedEntity != null) {
+            sb.append("/");
+            sb.append(validatedEntity);
+        }
     }
 
     public ValidationContext path(String path) {

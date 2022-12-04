@@ -19,7 +19,7 @@ public class ValidationError {
         return message;
     }
 
-    public ValidationContext getValidationContext() {
+    public ValidationContext getContext() {
         return ctx;
     }
 

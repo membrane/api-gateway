@@ -74,7 +74,6 @@ public class OpenAPIValidator {
         AtomicBoolean pathFound = new AtomicBoolean(false);
         api.getPaths().forEach((uriTemplate, pathItem) -> {
 
-
             // Path was already found so we do not need to check this uriTemplate
             if (pathFound.get()) {
                 return;
@@ -87,12 +86,6 @@ public class OpenAPIValidator {
             } catch (PathDoesNotMatchException e) {
                 return;
             }
-
-//            try {
-//                req.parsePathParameters(uriTemplate);
-//            } catch (PathDoesNotMatchException e) {
-//                return;
-//            }
 
             pathFound.set(true);
 

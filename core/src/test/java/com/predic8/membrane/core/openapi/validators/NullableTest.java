@@ -2,13 +2,12 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.Assert.*;
 
 
@@ -18,7 +17,7 @@ public class NullableTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/nullable.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/nullable.yml"));
     }
 
     @Test
@@ -39,7 +38,7 @@ public class NullableTest {
         m.put("address",null);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -50,10 +49,10 @@ public class NullableTest {
         m.put("contact",null);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/contact", e.getValidationContext().getJSONpointer());
+        assertEquals("/contact", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("null"));
     }
 
@@ -67,13 +66,7 @@ public class NullableTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/telefon", e.getValidationContext().getJSONpointer());
+        assertEquals("/telefon", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().toLowerCase().contains("null"));
     }
-
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

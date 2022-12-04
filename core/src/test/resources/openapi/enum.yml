@@ -3,9 +3,28 @@ info:
   title: Test API
   version: '1.0'
 servers:
-  - url: https://api.server.test/v1
+  - url: https://api.server.test/
 paths:
   /enum:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  # See https://json-schema.org/understanding-json-schema/reference/generic.html
+                  # enum without type
+                  type: string
+                  enum:
+                    - red
+                    - amber
+                    - green
+      responses:
+        '200':
+          description: OK
+  /enum-without-type:
     post:
       requestBody:
         content:

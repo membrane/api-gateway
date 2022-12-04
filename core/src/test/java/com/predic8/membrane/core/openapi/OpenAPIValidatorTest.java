@@ -35,8 +35,8 @@ public class OpenAPIValidatorTest {
         ValidationErrors errors = validator.validate(Request.get().path("/foo"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
-        assertEquals(404, errors.get(0).getValidationContext().getStatusCode());
-        assertEquals(PATH, errors.get(0).getValidationContext().getValidatedEntityType());
+        assertEquals(404, errors.get(0).getContext().getStatusCode());
+        assertEquals(PATH, errors.get(0).getContext().getValidatedEntityType());
     }
 
     @Test
@@ -44,8 +44,8 @@ public class OpenAPIValidatorTest {
         ValidationErrors errors = validator.validate(Request.patch().path("/customers/7"));
         System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
-        assertEquals(405, errors.get(0).getValidationContext().getStatusCode());
-        assertEquals(METHOD, errors.get(0).getValidationContext().getValidatedEntityType());
+        assertEquals(405, errors.get(0).getContext().getStatusCode());
+        assertEquals(METHOD, errors.get(0).getContext().getValidatedEntityType());
     }
 
     private InputStream getResourceAsStream(String fileName) {

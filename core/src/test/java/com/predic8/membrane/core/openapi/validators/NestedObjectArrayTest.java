@@ -2,11 +2,9 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
-
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.Assert.*;
 
 
@@ -16,30 +14,25 @@ public class NestedObjectArrayTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/nested-objects-arrays.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/nested-objects-arrays.yml"));
     }
 
     @Test
     public void nestedOk()  {
-
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/nested-objects-arrays.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this,"/openapi/nested-objects-arrays.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void nestedInvalid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/nested-objects-arrays-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this,"/openapi/nested-objects-arrays-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/b/2/c/1",e.getValidationContext().getJSONpointer());
-        assertEquals("string",e.getValidationContext().getSchemaType());
-        assertEquals(400,e.getValidationContext().getStatusCode());
+        assertEquals("/b/2/c/1",e.getContext().getJSONpointer());
+        assertEquals("string",e.getContext().getSchemaType());
+        assertEquals(400,e.getContext().getStatusCode());
+        assertEquals("REQUEST/BODY/b/2/c/1", e.getContext().getLocationForRequest());
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

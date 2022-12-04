@@ -2,11 +2,9 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
-
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.Assert.*;
 
@@ -17,30 +15,26 @@ public class ReferencesRequestTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/references-request.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/references-request.yml"));
     }
 
     @Test
     public void refRequestOk()  {
-        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/references-requests-responses-customer.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream(this,"/openapi/references-requests-responses-customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void refRequestInvalid()  {
-        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/references-requests-responses-customer-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream(this,"/openapi/references-requests-responses-customer-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals(BODY,e.getValidationContext().getValidatedEntityType());
-        assertEquals("REQUEST",e.getValidationContext().getValidatedEntity());
-        assertEquals("string",e.getValidationContext().getSchemaType());
-        assertEquals(400,e.getValidationContext().getStatusCode());
+        assertEquals(BODY,e.getContext().getValidatedEntityType());
+        assertEquals("REQUEST",e.getContext().getValidatedEntity());
+        assertEquals("string",e.getContext().getSchemaType());
+        assertEquals(400,e.getContext().getStatusCode());
+        assertEquals("REQUEST/BODY/name", e.getContext().getLocationForRequest());
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

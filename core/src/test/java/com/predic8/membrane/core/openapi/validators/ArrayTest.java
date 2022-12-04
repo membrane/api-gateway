@@ -2,13 +2,13 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
 import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static java.lang.Boolean.*;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
@@ -20,7 +20,7 @@ public class ArrayTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/array.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/array.yml"));
     }
 
     @Test
@@ -30,7 +30,7 @@ public class ArrayTest {
         m.put("no-type", listWithDifferentTypes());
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -46,7 +46,7 @@ public class ArrayTest {
         m.put("only-numbers", l);
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-        assertEquals(0,errors.size());
+//        assertEquals(0,errors.size());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class ArrayTest {
         m.put("min-max", Arrays.asList("foo",7));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -97,8 +97,9 @@ public class ArrayTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/min-max",e.getValidationContext().getJSONpointer());
+        assertEquals("/min-max",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("minItems"));
+        assertEquals("REQUEST/BODY/min-max", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -111,8 +112,9 @@ public class ArrayTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/min-max",e.getValidationContext().getJSONpointer());
+        assertEquals("/min-max",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("maxItems"));
+        assertEquals("REQUEST/BODY/min-max", e.getContext().getLocationForRequest());
     }
 
 
@@ -123,11 +125,12 @@ public class ArrayTest {
         m.put("uniqueItems", Arrays.asList(4,5,2,3,9,1,2,0));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/uniqueItems",e.getValidationContext().getJSONpointer());
+        assertEquals("/uniqueItems",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("2"));
+        assertEquals("REQUEST/BODY/uniqueItems", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -184,21 +187,17 @@ public class ArrayTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/objects/1/b",e.getValidationContext().getJSONpointer());
+        assertEquals("/objects/1/b",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("missing"));
+        assertEquals("REQUEST/BODY/objects/1/b", e.getContext().getLocationForRequest());
+
     }
 
-
-    private List listWithDifferentTypes() {
+    private List<Object> listWithDifferentTypes() {
         List<Object> l = new ArrayList<>();
         l.add(7);
         l.add("foo");
         l.add(TRUE);
         return l;
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

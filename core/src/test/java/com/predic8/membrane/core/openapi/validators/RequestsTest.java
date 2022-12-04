@@ -3,11 +3,9 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
-
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.Assert.*;
 
@@ -17,22 +15,21 @@ public class RequestsTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/customers.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/customers.yml"));
     }
 
     @Test
     public void wrongMediaTypeRequest() {
 
-        InputStream is = getResourceAsStream("/openapi/customer.json");
-
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType("text/plain").body(is));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType("text/plain").body(getResourceAsStream(this,"/openapi/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
-        ValidationError e = errors.get(0);
-        assertEquals(MEDIA_TYPE,e.getValidationContext().getValidatedEntityType());
-        assertEquals("text/plain",e.getValidationContext().getValidatedEntity());
-        assertEquals(415,e.getValidationContext().getStatusCode());
-        assertTrue(e.getMessage().toLowerCase().contains("mediatype"));
+        ValidationContext ctx = errors.get(0).getContext();
+        assertEquals(MEDIA_TYPE,ctx.getValidatedEntityType());
+        assertEquals("text/plain",ctx.getValidatedEntity());
+        assertEquals(415,ctx.getStatusCode());
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("mediatype"));
+        assertEquals("REQUEST/HEADER/Content-Type", ctx.getLocationForRequest());
     }
 
     /**
@@ -41,20 +38,14 @@ public class RequestsTest {
     @Test
     public void noContentInRequestSentPayload() {
 
-        InputStream is = getResourceAsStream("/openapi/customer.json");
-
-        ValidationErrors errors = validator.validate(Request.get().path("/customers").mediaType("application/json").body(is));
+        ValidationErrors errors = validator.validate(Request.get().path("/customers").mediaType("application/json").body(getResourceAsStream(this,"/openapi/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals(BODY,e.getValidationContext().getValidatedEntityType());
-        assertEquals("REQUEST",e.getValidationContext().getValidatedEntity());
-        assertEquals(400,e.getValidationContext().getStatusCode());
+        assertEquals(BODY,e.getContext().getValidatedEntityType());
+        assertEquals("REQUEST",e.getContext().getValidatedEntity());
+        assertEquals(400,e.getContext().getStatusCode());
         assertTrue(e.getMessage().toLowerCase().contains("body"));
+        assertEquals("REQUEST/BODY", e.getContext().getLocationForRequest());
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

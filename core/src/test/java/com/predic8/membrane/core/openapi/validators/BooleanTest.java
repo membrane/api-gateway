@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
 import java.io.*;
@@ -18,7 +17,6 @@ public class BooleanTest {
     OpenAPIValidator validator;
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
-
     @Before
     public void setUp() {
         validator = new OpenAPIValidator(getResourceAsStream("/openapi/boolean.yml"));
@@ -27,7 +25,7 @@ public class BooleanTest {
     @Test
     public void validInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/boolean").body(new JsonBody(getBoolean("good",true))));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -37,14 +35,16 @@ public class BooleanTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/good", e.getValidationContext().getJSONpointer());
+        assertEquals("/good", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("boolean"));
+        assertEquals("REQUEST/BODY/good", e.getContext().getLocationForRequest());
+
     }
 
     @Test
     public void validInQuery() {
         ValidationErrors errors = validator.validate(Request.get().path("/boolean?truth=true"));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -54,9 +54,10 @@ public class BooleanTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals(QUERY_PARAMETER, e.getValidationContext().getValidatedEntityType());
-        assertEquals("truth", e.getValidationContext().getValidatedEntity());
+        assertEquals(QUERY_PARAMETER, e.getContext().getValidatedEntityType());
+        assertEquals("truth", e.getContext().getValidatedEntity());
         assertTrue(e.getMessage().contains("boolean"));
+        assertEquals("REQUEST/QUERY_PARAMETER/truth", e.getContext().getLocationForRequest());
     }
 
     private JsonNode getBoolean(String name, boolean bool) {

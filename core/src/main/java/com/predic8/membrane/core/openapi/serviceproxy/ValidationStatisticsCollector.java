@@ -32,7 +32,7 @@ public class ValidationStatisticsCollector {
     public void collect(ValidationErrors vc) {
         vc.stream().forEach(validationError -> {
             // synchronized not needed because merge impl is atomic.
-            stats.merge(new ValidationStatsKey(validationError.getValidationContext()), 1, (prev, one) -> prev + 1);
+            stats.merge(new ValidationStatsKey(validationError.getContext()), 1, (prev, one) -> prev + 1);
         });
     }
 }

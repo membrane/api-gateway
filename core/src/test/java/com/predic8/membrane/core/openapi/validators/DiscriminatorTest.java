@@ -2,7 +2,6 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
 import java.io.*;
@@ -32,15 +31,13 @@ public class DiscriminatorTest {
         publicTransport.put("length","5cm");
 
         ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(publicTransport)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
         ValidationError numberError = errors.stream().filter(e -> e.getMessage().contains("number")).findFirst().get();
-
-        assertEquals("/length", numberError.getValidationContext().getJSONpointer());
+        assertEquals("/length", numberError.getContext().getJSONpointer());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findFirst().get();
-
         assertTrue(allOf.getMessage().contains("subschemas"));
     }
 
@@ -59,8 +56,7 @@ public class DiscriminatorTest {
 
 
         ValidationError requiredError = errors.stream().filter(e -> e.getMessage().toLowerCase().contains("required")).findAny().get();
-
-        assertEquals("/wheels", requiredError.getValidationContext().getJSONpointer());
+        assertEquals("/wheels", requiredError.getContext().getJSONpointer());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
         assertTrue(allOf.getMessage().contains("subschemas"));

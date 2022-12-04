@@ -2,7 +2,6 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
 import java.io.*;
@@ -45,11 +44,13 @@ public class CompositionTest {
         assertEquals(2,errors.size());
 
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("axLength")).findAny().get();
-        assertEquals("/firstname", enumError.getValidationContext().getJSONpointer());
+        assertEquals("/firstname", enumError.getContext().getJSONpointer());
+        assertEquals("REQUEST/BODY/firstname", enumError.getContext().getLocationForRequest());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
-        assertEquals("/firstname", allOf.getValidationContext().getJSONpointer());
+        assertEquals("/firstname", allOf.getContext().getJSONpointer());
         assertTrue(allOf.getMessage().contains("subschemas"));
+        assertEquals("REQUEST/BODY/firstname", allOf.getContext().getLocationForRequest());
 
     }
 
@@ -64,10 +65,10 @@ public class CompositionTest {
         assertEquals(2,errors.size());
 
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("minLength")).findAny().get();
-        assertEquals("/firstname", enumError.getValidationContext().getJSONpointer());
+        assertEquals("/firstname", enumError.getContext().getJSONpointer());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
-        assertEquals("/firstname", allOf.getValidationContext().getJSONpointer());
+        assertEquals("/firstname", allOf.getContext().getJSONpointer());
         assertTrue(allOf.getMessage().contains("subschemas"));
     }
 
@@ -100,10 +101,10 @@ public class CompositionTest {
         m.put("contact","Bonn");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/contact", e.getValidationContext().getJSONpointer());
+        assertEquals("/contact", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("anyOf"));
     }
 
@@ -114,10 +115,10 @@ public class CompositionTest {
         m.put("multiple",7);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/multiple", e.getValidationContext().getJSONpointer());
+        assertEquals("/multiple", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("neOf"));
     }
 
@@ -128,10 +129,10 @@ public class CompositionTest {
         m.put("multiple",15);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/multiple", e.getValidationContext().getJSONpointer());
+        assertEquals("/multiple", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("neOf"));
     }
 
@@ -142,7 +143,7 @@ public class CompositionTest {
         m.put("multiple",21);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -153,10 +154,10 @@ public class CompositionTest {
         m.put("factored-out",15);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/factored-out", e.getValidationContext().getJSONpointer());
+        assertEquals("/factored-out", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("neOf"));
         assertTrue(e.getMessage().contains("2 subschemas"));
     }
@@ -168,7 +169,7 @@ public class CompositionTest {
         m.put("factored-out",21);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -193,7 +194,7 @@ public class CompositionTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/not-string", e.getValidationContext().getJSONpointer());
+        assertEquals("/not-string", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("not"));
     }
 
@@ -228,12 +229,15 @@ public class CompositionTest {
 //        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("enum")).findAny().get();
-        assertEquals("/inheritance/country", enumError.getValidationContext().getJSONpointer());
+        assertEquals("/inheritance/country", enumError.getContext().getJSONpointer());
         assertTrue(enumError.getMessage().contains("does not contain a value from the enum"));
+        assertEquals("REQUEST/BODY/inheritance/country", enumError.getContext().getLocationForRequest());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
-        assertEquals("/inheritance", allOf.getValidationContext().getJSONpointer());
+        assertEquals("/inheritance", allOf.getContext().getJSONpointer());
         assertTrue(allOf.getMessage().contains("subschemas of allOf"));
+        assertEquals("REQUEST/BODY/inheritance", allOf.getContext().getLocationForRequest());
+
     }
 
     @Test
@@ -251,10 +255,10 @@ public class CompositionTest {
         assertEquals(2,errors.size());
 
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().toLowerCase().contains("required")).findAny().get();
-        assertEquals("/inheritance/country", enumError.getValidationContext().getJSONpointer());
+        assertEquals("/inheritance/country", enumError.getContext().getJSONpointer());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
-        assertEquals("/inheritance", allOf.getValidationContext().getJSONpointer());
+        assertEquals("/inheritance", allOf.getContext().getJSONpointer());
         assertTrue(allOf.getMessage().contains("subschemas"));
 
     }

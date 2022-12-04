@@ -10,4 +10,8 @@ public class TestUtils {
     public static InputStream toInputStrom(String s) {
         return new ByteArrayInputStream(s.getBytes());
     }
+
+    public static InputStream getResourceAsStream(Object obj, String fileName) {
+        return obj.getClass().getResourceAsStream(fileName);
+    }
 }

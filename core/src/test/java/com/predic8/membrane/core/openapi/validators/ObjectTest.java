@@ -1,15 +1,15 @@
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
 import java.math.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.Assert.*;
 
 
@@ -19,14 +19,20 @@ public class ObjectTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/object.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/object.yml"));
     }
 
     @Test
     public void numberAsObject() {
-        ValidationErrors errors = validator.validate(Request.post().path("/object").body(new JsonBody(getNumbers("object",new BigDecimal(7)))));
+        // Delete new JsonBody
+        JsonNode object = getNumbers("object", new BigDecimal(7));
+        ValidationErrors errors = validator.validate(Request.post().path("/object").body(new JsonBody(object)));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals(400,e.getContext().getStatusCode());
+        assertEquals("REQUEST/BODY/object", e.getContext().getLocationForRequest());
+        assertTrue(e.getMessage().contains("not an object"));
     }
 
     @Test
@@ -47,7 +53,7 @@ public class ObjectTest {
         m.put("additionalPropertiesTrue",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -62,8 +68,10 @@ public class ObjectTest {
         m.put("additionalPropertiesFalse",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals("REQUEST/BODY/additionalPropertiesFalse", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -96,7 +104,7 @@ public class ObjectTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/additionalPropertiesString/illegal",e.getValidationContext().getJSONpointer());
+        assertEquals("/additionalPropertiesString/illegal",e.getContext().getJSONpointer());
     }
 
     @Test
@@ -138,7 +146,7 @@ public class ObjectTest {
         assertEquals(1,errors.size());
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/additionalPropertiesComplex/illegal",e.getValidationContext().getJSONpointer());
+        assertEquals("/additionalPropertiesComplex/illegal",e.getContext().getJSONpointer());
     }
 
     @Test
@@ -151,10 +159,12 @@ public class ObjectTest {
         m.put("minMaxProperties",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/minMaxProperties",e.getValidationContext().getJSONpointer());
+        assertEquals("/minMaxProperties",e.getContext().getJSONpointer());
+        assertEquals("REQUEST/BODY/minMaxProperties", e.getContext().getLocationForRequest());
+
     }
 
     @Test
@@ -172,16 +182,9 @@ public class ObjectTest {
         m.put("minMaxProperties",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/minMaxProperties",e.getValidationContext().getJSONpointer());
+        assertEquals("/minMaxProperties",e.getContext().getJSONpointer());
     }
-
-
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

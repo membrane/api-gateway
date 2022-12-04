@@ -10,6 +10,7 @@ import org.junit.*;
 import java.io.*;
 import java.math.*;
 
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.Assert.*;
 
 
@@ -21,7 +22,7 @@ public class NumberTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/number.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/number.yml"));
     }
 
     @Test
@@ -112,7 +113,7 @@ public class NumberTest {
     @Test
     public void MultipleInBodyInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/number").body(new JsonBody(getNumbers("multiple",new BigDecimal(24)))));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().contains("multiple"));
@@ -123,15 +124,4 @@ public class NumberTest {
         root.put(name,n);
         return root;
     }
-
-    private JsonNode getStrings(String name, String value) {
-        ObjectNode root = objectMapper.createObjectNode();
-        root.put(name,value);
-        return root;
-    }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

@@ -2,13 +2,12 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.Assert.*;
 
 
@@ -18,7 +17,7 @@ public class ReadWriteOnlyTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/read-write-only.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/read-write-only.yml"));
     }
 
     @Test
@@ -28,7 +27,7 @@ public class ReadWriteOnlyTest {
         m.put("name","Jack");
 
         ValidationErrors errors = validator.validate(Request.put().path("/read-only").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -40,11 +39,12 @@ public class ReadWriteOnlyTest {
         m.put("name","Jack");
 
         ValidationErrors errors = validator.validate(Request.put().path("/read-only").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/id",e.getValidationContext().getJSONpointer());
+        assertEquals("/id",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("7"));
+        assertEquals("REQUEST/BODY/id", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -58,12 +58,9 @@ public class ReadWriteOnlyTest {
         ValidationErrors errors = validator.validateResponse(Request.get().path("/read-only"), Response.statusCode(200).mediaType("application/json").body(mapToJson(m)));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/role",e.getValidationContext().getJSONpointer());
+//        System.out.println("errors = " + errors);
+        assertEquals("/role",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("admin"));
+        assertEquals("REQUEST/BODY/role", e.getContext().getLocationForRequest());
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

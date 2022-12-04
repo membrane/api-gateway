@@ -2,13 +2,12 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.Assert.*;
 
 
@@ -18,7 +17,7 @@ public class RequiredTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/required.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/required.yml"));
     }
 
 
@@ -34,7 +33,7 @@ public class RequiredTest {
         o.put("normal", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(o)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -52,8 +51,9 @@ public class RequiredTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/normal/b", e.getValidationContext().getJSONpointer());
+        assertEquals("/normal/b", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("Required"));
+        assertEquals("REQUEST/BODY/normal/b", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -69,7 +69,7 @@ public class RequiredTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("/normal", e.getValidationContext().getJSONpointer());
+        assertEquals("/normal", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("Required"));
         assertTrue(e.getMessage().contains("a,b"));
     }
@@ -85,7 +85,7 @@ public class RequiredTest {
         readOnlyRequest.put("read-only-request", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(readOnlyRequest)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -100,14 +100,7 @@ public class RequiredTest {
         writeOnlyResponse.put("write-only-response", props);
 
         ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200).mediaType("application/json").body(mapToJson(writeOnlyResponse)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
-
-
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

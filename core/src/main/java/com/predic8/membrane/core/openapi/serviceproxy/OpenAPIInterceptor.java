@@ -85,6 +85,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return new OpenAPIValidator(api).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean shouldValidate(OpenAPI api, String direction) {
         Map<String, Object> extenstions = api.getExtensions();
         if (extenstions == null)
@@ -93,6 +94,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return xValidation != null && xValidation.get(direction);
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, Boolean> getxValidation(Map<String, Object> extenstions) {
         return (Map<String, Boolean>) extenstions.get("x-validation");
     }
@@ -159,7 +161,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
 
     private Outcome returnErrors(Exchange exc, ValidationErrors errors) {
-        exc.setResponse(com.predic8.membrane.core.http.Response.ResponseBuilder.newInstance().status(errors.get(0).getValidationContext().getStatusCode(), "Bad Request").body(errors.toString()).contentType(APPLICATION_JSON_UTF8).build());
+        exc.setResponse(com.predic8.membrane.core.http.Response.ResponseBuilder.newInstance().status(errors.get(0).getContext().getStatusCode(), "Bad Request").body(errors.toString()).contentType(APPLICATION_JSON_UTF8).build());
         return RETURN;
     }
 

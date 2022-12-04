@@ -20,10 +20,15 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     final private ObjectMapper om = new ObjectMapper();
 
+    @SuppressWarnings("rawtypes")
     private Schema schema;
     final private OpenAPI api;
 
+    @SuppressWarnings("rawtypes")
     public SchemaValidator(OpenAPI api, Schema schema) {
+        if (schema == null)
+            throw new RuntimeException("Should not happen!");
+
         this.schema = schema;
         this.api = api;
     }
@@ -37,7 +42,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
             return errors.add(ctx, "Got null to validate!");
         }
 
-        Object value = obj;
+        Object value ;
         try {
             value = resolveValueAndParseJSON(obj);
         } catch (IOException e) {
@@ -62,6 +67,8 @@ public class SchemaValidator implements IJSONSchemaValidator {
             if (!getSchemaNameFromRef(schema).equals(ctx.getComplexType())) {
                 ctx = ctx.complexType(getSchemaNameFromRef(schema));
                 schema = SchemaUtil.getSchemaFromRef(api, schema);
+                if (schema == null)
+                    throw new RuntimeException("Should not happen!");
             }
         }
 
@@ -100,12 +107,11 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 case "array":
                     return new ArrayValidator(api, schema).validate(ctx.schemaType("array"), value);
                 case "object":
-                    return new ObjectValidator(api, schema).validate(ctx.schemaType("object"), (ObjectNode) value);
+                    return new ObjectValidator(api, schema).validate(ctx.schemaType("object"), value);
                 default:
                     throw new RuntimeException("Should not happen! " + schema.getType());
             }
         } catch (Exception e) {
-            e.printStackTrace();
             return ValidationErrors.create(ctx, String.format("%s is not of %s format.", value, schema.getType()));
         }
     }
@@ -113,25 +119,16 @@ public class SchemaValidator implements IJSONSchemaValidator {
     /**
      * Unwrap or read value in case of InputStream or Body objects
      *
-     * @param obj
-     * @return
-     * @throws IOException
      */
     private Object resolveValueAndParseJSON(Object obj) throws IOException {
-        InputStream is = null;
 
-        if (obj instanceof InputStream)
-            is = (InputStream) obj;
-        else if (obj instanceof InputStreamBody)
-            is = ((InputStreamBody) obj).getInputStream();
+        if (obj instanceof Body)
+            return ((Body)obj).getJson();
 
-        if (obj instanceof JsonBody) {
-            return ((JsonBody) obj).getPayload();
-        } else if (obj instanceof StringBody)
-            return om.readValue(((StringBody) obj).asString(), JsonNode.class);
-        else if (is != null)
-            return om.readValue(is, JsonNode.class);
-
+        // Just temp to make sure there is no inputstream anymore! Can be deleted later!
+        if (obj instanceof InputStream) {
+            throw new RuntimeException("InputStream!");
+        }
 
         return obj;
     }

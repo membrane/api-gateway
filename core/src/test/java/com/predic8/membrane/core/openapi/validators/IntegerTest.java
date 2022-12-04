@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
 import java.io.*;
 import java.math.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static org.junit.Assert.*;
 
 
@@ -28,6 +28,10 @@ public class IntegerTest {
         ValidationErrors errors = validator.validate(Request.get().path("/integer?minimum=3"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals(QUERY_PARAMETER, e.getContext().getValidatedEntityType());
+        assertTrue(e.getMessage().contains("minimum"));
+        assertEquals("REQUEST/QUERY_PARAMETER/minimum", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -101,8 +105,6 @@ public class IntegerTest {
         assertTrue(e.getMessage().contains("maximum"));
     }
 
-
-
     private JsonNode getNumbers(String name, BigDecimal n) {
         ObjectNode root = objectMapper.createObjectNode();
         root.put(name,n);
@@ -118,5 +120,4 @@ public class IntegerTest {
     private InputStream getResourceAsStream(String fileName) {
         return this.getClass().getResourceAsStream(fileName);
     }
-
 }
