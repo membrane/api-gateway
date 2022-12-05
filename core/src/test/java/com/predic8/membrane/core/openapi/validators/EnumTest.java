@@ -45,7 +45,7 @@ public class EnumTest {
         assertEquals(BODY, e.getContext().getValidatedEntityType());
         assertEquals("REQUEST", e.getContext().getValidatedEntity());
         assertTrue(e.getMessage().contains("enum"));
-        assertEquals("REQUEST/BODY/state", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/state", e.getContext().getLocationForRequest());
     }
 
     /*

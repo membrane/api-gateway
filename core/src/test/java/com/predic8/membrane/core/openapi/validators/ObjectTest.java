@@ -31,7 +31,7 @@ public class ObjectTest {
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(400,e.getContext().getStatusCode());
-        assertEquals("REQUEST/BODY/object", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/object", e.getContext().getLocationForRequest());
         assertTrue(e.getMessage().contains("not an object"));
     }
 
@@ -71,7 +71,7 @@ public class ObjectTest {
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-        assertEquals("REQUEST/BODY/additionalPropertiesFalse", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/additionalPropertiesFalse", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -163,7 +163,7 @@ public class ObjectTest {
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/minMaxProperties",e.getContext().getJSONpointer());
-        assertEquals("REQUEST/BODY/minMaxProperties", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/minMaxProperties", e.getContext().getLocationForRequest());
 
     }
 

@@ -7,11 +7,13 @@ import com.predic8.membrane.core.openapi.*;
 import java.util.*;
 import java.util.stream.*;
 
+import static java.util.stream.Collectors.toList;
+
 public class ValidationErrors {
 
     private final static ObjectMapper om = new ObjectMapper();
 
-    private List<ValidationError> errors = new ArrayList<>();
+    private final List<ValidationError> errors = new ArrayList<>();
 
     public static ValidationErrors create(ValidationContext ctx, String message) {
         ValidationErrors ve = new ValidationErrors();
@@ -52,11 +54,25 @@ public class ValidationErrors {
         return errors.stream();
     }
 
+    /**
+     * Call with 400 or 500. Returns a more specifiy status code if there is any.
+     */
+    public int getConsolidatedStatusCode(int defaultValue) {
+        return errors.stream().map(e -> e.getContext().getStatusCode()).reduce((code, acc) -> {
+            if (acc == defaultValue) return code;
+            return acc;
+        }).orElse(defaultValue);
+    }
+
     @Override
     public String toString() {
 
-        Map wrapper = new HashMap();
-        wrapper.put("validationErrors", errors);
+        Map<String, List<Map<String,Object>>> m = getValidationErrorsGroupedByLocation();
+
+        System.out.println("m = " + m);
+
+        Map<String,Map<String, List<Map<String,Object>>>> wrapper = new HashMap<>();
+        wrapper.put("validationErrors", m);
 
         try {
             return om.writerWithDefaultPrettyPrinter().writeValueAsString(wrapper);
@@ -64,5 +80,18 @@ public class ValidationErrors {
             e.printStackTrace();
         }
         return "Error!";
+    }
+
+    private Map<String, List<Map<String,Object>>> getValidationErrorsGroupedByLocation() {
+        Map<String,List<Map<String,Object>>> m = new HashMap<>();
+        errors.forEach(ve -> {
+            List<Map<String,Object>> ves = new ArrayList<>();
+            ves.add(ve.getContentMap());
+            m.merge(ve.getContext().getLocationForRequest(), ves, (vesOld, vesNew) -> {
+                vesOld.addAll(vesNew);
+                return vesOld;
+            });
+        });
+        return m;
     }
 }

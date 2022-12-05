@@ -45,12 +45,12 @@ public class CompositionTest {
 
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("axLength")).findAny().get();
         assertEquals("/firstname", enumError.getContext().getJSONpointer());
-        assertEquals("REQUEST/BODY/firstname", enumError.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/firstname", enumError.getContext().getLocationForRequest());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
         assertEquals("/firstname", allOf.getContext().getJSONpointer());
         assertTrue(allOf.getMessage().contains("subschemas"));
-        assertEquals("REQUEST/BODY/firstname", allOf.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/firstname", allOf.getContext().getLocationForRequest());
 
     }
 
@@ -231,12 +231,12 @@ public class CompositionTest {
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("enum")).findAny().get();
         assertEquals("/inheritance/country", enumError.getContext().getJSONpointer());
         assertTrue(enumError.getMessage().contains("does not contain a value from the enum"));
-        assertEquals("REQUEST/BODY/inheritance/country", enumError.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/inheritance/country", enumError.getContext().getLocationForRequest());
 
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
         assertEquals("/inheritance", allOf.getContext().getJSONpointer());
         assertTrue(allOf.getMessage().contains("subschemas of allOf"));
-        assertEquals("REQUEST/BODY/inheritance", allOf.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/inheritance", allOf.getContext().getLocationForRequest());
 
     }
 

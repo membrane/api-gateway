@@ -67,7 +67,10 @@ public class OpenAPIValidationInterceptor extends AbstractInterceptor {
         if (errors.size() == 0)
             return CONTINUE;
 
-        exc.setResponse(Response.ResponseBuilder.newInstance().status(400,"Bad Request").body(errors.toString()).contentType(APPLICATION_JSON_UTF8).build());
+        exc.setResponse(Response.ResponseBuilder.newInstance()
+                .status(errors.getConsolidatedStatusCode(400),"Bad Request")
+                .body(errors.toString())
+                .contentType(APPLICATION_JSON_UTF8).build());
 
         return RETURN;
     }

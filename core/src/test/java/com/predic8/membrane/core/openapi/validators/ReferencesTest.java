@@ -96,6 +96,6 @@ public class ReferencesTest {
         assertEquals("string",ctx.getSchemaType());
         assertEquals(400,ctx.getStatusCode());
         assertEquals("/contract/details", ctx.getJSONpointer());
-        assertEquals("REQUEST/BODY/contract/details", ctx.getLocationForRequest());
+        assertEquals("REQUEST/BODY#/contract/details", ctx.getLocationForRequest());
     }
 }

@@ -99,7 +99,7 @@ public class ArrayTest {
         ValidationError e = errors.get(0);
         assertEquals("/min-max",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("minItems"));
-        assertEquals("REQUEST/BODY/min-max", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/min-max", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -114,7 +114,7 @@ public class ArrayTest {
         ValidationError e = errors.get(0);
         assertEquals("/min-max",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("maxItems"));
-        assertEquals("REQUEST/BODY/min-max", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/min-max", e.getContext().getLocationForRequest());
     }
 
 
@@ -130,7 +130,7 @@ public class ArrayTest {
         ValidationError e = errors.get(0);
         assertEquals("/uniqueItems",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("2"));
-        assertEquals("REQUEST/BODY/uniqueItems", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/uniqueItems", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class ArrayTest {
         ValidationError e = errors.get(0);
         assertEquals("/objects/1/b",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("missing"));
-        assertEquals("REQUEST/BODY/objects/1/b", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/objects/1/b", e.getContext().getLocationForRequest());
 
     }
 

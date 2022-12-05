@@ -35,6 +35,6 @@ public class ReferencesResponseTest {
         assertEquals("RESPONSE",e.getContext().getValidatedEntity());
         assertEquals("string",e.getContext().getSchemaType());
         assertEquals(500,e.getContext().getStatusCode());
-        assertEquals("RESPONSE/BODY/name", e.getContext().getLocationForResponse());
+        assertEquals("RESPONSE/BODY#/name", e.getContext().getLocationForResponse());
     }
 }

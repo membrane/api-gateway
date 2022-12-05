@@ -33,6 +33,6 @@ public class NestedObjectArrayTest {
         assertEquals("/b/2/c/1",e.getContext().getJSONpointer());
         assertEquals("string",e.getContext().getSchemaType());
         assertEquals(400,e.getContext().getStatusCode());
-        assertEquals("REQUEST/BODY/b/2/c/1", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/b/2/c/1", e.getContext().getLocationForRequest());
     }
 }

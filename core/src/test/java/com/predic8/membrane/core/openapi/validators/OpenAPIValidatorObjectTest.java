@@ -77,7 +77,7 @@ public class OpenAPIValidatorObjectTest {
         assertEquals(400, e.getContext().getStatusCode());
         assertEquals(BODY, e.getContext().getValidatedEntityType());
         assertEquals("REQUEST", e.getContext().getValidatedEntity());
-        assertEquals("REQUEST/BODY/address/city", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/address/city", e.getContext().getLocationForRequest());
         assertEquals("Customer", e.getContext().getComplexType());
         assertEquals("object", e.getContext().getSchemaType());
 

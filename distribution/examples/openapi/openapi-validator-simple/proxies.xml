@@ -11,8 +11,8 @@
             <spec location="contacts-api-v1.yml" validate="requests"/>
         </OpenAPIProxy>
 
-		<!-- This proxy provides a mock backend implementation for the API for this demo. Instead
-			 of this mock use the backend for your API.
+		<!-- This proxy provides a mock backend implementation for the API. Instead
+			 of the mock you can use the backend for your API.
 		-->
 		<serviceProxy port="3000">
 			<path>/persons</path>

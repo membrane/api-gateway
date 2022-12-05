@@ -9,7 +9,7 @@ public class ValidationContext {
     private String method;
     private String path;
     private String uriTemplate;
-    private String xpointer = "";
+    private String jsonPointer = "";
     private String schemaType;
     private String complexType;
     private ValidatedEntityType validatedEntityType;
@@ -27,7 +27,7 @@ public class ValidationContext {
         this.method = ctx.method;
         this.path = ctx.path;
         this.uriTemplate = ctx.uriTemplate;
-        this.xpointer = ctx.xpointer;
+        this.jsonPointer = ctx.jsonPointer;
         this.schemaType = ctx.schemaType;
         this.complexType = ctx.complexType;
         this.validatedEntityType = ctx.validatedEntityType;
@@ -47,7 +47,7 @@ public class ValidationContext {
     }
 
     public String getJSONpointer() {
-        return xpointer;
+        return jsonPointer;
     }
 
     public String getMethod() {
@@ -93,7 +93,10 @@ public class ValidationContext {
             sb.append("HEADER/Content-Type");
         } else {
             sb.append(validatedEntityType.name());
-            sb.append(getJSONpointer());
+            if (jsonPointer.length() > 0) {
+                sb.append("#");
+                sb.append(getJSONpointer());
+            }
         }
 
         return sb.toString();
@@ -168,7 +171,7 @@ public class ValidationContext {
 
     public ValidationContext addJSONpointerSegment(String segment) {
         ValidationContext ctx = this.deepCopy();
-        ctx.xpointer = ctx.xpointer + "/" + segment;
+        ctx.jsonPointer = ctx.jsonPointer + "/" + segment;
         return ctx;
     }
 
@@ -182,7 +185,7 @@ public class ValidationContext {
                 "method='" + method + '\'' +
                 ", path='" + path + '\'' +
                 ", uriTemplate='" + uriTemplate + '\'' +
-                ", xpointer='" + xpointer + '\'' +
+                ", xpointer='" + jsonPointer + '\'' +
                 ", schemaType='" + schemaType + '\'' +
                 ", complexType='" + complexType + '\'' +
                 ", validatedEntityType=" + validatedEntityType +

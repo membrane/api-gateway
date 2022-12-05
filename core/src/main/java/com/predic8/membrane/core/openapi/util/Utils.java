@@ -167,4 +167,9 @@ public class Utils {
 
         return str.substring(0,str.indexOf(';'));
     }
+
+    public static <T> void setFieldIfNotNull(Map<String,T> m, String name, T v) {
+        if (v != null)
+            m.put(name,v);
+    }
 }

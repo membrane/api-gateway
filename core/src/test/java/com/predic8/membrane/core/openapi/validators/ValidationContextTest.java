@@ -9,7 +9,7 @@ public class ValidationContextTest {
 
     @Test
     public void getLocation() {
-        assertEquals("REQUEST/BODY/only-numbers/1",
+        assertEquals("REQUEST/BODY#/only-numbers/1",
                 new ValidationContext().path("/array")
                         .complexType("Array")
                         .validatedEntityType(BODY)

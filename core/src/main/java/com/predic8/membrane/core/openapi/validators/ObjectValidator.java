@@ -212,21 +212,23 @@ public class ObjectValidator implements IJSONSchemaValidator {
     }
 
     private ValidationErrors validateProperties(ValidationContext ctx, JsonNode node) {
-        ValidationErrors errors = new ValidationErrors();
 
         if (schema.getProperties() == null)
-            return errors;
+            return null;
 
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        Map<String, Schema> schemaProperties = schema.getProperties();
+        ValidationErrors errors = new ValidationErrors();
 
-        schemaProperties.forEach((propertyName, propertySchema) -> {
-
+        getPropertiesFromSchema().forEach((propertyName, propertySchema) -> {
             errors.add(validateProperty(propertyName, propertySchema, node, ctx.addJSONpointerSegment(propertyName)));
             errors.add(validateReadOnlyProperty(ctx, node, propertyName, propertySchema));
             errors.add(validateWriteOnlyProperty(ctx, node, propertyName, propertySchema));
         });
         return errors;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Map<String, Schema> getPropertiesFromSchema() {
+        return (Map<String, Schema>) schema.getProperties();
     }
 
     @SuppressWarnings("rawtypes")

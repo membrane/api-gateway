@@ -44,7 +44,7 @@ public class ReadWriteOnlyTest {
         ValidationError e = errors.get(0);
         assertEquals("/id",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("7"));
-        assertEquals("REQUEST/BODY/id", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/id", e.getContext().getLocationForRequest());
     }
 
     @Test
@@ -61,6 +61,6 @@ public class ReadWriteOnlyTest {
 //        System.out.println("errors = " + errors);
         assertEquals("/role",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("admin"));
-        assertEquals("REQUEST/BODY/role", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/role", e.getContext().getLocationForRequest());
     }
 }

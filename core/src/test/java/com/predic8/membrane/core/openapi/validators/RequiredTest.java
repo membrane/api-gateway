@@ -53,7 +53,7 @@ public class RequiredTest {
         ValidationError e = errors.get(0);
         assertEquals("/normal/b", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("Required"));
-        assertEquals("REQUEST/BODY/normal/b", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/normal/b", e.getContext().getLocationForRequest());
     }
 
     @Test

@@ -37,7 +37,7 @@ public class BooleanTest {
         ValidationError e = errors.get(0);
         assertEquals("/good", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("boolean"));
-        assertEquals("REQUEST/BODY/good", e.getContext().getLocationForRequest());
+        assertEquals("REQUEST/BODY#/good", e.getContext().getLocationForRequest());
 
     }
 
