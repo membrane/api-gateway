@@ -85,7 +85,7 @@ public class ObjectTest {
         m.put("additionalPropertiesString",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 

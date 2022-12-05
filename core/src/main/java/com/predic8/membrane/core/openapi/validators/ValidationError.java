@@ -34,9 +34,6 @@ public class ValidationError {
     public Map<String,Object> getContentMap() {
         Map<String,Object> fields = new LinkedHashMap<>();
         setFieldIfNotNull(fields,"message", message);
-        setFieldIfNotNull(fields,"method",ctx.getMethod());
-        setFieldIfNotNull(fields,"uriTemplate",ctx.getUriTemplate());
-        setFieldIfNotNull(fields,"path",ctx.getPath());
         setFieldIfNotNull(fields,"complexType",ctx.getComplexType());
         setFieldIfNotNull(fields,"schemaType",ctx.getSchemaType());
 

@@ -7,6 +7,7 @@ import com.predic8.membrane.core.openapi.*;
 import java.util.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
 import static java.util.stream.Collectors.toList;
 
 public class ValidationErrors {
@@ -67,11 +68,17 @@ public class ValidationErrors {
     @Override
     public String toString() {
 
+        if (errors.size() == 0)
+            return "No validation errors!";
+
         Map<String, List<Map<String,Object>>> m = getValidationErrorsGroupedByLocation();
+        Map<String,Object> wrapper = new LinkedHashMap<>();
 
-        System.out.println("m = " + m);
+        ValidationContext ctx = errors.get(0).getContext();
+        setFieldIfNotNull(wrapper,"method",ctx.getMethod());
+        setFieldIfNotNull(wrapper,"uriTemplate",ctx.getUriTemplate());
+        setFieldIfNotNull(wrapper,"path",ctx.getPath());
 
-        Map<String,Map<String, List<Map<String,Object>>>> wrapper = new HashMap<>();
         wrapper.put("validationErrors", m);
 
         try {

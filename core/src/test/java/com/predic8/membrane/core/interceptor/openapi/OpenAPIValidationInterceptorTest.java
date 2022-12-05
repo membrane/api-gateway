@@ -50,8 +50,12 @@ public class OpenAPIValidationInterceptorTest {
         exc.setRequest(new Request.Builder().method("GET").build());
         assertEquals(RETURN, interceptor.handleRequest(exc));
         JsonNode node = om.readTree(exc.getResponse().getBody().getContent());
-        System.out.println("node.toPrettyString() = " + node.toPrettyString());
-        assertEquals(1, node.size());
+//        System.out.println("node.toPrettyString() = " + node.toPrettyString());
+        assertEquals(4, node.size());
+        assertEquals("GET",node.get("method").asText());
+        assertEquals("/customers",node.get("uriTemplate").asText());
+        assertEquals("/customers?limit=1000",node.get("path").asText());
+        assertTrue(node.get("validationErrors").get("REQUEST/QUERY_PARAMETER") != null);
     }
 
     @Test

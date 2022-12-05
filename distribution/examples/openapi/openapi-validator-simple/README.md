@@ -19,7 +19,7 @@ or:
 service.proxy.bat
 ```
 
-3. Send a request using curl:
+3. Send a valid request using curl:
 
 ```
 curl -X POST http://localhost:2000/persons -H "Content-Type: application/json" -d '{"name": "Johannes Gutenberg","age": 78}'
@@ -65,7 +65,7 @@ You can also execute the requests in the _requests.http_ file.
 
 #### HOW IT IS DONE
 
-1. In the _proxies.xml_ configuration there is an **OpenAPIProxy** that reads the OpenAPI document and creates the APIs in Membrane.   
+1. In the _proxies.xml_ configuration there is an OpenAPIProxy that reads the OpenAPI document and creates the APIs in Membrane.   
 
 ```
 <OpenAPIProxy port="2000">
@@ -73,19 +73,9 @@ You can also execute the requests in the _requests.http_ file.
 </OpenAPIProxy>
 ```
 
-2. Have a look at the OpenAPI document _contacts-api-v1.yml_. The _age_ property must be 0 or higher.
+2. Incomming requests are validated against the definitions in the OpenAPI specification. In case of an validation failure an error message is returned. 
 
-```
-age:
-  type: integer
-  minimum: 0
-```
-
-2. Incomming requests are validated against the definitions in the OpenAPI specification. How things evolve is dependend on the result of the validation. 
-
-**a.) There are no validation errors**
-
-The request is sent to the backend with the address from the OpenAPI definition:
+3. The request is sent to the backend server with the server url from the OpenAPI definition:
 
 ```
 info:
@@ -94,25 +84,6 @@ servers:
   - url: http://localhost:3000
 ```
 
-Then Membrane routes the answer of the backend back to the client.
+4. The answer is returned to the client.
 
-**b.) There are validation errors**
-
-In case of a validation failure an error message is returned to client without calling the backend. 
-
-```
-{
-  "validationErrors" : {
-    "REQUEST/BODY#/age" : [ {
-      "message" : "-10 is smaller than the minimum of 0",
-      "method" : "POST",
-      "uriTemplate" : "/persons",
-      "path" : "/persons",
-      "complexType" : "Person",
-      "schemaType" : "integer"
-    } ]
-  }
-}
-```
-
-See the _examples/openapi/openapi-validator_ folder for a more detailed example.
+For a more detailed example have a look at the _examples/openapi/openapi-validator_ folder.
