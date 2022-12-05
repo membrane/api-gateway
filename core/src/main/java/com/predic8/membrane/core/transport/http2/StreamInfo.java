@@ -14,9 +14,7 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.AbstractBodyTransferrer;
-import com.predic8.membrane.core.http.Chunk;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http2.frame.DataFrame;
 import com.predic8.membrane.core.transport.http2.frame.FatalConnectionException;
 import com.predic8.membrane.core.transport.http2.frame.Frame;
@@ -47,6 +45,8 @@ public class StreamInfo {
     private StreamInfo priorityParent = null;
     private StreamState state = StreamState.IDLE;
     private int weight;
+    private Message message;
+    private boolean isTrailer;
 
     public StreamInfo(int streamId, FrameSender sender, Settings peerSettings, Settings ourSettings) {
         this.streamId = streamId;
@@ -129,6 +129,8 @@ public class StreamInfo {
 
         if (state == StreamState.RESERVED_REMOTE)
             setState(StreamState.HALF_CLOSED_LOCAL);
+
+        isTrailer = true;
     }
 
     private void setState(StreamState state) {
@@ -165,6 +167,7 @@ public class StreamInfo {
     private class Http2Body extends AbstractBody {
 
         int streamedLength = 0;
+        Header trailer;
 
         @Override
         protected void readLocal() throws IOException {
@@ -181,19 +184,18 @@ public class StreamInfo {
 
         private byte[] createByteArray(DataFrame df) {
             // TODO this has bad performance, can be avoided by subclassing Chunk
-            byte[] buf = new byte[df.getDataLength()];
-            if (df.getDataLength() > 0)
-                System.arraycopy(df.getContent(), df.getDataStartIndex(), buf, 0, df.getDataLength());
+            int len = df.getDataLength();
+            byte[] buf = new byte[len];
+            if (len > 0)
+                System.arraycopy(df.getContent(), df.getDataStartIndex(), buf, 0, len);
             return buf;
         }
 
         @Override
         protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
-            if (getLength() == 0)
-                return;
-
-            out.write(getContent(), 0, getLength());
-            out.finish();
+            if (getLength() > 0)
+                out.write(getContent(), 0, getLength());
+            out.finish(trailer);
         }
 
         @Override
@@ -203,14 +205,16 @@ public class StreamInfo {
                 DataFrame df = removeDataFrame();
                 if (df == null)
                     continue;
-                out.write(df.getContent(), df.getDataStartIndex(), df.getDataLength());
+                int len = df.getDataLength();
+                if (len > 0)
+                    out.write(df.getContent(), df.getDataStartIndex(), len);
                 chunks.add(new Chunk(createByteArray(df)));
 
                 if (df.isEndStream())
                     break;
             }
 
-            out.finish();
+            out.finish(trailer);
             markAsRead();
         }
 
@@ -221,13 +225,16 @@ public class StreamInfo {
                 DataFrame df = removeDataFrame();
                 if (df == null)
                     continue;
-                out.write(df.getContent(), df.getDataStartIndex(), df.getDataLength());
-                streamedLength += df.getDataLength();
+                int len = df.getDataLength();
+                if (len > 0) {
+                    out.write(df.getContent(), df.getDataStartIndex(), len);
+                    streamedLength += len;
+                }
 
                 if (df.isEndStream())
                     break;
             }
-            out.finish();
+            out.finish(trailer);
             markAsRead();
         }
 
@@ -247,6 +254,22 @@ public class StreamInfo {
             if (wasStreamed())
                 return streamedLength;
             return super.getLength();
+        }
+
+        @Override
+        public boolean hasTrailer() {
+            return trailer != null;
+        }
+
+        @Override
+        public Header getTrailer() {
+            return trailer;
+        }
+
+        @Override
+        public boolean setTrailer(Header trailer) {
+            this.trailer = trailer;
+            return true;
         }
     }
 
@@ -283,6 +306,18 @@ public class StreamInfo {
 
     public Semaphore getBufferedDataFrames() {
         return bufferedDataFrames;
+    }
+
+    public Message getMessage() {
+        return message;
+    }
+
+    public void setMessage(Message message) {
+        this.message = message;
+    }
+
+    public boolean isTrailer() {
+        return isTrailer;
     }
 
     @Override

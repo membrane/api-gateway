@@ -19,10 +19,7 @@ import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
 import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
-import com.predic8.membrane.core.http.BodyTest;
-import com.predic8.membrane.core.http.HeaderTest;
-import com.predic8.membrane.core.http.RequestTest;
-import com.predic8.membrane.core.http.ResponseTest;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
@@ -115,7 +112,7 @@ import org.junit.runners.Suite.SuiteClasses;
 		Xml2JsonInterceptorTest.class, Json2XmlInterceptorTest.class, TemplateInterceptorTest.class,
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
 		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class,
-		ProxyTest.class, Http2ClientServerTest.class
+		ProxyTest.class, Http2ClientServerTest.class, ChunkedBodyTest.class
 
 })
 public class UnitTests {

@@ -110,9 +110,9 @@ public class Http2ClientServerTest {
     @Test
     public void longBody() throws Exception {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 1000; i++)
+        for (int i = 0; i < 2000; i++)
             sb.append("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+!@#$%^&*(){}?+S_|");
-        // 80k exceeds the max frame size as well as the initial window size
+        // 160k exceeds the max frame size as well as the initial window size
         test200(sb.toString());
     }
 

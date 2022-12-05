@@ -187,7 +187,7 @@ public class Http2ExchangeHandler implements Runnable {
     }
 
     protected void writeResponse(Response res) throws Exception {
-        sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(res, streamId, encoder, peerSettings, false));
+        sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(res, res.getHeader(), streamId, encoder, peerSettings, false));
 
         writeMessageBody(streamId, streamInfo, sender, peerSettings, peerFlowControl, res);
 
@@ -231,28 +231,46 @@ public class Http2ExchangeHandler implements Runnable {
             }
 
             @Override
-            public void finish() throws IOException {
+            public void finish(Header header) throws IOException {
+                if (header != null) {
+                    // wait for sender queue to empty
+                    // TODO: this could be solved via synchronization
+                    while (!streamInfo.getDataFramesToBeSent().isEmpty()) {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(null, header, streamId, encoder, peerSettings, true));
+                } else {
+                    Frame frame = new Frame();
+                    frame.fill(TYPE_DATA,
+                            FLAG_END_STREAM,
+                            streamId,
+                            null,
+                            0,
+                            0);
 
+                    sender.send(frame);
+                }
             }
         }, false);
 
-        Frame frame = new Frame();
-        frame.fill(TYPE_DATA,
-                FLAG_END_STREAM,
-                streamId,
-                null,
-                0,
-                0);
-
-        sender.send(frame);
     }
 
-    public static List<Frame> createHeadersFrames(Message res, int streamId, Encoder encoder, Settings peerSettings, boolean isAtEof) throws IOException {
+    public static List<Frame> createHeadersFrames(Message res, Header header, int streamId, Encoder encoder, Settings peerSettings, boolean isAtEof) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         encoder.setMaxHeaderTableSize(baos, peerSettings.getHeaderTableSize());
 
-        StringBuilder sb = log.isDebugEnabled() ? new StringBuilder() : null;
+        StringBuilder sb = null;
+        if (log.isDebugEnabled()) {
+            sb = new StringBuilder();
+            sb.append("Headers on stream ");
+            sb.append(streamId);
+            sb.append(":\n");
+        }
 
         if (res instanceof Request) {
             Request req = (Request)res;
@@ -260,10 +278,6 @@ public class Http2ExchangeHandler implements Runnable {
             String val = req.getMethod();
             encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), val.getBytes(StandardCharsets.US_ASCII), false);
             if (sb != null) {
-                sb.append("Headers on stream ");
-                sb.append(streamId);
-                sb.append(":\n");
-
                 sb.append(key);
                 sb.append(": ");
                 sb.append(val);
@@ -302,10 +316,6 @@ public class Http2ExchangeHandler implements Runnable {
             String valStatus = "" + ((Response)res).getStatusCode();
             encoder.encodeHeader(baos, keyStatus.getBytes(StandardCharsets.US_ASCII), valStatus.getBytes(StandardCharsets.US_ASCII), false);
             if (sb != null) {
-                sb.append("Headers on stream ");
-                sb.append(streamId);
-                sb.append(":\n");
-
                 sb.append(keyStatus);
                 sb.append(": ");
                 sb.append(valStatus);
@@ -313,7 +323,7 @@ public class Http2ExchangeHandler implements Runnable {
             }
         }
 
-        for (HeaderField hf : res.getHeader().getAllHeaderFields()) {
+        for (HeaderField hf : header.getAllHeaderFields()) {
             String key = hf.getHeaderName().toString().toLowerCase();
             if ("keep-alive".equals(key) || "proxy-connection".equals(key) || "transfer-encoding".equals(key) || "upgrade".equals(key) || "connection".equals(key) || "host".equals(key))
                 continue;
@@ -334,20 +344,20 @@ public class Http2ExchangeHandler implements Runnable {
         if (sb != null)
             log.debug(sb.toString());
 
-        byte[] header = baos.toByteArray();
+        byte[] buffer = baos.toByteArray();
         List<Frame> frames = new ArrayList<>();
 
         int maxFrameSize = peerSettings.getMaxFrameSize();
-        for (int offset = 0; offset < header.length; offset += maxFrameSize) {
+        for (int offset = 0; offset < buffer.length; offset += maxFrameSize) {
             Frame frame = new Frame();
-            boolean isLast = offset + maxFrameSize >= header.length;
+            boolean isLast = offset + maxFrameSize >= buffer.length;
             frame.fill(
                     offset == 0 ? TYPE_HEADERS : TYPE_CONTINUATION,
                     (isLast ? FLAG_END_HEADERS : 0) + (isAtEof ? FLAG_END_STREAM : 0),
                     streamId,
-                    header,
+                    buffer,
                     offset,
-                    Math.min(maxFrameSize, header.length - offset)
+                    Math.min(maxFrameSize, buffer.length - offset)
             );
             frames.add(frame);
         }

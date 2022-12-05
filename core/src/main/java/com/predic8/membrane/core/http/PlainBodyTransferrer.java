@@ -34,6 +34,6 @@ public class PlainBodyTransferrer extends AbstractBodyTransferrer {
 	}
 
 	@Override
-	public void finish() throws IOException {
+	public void finish(Header header) throws IOException {
 	}
 }

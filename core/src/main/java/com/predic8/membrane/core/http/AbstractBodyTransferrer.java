@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 /**
@@ -25,6 +26,6 @@ public abstract class AbstractBodyTransferrer {
 	public abstract void write(byte[] content, int i, int length) throws IOException;
 	public abstract void write(Chunk chunk) throws IOException;
 
-	public abstract void finish() throws IOException;
+	public abstract void finish(@Nullable Header header) throws IOException;
 
 }

@@ -248,8 +248,9 @@ public class HttpClient {
 							sniServerName, proxy, proxySSLContext, applicationProtocols);
 					if (useHttp2 && Http2TlsSupport.isHttp2(con.socket))
 						usingHttp2 = true;
+					else
+						exc.setTargetConnection(con);
 					con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming());
-					exc.setTargetConnection(con);
 				}
 				if (proxy != null && sslProvider == null)
 					// if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.

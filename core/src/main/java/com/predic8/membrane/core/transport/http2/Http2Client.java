@@ -55,7 +55,9 @@ public class Http2Client implements Runnable {
         this.logic = new Http2Logic(executor, con.socket, con.in, con.out, showSSLExceptions, new Http2MessageHandler() {
             @Override
             public Message createMessage() {
-                return new Response();
+                Response response = new Response();
+                response.getHeader().setValue("Transfer-Encoding", "chunked");
+                return response;
             }
 
             @Override
@@ -86,7 +88,7 @@ public class Http2Client implements Runnable {
             StreamInfo streamInfo = new StreamInfo(streamId, logic.sender, logic.peerSettings, logic.ourSettings);
             logic.streams.put(streamId, streamInfo);
 
-            logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), streamId, encoder, peerSettings, false));
+            logic.sender.send(streamId, (encoder, peerSettings) -> createHeadersFrames(exc.getRequest(), exc.getRequest().getHeader(), streamId, encoder, peerSettings, false));
 
             writeMessageBody(streamId, streamInfo, logic.sender, logic.peerSettings, logic.peerFlowControl, exc.getRequest());
 

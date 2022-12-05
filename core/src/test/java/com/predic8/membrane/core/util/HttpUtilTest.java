@@ -14,17 +14,15 @@
 
 package com.predic8.membrane.core.util;
 
-import static com.predic8.membrane.core.util.HttpUtil.readLine;
+import com.predic8.membrane.core.Constants;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Test;
-
-
-import com.predic8.membrane.core.Constants;
+import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static org.junit.Assert.assertEquals;
 
 public class HttpUtilTest {
@@ -53,18 +51,6 @@ public class HttpUtilTest {
 		InputStream in = getClass().getClassLoader().getResourceAsStream("request-post.msg");
 		String line = readLine(in);
 		assertEquals("POST /operation/call HTTP/1.1", line);
-	}
-
-	@Test
-	public void testReadChunkSize() throws Exception {
-		String s = "3d2F" + Constants.CRLF;
-		assertEquals(15663, HttpUtil.readChunkSize(new ByteArrayInputStream(s.getBytes())));
-	}
-
-	@Test
-	public void testReadChunkSizeWithExtension() throws Exception {
-		String s = "3d2F" + Constants.CRLF + ";gfgfgfg" + Constants.CRLF;
-		assertEquals(15663, HttpUtil.readChunkSize(new ByteArrayInputStream(s.getBytes())));
 	}
 
 }

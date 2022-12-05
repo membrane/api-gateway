@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http2;
 
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -274,6 +275,8 @@ public class Http2Logic {
             streams.put(streamId1, streamInfo);
         }
 
+        boolean isTrailer = streamInfo.isTrailer();
+
         streamInfo.receivedHeaders();
 
         if (headers.isPriority())
@@ -302,7 +305,17 @@ public class Http2Logic {
             headerFrames.add(last);
         }
 
-        Message request = messageHandler.createMessage();
+        log.debug("header isTrailer=" + isTrailer);
+        Message request;
+        Header header;
+        if (isTrailer) {
+            request = streamInfo.getMessage();
+            header = new Header();
+        } else {
+            request = messageHandler.createMessage();
+            streamInfo.setMessage(request);
+            header = request.getHeader();
+        }
 
         StringBuilder sb = log.isDebugEnabled() ? new StringBuilder() : null;
 
@@ -338,7 +351,7 @@ public class Http2Logic {
                     ((Response) request).setStatusCode(Integer.parseInt(val));
                     log.debug("streamId=" + streamId1 + " status=" + val);
                 } else
-                    request.getHeader().add(key, val);
+                    header.add(key, val);
             }
         });
         if (decoder.endHeaderBlock())
@@ -347,10 +360,14 @@ public class Http2Logic {
         if (sb != null)
             log.debug(sb.toString());
 
-        if (!headers.isEndStream())
-            request.setBody(streamInfo.createBody());
+        if (isTrailer) {
+            request.getBody().setTrailer(header);
+        } else {
+            if (!headers.isEndStream())
+                request.setBody(streamInfo.createBody());
 
-        messageHandler.handleExchange(streamInfo, request, showSSLExceptions, remoteAddr);
+            messageHandler.handleExchange(streamInfo, request, showSSLExceptions, remoteAddr);
+        }
 
         if (headers.isEndStream())
             streamInfo.receivedEndStream(false);

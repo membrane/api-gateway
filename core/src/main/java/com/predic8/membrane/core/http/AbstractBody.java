@@ -220,4 +220,19 @@ public abstract class AbstractBody {
 	public boolean wasStreamed() {
 		return wasStreamed;
 	}
+
+	public Header getTrailer() {
+		return null;
+	}
+
+	/**
+	 * @return true, when the body supports trailers and the trailer was therefore set.
+	 */
+	public boolean setTrailer(Header trailer) {
+		return false;
+	}
+
+	public boolean hasTrailer() {
+		return false;
+	}
 }

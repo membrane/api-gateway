@@ -20,9 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -76,30 +74,7 @@ public class HttpUtil {
 		throw new EOFWhileReadingLineException(line.toString());
 	}
 
-
-	public static int readChunkSize(InputStream in) throws IOException {
-		StringBuilder buffer = new StringBuilder();
-
-		int c = 0;
-		while ((c = in.read()) != -1) {
-			if (c == 13) {
-				c = in.read();
-				break;
-			}
-
-			// ignore chunk extensions
-			if (c == ';') {
-				while ((c = in.read()) != 10)
-					;
-			}
-
-			buffer.append((char) c);
-		}
-
-		return Integer.parseInt(buffer.toString().trim(), 16);
-	}
-
-	public static Response setHTMLErrorResponse(ResponseBuilder responseBuilder, String message, String comment) {
+    public static Response setHTMLErrorResponse(ResponseBuilder responseBuilder, String message, String comment) {
 		Response response = responseBuilder.build();
 		response.setHeader(createHeaders(MimeType.TEXT_HTML_UTF8));
 		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(Constants.UTF_8_CHARSET));
@@ -237,33 +212,6 @@ public class HttpUtil {
 			header.add(headers[i],headers[i+1]);
 		}
 		return header;
-	}
-
-	public static List<Chunk> readChunks(InputStream in) throws IOException {
-		List<Chunk> chunks = new ArrayList<Chunk>();
-		int chunkSize;
-		while ((chunkSize = readChunkSize(in)) > 0) {
-			chunks.add(new Chunk(ByteUtil.readByteArray(in, chunkSize)));
-			in.read(); // CR
-			in.read(); // LF
-		}
-		in.read(); // CR
-		in.read(); // LF
-		return chunks;
-	}
-
-	public static void readChunksAndDrop(InputStream in, List<MessageObserver> observers) throws IOException {
-		int chunkSize;
-		while ((chunkSize = readChunkSize(in)) > 0) {
-			byte[] bytes = ByteUtil.readByteArray(in, chunkSize);
-			Chunk chunk = new Chunk(bytes);
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk);
-			in.read(); // CR
-			in.read(); // LF
-		}
-		in.read(); // CR
-		in.read(); // LF
 	}
 
 	public static String getHostName(String destination) throws MalformedURLException {

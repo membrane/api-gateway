@@ -116,11 +116,9 @@ public class Body extends AbstractBody {
 
 	@Override
 	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
-		if (getLength() == 0)
-			return;
-
-		out.write(getContent(), 0, getLength());
-		out.finish();
+		if (getLength() > 0)
+			out.write(getContent(), 0, getLength());
+		out.finish(null);
 	}
 
 	@Override
@@ -141,7 +139,7 @@ public class Body extends AbstractBody {
 				observer.bodyChunk(chunk1);
 		}
 
-		out.finish();
+		out.finish(null);
 		markAsRead();
 	}
 
@@ -159,7 +157,7 @@ public class Body extends AbstractBody {
 			for (MessageObserver observer : observers)
 				observer.bodyChunk(buffer, 0, length);
 		}
-		out.finish();
+		out.finish(null);
 		markAsRead();
 	}
 

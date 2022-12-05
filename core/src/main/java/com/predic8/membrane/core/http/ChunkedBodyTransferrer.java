@@ -39,9 +39,12 @@ public class ChunkedBodyTransferrer extends AbstractBodyTransferrer {
 	}
 
 	@Override
-	public void finish() throws IOException {
+	public void finish(Header header) throws IOException {
 		out.write(ZERO);
 		out.write(Constants.CRLF_BYTES);
+		if (header != null) {
+			header.write(out);
+		}
 		out.write(Constants.CRLF_BYTES);
 	}
 
