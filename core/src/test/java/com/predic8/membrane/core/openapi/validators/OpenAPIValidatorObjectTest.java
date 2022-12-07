@@ -53,7 +53,7 @@ public class OpenAPIValidatorObjectTest {
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
 
         assertEquals(3,errors.size());
         assertTrue(errors.stream().allMatch(ve -> ve.getContext().getValidatedEntityType().equals(BODY)));

@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.*;
 
+import java.nio.charset.*;
 import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
 import static java.util.stream.Collectors.toList;
 
 public class ValidationErrors {
@@ -16,9 +18,11 @@ public class ValidationErrors {
 
     private final List<ValidationError> errors = new ArrayList<>();
 
+    public enum Direction { REQUEST, RESPONSE }
+
     public static ValidationErrors create(ValidationContext ctx, String message) {
         ValidationErrors ve = new ValidationErrors();
-        ve.add(ctx,message);
+        ve.add(ctx, message);
         return ve;
     }
 
@@ -39,7 +43,7 @@ public class ValidationErrors {
     }
 
     public ValidationErrors add(ValidationContext ctx, String message) {
-        errors.add(new ValidationError(ctx,message));
+        errors.add(new ValidationError(ctx, message));
         return this;
     }
 
@@ -65,40 +69,46 @@ public class ValidationErrors {
         }).orElse(defaultValue);
     }
 
-    @Override
-    public String toString() {
+    public byte[] getErrorMessage(Direction direction) {
 
         if (errors.size() == 0)
-            return "No validation errors!";
+            return "No validation errors!".getBytes();
 
-        Map<String, List<Map<String,Object>>> m = getValidationErrorsGroupedByLocation();
-        Map<String,Object> wrapper = new LinkedHashMap<>();
+        Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction);
+        Map<String, Object> wrapper = new LinkedHashMap<>();
 
         ValidationContext ctx = errors.get(0).getContext();
-        setFieldIfNotNull(wrapper,"method",ctx.getMethod());
-        setFieldIfNotNull(wrapper,"uriTemplate",ctx.getUriTemplate());
-        setFieldIfNotNull(wrapper,"path",ctx.getPath());
+        setFieldIfNotNull(wrapper, "method", ctx.getMethod());
+        setFieldIfNotNull(wrapper, "uriTemplate", ctx.getUriTemplate());
+        setFieldIfNotNull(wrapper, "path", ctx.getPath());
 
         wrapper.put("validationErrors", m);
 
         try {
-            return om.writerWithDefaultPrettyPrinter().writeValueAsString(wrapper);
+            return om.writerWithDefaultPrettyPrinter().writeValueAsBytes(wrapper);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        return "Error!";
+        return "Error!".getBytes();
     }
 
-    private Map<String, List<Map<String,Object>>> getValidationErrorsGroupedByLocation() {
-        Map<String,List<Map<String,Object>>> m = new HashMap<>();
+    private Map<String, List<Map<String, Object>>> getValidationErrorsGroupedByLocation(Direction direction) {
+        Map<String, List<Map<String, Object>>> m = new HashMap<>();
         errors.forEach(ve -> {
-            List<Map<String,Object>> ves = new ArrayList<>();
+            List<Map<String, Object>> ves = new ArrayList<>();
             ves.add(ve.getContentMap());
-            m.merge(ve.getContext().getLocationForRequest(), ves, (vesOld, vesNew) -> {
+            m.merge(getLocationFor(direction, ve), ves, (vesOld, vesNew) -> {
                 vesOld.addAll(vesNew);
                 return vesOld;
             });
         });
         return m;
+    }
+
+    private String getLocationFor(Direction direction, ValidationError ve) {
+        if (direction.equals(REQUEST)) {
+            return ve.getContext().getLocationForRequest();
+        }
+        return ve.getContext().getLocationForResponse();
     }
 }

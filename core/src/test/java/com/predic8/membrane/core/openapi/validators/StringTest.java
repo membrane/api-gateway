@@ -118,7 +118,7 @@ public class StringTest {
     @Test
     public void uriValid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("uri","a:b"))));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 

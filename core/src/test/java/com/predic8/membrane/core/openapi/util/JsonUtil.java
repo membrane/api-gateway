@@ -3,6 +3,7 @@ package com.predic8.membrane.core.openapi.util;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 
+import java.io.*;
 import java.math.*;
 import java.util.*;
 
@@ -24,5 +25,9 @@ public class JsonUtil {
         ObjectNode root = om.createObjectNode();
         root.put(name,value);
         return root;
+    }
+
+    public static byte[] convert2JSON(Map<String, Object> customer) throws IOException {
+        return om.writer().writeValueAsBytes(om.valueToTree(customer));
     }
 }

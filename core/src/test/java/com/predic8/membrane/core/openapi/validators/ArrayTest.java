@@ -56,7 +56,7 @@ public class ArrayTest {
         m.put("only-numbers", listWithDifferentTypes());
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
     }
 

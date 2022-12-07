@@ -38,7 +38,7 @@ public class ObjectTest {
     @Test
     public void stringAsObject() {
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(new JsonBody(getStrings("object","Hossa"))));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
     }
 

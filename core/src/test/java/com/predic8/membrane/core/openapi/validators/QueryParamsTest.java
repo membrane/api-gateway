@@ -39,7 +39,7 @@ public class QueryParamsTest {
     @Test
     public void unkownQueryParam() {
         ValidationErrors errors = validator.validate(Request.get().path("/cities?unknown=3&limit=10"));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("REQUEST/QUERY_PARAMETER", e.getContext().getLocationForRequest());

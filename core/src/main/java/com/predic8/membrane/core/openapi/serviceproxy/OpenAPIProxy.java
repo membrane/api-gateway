@@ -14,16 +14,17 @@ import java.net.*;
 import java.util.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.openapi.util.Utils.getPathFromURL;
 import static com.predic8.membrane.core.util.FileUtil.readInputStream;
 import static java.lang.String.format;
 
-@MCElement(name="OpenAPIProxy")
+@MCElement(name = "OpenAPIProxy")
 public class OpenAPIProxy extends AbstractServiceProxy {
 
-    private static Logger log = LoggerFactory.getLogger(OpenAPIProxy.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIProxy.class.getName());
 
-    private String dir;
-    private List<OpenAPI> apis = new ArrayList<>();
+    protected List<OpenAPI> apis = new ArrayList<>();
+    protected Map<String, OpenAPI> basePaths;
 
     public OpenAPIProxy() {
         key = new OpenAPIProxyServiceKey(4000);
@@ -37,12 +38,14 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         return null;
     }
 
-    @MCElement(name="spec",topLevel = false)
+    @MCElement(name = "spec", topLevel = false)
     public static class Spec {
 
         String location;
         String dir;
-        String validate = "false";
+        Boolean validateRequests;
+        Boolean validateResponses;
+        Boolean validationDetails;
 
         public Spec() {
         }
@@ -65,13 +68,31 @@ public class OpenAPIProxy extends AbstractServiceProxy {
             this.dir = dir;
         }
 
-        public String getValidate() {
-            return validate;
+        public boolean getValidateRequests() {
+            return validateRequests;
         }
 
         @MCAttribute()
-        public void setValidate(String validate) {
-            this.validate = validate;
+        public void setValidateRequests(boolean validateRequests) {
+            this.validateRequests = validateRequests;
+        }
+
+        public boolean getValidateResponses() {
+            return validateResponses;
+        }
+
+        @MCAttribute()
+        public void setValidateResponses(boolean validateResponses) {
+            this.validateResponses = validateResponses;
+        }
+
+        public boolean getValidationDetails() {
+            return validationDetails;
+        }
+
+        @MCAttribute()
+        public void setValidationDetails(boolean validationDetails) {
+            this.validationDetails = validationDetails;
         }
     }
 
@@ -81,7 +102,7 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         return specs;
     }
 
-    @MCChildElement(order=25)
+    @MCChildElement(order = 25)
     public void setSpecs(List<Spec> specs) {
         this.specs = specs;
     }
@@ -92,24 +113,24 @@ public class OpenAPIProxy extends AbstractServiceProxy {
 
         readSpecs();
 
-        Map<String,OpenAPI>  basePaths = getOpenAPIMap();
+        basePaths = getOpenAPIMap();
         configureBasePaths(basePaths);
 
         interceptors.add(new OpenAPIAPIInterceptor(apis));
-        interceptors.add(new OpenAPIInterceptor(basePaths, this));
+        interceptors.add(new OpenAPIInterceptor(this));
     }
 
     private void configureBasePaths(Map<String, OpenAPI> basePaths) {
         ArrayList<String> basePathsThatMatch = new ArrayList<>(basePaths.keySet());
         basePathsThatMatch.add("/openapi/");
-        ((OpenAPIProxyServiceKey)key).setBasePaths(basePathsThatMatch);
+        ((OpenAPIProxyServiceKey) key).setBasePaths(basePathsThatMatch);
     }
 
-    private void readSpecs() throws ResourceRetrievalException, FileNotFoundException, CheckableBeanFactory.InvalidConfigurationException {
-        for (Spec spec: specs) {
+    private void readSpecs() throws ResourceRetrievalException, FileNotFoundException {
+        for (Spec spec : specs) {
             if (spec.location != null) {
                 log.info("Parsing spec " + spec.location);
-                apis.add(parseLocationAsOpenAPI(spec));
+                apis.add(addLocationAsOpenAPI(spec));
             }
             if (spec.dir != null) {
                 log.info("Parsing specs from dir " + spec.dir);
@@ -118,11 +139,11 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         }
     }
 
-    private void addOpenAPISpecsFromDirectory(Spec spec) throws FileNotFoundException, CheckableBeanFactory.InvalidConfigurationException {
+    private void addOpenAPISpecsFromDirectory(Spec spec) throws FileNotFoundException {
         for (File file : getOpenAPIFiles(spec.dir)) {
             log.info("Parsing spec " + file);
             OpenAPI api = parseFileAsOpenAPI(file);
-            setValidationOnAPI(spec, api);
+            setExtentsionOnAPI(spec, api);
             apis.add(api);
         }
     }
@@ -132,54 +153,56 @@ public class OpenAPIProxy extends AbstractServiceProxy {
                 null, null).getOpenAPI();
     }
 
-    private OpenAPI parseLocationAsOpenAPI(Spec spec) throws ResourceRetrievalException, CheckableBeanFactory.InvalidConfigurationException {
+    private OpenAPI addLocationAsOpenAPI(Spec spec) throws ResourceRetrievalException {
         OpenAPI api = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(spec.location)),
-                        null, null).getOpenAPI();
-        setValidationOnAPI(spec, api);
-        return api;
-    }
-
-    private void setValidationOnAPI(Spec spec, OpenAPI api) throws CheckableBeanFactory.InvalidConfigurationException {
-        if (!isValidationOptionCorrect(spec)) {
-            throw new CheckableBeanFactory.InvalidConfigurationException(format("The value %s is not a valid option for the validation attribute. Please use a value of %s", spec.validate, VALIDATE_OPTIONS.getValues() ));
-        }
+                null, null).getOpenAPI();
 
         if (api.getExtensions() == null) {
             api.setExtensions(new HashMap<>());
         }
 
-        api.getExtensions().put("x-validation", getValidationOptions(spec));
+        setExtentsionOnAPI(spec, api);
+        return api;
     }
 
-    private Map<String,Boolean> getValidationOptions(Spec spec) {
-        Map<String,Boolean> validationOptions = new HashMap<>();
-        validationOptions.put("requests",false);
-        validationOptions.put("responses",false);
-        switch (spec.validate) {
-            case "all":
-                validationOptions.put("requests",true);
-                validationOptions.put("responses",true);
-                break;
-            case "requests":
-                validationOptions.put("requests",true);
-                break;
-            case "responses":
-                validationOptions.put("responses",true);
-                break;
-            default:
-        }
-        return validationOptions;
+    private void setExtentsionOnAPI(Spec spec, OpenAPI api) {
+        api.getExtensions().put("x-validation", updateExtension(getXValidationExtension(api), spec));
     }
 
-    private boolean isValidationOptionCorrect(Spec spec) {
-        return Arrays.stream(VALIDATE_OPTIONS.values()).anyMatch(o -> o.name().equalsIgnoreCase(spec.validate));
+    private Map<String, Object> getXValidationExtension(OpenAPI api) {
+        if (api.getExtensions().get("x-validation") != null)
+            //noinspection unchecked
+            return (Map<String, Object>) api.getExtensions().get("x-validation");
+
+        Map<String, Object> extension = new HashMap<>();
+        extension.put("requests", false);
+        extension.put("responses", false);
+        extension.put("validationDetails", true);
+        return extension;
     }
 
-    private Map<String,OpenAPI> getOpenAPIMap() {
-        Map<String,OpenAPI> basePaths = new HashMap<>();
+    private Map<String, Object> updateExtension(Map<String, Object> extension, Spec spec) {
+
+        if (spec.validationDetails != null)
+            extension.put("validationDetails", spec.validationDetails);
+
+        if (spec.validateRequests != null)
+            extension.put("requests", spec.validateRequests);
+
+        if (spec.validateResponses != null)
+            extension.put("responses", spec.validateResponses);
+
+        extension.putIfAbsent("requests", false);
+        extension.putIfAbsent("responses", false);
+
+        return extension;
+    }
+
+    private Map<String, OpenAPI> getOpenAPIMap() {
+        Map<String, OpenAPI> basePaths = new HashMap<>();
         apis.forEach(api -> api.getServers().forEach(server -> {
             try {
-                basePaths.put(Utils.getPathFromURL(server.getUrl()), api);
+                basePaths.put(getPathFromURL(server.getUrl()), api);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 // @TODO
@@ -193,29 +216,25 @@ public class OpenAPIProxy extends AbstractServiceProxy {
         return new File(dir).listFiles((d, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
     }
 
-    public String getDir() {
-        return dir;
-    }
-
-    @MCAttribute
-    public void setDir(String dir) {
-        this.dir = dir;
-    }
-
     public ValidationStatisticsCollector getValidationStatisticCollector() {
         return statisticCollector;
     }
 
     private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
-        return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(),  location));
+        return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
     }
 
-    public enum VALIDATE_OPTIONS { all, requests, responses, none;
+    public enum VALIDATE_OPTIONS {
+        all, requests, responses, none;
 
         public static List<String> getValues() {
             return Stream.of(values())
                     .map(Enum::name)
                     .collect(Collectors.toList());
         }
+    }
+
+    public Map<String, OpenAPI> getBasePaths() {
+        return basePaths;
     }
 }

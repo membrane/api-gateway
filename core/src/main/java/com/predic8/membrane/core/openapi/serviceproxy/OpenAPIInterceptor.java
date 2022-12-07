@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
@@ -12,22 +13,20 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.openapi.util.PathUtils.getUrlWithoutPath;
-import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
-import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.util.PathUtils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.RESPONSE;
 
 
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
-    Map<String, OpenAPI> apisByBasePath;
-    OpenAPIProxy proxy;
+    protected final OpenAPIProxy proxy;
 
-    public OpenAPIInterceptor(Map<String, OpenAPI> apisByBasePath, OpenAPIProxy proxy) {
-        this.apisByBasePath = apisByBasePath;
+    public OpenAPIInterceptor(OpenAPIProxy proxy) {
         this.proxy = proxy;
     }
 
@@ -35,39 +34,54 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         exc.getDestinations().clear();
 
-        ValidationErrors errors = null;
-        for (String basePath : apisByBasePath.keySet()) {
-            if (exc.getRequest().getUri().startsWith(basePath)) {
-                OpenAPI api = apisByBasePath.get(basePath);
-                errors = validateRequest(api, exc);
-                addDestinationsFromOpenAPIServers(api, exc, basePath);
-            }
+        String basePath = getMatchingBasePath(exc);
+
+        // No matching API found
+        if  (basePath == null) {
+            exc.setResponse(Response.notFound().contentType(APPLICATION_JSON_UTF8).body(errorJson("No matching API found!")).build());
+            return RETURN;
         }
+
+        OpenAPI api = proxy.getBasePaths().get(basePath);
+        addDestinationsFromOpenAPIServers(api, exc);
+
+        ValidationErrors errors = validateRequest(api, exc);
 
         if (errors != null && errors.size() > 0) {
             proxy.statisticCollector.collect(errors);
-            return returnErrors(exc, errors);
+            return returnErrors(exc, errors, REQUEST, validationDetails(api));
         }
+
+        exc.setProperty("openApi",api);
 
         return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        ValidationErrors errors = null;
-        for (String basePath : apisByBasePath.keySet()) {
-            if (exc.getRequest().getUri().startsWith(basePath)) {
-                OpenAPI api = apisByBasePath.get(basePath);
-                errors = validateResponse(api, exc);
-            }
-        }
+
+        OpenAPI api = (OpenAPI) exc.getProperty("openApi");
+        ValidationErrors errors = validateResponse(api, exc);
 
         if (errors != null && errors.size() > 0) {
             exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
-            return returnErrors(exc, errors);
+            proxy.statisticCollector.collect(errors);
+            return returnErrors(exc, errors, RESPONSE, validationDetails(api));
         }
-
         return CONTINUE;
+    }
+
+    private byte[] errorJson(String msg) {
+        return String.format("{ \"error\": \"%s\"}", msg).getBytes();
+    }
+
+    protected String getMatchingBasePath(Exchange exc) {
+        for (String basePath : proxy.getBasePaths().keySet()) {
+            if (exc.getRequest().getUri().startsWith(basePath)) {
+                return basePath;
+            }
+        }
+        return null;
     }
 
     private ValidationErrors validateRequest(OpenAPI api, Exchange exc) throws IOException {
@@ -85,6 +99,24 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return new OpenAPIValidator(api).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
     }
 
+    public boolean validationDetails(OpenAPI api) {
+        if (api.getExtensions() == null)
+            return true;
+
+        @SuppressWarnings("unchecked")
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+
+        if (xValidation == null)
+            return true;
+
+        Boolean validationDetails = (Boolean) xValidation.get("validationDetails");
+
+        if (xValidation.get("validationDetails") == null)
+            return true;
+
+        return validationDetails;
+    }
+
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean shouldValidate(OpenAPI api, String direction) {
         Map<String, Object> extenstions = api.getExtensions();
@@ -99,7 +131,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return (Map<String, Boolean>) extenstions.get("x-validation");
     }
 
-    private void addDestinationsFromOpenAPIServers(OpenAPI api, Exchange exc, String basePath) {
+    protected void addDestinationsFromOpenAPIServers(OpenAPI api, Exchange exc) {
         api.getServers().forEach(server -> {
             URL url;
             try {
@@ -111,9 +143,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             setHostHeader(exc, url);
             exc.setProperty(SNI_SERVER_NAME, url.getHost());
-
-            // @TODO add dispatcherInterceptor SSL Setting
-
             exc.getDestinations().add(getUrlWithoutPath(url) + exc.getRequest().getUri());
         });
     }
@@ -135,7 +164,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         sb.append("<table>");
         sb.append("<thead><th>API</th><th>Base Path</th><th>Validation</th></thead>");
 
-        for (Map.Entry<String, OpenAPI> entry : apisByBasePath.entrySet()) {
+        for (Map.Entry<String, OpenAPI> entry : proxy.getBasePaths().entrySet()) {
             sb.append("<tr>");
             sb.append("<td>");
             sb.append(entry.getValue().getInfo().getTitle());
@@ -159,11 +188,15 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         exc.getRequest().getHeader().setHost(new HostAndPort(url.getHost(), url.getPort()).toString());
     }
 
-
-    private Outcome returnErrors(Exchange exc, ValidationErrors errors) {
-        exc.setResponse(com.predic8.membrane.core.http.Response.ResponseBuilder.newInstance().status(errors.get(0).getContext().getStatusCode(), "Bad Request").body(errors.toString()).contentType(APPLICATION_JSON_UTF8).build());
+    private Outcome returnErrors(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
+        exc.setResponse(Response.ResponseBuilder.newInstance().status(errors.get(0).getContext().getStatusCode(), "Bad Request").body(getErrorMessage(errors, direction, validationDetails)).contentType(APPLICATION_JSON_UTF8).build());
         return RETURN;
     }
 
+    private byte[] getErrorMessage(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
+        if (validationDetails)
+           return errors.getErrorMessage(direction);
 
+       return  "{ \"error\": \"Message validation failed!\" }".getBytes();
+    }
 }

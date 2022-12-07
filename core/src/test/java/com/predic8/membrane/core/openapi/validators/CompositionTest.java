@@ -8,6 +8,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.mapToJson;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -19,7 +20,7 @@ public class CompositionTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/composition.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/composition.yml"));
     }
 
     @Test
@@ -262,10 +263,4 @@ public class CompositionTest {
         assertTrue(allOf.getMessage().contains("subschemas"));
 
     }
-
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

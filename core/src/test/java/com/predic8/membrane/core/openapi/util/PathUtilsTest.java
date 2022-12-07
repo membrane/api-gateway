@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.config.*;
 import org.junit.*;
 
 import java.net.*;

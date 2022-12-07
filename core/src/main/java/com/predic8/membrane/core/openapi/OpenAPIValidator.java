@@ -10,6 +10,7 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
@@ -18,10 +19,9 @@ import static java.lang.String.*;
 
 public class OpenAPIValidator {
 
-    private static Logger log = LoggerFactory.getLogger(OpenAPIValidator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIValidator.class.getName());
 
-    private OpenAPI api;
-    private UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
+    private final OpenAPI api;
     private String basePath = "";
 
     public OpenAPIValidator(OpenAPI api) {
@@ -63,10 +63,9 @@ public class OpenAPIValidator {
         return validateMessage(request, response);
     }
 
+
+
     private ValidationErrors validateMessage(Request req, Response response) {
-
-        //req.ajustPathAccordingToBasePath(basePath);
-
         ValidationContext ctx = ValidationContext.fromRequest(req);
 
         ValidationErrors errors = new ValidationErrors();
@@ -104,7 +103,6 @@ public class OpenAPIValidator {
 
         return errors;
     }
-
 
     private ValidationErrors validateMethods(ValidationContext ctx, Request req, Response response, PathItem pathItem) {
         ValidationErrors errors = new ValidationErrors();

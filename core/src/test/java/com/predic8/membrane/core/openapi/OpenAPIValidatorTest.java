@@ -6,6 +6,7 @@ import org.junit.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
 import static org.junit.Assert.assertEquals;
@@ -16,7 +17,7 @@ public class OpenAPIValidatorTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/customers.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/customers.yml"));
     }
 
     @Test
@@ -42,13 +43,9 @@ public class OpenAPIValidatorTest {
     @Test
     public void validateWrongMethod() {
         ValidationErrors errors = validator.validate(Request.patch().path("/customers/7"));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         assertEquals(405, errors.get(0).getContext().getStatusCode());
         assertEquals(METHOD, errors.get(0).getContext().getValidatedEntityType());
-    }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
     }
 }

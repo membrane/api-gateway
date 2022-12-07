@@ -23,7 +23,6 @@ public class Utils {
     final static Pattern componentSchemaPattern = compile("#/components/\\w+/(.*)");
 
     //noinspection
-//    final static Pattern urlPathPattern = compile("\\w*:?/?/?/?.*?(/.*)");
     final static Pattern urlPathPattern = compile("(http://|https://)?.*?(/.*)");
 
     final static Pattern uuidPattern = compile("^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$");
@@ -90,14 +89,8 @@ public class Utils {
         if(!m.matches())
             return false;
 
-//        for (int i = 0; i < m.groupCount(); i++) {
-//            System.out.println("m.group(i) = " + i+ " " + m.group(i));
-//        }
-
         String authority = m.group(2);
         String path = m.group(5);
-        if (path.equals("http"))
-            return false;
 
         return authority != null && path != null;
     }

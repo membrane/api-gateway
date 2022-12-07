@@ -71,21 +71,6 @@ public class UtilsTest {
     public void getPathFromURLNoPath() throws MalformedURLException {
         assertEquals("", getPathFromURL("http://localhost:4567"));
     }
-
-    @Test
-    public void reTest() {
-        String regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]";
-        Pattern p = Pattern.compile(regex);
-        
-        Matcher m = p.matcher("https://localhost:3000/demo-api/v2");
-        
-        if (m.matches()) {
-            System.out.println("m.groupCount() = " + m.groupCount());
-            for (int i = 0; i < m.groupCount(); i++) {
-                System.out.println("m.group(i) = " + m.group(i));
-            }
-        }
-    }
     
     @Test
     public void getMediaTypeFromContentTypeHeader() {
