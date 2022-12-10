@@ -40,20 +40,28 @@ import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
 import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.Util;
 import org.apache.commons.codec.binary.Base64;
+import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.NumericDate;
+import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.Key;
+import java.security.KeyPair;
 import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -90,6 +98,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private String callbackPath = "oauth2callback";
 
     private final ObjectMapper om = new ObjectMapper();
+    private Key key;
+    private X509Certificate certificate;
 
     @Override
     public void init() throws Exception {
@@ -171,6 +181,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         firstInitWhenDynamicAuthorizationService = getAuthService().supportsDynamicRegistration();
         if(!getAuthService().supportsDynamicRegistration())
             firstInitWhenDynamicAuthorizationService = false;
+
+        if (auth.isUseJWTForClientAuth()) {
+            Object pemObject = PEMSupport.getInstance().parseKey(auth.getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getBaseLocation()));
+            key = pemObject instanceof Key ? (Key) pemObject : ((KeyPair)pemObject).getPrivate();
+            certificate = PEMSupport.getInstance().parseCertificate(auth.getSslParser().getKey().getCertificates().get(0).get(router.getResolverMap(), router.getBaseLocation()));
+        }
     }
 
     @Override
@@ -353,13 +369,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return;
 
         OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER));
-        Exchange refreshTokenExchange = new Request.Builder()
+        Exchange refreshTokenExchange = applyAuth(auth, new Request.Builder()
                 .post(auth.getTokenEndpoint())
                 .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                 .header(Header.ACCEPT, "application/json")
-                .header(Header.USER_AGENT, Constants.USERAGENT)
-                .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
-                .body("&grant_type=refresh_token"
+                .header(Header.USER_AGENT, Constants.USERAGENT),
+                "grant_type=refresh_token"
                         + "&refresh_token=" + oauth2Params.getRefreshToken())
                 .buildExchange();
 
@@ -392,6 +407,55 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     }
 
+    private Request.Builder applyAuth(AuthorizationService auth, Request.Builder requestBuilder, String body) {
+
+        if (auth.isUseJWTForClientAuth()) {
+            body += "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
+                    "&client_assertion=" + createClientToken(auth);
+        }
+
+        String clientSecret = auth.getClientSecret();
+        if (clientSecret != null)
+            requestBuilder
+                    .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + clientSecret).getBytes())))
+                    .body(body);
+        else
+            requestBuilder.body(body + "&client_id" + auth.getClientId());
+        return requestBuilder;
+    }
+
+    private String createClientToken(AuthorizationService auth) {
+        try {
+            String jwtSub = auth.getClientId();
+            String jwtAud = auth.getTokenEndpoint();
+
+            // see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
+            JwtClaims jwtClaims = new JwtClaims();
+            jwtClaims.setSubject(jwtSub);
+            jwtClaims.setAudience(jwtAud);
+            jwtClaims.setIssuer(jwtClaims.getSubject());
+            jwtClaims.setJwtId(UUID.randomUUID().toString());
+            jwtClaims.setIssuedAtToNow();
+            NumericDate expiration = NumericDate.now();
+            expiration.addSeconds(300);
+            jwtClaims.setExpirationTime(expiration);
+            jwtClaims.setNotBeforeMinutesInThePast(2f);
+
+            JsonWebSignature jws = new JsonWebSignature();
+            jws.setPayload(jwtClaims.toJson());
+            jws.setKey(key);
+            jws.setX509CertSha1ThumbprintHeaderValue(certificate);
+            jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+            jws.setHeader("typ", "JWT");
+
+            return jws.getCompactSerialization();
+        } catch (JoseException e) {
+            throw new RuntimeException(e);
+        } catch (MalformedClaimException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String numberToString(Object number) {
         if (number == null)
             return null;
@@ -401,6 +465,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return ((Long)number).toString();
         if (number instanceof Double)
             return ((Double)number).toString();
+        if (number instanceof String)
+            return (String)number;
         log.warn("Unhandled number type " + number.getClass().getName());
         return null;
     }
@@ -584,13 +650,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 if (code == null)
                     throw new RuntimeException("No code received.");
 
-                Exchange e = new Request.Builder()
+                Exchange e = applyAuth(auth, new Request.Builder()
                         .post(auth.getTokenEndpoint())
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.ACCEPT, "application/json")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
-                        .body("code=" + code
+                        .header(Header.USER_AGENT, Constants.USERAGENT),
+                        "code=" + code
                                 + "&redirect_uri=" + publicURL + callbackPath
                                 + "&grant_type=authorization_code")
                         .buildExchange();

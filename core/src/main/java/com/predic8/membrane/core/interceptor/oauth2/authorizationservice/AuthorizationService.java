@@ -19,7 +19,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -45,6 +44,7 @@ public abstract class AuthorizationService {
     protected String scope;
     private SSLParser sslParser;
     private SSLContext sslContext;
+    private boolean useJWTForClientAuth;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -91,8 +91,10 @@ public abstract class AuthorizationService {
 
     protected void checkForClientIdAndSecret(){
         synchronized (lock) {
-            if (clientId == null || clientSecret == null)
-                throw new RuntimeException(this.getClass().getSimpleName() + " cannot work without specified clientId and clientSecret");
+            if (clientId == null)
+                throw new RuntimeException(this.getClass().getSimpleName() + " cannot work without specified clientId");
+            if (clientSecret == null && sslParser == null)
+                throw new RuntimeException(this.getClass().getSimpleName() + " cannot work without either clientSecret or a client key+certificate");
         }
     }
 
@@ -170,5 +172,14 @@ public abstract class AuthorizationService {
     @MCChildElement(order=20, allowForeign = true)
     public void setSslParser(SSLParser sslParser) {
         this.sslParser = sslParser;
+    }
+
+    public boolean isUseJWTForClientAuth() {
+        return useJWTForClientAuth;
+    }
+
+    @MCAttribute
+    public void setUseJWTForClientAuth(boolean useJWTForClientAuth) {
+        this.useJWTForClientAuth = useJWTForClientAuth;
     }
 }
