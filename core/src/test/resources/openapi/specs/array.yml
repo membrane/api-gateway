@@ -1,6 +1,7 @@
 openapi: '3.0.2'
 info:
-  title: Array API
+  # array.yml and boolean.yml have the same id on purpose!
+  title: Test API
   version: '1.0'
 servers:
   - url: https://api.server.test/

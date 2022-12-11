@@ -27,50 +27,54 @@ public class OpenAPIRecordFactory {
         this.router = router;
     }
 
-    public Map<String,OpenAPIRecord> create(Collection<Spec> specs) throws IOException {
-
-        Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
-
+    public Map<String, OpenAPIRecord> create(Collection<Spec> specs) throws IOException {
+        Map<String, OpenAPIRecord> apiRecords = new LinkedHashMap<>();
         for (Spec spec : specs) {
             // Maybe a spec has both location and dir.
-            if (spec.location != null) {
-                log.info("Parsing spec " + spec.location);
-                OpenAPIRecord rec = create(spec);
-
-                // TODO
-                String id = getIdFromAPI(rec.api);
-                if (apiRecords.get(id) != null) {
-                    System.out.println("Duplicate id = " + id);
-                    id += "-2";
-                }
-                apiRecords.put(id,rec);
-            }
-            if (spec.dir != null) {
-                log.info("Parsing specs from dir " + spec.dir);
-                File[] openAPIFiles = getOpenAPIFiles(spec.dir);
-                if (openAPIFiles == null) {
-                    log.warn(String.format("Directory %s does not contain any OpenAPI documents.",spec.dir));
-                    continue;
-                }
-                for (File file : openAPIFiles) {
-                    log.info("Parsing spec " + file);
-                    OpenAPIRecord rec =create(spec,file);
-
-                    // TODO
-                    String id = getIdFromAPI(rec.api);
-                    if (apiRecords.get(id) != null) {
-                        System.out.println("Duplicate id = " + id);
-                        id += "-2";
-                    }
-                    apiRecords.put(id, rec);
-                }
-            }
+            addOpenApisFromLocation(apiRecords, spec);
+            addOpenApisFromDirectory(apiRecords, spec);
         }
         return apiRecords;
     }
 
+    private void addOpenApisFromDirectory(Map<String, OpenAPIRecord> apiRecords, Spec spec) throws IOException {
+        if (spec.dir == null)
+            return;
+
+        log.info("Parsing specs from dir " + spec.dir);
+        File[] openAPIFiles = getOpenAPIFiles(spec.dir);
+        if (openAPIFiles == null) {
+            log.warn(String.format("Directory %s does not contain any OpenAPI documents.", spec.dir));
+            return;
+        }
+        for (File file : openAPIFiles) {
+            log.info("Parsing spec " + file);
+            OpenAPIRecord rec = create(spec, file);
+            apiRecords.put(getUniqueId(apiRecords,rec), rec);
+        }
+    }
+
+    private void addOpenApisFromLocation(Map<String, OpenAPIRecord> apiRecords, Spec spec) throws IOException {
+        if (spec.location == null)
+            return;
+
+        log.info("Parsing spec " + spec.location);
+        apiRecords.put(getUniqueId(apiRecords, create(spec)), create(spec));
+    }
+
+    private String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
+        String id = getIdFromAPI(rec.api);
+        if (apiRecords.get(id) != null) {
+            log.warn("There are multiple OpenAPI documents with the id {}. The id is computed from the title {} and version {}. Please make sure that the documents are different or use the x-membrane-id field.",
+                    id, rec.api.getInfo().getTitle(), rec.api.getInfo().getVersion());
+            id += "-0";
+            log.warn("Changing the id to {} in order to make them unique.", id);
+        }
+        return id;
+    }
+
     private OpenAPIRecord create(Spec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router,spec), getSpec(router, spec));
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec));
         setExtentsionOnAPI(spec, record.api);
         return record;
     }

@@ -28,24 +28,10 @@
             <index/>
         </serviceProxy>
 
-        <!-- Forwards HTTP requests on port 2001 to some other HTTP server, in this example to www.membrane-soa.org. -->
-<!--        <serviceProxy name="localhost" port="2001">-->
-<!--            <OpenAPIValidator location="conf/fruitshop-api.yml" />-->
-<!--            <target host="api.predic8.de" port="443">-->
-<!--                <ssl/>-->
-<!--            </target>-->
-<!--        </serviceProxy>-->
-
-        <serviceProxy port="5001">
-            <template contentType="application/json">{ "success": true }</template>
-            <return/>
-        </serviceProxy>
-
         <OpenAPIProxy name="OpenAPI" port="2000">
 <!--            <spec location="fruitshop-api.yml" validate="requests"/>-->
             <spec location="contacts-api-v1.yml" validateRequests="true"/>
             <log/>
-            <target host="localhost" port="5099"/>
         </OpenAPIProxy>
 
         <serviceProxy name="Prometheus Monitoring" port="8888">
