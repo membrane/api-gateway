@@ -6,6 +6,7 @@ import org.junit.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.X_MEMBRANE_VALIDATION;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
@@ -27,13 +28,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertFalse((Boolean) xValidation.get("requests"));
@@ -50,13 +51,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertTrue((Boolean) xValidation.get("requests"));
@@ -72,13 +73,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertFalse((Boolean) xValidation.get("requests"));
@@ -96,13 +97,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertTrue((Boolean) xValidation.get("requests"));
@@ -117,13 +118,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertTrue((Boolean) xValidation.get("requests"));
@@ -138,13 +139,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertFalse((Boolean) xValidation.get("requests"));
@@ -162,13 +163,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertTrue((Boolean) xValidation.get("requests"));
@@ -185,13 +186,13 @@ public class OpenAPIProxyTest {
 
         OpenAPIProxy proxy = createProxy(router,spec);
 
-        assertEquals(1, proxy.apis.size());
-        OpenAPI api = proxy.apis.get(0);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = proxy.apiRecords.get(0).api;
 
         assertNotNull(api.getExtensions());
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
         assertTrue((Boolean) xValidation.get("requests"));

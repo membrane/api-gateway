@@ -4,7 +4,6 @@ import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
 import org.junit.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.mapToJson;
@@ -20,7 +19,7 @@ public class CompositionTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/composition.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/composition.yml"));
     }
 
     @Test

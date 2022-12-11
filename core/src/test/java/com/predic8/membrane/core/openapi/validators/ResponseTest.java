@@ -17,13 +17,13 @@ public class ResponseTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/customers.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
     }
 
     @Test
     public void validCustomerResponse() {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this,"/openapi/customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
@@ -31,7 +31,7 @@ public class ResponseTest {
     @Test
     public void invalidCustomerResponse() {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this,"/openapi/invalid-customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/invalid-customer.json")));
 
 //        System.out.println("errors = " + errors);
 
@@ -48,7 +48,7 @@ public class ResponseTest {
     @Test
     public void statusCode404() {
 
-        InputStream is = getResourceAsStream(this,"/openapi/customer.json");
+        InputStream is = getResourceAsStream(this, "/openapi/messages/customer.json");
 
         ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(404).json().body(is));
 //        System.out.println("errors = " + errors);
@@ -65,7 +65,7 @@ public class ResponseTest {
     @Test
     public void wrongMediaTypeResponse() {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/xml").body(getResourceAsStream(this,"/openapi/customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/xml").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -81,7 +81,7 @@ public class ResponseTest {
     @Test
     public void noContentInResponseSendPayload() {
 
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(getResourceAsStream(this,"/openapi/customer.json")), Response.statusCode(200).mediaType("application/json").body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")), Response.statusCode(200).mediaType("application/json").body("{ }"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -94,7 +94,7 @@ public class ResponseTest {
     @Test
     public void statusCodeNotInResponse() {
 
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(getResourceAsStream(this,"/openapi/customer.json")), Response.statusCode(202).mediaType("application/json").body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")), Response.statusCode(202).mediaType("application/json").body("{ }"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

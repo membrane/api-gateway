@@ -19,7 +19,7 @@ public class BooleanTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/boolean.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/boolean.yml"));
     }
 
     @Test

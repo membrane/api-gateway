@@ -18,7 +18,7 @@ public class DiscriminatorTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/discriminator.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/discriminator.yml"));
     }
 
     @Test

@@ -4,10 +4,8 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
 import java.math.*;
 
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
@@ -22,7 +20,7 @@ public class NumberTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/number.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/number.yml"));
     }
 
     @Test

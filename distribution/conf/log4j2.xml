@@ -13,6 +13,9 @@
         </RollingFile>
     </Appenders>
     <Loggers>
+        <Logger name="com.predic8.membrane.core.openapi" level="debug">
+            <AppenderRef ref="FILE" />
+        </Logger>
         <Logger name="com.predic8" level="info">
             <AppenderRef ref="FILE" />
         </Logger>

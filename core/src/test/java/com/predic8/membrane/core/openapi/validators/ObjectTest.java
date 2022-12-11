@@ -19,7 +19,7 @@ public class ObjectTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/object.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/object.yml"));
     }
 
     @Test

@@ -4,18 +4,15 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.openapi.util.JsonUtil.convert2JSON;
-import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.Assert.*;
 
 public class OpenAPIInterceptorTest {
@@ -23,98 +20,91 @@ public class OpenAPIInterceptorTest {
     ObjectMapper om = new ObjectMapper();
     Router router;
 
+    OpenAPIProxy.Spec specInfoServers;
+    OpenAPIProxy.Spec specInfo3Servers;
+    OpenAPIProxy.Spec specCustomers;
+
+    Exchange excGet = new Exchange(null);
+    OpenAPIInterceptor interceptor1Server;
+    OpenAPIInterceptor interceptor3Server;
+
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         router = new Router();
+
+        specInfoServers = new OpenAPIProxy.Spec();
+        specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
+
+        specInfo3Servers = new OpenAPIProxy.Spec();
+        specInfo3Servers.location = "src/test/resources/openapi/specs/info-3-servers.yml";
+
+        specCustomers = new OpenAPIProxy.Spec();
+        specCustomers.location = "src/test/resources/openapi/specs/customers.yml";
+
+        excGet.setRequest(new Request.Builder().method("GET").build());
+
+        interceptor1Server = new OpenAPIInterceptor(createProxy(router, specInfoServers));
+        interceptor3Server = new OpenAPIInterceptor(createProxy(router, specInfo3Servers));
     }
 
     @Test
-    public void getMatchingBasePathOneServer() throws Exception {
-
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/info-servers.yml";
-
-        Exchange exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/base/v2/foo").build());
-
-        assertEquals("/base/v2", new OpenAPIInterceptor(createProxy(router,spec)).getMatchingBasePath(exc));
+    public void getMatchingBasePathOneServer() {
+        excGet.getRequest().setUri("/base/v2/foo");
+        assertEquals("/base/v2", interceptor1Server.getMatchingBasePath(excGet));
     }
 
     @Test
-    public void getMatchingBasePathMultipleServers() throws Exception {
-
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/info-3-servers.yml";
-
-        Exchange exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/foo/boo").build());
-
-        assertEquals("/foo", new OpenAPIInterceptor(createProxy(router,spec)).getMatchingBasePath(exc));
+    public void getMatchingBasePathMultipleServers() {
+        excGet.getRequest().setUri("/foo/boo");
+        assertEquals("/foo", interceptor3Server.getMatchingBasePath(excGet));
     }
 
     @Test
-    public void nonMatchingBasePathMultipleServers() throws Exception {
-
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/info-3-servers.yml";
-
-        Exchange exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/goo/boo").build());
-
-        assertNull(null, new OpenAPIInterceptor(createProxy(router,spec)).getMatchingBasePath(exc));
+    public void nonMatchingBasePathMultipleServers() {
+        excGet.getRequest().setUri("/goo/boo");
+        assertNull(null, interceptor3Server.getMatchingBasePath(excGet));
     }
 
     @Test
     public void nonMatchingBasePathErrorMessage() throws Exception {
+        excGet.getRequest().setUri("/goo/boo");
+        assertEquals(RETURN, interceptor3Server.handleRequest(excGet));
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/info-3-servers.yml";
+        assertEquals(404, excGet.getResponse().getStatusCode());
+        assertTrue(excGet.getResponse().getHeader().getContentType().contains("application/json"));
+        excGet.getResponse().getBody().getContent();
 
-        Exchange exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/goo/boo").build());
-
-        Outcome outcome = new OpenAPIInterceptor(createProxy(router,spec)).handleRequest(exc);
-
-        assertEquals(RETURN, outcome);
-
-        assertEquals(404, exc.getResponse().getStatusCode());
-        assertTrue(exc.getResponse().getHeader().getContentType().contains("application/json"));
-        exc.getResponse().getBody().getContent();
-
-        JsonNode node = om.readValue(exc.getResponse().getBody().getContent(), JsonNode.class);
-        assertEquals("No matching API found!",node.get("error").asText());
+        assertEquals("No matching API found!", getMapFromResponse(excGet).get("error"));
     }
 
     @Test
     public void destinations() throws Exception {
+        excGet.getRequest().setUri("/foo/boo");
+        assertEquals(CONTINUE, interceptor3Server.handleRequest(excGet));
+        assertEquals(3,excGet.getDestinations().size());
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/info-3-servers.yml";
-
-        Exchange exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/foo/boo").build());
-
-        Outcome outcome = new OpenAPIInterceptor(createProxy(router,spec)).handleRequest(exc);
-
-        assertEquals(CONTINUE, outcome);
-
-        assertEquals(3,exc.getDestinations().size());
-
-        List<String> urls = new ArrayList<>();
+        Collection<String> urls = new ArrayList<>();
         urls.add("https://localhost:3000/foo/boo");
         urls.add("https://localhost:4000/foo/boo");
         urls.add("https://localhost:5000/foo/boo");
 
-        assertEquals(urls, exc.getDestinations());
+        assertEquals(urls, excGet.getDestinations());
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Test
+    public void destinationsTargetSet() throws Exception {
+        excGet.getRequest().setUri("/foo/boo");
+        OpenAPIProxy proxy = createProxy(router, specInfo3Servers);
+        proxy.getTarget().setHost("api.predic8.de");
+        assertEquals(CONTINUE, new OpenAPIInterceptor(proxy).handleRequest(excGet));
+        assertEquals(0,excGet.getDestinations().size());
+    }
+
+    @SuppressWarnings({"unchecked"})
     @Test
     public void validateRequest() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/customers.yml";
-        spec.validateRequests = true;
+        specCustomers.validateRequests = true;
 
         Map<String,Object> customer = new HashMap<>();
         customer.put("id","CUST-7");
@@ -125,54 +115,32 @@ public class OpenAPIInterceptorTest {
         exc.setOriginalRequestUri("/customers");
         exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType("application/json").body(convert2JSON(customer)).build());
 
-        Outcome outcome = new OpenAPIInterceptor(createProxy(router,spec)).handleRequest(exc);
-
-        assertEquals(RETURN, outcome);
+        assertEquals(RETURN, new OpenAPIInterceptor(createProxy(router,specCustomers)).handleRequest(exc));
         assertEquals(400,exc.getResponse().getStatusCode());
 
-        Map errors = om.readValue(exc.getResponse().getBody().getContent(), Map.class);
-        assertEquals("POST", errors.get("method"));
-        testValidationResults(errors, "REQUEST");
+        assertEquals("POST", getMapFromResponse(exc).get("method"));
+        testValidationResults(getMapFromResponse(exc), "REQUEST");
     }
 
-
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void validateResponse() throws Exception {
-
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/customers.yml";
-        spec.validateResponses = true;
-
-        Exchange exc = callEndpoint(spec);
-
-        Map errors = om.readValue(exc.getResponse().getBody().getContent(), Map.class);
-        assertEquals("PUT", errors.get("method"));
-        testValidationResults(errors, "RESPONSE");
+        specCustomers.validateResponses = true;
+        assertEquals("PUT", getMapFromResponse(callPut(specCustomers)).get("method"));
+        testValidationResults(getMapFromResponse(callPut(specCustomers)), "RESPONSE");
     }
 
     @Test
-    @SuppressWarnings({"rawtypes"})
     public void validateResponseLessDetails() throws Exception {
-
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
-        spec.location = "src/test/resources/openapi/customers.yml";
-        spec.validateResponses = true;
-        spec.validationDetails = false;
-
-        Exchange exc = callEndpoint(spec);
-
-        Map errors = om.readValue(exc.getResponse().getBody().getContent(), Map.class);
-
-        assertEquals("Message validation failed!", errors.get("error"));
+        specCustomers.validateResponses = true;
+        specCustomers.validationDetails = false;
+        assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("error"));
     }
 
     @NotNull
-    private Exchange callEndpoint(OpenAPIProxy.Spec spec) throws Exception {
+    private Exchange callPut(OpenAPIProxy.Spec spec) throws Exception {
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
-
         exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType("application/json").build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, spec));
@@ -184,12 +152,9 @@ public class OpenAPIInterceptorTest {
         customer.put("age",110);
         customer.put("foo",110);
 
-        Response response = Response.ResponseBuilder.newInstance().status(200,"OK").contentType("application/json").body(convert2JSON(customer)).build();
-        exc.setResponse(response);
+        exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType("application/json").body(convert2JSON(customer)).build());
 
-        Outcome outcome = interceptor.handleResponse(exc);
-
-        assertEquals(RETURN, outcome);
+        assertEquals(RETURN, interceptor.handleResponse(exc));
         assertEquals(500,exc.getResponse().getStatusCode());
         return exc;
     }
@@ -205,9 +170,9 @@ public class OpenAPIInterceptorTest {
         assertEquals(3,validationErrors.size());
 
         Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).get(0);
-
         assertEquals("Customer",m1.get("complexType"));
         assertEquals("object",m1.get("schemaType"));
+
         assertTrue(((String)m1.get("message")).contains("additional properties"));
 
         Map<String,Object> m2 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/firstName")).get(0);
@@ -222,5 +187,4 @@ public class OpenAPIInterceptorTest {
         assertEquals("integer",m3.get("schemaType"));
         assertTrue(((String)m3.get("message")).contains("maximum"));
     }
-
 }

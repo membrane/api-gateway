@@ -14,20 +14,20 @@ public class ReferencesResponseTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/references-response.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/references-response.yml"));
     }
 
     @Test
     public void refRequestOk()  {
         ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"),Response.statusCode(200)
-                .json().body(getResourceAsStream(this,"/openapi/references-requests-responses-customer.json")));
+                .json().body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void refResponseInvalid()  {
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this,"/openapi/references-requests-responses-customer-invalid.json")));
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

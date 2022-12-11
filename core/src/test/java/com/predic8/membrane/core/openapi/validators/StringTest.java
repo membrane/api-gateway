@@ -19,7 +19,7 @@ public class StringTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/strings.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/strings.yml"));
     }
 
     @Test

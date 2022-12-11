@@ -13,6 +13,7 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.openapi.util.PathUtils.normalizeUri;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static java.lang.String.*;
@@ -63,8 +64,6 @@ public class OpenAPIValidator {
         return validateMessage(request, response);
     }
 
-
-
     private ValidationErrors validateMessage(Request req, Response response) {
         ValidationContext ctx = ValidationContext.fromRequest(req);
 
@@ -78,15 +77,12 @@ public class OpenAPIValidator {
                 return;
             }
 
-            String referenz = PathUtils.normalizeUri(basePath + uriTemplate);
-
             try {
-                req.parsePathParameters(referenz);
-            } catch (PathDoesNotMatchException e) {
+                req.parsePathParameters(normalizeUri(basePath + uriTemplate));
+                pathFound.set(true);
+            } catch (PathDoesNotMatchException ignore) {
                 return;
             }
-
-            pathFound.set(true);
 
             errors.add(validateMethods(ctx.uriTemplate(uriTemplate), req, response, pathItem));
 

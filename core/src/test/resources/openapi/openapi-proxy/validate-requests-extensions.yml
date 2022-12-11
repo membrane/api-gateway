@@ -4,7 +4,7 @@ info:
   version: '1.0'
 servers:
   - url: https://localhost:3000
-x-validation:
+x-membrane-validation:
   requests: true
 paths:
   /boolean:

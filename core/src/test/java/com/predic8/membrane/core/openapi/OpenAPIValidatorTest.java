@@ -4,8 +4,6 @@ import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.*;
 
-import java.io.*;
-
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
@@ -17,7 +15,7 @@ public class OpenAPIValidatorTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/customers.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
     }
 
     @Test

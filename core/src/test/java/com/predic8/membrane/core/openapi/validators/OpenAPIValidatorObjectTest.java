@@ -18,13 +18,13 @@ public class OpenAPIValidatorObjectTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/customers.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
     }
 
     @Test
     public void invalidJSON() {
 
-        InputStream is = getResourceAsStream(this,"/openapi/invalid.json");
+        InputStream is = getResourceAsStream(this, "/openapi/messages/invalid.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
@@ -38,7 +38,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void validateRequestBody() {
 
-        InputStream is = getResourceAsStream(this,"/openapi/customer.json");
+        InputStream is = getResourceAsStream(this, "/openapi/messages/customer.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
@@ -49,7 +49,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void invalidRequestBody() {
 
-        InputStream is = getResourceAsStream(this,"/openapi/invalid-customer.json");
+        InputStream is = getResourceAsStream(this, "/openapi/messages/invalid-customer.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 
@@ -69,7 +69,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void requiredPropertyMissing() {
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream(this,"/openapi/missing-required-property.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream(this, "/openapi/messages/missing-required-property.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -87,7 +87,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void requiredPropertiesMissing() {
 
-        InputStream is = getResourceAsStream(this,"/openapi/missing-required-properties.json");
+        InputStream is = getResourceAsStream(this, "/openapi/messages/missing-required-properties.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
@@ -102,7 +102,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void additionalPropertiesInvalid() {
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream(this,"/openapi/customer-additional-properties-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream(this, "/openapi/messages/customer-additional-properties-invalid.json")));
 
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

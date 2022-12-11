@@ -15,7 +15,7 @@ public class OpenAPIValidatorJSONSchemaTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/customers.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
     }
 
     @Test

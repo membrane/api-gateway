@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import org.junit.*;
 
 import java.io.*;
@@ -168,4 +169,12 @@ public class UtilsTest {
     public void dateTimeInvalid() {
         assertFalse(isValidDateTime("2008-02-01"));
     }
+
+    @Test
+    public void normalizeForId() {
+        assertEquals("a-b", Utils.normalizeForId("a b"));
+        assertEquals("a-b", Utils.normalizeForId("a%b"));
+        assertEquals("a-3b-c12", Utils.normalizeForId("a-+# 3b C12"));
+    }
+
 }

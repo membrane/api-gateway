@@ -16,6 +16,7 @@ import java.util.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.X_MEMBRANE_VALIDATION;
 import static com.predic8.membrane.core.openapi.util.PathUtils.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
@@ -32,10 +33,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.getDestinations().clear();
-
         String basePath = getMatchingBasePath(exc);
-
         // No matching API found
         if  (basePath == null) {
             exc.setResponse(Response.notFound().contentType(APPLICATION_JSON_UTF8).body(errorJson("No matching API found!")).build());
@@ -43,7 +41,11 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         }
 
         OpenAPI api = proxy.getBasePaths().get(basePath);
-        addDestinationsFromOpenAPIServers(api, exc);
+
+        // If OpenAPIProxy has a <target> Element use this for routing otherwise
+        // take the urls from the info.servers field in the OpenAPI document.
+        if (proxy.getTarget() == null || (proxy.getTarget().getHost() == null && proxy.getTarget().getUrl() == null))
+            setDestinationsFromOpenAPI(api, exc);
 
         ValidationErrors errors = validateRequest(api, exc);
 
@@ -86,7 +88,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private ValidationErrors validateRequest(OpenAPI api, Exchange exc) throws IOException {
         ValidationErrors errors = new ValidationErrors();
-        if (!shouldValidate(api, VALIDATE_OPTIONS.requests.name()))
+        if (!shouldValidate(api, "requests"))
             return errors;
 
         return new OpenAPIValidator(api).validate(getOpenapiValidatorRequest(exc));
@@ -94,7 +96,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private ValidationErrors validateResponse(OpenAPI api, Exchange exc) throws IOException {
         ValidationErrors errors = new ValidationErrors();
-        if (!shouldValidate(api, VALIDATE_OPTIONS.responses.name()))
+        if (!shouldValidate(api, "responses"))
             return errors;
         return new OpenAPIValidator(api).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
     }
@@ -104,7 +106,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return true;
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get("x-validation");
+        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         if (xValidation == null)
             return true;
@@ -128,10 +130,11 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     @SuppressWarnings("unchecked")
     private Map<String, Boolean> getxValidation(Map<String, Object> extenstions) {
-        return (Map<String, Boolean>) extenstions.get("x-validation");
+        return (Map<String, Boolean>) extenstions.get(X_MEMBRANE_VALIDATION);
     }
 
-    protected void addDestinationsFromOpenAPIServers(OpenAPI api, Exchange exc) {
+    protected void setDestinationsFromOpenAPI(OpenAPI api, Exchange exc) {
+        exc.getDestinations().clear();
         api.getServers().forEach(server -> {
             URL url;
             try {
@@ -173,8 +176,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             sb.append(entry.getKey());
             sb.append("</td>");
             sb.append("<td>");
-            if (entry.getValue().getExtensions() != null && entry.getValue().getExtensions().get("x-validation") != null) {
-                sb.append(entry.getValue().getExtensions().get("x-validation"));
+            if (entry.getValue().getExtensions() != null && entry.getValue().getExtensions().get(X_MEMBRANE_VALIDATION) != null) {
+                sb.append(entry.getValue().getExtensions().get(X_MEMBRANE_VALIDATION));
             }
             sb.append("</td>");
             sb.append("</tr>");

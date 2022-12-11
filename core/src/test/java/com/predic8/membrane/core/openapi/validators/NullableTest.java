@@ -17,7 +17,7 @@ public class NullableTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/nullable.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/nullable.yml"));
     }
 
     @Test

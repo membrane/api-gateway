@@ -18,7 +18,7 @@ public class EnumTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/enum.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/enum.yml"));
     }
 
     @Test

@@ -165,4 +165,12 @@ public class Utils {
         if (v != null)
             m.put(name,v);
     }
+
+    public static String normalizeForId(String s) {
+        return s.replaceAll("\\W+","-").toLowerCase();
+    }
+
+    public static InputStream getResourceAsStream(Object obj, String fileName) {
+        return obj.getClass().getResourceAsStream(fileName);
+    }
 }

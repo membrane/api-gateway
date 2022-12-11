@@ -15,7 +15,7 @@ public class QueryParamsTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/query-params.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/query-params.yml"));
     }
 
     @Test

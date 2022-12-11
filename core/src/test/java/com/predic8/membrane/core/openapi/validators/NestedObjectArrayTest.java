@@ -14,19 +14,19 @@ public class NestedObjectArrayTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/nested-objects-arrays.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/nested-objects-arrays.yml"));
     }
 
     @Test
     public void nestedOk()  {
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this,"/openapi/nested-objects-arrays.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this, "/openapi/messages/nested-objects-arrays.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void nestedInvalid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this,"/openapi/nested-objects-arrays-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this, "/openapi/messages/nested-objects-arrays-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

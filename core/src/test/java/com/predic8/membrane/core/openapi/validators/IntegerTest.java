@@ -20,7 +20,7 @@ public class IntegerTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/integer.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/integer.yml"));
     }
 
     @Test

@@ -15,13 +15,13 @@ public class RequestsTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/customers.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
     }
 
     @Test
     public void wrongMediaTypeRequest() {
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType("text/plain").body(getResourceAsStream(this,"/openapi/customer.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType("text/plain").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationContext ctx = errors.get(0).getContext();
@@ -38,7 +38,7 @@ public class RequestsTest {
     @Test
     public void noContentInRequestSentPayload() {
 
-        ValidationErrors errors = validator.validate(Request.get().path("/customers").mediaType("application/json").body(getResourceAsStream(this,"/openapi/customer.json")));
+        ValidationErrors errors = validator.validate(Request.get().path("/customers").mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

@@ -63,6 +63,7 @@ components:
               type: string
     Product:
       type: object
+      required: ["name","price"]
       additionalProperties: false
       properties:
         name:

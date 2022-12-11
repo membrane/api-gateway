@@ -17,7 +17,7 @@ public class RequiredTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/required.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/required.yml"));
     }
 
 

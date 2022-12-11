@@ -13,13 +13,14 @@ import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
 
 public class OpenAPIAPIInterceptor extends AbstractInterceptor {
 
-    List<OpenAPI> apis;
+    Collection<OpenAPIRecord> apis;
     private final ObjectMapper om = new ObjectMapper();
 
-    public OpenAPIAPIInterceptor(List<OpenAPI> apis) {
+    public OpenAPIAPIInterceptor(Collection<OpenAPIRecord> apis) {
         this.apis = apis;
         setFlow(Flow.Set.REQUEST);
     }
@@ -29,16 +30,16 @@ public class OpenAPIAPIInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().getUri().startsWith("/openapi/"))
             return CONTINUE;
 
-        Map apiDesc = new HashMap();
-        for (OpenAPI api: apis) {
-            Map details = new HashMap();
+        Map<String,Object> apiDesc = new HashMap<>();
+        for (OpenAPIRecord record: apis) {
+            Map<String,Object > details = new HashMap<>();
 
-            details.put("version", api.getInfo().getVersion());
-            details.put("validation", computeValidationMap(api));
+            details.put("version", record.api.getInfo().getVersion());
+            details.put("validation", computeValidationMap(record.api));
 
-            ArrayList servers = new ArrayList<>();
-            for (Server oaServer: api.getServers()) {
-                Map server = new HashMap();
+            ArrayList<Map <String,String>> servers = new ArrayList<>();
+            for (Server oaServer: record.api.getServers()) {
+                Map<String,String>  server = new HashMap<>();
                 server.put("url",oaServer.getUrl());
                 if (oaServer.getDescription() != null)
                     server.put("description", oaServer.getDescription());
@@ -47,7 +48,7 @@ public class OpenAPIAPIInterceptor extends AbstractInterceptor {
 
 
             details.put("servers", servers);
-            apiDesc.put(api.getInfo().getTitle(),details);
+            apiDesc.put(record.api.getInfo().getTitle(),details);
         }
 
         exc.setResponse(Response.ok().contentType("application/json").body(om.writerWithDefaultPrettyPrinter().writeValueAsBytes(apiDesc)).build());
@@ -67,18 +68,17 @@ public class OpenAPIAPIInterceptor extends AbstractInterceptor {
 
     @Override
     public String getLongDescription() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("You can access the live information at:<br/><br/>/openapi/");
-        return sb.toString();
+        return "You can access the live information at:<br/><br/>/openapi/";
     }
 
 
-    private Map computeValidationMap(OpenAPI api) {
-        Map validationMap = new HashMap();
+    @SuppressWarnings("unchecked")
+    private Map<String,Boolean> computeValidationMap(OpenAPI api) {
+        Map<String,Boolean> validationMap = new HashMap<>();
         validationMap.put("requests",false);
         validationMap.put("responses",false);
         if (api.getExtensions() != null) {
-            validationMap = (Map) api.getExtensions().get("x-validation");
+            validationMap = (Map<String,Boolean>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
         }
         return validationMap;
     }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Open API"/>
+    <title>Overview OpenAPI</title>
+</head>
+<body>
+
+<div class="container">
+
+<h1 class="title">APIs</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Version</th>
+            <th>Title</th>
+        </tr>
+    </thead>
+    <tbody>
+<% for (api in apis) { %>
+<tr>
+    <td><%= api.key %></td>
+    <td><%= api.value.api.openapi %></td>
+    <td><a href="/openapi-spec/ui/${api.key}"><%= api.value.api.info.title %></a></td>
+    <td><%= api.value.api.info.version %></td>
+</tr>
+<% } %>
+    </tbody>
+</table>
+</div>
+</body>
+</html>

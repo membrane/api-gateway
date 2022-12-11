@@ -17,7 +17,7 @@ public class ReadWriteOnlyTest {
 
     @Before
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this,"/openapi/read-write-only.yml"));
+        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/read-write-only.yml"));
     }
 
     @Test
