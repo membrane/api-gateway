@@ -1,6 +1,6 @@
 openapi: '3.0.2'
 info:
-  title: Test API
+  title: Integer Test API
   version: '1.0'
 servers:
   - url: https://api.server.test/

@@ -20,15 +20,15 @@ public class OpenAPIProxy extends ServiceProxy {
     public static final String RESPONSES = "responses";
     public static final String VALIDATION_DETAILS = "validationDetails";
 
-    protected List<OpenAPIRecord> apiRecords = new ArrayList<>();
+    protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
     protected Map<String, OpenAPI> basePaths;
 
-    public OpenAPIProxy() {
-        key = new OpenAPIProxyServiceKey(4000);
-    }
+    protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
-    ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
+    public OpenAPIProxy() {
+        key = new OpenAPIProxyServiceKey(getPort());
+    }
 
     @Override
     protected AbstractProxy getNewInstance() {
@@ -74,23 +74,23 @@ public class OpenAPIProxy extends ServiceProxy {
             this.validateRequests = validateRequests;
         }
 
-        public boolean getValidateResponses() {
-            return validateResponses;
-        }
-
-        @MCAttribute()
-        public void setValidateResponses(boolean validateResponses) {
-            this.validateResponses = validateResponses;
-        }
-
-        public boolean getValidationDetails() {
-            return validationDetails;
-        }
-
-        @MCAttribute()
-        public void setValidationDetails(boolean validationDetails) {
-            this.validationDetails = validationDetails;
-        }
+//        public boolean getValidateResponses() {
+//            return validateResponses;
+//        }
+//
+//        @MCAttribute()
+//        public void setValidateResponses(boolean validateResponses) {
+//            this.validateResponses = validateResponses;
+//        }
+//
+//        public boolean getValidationDetails() {
+//            return validationDetails;
+//        }
+//
+//        @MCAttribute()
+//        public void setValidationDetails(boolean validationDetails) {
+//            this.validationDetails = validationDetails;
+//        }
     }
 
     protected List<Spec> specs = new ArrayList<>();
@@ -114,7 +114,7 @@ public class OpenAPIProxy extends ServiceProxy {
         configureBasePaths();
 
         interceptors.add(new OpenAPIPublisherInterceptor(apiRecords));
-        interceptors.add(new OpenAPIAPIInterceptor(apiRecords));
+        //interceptors.add(new OpenAPIAPIInterceptor(apiRecords));
         interceptors.add(new OpenAPIInterceptor(this));
     }
 
@@ -127,7 +127,7 @@ public class OpenAPIProxy extends ServiceProxy {
 
     private Map<String, OpenAPI> getOpenAPIMap() {
         Map<String, OpenAPI> basePaths = new HashMap<>();
-        apiRecords.forEach(record -> record.api.getServers().forEach(server -> {
+        apiRecords.forEach((id,record) -> record.api.getServers().forEach(server -> {
             try {
                 basePaths.put(getPathFromURL(server.getUrl()), record.api);
             } catch (MalformedURLException e) {

@@ -13,8 +13,8 @@ public class OpenAPIUtilTest {
 
     @Test
     public void getIdFromAPITest() {
-        assertEquals("api-title-v1-0", getIdFromAPI(getApi("/openapi/specs/customers.yml")) );
-        assertEquals("strings-test-api-v1-0", getIdFromAPI(getApi("/openapi/specs/info-3-servers.yml")) );
+        assertEquals("customers-api-v1-0", getIdFromAPI(getApi("/openapi/specs/customers.yml")) );
+        assertEquals("servers-3-api-v1-0", getIdFromAPI(getApi("/openapi/specs/info-3-servers.yml")) );
     }
 
     private OpenAPI getApi(String pfad) {

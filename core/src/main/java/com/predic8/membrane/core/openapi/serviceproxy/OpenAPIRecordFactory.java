@@ -12,6 +12,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
 import static com.predic8.membrane.core.util.FileUtil.*;
 
 public class OpenAPIRecordFactory {
@@ -26,14 +27,23 @@ public class OpenAPIRecordFactory {
         this.router = router;
     }
 
-    public List<OpenAPIRecord> create(Collection<Spec> specs) throws IOException {
+    public Map<String,OpenAPIRecord> create(Collection<Spec> specs) throws IOException {
 
-        List<OpenAPIRecord> apiRecords = new ArrayList<>();
+        Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
         for (Spec spec : specs) {
+            // Maybe a spec has both location and dir.
             if (spec.location != null) {
                 log.info("Parsing spec " + spec.location);
-                apiRecords.add(create(spec));
+                OpenAPIRecord rec = create(spec);
+
+                // TODO
+                String id = getIdFromAPI(rec.api);
+                if (apiRecords.get(id) != null) {
+                    System.out.println("Duplicate id = " + id);
+                    id += "-2";
+                }
+                apiRecords.put(id,rec);
             }
             if (spec.dir != null) {
                 log.info("Parsing specs from dir " + spec.dir);
@@ -44,7 +54,15 @@ public class OpenAPIRecordFactory {
                 }
                 for (File file : openAPIFiles) {
                     log.info("Parsing spec " + file);
-                    apiRecords.add(create(spec,file));
+                    OpenAPIRecord rec =create(spec,file);
+
+                    // TODO
+                    String id = getIdFromAPI(rec.api);
+                    if (apiRecords.get(id) != null) {
+                        System.out.println("Duplicate id = " + id);
+                        id += "-2";
+                    }
+                    apiRecords.put(id, rec);
                 }
             }
         }

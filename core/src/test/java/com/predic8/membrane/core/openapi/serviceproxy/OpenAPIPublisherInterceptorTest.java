@@ -29,7 +29,7 @@ public class OpenAPIPublisherInterceptorTest {
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
         OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
         spec.setDir("src/test/resources/openapi/specs");
-        List<OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
+        Map<String, OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
 
         interceptor = new OpenAPIPublisherInterceptor(records);
 
@@ -38,20 +38,20 @@ public class OpenAPIPublisherInterceptorTest {
 
     @Test
     public void constuctor() {
-        assertEquals(9, interceptor.recs.size());
-        assertNotNull(interceptor.recs.get("references-test-v1-0"));
-        assertNotNull(interceptor.recs.get("strings-test-api-v1-0"));
-        assertNotNull(interceptor.recs.get("test-api-v1-0"));
-        assertNotNull(interceptor.recs.get("query-params-test-api-v1-0"));
-        assertNotNull(interceptor.recs.get("nested-objects-and-arrays-test-api-v1-0"));
-        assertNotNull(interceptor.recs.get("references-response-test-v1-0"));
+        assertEquals(23, interceptor.apis.size());
+        assertNotNull(interceptor.apis.get("references-test-v1-0"));
+        assertNotNull(interceptor.apis.get("strings-test-api-v1-0"));
+        assertNotNull(interceptor.apis.get("x-membrane-extension-sample-v1-4"));
+        assertNotNull(interceptor.apis.get("query-params-test-api-v1-0"));
+        assertNotNull(interceptor.apis.get("nested-objects-and-arrays-test-api-v1-0"));
+        assertNotNull(interceptor.apis.get("references-response-test-v1-0"));
     }
 
     @Test
     public void getApiDirectory() throws Exception {
         get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertEquals(9, TestUtils.getMapFromResponse(get).size());
+        assertEquals(23, TestUtils.getMapFromResponse(get).size());
     }
 
     @Test

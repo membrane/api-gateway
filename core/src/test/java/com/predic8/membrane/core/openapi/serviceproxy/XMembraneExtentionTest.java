@@ -4,15 +4,11 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.parser.*;
 import org.junit.*;
 
 import java.io.*;
 import java.util.*;
-
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static org.junit.Assert.*;
 
 public class XMembraneExtentionTest {
 
@@ -29,7 +25,7 @@ public class XMembraneExtentionTest {
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
         OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
         spec.setDir("src/test/resources/openapi/specs");
-        List<OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
+        Map<String,OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
 
         interceptor = new OpenAPIPublisherInterceptor(records);
 
@@ -39,9 +35,9 @@ public class XMembraneExtentionTest {
     @Test
     public void ids() {
 
-        System.out.println("interceptor = " + interceptor.recs.keySet());
+        System.out.println("interceptor = " + interceptor.apis.keySet());
 
-        interceptor.recs.get("extension-sample-1-4");
+        interceptor.apis.get("extension-sample-1-4");
     }
 
 }

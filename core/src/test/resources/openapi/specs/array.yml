@@ -1,6 +1,6 @@
 openapi: '3.0.2'
 info:
-  title: Test API
+  title: Array API
   version: '1.0'
 servers:
   - url: https://api.server.test/
@@ -29,12 +29,12 @@ components:
             type: number
         prefixed:
           type: array
-          prefixItems:   # As of 2022-11-20 parser does not support OpenAPI 3.1.0
-            - type: string
-            - type: string
-              enum: ["DE","FR","IT","PL"]
-            - type: integer
-            - type: boolean
+#          prefixItems:   # As of 2022-11-20 parser does not support OpenAPI 3.1.0
+#            - type: string
+#            - type: string
+#              enum: ["DE","FR","IT","PL"]
+#            - type: integer
+#            - type: boolean
         min-max:
           type: array
           minItems: 2

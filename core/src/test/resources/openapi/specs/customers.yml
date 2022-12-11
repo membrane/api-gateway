@@ -1,6 +1,6 @@
 openapi: '3.0.2'
 info:
-  title: API Title
+  title: Customers API
   version: '1.0'
 servers:
   - url: http://localhost:4567

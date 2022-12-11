@@ -38,4 +38,8 @@ public class TestUtils {
     public static JsonNode getJsonFromResponse(Exchange exc) throws IOException {
         return om.readValue(exc.getResponse().getBody().getContent(), JsonNode.class);
     }
+
+    public static OpenAPIRecord getSingleOpenAPIRecord(Map<String,OpenAPIRecord> m) {
+        return (OpenAPIRecord) m.values().toArray()[0];
+    }
 }

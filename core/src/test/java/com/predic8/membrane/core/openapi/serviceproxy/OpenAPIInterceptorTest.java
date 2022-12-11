@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -17,14 +16,13 @@ import static org.junit.Assert.*;
 
 public class OpenAPIInterceptorTest {
 
-    ObjectMapper om = new ObjectMapper();
     Router router;
 
     OpenAPIProxy.Spec specInfoServers;
     OpenAPIProxy.Spec specInfo3Servers;
     OpenAPIProxy.Spec specCustomers;
 
-    Exchange excGet = new Exchange(null);
+    Exchange exc = new Exchange(null);
     OpenAPIInterceptor interceptor1Server;
     OpenAPIInterceptor interceptor3Server;
 
@@ -41,7 +39,7 @@ public class OpenAPIInterceptorTest {
         specCustomers = new OpenAPIProxy.Spec();
         specCustomers.location = "src/test/resources/openapi/specs/customers.yml";
 
-        excGet.setRequest(new Request.Builder().method("GET").build());
+        exc.setRequest(new Request.Builder().method("GET").build());
 
         interceptor1Server = new OpenAPIInterceptor(createProxy(router, specInfoServers));
         interceptor3Server = new OpenAPIInterceptor(createProxy(router, specInfo3Servers));
@@ -49,55 +47,55 @@ public class OpenAPIInterceptorTest {
 
     @Test
     public void getMatchingBasePathOneServer() {
-        excGet.getRequest().setUri("/base/v2/foo");
-        assertEquals("/base/v2", interceptor1Server.getMatchingBasePath(excGet));
+        exc.getRequest().setUri("/base/v2/foo");
+        assertEquals("/base/v2", interceptor1Server.getMatchingBasePath(exc));
     }
 
     @Test
     public void getMatchingBasePathMultipleServers() {
-        excGet.getRequest().setUri("/foo/boo");
-        assertEquals("/foo", interceptor3Server.getMatchingBasePath(excGet));
+        exc.getRequest().setUri("/foo/boo");
+        assertEquals("/foo", interceptor3Server.getMatchingBasePath(exc));
     }
 
     @Test
     public void nonMatchingBasePathMultipleServers() {
-        excGet.getRequest().setUri("/goo/boo");
-        assertNull(null, interceptor3Server.getMatchingBasePath(excGet));
+        exc.getRequest().setUri("/goo/boo");
+        assertNull(null, interceptor3Server.getMatchingBasePath(exc));
     }
 
     @Test
     public void nonMatchingBasePathErrorMessage() throws Exception {
-        excGet.getRequest().setUri("/goo/boo");
-        assertEquals(RETURN, interceptor3Server.handleRequest(excGet));
+        exc.getRequest().setUri("/goo/boo");
+        assertEquals(RETURN, interceptor3Server.handleRequest(exc));
 
-        assertEquals(404, excGet.getResponse().getStatusCode());
-        assertTrue(excGet.getResponse().getHeader().getContentType().contains("application/json"));
-        excGet.getResponse().getBody().getContent();
+        assertEquals(404, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getHeader().getContentType().contains("application/json"));
+        exc.getResponse().getBody().getContent();
 
-        assertEquals("No matching API found!", getMapFromResponse(excGet).get("error"));
+        assertEquals("No matching API found!", getMapFromResponse(exc).get("error"));
     }
 
     @Test
     public void destinations() throws Exception {
-        excGet.getRequest().setUri("/foo/boo");
-        assertEquals(CONTINUE, interceptor3Server.handleRequest(excGet));
-        assertEquals(3,excGet.getDestinations().size());
+        exc.getRequest().setUri("/foo/boo");
+        assertEquals(CONTINUE, interceptor3Server.handleRequest(exc));
+        assertEquals(3, exc.getDestinations().size());
 
         Collection<String> urls = new ArrayList<>();
         urls.add("https://localhost:3000/foo/boo");
         urls.add("https://localhost:4000/foo/boo");
         urls.add("https://localhost:5000/foo/boo");
 
-        assertEquals(urls, excGet.getDestinations());
+        assertEquals(urls, exc.getDestinations());
     }
 
     @Test
     public void destinationsTargetSet() throws Exception {
-        excGet.getRequest().setUri("/foo/boo");
+        exc.getRequest().setUri("/foo/boo");
         OpenAPIProxy proxy = createProxy(router, specInfo3Servers);
         proxy.getTarget().setHost("api.predic8.de");
-        assertEquals(CONTINUE, new OpenAPIInterceptor(proxy).handleRequest(excGet));
-        assertEquals(0,excGet.getDestinations().size());
+        assertEquals(CONTINUE, new OpenAPIInterceptor(proxy).handleRequest(exc));
+        assertEquals(0, exc.getDestinations().size());
     }
 
     @SuppressWarnings({"unchecked"})

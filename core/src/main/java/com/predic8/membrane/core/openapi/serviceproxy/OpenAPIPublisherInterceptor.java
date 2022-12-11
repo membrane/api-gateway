@@ -13,7 +13,6 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
 import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
@@ -29,20 +28,19 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private static final Pattern patternMeta = Pattern.compile(PATH + "/(.*)");
     private static final Pattern patternUI = Pattern.compile(PATH_UI + "/(.*)");
 
-    protected Map<String,OpenAPIRecord> recs = new HashMap<>();
+    protected Map<String, OpenAPIRecord> apis;
 
     private Template swaggerUiHtmlTemplate;
     private Template apiOverviewHtmlTemplate;
 
-    public OpenAPIPublisherInterceptor(List<OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
-        createApiMap(apis);
-
+    public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
+        this.apis = apis;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
     private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
-        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(getResourceAsStream(this,filePath)));
+        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(getResourceAsStream(this, filePath)));
     }
 
     @Override
@@ -52,41 +50,34 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         if (exc.getRequest().getUri().startsWith(PATH_UI)) {
-            Matcher m =  patternUI.matcher(exc.getRequest().getUri());
+            Matcher m = patternUI.matcher(exc.getRequest().getUri());
             if (!m.matches()) { // No id specified
                 exc.setResponse(Response.ok().contentType("application/json").body("Please specify an Id").build());
                 return RETURN;
             }
 
+            Map<String, Object> tempCtx = new HashMap<>();
             String id = m.group(1);
-
-            Map<String,Object> tempCtx = new HashMap<>();
-            tempCtx.put("openApiUrl",PATH + "/" + id);
-
+            tempCtx.put("openApiUrl", PATH + "/" + id);
             exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(swaggerUiHtmlTemplate.make(tempCtx).toString()).build());
-
             return RETURN;
         }
 
-        Matcher m =  patternMeta.matcher(exc.getRequest().getUri());
+        Matcher m = patternMeta.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
-            ObjectNode obj = createDictionaryOfAPIs();
-
             if (acceptsHtmlExplicit(exc)) {
-                Map<String,Object> tempCtx = new HashMap<>();
-                tempCtx.put("apis",recs);
-                tempCtx.put("openApiUrl",PATH + "/" + id);
+                Map<String, Object> tempCtx = new HashMap<>();
+                tempCtx.put("apis", apis);
+                tempCtx.put("openApiUrl", PATH + "/" + id);
                 exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(apiOverviewHtmlTemplate.make(tempCtx).toString()).build());
-
-            } else {
-                exc.setResponse(Response.ok().contentType("application/json").body(ow.writeValueAsBytes(obj)).build());
+                return RETURN;
             }
+            exc.setResponse(Response.ok().contentType("application/json").body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
             return RETURN;
         }
 
         String id = m.group(1);
-
-        OpenAPIRecord api = recs.get(id);
+        OpenAPIRecord api = apis.get(id);
 
         if (api == null) {
             exc.setResponse(Response.notFound().body("not found").build());
@@ -94,13 +85,12 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         }
 
         exc.setResponse(Response.ok().contentType("application/x-yaml").body(omYaml.writeValueAsBytes(api.node)).build());
-
         return RETURN;
     }
 
     private ObjectNode createDictionaryOfAPIs() {
         ObjectNode top = om.createObjectNode();
-        for (Map.Entry<String, OpenAPIRecord> e : recs.entrySet()) {
+        for (Map.Entry<String, OpenAPIRecord> e : apis.entrySet()) {
             ObjectNode apiDetails = top.putObject(e.getKey());
             apiDetails.put("openapi", e.getValue().node.get("openapi").asText());
             apiDetails.put("title", e.getValue().node.get("info").get("title").asText());
@@ -109,12 +99,6 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             apiDetails.put("ui_link", PATH + "/ui/" + e.getKey());
         }
         return top;
-    }
-
-    private void createApiMap(List<OpenAPIRecord> apis) {
-        for (OpenAPIRecord rec : apis) {
-            this.recs.put(getIdFromAPI(rec.api),rec);
-        }
     }
 
     /**
