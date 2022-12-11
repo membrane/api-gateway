@@ -63,7 +63,7 @@ public class OpenAPIPublisherInterceptorTest {
 
     @Test
     public void getApiById() throws Exception {
-        get.getRequest().setUri("/openapi-spec/nested-objects-and-arrays-test-api-v1-0");
+        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH  + "/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals("application/x-yaml", get.getResponse().getHeader().getContentType());
         assertEquals("Nested Objects and Arrays Test API", getJsonFromYamlResponse(get).get("info").get("title").textValue());

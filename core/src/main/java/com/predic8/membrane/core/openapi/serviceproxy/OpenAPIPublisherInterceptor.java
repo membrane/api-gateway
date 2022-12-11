@@ -22,8 +22,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    public static final String PATH = "/openapi-spec";
-    public static final String PATH_UI = "/openapi-spec/ui";
+    public static final String PATH = "/api-doc";
+    public static final String PATH_UI = "/api-doc/ui";
 
     private static final Pattern patternMeta = Pattern.compile(PATH + "/(.*)");
     private static final Pattern patternUI = Pattern.compile(PATH_UI + "/(.*)");
@@ -55,21 +55,14 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
                 exc.setResponse(Response.ok().contentType("application/json").body("Please specify an Id").build());
                 return RETURN;
             }
-
-            Map<String, Object> tempCtx = new HashMap<>();
-            String id = m.group(1);
-            tempCtx.put("openApiUrl", PATH + "/" + id);
-            exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(swaggerUiHtmlTemplate.make(tempCtx).toString()).build());
+            exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(m.group(1))).build());
             return RETURN;
         }
 
         Matcher m = patternMeta.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
-                Map<String, Object> tempCtx = new HashMap<>();
-                tempCtx.put("apis", apis);
-                tempCtx.put("openApiUrl", PATH + "/" + id);
-                exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(apiOverviewHtmlTemplate.make(tempCtx).toString()).build());
+                exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderOverviewTemplate()).build());
                 return RETURN;
             }
             exc.setResponse(Response.ok().contentType("application/json").body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
@@ -86,6 +79,19 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
         exc.setResponse(Response.ok().contentType("application/x-yaml").body(omYaml.writeValueAsBytes(api.node)).build());
         return RETURN;
+    }
+
+    private String renderOverviewTemplate() {
+        Map<String, Object> tempCtx = new HashMap<>();
+        tempCtx.put("apis", apis);
+        tempCtx.put("pathUi", PATH_UI);
+        return apiOverviewHtmlTemplate.make(tempCtx).toString();
+    }
+
+    private String renderSwaggerUITemplate(String id) {
+        Map<String, Object> tempCtx = new HashMap<>();
+        tempCtx.put("openApiUrl", PATH + "/" + id);
+        return swaggerUiHtmlTemplate.make(tempCtx).toString();
     }
 
     private ObjectNode createDictionaryOfAPIs() {

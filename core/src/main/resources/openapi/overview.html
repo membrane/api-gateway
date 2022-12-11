@@ -5,32 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Open API"/>
     <title>Overview OpenAPI</title>
+    <style>
+        /* Make inner padding possilbe */
+        * {
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+        .box, table {
+            border-radius: 10px;
+            width: 70%;
+            margin-left:15%;
+            margin-bottom: 1em;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+        }
+        .box {
+            background-color: white;
+            padding: 1em;
+        }
+        table {
+            text-align: left;
+            border-spacing: 0;
+        }
+        tr {
+            border-bottom: 1px solid #dddddd;
+        }
+        tr:nth-of-type(even) {
+            background-color: #f3f3f3;
+        }
+        td,th {
+            padding: 12px 15px;
+        }
+        body {
+            background-color: #eeeeee;
+            font-family: sans-serif;
+            font-size: 1.2em;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="container">
+    <div class="box">
+        <h1 class="title">APIs</h1>
+    </div>
 
-<h1 class="title">APIs</h1>
-
+<!--    <div class="box">-->
 <table class="table">
-    <thead>
         <tr>
-            <th>Id</th>
-            <th>Version</th>
             <th>Title</th>
+            <th>Version</th>
+            <th>OpenAPI</th>
+            <th>Key</th>
         </tr>
-    </thead>
-    <tbody>
 <% for (api in apis) { %>
 <tr>
-    <td><%= api.key %></td>
-    <td><%= api.value.api.openapi %></td>
-    <td><a href="/openapi-spec/ui/${api.key}"><%= api.value.api.info.title %></a></td>
+    <td><!--suppress HtmlUnknownTarget -->
+        <a href="${pathUi}/${api.key}"><%= api.value.api.info.title %></a></td>
     <td><%= api.value.api.info.version %></td>
+    <td><%= api.value.api.openapi %></td>
+    <td><%= api.key %></td>
 </tr>
 <% } %>
-    </tbody>
 </table>
-</div>
+<!--    </div>-->
+    <div class="box">
+        <b>Membrane Proxy</b><br/>
+        Feel free to modify the look and feel to your taste.
+    </div>
+
 </body>
 </html>
