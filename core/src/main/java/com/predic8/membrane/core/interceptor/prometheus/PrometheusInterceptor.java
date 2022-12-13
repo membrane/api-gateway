@@ -164,7 +164,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         for (Map.Entry<String, String> e : labels.entrySet()) {
             sb.append(e.getKey());
             sb.append("=\"");
-            sb.append(e.getValue());
+            sb.append(e.getValue());  // TODO Sanitize / Ok aber \ nicht wie prometheusCompatibleName
             sb.append("\",");
         }
         sb.append("} ");

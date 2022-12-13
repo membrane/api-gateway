@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
@@ -5,32 +21,25 @@ import io.swagger.v3.oas.models.media.*;
 
 import java.math.*;
 
-public class NumberValidator extends AbstractNumberValidator {
+import static java.lang.Double.parseDouble;
 
-    public NumberValidator(Schema schema) {
-        super(schema);
-    }
+public class NumberValidator implements IJSONSchemaValidator {
 
+    /**
+     * Only check if obj can be converted to a number
+     */
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
-
-        ctx = ctx.schemaType("number");
-
-        ValidationErrors errors = new ValidationErrors();
-        BigDecimal value = null;
-
-        try {
+       try {
             if (obj instanceof JsonNode) {
                 // Not using double prevents from losing fractions
-                value = new BigDecimal(((JsonNode) obj).asText());
+                new BigDecimal(((JsonNode) obj).asText());
             } else if (obj instanceof String) {
-                value = new BigDecimal(Double.parseDouble((String) obj));
+                parseDouble((String) obj);
             }
         } catch (NumberFormatException e) {
-            return errors.add(new ValidationError(ctx, String.format("%s is not a number.", obj)));
+            return ValidationErrors.create(ctx.schemaType("number"), String.format("%s is not a number.", obj));
         }
-
-
-        return errors.add(validateRestrictions(value, ctx));
+        return null;
     }
 }

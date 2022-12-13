@@ -1,6 +1,23 @@
+/*
+ *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
 import io.swagger.v3.oas.models.*;
 import org.slf4j.*;
@@ -8,17 +25,17 @@ import org.slf4j.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-
-@MCElement(name = "OpenAPIProxy")
+@MCElement(name = "openAPIProxy")
 public class OpenAPIProxy extends ServiceProxy {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIProxy.class.getName());
 
     public static final String X_MEMBRANE_VALIDATION = "x-membrane-validation";
+    public static final String X_MEMBRANE_ID = "x-membrane-id";
     public static final String REQUESTS = "requests";
     public static final String RESPONSES = "responses";
     public static final String VALIDATION_DETAILS = "validationDetails";
+
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -40,9 +57,9 @@ public class OpenAPIProxy extends ServiceProxy {
 
         String location;
         String dir;
-        Boolean validateRequests;
-        Boolean validateResponses;
-        Boolean validationDetails;
+        YesNoOpenAPIOption validateRequests = YesNoOpenAPIOption.ASINOPENAPI;
+        YesNoOpenAPIOption validateResponses = YesNoOpenAPIOption.ASINOPENAPI;
+        YesNoOpenAPIOption validationDetails = YesNoOpenAPIOption.ASINOPENAPI;
 
         public Spec() {
         }
@@ -65,32 +82,38 @@ public class OpenAPIProxy extends ServiceProxy {
             this.dir = dir;
         }
 
-        public boolean getValidateRequests() {
+        public YesNoOpenAPIOption getValidateRequests() {
             return validateRequests;
         }
 
-        @MCAttribute()
-        public void setValidateRequests(boolean validateRequests) {
+        @MCAttribute
+        public void setValidateRequests(YesNoOpenAPIOption validateRequests) {
             this.validateRequests = validateRequests;
         }
 
-//        public boolean getValidateResponses() {
-//            return validateResponses;
-//        }
-//
-//        @MCAttribute()
-//        public void setValidateResponses(boolean validateResponses) {
-//            this.validateResponses = validateResponses;
-//        }
-//
-//        public boolean getValidationDetails() {
-//            return validationDetails;
-//        }
-//
-//        @MCAttribute()
-//        public void setValidationDetails(boolean validationDetails) {
-//            this.validationDetails = validationDetails;
-//        }
+        public YesNoOpenAPIOption getValidateResponses() {
+            return validateResponses;
+        }
+
+        @MCAttribute()
+        public void setValidateResponses(YesNoOpenAPIOption validateResponses) {
+            this.validateResponses = validateResponses;
+        }
+
+        @MCAttribute()
+        public void setValidationDetails(YesNoOpenAPIOption validationDetails) {
+            this.validationDetails = validationDetails;
+        }
+
+        public YesNoOpenAPIOption getValidationDetails() {
+            return validationDetails;
+        }
+
+        public enum YesNoOpenAPIOption {
+            YES,
+            NO,
+            ASINOPENAPI
+        }
     }
 
     protected List<Spec> specs = new ArrayList<>();
@@ -118,6 +141,7 @@ public class OpenAPIProxy extends ServiceProxy {
         interceptors.add(new OpenAPIInterceptor(this));
     }
 
+    // TODO Stimmen die Pfade?
     private void configureBasePaths() {
         ArrayList<String> basePathsThatMatch = new ArrayList<>(basePaths.keySet());
         basePathsThatMatch.add("/openapi/"); // Add path for the API for OpenAPI
@@ -129,7 +153,7 @@ public class OpenAPIProxy extends ServiceProxy {
         Map<String, OpenAPI> basePaths = new HashMap<>();
         apiRecords.forEach((id,record) -> record.api.getServers().forEach(server -> {
             try {
-                basePaths.put(getPathFromURL(server.getUrl()), record.api);
+                basePaths.put(UriUtil.getPathFromURL(server.getUrl()), record.api);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 // @TODO

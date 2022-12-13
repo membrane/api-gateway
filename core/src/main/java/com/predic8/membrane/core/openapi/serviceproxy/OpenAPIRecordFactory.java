@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
@@ -12,7 +28,8 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 
 public class OpenAPIRecordFactory {
@@ -128,19 +145,23 @@ public class OpenAPIRecordFactory {
 
     private Map<String, Object> updateExtension(Map<String, Object> extension, Spec spec) {
 
-        if (spec.validationDetails != null)
-            extension.put(VALIDATION_DETAILS, spec.validationDetails);
+        if (spec.validationDetails != ASINOPENAPI)
+            extension.put(VALIDATION_DETAILS, toYesNo(spec.validationDetails));
 
-        if (spec.validateRequests != null)
-            extension.put(REQUESTS, spec.validateRequests);
+        if (spec.validateRequests != ASINOPENAPI)
+            extension.put(REQUESTS, toYesNo(spec.validateRequests));
 
-        if (spec.validateResponses != null)
-            extension.put(RESPONSES, spec.validateResponses);
+        if (spec.validateResponses != ASINOPENAPI)
+            extension.put(RESPONSES, toYesNo(spec.validateResponses));
 
         extension.putIfAbsent(REQUESTS, false);
         extension.putIfAbsent(RESPONSES, false);
 
         return extension;
+    }
+
+    private boolean toYesNo(Spec.YesNoOpenAPIOption option) {
+        return option == YES;
     }
 
     private File[] getOpenAPIFiles(String dir) {

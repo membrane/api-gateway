@@ -1,10 +1,25 @@
+/*
+ *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import redis.clients.jedis.*;
@@ -16,8 +31,8 @@ import java.util.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.X_MEMBRANE_VALIDATION;
-import static com.predic8.membrane.core.openapi.util.PathUtils.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.RESPONSE;
@@ -88,7 +103,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private ValidationErrors validateRequest(OpenAPI api, Exchange exc) throws IOException {
         ValidationErrors errors = new ValidationErrors();
-        if (!shouldValidate(api, "requests"))
+        if (!shouldValidate(api, REQUESTS))
             return errors;
 
         return new OpenAPIValidator(api).validate(getOpenapiValidatorRequest(exc));
@@ -96,7 +111,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private ValidationErrors validateResponse(OpenAPI api, Exchange exc) throws IOException {
         ValidationErrors errors = new ValidationErrors();
-        if (!shouldValidate(api, "responses"))
+        if (!shouldValidate(api, RESPONSES))
             return errors;
         return new OpenAPIValidator(api).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
     }
@@ -199,7 +214,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     private byte[] getErrorMessage(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
         if (validationDetails)
            return errors.getErrorMessage(direction);
-
-       return  "{ \"error\": \"Message validation failed!\" }".getBytes();
+        return createErrorMessage("Message validation failed!");
     }
 }

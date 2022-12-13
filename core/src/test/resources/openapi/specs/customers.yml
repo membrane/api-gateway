@@ -3,7 +3,8 @@ info:
   title: Customers API
   version: '1.0'
 servers:
-  - url: http://localhost:4567
+  - url: http://api.predic8.de:4567
+  - url: https://api.predic8.de/foo
 paths:
   /customers:
     get:
