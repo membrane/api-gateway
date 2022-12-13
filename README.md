@@ -21,7 +21,7 @@ Start `service-proxy.sh` or `service-proxy.bat`.
 
 Have a look at the main configuration file `conf/proxies.xml`. Changes to this file are instantly deployed.
 
-Run the samples in the examples folder, follow the [REST](https://www.membrane-soa.org/service-proxy-doc/current/rest-quickstart.htm) or [SOAP](https://www.membrane-soa.org/service-proxy-doc/4.4/soap-quickstart.htm) tutorials, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
+Run the samples in the examples folder, follow the [REST](https://www.membrane-soa.org/service-proxy-doc/4.8/rest-quickstart.htm) or [SOAP](https://www.membrane-soa.org/service-proxy-doc/4.4/soap-quickstart.htm) tutorials, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
 
 Samples
 -------

@@ -31,6 +31,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.jwt.Jwks;
+import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
@@ -49,6 +51,8 @@ import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,6 +104,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private final ObjectMapper om = new ObjectMapper();
     private Key key;
     private X509Certificate certificate;
+    private boolean skipUserInfo;
+    private JwtAuthInterceptor jwtAuthInterceptor;
 
     @Override
     public void init() throws Exception {
@@ -187,6 +193,16 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             key = pemObject instanceof Key ? (Key) pemObject : ((KeyPair)pemObject).getPrivate();
             certificate = PEMSupport.getInstance().parseCertificate(auth.getSslParser().getKey().getCertificates().get(0).get(router.getResolverMap(), router.getBaseLocation()));
         }
+
+        if (skipUserInfo) {
+            jwtAuthInterceptor = new JwtAuthInterceptor();
+            Jwks jwks = new Jwks();
+            jwks.setJwks(new ArrayList<>());
+            jwks.setJwksUris(auth.getJwksEndpoint());
+            jwtAuthInterceptor.setJwks(jwks);
+            jwtAuthInterceptor.setExpectedAud("any!!");
+            jwtAuthInterceptor.init(router);
+        }
     }
 
     @Override
@@ -206,7 +222,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if(isOAuth2RedirectRequest(exc))
             handleOriginalRequest(exc);
 
-        if (session == null || !session.isVerified()) {
+        if (!skipUserInfo && (session == null || !session.isVerified())) {
             String auth = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
             if (auth != null && auth.substring(0, 7).equalsIgnoreCase("Bearer ")) {
                 session = getSessionManager().getSession(exc);
@@ -706,39 +722,49 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
                 validTokens.put(token,true);
 
-                Exchange e2 = new Request.Builder()
-                        .get(auth.getUserInfoEndpoint())
-                        .header("Authorization", json.get("token_type") + " " + token)
-                        .header("User-Agent", Constants.USERAGENT)
-                        .header(Header.ACCEPT, "application/json")
-                        .buildExchange();
+                if (!skipUserInfo) {
+                    Exchange e2 = new Request.Builder()
+                            .get(auth.getUserInfoEndpoint())
+                            .header("Authorization", json.get("token_type") + " " + token)
+                            .header("User-Agent", Constants.USERAGENT)
+                            .header(Header.ACCEPT, "application/json")
+                            .buildExchange();
 
-                if (log.isDebugEnabled()) {
-                    logi.setHeaderOnly(false);
-                    logi.handleRequest(e2);
+                    if (log.isDebugEnabled()) {
+                        logi.setHeaderOnly(false);
+                        logi.handleRequest(e2);
+                    }
+
+                    Response response2 = auth.doRequest(e2);
+
+                    if (log.isDebugEnabled())
+                        logi.handleResponse(e2);
+
+                    if (response2.getStatusCode() != 200) {
+                        statistics.accessTokenInvalid();
+                        throw new RuntimeException("User data could not be retrieved.");
+                    }
+
+                    statistics.accessTokenValid();
+
+                    if (!isJson(response2))
+                        throw new RuntimeException("Userinfo response is no JSON.");
+                    Map<String, Object> json2 = om.readValue(response2.getBodyAsStreamDecoded(), Map.class);
+
+                    oauth2Answer.setUserinfo(json2);
+
+                    session.put(OAUTH2_ANSWER, oauth2Answer.serialize());
+
+                    processUserInfo(json2, session);
+                } else {
+                    session.put(OAUTH2_ANSWER, oauth2Answer.serialize());
+
+                    // assume access token is JWT
+                    if (jwtAuthInterceptor.handleJwt(exc, token) != Outcome.CONTINUE)
+                        throw new RuntimeException("Access token is not a JWT.");
+
+                    processUserInfo((Map<String, Object>) exc.getProperty("jwt"), session);
                 }
-
-                Response response2 = auth.doRequest(e2);
-
-                if (log.isDebugEnabled())
-                    logi.handleResponse(e2);
-
-                if (response2.getStatusCode() != 200) {
-                    statistics.accessTokenInvalid();
-                    throw new RuntimeException("User data could not be retrieved.");
-                }
-
-                statistics.accessTokenValid();
-
-                if (!isJson(response2))
-                    throw new RuntimeException("Userinfo response is no JSON.");
-                Map<String, Object> json2 = om.readValue(response2.getBodyAsStreamDecoded(), Map.class);
-
-                oauth2Answer.setUserinfo(json2);
-
-                session.put(OAUTH2_ANSWER,oauth2Answer.serialize());
-
-                processUserInfo(json2, session);
 
                 doRedirect(exc,originalRequest);
 
@@ -840,5 +866,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCChildElement(order=20, allowForeign = true)
     public void setOriginalExchangeStore(OriginalExchangeStore originalExchangeStore) {
         this.originalExchangeStore = originalExchangeStore;
+    }
+
+    public boolean isSkipUserInfo() {
+        return skipUserInfo;
+    }
+
+    @MCAttribute
+    public void setSkipUserInfo(boolean skipUserInfo) {
+        this.skipUserInfo = skipUserInfo;
     }
 }

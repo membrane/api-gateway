@@ -83,12 +83,15 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         String jwt;
         try {
             jwt = jwtRetriever.get(exc);
-
-            if(jwt == null)
-                return setJsonErrorAndReturn(null,exc,400, ERROR_JWT_NOT_FOUND);
         }catch (Exception e){
             return setJsonErrorAndReturn(e,exc,400, ERROR_JWT_NOT_FOUND);
         }
+        return handleJwt(exc, jwt);
+    }
+
+    public Outcome handleJwt(Exchange exc, String jwt) {
+        if(jwt == null)
+            return setJsonErrorAndReturn(null,exc,400, ERROR_JWT_NOT_FOUND);
 
         String decode;
         try {
@@ -110,8 +113,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         }catch (Exception e){
             return setJsonErrorAndReturn(e,exc,400, ERROR_DECODED_HEADER_NOT_JSON);
         }
-        
-        
+
+
         try {
             Object kidMaybe = map.get("kid");
             if(kidMaybe == null)
@@ -154,6 +157,9 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         if(expectedAud != null && !expectedAud.isEmpty())
         jwtConsumerBuilder
                 .setExpectedAudience(expectedAud);
+        if (expectedAud.equals("any!!"))
+            jwtConsumerBuilder.setSkipDefaultAudienceValidation();
+
 
         JwtConsumer jwtValidator = jwtConsumerBuilder.build();
         return jwtValidator;
@@ -198,6 +204,11 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         return expectedAud;
     }
 
+    /**
+     * @description
+     * <p>Expected audience ('aud') value of the token.</p>
+     * <p>Use "any!!" to allow any audience value. This is strongly discouraged.</p>
+     */
     @MCAttribute
     public JwtAuthInterceptor setExpectedAud(String expectedAud) {
         this.expectedAud = expectedAud;
