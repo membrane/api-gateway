@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.servlet;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

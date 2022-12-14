@@ -17,7 +17,6 @@ import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
-import com.predic8.membrane.examples.tests.validation.SchematronValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
@@ -59,7 +58,6 @@ import org.junit.runners.Suite.SuiteClasses;
 
 	FormValidationTest.class,
 	JSONSchemaValidationTest.class,
-	SchematronValidationTest.class,
 	XMLValidationTest.class,
 
 	CustomInterceptorTest.class,

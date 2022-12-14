@@ -10,28 +10,27 @@ In this example we will set up a load balancer, two nodes and one client. The co
 To run the example execute the following steps:
 
 0. Setup
-   Download the JAX-WS reference implementation from http://jax-ws.java.net/ and unpack it (lets say to
-   C:\work\JAXWS2.2.5-20110729 ). Download Apache Ant from http://ant.apache.org/bindownload.cgi and unpack it (lets
-   say to C:\work\apache-ant-1.8.2-bin . Let us also say your Java resides in C:\Program Files\Java\jdk1.7.0_01 . 
+   Download the Apache Maven from https://maven.apache.org/download.cgi and unpack it (lets
+   say to C:\work\apache-maven-3.8.6 . Let us also say your Java resides in C:\Program Files\Java\jdk-17.0.2 . 
 
    Execute the following commands:
    ```
-     set JAVA_HOME=C:\Program Files\Java\jdk1.7.0_01
-     set JAXWS_HOME=C:\work\JAXWS2.2.5-20110729\jaxws-ri\bin
-     set PATH=%PATH%;C:\work\apache-ant-1.8.2-bin\bin;C:\work\JAXWS2.2.5-20110729\jaxws-ri\bin
+     set JAVA_HOME=C:\Program Files\Java\jdk-17.0.2
+     set PATH=%PATH%;C:\work\apache-maven-3.8.6\bin;C:\Program Files\Java\jdk-17.0.2\bin
     ```
-1. Go to the `examples/loadbalancer-session-3` directory.
+2. Go to the `examples/loadbalancer-session-3` directory.
 
-2. Execute
+3. Execute
 
    `service-proxy.bat`
 
    This will initialize the `LoadBalancingInterceptor` and associate it with a rule.
 
-3. Now start two nodes:
+4. Now start two nodes:
 ```
-   start ant run-node1
-   start ant run-node2
+   mvn package
+   start mvn exec:java@node1
+   start mvn exec:java@node2
 ```
 4. Open the URL http://localhost:9000/admin/
 
@@ -43,7 +42,7 @@ To run the example execute the following steps:
 
 8. Go to the command line and run the following command:
 ```
-   start ant run-client -Dlogin=jim
+   start mvn exec:java@client
 ```
 9. Take a look at the console output of node 1 and node 2. You will notice that only node 1 received requests, because of the session id. Membrane sends messages with the same session id to the same node.  
 

@@ -37,15 +37,11 @@
 		</dependency>
 
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>xalan</groupId>
-			<artifactId>xalan</artifactId>
-		</dependency>
 		<dependency>
 			<groupId>commons-logging</groupId>
 			<artifactId>commons-logging</artifactId>
@@ -99,7 +95,7 @@
 					<execution>
 						<phase>package</phase>
 						<goals>
-							<goal>assembly</goal>
+							<goal>single</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -108,6 +104,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<failIfNoTests>false</failIfNoTests>
+					<failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
 					<test>**/UnitTests.java</test>
 				</configuration>
 			</plugin>
@@ -140,6 +137,7 @@
 					<plugin>
 						<groupId>org.eclipse.jetty</groupId>
 						<artifactId>jetty-maven-plugin</artifactId>
+						<version>11.0.13</version>
 						<!-- documentation is at http://www.eclipse.org/jetty/documentation/current/jetty-maven-plugin.html -->
 						<configuration>
 							<war>${basedir}/target/${project.artifactId}-${project.version}-integration-test.war</war>

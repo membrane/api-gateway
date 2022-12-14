@@ -17,8 +17,8 @@ package com.predic8.chat;
 import java.util.Hashtable;
 import java.util.concurrent.*;
 
-import javax.jws.*;
-import javax.xml.ws.Endpoint;
+import jakarta.jws.*;
+import jakarta.xml.ws.Endpoint;
 
 import com.predic8.chat.*;
 

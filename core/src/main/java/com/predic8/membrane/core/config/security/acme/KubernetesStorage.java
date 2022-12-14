@@ -15,7 +15,7 @@ package com.predic8.membrane.core.config.security.acme;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.util.Objects;
 

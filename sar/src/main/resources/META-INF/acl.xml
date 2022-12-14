@@ -1,9 +1,0 @@
-<accessControl>
-  <resource uri="*">
-    <clients>
-      <hostname>localhost</hostname>
-	  <ip>127.0.0.1</ip>
-	  <ip>0:0:0:0:0:0:0:1</ip>
-	 </clients>
-  </resource>
-</accessControl>

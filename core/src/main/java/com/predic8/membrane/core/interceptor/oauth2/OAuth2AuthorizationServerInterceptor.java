@@ -31,7 +31,7 @@ import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerat
 import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.util.HashSet;
 

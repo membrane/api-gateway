@@ -30,7 +30,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.UserDataProv
 import com.predic8.membrane.core.util.HttpUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;

@@ -283,7 +283,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 	}
 
-	private static final String REQUIRED = "org.springframework.beans.factory.annotation.Required";
+	private static final String REQUIRED = "com.predic8.membrane.annot.Required";
 
 	private void scan(Model m, MainInfo main, ElementInfo ii) {
 		scan(m, main, ii, ii.getElement());

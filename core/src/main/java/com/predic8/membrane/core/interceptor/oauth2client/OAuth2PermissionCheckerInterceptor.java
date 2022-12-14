@@ -24,7 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;

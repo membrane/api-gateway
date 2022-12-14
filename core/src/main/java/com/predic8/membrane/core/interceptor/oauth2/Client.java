@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 @MCElement(name="client", topLevel=false, id="staticClientList-client")
 public class Client {

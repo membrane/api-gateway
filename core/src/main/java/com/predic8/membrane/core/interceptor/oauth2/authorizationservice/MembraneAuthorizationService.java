@@ -24,7 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 @MCElement(name = "headerJwtRetriever")
 public class HeaderJwtRetriever implements JwtRetriever{

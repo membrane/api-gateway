@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.stomp;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;

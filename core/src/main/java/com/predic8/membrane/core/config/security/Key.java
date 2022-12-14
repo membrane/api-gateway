@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.util.ArrayList;
 import java.util.List;

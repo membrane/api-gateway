@@ -21,7 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;

@@ -106,36 +106,11 @@ public class ConsistentVersionNumbers {
 
 	private static void run(File base) throws Exception {
 		recurse(base, 2);
-		
+
 		handlePOM(new File(base.getAbsolutePath() + "/distribution/examples/embedding-java/pom.xml"), false);
-		handleJBossDeploymentStructure(new File(base.getAbsolutePath() + "/sar/src/main/resources/META-INF/jboss-deployment-structure.xml"));
+		handlePOM(new File(base.getAbsolutePath() + "/distribution/examples/stax-interceptor/pom.xml"), false);
 	}
 
-
-	private static void handleJBossDeploymentStructure(File file) throws Exception {
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		//dbf.setNamespaceAware(true);
-		Document d = dbf.newDocumentBuilder().parse(file);
-		XPathFactory pf = XPathFactory.newInstance();
-		XPath p = pf.newXPath();
-		NodeList l = (NodeList) p.compile(
-				"//jboss-deployment-structure/deployment/resources/resource-root"
-				).evaluate(d, XPathConstants.NODESET);
-		for (int i = 0; i < l.getLength(); i++) {
-			Element e = (Element) l.item(i);
-			String oldValue = e.getAttribute("path");
-			if (oldValue != null && oldValue.length() != 0) {
-				String prefix = "lib/service-proxy-core-";
-				String suffix = ".jar";
-				if (oldValue.startsWith(prefix) && oldValue.endsWith(suffix)) {
-					String oldVersion = oldValue.substring(prefix.length(), oldValue.length() - suffix.length());
-					String newVersion = handler.handle(file, oldVersion);
-					e.setAttribute("path", prefix + newVersion + suffix);
-				}
-			}
-		}
-		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(file));
-	}
 
 	private static void validateBase(File base) throws Exception {
 		if (!base.exists() || !base.isDirectory())

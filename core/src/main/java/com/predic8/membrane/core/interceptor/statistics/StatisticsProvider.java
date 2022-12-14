@@ -28,7 +28,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 

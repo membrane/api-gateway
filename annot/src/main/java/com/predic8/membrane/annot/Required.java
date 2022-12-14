@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2022 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,12 +11,12 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+package com.predic8.membrane.annot;
 
-package com.predic8.membrane.core;
-
-public interface RouterServiceMBean {
-	public void start() throws Exception;
-	public void stop() throws Exception;
-	public void setProxiesXml(String proxiesXml);
-	public String getProxiesXml();
+/**
+ * Marks properties as 'required'.
+ *
+ * Used to enhance the Membrane configuration grammar. Also used for validation.
+ */
+public @interface Required {
 }

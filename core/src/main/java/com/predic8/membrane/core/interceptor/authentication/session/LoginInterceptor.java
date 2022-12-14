@@ -25,7 +25,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.util.Map;
 

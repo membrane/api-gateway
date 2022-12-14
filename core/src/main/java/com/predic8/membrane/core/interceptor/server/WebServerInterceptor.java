@@ -25,7 +25,7 @@ import com.predic8.membrane.core.util.TextUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -34,7 +34,7 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;

@@ -23,7 +23,7 @@ import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.transport.ws.WebSocketSender;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 

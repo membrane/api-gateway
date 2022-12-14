@@ -17,7 +17,7 @@ package com.predic8.membrane.servlet;
 import java.io.InputStream;
 import java.util.List;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.apache.commons.logging.Log;

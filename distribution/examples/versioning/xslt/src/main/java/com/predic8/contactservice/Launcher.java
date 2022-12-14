@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.contactservice;
 
-import javax.xml.ws.Endpoint;
+import jakarta.xml.ws.Endpoint;
 
 import com.predic8.contactservice.v20.ContactService20;
 

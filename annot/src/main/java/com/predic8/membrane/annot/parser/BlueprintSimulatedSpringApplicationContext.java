@@ -18,6 +18,7 @@ import java.lang.annotation.Annotation;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.osgi.service.blueprint.container.BlueprintContainer;
 import org.osgi.service.blueprint.container.NoSuchComponentException;
@@ -316,4 +317,8 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 		throw new RuntimeException("not implemented");
 	}
 
+	@Override
+	public <A extends Annotation> Set<A> findAllAnnotationsOnBean(String beanName, Class<A> annotationType, boolean allowFactoryBeanInit) throws NoSuchBeanDefinitionException {
+		throw new RuntimeException("not implemented");
+	}
 }

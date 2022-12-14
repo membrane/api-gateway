@@ -14,7 +14,7 @@
 
 package com.predic8.chat;
 
-import javax.xml.ws.BindingProvider;
+import jakarta.xml.ws.BindingProvider;
 
 import com.predic8.chat.*;
 

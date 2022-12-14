@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import org.springframework.beans.factory.annotation.Required;
+import com.predic8.membrane.annot.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;

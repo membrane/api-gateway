@@ -47,16 +47,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.sun.xml.ws</groupId>
-			<artifactId>jaxws-rt</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.xml.ws</groupId>
-			<artifactId>jaxws-tools</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>xmlunit</groupId>
 			<artifactId>xmlunit</artifactId>
 			<scope>test</scope>

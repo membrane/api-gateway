@@ -16,7 +16,7 @@ package com.predic8.membrane.servlet;
 
 import java.util.Collection;
 
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import org.springframework.web.context.support.XmlWebApplicationContext;
 

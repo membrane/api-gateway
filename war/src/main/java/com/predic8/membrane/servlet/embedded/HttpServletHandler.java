@@ -18,9 +18,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Enumeration;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -97,7 +97,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 
 	@SuppressWarnings("deprecation")
 	protected void writeResponse(Response res) throws Exception {
-		response.setStatus(res.getStatusCode(), res.getStatusMessage());
+		response.setStatus(res.getStatusCode());
 		for (HeaderField header : res.getHeader().getAllHeaderFields()) {
 			if (header.getHeaderName().equals(Header.TRANSFER_ENCODING))
 				continue;
