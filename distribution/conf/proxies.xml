@@ -28,11 +28,11 @@
             <index/>
         </serviceProxy>
 
-        <OpenAPIProxy name="OpenAPI" port="2000">
+        <openAPIProxy name="OpenAPI" port="2000">
 <!--            <spec location="fruitshop-api.yml" validate="requests"/>-->
 <!--            <spec location="contacts-api-v1.yml" validateRequests="true"/>-->
-            <spec dir="../core/src/test/resources/openapi/specs" validateRequests="true"/>
-        </OpenAPIProxy>
+            <spec dir="../core/src/test/resources/openapi/specs" validateRequests="yes"/>
+        </openAPIProxy>
 
         <serviceProxy name="Prometheus Monitoring" port="8888">
             <path>/metrics</path>
