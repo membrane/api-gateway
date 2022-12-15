@@ -1,0 +1,31 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<!-- Configures Membrane as an API Gateway for the specified OpenAPI specifications -->
+		<openAPIProxy port="2000">
+            <spec location="contacts-api-v1.yml" validateRequests="yes"/>
+        </openAPIProxy>
+
+		<!-- This proxy provides a mock backend implementation for the API. Instead
+			 of the mock you can use the backend for your API.
+		-->
+		<serviceProxy port="3000">
+			<path>/persons</path>
+			<response>
+				<template pretty="true" contentType="application/json">
+					{ "success": true }
+				</template>
+			</response>
+            <return statusCode="201"/>
+        </serviceProxy>
+
+		<!-- See examples/openapi-validator for a more detailed example -->
+
+	</router>
+	
+</spring:beans>

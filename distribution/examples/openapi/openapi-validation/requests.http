@@ -1,0 +1,128 @@
+#
+# Request samples can be executed:
+#
+# a.) In Visual Studio Code with the HTTP Client Plugin
+#     See: https://marketplace.visualstudio.com/items?itemName=mkloubert.vscode-http-client
+#
+# b.) In IntelliJ with the HTTP Client Plugin
+#     See: https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html
+#
+
+
+
+### Valid request, should work => 200 Ok
+GET /demo-api/v2/persons?limit=10
+Host: localhost:2000
+
+### Wrong path => 404 Not Found
+GET /demo-api/v2/wrong
+Host: localhost:2000
+
+### Limit greater than 100 => 400 Bad Request
+GET /demo-api/v2/persons?limit=200
+Host: localhost:2000
+
+### Valid => 201 Ok
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer"
+}
+
+### Invalid UUID, email and enum => 400 Bad Request
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer",
+    "email": "jan(at)schilderei.nl",
+    "type": "ARTIST"
+}
+
+### Wrong Content-Type => 415 Unsupported Mediatype
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/xml
+
+<name>Jan</name>
+
+### Required property is missing => 400 Bad Request
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "email": "jan@predic8.de"
+}
+
+### Additional property role => 400 Bad Request
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer",
+    "role": "admin"
+}
+
+### Wrong regex pattern => 400 Bad Request
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer",
+    "countryCode": "Germany"
+}
+
+### Nested Object => 201 Created
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer",
+    "countryCode": "DE",
+    "address": {
+        "city": "Bonn",
+        "street": "Koblenzer Straße 65",
+        "zip": "D-53173"
+    }
+}
+
+### OneOf with wrong string pattern => 400 Bad Request
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer",
+    "countryCode": "DE",
+    "address": {
+        "city": "Bonn",
+        "street": "Koblenzer Straße 65",
+        "zip": "D-5317"
+    }
+}
+
+### OneOf with right integer => 201 Created
+PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
+Host: localhost:2000
+Content-Type: application/json
+
+{
+    "name": "Jan Vermeer",
+    "countryCode": "DE",
+    "address": {
+        "city": "Bonn",
+        "street": "Koblenzer Straße 65",
+        "zip": 53173
+    }
+}
+
+
+
+

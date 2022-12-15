@@ -1,0 +1,94 @@
+openapi: '3.0.2'
+info:
+  title: Person API to demo more OpenAPI Validation Features
+  version: '1.0'
+servers:
+  - url: http://localhost:3000/demo-api/v2/
+paths:
+  /persons:
+    parameters:
+      - in: query
+        name: limit
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 0
+    get:
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  persons:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Person"
+  /persons/{pid}:
+    parameters:
+      - in: path
+        name: pid
+        required: true
+        schema: 
+          type: string
+          format: uuid
+    put:
+       requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Person"
+       responses:
+        '200':
+          description: OK     
+
+components:
+  schemas:
+    Person:
+      type: object
+      additionalProperties: false
+      required: ["id","name"]
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          minLength: 3
+          maxLength: 12
+        email:
+          type: string
+          format: email
+        countryCode:
+          type: string
+          pattern: \w{2}
+          minLength: 2
+          maxLength: 2
+        address:
+          $ref: "#/components/schemas/Address"
+        type:
+          type: string
+          enum: ['PRIVAT','BUSINESS']
+    Address:
+      type: object
+      additionalProperties: false
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        zip:
+          oneOf:
+            - type: string
+              maxLength: 7
+              minLength: 7
+              pattern: \w-\d{5}
+            - type: integer
+              minimum: 00000
+              maximum: 99999
+
+        
