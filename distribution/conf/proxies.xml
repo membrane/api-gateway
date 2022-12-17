@@ -31,6 +31,8 @@
         <openAPIProxy name="OpenAPI" port="2000">
 <!--            <spec location="fruitshop-api.yml" validate="requests"/>-->
 <!--            <spec location="contacts-api-v1.yml" validateRequests="true"/>-->
+            <spec dir="conf"/>
+<!--            <spec location="https://petstore3.swagger.io/api/v3/openapi.json"/>-->
             <spec dir="../core/src/test/resources/openapi/specs" validateRequests="no"/>
         </openAPIProxy>
 

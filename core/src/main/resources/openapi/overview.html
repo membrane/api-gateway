@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!--suppress HtmlUnknownTarget -->
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -54,17 +55,29 @@
 <table class="table">
         <tr>
             <th>Title</th>
+            <th>Path</th>
             <th>Version</th>
             <th>OpenAPI</th>
             <th>Key</th>
         </tr>
 <% for (api in apis) { %>
 <tr>
-    <td><!--suppress HtmlUnknownTarget -->
+    <td>
+        <!--suppress HtmlUnknownTarget -->
         <a href="${pathUi}/${api.key}"><%= api.value.api.info.title %></a></td>
+    <td>
+        <ul>
+        <% for (server in api.value.api.servers) { %>
+            <li><%= com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(server.url) %><br>
+                <%= server.description != null ? server.description : "" %>
+            </li>
+        <% } %>
+        </ul>
+
+    </td>
     <td><%= api.value.api.info.version %></td>
     <td><%= api.value.api.openapi %></td>
-    <td><%= api.key %></td>
+    <td><a href="${path}/${api.key}"><%= api.key %></a></td>
 </tr>
 <% } %>
 </table>

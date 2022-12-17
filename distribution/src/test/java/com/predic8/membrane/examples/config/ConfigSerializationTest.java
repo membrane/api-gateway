@@ -101,6 +101,8 @@ public class ConfigSerializationTest {
 			//prettyPrint(xml);
 			//System.out.println(xml);
 
+			//System.out.println("ConfigFile: " + configFile);
+
 			AssertUtils.assertContainsNot("incomplete serialization", xml);
 
 			Router r2 = MCUtil.fromXML(Router.class, xml);

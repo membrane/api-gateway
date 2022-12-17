@@ -24,6 +24,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.rules.TimeCollector;
@@ -35,6 +36,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
+import static java.util.stream.Collectors.toList;
 
 @MCElement(name = "prometheus")
 public class PrometheusInterceptor extends AbstractInterceptor {
@@ -338,16 +342,16 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     }
 
-    public List<Long> getBuckets() {
-        return TimeCollector.getBuckets();
-    }
-
     @MCAttribute
     public void setBuckets(String buckets) {
         TimeCollector.setBuckets(Arrays.stream(buckets
                         .replaceAll("\\s+", "")
                         .split(","))
                 .map(Long::parseLong)
-                .collect(Collectors.toList()));
+                .collect(toList()));
+    }
+
+    public String getBuckets() {
+        return joinByComma(TimeCollector.getBuckets().stream().map(Object::toString).collect(toList()));
     }
 }

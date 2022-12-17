@@ -17,14 +17,17 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.rules.*;
 import io.swagger.v3.parser.*;
 import org.junit.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -34,22 +37,25 @@ public class OpenAPIPublisherInterceptorTest {
 
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
+    OpenAPIRecordFactory openAPIRecordFactory;
     OpenAPIPublisherInterceptor interceptor;
-
+    Map<String, OpenAPIRecord> records;
     Exchange get = new Exchange(null);
 
     @Before
     public void setUp() throws IOException, ClassNotFoundException {
         Router router = new Router();
         router.setBaseLocation("");
-        OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
+        openAPIRecordFactory = new OpenAPIRecordFactory(router);
         OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
         spec.setDir("src/test/resources/openapi/specs");
-        Map<String, OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
+        records = openAPIRecordFactory.create(Collections.singletonList(spec));
 
         interceptor = new OpenAPIPublisherInterceptor(records);
 
         get.setRequest(new Request.Builder().method("GET").build());
+        get.setRule(new NullRule());
+        get.setOriginalHostHeader("api.predic8.de:80");
     }
 
     @Test
@@ -87,5 +93,23 @@ public class OpenAPIPublisherInterceptorTest {
 
     private JsonNode getJsonFromYamlResponse(Exchange exc) throws IOException {
         return omYaml.readTree(exc.getResponse().getBody().getContent());
+    }
+
+    @Test
+    public void rewriteOpenAPIaccordingToRequestTest() throws MalformedURLException {
+        OpenAPIRecord rec = records.get("servers-1-api-v1-0");
+        interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
+        assertEquals("http://api.predic8.de/base/v2",rec.node.get("servers").get(0).get("url").asText());
+        assertEquals("Test System",rec.node.get("servers").get(0).get("description").asText());
+    }
+
+    @Test
+    public void rewriteOpenAPIaccordingToRequest3Servers() throws MalformedURLException {
+        OpenAPIRecord rec = records.get("servers-3-api-v1-0");
+        interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
+        assertEquals(3,rec.node.get("servers").size());
+        assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(0).get("url").asText());
+        assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(1).get("url").asText());
+        assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(2).get("url").asText());
     }
 }

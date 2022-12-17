@@ -137,16 +137,12 @@ public class OpenAPIProxy extends ServiceProxy {
         configureBasePaths();
 
         interceptors.add(new OpenAPIPublisherInterceptor(apiRecords));
-        //interceptors.add(new OpenAPIAPIInterceptor(apiRecords));
         interceptors.add(new OpenAPIInterceptor(this));
     }
 
     // TODO Stimmen die Pfade?
     private void configureBasePaths() {
-        ArrayList<String> basePathsThatMatch = new ArrayList<>(basePaths.keySet());
-        basePathsThatMatch.add("/openapi/"); // Add path for the API for OpenAPI
-        basePathsThatMatch.add("/openapi-spec");
-        ((OpenAPIProxyServiceKey) key).setBasePaths(basePathsThatMatch);
+        ((OpenAPIProxyServiceKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
     }
 
     private Map<String, OpenAPI> getOpenAPIMap() {

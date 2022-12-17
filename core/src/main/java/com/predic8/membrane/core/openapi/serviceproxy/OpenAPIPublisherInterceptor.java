@@ -119,20 +119,17 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    private void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws MalformedURLException {
-        ArrayNode rewrittenServers = ((ObjectNode) rec.node).putArray("servers");
+    protected void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws MalformedURLException {
         for (JsonNode server: rec.node.get("servers")) {
-            rewrittenServers.add(getRewrittenServerNode(exc, server));
+            ((ObjectNode)server).put("url", rewriteServerNode(exc, server));
         }
     }
 
-    private ObjectNode getRewrittenServerNode(Exchange exc, JsonNode server) throws MalformedURLException {
-        ObjectNode newServer = om.createObjectNode();
-        newServer.put("url", rewrite(server.get("url").asText(),
+    private String rewriteServerNode(Exchange exc, JsonNode server) throws MalformedURLException {
+        return rewrite(server.get("url").asText(),
                 getProtocol(exc),
                 exc.getOriginalHostHeaderHost(),
-                parseInt(exc.getOriginalHostHeaderPort()) ));
-        return newServer;
+                parseInt(exc.getOriginalHostHeaderPort()));
     }
 
     private String getProtocol(Exchange exc) {
@@ -156,12 +153,14 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         Map<String, Object> tempCtx = new HashMap<>();
         tempCtx.put("apis", apis);
         tempCtx.put("pathUi", PATH_UI);
+        tempCtx.put("path", PATH);
         return apiOverviewHtmlTemplate.make(tempCtx).toString();
     }
 
     private String renderSwaggerUITemplate(String id) {
         Map<String, Object> tempCtx = new HashMap<>();
         tempCtx.put("openApiUrl", PATH + "/" + id);
+        tempCtx.put("openApiTitle", apis.get(id).api.getInfo().getTitle());
         return swaggerUiHtmlTemplate.make(tempCtx).toString();
     }
 

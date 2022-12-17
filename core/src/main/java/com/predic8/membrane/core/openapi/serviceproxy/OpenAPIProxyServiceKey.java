@@ -25,10 +25,14 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
     private static Logger log = LoggerFactory.getLogger(OpenAPIProxyServiceKey.class.getName());
 
-    ArrayList<String> basePaths;
+    ArrayList<String> basePaths = new ArrayList<>();
 
     public OpenAPIProxyServiceKey(int port) {
         super(port);
+
+        // Add basePaths of OpenAPIPublisherInterceptor to accept them also
+        basePaths.add(OpenAPIPublisherInterceptor.PATH);
+        basePaths.add(OpenAPIPublisherInterceptor.PATH_UI);
     }
 
     @Override
@@ -54,7 +58,7 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
         return "*";
     }
 
-    void setBasePaths(ArrayList<String> paths) {
-        basePaths=paths;
+    void addBasePaths(ArrayList<String> paths) {
+        basePaths.addAll(paths);
     }
 }

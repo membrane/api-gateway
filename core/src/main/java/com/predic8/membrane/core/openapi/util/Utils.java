@@ -19,15 +19,19 @@ package com.predic8.membrane.core.openapi.util;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.servers.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.*;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.regex.Pattern.*;
 
 public class Utils {
@@ -79,7 +83,7 @@ public class Utils {
         for (int len; (len = is.read(buf)) != -1 ;) {
             bos.write(buf,0,len);
         }
-        return bos.toString("UTF-8");
+        return bos.toString(UTF_8);
     }
 
     public static boolean isValidUUID(String s) {
@@ -183,5 +187,18 @@ public class Utils {
 
     public static byte[] createErrorMessage(String msg) {
         return String.format("{ \"error\": \"%s\" }",msg).getBytes();
+    }
+
+    public static String pathList(OpenAPI paths) {
+        System.out.println(paths);
+        System.out.println(paths.getClass());
+//        ArrayList<String> rp = new ArrayList<>();
+//        System.out.println(rp);
+//        for (Object path : paths) {
+//            if (!rp.contains(path))
+//                rp.add((String) path);
+//        }
+//        return joinByComma(rp);
+        return null;
     }
 }

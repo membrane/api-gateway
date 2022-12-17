@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L - %m%n" />
+        </Console>
+        <RollingFile name="FILE" fileName="membrane.log" filePattern="membrane.log.%i">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L - %m%n" />
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10" />
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.predic8.membrane.core.openapi" level="debug">
+            <AppenderRef ref="FILE" />
+        </Logger>
+        <Logger name="com.predic8" level="debug">
+            <AppenderRef ref="FILE" />
+        </Logger>
+        <Root level="debug">
+            <AppenderRef ref="STDOUT" />
+        </Root>
+    </Loggers>
+</Configuration>
