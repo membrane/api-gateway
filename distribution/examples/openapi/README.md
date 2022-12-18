@@ -7,7 +7,14 @@ Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/
 - Rewriting of addresses
 - Swagger UI integration 
 
+This page serves as a reference for the functions and configuration. See also the working examples:
+
+- [openAPIProxy](openapi-proxy)
+- [OpenAPI validation](openapi-validation-simple)
+- [OpenAPI validation extended sample](openapi-validation)
+
 The **openAPIProxy** is featured in Membrane version 5 and newer and supports OpenAPI from version 3.0.0. Version 2 is not supported.
+
 
 
 # Configuration
@@ -80,7 +87,7 @@ The __openAPIProxy__ has an UI that can be reached on its port e.g. [http://loca
 
 ![Overview UI](openapi-proxy/api-overview.png)
 
-To get a JSON description of the deployed OpenAPI documents call the same URL outside of the browser e.g. in curl or Postman:
+To get a JSON description of the deployed OpenAPI documents call the same <a href="curl http://localhost:2000/api-doc">URL</a> outside of the browser e.g. in curl or Postman:
 
 ```
 curl http://localhost:2000/api-doc
@@ -142,7 +149,7 @@ TLS for incoming and outgoing connections can be configured in the same way as f
 
 # Plugins / Interceptors
 
-The behaviour of the _openAPIProxy_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and documentation of the [configuration elements](http://membrane-soa.org/service-proxy-doc/4.8/configuration/reference/).
+The behaviour of the _openAPIProxy_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-soa.org/service-proxy-doc/4.8/configuration/reference/).
 
 ```
 <openAPIProxy port="2000">
@@ -171,4 +178,4 @@ info:
   x-membrane-id: fruitshop
 ```
 
-To the id the version will be appended so the id will then be _fruitshop-v-1-0_.
+To the id the version will be appended so the id will be _fruitshop-v-1-0_.
