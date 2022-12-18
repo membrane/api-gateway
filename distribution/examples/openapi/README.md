@@ -1,9 +1,9 @@
-# OpenAPI Support
+# openAPIProxy - OpenAPI Configuration and Validation
 
 Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/OpenAPI-Specification) and provides the following features:
 
-- Complete configuration from OpenAPI
-- Validation of requests and responses against OpenAPI definitions. Including paths, parameters and JSON bodies.
+- Configuration from OpenAPI
+- Request and response validation against OpenAPI, including paths, parameters and JSON bodies.
 - Rewriting of addresses
 - Swagger UI integration 
 
@@ -17,7 +17,7 @@ An _openAPIProxy_ can be added to the _proxies.xml_ configuration. See the examp
 ```
 <router>
     <openAPIProxy port="2000">
-        <spec location="fruitshop-api.yml" validateRequests="yes"/>
+        <spec location="fruitshop-api.yml"/>
         <spec dir="openapi"/>
         <spec location="https://developer.lufthansa.com/swagger/export/21516"/>
         <spec location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
@@ -35,7 +35,7 @@ servers:
   - url: https://api.predic8.de/shop
 ```
 
-It is also possilbe to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration.
+It is also possilbe to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration. Then the addresse in the ```server``` field of the OpenAPI are ignored.
 
 ```
 <serviceProxy>
@@ -46,9 +46,9 @@ It is also possilbe to configure the backend address using a [target](https://ww
 </serviceProxy>
 ```
 
-# Validation
+# OpenAPI Validation
 
-Membrane can validate requests and responses against OpenAPI specifications. The validation uses all the definitions in OpenAPI documents like:
+Membrane can validate requests and responses against OpenAPI definitions like:
 
 - Methods and paths
 - Query and path parameters
@@ -74,9 +74,9 @@ x-membrane-validation:
   details: false
 ```
 
-# Overview UI and Swagger UI
+# Overview and Swagger UI
 
-The __openAPIProxy__ has an UI that can be reached on its port e.g. [http://localhost:2000/api-doc](http://localhost:2000/api-doc). Follow the links on the left to access a Swagger _UI for the document or the link on the right to download the OpenAPI document.
+The __openAPIProxy__ has an UI that can be reached on its port e.g. [http://localhost:2000/api-doc](http://localhost:2000/api-doc). Follow the links on the left to access the Swagger UI or the link on the right to download the OpenAPI document.
 
 ![Overview UI](openapi-proxy/api-overview.png)
 
