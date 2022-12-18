@@ -57,7 +57,7 @@ public class OpenAPIProxyTest {
         assertNotNull(xValidation);
         assertFalse((Boolean) xValidation.get("requests"));
         assertFalse((Boolean) xValidation.get("responses"));
-        assertTrue((Boolean) xValidation.get("validationDetails"));
+        assertTrue((Boolean) xValidation.get("details"));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class OpenAPIProxyTest {
         assertNotNull(xValidation);
         assertFalse((Boolean) xValidation.get("requests"));
         assertTrue((Boolean) xValidation.get("responses"));
-        assertNull(xValidation.get("validationDetails"));
+        assertNull(xValidation.get("details"));
     }
 
     @Test
@@ -192,7 +192,7 @@ public class OpenAPIProxyTest {
         assertNotNull(xValidation);
         assertTrue((Boolean) xValidation.get("requests"));
         assertFalse((Boolean) xValidation.get("responses"));
-        assertFalse((Boolean) xValidation.get("validationDetails"));
+        assertFalse((Boolean) xValidation.get("details"));
     }
 
     @Test
@@ -215,7 +215,7 @@ public class OpenAPIProxyTest {
             assertNotNull(xValidation);
             assertTrue((Boolean) xValidation.get("requests"));
             assertFalse((Boolean) xValidation.get("responses"));
-            assertFalse((Boolean) xValidation.get("validationDetails"));
+            assertFalse((Boolean) xValidation.get("details"));
         }
     }
 }

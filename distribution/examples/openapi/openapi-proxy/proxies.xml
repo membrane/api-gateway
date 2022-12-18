@@ -6,18 +6,20 @@
 
 	<router>
 
-		<!-- API Gateway for the given OpenAPI specifications -->
 		<openAPIProxy port="2000">
-            <spec location="fruitshop-api.yml" 
-			      validateRequests="yes"/>
+            <spec location="fruitshop-api.yml" validateRequests="yes" validateResponses="yes" validationDetails="yes"/>
+			<spec location="https://raw.githubusercontent.com/twilio/twilio-oai/main/spec/yaml/twilio_chat_v3.yaml"/>
+			<spec location="https://developer.lufthansa.com/swagger/export/21516"/>
+			<spec location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
+			<spec location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
+			<response>
+				<groovy>exc.response.header.add("Foo",42)</groovy>
+			</response>
         </openAPIProxy>
-
-		<!-- Monitoring endpoint for prometheus -->
-		<serviceProxy name="Prometheus Monitoring" port="8888">
-            <path>/metrics</path>
-            <prometheus/>
-        </serviceProxy>
 	
+		
+		
+
 	</router>
 	
 </spring:beans>

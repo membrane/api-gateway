@@ -165,6 +165,6 @@ public class OpenAPIRecordFactory {
     }
 
     private File[] getOpenAPIFiles(String dir) {
-        return new File(dir).listFiles((d, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
+        return new File(dir).listFiles((d, name) -> name.endsWith(".yml") || name.endsWith(".yaml") || name.endsWith(".json"));
     }
 }

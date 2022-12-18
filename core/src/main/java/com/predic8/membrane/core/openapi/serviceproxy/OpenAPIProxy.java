@@ -34,7 +34,7 @@ public class OpenAPIProxy extends ServiceProxy {
     public static final String X_MEMBRANE_ID = "x-membrane-id";
     public static final String REQUESTS = "requests";
     public static final String RESPONSES = "responses";
-    public static final String VALIDATION_DETAILS = "validationDetails";
+    public static final String VALIDATION_DETAILS = "details";
 
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();

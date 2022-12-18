@@ -120,6 +120,9 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     protected void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws MalformedURLException {
+        // The /info/servers field is not in every document present.
+        if (rec.node.get("servers") == null)
+            return;
         for (JsonNode server: rec.node.get("servers")) {
             ((ObjectNode)server).put("url", rewriteServerNode(exc, server));
         }

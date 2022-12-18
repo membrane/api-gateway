@@ -126,9 +126,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (xValidation == null)
             return true;
 
-        Boolean validationDetails = (Boolean) xValidation.get("validationDetails");
+        Boolean validationDetails = (Boolean) xValidation.get("details");
 
-        if (xValidation.get("validationDetails") == null)
+        if (xValidation.get("details") == null)
             return true;
 
         return validationDetails;

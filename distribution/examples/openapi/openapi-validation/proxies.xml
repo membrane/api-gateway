@@ -43,6 +43,12 @@
 			</response>
             <return statusCode="200"/>
         </serviceProxy>
+
+		<!-- Monitoring endpoint for prometheus -->
+		<serviceProxy name="Prometheus Monitoring" port="8888">
+			<path>/metrics</path>
+			<prometheus/>
+		</serviceProxy>
 	
 	</router>
 	

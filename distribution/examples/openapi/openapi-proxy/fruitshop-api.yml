@@ -2,13 +2,14 @@ openapi: '3.0.2'
 info:
   title: Fruit Shop API
   version: '1.0'
+  x-membrane-id: fruitshop
 servers:
   - url: https://api.predic8.de/shop
-#x-validation:
-#  - request: true
 paths:
   /products/:
     get:
+      tags:
+        - Shop
       parameters:
         - name: limit
           in: query
@@ -16,6 +17,7 @@ paths:
           schema: 
             type: integer
             maximum: 100
+            minimum: 0
             example: 10
       responses:
         '200':
@@ -25,6 +27,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProductList"
     post:
+      tags:
+        - Shop
       requestBody:
         content:
           application/json:
@@ -43,6 +47,8 @@ paths:
           minimum: 0
         required: true
     get:
+      tags:
+        - Shop
       responses:
         '200':
           description: OK      
@@ -68,7 +74,8 @@ components:
       properties:
         name:
           type: string
-          example: Feigen
+          example: Figs
+          maxLength: 10
         price:
           type: number
           example: 2.70
