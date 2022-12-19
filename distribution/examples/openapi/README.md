@@ -7,9 +7,9 @@ Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/
 - Rewriting of addresses
 - Swagger UI integration 
 
-This page serves as a reference for the functions and configuration. See also the working examples:
+This page serves as a reference for the functions and configuration. See also the examples:
 
-- [openAPIProxy](openapi-proxy)
+- [openAPIProxy, UI and Swagger UI](openapi-proxy)
 - [OpenAPI validation](openapi-validation-simple)
 - [OpenAPI validation extended sample](openapi-validation)
 
@@ -19,7 +19,7 @@ The **openAPIProxy** is featured in Membrane version 5 and newer and supports Op
 
 # Configuration
 
-An _openAPIProxy_ can be added to the _proxies.xml_ configuration. See the example in the [openapi-proxy/](openapi-proxy/) folder for a working sample.
+An _openAPIProxy_ can be added to the _proxies.xml_ configuration file. See the example in the [openapi-proxy/](openapi-proxy/) folder.
 
 ```
 <router>
@@ -33,16 +33,18 @@ An _openAPIProxy_ can be added to the _proxies.xml_ configuration. See the examp
 </router>
 ```
 
-The _spec_ element adds OpenAPI documents to the proxies configuration. You can add _*.json_, _*.yml_ and _*.yaml_ files in a folder using the _dir_ attribute or single local or remote files using the _location_ attribute. 
+The _spec_ element adds OpenAPI documents to the configuration. You can add _*.json_, _*.yml_ and _*.yaml_ files in a folder using the _dir_ attribute or single local or remote files using the _location_ attribute. 
 
-The addresses of the backend servers and the basepaths are taken from the OpenAPI specification. In the sample below all requests starting with ```/shop``` will be sent to the backend server ```api.predic8.de``` using TLS.
+The addresses of the backend servers and the basepaths are taken from the OpenAPI specification. Suppose an OpenAPI document contains the _servers_ field below. The proxy will match requests against the basepath ```/shop``` and in case of a match it will forward the request to the backend server ```api.predic8.de``` using TLS.
 
 ```
 servers:
   - url: https://api.predic8.de/shop
 ```
 
-It is also possilbe to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration. Then the addresse in the ```server``` field of the OpenAPI are ignored.
+If the basepath does not match, the next API is checked. 
+
+It is also possilbe to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
 
 ```
 <serviceProxy>
@@ -55,7 +57,7 @@ It is also possilbe to configure the backend address using a [target](https://ww
 
 # OpenAPI Validation
 
-Membrane can validate requests and responses against OpenAPI definitions like:
+Membrane can validate requests and responses against OpenAPI definitions and check:
 
 - Methods and paths
 - Query and path parameters
@@ -63,7 +65,7 @@ Membrane can validate requests and responses against OpenAPI definitions like:
 - Status codes
 - Body content according to the JSON Schema component definitions 
 
-Validation can be activated for requests and responses separatly. Set _validationDetails_ to _no_ if you do not want to send validation details to the client.
+Validation can be activated for requests and responses separatly. Set _validationDetails_ to _no_ if you do not want to send validation errors in detail to the client.
 
 ```
 <spec location="fruitshop-api.yml" 
@@ -96,13 +98,15 @@ curl http://localhost:2000/api-doc
 
 # Rewirting of Server Addresses
 
+When an API is published on a gateway the OpenAPI must point to the gateway instead of pointing to the backend server. Rewriting changes the backend addresses of an OpenAPI document to the adress of the gateway.
+
 The _openAPIProxy_ exposes the OpenAPI specifications in the UI and over an endpoint:
 
 ```
 /api_docs/<<id of the api>>
 ```
 
-The address in the _/servers_ field are rewritten to the address the endpoint is called. Suppose the OpenAPI has the following servers field:
+The addresses in the OpenAPI's _/servers_ field are rewritten to the address the endpoint is called on the gateway. Suppose the OpenAPI has the following servers field:
 
 ```
 servers:

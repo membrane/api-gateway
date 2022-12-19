@@ -34,10 +34,14 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/Product"
-
       responses:
-        '200':
+        '201':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+          
   /products/{pid}:
     parameters:
       - in: path
@@ -51,7 +55,11 @@ paths:
         - Shop
       responses:
         '200':
-          description: OK      
+          description: OK  
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
 
 components:
   schemas:
@@ -61,12 +69,14 @@ components:
         meta:
           type: object
         products:
-          type: object
-          properties:
-            name:
-              type: string
-            product_url:
-              type: string
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              product_url:
+                type: string
     Product:
       type: object
       required: ["name","price"]
@@ -83,9 +93,19 @@ components:
         category_url:
           type: string
           example: /shop/categories/Fruits
+          readOnly: true
         vendor_url:
           type: string
           example: /shop/vendors/672
+          readOnly: true
+        product_url:
+          type: string
+          example: /shop/products/44
+          readOnly: true
+        photo_url:
+          type: string
+          example: /shop/products/44/photo
+          readOnly: true
 
 
 

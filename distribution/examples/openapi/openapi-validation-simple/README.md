@@ -2,8 +2,9 @@
 
 The **OpenAPIProxy** can validate requests and responses against OpenAPI. The specifications can be in YAML or JSON format on disk or reachable over the network.
 
-
 ## Running the example
+
+Make sure to use Membrane version 5 or newer.
 
 1. Go to the _examples/openapi/openapi-validation-simple_ directory
 
@@ -47,19 +48,15 @@ curl -X POST http://localhost:2000/persons \
 
 ```
 {
-  "validationErrors" : [ {
-    "message" : "-10 is smaller than the minimum of 0",
-    "validationContext" : {
-      "method" : "POST",
-      "path" : "/persons",
-      "uriTemplate" : "/persons",
-      "schemaType" : "integer",
+  "method" : "POST",
+  "uriTemplate" : "/persons",
+  "path" : "/persons",
+  "validationErrors" : {
+    "REQUEST/BODY#/age" : [ {
+      "message" : "-10 is smaller than the minimum of 0",
       "complexType" : "Person",
-      "validatedEntityType" : "BODY",
-      "validatedEntity" : "REQUEST",
-      "statusCode" : 400,
-      "jsonpointer" : "/age"
-    }
+      "schemaType" : "integer"
+    } ]
   }
 }
 ```
@@ -106,12 +103,12 @@ In case of a validation failure an error message is returned to client without c
 
 ```
 {
+  "method" : "POST",
+  "uriTemplate" : "/persons",
+  "path" : "/persons",
   "validationErrors" : {
     "REQUEST/BODY#/age" : [ {
       "message" : "-10 is smaller than the minimum of 0",
-      "method" : "POST",
-      "uriTemplate" : "/persons",
-      "path" : "/persons",
       "complexType" : "Person",
       "schemaType" : "integer"
     } ]
@@ -119,4 +116,4 @@ In case of a validation failure an error message is returned to client without c
 }
 ```
 
-See the _examples/openapi/openapi-validation_ folder for a more detailed example.
+See the [openapi-validation](../openapi-validation) folder for a more detailed example.

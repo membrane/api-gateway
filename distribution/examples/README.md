@@ -27,6 +27,7 @@
 |[login](https://github.com/membrane/service-proxy/tree/master/distribution/examples/login)|The `LoginInterceptor`, Membrane Service Proxy can log requests and responses.|
 |[ntlm](https://github.com/membrane/service-proxy/tree/master/distribution/examples/ntlm)|In this example we are going to see how NTLM authentication is handled with Membrane Service Proxy.|
 |[oauth2](https://github.com/membrane/service-proxy/tree/master/distribution/examples/oauth2)|Please follow https://www.membrane-soa.org/service-proxy-doc/current/oauth2-password-flow-sample.htm|
+|[openapi](openapi/)|Load APIs from OpenAPI documents and validate requests and responses against OpenAPI.|
 |[proxy](https://github.com/membrane/service-proxy/tree/master/distribution/examples/proxy)|Membrane offers the functionality to forward its HTTP requests to a proxy. Membrane can also serve as an HTTP proxy itself. This example demonstrates both features.|
 |[quickstart-rest](https://github.com/membrane/service-proxy/tree/master/distribution/examples/quickstart-rest)|Please follow http://membrane-soa.org/service-proxy-doc/current/rest-quickstart.htm .|
 |[quickstart-soap](https://github.com/membrane/service-proxy/tree/master/distribution/examples/quickstart-soap)|Please follow http://membrane-soa.org/service-proxy-doc/current/soap-quickstart.htm .|

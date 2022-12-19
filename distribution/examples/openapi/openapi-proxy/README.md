@@ -1,8 +1,10 @@
-# openAPIProxy Example
+# OpenAPI Configuration Example
 
 This sample shows the configuration, validation, and the UI of an **openAPIProxy**.
 
 ## Running the Example
+
+Make sure to use Membrane version 5 or newer.
 
 1. Go to the _examples/openapi/openapi-proxy_ directory and start Membrane:
 
@@ -21,6 +23,7 @@ service.proxy.bat
 
 ```
 curl localhost:2000/api-docs
+
 {
   "fruit-shop-api-v1-0" : {
     "openapi" : "3.0.2",
@@ -39,28 +42,26 @@ Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc)
 
 
 
-3. Click on [Fruit Shop API](http://localhost:2000/api-doc/ui/fruit-shop-api-v1-0) to get the Swagger UI of the API.
+3. Click on [Fruit Shop API](http://localhost:2000/api-doc/ui/fruit-shop-api-v1-0) on the left to open the Swagger UI of the API.
 
 ![Swagger UI](swagger-ui.png)
 
 4. Click on __POST /products__ to expand it.
 
-![POST /products](get-products.png)
+![POST /products](post-products.png)
 
 5. Next click on _Try it out_ and then on _Execute_. The call should succeed and create a new product.
 
-6. Now lets try invalid input. Change the _price_ to a negative number like _-2.7_ and _execute_ the call again.
+6. Change the _price_ to a negative number like _-2.7_ and _execute_ the call again.
 
 ```
 {
   "name": "Feigen",
-  "price": -2.7,
-  "category_url": "/shop/categories/Fruits",
-  "vendor_url": "/shop/vendors/672"
+  "price": -2.7
 }
 ```
 
-This time the API returns a _400 Bad Request_ status code and an error message from the OpenAPI validation.
+The validator checks the request against the OpenAPI definition. Cause the value for price is invalid a _400 Bad Request_ status code and an error message is returned.
 	
 ```
 {
@@ -81,9 +82,9 @@ This time the API returns a _400 Bad Request_ status code and an error message f
 
 7. Try also a value for _name_ that is longer than 10 characters.
 
-For more about the validation of requests and responses using OpenAPI description have a look at:
+For more about the OpenAPI Validation features of Membrane have a look at:
 
-- [Simple Validation Example](../openapi-validation-simple/)
+- [Simple Validation Example](../openapi-validation-simple)
 - [Extended Validation Example](../openapi-validation/)
 
 

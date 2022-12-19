@@ -7,19 +7,12 @@
 	<router>
 
 		<openAPIProxy port="2000">
-            <spec location="fruitshop-api.yml" validateRequests="yes" validateResponses="yes" validationDetails="yes"/>
-			<spec location="https://raw.githubusercontent.com/twilio/twilio-oai/main/spec/yaml/twilio_chat_v3.yaml"/>
-			<spec location="https://developer.lufthansa.com/swagger/export/21516"/>
-			<spec location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
-			<spec location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
-			<response>
-				<groovy>exc.response.header.add("Foo",42)</groovy>
-			</response>
+            <spec location="fruitshop-api.yml"
+				  validateRequests="yes"
+				  validateResponses="yes"
+				  validationDetails="yes"/>
         </openAPIProxy>
-	
 		
-		
-
 	</router>
 	
 </spring:beans>
