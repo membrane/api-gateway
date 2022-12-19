@@ -44,7 +44,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JOSE_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.jose4j.lang.HashUtil.SHA_256;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeServerSimulator {
     private static final Logger LOG = LoggerFactory.getLogger(AcmeServerSimulator.class);
@@ -100,7 +100,7 @@ public class AcmeServerSimulator {
                 jws.setEncodedPayload((String)body.get("payload"));
                 jws.setEncodedSignature((String)body.get("signature"));
 
-                assertTrue("RFC 8555 Section 6.2", jws.getJwkHeader() == null || jws.getKeyIdHeaderValue() == null);
+                assertTrue(jws.getJwkHeader() == null || jws.getKeyIdHeaderValue() == null, "RFC 8555 Section 6.2");
 
                 if ("/acme/new-acct".equals(exc.getRequest().getUri())) {
                     // if new account: use public key to verify JWS
@@ -126,7 +126,7 @@ public class AcmeServerSimulator {
                     return Outcome.RETURN;
                 }
                 if ("/acme/new-acct".equals(exc.getRequest().getUri())) {
-                    assertNotNull("RFC 8555 Section 6.2", jws.getJwkHeader());
+                    assertNotNull(jws.getJwkHeader(), "RFC 8555 Section 6.2");
                     String accountUrl = "http://localhost:3050/acme/acct/123456";
 
                     exc.setResponse(Response.ok().status(201, "Created")

@@ -18,10 +18,9 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -30,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ConcurrentConnectionLimitTest {
 
@@ -42,7 +41,7 @@ public class ConcurrentConnectionLimitTest {
     private CountDownLatch countDownLatchEnd = new CountDownLatch(concurrency);
     private int port = 3026;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception{
         executor = Executors.newFixedThreadPool(concurrency);
 
@@ -59,7 +58,7 @@ public class ConcurrentConnectionLimitTest {
         router.init();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         router.shutdown();
     }
@@ -103,8 +102,8 @@ public class ConcurrentConnectionLimitTest {
         executor.shutdown();
         executor.awaitTermination(60, TimeUnit.SECONDS);
 
-        bad.stream().distinct().forEach(code -> assertEquals("All bad responses are 429",429,code.intValue()));
-        assertEquals("Number of bad responses",concurrency-concurrentLimit,bad.size());
-        assertEquals("Number of good responses",concurrentLimit,good.size());
+        bad.stream().distinct().forEach(code -> assertEquals(429, code.intValue(), "All bad responses are 429"));
+        assertEquals(concurrency - concurrentLimit, bad.size(), "Number of bad responses");
+        assertEquals(concurrentLimit, good.size(), "Number of good responses");
     }
 }

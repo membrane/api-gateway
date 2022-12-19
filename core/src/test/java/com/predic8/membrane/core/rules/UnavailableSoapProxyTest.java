@@ -13,15 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
@@ -33,7 +31,7 @@ public class UnavailableSoapProxyTest {
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
-	@Before
+	@BeforeEach
 	public void setup() {
 		r = new Router();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
@@ -107,7 +105,7 @@ public class UnavailableSoapProxyTest {
 		test();
 	}
 
-	@After
+	@AfterEach
 	public void cleanup() {
 		r2.stop();
 		r.stop();

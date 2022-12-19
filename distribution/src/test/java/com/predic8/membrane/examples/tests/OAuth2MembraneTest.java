@@ -17,10 +17,9 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.test.AssertUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2MembraneTest extends DistributionExtractingTestcase {
 
@@ -38,7 +37,7 @@ public class OAuth2MembraneTest extends DistributionExtractingTestcase {
             headers[1] = "application/x-www-form-urlencoded";
             AssertUtils.postAndAssert(200,"http://localhost:2000/login/",headers,"target=&username=john&password=password");
             AssertUtils.postAndAssert(200,"http://localhost:2000/login/consent",headers,"target=&consent=Accept");
-            Assert.assertEquals(AssertUtils.getAndAssert200("http://thomas-bayer.com"), AssertUtils.getAndAssert200("http://localhost:2000/"));
+            assertEquals(AssertUtils.getAndAssert200("http://thomas-bayer.com"), AssertUtils.getAndAssert200("http://localhost:2000/"));
         } finally {
             sl.killScript();
             sl2.killScript();

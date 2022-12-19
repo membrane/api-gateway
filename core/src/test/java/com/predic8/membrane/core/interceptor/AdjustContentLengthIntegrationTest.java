@@ -14,21 +14,22 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.*;
 
 import com.predic8.membrane.core.Router;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-public class AdjustContentLengthIntegrationTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-	private Router router;
+public class AdjustContentLengthIntegrationTest {
 
-	@Override
-	@Before
-	public void setUp() throws Exception {
+	private static Router router;
+
+	@BeforeAll
+	public static void setUp() throws Exception {
 		router = Router.init("classpath:/adjustContentLength/xslt.proxies.xml");
 	}
 
@@ -50,9 +51,8 @@ public class AdjustContentLengthIntegrationTest extends TestCase {
 
 	}
 
-	@Override
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

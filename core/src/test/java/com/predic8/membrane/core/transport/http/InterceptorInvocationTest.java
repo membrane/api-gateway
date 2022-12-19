@@ -24,9 +24,9 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
@@ -38,18 +38,18 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class InterceptorInvocationTest {
 
-	private HttpRouter router;
+	private static HttpRouter router;
 
 	List<String> backboneInterceptorNames;
 
-	List<String> regularInterceptorNames;
+	static List<String> regularInterceptorNames;
 
-	List<String> ruleInterceptorNames;
+	static List<String> ruleInterceptorNames;
 
-	List<String> interceptorSequence;
+	static List<String> interceptorSequence;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 
 		MockInterceptor.clear();
 
@@ -63,8 +63,8 @@ public class InterceptorInvocationTest {
 
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 
@@ -78,7 +78,7 @@ public class InterceptorInvocationTest {
 				Arrays.<String>asList());
 	}
 
-	private ServiceProxy createServiceProxy() {
+	private static ServiceProxy createServiceProxy() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 4000), "thomas-bayer.com", 80);
 		for (String label : ruleInterceptorNames) {
 			rule.getInterceptors().add(new MockInterceptor(label));
@@ -104,14 +104,14 @@ public class InterceptorInvocationTest {
 		return res;
 	}
 
-	private List<String> createInterceptorSequence() {
+	private static List<String> createInterceptorSequence() {
 		List<String> sequense = new ArrayList<String>();
 		sequense.addAll(regularInterceptorNames);
 		sequense.addAll(ruleInterceptorNames);
 		return sequense;
 	}
 
-	private HttpRouter createRouter() throws Exception {
+	private static HttpRouter createRouter() throws Exception {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(createServiceProxy());
 		addMockInterceptors(router, regularInterceptorNames);
@@ -119,7 +119,7 @@ public class InterceptorInvocationTest {
 		return router;
 	}
 
-	private void addMockInterceptors(HttpRouter router, List<String> labels) {
+	private static void addMockInterceptors(HttpRouter router, List<String> labels) {
 		for (String label : labels) {
 			router.addUserFeatureInterceptor(new MockInterceptor(label));
 		}

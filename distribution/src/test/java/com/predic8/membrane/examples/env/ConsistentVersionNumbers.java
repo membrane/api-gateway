@@ -33,12 +33,13 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * This test checks that all version numbers in the miscellaneous project files
@@ -62,7 +63,7 @@ public class ConsistentVersionNumbers {
 					version = old;
 				else {
 					try {
-						Assert.assertEquals(version, old);
+						assertEquals(version, old);
 					} catch (RuntimeException e) {
 						throw new RuntimeException("in file " + file.getAbsolutePath(), e);
 					}

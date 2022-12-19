@@ -15,16 +15,15 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 
 import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 
-import junit.framework.TestCase;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.http.*;
 
-public class XMLSessionIdExtractorTest extends TestCase {
+public class XMLSessionIdExtractorTest {
 
 
 	@Test

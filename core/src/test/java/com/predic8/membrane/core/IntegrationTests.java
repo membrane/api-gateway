@@ -17,9 +17,8 @@ import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreIntegra
 import com.predic8.membrane.core.http.LargeBodyTest;
 import com.predic8.membrane.core.rules.ProxySSLTest;
 import com.predic8.membrane.integration.*;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 import com.predic8.membrane.core.config.SpringReferencesTest;
 import com.predic8.membrane.core.http.MethodTest;
@@ -38,8 +37,8 @@ import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
-@RunWith(Suite.class)
-@SuiteClasses({ MethodTest.class, RegExReplaceInterceptorTest.class,
+@Suite
+@SelectClasses({ MethodTest.class, RegExReplaceInterceptorTest.class,
 	Http10Test.class, Http11Test.class,
 	AccessControlInterceptorIntegrationTest.class,
 	LoadBalancingInterceptorTest.class,

@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import org.junit.Assert;
-
-import org.junit.Test;
 
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SimpleXPathParserTest {
 
@@ -25,19 +25,21 @@ public class SimpleXPathParserTest {
 
 	@Test
 	public void valid1() {
-		Assert.assertNotNull(p.parse("//a"));
+		assertNotNull(p.parse("//a"));
 	}
 
 	@Test
 	public void valid2() {
 		ContainerNode n = p.parse("//a[@b='c'] (: comment (: nested comment :) :) and (//d)");
-		Assert.assertNotNull(n);
-		Assert.assertEquals(6, n.nodes.length);
+		assertNotNull(n);
+		assertEquals(6, n.nodes.length);
 	}
 
-	@Test(expected = RuntimeException.class)
+	@Test
 	public void invalid1() {
-		p.parse("//a[");
+		assertThrows(RuntimeException.class, () -> {
+				p.parse("//a[");
+		});
 	}
 
 }

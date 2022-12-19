@@ -17,11 +17,11 @@ package com.predic8.membrane.core.util;
 
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static com.predic8.membrane.core.util.URLUtil.getHost;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class URLUtilTest {
 

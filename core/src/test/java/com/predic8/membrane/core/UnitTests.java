@@ -66,12 +66,11 @@ import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorWADLTest;
 import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@SuiteClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
+@Suite
+@SelectClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
         HttpUtilTest.class, RequestTest.class, ResponseTest.class,
         MagicTest.class, WSDLInterceptorTest.class,
         AccessControlParserTest.class, AccessControlInterceptorTest.class,

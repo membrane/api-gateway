@@ -13,12 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.*;
@@ -26,14 +25,18 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 public class RewriteInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
-	private RewriteInterceptor  interceptor;
+	private static RewriteInterceptor  interceptor;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 
 		interceptor = new RewriteInterceptor();
 		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl", null));
@@ -45,8 +48,8 @@ public class RewriteInterceptorIntegrationTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

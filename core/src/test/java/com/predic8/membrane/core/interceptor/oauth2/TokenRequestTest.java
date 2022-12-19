@@ -13,26 +13,21 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
-@RunWith(Parameterized.class)
 public class TokenRequestTest extends RequestParameterizedTest {
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
         oasit.runUntilGoodGrantedAuthCode().run();
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockTokenRequest().call();
     }
 
-    @Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
             testCodeMissing(),

@@ -15,25 +15,21 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-@RunWith(Parameterized.class)
 public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
         oasit.runUntilGoodAuthOpenidRequest().run();
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockEmptyEndpointRequest().call();
     }
 
-    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 testConsentNotGiven(),

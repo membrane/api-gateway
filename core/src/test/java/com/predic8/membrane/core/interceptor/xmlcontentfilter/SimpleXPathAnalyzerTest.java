@@ -17,9 +17,10 @@ import java.util.List;
 
 import javax.xml.namespace.QName;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class SimpleXPathAnalyzerTest {
 
@@ -32,9 +33,9 @@ public class SimpleXPathAnalyzerTest {
 	private void assertIntersectExceptExprCount(int countToAssert, String xpath) {
 		List<?> l = new SimpleXPathAnalyzer().getIntersectExceptExprs(xpath);
 		if (countToAssert == -1)
-			Assert.assertNull(l);
+			assertNull(l);
 		else
-			Assert.assertEquals(countToAssert, l.size());
+			assertEquals(countToAssert, l.size());
 	}
 
 	@Test
@@ -48,7 +49,7 @@ public class SimpleXPathAnalyzerTest {
 	}
 
 	private void assertGetElement(String xpath, QName expectedReturnValue) {
-		Assert.assertEquals(expectedReturnValue,
+		assertEquals(expectedReturnValue,
 				new SimpleXPathAnalyzer().getElement(new SimpleXPathParser().parse(xpath)));
 	}
 

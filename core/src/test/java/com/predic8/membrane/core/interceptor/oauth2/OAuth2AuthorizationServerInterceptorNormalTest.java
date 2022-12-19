@@ -19,9 +19,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.Util;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
 
 import javax.mail.internet.ParseException;
 import java.io.IOException;
@@ -30,17 +28,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(Parameterized.class)
 public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2AuthorizationServerInterceptorBase {
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
     }
 
-    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() throws Exception {
         return Arrays.asList(new Object[][] {
                 testBadRequest(),

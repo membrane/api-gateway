@@ -14,12 +14,11 @@
 
 package com.predic8.membrane.core.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.URISyntaxException;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class URITest {
 
@@ -46,7 +45,7 @@ public class URITest {
 	private void assertError(String uri, String path, String query) {
 		try {
 			new URI(uri, false);
-			Assert.fail("Expected URISyntaxException.");
+			fail("Expected URISyntaxException.");
 		} catch (URISyntaxException e) {
 			// do nothing
 		}

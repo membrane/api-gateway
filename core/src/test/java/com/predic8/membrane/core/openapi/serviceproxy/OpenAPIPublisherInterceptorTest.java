@@ -24,14 +24,15 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
 import io.swagger.v3.parser.*;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIPublisherInterceptorTest {
 
@@ -42,7 +43,7 @@ public class OpenAPIPublisherInterceptorTest {
     Map<String, OpenAPIRecord> records;
     Exchange get = new Exchange(null);
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException, ClassNotFoundException {
         Router router = new Router();
         router.setBaseLocation("");

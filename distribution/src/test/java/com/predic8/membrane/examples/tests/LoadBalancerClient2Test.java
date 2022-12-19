@@ -18,13 +18,12 @@ import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static com.predic8.membrane.examples.tests.LoadBalancerUtil.assertNodeStatus;
 import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.apache.commons.io.FileUtils.writeStringToFile;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
@@ -117,7 +116,7 @@ public class LoadBalancerClient2Test extends DistributionExtractingTestcase {
 
 		Process2 lbclient = new Process2.Builder().in(base).executable(line).start();
 		try {
-			Assert.assertEquals(expectedReturnCode, lbclient.waitFor(30000));
+			assertEquals(expectedReturnCode, lbclient.waitFor(30000));
 		} finally {
 			lbclient.killScript();
 		}

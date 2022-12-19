@@ -15,10 +15,8 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
 
-import org.junit.Assert;
-
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -26,12 +24,14 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class MessageAnalyserTest {
 
-	private MessageAnalyser analyser;
+	private static MessageAnalyser analyser;
 
-	@Before
-	public void setUp() {
+	@BeforeAll
+	public static void setUp() {
 		analyser = new MessageAnalyser();
 	}
 
@@ -42,11 +42,11 @@ public class MessageAnalyserTest {
 
 		analyser.handleRequest(exc);
 
-		Assert.assertEquals("Envelope", exc.getProperty(MessageAnalyser.REQUEST_ROOT_ELEMENT_NAME));
-		Assert.assertEquals(Constants.SOAP11_NS, exc.getProperty(MessageAnalyser.REQUEST_ROOT_ELEMENT_NS));
-		Assert.assertEquals(Constants.SOAP11_VERION, exc.getProperty(MessageAnalyser.REQUEST_SOAP_VERSION));
-		Assert.assertEquals("getBuecher", exc.getProperty(MessageAnalyser.REQUEST_SOAP_OPERATION));
-		Assert.assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.REQUEST_SOAP_OPERATION_NS));
+		assertEquals("Envelope", exc.getProperty(MessageAnalyser.REQUEST_ROOT_ELEMENT_NAME));
+		assertEquals(Constants.SOAP11_NS, exc.getProperty(MessageAnalyser.REQUEST_ROOT_ELEMENT_NS));
+		assertEquals(Constants.SOAP11_VERION, exc.getProperty(MessageAnalyser.REQUEST_SOAP_VERSION));
+		assertEquals("getBuecher", exc.getProperty(MessageAnalyser.REQUEST_SOAP_OPERATION));
+		assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.REQUEST_SOAP_OPERATION_NS));
 
 	}
 
@@ -57,11 +57,11 @@ public class MessageAnalyserTest {
 
 		analyser.handleResponse(exc);
 
-		Assert.assertEquals("Envelope", exc.getProperty(MessageAnalyser.RESPONSE_ROOT_ELEMENT_NAME));
-		Assert.assertEquals(Constants.SOAP11_NS, exc.getProperty(MessageAnalyser.RESPONSE_ROOT_ELEMENT_NS));
-		Assert.assertEquals(Constants.SOAP11_VERION, exc.getProperty(MessageAnalyser.RESPONSE_SOAP_VERSION));
-		Assert.assertEquals("getBuecher", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION));
-		Assert.assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION_NS));
+		assertEquals("Envelope", exc.getProperty(MessageAnalyser.RESPONSE_ROOT_ELEMENT_NAME));
+		assertEquals(Constants.SOAP11_NS, exc.getProperty(MessageAnalyser.RESPONSE_ROOT_ELEMENT_NS));
+		assertEquals(Constants.SOAP11_VERION, exc.getProperty(MessageAnalyser.RESPONSE_SOAP_VERSION));
+		assertEquals("getBuecher", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION));
+		assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION_NS));
 
 	}
 

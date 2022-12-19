@@ -25,9 +25,8 @@ import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.lang.JoseException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,18 +34,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(Parameterized.class)
 public class JwtAuthInterceptorTest{
 
     public static final String KID = "membrane";
     public static final String SUB_CLAIM_CONTENT = "Till, der fleiﬂige Programmierer";
     private static final String AUDIENCE = "AusgestelltFuer";
 
-    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() throws Exception {
         return Arrays.asList(new Object[][] {
                 happyPath(),
@@ -218,15 +215,12 @@ public class JwtAuthInterceptorTest{
         R call(T param) throws Exception;
     }
 
-    @Parameterized.Parameter
-    public String testName;
-    @Parameterized.Parameter(value=1)
-    public FunctionWithException<RsaJsonWebKey,Exchange> exchangeCreator;
-    @Parameterized.Parameter(value = 2)
-    public Consumer<Exchange> asserts;
-
-    @Test
-    public void test() throws Exception{
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void test(
+            String testName,
+            FunctionWithException<RsaJsonWebKey,Exchange> exchangeCreator,
+            Consumer<Exchange> asserts) throws Exception{
         RsaJsonWebKey privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId(KID);
 

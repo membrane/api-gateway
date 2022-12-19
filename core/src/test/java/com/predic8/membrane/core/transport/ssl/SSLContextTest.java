@@ -21,12 +21,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 
-import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
@@ -34,13 +33,21 @@ import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class SSLContextTest {
 
-	private Router router;
+	private static Router router;
 
-	@Before
-	public void before() {
+	@BeforeAll
+	public static void before() {
 		router = new HttpRouter();
+	}
+
+	@AfterAll
+	public static void done() {
+		router.stop();
 	}
 
 	private class SSLContextBuilder {
@@ -83,18 +90,22 @@ public class SSLContextTest {
 		return new SSLContextBuilder();
 	}
 
-	@Test(expected=Exception.class)
+	@Test
 	public void simpleConfig() throws Exception {
-		SSLContext server = cb().build();
-		SSLContext client = cb().build();
-		testCombination(server, client);
+		assertThrows(Exception.class, () -> {
+			SSLContext server = cb().build();
+			SSLContext client = cb().build();
+			testCombination(server, client);
+		});
 	}
 
-	@Test(expected=Exception.class)
+	@Test
 	public void serverKeyOnlyWithoutClientTrust() throws Exception {
-		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").build();
-		SSLContext client = cb().build();
-		testCombination(server, client);
+		assertThrows(Exception.class, () -> {
+			SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").build();
+			SSLContext client = cb().build();
+			testCombination(server, client);
+		});
 	}
 
 	@Test
@@ -104,11 +115,13 @@ public class SSLContextTest {
 		testCombination(server, client);
 	}
 
-	@Test(expected=SocketException.class)
+	@Test
 	public void serverKeyOnlyWithInvalidClientTrust() throws Exception {
-		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa2.keystore").build();
-		SSLContext client = cb().withTrustStore("classpath:/ssl-rsa-pub.keystore").build();
-		testCombination(server, client);
+		assertThrows(SocketException.class, () -> {
+			SSLContext server = cb().withKeyStore("classpath:/ssl-rsa2.keystore").build();
+			SSLContext client = cb().withTrustStore("classpath:/ssl-rsa-pub.keystore").build();
+			testCombination(server, client);
+		});
 	}
 
 	@Test
@@ -118,11 +131,13 @@ public class SSLContextTest {
 		testCombination(server, client);
 	}
 
-	@Test(expected=SSLHandshakeException.class)
+	@Test
 	public void serverAndClientCertificatesWithoutServerTrust() throws Exception {
-		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
-		SSLContext client = cb().withKeyStore("classpath:/ssl-rsa2.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
-		testCombination(server, client);
+		assertThrows(SSLHandshakeException.class, () -> {
+			SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
+			SSLContext client = cb().withKeyStore("classpath:/ssl-rsa2.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
+			testCombination(server, client);
+		});
 	}
 
 
@@ -139,7 +154,7 @@ public class SSLContextTest {
 					Socket s = client.createSocket("localhost", 3020, 30000, null, null);
 					try {
 						BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-						Assert.assertEquals("Hi", br.readLine());
+						assertEquals("Hi", br.readLine());
 					} finally {
 						s.close();
 					}

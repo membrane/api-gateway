@@ -13,29 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import java.io.StringReader;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.xml.*;
+import com.predic8.membrane.core.util.MessageUtil;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import java.io.StringReader;
 
-import junit.framework.TestCase;
-
-import org.junit.Test;
-import org.xml.sax.InputSource;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.xml.Param;
-import com.predic8.membrane.core.http.xml.Path;
-import com.predic8.membrane.core.http.xml.Query;
-import com.predic8.membrane.core.http.xml.Request;
-import com.predic8.membrane.core.http.xml.URI;
-import com.predic8.membrane.core.util.MessageUtil;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class HTTP2XMLInterceptorTest extends TestCase {
+public class HTTP2XMLInterceptorTest {
 
 	private Exchange exc;
 
@@ -43,7 +38,7 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 
 	XPath xpath = XPathFactory.newInstance().newXPath();
 
-	@Override
+	@BeforeEach
 	protected void setUp() throws Exception {
 		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("http://localhost/axis2/services/BLZService?wsdl"));
@@ -71,7 +66,7 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 
 	@Test
 	public void parseXML() throws Exception {
-		String xml = "<request method='POST' http-version='1.1'><uri value='http://localhost:3011/manager/person?vorname=jim&amp;nachname=panse'><host>localhost</host><port>8080</port><path><component>manager</component><component>person</component></path><query><param name='vorname'>jim</param><param name='nachname'>panse</param></query></uri></request>";
+		String xml = "<request method='POST' http-version='1.1'><uri value='http://localhost:3011/manager/person?vorname=jim&amp;nachname=panse'><host>localhost</host><port>3011</port><path><component>manager</component><component>person</component></path><query><param name='vorname'>jim</param><param name='nachname'>panse</param></query></uri></request>";
 
 		XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
 		r.next(); //skip DocumentNode

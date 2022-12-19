@@ -17,25 +17,25 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Ignore
+@Disabled
 public class AccessControlInterceptorTest {
 
 	private static final String BASE_URL = "http://localhost:4000";
 
-	private AccessControlInterceptor interceptor;
+	private static AccessControlInterceptor interceptor;
 
-	private HttpRouter router;
+	private static HttpRouter router;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		router = new HttpRouter();
 
 		interceptor = new AccessControlInterceptor();
@@ -68,8 +68,8 @@ public class AccessControlInterceptorTest {
 		getAndAssert(403, BASE_URL + "/crm/services/BLZService?wsdl");
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

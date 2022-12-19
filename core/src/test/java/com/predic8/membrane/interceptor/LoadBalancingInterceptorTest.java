@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -27,9 +27,7 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -62,7 +60,7 @@ public class LoadBalancingInterceptorTest {
 	private HttpRouter service2;
 	protected HttpRouter balancer;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 
 		service1 = new HttpRouter();
@@ -117,7 +115,7 @@ public class LoadBalancingInterceptorTest {
 		((HTTPClientInterceptor)l.get(l.size()-1)).setFailOverOn5XX(true);
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		service1.shutdown();
 		service2.shutdown();

@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
@@ -37,7 +37,7 @@ public class RuleManagerTest {
 
 	Rule forwardBlzPOST;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception{
 		manager = new RuleManager();
 		MockRouter router = new MockRouter();

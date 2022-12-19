@@ -22,23 +22,21 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor;
 import groovy.json.StringEscapeUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXParseException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class Xml2JsonInterceptorTest {
 
     @Test
     public void invalidXml() throws Exception {
-        Assert.assertThrows(SAXParseException.class, () ->{getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
+        assertThrows(SAXParseException.class, () ->{getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
                 new ByteArrayInputStream("5".getBytes(StandardCharsets.UTF_8)))));
         });
     }

@@ -18,11 +18,11 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.util.*;
-import org.junit.*;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class InputStreamBodyTest {
 

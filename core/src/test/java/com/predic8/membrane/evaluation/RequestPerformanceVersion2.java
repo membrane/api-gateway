@@ -16,16 +16,16 @@ package com.predic8.membrane.evaluation;
 
 import java.io.*;
 
-import org.junit.*;
-
 import com.predic8.membrane.core.http.Request;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RequestPerformanceVersion2 {
 
 	private int bufferSize;
 	private byte[] buffer = new byte[1024];
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		fillByteArray();
 	}

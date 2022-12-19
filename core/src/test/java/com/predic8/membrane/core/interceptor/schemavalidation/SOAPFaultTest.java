@@ -15,11 +15,11 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;

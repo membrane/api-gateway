@@ -21,7 +21,7 @@ import com.predic8.membrane.core.interceptor.apimanagement.quota.AMQuota;
 import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.AMRateLimiter;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -30,7 +30,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AMQuotaInterceptorTest {
     @Test

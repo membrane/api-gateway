@@ -22,7 +22,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;

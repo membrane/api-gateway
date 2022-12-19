@@ -15,21 +15,19 @@
 package com.predic8.membrane.core.interceptor.cbr;
 
 import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Assert;
-import junit.framework.TestCase;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 
-public class XPathCBRInterceptorTest extends TestCase {
+public class XPathCBRInterceptorTest {
 
 	Exchange exc = new Exchange(null);
 
@@ -45,7 +43,7 @@ public class XPathCBRInterceptorTest extends TestCase {
 				"//CITY[text()='Bonn']","http://www.host.de/service"));
 
 		i.handleRequest(exc);
-		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
+		assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
 
 	}
 
@@ -64,7 +62,7 @@ public class XPathCBRInterceptorTest extends TestCase {
 		i.setNamespaces(getNamespaceMap("pre", "http://predic8.de/customer/1"));
 
 		i.handleRequest(exc);
-		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
+		assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
 
 	}
 

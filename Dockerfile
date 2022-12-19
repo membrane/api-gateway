@@ -1,15 +1,4 @@
-FROM ubuntu:jammy
-
-RUN apt-get update && \
-    apt-get install -y openjdk-17-jdk-headless zip curl
-
-RUN rm -rf /var/lib/apt/lists/* && rm -rf /var/cache/oracle-jdk8-installer
-
-RUN curl -o /maven.tar.gz https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz && \
-  mkdir /maven && \
-  cd /maven && \
-  tar -xvf /maven.tar.gz && \
-  rm /maven.tar.gz
+FROM maven:3-openjdk-17
 
 ADD pom.xml /app/
 ADD annot/pom.xml /app/annot/
@@ -20,10 +9,8 @@ WORKDIR /app
 RUN if [ -d .m2 ] ; then mv .m2 /root ; fi
 
 # fake maven run to pre-cache a few maven dependencies
-RUN /maven/apache-maven-*/bin/mvn install ; exit 0
+RUN mvn install ; exit 0
 
 ADD . /app
 
-ENV MAVEN_OPTS="-XX:MaxPermSize=128m"
-
-RUN /maven/apache-maven-*/bin/mvn install
+RUN mvn install

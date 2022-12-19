@@ -18,13 +18,14 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -32,7 +33,7 @@ public class DiscriminatorTest {
 
     OpenAPIValidator validator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/discriminator.yml"));
     }

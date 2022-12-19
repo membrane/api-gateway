@@ -15,16 +15,16 @@
 
 package com.predic8.membrane.core.util;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Constants;
 
@@ -36,13 +36,13 @@ public class ByteUtilTest {
 
 	private InputStream in1, in2;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		in1 = new ByteArrayInputStream(message1.getBytes());
 		in2 = new ByteArrayInputStream(message2.getBytes());
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		in1.close();
 		in2.close();

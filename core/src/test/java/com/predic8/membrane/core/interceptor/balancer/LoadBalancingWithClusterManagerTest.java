@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -25,8 +25,8 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
@@ -37,10 +37,10 @@ import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
 public class LoadBalancingWithClusterManagerTest {
 
-	private HttpRouter lb;
-	private HttpRouter node1;
-	private HttpRouter node2;
-	private HttpRouter node3;
+	private static HttpRouter lb;
+	private static HttpRouter node1;
+	private static HttpRouter node2;
+	private static HttpRouter node3;
 
 	@Test
 	public void nodesTest() throws Exception {
@@ -93,8 +93,8 @@ public class LoadBalancingWithClusterManagerTest {
 
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		lb.shutdown();
 		node1.shutdown();
 		node2.shutdown();

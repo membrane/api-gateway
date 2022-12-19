@@ -19,16 +19,16 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import junit.framework.TestCase;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
-public class XSLTInterceptorTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class XSLTInterceptorTest {
 
 	Exchange exc = new Exchange(null);
 	XPath xpath = XPathFactory.newInstance().newXPath();

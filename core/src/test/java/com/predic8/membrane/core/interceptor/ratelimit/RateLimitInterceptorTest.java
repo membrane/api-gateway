@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.joda.time.Duration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;

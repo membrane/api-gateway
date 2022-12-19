@@ -13,14 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
@@ -29,12 +28,16 @@ import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 public class RESTBLZServiceIntegrationTest {
 
 	private static HttpRouter router;
 
 
-	@Before
+	@BeforeAll
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3005), "thomas-bayer.com", 80);
 		router = new HttpRouter();
@@ -59,7 +62,7 @@ public class RESTBLZServiceIntegrationTest {
 
 	}
 
-	@After
+	@AfterAll
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

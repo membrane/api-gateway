@@ -13,17 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.formvalidation;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
-
-import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor.Field;
 import com.predic8.membrane.core.util.MessageUtil;
+import org.junit.jupiter.api.Test;
+
 public class FormValidationInterceptorTest {
 
 	@Test

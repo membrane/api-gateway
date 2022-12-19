@@ -14,6 +14,7 @@ package com.predic8.membrane.core.interceptor.oauth2server;
 
 import com.floreysoft.jmte.Engine;
 import com.floreysoft.jmte.ErrorHandler;
+import com.floreysoft.jmte.message.ErrorMessage;
 import com.floreysoft.jmte.message.ParseException;
 import com.floreysoft.jmte.token.Token;
 import com.google.common.collect.ImmutableMap;
@@ -103,13 +104,13 @@ public class LoginDialog2 {
         engine.setErrorHandler(new ErrorHandler() {
 
             @Override
-            public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
-                log.error(arg0);
+            public void error(ErrorMessage arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
+                log.error(arg0.key);
             }
 
             @Override
-            public void error(String arg0, Token arg1) throws ParseException {
-                log.error(arg0);
+            public void error(ErrorMessage arg0, Token arg1) throws ParseException {
+                log.error(arg0.key);
             }
         });
         Map pages = ImmutableMap

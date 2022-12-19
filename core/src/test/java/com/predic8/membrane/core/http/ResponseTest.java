@@ -15,9 +15,9 @@
 
 package com.predic8.membrane.core.http;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,9 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.core.util.EndOfStreamException;
 
@@ -49,7 +47,7 @@ public class ResponseTest {
 
 	private InputStream tempIn;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		in1 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-unchunked-html.msg");
 		in2 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-unchunked-image.msg");
@@ -60,7 +58,7 @@ public class ResponseTest {
 		res3 = new Response();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		if (in1 != null) {
 			in1.close();

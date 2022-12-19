@@ -15,14 +15,14 @@
 package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Calendar;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;

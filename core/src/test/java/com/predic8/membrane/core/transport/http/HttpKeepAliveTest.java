@@ -14,16 +14,16 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -44,7 +44,7 @@ public class HttpKeepAliveTest {
 	private HttpRouter service1;
 	private ServiceProxy sp1;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		set = new HashSet<Integer>();
 
@@ -64,7 +64,7 @@ public class HttpKeepAliveTest {
 		service1.init();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		service1.shutdown();
 	}

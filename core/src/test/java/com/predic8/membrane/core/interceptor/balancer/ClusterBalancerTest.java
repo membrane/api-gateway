@@ -14,28 +14,27 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
-
-import junit.framework.TestCase;
-
-import org.junit.*;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-public class ClusterBalancerTest extends TestCase {
+public class ClusterBalancerTest {
 
-	private XMLElementSessionIdExtractor extracor;
-	private LoadBalancingInterceptor lb;
-	private Router r;
+	private static XMLElementSessionIdExtractor extracor;
+	private static LoadBalancingInterceptor lb;
+	private static Router r;
 
-	@Override
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 
 		extracor = new XMLElementSessionIdExtractor();
 		extracor.setLocalName("session");
@@ -56,9 +55,8 @@ public class ClusterBalancerTest extends TestCase {
 		BalancerUtil.up(r, "Default", "Default", "localhost", 3000);
 	}
 
-	@Override
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		r.shutdown();
 		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException
 		Thread.sleep(400);

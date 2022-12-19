@@ -29,10 +29,10 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.StreamPump;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -50,13 +50,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
  */
 public class SessionResumptionTest {
 
-    private Closeable tcpForwarder;
-    private Router router1;
-    private Router router2;
-    private SSLContext clientTLSContext;
+    private static Closeable tcpForwarder;
+    private static Router router1;
+    private static Router router2;
+    private static SSLContext clientTLSContext;
 
-    @Before
-    public void init() throws IOException {
+    @BeforeAll
+    public static void init() throws IOException {
         tcpForwarder = startTCPForwarder(3044);
         router1 = createTLSServer(3042);
         router2 = createTLSServer(3043);
@@ -64,7 +64,7 @@ public class SessionResumptionTest {
         clientTLSContext = createClientTLSContext();
     }
 
-    private SSLContext createClientTLSContext() {
+    private static SSLContext createClientTLSContext() {
         SSLParser sslParser = new SSLParser();
         TrustStore trustStore = new TrustStore();
         trustStore.setLocation("classpath:/ssl-rsa-pub.keystore");
@@ -74,14 +74,14 @@ public class SessionResumptionTest {
         return new StaticSSLContext(sslParser, new ResolverMap(), ".");
     }
 
-    @After
-    public void done() throws IOException {
+    @AfterAll
+    public static void done() throws IOException {
         tcpForwarder.close();
         router1.shutdown();
         router2.shutdown();
     }
 
-    @Ignore
+    @Disabled
     @Test
     public void doit() throws Exception {
         HttpClient hc = new HttpClient();
@@ -93,7 +93,7 @@ public class SessionResumptionTest {
         }
     }
 
-    private Router createTLSServer(int port) {
+    private static Router createTLSServer(int port) {
         Router router = new HttpRouter();
         router.setHotDeploy(false);
         ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(port), null, 0);
@@ -117,7 +117,7 @@ public class SessionResumptionTest {
         return router;
     }
 
-    private Closeable startTCPForwarder(int port) throws IOException {
+    private static Closeable startTCPForwarder(int port) throws IOException {
         AtomicInteger counter = new AtomicInteger();
         StreamPump.StreamPumpStats sps = new StreamPump.StreamPumpStats();
         ServiceProxy mock = new ServiceProxy();

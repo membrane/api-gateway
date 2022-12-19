@@ -24,16 +24,17 @@ import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDa
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
 import com.predic8.membrane.core.util.Util;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class OAuth2AuthorizationServerInterceptorBase {
 
@@ -186,7 +187,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         return runTest(OAuth2AuthorizationServerInterceptorOpenidTest.class,"testGoodAuthRequest");
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         router = new HttpRouter();
         initOasi();
@@ -194,30 +195,24 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         initLoginMockParametersForJohn();
     }
 
-    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() throws Exception {
         return Arrays.asList(new Object[][] {
         });
     }
 
-    @Parameterized.Parameter
-    public String testName;
-    @Parameterized.Parameter(value = 1)
-    public Runnable preprocessing;
-    @Parameterized.Parameter(value = 2)
-    public Callable<Exchange> preparedExchange;
-    @Parameterized.Parameter(value = 3)
-    public int expectedStatusCode;
-    @Parameterized.Parameter(value = 4)
-    public Consumer<Exchange> postprocessing;
-
-    @Test
-    public void test() throws Exception {
+    @ParameterizedTest(name="{0}")
+    @MethodSource("data")
+    public void test(
+            String testName,
+            Runnable preprocessing,
+            Callable<Exchange> preparedExchange,
+            int expectedStatusCode,
+            Consumer<Exchange> postprocessing) throws Exception {
         preprocessing.run();
         exc = preparedExchange.call();
         OAuth2TestUtil.makeExchangeValid(exc);
         oasi.handleRequest(exc);
-        Assert.assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
+        assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
         postprocessing.call(exc);
     }
 
@@ -244,7 +239,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                     Exchange exc = preparedExchange.call();
                     OAuth2TestUtil.makeExchangeValid(exc);
                     oasi.handleRequest(exc);
-                    Assert.assertEquals(expectedStatusCode, exc.getResponse().getStatusCode());
+                    assertEquals(expectedStatusCode, exc.getResponse().getStatusCode());
                     postprocessing.call(exc);
 
                 }catch(Exception e){

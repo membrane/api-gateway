@@ -15,13 +15,11 @@
 package com.predic8.membrane.core.transport.http;
 
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-import java.net.InetAddress;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -35,7 +33,7 @@ public class ConnectionTest {
 
 	HttpRouter router;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 
 		Rule rule2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
@@ -46,7 +44,7 @@ public class ConnectionTest {
 		con127_0_0_1 = Connection.open("127.0.0.1", 2000, null, null, 30000);
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		conLocalhost.close();
 		con127_0_0_1.close();

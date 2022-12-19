@@ -24,8 +24,9 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,15 +35,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.Header.CHUNKED;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LargeBodyTest {
 
-    private HttpRouter router, router2;
-    private HttpClientConfiguration hcc;
-    private AtomicReference<Exchange> middleExchange = new AtomicReference<>();
+    private static HttpRouter router, router2;
+    private static HttpClientConfiguration hcc;
+    private static AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
+
         // streaming only works for maxRetries = 1
         hcc = new HttpClientConfiguration();
         hcc.setMaxRetries(1);
@@ -78,8 +81,8 @@ public class LargeBodyTest {
         router2.init();
     }
 
-    @After
-    public void shutdown() throws IOException {
+    @AfterAll
+    public static void shutdown() throws IOException {
         if (router != null)
             router.shutdown();
         if (router2 != null)
@@ -88,7 +91,6 @@ public class LargeBodyTest {
 
     @Test
     public void large() throws Exception {
-        setup();
         long len = Integer.MAX_VALUE + 1l;
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).buildExchange();
@@ -100,7 +102,6 @@ public class LargeBodyTest {
 
     @Test
     public void largeChunked() throws Exception {
-        setup();
         long len = Integer.MAX_VALUE + 1l;
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();

@@ -15,8 +15,9 @@ package com.predic8.membrane.core.interceptor;
 
 import java.util.regex.Pattern;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IndexInterceptorTest {
 	@Test
@@ -56,7 +57,7 @@ public class IndexInterceptorTest {
 			if (fulfilled == null)
 				return;
 		}
-		Assert.assertTrue(Pattern.matches(regex, fulfilled));
+		assertTrue(Pattern.matches(regex, fulfilled));
 	}
 
 }

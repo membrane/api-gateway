@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.tunnel;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.jms.*;
 import java.util.Scanner;

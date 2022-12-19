@@ -19,18 +19,19 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LimitedMemoryExchangeStoreTest {
 
 	private static LimitedMemoryExchangeStore store;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		store = new LimitedMemoryExchangeStore();
 	}
 
@@ -43,7 +44,7 @@ public class LimitedMemoryExchangeStoreTest {
 		Exchange exc = getExchange("1");
 		store.snap(exc, Flow.RESPONSE);
 
-		Assert.assertEquals(2, store.getAllExchangesAsList().size());
+		assertEquals(2, store.getAllExchangesAsList().size());
 		assertStore(0, "0");
 		assertStore(1, "1");
 
@@ -51,14 +52,14 @@ public class LimitedMemoryExchangeStoreTest {
 
 		store.snap(getExchange("2"), Flow.RESPONSE);
 
-		Assert.assertEquals(2, store.getAllExchangesAsList().size());
+		assertEquals(2, store.getAllExchangesAsList().size());
 		assertStore(0, "1");
 		assertStore(1, "2");
 
 	}
 
 	private void assertStore(int pos, String value) {
-		Assert.assertEquals(value, store.getAllExchangesAsList().get(pos).getProperty("id"));
+		assertEquals(value, store.getAllExchangesAsList().get(pos).getProperty("id"));
 	}
 
 	private Exchange getExchange(String id) throws IOException {

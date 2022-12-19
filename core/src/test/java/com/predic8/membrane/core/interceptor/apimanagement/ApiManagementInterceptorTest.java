@@ -20,9 +20,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;

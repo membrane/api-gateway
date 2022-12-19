@@ -36,8 +36,9 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -48,8 +49,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the LoadBalancingInterceptor using the SuccessStrategy.
@@ -107,7 +107,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
         ((HTTPClientInterceptor) l.get(l.size() - 1)).setFailOverOn5XX(true);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         for (HttpRouter httpRouter : httpRouters) {
             httpRouter.shutdown();
@@ -202,7 +202,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
         assertEquals(100, ctx.successCounter.get());
         for (int i = 0; i < 100; i++) {
             if (i < 10 || i >= 40) {
-                assertTrue("For " + i + " value was: " + ctx.runtimes[i], ctx.runtimes[i] < 500);
+                assertTrue(ctx.runtimes[i] < 500, "For " + i + " value was: " + ctx.runtimes[i]);
             }
         }
     }

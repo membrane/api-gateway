@@ -117,7 +117,9 @@ public class HttpTransport extends Transport {
 			closePort(ipPort);
 		}
 		log.debug("Closing all stream pumps.");
-		getRouter().getStatistics().getStreamPumpStats().closeAllStreamPumps();
+		Router router = getRouter();
+		if (router != null)
+			router.getStatistics().getStreamPumpStats().closeAllStreamPumps();
 
 		if (waitForCompletion) {
 			long now = System.currentTimeMillis();

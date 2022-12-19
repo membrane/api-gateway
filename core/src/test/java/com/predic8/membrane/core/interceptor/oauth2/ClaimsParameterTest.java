@@ -14,12 +14,12 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.HashSet;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ClaimsParameterTest {
 

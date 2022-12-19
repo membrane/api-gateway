@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class ClusterManagerTest extends TestCase {
+public class ClusterManagerTest {
 
 	private Balancer cm;
 

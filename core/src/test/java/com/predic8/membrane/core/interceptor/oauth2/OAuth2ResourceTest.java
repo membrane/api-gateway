@@ -35,7 +35,10 @@ import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.junit.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,9 +54,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-@Ignore
+import static org.junit.jupiter.api.Assertions.*;
+
+@Disabled
 public class OAuth2ResourceTest {
 
     Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
@@ -77,7 +80,7 @@ public class OAuth2ResourceTest {
 
     Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = handleRedirect(cookieManager(httpClient()));
 
-    @Before
+    @BeforeEach
     public void init() throws IOException {
         mockAuthServer = new HttpRouter();
         mockAuthServer.setHotDeploy(false);
@@ -92,7 +95,7 @@ public class OAuth2ResourceTest {
         oauth2Resource.start();
     }
 
-    @After
+    @AfterEach
     public void done() {
         if (mockAuthServer != null)
             mockAuthServer.stop();
@@ -106,9 +109,9 @@ public class OAuth2ResourceTest {
 
         excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        Assert.assertEquals("/init", (String) body2.get("path"));
-        Assert.assertEquals("", (String) body2.get("body"));
-        Assert.assertEquals("GET", (String) body2.get("method"));
+        assertEquals("/init", (String) body2.get("path"));
+        assertEquals("", (String) body2.get("body"));
+        assertEquals("GET", (String) body2.get("method"));
     }
 
     @Test
@@ -117,9 +120,9 @@ public class OAuth2ResourceTest {
 
         excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        Assert.assertEquals("/init", (String) body2.get("path"));
-        Assert.assertEquals("demobody", (String) body2.get("body"));
-        Assert.assertEquals("POST", (String) body2.get("method"));
+        assertEquals("/init", (String) body2.get("path"));
+        assertEquals("demobody", (String) body2.get("body"));
+        assertEquals("POST", (String) body2.get("method"));
     }
 
     // this test also implicitly tests concurrency on oauth2resource
@@ -129,7 +132,7 @@ public class OAuth2ResourceTest {
 
         excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        Assert.assertEquals("/init", (String) body2.get("path"));
+        assertEquals("/init", (String) body2.get("path"));
 
         Set<String> accessTokens = new HashSet<>();
         List<Thread> threadList = new ArrayList<>();
@@ -144,7 +147,7 @@ public class OAuth2ResourceTest {
                     excCallResource2 = cookieHandlingRedirectingHttpClient.call(excCallResource2);
                     Map body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
                     String path = (String)body.get("path");
-                    Assert.assertEquals("/" + uuid, path);
+                    assertEquals("/" + uuid, path);
                     synchronized (accessTokens) {
                         accessTokens.add((String)body.get("accessToken"));
                     }
@@ -218,7 +221,7 @@ public class OAuth2ResourceTest {
         LOG.debug("getting " + excCallResource.getDestinations().get(0));
         excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        Assert.assertEquals("/init" + j, (String) body2.get("path"));
+        assertEquals("/init" + j, (String) body2.get("path"));
 
         assertEquals(limit, goodTests.get());
 
@@ -244,7 +247,7 @@ public class OAuth2ResourceTest {
             LOG.debug("getting " + excCallResource.getDestinations().get(0));
             excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
             Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-            Assert.assertEquals("/init" + j, (String) body2.get("path"));
+            assertEquals("/init" + j, (String) body2.get("path"));
         }
 
         // expect the auth server to be hit exactly once, second call should have had a cookie

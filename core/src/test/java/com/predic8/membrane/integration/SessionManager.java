@@ -29,9 +29,9 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.*;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,12 +42,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(Parameterized.class)
 public class SessionManager {
 
-    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() throws Exception {
         return Arrays.asList(new Object[][] {
                 inMemory(),
@@ -69,18 +67,15 @@ public class SessionManager {
         };
     }
 
-    @Parameterized.Parameter(value = 0)
-    public String nameDummyField;
-
-    @Parameterized.Parameter(value = 1)
-    public Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier;
-
     public static final String REMEMBER_HEADER = "X-Remember-This";
     public static final int GATEWAY_PORT = 31337;
 
-    @Test
-    public void remembersThings() throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void remembersThings(
+            String nameDummyField,
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
 
@@ -103,9 +98,12 @@ public class SessionManager {
         httpRouter.stop();
     }
 
-    @Test
-    public void sessionExpires() throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(Duration.ZERO)));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void sessionExpires(
+            String nameDummyField,
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier, Duration.ZERO)));
 
         HttpClientContext ctx = getHttpClientContext();
 
@@ -129,9 +127,12 @@ public class SessionManager {
         httpRouter.stop();
     }
 
-    @Test
-    public void changeValueInSession() throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void changeValueInSession(
+            String nameDummyField,
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
 
@@ -163,9 +164,12 @@ public class SessionManager {
         httpRouter.stop();
     }
 
-    @Test
-    public void sessionCookie() throws Exception{
-        AbstractInterceptorWithSession abstractInterceptorWithSession = testInterceptor();
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void sessionCookie(
+            String nameDummyField,
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
+        AbstractInterceptorWithSession abstractInterceptorWithSession = testInterceptor(smSupplier);
         abstractInterceptorWithSession.getSessionManager().setSessionCookie(true);
 
         HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, abstractInterceptorWithSession));
@@ -203,9 +207,12 @@ public class SessionManager {
         httpRouter.stop();
     }
 
-    @Test
-    public void expiresPartIsRefreshedOnAccess() throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void expiresPartIsRefreshedOnAccess(
+            String nameDummyField,
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
 
@@ -248,9 +255,12 @@ public class SessionManager {
         httpRouter.stop();
     }
 
-    @Test
-    public void parallelRequests() throws Exception {
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor()));
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void parallelRequests(
+            String nameDummyField,
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
+        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
         ExecutorService executor = Executors.newCachedThreadPool();
@@ -309,7 +319,9 @@ public class SessionManager {
         return ctx;
     }
 
-    private AbstractInterceptorWithSession testInterceptor(Duration... ttl) {
+    private AbstractInterceptorWithSession testInterceptor(
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier,
+            Duration... ttl) {
         if(ttl == null || ttl.length == 0)
             ttl = new Duration[] {Duration.ofSeconds(300)};
 

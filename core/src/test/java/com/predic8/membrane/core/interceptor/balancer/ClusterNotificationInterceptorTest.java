@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URLEncoder;
 import java.security.SecureRandom;
@@ -21,28 +23,25 @@ import java.security.SecureRandom;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
-public class ClusterNotificationInterceptorTest extends TestCase {
+public class ClusterNotificationInterceptorTest {
 	private HttpRouter router;
 	private ClusterNotificationInterceptor interceptor;
 	private LoadBalancingInterceptor lbi;
 
-	@Override
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
 		router = new HttpRouter();
@@ -59,8 +58,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		router.init();
 	}
 
-	@Override
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

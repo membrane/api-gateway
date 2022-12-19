@@ -16,9 +16,7 @@ package com.predic8.membrane.integration;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
@@ -31,7 +29,7 @@ public class ProxySSLConnectionMethodTest {
 
 	private Router router;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		router = new HttpRouter();
 		router.setExchangeStore(new MemoryExchangeStore());
@@ -39,7 +37,7 @@ public class ProxySSLConnectionMethodTest {
 		router.init();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

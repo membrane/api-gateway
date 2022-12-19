@@ -13,16 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.InputStream;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
@@ -37,11 +37,11 @@ import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 
 public class ViaProxyTest {
 
-	HttpRouter proxyRouter;
-	HttpRouter router;
+	static HttpRouter proxyRouter;
+	static HttpRouter router;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		ProxyConfiguration proxy = new ProxyConfiguration();
 		proxy.setHost("localhost");
 		proxy.setPort(3128);
@@ -70,8 +70,8 @@ public class ViaProxyTest {
 		assertEquals(200, client.executeMethod(post));
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 		proxyRouter.shutdown();
 	}

@@ -171,7 +171,7 @@
 		directory before using JDBC interceptor. 
 	-->
 	<!-- 
-		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+		<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
 			<property name="driverClassName" value="com.mysql.jdbc.Driver" /> 
 			<property name="url" value="jdbc:mysql://localhost:3306/membrane" /> 
 			<property name="username" value="root" /> 
@@ -179,7 +179,7 @@
 		</bean> 
 	-->
 	<!-- 
-		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+		<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
 			<property name="driverClassName" value="org.apache.derby.jdbc.ClientDriver" /> 
 			<property name="url" value="jdbc:derby://localhost:1527/membranedb-test;create=true" /> 
 			<property name="username" value="APP" /> 
@@ -188,7 +188,7 @@
 	-->
 	
 	<!-- 
-		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+		<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
 			<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/> 
 			<property name="url" value="jdbc:oracle:thin:@127.0.0.1:1521:your-database"/>
 			<property name="username" value="your-username" /> 

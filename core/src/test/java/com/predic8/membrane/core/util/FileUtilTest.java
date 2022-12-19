@@ -1,23 +1,24 @@
 package com.predic8.membrane.core.util;
 
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class FileUtilTest {
 
     InputStream is;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         is = new ByteArrayInputStream("Hello".getBytes());
     }
 
     @Test
     public void read() {
-        Assert.assertEquals("Hello", FileUtil.readInputStream(is));
+        assertEquals("Hello", FileUtil.readInputStream(is));
     }
 
 }

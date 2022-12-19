@@ -13,24 +13,19 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.BeforeEach;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
 public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         super.setUp();
         exc = oasit.getMockAuthRequestExchange().call();
     }
 
-    @Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 testClientIdMissing(),

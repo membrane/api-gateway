@@ -18,10 +18,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -33,11 +32,14 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.util.URIFactory;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class IllegalCharactersInURLTest {
 
 	private HttpRouter r;
 
-	@Before
+	@BeforeEach
 	public void init() throws Exception {
 		r = new HttpRouter();
 		r.setHotDeploy(false);
@@ -46,7 +48,7 @@ public class IllegalCharactersInURLTest {
 		sp2.getInterceptors().add(new AbstractInterceptor() {
 			@Override
 			public Outcome handleRequest(Exchange exc) throws Exception {
-				Assert.assertEquals("/foo{}", exc.getRequestURI());
+				assertEquals("/foo{}", exc.getRequestURI());
 				exc.setResponse(Response.ok().build());
 				return Outcome.RETURN;
 			}
@@ -55,22 +57,24 @@ public class IllegalCharactersInURLTest {
 		r.start();
 	}
 
-	@After
+	@AfterEach
 	public void uninit() {
 		r.stop();
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test
 	public void apacheHttpClient() throws Exception {
-		CloseableHttpClient hc = HttpClientBuilder.create().build();
-		HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
-		Assert.assertEquals(200, res.getStatusLine().getStatusCode());
+		assertThrows(IllegalArgumentException.class, () -> {
+			CloseableHttpClient hc = HttpClientBuilder.create().build();
+			HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
+			assertEquals(200, res.getStatusLine().getStatusCode());
+		});
 	}
 
 	@Test
 	public void doit() throws Exception {
 		URIFactory uriFactory = new URIFactory(true);
 		Response res = new HttpClient().call(new Request.Builder().method("GET").url(uriFactory, "http://localhost:3027/foo{}").body("").buildExchange()).getResponse();
-		Assert.assertEquals(200, res.getStatusCode());
+		assertEquals(200, res.getStatusCode());
 	}
 }

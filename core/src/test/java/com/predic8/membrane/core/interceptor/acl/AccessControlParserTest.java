@@ -15,13 +15,14 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.util.List;
 
-import junit.framework.TestCase;
-
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 
-public class AccessControlParserTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class AccessControlParserTest {
 
 	public static final String FILE_NAME = "classpath:/acl/acl.xml";
 
@@ -29,11 +30,10 @@ public class AccessControlParserTest extends TestCase {
 
 	public static final String RESOURCE_URI_2 = "/crm/kundenservice";
 
-	private List<Resource> resources;
+	private static List<Resource> resources;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@BeforeAll
+	protected static void setUp() throws Exception {
 		resources = new AccessControlInterceptor().parse(FILE_NAME, new HttpRouter()).getResources();
 	}
 

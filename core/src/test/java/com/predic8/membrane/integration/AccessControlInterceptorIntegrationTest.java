@@ -24,15 +24,13 @@ import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AccessControlInterceptorIntegrationTest {
 
@@ -55,14 +53,14 @@ public class AccessControlInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3008), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

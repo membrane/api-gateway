@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -25,11 +25,11 @@ import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 
 public class XMLProtectionInterceptorTest {
-	private Exchange exc;
-	private XMLProtectionInterceptor interceptor;
+	private static Exchange exc;
+	private static XMLProtectionInterceptor interceptor;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");

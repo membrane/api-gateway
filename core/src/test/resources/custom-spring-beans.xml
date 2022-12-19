@@ -131,7 +131,7 @@
 	<fileExchangeStore id="fileExchangeStore" dir="target/temp" raw="false" saveBodyOnly="false"/>
 
 <!-- 
-  <spring:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+  <spring:bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
     <spring:property name="driverClassName" value="com.mysql.jdbc.Driver" /> 
     <spring:property name="url" value="jdbc:mysql://localhost:3306/membrane" /> 
     <spring:property name="username" value="root" /> 

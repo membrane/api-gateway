@@ -13,26 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.*;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.Mapping;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class REST2SOAPInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*",
 				".*", 3004), "www.thomas-bayer.com", 80);
 		router = new HttpRouter();
@@ -44,8 +46,8 @@ public class REST2SOAPInterceptorIntegrationTest {
 		router.init();
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 
@@ -62,7 +64,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 		assertEquals(200, status);
 	}
 
-	private List<Mapping> getMappings() {
+	private static List<Mapping> getMappings() {
 		List<Mapping> mappings = new ArrayList<Mapping>();
 		Mapping m = new Mapping();
 		m.regex = "/bank/.*";

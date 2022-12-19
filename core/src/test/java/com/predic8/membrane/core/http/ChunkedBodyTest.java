@@ -33,7 +33,7 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ChunkedBodyTest {
     @Test

@@ -18,20 +18,20 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIValidatorObjectTest {
 
     OpenAPIValidator validator;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
     }

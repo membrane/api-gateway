@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.magic;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.ws.magic.Magic;
 

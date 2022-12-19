@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.servlet.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -28,17 +28,14 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class ForwardingTest {
 
-	@Parameters
 	public static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
 				{ 3021 }, // jetty port embedding membrane
@@ -46,17 +43,12 @@ public class ForwardingTest {
 		});
 	}
 
-	private final int port;
-
-	public ForwardingTest(int port) {
-		this.port = port;
-	}
-
-	@Test
-	public void testReachable() throws ClientProtocolException, IOException {
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void testReachable(int port) throws ClientProtocolException, IOException {
 		String secret = "secret452363763";
 		HttpClient hc = HttpClientBuilder.create().build();
-		HttpPost post = new HttpPost(getBaseURL());
+		HttpPost post = new HttpPost(getBaseURL(port));
 		post.setEntity(new StringEntity(secret));
 		HttpResponse res = hc.execute(post);
 		assertEquals(200, res.getStatusLine().getStatusCode());
@@ -64,31 +56,34 @@ public class ForwardingTest {
 		AssertUtils.assertContains(secret, EntityUtils.toString(res.getEntity()));
 	}
 
-	private void testQueryParam(String param) throws ClientProtocolException, IOException {
+	private void testQueryParam(int port, String param) throws ClientProtocolException, IOException {
 		HttpClient hc = HttpClientBuilder.create().build();
-		HttpGet get = new HttpGet(getBaseURL() + "?" + param);
+		HttpGet get = new HttpGet(getBaseURL(port) + "?" + param);
 		HttpResponse res = hc.execute(get);
 		assertEquals(200, res.getStatusLine().getStatusCode());
 
 		AssertUtils.assertContains("?" + param, EntityUtils.toString(res.getEntity()));
 	}
 
-	@Test
-	public void testParam1() throws ClientProtocolException, IOException {
-		testQueryParam("a");
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void testParam1(int port) throws ClientProtocolException, IOException {
+		testQueryParam(port, "a");
 	}
 
-	@Test
-	public void testParam2() throws ClientProtocolException, IOException {
-		testQueryParam("a=1");
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void testParam2(int port) throws ClientProtocolException, IOException {
+		testQueryParam(port, "a=1");
 	}
 
-	@Test
-	public void testParam3() throws ClientProtocolException, IOException {
-		testQueryParam("a=1&b=2");
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void testParam3(int port) throws ClientProtocolException, IOException {
+		testQueryParam(port, "a=1&b=2");
 	}
 
-	private String getBaseURL() {
+	private String getBaseURL(int port) {
 		return "http://localhost:" + port + "/";
 	}
 

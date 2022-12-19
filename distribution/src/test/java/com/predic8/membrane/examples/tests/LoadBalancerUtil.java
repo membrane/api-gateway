@@ -17,6 +17,7 @@ package com.predic8.membrane.examples.tests;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.assertStatusCode;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,14 +30,13 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
-import org.junit.Assert;
 
 public class LoadBalancerUtil {
 	private static Pattern nodePattern = Pattern.compile("Mock Node (\\d+)");
 
 	public static int getRespondingNode(String url) throws ParseException, IOException {
 		Matcher m = nodePattern.matcher(getAndAssert200(url));
-		Assert.assertTrue(m.find());
+		assertTrue(m.find());
 		return Integer.parseInt(m.group(1));
 
 	}

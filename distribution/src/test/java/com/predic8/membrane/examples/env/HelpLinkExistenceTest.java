@@ -18,11 +18,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
@@ -31,6 +29,8 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test unfortunately fails if there are new classes in the project
@@ -55,8 +55,9 @@ public class HelpLinkExistenceTest {
 	public void doit() throws Exception {
 		Set<Class<?>> classes = getElementClasses();
 
-		Assert.assertNotEquals(0, classes.size());
+		assertNotEquals(0, classes.size());
 		HttpClient hc = new HttpClient();
+		StringBuilder errors = new StringBuilder();
 		for (Class<?> clazz : classes) {
 			if (Interceptor.class.isAssignableFrom(clazz)) {
 				Interceptor i = (Interceptor) clazz.newInstance();
@@ -66,14 +67,11 @@ public class HelpLinkExistenceTest {
 
 				Response r = hc.call(new Request.Builder().get(url).buildExchange()).getResponse();
 
-				try {
-					Assert.assertEquals(200, r.getStatusCode());
-				} catch (Throwable e) {
-					throw new RuntimeException(url, e);
-				}
+				if (r.getStatusCode() != 200)
+					errors.append(url + " returned " + r.getStatusCode() + "." + System.lineSeparator());
 			}
 		}
-
+		assertTrue(errors.length() == 0, errors.toString());
 	}
 
 	@SuppressWarnings("unchecked")

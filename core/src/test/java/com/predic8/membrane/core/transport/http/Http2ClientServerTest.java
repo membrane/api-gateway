@@ -27,9 +27,9 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.transport.http.HttpClient.HTTP2;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientServerTest {
     private volatile Response response;
@@ -46,7 +46,7 @@ public class Http2ClientServerTest {
     private HttpClient hc;
     private HttpRouter router;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         SSLParser sslParser = new SSLParser();
         sslParser.setUseExperimentalHttp2(true);
@@ -90,7 +90,7 @@ public class Http2ClientServerTest {
         hc = new HttpClient(configuration);
     }
 
-    @After
+    @AfterEach
     public void done() throws Throwable {
         hc.finalize();
         router.stop();

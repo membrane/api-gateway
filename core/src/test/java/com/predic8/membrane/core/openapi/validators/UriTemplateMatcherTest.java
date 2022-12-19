@@ -18,19 +18,18 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;
-import org.junit.*;
-
-import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.util.MapUtils.stringMap;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("CatchMayIgnoreException")
 public class UriTemplateMatcherTest {
 
     UriTemplateMatcher matcher;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         matcher = new UriTemplateMatcher();
     }

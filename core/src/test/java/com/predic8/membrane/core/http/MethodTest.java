@@ -13,16 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.DeleteMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -31,10 +31,10 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class MethodTest {
 
-	private HttpRouter router;
+	private static HttpRouter router;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "predic8.de", 80);
 		rule.getInterceptors().add(new AbstractInterceptor() {
 			@Override
@@ -61,8 +61,8 @@ public class MethodTest {
 		assertTrue(status < 400);
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

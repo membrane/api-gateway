@@ -13,12 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.util.List;
-
-import org.junit.*;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchangestore.*;
@@ -33,19 +31,20 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorIntercept
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
+import org.junit.jupiter.api.*;
 
 @SuppressWarnings("unused")
 public class CustomSpringConfigurationTest {
 
 	private Router router;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		new File("target/temp").mkdirs();
 		router = Router.init("src/test/resources/custom-spring-beans.xml");
 	}
 
-	@Ignore
+	@Disabled
 	@Test
 	public void testInit() throws Exception {
 		assertNotNull(router);
@@ -209,7 +208,7 @@ public class CustomSpringConfigurationTest {
 				((FileExchangeStore) i.getExchangeStore()).getDir());
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

@@ -22,15 +22,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.http.client.ClientProtocolException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class WSDLRewritingTest {
 
-	@Parameters
 	public static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
 				{ 3021 }, // jetty port embedding membrane
@@ -39,18 +36,13 @@ public class WSDLRewritingTest {
 		});
 	}
 
-	private final int port;
-
-	public WSDLRewritingTest(int port) {
-		this.port = port;
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void testWSDLRewritten(int port) throws ClientProtocolException, IOException {
+		assertContains("localhost:" + port, getAndAssert200(getBaseURL(port) + "ArticleService.wsdl"));
 	}
 
-	@Test
-	public void testWSDLRewritten() throws ClientProtocolException, IOException {
-		assertContains("localhost:" + port, getAndAssert200(getBaseURL() + "ArticleService.wsdl"));
-	}
-
-	private String getBaseURL() {
+	private String getBaseURL(int port) {
 		return "http://localhost:" + port + "/";
 	}
 

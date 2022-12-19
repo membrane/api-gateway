@@ -13,26 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Constants;
 
 @SuppressWarnings("unused")
 public class BodyTest {
 
-	private byte[] msg0 = new byte[] { 'd', 'd', 13, 10, 13, 10 };
-	private byte[] msg1 = new byte[] { 'd', 'd', 13, 10, 13, 10, 'f', 'r' };
-	private byte[] msg2 = new byte[10000];
-	private byte[] msg3 = new byte[] { 'd', 'd', 13, 13, 10 };
+	private static byte[] msg0 = new byte[] { 'd', 'd', 13, 10, 13, 10 };
+	private static byte[] msg1 = new byte[] { 'd', 'd', 13, 10, 13, 10, 'f', 'r' };
+	private static byte[] msg2 = new byte[10000];
+	private static byte[] msg3 = new byte[] { 'd', 'd', 13, 13, 10 };
 
 	private String chunk = "1aa\r\n<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'><soapenv:Body><ns1:getBankResponse xmlns:ns1='http://thomas-bayer.com/blz/'><ns1:details><ns1:bezeichnung>Deutsche Bank Privat und Geschaeftskunden</ns1:bezeichnung><ns1:bic>DEUTDEDB380</ns1:bic><ns1:ort>Bonn</ns1:ort><ns1:plz>53004</ns1:plz></ns1:details></ns1:getBankResponse></soapenv:Body></soapenv:Envelope>\r\n0\r\n\r\n";
 
@@ -42,12 +42,12 @@ public class BodyTest {
 	private String chunk2 = "2\r\naa\r\n3\r\nbbb\r\n0\r\n\r\n";
 	private String chunk2Body = "aabbb";
 
-	private AbstractBody unchunkedBody;
-	private AbstractBody unchunkedBody2;
+	private static AbstractBody unchunkedBody;
+	private static AbstractBody unchunkedBody2;
 
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		Arrays.fill(msg2, (byte) 20);
 		unchunkedBody = new Body(new ByteArrayInputStream(msg1), msg1.length);
 		unchunkedBody2 = new Body(new ByteArrayInputStream(msg2), msg2.length);

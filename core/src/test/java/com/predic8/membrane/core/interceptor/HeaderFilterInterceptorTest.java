@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.exchange.Exchange;

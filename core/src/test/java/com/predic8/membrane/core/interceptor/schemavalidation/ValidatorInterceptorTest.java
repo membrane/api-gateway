@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -47,7 +47,7 @@ public class ValidatorInterceptorTest {
 
 	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");

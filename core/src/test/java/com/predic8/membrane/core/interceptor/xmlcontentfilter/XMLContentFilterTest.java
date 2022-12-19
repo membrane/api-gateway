@@ -17,15 +17,20 @@ import java.io.IOException;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import org.junit.Assert;
-
-import org.custommonkey.xmlunit.XMLAssert;
-import org.junit.Test;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
+import org.xmlunit.builder.DiffBuilder;
+import org.xmlunit.matchers.CompareMatcher;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.xmlunit.matchers.CompareMatcher.isIdenticalTo;
+import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
 
 public class XMLContentFilterTest {
 
@@ -45,16 +50,16 @@ public class XMLContentFilterTest {
 
 	@Test
 	public void test() throws XPathExpressionException, SAXException, IOException {
-		XMLAssert.assertXMLEqual("<a/>", applyXPath("//b"));
-		XMLAssert.assertXMLEqual("<a/>", applyXPath("//b[@c]"));
-		XMLAssert.assertXMLEqual("<a/>", applyXPath("//*[ local-name() = 'b' ]"));
-		XMLAssert.assertXMLEqual(DOC, applyXPath("//b[@c='2']"));
+		assertThat("<a/>", isSimilarTo(applyXPath("//b")));
+		assertThat("<a/>", isSimilarTo(applyXPath("//b[@c]")));
+		assertThat("<a/>", isSimilarTo(applyXPath("//*[ local-name() = 'b' ]")));
+		assertThat(DOC, isSimilarTo(applyXPath("//b[@c='2']")));
 	}
 
 	public void assertFastCheck(String xpath) {
 		// if createElementFinder is not null, a (fast) StAX parser can be used
 		// to run a first check whether the XPath expression has any chance of succeeding
-		Assert.assertNotNull(XMLContentFilter.createElementFinder(xpath));
+		assertNotNull(XMLContentFilter.createElementFinder(xpath));
 	}
 
 	@Test

@@ -16,9 +16,9 @@ package com.predic8.membrane.core.interceptor;
 import static com.predic8.membrane.core.Constants.WSDL_HTTP_NS;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,8 +32,9 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -52,12 +53,12 @@ public class WSDLInterceptorTest {
 
 	private WSDLInterceptor interceptor;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(MessageUtil
 				.getGetRequest("/axis2/services/BLZService?wsdl"));
-		InputStream resourceAsStream = this.getClass().getResourceAsStream("/blz-service.wsdl");
+		InputStream resourceAsStream = WSDLInterceptorTest.class.getResourceAsStream("/blz-service.wsdl");
 		Response okResponse = Response.ok()
 				.contentType("text/xml; charset=utf-8")
 				.body(resourceAsStream, true)

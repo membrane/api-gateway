@@ -19,7 +19,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.statistics.AMStatisticsCollector;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 

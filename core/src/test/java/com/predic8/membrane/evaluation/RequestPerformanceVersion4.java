@@ -18,8 +18,8 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.http.Request;
 
@@ -28,7 +28,7 @@ public class RequestPerformanceVersion4 {
 	private int bufferSize;
 	private byte[] buffer = new byte[1024];
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		fillByteArray();
 	}

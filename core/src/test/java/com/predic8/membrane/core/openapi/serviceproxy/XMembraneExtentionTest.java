@@ -21,7 +21,8 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import io.swagger.v3.parser.*;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.util.*;
@@ -34,7 +35,7 @@ public class XMembraneExtentionTest {
 
     Exchange get = new Exchange(null);
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException, ClassNotFoundException {
         Router router = new Router();
         router.setBaseLocation("");

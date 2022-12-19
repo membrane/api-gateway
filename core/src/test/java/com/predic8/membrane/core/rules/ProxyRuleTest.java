@@ -13,17 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -32,11 +29,11 @@ import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 
 public class ProxyRuleTest {
 
-	private Router router;
-	private Rule rule;
+	private static Router router;
+	private static Rule rule;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
 		rule = new ProxyRule(new ProxyRuleKey(8888));
 		rule.setName("Rule 1");
@@ -46,8 +43,8 @@ public class ProxyRuleTest {
 
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 
@@ -69,7 +66,7 @@ public class ProxyRuleTest {
 		assertFalse(rule.isBlockRequest());
 	}
 
-	private List<Interceptor> getInterceptors() {
+	private static List<Interceptor> getInterceptors() {
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
 		Interceptor balancer = new LoadBalancingInterceptor();
 		balancer.setId("roundRobinBalancer");

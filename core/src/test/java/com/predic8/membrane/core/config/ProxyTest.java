@@ -13,20 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 
 
 public class ProxyTest {
 
-	private ProxyConfiguration proxy;
+	private static ProxyConfiguration proxy;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		proxy = new ProxyConfiguration();
 		proxy.setUsername("predic8");
 		proxy.setPassword("secret");

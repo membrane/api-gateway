@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;

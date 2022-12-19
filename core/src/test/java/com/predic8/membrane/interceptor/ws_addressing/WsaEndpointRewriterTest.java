@@ -13,15 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor.ws_addressing;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.InputStream;
 
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.ws_addressing.DecoupledEndpointRegistry;
@@ -30,7 +30,7 @@ import com.predic8.membrane.core.interceptor.ws_addressing.WsaEndpointRewriter;
 public class WsaEndpointRewriterTest {
 	private InputStream input;
 
-	@Before
+	@BeforeEach
 	public void setUp() {
 		input = WsaEndpointRewriterTest.class.getResourceAsStream("/interceptor/ws_addressing/body.xml");
 	}

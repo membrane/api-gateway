@@ -18,6 +18,7 @@ import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.util.*;
 
+import com.floreysoft.jmte.message.ErrorMessage;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
@@ -107,13 +108,13 @@ public class LoginDialog {
 		engine.setErrorHandler(new ErrorHandler() {
 
 			@Override
-			public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
-				log.error(arg0);
+			public void error(ErrorMessage arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
+				log.error(arg0.key);
 			}
 
 			@Override
-			public void error(String arg0, Token arg1) throws ParseException {
-				log.error(arg0);
+			public void error(ErrorMessage arg0, Token arg1) throws ParseException {
+				log.error(arg0.key);
 			}
 		});
 		Map<String, Object> model = new HashMap<String, Object>();

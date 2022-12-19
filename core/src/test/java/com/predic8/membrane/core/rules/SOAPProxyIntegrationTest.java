@@ -19,9 +19,9 @@ import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Header;
@@ -31,12 +31,12 @@ public class SOAPProxyIntegrationTest {
 
 	private static Router router;
 
-	@BeforeClass
+	@BeforeAll
 	public static void init() throws MalformedURLException {
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void uninit() throws IOException {
 		router.shutdown();
 	}

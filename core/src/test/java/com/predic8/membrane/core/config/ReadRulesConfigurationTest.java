@@ -16,85 +16,84 @@ package com.predic8.membrane.core.config;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReadRulesConfigurationTest {
 
-	private Router router;
+	private static Router router;
 
-	private List<Rule> rules;
+	private static List<Rule> rules;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
         router = Router.init("classpath:/proxies.xml");
 		rules = router.getRuleManager().getRules();
 	}
 
 	@Test
 	public void testRulesSize() {
-		Assert.assertEquals(3, rules.size());
+		assertEquals(3, rules.size());
 	}
 
 	@Test
 	public void testProxyRuleListenPort() {
-		Assert.assertEquals(3090, rules.get(0).getKey().getPort());
+		assertEquals(3090, rules.get(0).getKey().getPort());
 	}
 
 	@Test
 	public void testProxyRuleBlockRequest() {
-		Assert.assertTrue(rules.get(0).isBlockRequest());
+		assertTrue(rules.get(0).isBlockRequest());
 	}
 
 	@Test
 	public void testProxyRuleBlockResponse() {
-		Assert.assertFalse(rules.get(0).isBlockResponse());
+		assertFalse(rules.get(0).isBlockResponse());
 	}
 
 	@Test
 	public void testServiceProxyListenPort() {
-		Assert.assertEquals(3000, rules.get(1).getKey().getPort());
+		assertEquals(3000, rules.get(1).getKey().getPort());
 	}
 
 	@Test
 	public void testServiceProxyTargetPort() {
-		Assert.assertEquals(80, ((ServiceProxy)rules.get(1)).getTargetPort());
+		assertEquals(80, ((ServiceProxy)rules.get(1)).getTargetPort());
 	}
 
 	@Test
 	public void testServiceProxyTargetHost() {
-		Assert.assertEquals("thomas-bayer.com", ((ServiceProxy)rules.get(1)).getTargetHost());
+		assertEquals("thomas-bayer.com", ((ServiceProxy)rules.get(1)).getTargetHost());
 	}
 
 	@Test
 	public void testServiceProxyDefaultMethod() {
-		Assert.assertEquals("*", rules.get(1).getKey().getMethod());
+		assertEquals("*", rules.get(1).getKey().getMethod());
 	}
 
 	@Test
 	public void testTestServiceProxyDefaultHost() {
-		Assert.assertEquals("*", rules.get(1).getKey().getHost());
+		assertEquals("*", rules.get(1).getKey().getHost());
 	}
 
 	@Test
 	public void testServiceProxyBlockRequest() {
-		Assert.assertFalse(rules.get(1).isBlockRequest());
+		assertFalse(rules.get(1).isBlockRequest());
 	}
 
 	@Test
 	public void testServiceProxyBlockResponse() {
-		Assert.assertTrue(rules.get(1).isBlockResponse());
+		assertTrue(rules.get(1).isBlockResponse());
 	}
 
 	@Test
 	public void testLocalServiceProxyListenPort() {
-		Assert.assertEquals(2000, rules.get(2).getKey().getPort());
+		assertEquals(2000, rules.get(2).getKey().getPort());
 	}
 
 	@Test
@@ -114,16 +113,16 @@ public class ReadRulesConfigurationTest {
 
 	@Test
 	public void testLocalServiceProxyInboundSSL() {
-		Assert.assertNull(rules.get(2).getSslInboundContext());
+		assertNull(rules.get(2).getSslInboundContext());
 	}
 
 	@Test
 	public void testLocalServiceProxyOutboundSSL() {
-		Assert.assertNull(rules.get(2).getSslOutboundContext());
+		assertNull(rules.get(2).getSslOutboundContext());
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

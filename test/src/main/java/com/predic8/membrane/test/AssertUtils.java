@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.test;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -58,6 +56,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.util.EntityUtils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AssertUtils {
 

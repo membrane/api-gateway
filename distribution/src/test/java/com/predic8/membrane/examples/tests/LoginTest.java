@@ -16,7 +16,7 @@ package com.predic8.membrane.examples.tests;
 
 import java.io.IOException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;

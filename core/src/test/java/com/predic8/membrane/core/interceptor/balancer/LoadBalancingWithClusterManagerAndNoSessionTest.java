@@ -13,15 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import org.junit.Before;
-
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
+import org.junit.jupiter.api.BeforeEach;
 
 public class LoadBalancingWithClusterManagerAndNoSessionTest extends
 LoadBalancingInterceptorTest {
 
-	@Override
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		super.setUp();
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 2000);

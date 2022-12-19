@@ -18,11 +18,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.*;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +31,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
-import com.sun.mail.smtp.SMTPTransport;
 
 /**
  * @explanation A <i>token provider</i> sending a randomly generated numeric token
@@ -111,6 +108,7 @@ public class EmailTokenProvider extends NumericTokenProvider {
 	private void sendEmail(String sender, String recipient, String subject, String text) {
 		try {
 			Properties props = System.getProperties();
+			props.put("mail.smtp.host", smtpHost);
 			props.put("mail.smtp.port", "" + smtpPort);
 			props.put("mail.smtp.socketFactory.port", "" + smtpPort);
 			if (ssl) {
@@ -121,7 +119,12 @@ public class EmailTokenProvider extends NumericTokenProvider {
 				props.put("mail.smtp.auth", "true");
 			}
 
-			Session session = Session.getInstance(props, null);
+			Session session = Session.getInstance(props, new Authenticator() {
+				@Override
+				protected PasswordAuthentication getPasswordAuthentication() {
+					return new PasswordAuthentication(smtpUser, smtpPassword);
+				}
+			});
 
 			final MimeMessage msg = new MimeMessage(session);
 
@@ -131,10 +134,7 @@ public class EmailTokenProvider extends NumericTokenProvider {
 			msg.setText(text, Constants.UTF_8);
 			msg.setSentDate(new Date());
 
-			SMTPTransport t = (SMTPTransport)session.getTransport(ssl ? "smtps" : "smtp");
-			t.connect(smtpHost, smtpUser, smtpPassword);
-			t.sendMessage(msg, msg.getAllRecipients());
-			t.close();
+			Transport.send(msg, msg.getAllRecipients());
 		} catch (MessagingException e) {
 			throw new RuntimeException(e);
 		}

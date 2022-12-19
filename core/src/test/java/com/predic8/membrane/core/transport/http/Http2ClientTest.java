@@ -17,7 +17,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -25,8 +25,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientTest {
 

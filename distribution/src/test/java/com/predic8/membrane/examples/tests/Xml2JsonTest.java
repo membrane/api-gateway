@@ -16,8 +16,7 @@ package com.predic8.membrane.examples.tests;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Xml2JsonTest extends DistributionExtractingTestcase {
 
@@ -42,7 +42,7 @@ public class Xml2JsonTest extends DistributionExtractingTestcase {
             String response = postAndAssert(200,"http://localhost:2000/", headers, body);
             Thread.sleep(1000);
 
-            Assert.assertTrue(b.toString().contains("{\"jobs\":{\"job\":"));
+            assertTrue(b.toString().contains("{\"jobs\":{\"job\":"));
 
         } finally {
             sl.killScript();

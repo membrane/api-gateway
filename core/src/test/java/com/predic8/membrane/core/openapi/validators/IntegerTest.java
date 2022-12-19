@@ -20,13 +20,14 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.math.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class IntegerTest {
@@ -34,7 +35,7 @@ public class IntegerTest {
     OpenAPIValidator validator;
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/integer.yml"));
     }

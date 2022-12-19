@@ -33,23 +33,20 @@ import com.predic8.membrane.core.transport.http.HttpClientUtil;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.util.URIFactory;
 import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AbortExchangeTest {
 
     Router router;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         router = new HttpRouter();
 
@@ -107,9 +104,9 @@ public class AbortExchangeTest {
 
     private void assertExchangeStoreHas(ExchangeStore exchangeStore, int numberOfExchanges, int responsePresent) throws IOException {
         List<AbstractExchange> list = exchangeStore.getAllExchangesAsList();
-        Assert.assertEquals(numberOfExchanges, list.size());
+        assertEquals(numberOfExchanges, list.size());
         for (AbstractExchange e : list) {
-            assertTrue("Exchange has " + (responsePresent == 1 ? "no " : "") + "response", responsePresent == 0 ? e.getResponse().getBody().getLength() == 0 : list.get(0).getResponse().getBody().getLength() >= 1);
+            assertTrue(responsePresent == 0 ? e.getResponse().getBody().getLength() == 0 : list.get(0).getResponse().getBody().getLength() >= 1, "Exchange has " + (responsePresent == 1 ? "no " : "") + "response");
         }
 
     }
@@ -118,7 +115,7 @@ public class AbortExchangeTest {
         return new HttpClient().call(new Request.Builder().get("http://localhost:3031/").header("Connection", "close").buildExchange()).getResponse();
     }
 
-    @After
+    @AfterEach
     public void done() throws IOException {
         router.shutdown();
     }

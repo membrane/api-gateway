@@ -13,19 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.predic8.membrane.core.interceptor.swagger.SwaggerAdapter;
 import io.swagger.parser.SwaggerParser;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class SwaggerProxyKeyTest {
 
 	static SwaggerProxyKey key;
 
-	@BeforeClass
+	@BeforeAll
 	public static void oneTimeSetUp() {
 		key = new SwaggerProxyKey(3000);
 		key.setSwagger(new SwaggerAdapter(new SwaggerParser().read("http://petstore.swagger.io/v2/swagger.json")));

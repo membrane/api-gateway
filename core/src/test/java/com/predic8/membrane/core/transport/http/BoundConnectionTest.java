@@ -15,14 +15,13 @@
 package com.predic8.membrane.core.transport.http;
 
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
-import java.net.InetAddress;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -40,7 +39,7 @@ public class BoundConnectionTest {
 	HttpRouter router;
 	volatile long connectionHash = 0;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		router = new HttpRouter();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("*",
@@ -61,7 +60,7 @@ public class BoundConnectionTest {
 		router.init();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

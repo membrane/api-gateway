@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor.ws_addressing;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.InputStream;
 
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
@@ -27,12 +27,12 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.ws_addressing.WsaEndpointRewriterInterceptor;
 import com.predic8.membrane.core.util.MessageUtil;
 
-@Ignore
+@Disabled
 public class WsaEndpointRewriterInterceptorTest {
 	private WsaEndpointRewriterInterceptor rewriter;
 	private Exchange exc;
 
-	@Before
+	@BeforeEach
 	public void setUp() {
 		rewriter = new WsaEndpointRewriterInterceptor();
 		exc = new Exchange(null);

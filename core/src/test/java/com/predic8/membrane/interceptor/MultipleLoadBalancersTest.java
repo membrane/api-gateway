@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.interceptor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 
@@ -23,9 +23,9 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
@@ -39,13 +39,18 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
 public class MultipleLoadBalancersTest {
-	private MockService service1, service2, service11, service12;
+	private static MockService service1;
+	private static MockService service2;
+	private static MockService service11;
+	private static MockService service12;
 
-	protected LoadBalancingInterceptor balancingInterceptor1, balancingInterceptor2;
-	private DispatchingStrategy roundRobinStrategy1, roundRobinStrategy2;
-	protected HttpRouter balancer;
+	protected static LoadBalancingInterceptor balancingInterceptor1;
+	protected static LoadBalancingInterceptor balancingInterceptor2;
+	private static DispatchingStrategy roundRobinStrategy1;
+	private static DispatchingStrategy roundRobinStrategy2;
+	protected static HttpRouter balancer;
 
-	private class MockService {
+	private static class MockService {
 		final int port;
 		final HttpRouter service1;
 		final DummyWebServiceInterceptor mockInterceptor1;
@@ -66,7 +71,7 @@ public class MultipleLoadBalancersTest {
 		}
 	}
 
-	private LoadBalancingInterceptor createBalancingInterceptor(int port, String name) throws Exception {
+	private static LoadBalancingInterceptor createBalancingInterceptor(int port, String name) throws Exception {
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80);
 		LoadBalancingInterceptor balancingInterceptor1 = new LoadBalancingInterceptor();
 		balancingInterceptor1.setName(name);
@@ -77,8 +82,8 @@ public class MultipleLoadBalancersTest {
 	}
 
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 
 		service1 = new MockService(2001);
 		service2 = new MockService(2002);
@@ -101,8 +106,8 @@ public class MultipleLoadBalancersTest {
 		roundRobinStrategy2 = new RoundRobinStrategy();
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		service1.close();
 		service2.close();
 		service11.close();

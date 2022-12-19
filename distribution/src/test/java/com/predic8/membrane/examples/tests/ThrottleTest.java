@@ -15,12 +15,12 @@
 package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
@@ -36,7 +36,7 @@ public class ThrottleTest extends DistributionExtractingTestcase {
 			long start = System.currentTimeMillis();
 			getAndAssert200("http://localhost:2000/");
 			long elapsedMillis = System.currentTimeMillis() - start;
-			Assert.assertTrue(elapsedMillis >= 1000);
+			assertTrue(elapsedMillis >= 1000);
 		} finally {
 			sl.killScript();
 		}

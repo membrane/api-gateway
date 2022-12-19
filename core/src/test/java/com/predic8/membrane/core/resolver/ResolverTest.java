@@ -19,14 +19,10 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -40,8 +36,12 @@ import com.predic8.schema.Schema;
 import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class ResolverTest {
 
 	/*
@@ -80,7 +80,6 @@ public class ResolverTest {
 	// ResolverInterfaceType (MEMBRANE_SERVICE_PROXY, MEMBRANE_SOA_MODEL, LS_RESOURCE_RESOLVER) is handled by
 	// different test methods below
 
-	@Parameters
 	public static List<Object[]> getConfigurations() {
 		List<Object[]> res = new ArrayList<Object[]>();
 		for (BasisUrlType but : BasisUrlType.values())
@@ -88,21 +87,15 @@ public class ResolverTest {
 		return res;
 	}
 
-	private BasisUrlType basisUrlType;
-
-	public ResolverTest(BasisUrlType basisUrlType) {
-		this.basisUrlType = basisUrlType;
-	}
-
-
 	public static ResolverMap resolverMap = new ResolverMap();
 
 	private String wsdlLocation;
 	private String xsdLocation;
 
-	@Test
-	public void testLSResourceResolver() throws IOException {
-		if (hit = !setupLocations())
+	@ParameterizedTest
+	@MethodSource("getConfigurations")
+	public void testLSResourceResolver(BasisUrlType basisUrlType) throws IOException {
+		if (hit = !setupLocations(basisUrlType))
 			return;
 
 		try {
@@ -112,24 +105,26 @@ public class ResolverTest {
 		}
 	}
 
-	@Test
-	public void testMembraneServiceProxyCombine() throws IOException {
-		if (hit = !setupLocations())
+	@ParameterizedTest
+	@MethodSource("getConfigurations")
+	public void testMembraneServiceProxyCombine(BasisUrlType basisUrlType) throws IOException {
+		if (hit = !setupLocations(basisUrlType))
 			return;
 
-		Assert.assertNotNull(resolverMap.resolve(wsdlLocation));
+		assertNotNull(resolverMap.resolve(wsdlLocation));
 		for (String relUrl : new String[] { "1.xsd", "./1.xsd", "../resolver/1.xsd", "http://localhost:3029/resolver/1.xsd" }) {
 			try {
-				Assert.assertNotNull(resolverMap.resolve(ResolverMap.combine(wsdlLocation, relUrl)));
+				assertNotNull(resolverMap.resolve(ResolverMap.combine(wsdlLocation, relUrl)));
 			} catch (Exception e) {
 				throw new RuntimeException("Error during combine(\"" + wsdlLocation + "\", \"" + relUrl + "\"):", e);
 			}
 		}
 	}
 
-	@Test
-	public void testMembraneSoaModel() throws IOException {
-		if (hit = !setupLocations())
+	@ParameterizedTest
+	@MethodSource("getConfigurations")
+	public void testMembraneSoaModel(BasisUrlType basisUrlType) throws IOException {
+		if (hit = !setupLocations(basisUrlType))
 			return;
 
 		try {
@@ -145,17 +140,17 @@ public class ResolverTest {
 		}
 	}
 
-	@After
+	@AfterEach
 	public void postpare() {
 		// since a.wsdl and 2.xsd reference a HTTP resource, it should get loaded
-		Assert.assertTrue("No HTTP resource was retrieved (while referenced)", hit);
+		assertTrue(hit, "No HTTP resource was retrieved (while referenced)");
 	}
 
 	/**
 	 * Sets wsdlLocation and xsdLocation, given the current test parameters
 	 * @return whether the current test parameters is supported
 	 */
-	private boolean setupLocations() throws IOException {
+	private boolean setupLocations(BasisUrlType basisUrlType) throws IOException {
 		switch (basisUrlType) {
 		case BUNDLE:
 			return false;
@@ -178,7 +173,7 @@ public class ResolverTest {
 			if (!deployment.equals(STANDALONE))
 				return false;
 			basisUrlType = BasisUrlType.WINDOWS_DRIVE;
-			if (!setupLocations())
+			if (!setupLocations(basisUrlType))
 				return false;
 			wsdlLocation = "file://" + wsdlLocation;
 			xsdLocation = "file://" + xsdLocation;
@@ -198,7 +193,7 @@ public class ResolverTest {
 			if (!deployment.equals(STANDALONE))
 				return false;
 			basisUrlType = BasisUrlType.WINDOWS_DRIVE;
-			if (!setupLocations())
+			if (!setupLocations(basisUrlType))
 				return false;
 			wsdlLocation = wsdlLocation.replaceAll("/", "\\\\");
 			xsdLocation = xsdLocation.replaceAll("/", "\\\\");
@@ -257,7 +252,7 @@ public class ResolverTest {
 
 	public static String deployment = STANDALONE;
 
-	@BeforeClass
+	@BeforeAll
 	public static void setup() throws Exception {
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3029), "localhost", 8080);
 
@@ -282,7 +277,7 @@ public class ResolverTest {
 		router.init();
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void teardown() throws IOException {
 		router.shutdown();
 	}

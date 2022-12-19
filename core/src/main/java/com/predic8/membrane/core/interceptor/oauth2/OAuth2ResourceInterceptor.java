@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.floreysoft.jmte.Engine;
 import com.floreysoft.jmte.ErrorHandler;
+import com.floreysoft.jmte.message.ErrorMessage;
 import com.floreysoft.jmte.message.ParseException;
 import com.floreysoft.jmte.token.Token;
 import com.google.common.cache.Cache;
@@ -453,13 +454,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         engine.setErrorHandler(new ErrorHandler() {
 
             @Override
-            public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
-                log.error(arg0);
+            public void error(ErrorMessage arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
+                log.error(arg0.key);
             }
 
             @Override
-            public void error(String arg0, Token arg1) throws ParseException {
-                log.error(arg0);
+            public void error(ErrorMessage arg0, Token arg1) throws ParseException {
+                log.error(arg0.key);
             }
         });
         Map<String, Object> model = new HashMap<String, Object>();

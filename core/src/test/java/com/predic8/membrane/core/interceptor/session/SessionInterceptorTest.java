@@ -35,9 +35,9 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -50,16 +50,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SessionInterceptorTest {
 
-    private HttpRouter router;
-    private CloseableHttpClient httpClient;
+    private static HttpRouter router;
+    private static CloseableHttpClient httpClient;
 
-    @Before
-    public void setUp() {
+    @BeforeAll
+    public static void setUp() {
         router = new HttpRouter();
         httpClient = createHttpClient();
     }
@@ -248,7 +248,7 @@ public class SessionInterceptorTest {
                 .collect(Collectors.joining(";")));
     }
 
-    private CloseableHttpClient createHttpClient() {
+    private static CloseableHttpClient createHttpClient() {
         return HttpClients.custom().setConnectionManager(new BasicHttpClientConnectionManager()).setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
     }
 
@@ -289,8 +289,8 @@ public class SessionInterceptorTest {
             };
     }
 
-    @After
-    public void tearDown() throws IOException {
+    @AfterAll
+    public static void tearDown() throws IOException {
         httpClient.close();
         router.shutdown();
     }

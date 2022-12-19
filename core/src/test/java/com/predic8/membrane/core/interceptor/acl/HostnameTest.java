@@ -15,24 +15,23 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.UnknownHostException;
 
-import junit.framework.TestCase;
-
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 
-public class HostnameTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-	Router router;
+public class HostnameTest {
 
-	Hostname h1;
+	static Router router;
 
-	Ip ip;
+	static Hostname h1;
 
-	@Override
-	@Before
-	public void setUp() throws Exception {
+	static Ip ip;
+
+	@BeforeAll
+	public static void setUp() throws Exception {
 
 		router = new Router();
 

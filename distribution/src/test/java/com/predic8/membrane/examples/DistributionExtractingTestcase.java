@@ -26,8 +26,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * Extracts the .zip distribution built by Maven.
@@ -35,7 +35,7 @@ import org.junit.Before;
 public class DistributionExtractingTestcase {
 	private File targetDir, unzipDir, membraneHome;
 
-	@Before
+	@BeforeEach
 	public void init() throws IOException, InterruptedException {
 		targetDir = new File("target").getCanonicalFile();
 		if (!targetDir.exists())
@@ -115,7 +115,7 @@ public class DistributionExtractingTestcase {
 		return membraneHome;
 	}
 
-	@After
+	@AfterEach
 	public void done() {
 		System.out.println("cleaning up...");
 		recursiveDelete(unzipDir);

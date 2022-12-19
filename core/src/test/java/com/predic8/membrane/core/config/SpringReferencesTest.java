@@ -17,11 +17,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 
-import org.junit.Assert;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -29,12 +27,15 @@ import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.SpringInterceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
 public class SpringReferencesTest {
 
-	private Router r;
+	private static Router r;
 
-	@Before
-	public void before() throws MalformedURLException {
+	@BeforeAll
+	public static void before() throws MalformedURLException {
 		r = Router.init("classpath:/proxies-using-spring-refs.xml");
 	}
 
@@ -43,20 +44,20 @@ public class SpringReferencesTest {
 		ServiceProxy p = (ServiceProxy) r.getRules().iterator().next();
 		List<Interceptor> is = p.getInterceptors();
 
-		Assert.assertEquals(LogInterceptor.class, is.get(0).getClass());
-		Assert.assertEquals(LogInterceptor.class, is.get(1).getClass());
-		Assert.assertEquals(LogInterceptor.class, is.get(2).getClass());
-		Assert.assertEquals(SpringInterceptor.class, is.get(3).getClass());
-		Assert.assertEquals(LogInterceptor.class, is.get(4).getClass());
+		assertEquals(LogInterceptor.class, is.get(0).getClass());
+		assertEquals(LogInterceptor.class, is.get(1).getClass());
+		assertEquals(LogInterceptor.class, is.get(2).getClass());
+		assertEquals(SpringInterceptor.class, is.get(3).getClass());
+		assertEquals(LogInterceptor.class, is.get(4).getClass());
 
 		SpringInterceptor si = (SpringInterceptor) is.get(3);
 
-		Assert.assertSame(is.get(1), is.get(2));
-		Assert.assertSame(is.get(1), si.getInner());
+		assertSame(is.get(1), is.get(2));
+		assertSame(is.get(1), si.getInner());
 	}
 
-	@After
-	public void after() throws IOException {
+	@AfterAll
+	public static void after() throws IOException {
 		r.shutdown();
 	}
 }

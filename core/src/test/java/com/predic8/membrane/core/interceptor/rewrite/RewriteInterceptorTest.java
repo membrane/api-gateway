@@ -13,13 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -36,7 +37,7 @@ public class RewriteInterceptorTest {
 	private DispatchingInterceptor di;
 	private ServiceProxy sp;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		HttpRouter router = new HttpRouter();
 

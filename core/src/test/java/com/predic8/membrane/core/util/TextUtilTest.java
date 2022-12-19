@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.regex.Pattern;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TextUtilTest {
 

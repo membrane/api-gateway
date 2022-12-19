@@ -21,20 +21,20 @@ import java.util.List;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 
 public class UserFeatureTest {
 
-	private Router router;
+	private static Router router;
 
-	List<String> labels, inverseLabels;
+	static List<String> labels, inverseLabels;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		router = Router.init("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
 
@@ -42,8 +42,8 @@ public class UserFeatureTest {
 		inverseLabels = new ArrayList<String>(Arrays.asList(new String[] { "Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1" }));
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

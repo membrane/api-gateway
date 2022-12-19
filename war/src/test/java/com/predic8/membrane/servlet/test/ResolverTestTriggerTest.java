@@ -14,19 +14,21 @@
 package com.predic8.membrane.servlet.test;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import org.apache.http.ParseException;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Request;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Test;
+import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,15 +56,18 @@ public class ResolverTestTriggerTest extends AbstractInterceptor {
 			resolverMap.getClass().getMethod("addSchemaResolver", SchemaResolver.class).invoke(resolverMap, value);
 
 
-			Parameterized p = new Parameterized(clazz);
-			JUnitCore c = new JUnitCore();
-			Result run = c.run(Request.runner(p));
+			LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request().selectors(selectClass(clazz)).build();
+			SummaryGeneratingListener listener = new SummaryGeneratingListener();
+
+			Launcher launcher = LauncherFactory.create();
+			launcher.registerTestExecutionListeners(listener);
+			launcher.execute(request);
 
 			StringBuilder sb = new StringBuilder();
 
 			sb.append(MAGIC);
 
-			for (Failure f : run.getFailures()) {
+			for (TestExecutionSummary.Failure f : listener.getSummary().getFailures()) {
 				sb.append(f.toString());
 				StringWriter stringWriter = new StringWriter();
 				f.getException().printStackTrace(new PrintWriter(stringWriter));
@@ -81,7 +86,7 @@ public class ResolverTestTriggerTest extends AbstractInterceptor {
 
 	@Test
 	public void run() throws ParseException, IOException {
-		Assert.assertEquals(MAGIC, getAndAssert200("http://localhost:3021/test/"));
+		assertEquals(MAGIC, getAndAssert200("http://localhost:3021/test/"));
 	}
 
 }

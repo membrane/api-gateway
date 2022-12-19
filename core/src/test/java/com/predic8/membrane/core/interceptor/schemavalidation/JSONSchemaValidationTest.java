@@ -16,13 +16,14 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import java.io.IOException;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.resolver.ResolverMap;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JSONSchemaValidationTest {
 
@@ -40,9 +41,9 @@ public class JSONSchemaValidationTest {
 		Exchange exchange = new Exchange(null);
 		jsonValidator.validateMessage(exchange, request, "request");
 		if (success)
-			Assert.assertTrue(sb.toString(), sb.length() == 0);
+			assertTrue(sb.length() == 0, sb.toString());
 		else
-			Assert.assertTrue("No error occurred, but expected one.", sb.length() != 0);
+			assertTrue(sb.length() != 0, "No error occurred, but expected one.");
 	}
 
 	@Test

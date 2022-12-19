@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;

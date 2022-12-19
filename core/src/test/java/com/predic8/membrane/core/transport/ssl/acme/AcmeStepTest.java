@@ -32,9 +32,9 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.ssl.AcmeSSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.security.Security;
@@ -44,8 +44,8 @@ import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORI
 import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_VALID;
 import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_PROCESSING;
 import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_READY;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeStepTest {
 
@@ -56,13 +56,13 @@ public class AcmeStepTest {
     private AcmeServerSimulator sim;
     public String baseUrl = "http://localhost:3050/directory";
 
-    @Before
+    @BeforeEach
     public void init() throws IOException {
         sim = new AcmeServerSimulator(3050, 3052, true);
         sim.start();
     }
 
-    @After
+    @AfterEach
     public void done() {
         sim.stop();
     }

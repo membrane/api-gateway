@@ -14,26 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.cbr;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 
-public class XPathCBRInterceptorIntegrationTest extends TestCase {
+public class XPathCBRInterceptorIntegrationTest {
 
-	private Router router;
+	private static Router router;
 
-	@Override
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		router = Router.init("classpath:/cbr/cbr.proxies.xml");
 	}
 
@@ -46,8 +43,7 @@ public class XPathCBRInterceptorIntegrationTest extends TestCase {
 		httpClient.getHttpConnectionManager().closeIdleConnections(0);
 	}
 
-	@Override
-	@After
+	@AfterAll
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

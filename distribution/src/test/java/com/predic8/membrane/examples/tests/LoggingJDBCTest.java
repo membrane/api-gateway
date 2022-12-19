@@ -16,6 +16,8 @@ package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static org.apache.commons.io.FileUtils.copyFileToDirectory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,8 +28,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
@@ -68,8 +69,8 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 			try {
 				ResultSet rs = stmt.executeQuery("select METHOD from MEMBRANE.STATISTIC");
 				try {
-					Assert.assertTrue(rs.next());
-					Assert.assertEquals("GET", rs.getString(1));
+					assertTrue(rs.next());
+					assertEquals("GET", rs.getString(1));
 				} finally {
 					rs.close();
 				}

@@ -17,7 +17,7 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import com.predic8.membrane.test.AssertUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,8 +27,8 @@ import java.nio.file.Paths;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class InternalProxyTest extends DistributionExtractingTestcase {
 

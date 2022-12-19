@@ -16,9 +16,7 @@ package com.predic8.membrane.core.interceptor.rewrite;
 
 import java.net.URL;
 
-import org.junit.Assert;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -27,38 +25,40 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class ReverseProxyingInterceptorTest {
 	ReverseProxyingInterceptor rp = new ReverseProxyingInterceptor();
 
 	@Test
 	public void localRedirect() throws Exception {
 		// invalid by spec, redirection location should not be rewritten
-		Assert.assertEquals("/local", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "/local"));
+		assertEquals("/local", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "/local"));
 	}
 
 	@Test
 	public void sameServer() throws Exception {
 		// same server, redirection location should be rewritten
 		// (whether ":80" actually occurs the final string does not matter)
-		Assert.assertEquals("http://membrane/bar", getRewrittenRedirectionLocation("membrane", 80, "http://target/foo", "http://target/bar"));
+		assertEquals("http://membrane/bar", getRewrittenRedirectionLocation("membrane", 80, "http://target/foo", "http://target/bar"));
 	}
 
 	@Test
 	public void sameServerNonStdPort() throws Exception {
 		// same server, redirection location should be rewritten
-		Assert.assertEquals("http://membrane:2000/bar", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "http://target/bar"));
+		assertEquals("http://membrane:2000/bar", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "http://target/bar"));
 	}
 
 	@Test
 	public void differentPort() throws Exception {
 		// different port, redirection location should not be rewritten
-		Assert.assertEquals("http://membrane:2001/bar", getRewrittenRedirectionLocation("membrane", 80, "http://membrane:2000/foo", "http://membrane:2001/bar"));
+		assertEquals("http://membrane:2001/bar", getRewrittenRedirectionLocation("membrane", 80, "http://membrane:2000/foo", "http://membrane:2001/bar"));
 	}
 
 	@Test
 	public void differentServer() throws Exception {
 		// different server, redirection location should not be rewritten
-		Assert.assertEquals("http://target2/bar", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "http://target2/bar"));
+		assertEquals("http://target2/bar", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "http://target2/bar"));
 	}
 
 
@@ -67,39 +67,39 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private String getRewrittenRedirectionLocation(String requestHostHeader, int port, String requestURI, String redirectionURI) throws Exception {
 		Exchange exc = createExchange(requestHostHeader, null, port, requestURI, redirectionURI);
-		Assert.assertEquals(Outcome.CONTINUE, rp.handleResponse(exc));
+		assertEquals(Outcome.CONTINUE, rp.handleResponse(exc));
 		return exc.getResponse().getHeader().getFirstValue(Header.LOCATION);
 	}
 
 	@Test
 	public void localDestination() throws Exception {
 		// invalid by spec, redirection location should not be rewritten
-		Assert.assertEquals("/local", getRewrittenDestination("membrane", "/local", 2000, "/foo", "http", 80));
+		assertEquals("/local", getRewrittenDestination("membrane", "/local", 2000, "/foo", "http", 80));
 	}
 
 	@Test
 	public void sameServerDestination() throws Exception {
 		// same server, redirection location should be rewritten
 		// (whether ":80" actually occurs the final string does not matter)
-		Assert.assertEquals("http://target/bar", getRewrittenDestination("membrane", "http://membrane/bar", 80, "/foo", "http", 80));
+		assertEquals("http://target/bar", getRewrittenDestination("membrane", "http://membrane/bar", 80, "/foo", "http", 80));
 	}
 
 	@Test
 	public void sameServerNonStdPortDestination() throws Exception {
 		// same server, redirection location should be rewritten
-		Assert.assertEquals("https://target:81/bar", getRewrittenDestination("membrane:2000", "http://membrane:2000/bar", 2000, "/foo", "https", 81));
+		assertEquals("https://target:81/bar", getRewrittenDestination("membrane:2000", "http://membrane:2000/bar", 2000, "/foo", "https", 81));
 	}
 
 	@Test
 	public void differentPortDestination() throws Exception {
 		// different port, redirection location should not be rewritten
-		Assert.assertEquals("http://membrane:2001/bar", getRewrittenDestination("membrane", "http://membrane:2001/bar", 80, "/foo", "http", 80));
+		assertEquals("http://membrane:2001/bar", getRewrittenDestination("membrane", "http://membrane:2001/bar", 80, "/foo", "http", 80));
 	}
 
 	@Test
 	public void differentServerDestination() throws Exception {
 		// different server, redirection location should not be rewritten
-		Assert.assertEquals("http://target2/bar", getRewrittenDestination("membrane", "http://target2/bar", 2000, "/foo", "http", 80));
+		assertEquals("http://target2/bar", getRewrittenDestination("membrane", "http://target2/bar", 2000, "/foo", "http", 80));
 	}
 
 
@@ -110,7 +110,7 @@ public class ReverseProxyingInterceptorTest {
 		Exchange exc = createExchange(requestHostHeader, requestDestinationHeader, port, requestURI, null);
 		String url = new URL(targetScheme, "target", targetPort, exc.getRequest().getUri()).toString();
 		exc.getDestinations().add(url);
-		Assert.assertEquals(Outcome.CONTINUE, rp.handleRequest(exc));
+		assertEquals(Outcome.CONTINUE, rp.handleRequest(exc));
 		return exc.getRequest().getHeader().getFirstValue(Header.DESTINATION);
 	}
 

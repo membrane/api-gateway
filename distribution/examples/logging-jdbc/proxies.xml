@@ -4,7 +4,7 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<spring:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+	<spring:bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
 		<spring:property name="driverClassName" value="org.apache.derby.jdbc.ClientDriver" />
 		<spring:property name="url" value="jdbc:derby://localhost:1527/membranedb;create=true" />
 		<spring:property name="username" value="membrane" />

@@ -13,16 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 
-import org.junit.Assert;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -31,19 +29,19 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class ReadRulesWithInterceptorsConfigurationTest {
 
-	private Router router;
+	private static Router router;
 
-	private List<Rule> rules;
+	private static List<Rule> rules;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		router = Router.init("src/test/resources/ref.proxies.xml");
 		rules = router.getRuleManager().getRules();
 	}
 
 	@Test
 	public void testRulesSize() throws Exception {
-		Assert.assertEquals(2, rules.size());
+		assertEquals(2, rules.size());
 	}
 
 	@Test
@@ -72,8 +70,8 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 		assertEquals("Access Control List Interceptor", interceptors.get(0).getDisplayName());
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

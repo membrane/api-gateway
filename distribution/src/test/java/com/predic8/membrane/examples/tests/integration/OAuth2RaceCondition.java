@@ -28,9 +28,9 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -39,8 +39,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2RaceCondition {
 
@@ -48,13 +48,13 @@ public class OAuth2RaceCondition {
     private Router server;
     private Router client;
 
-    @Before
+    @BeforeEach
     public void setUp() throws MalformedURLException {
         server = HttpRouter.init(System.getProperty("user.dir") + "\\src\\test\\resources\\OAuth2\\server.xml");
         client = HttpRouter.init(System.getProperty("user.dir") + "\\src\\test\\resources\\OAuth2\\client.xml");
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws MalformedURLException {
         server.stop();
         client.stopAll();

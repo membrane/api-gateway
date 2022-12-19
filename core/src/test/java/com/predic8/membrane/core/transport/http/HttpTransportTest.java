@@ -18,9 +18,9 @@ import java.io.IOException;
 
 import com.predic8.membrane.core.Statistics;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
@@ -28,7 +28,7 @@ import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import static org.mockito.Mockito.*;
 
@@ -45,7 +45,7 @@ public class HttpTransportTest {
 	private Statistics statistics = new Statistics();
 	private HttpTransport transport;
 
-	@Before
+	@BeforeEach
 	public void before() throws Exception {
 		when(resolverMap.getHTTPSchemaResolver()).thenReturn(httpSchemaResolver);
 		when(router.getResolverMap()).thenReturn(resolverMap);
@@ -58,7 +58,7 @@ public class HttpTransportTest {
 		transport.init(router);
 	}
 
-	@After
+	@AfterEach
 	public void after() throws IOException {
 		transport.closeAll();
 	}

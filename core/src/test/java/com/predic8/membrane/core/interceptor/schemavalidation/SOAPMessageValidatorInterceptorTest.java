@@ -14,14 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.InputStreamReader;
 
 import com.predic8.membrane.core.resolver.ResolverMap;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -33,11 +33,11 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class SOAPMessageValidatorInterceptorTest {
 
-	private Request requestTB;
+	private static Request requestTB;
 
-	private Request requestXService;
+	private static Request requestXService;
 
-	private Exchange exc;
+	private static Exchange exc;
 
 	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.xml";
 
@@ -49,8 +49,8 @@ public class SOAPMessageValidatorInterceptorTest {
 
 
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
@@ -96,7 +96,7 @@ public class SOAPMessageValidatorInterceptorTest {
 		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
-	@Ignore(value="This is a problem in the soa-model dependency.")
+	@Disabled(value="This is a problem in the soa-model dependency.")
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
 		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));

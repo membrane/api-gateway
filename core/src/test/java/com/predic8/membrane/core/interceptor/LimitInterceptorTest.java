@@ -18,19 +18,21 @@ import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import java.io.IOException;
 
 import org.apache.http.client.ClientProtocolException;
-import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class LimitInterceptorTest {
 
 	private static HttpRouter router;
 
-	@BeforeClass
+	@BeforeAll
 	public static void before() throws Exception {
 		router = new HttpRouter();
 
@@ -50,7 +52,7 @@ public class LimitInterceptorTest {
 		router.init();
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void after() throws IOException {
 		router.shutdown();
 	}

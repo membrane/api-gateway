@@ -18,38 +18,35 @@ import java.io.FileInputStream;
 
 import javax.xml.stream.XMLInputFactory;
 
-import org.junit.Assert;
-
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.SOAPUtil;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class SOAPUtilTest {
-	private XMLInputFactory xmlInputFactory;
+	private static XMLInputFactory xmlInputFactory;
 
-	@Before
-	public void setUp() throws Exception {
-
+	@BeforeAll
+	public static void setUp() throws Exception {
 		xmlInputFactory = XMLInputFactory.newInstance();
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-
 	}
 
 	@Test
 	public void testFaultCheckSpecExample() throws Exception {
-		Assert.assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultFromSpec.xml")));
+		assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultFromSpec.xml")));
 	}
 
 	@Test
 	public void testFaultCustom() throws Exception {
-
-		Assert.assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultCustom.xml")));
+		assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultCustom.xml")));
 	}
 
 	private Message getMessage(String path) throws Exception {

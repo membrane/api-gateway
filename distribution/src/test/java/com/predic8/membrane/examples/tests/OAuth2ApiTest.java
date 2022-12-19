@@ -16,10 +16,10 @@ package com.predic8.membrane.examples.tests;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2ApiTest extends DistributionExtractingTestcase {
 

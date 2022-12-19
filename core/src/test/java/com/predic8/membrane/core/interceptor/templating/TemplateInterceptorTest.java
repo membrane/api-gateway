@@ -20,7 +20,10 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.json.JSONObject;
-import org.junit.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.w3c.dom.NodeList;
 
@@ -33,6 +36,8 @@ import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class TemplateInterceptorTest {
 
     TemplateInterceptor ti;
@@ -44,7 +49,7 @@ public class TemplateInterceptorTest {
     static ResolverMap map;
     static final String separator = FileSystems.getDefault().getSeparator();
 
-    @BeforeClass
+    @BeforeAll
     public static void setupFiles() throws IOException {
         //user.dir returns current working directory
         copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir") +
@@ -61,7 +66,7 @@ public class TemplateInterceptorTest {
         Mockito.when(router.getResolverMap()).thenReturn(map);
     }
 
-    @Before
+    @BeforeEach
     public void setUp(){
         ti = new TemplateInterceptor();
         exc = new Exchange(null);
@@ -85,7 +90,7 @@ public class TemplateInterceptorTest {
         String filled = ((NodeList) xpath.evaluate(DocumentBuilderFactory.newInstance().newDocumentBuilder()
                 .parse(exc.getRequest().getBodyAsStream()), XPathConstants.NODESET)).item(0).getFirstChild().getNodeValue();
 
-        Assert.assertEquals("minister", filled.trim());
+        assertEquals("minister", filled.trim());
     }
 
 
@@ -93,26 +98,30 @@ public class TemplateInterceptorTest {
     public void nonXmlTemplateListTest() throws Exception {
         setAndHandleRequest("./template_test.json");
 
-        Assert.assertEquals("food1",
+        assertEquals("food1",
                 new JSONObject(exc.getRequest().getBodyAsStringDecoded()).getJSONArray("orders")
                         .getJSONObject(0).getJSONArray("items").getString(0));
 
-        Assert.assertEquals("minister",
+        assertEquals("minister",
                 new JSONObject(exc.getRequest().getBodyAsStringDecoded()).getJSONObject("meta").getString("title"));
 
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void initTest() throws Exception {
-        ti.setLocation("./template_test.json");
-        ti.setTextTemplate("${minister}");
-        ti.init(router);
+        assertThrows(IllegalStateException.class, () -> {
+            ti.setLocation("./template_test.json");
+            ti.setTextTemplate("${minister}");
+            ti.init(router);
+        });
     }
 
-    @Test(expected = ResourceRetrievalException.class)
+    @Test
     public void notFoundTemplateException() throws Exception {
-        ti.setLocation("./not_existent_file");
-        ti.init(router);
+        assertThrows(ResourceRetrievalException.class, () -> {
+            ti.setLocation("./not_existent_file");
+            ti.init(router);
+        });
     }
 
     @Test
@@ -121,26 +130,26 @@ public class TemplateInterceptorTest {
         ti.init(router);
         ti.handleRequest(exc);
 
-        Assert.assertEquals("minister", exc.getRequest().getBodyAsStringDecoded());
+        assertEquals("minister", exc.getRequest().getBodyAsStringDecoded());
     }
 
     @Test
     public void contentTypeTestXml() throws Exception {
         setAndHandleRequest("./project_template.xml");
-        Assert.assertTrue(exc.getRequest().isXML());
+        assertTrue(exc.getRequest().isXML());
     }
 
     @Test
     public void contentTypeTestOther() throws Exception {
         ti.setContentType("application/json");
         setAndHandleRequest("./template_test.json");
-        Assert.assertTrue(exc.getRequest().isJSON());
+        assertTrue(exc.getRequest().isJSON());
     }
 
     @Test
     public void contentTypeTestNoXml() throws Exception {
         setAndHandleRequest("./template_test.json");
-        Assert.assertEquals("text/plain",exc.getRequest().getHeader().getContentType());
+        assertEquals("text/plain",exc.getRequest().getHeader().getContentType());
     }
 
     private void setAndHandleRequest(String location) throws Exception {
@@ -149,7 +158,7 @@ public class TemplateInterceptorTest {
         ti.handleRequest(exc);
     }
 
-    @AfterClass
+    @AfterAll
     public static  void deleteFile() throws IOException {
         Files.delete(copiedXml);
         Files.delete(copiedJson);

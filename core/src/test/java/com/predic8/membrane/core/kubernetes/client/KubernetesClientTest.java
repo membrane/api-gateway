@@ -21,9 +21,9 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Base64;
@@ -33,14 +33,14 @@ import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.interceptor.apimanagement.ApiManagementInterceptor.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class KubernetesClientTest {
 
-    private HttpRouter router;
+    private static HttpRouter router;
 
-    @Before
-    public void prepare() {
+    @BeforeAll
+    public static void prepare() {
         router = new HttpRouter();
         router.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3053), null, 0);
@@ -94,16 +94,18 @@ public class KubernetesClientTest {
         router.start();
     }
 
-    @After
-    public void done() {
+    @AfterAll
+    public static void done() {
         router.stop();
     }
 
-    @Test(expected = KubernetesApiException.class)
+    @Test
     public void read_nonExistent() throws IOException, KubernetesApiException {
-        KubernetesClient kc = KubernetesClientBuilder.newBuilder().baseURL("http://localhost:3053/").build();
+        assertThrows(KubernetesApiException.class, () -> {
+            KubernetesClient kc = KubernetesClientBuilder.newBuilder().baseURL("http://localhost:3053/").build();
 
-        kc.read("v1", "Secret", "default", "non-existent");
+            kc.read("v1", "Secret", "default", "non-existent");
+        });
     }
 
     @Test

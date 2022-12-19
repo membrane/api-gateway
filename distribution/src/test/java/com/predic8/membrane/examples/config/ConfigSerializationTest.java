@@ -19,11 +19,9 @@ import com.predic8.membrane.annot.bean.MCUtil;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.test.AssertUtils;
 import org.apache.commons.io.FileUtils;
-import org.custommonkey.xmlunit.XMLAssert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +30,9 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
 
 /**
  * Tests {@link MCUtil#fromXML(Class, String)} and {@link MCUtil#toXML(Object)} on every
@@ -45,7 +46,6 @@ import java.util.List;
  * 5. compare output from steps 2 and 4.
  *
  */
-@RunWith(Parameterized.class)
 public class ConfigSerializationTest {
 
 	// list of examples that do not work
@@ -61,7 +61,6 @@ public class ConfigSerializationTest {
 			"template-interceptor"
 	});
 
-	@Parameters
 	public static List<Object[]> getPorts() {
 		ArrayList<Object[]> res = new ArrayList<Object[]>();
 		recurse(new File("examples"), res);
@@ -83,14 +82,9 @@ public class ConfigSerializationTest {
 			}
 	}
 
-	private final String configFile;
-
-	public ConfigSerializationTest(String configFile) {
-		this.configFile = configFile;
-	}
-
-	@Test
-	public void doit() throws Exception {
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void doit(String configFile) throws Exception {
 		try {
 			String config = FileUtils.readFileToString(new File(configFile));
 
@@ -109,7 +103,7 @@ public class ConfigSerializationTest {
 
 			String xml2 = MCUtil.toXML(r2);
 
-			XMLAssert.assertXMLEqual(xml2, xml);
+			assertThat(xml2, isSimilarTo(xml));
 		} catch (Exception e) {
 			throw new Exception("in test " + configFile, e);
 		}

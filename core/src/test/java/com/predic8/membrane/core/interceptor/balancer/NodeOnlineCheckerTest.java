@@ -16,14 +16,14 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import java.net.URISyntaxException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NodeOnlineCheckerTest {
 	

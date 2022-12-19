@@ -13,24 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.http.Request;
 
 
 public class ServiceProxyKeyTest {
-
-
-	@Before
-	public void setUp() throws Exception {
-
-	}
 
 	@Test
 	public void testSimpleConstructor() throws Exception {

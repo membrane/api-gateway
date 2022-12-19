@@ -20,7 +20,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
@@ -29,7 +29,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class Json2XmlInterceptorTest {
@@ -46,10 +46,12 @@ public class Json2XmlInterceptorTest {
                 parse(processThroughInterceptorResponse(loadResource("/json/convert.json")))));
     }
 
-    @Test(expected = JSONException.class)
+    @Test
     public void invalidJsonTest() throws Exception {
-        getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
-                parse(processThroughInterceptor(new ByteArrayInputStream("invalid json".getBytes(StandardCharsets.UTF_8)))));
+        assertThrows(JSONException.class, () -> {
+            getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
+                    parse(processThroughInterceptor(new ByteArrayInputStream("invalid json".getBytes(StandardCharsets.UTF_8)))));
+        });
     }
 
     private Request createRequestFromBytes(byte[] bytes) throws IOException {

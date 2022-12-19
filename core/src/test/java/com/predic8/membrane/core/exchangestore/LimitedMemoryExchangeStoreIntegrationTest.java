@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.exchangestore;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.LargeBodyTest;
 import com.predic8.membrane.core.http.Request;
@@ -28,24 +29,25 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.Header.CHUNKED;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LimitedMemoryExchangeStoreIntegrationTest {
-    private LimitedMemoryExchangeStore lmes;
-    private HttpRouter router, router2;
-    private HttpClientConfiguration hcc;
-    private AtomicReference<Exchange> middleExchange = new AtomicReference<>();
+    private static LimitedMemoryExchangeStore lmes;
+    private static HttpRouter router;
+    private static HttpRouter router2;
+    private static HttpClientConfiguration hcc;
+    private static AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         lmes = new LimitedMemoryExchangeStore();
         lmes.setMaxSize(500000);
 
@@ -87,8 +89,13 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         router2.init();
     }
 
-    @After
-    public void shutdown() throws IOException {
+    @BeforeEach
+    public void init() {
+        lmes.removeAllExchanges((AbstractExchange[]) lmes.getAllExchanges());
+    }
+
+    @AfterAll
+    public static void shutdown() throws IOException {
         if (router != null)
             router.shutdown();
         if (router2 != null)
@@ -97,7 +104,6 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
 
     @Test
     public void small() throws Exception {
-        setup();
         long len = 100;
 
         Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).buildExchange();
@@ -112,7 +118,6 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
 
     @Test
     public void large() throws Exception {
-        setup();
         long len = Integer.MAX_VALUE + 1l;
 
         Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).buildExchange();
@@ -126,7 +131,6 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
 
     @Test
     public void largeChunked() throws Exception {
-        setup();
         long len = Integer.MAX_VALUE + 1l;
 
         Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();

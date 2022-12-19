@@ -14,13 +14,13 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 
-import junit.framework.TestCase;
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.http.*;
 
-public class JSESSIONIDExtractorTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class JSESSIONIDExtractorTest {
 
 
 	@Test

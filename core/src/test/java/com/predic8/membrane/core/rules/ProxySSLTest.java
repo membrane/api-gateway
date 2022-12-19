@@ -28,38 +28,25 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@RunWith(Parameterized.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class ProxySSLTest {
-    @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 { false, false, 3032, 3033 }, { false, true, 3034, 3035 }, { true, false, 3036, 3037 }, { true, true, 3038, 3039 }
         });
     }
 
-    private boolean backendUsesSSL;
-    private boolean proxyUsesSSL;
-    private int backendPort;
-    private int proxyPort;
-
-    public ProxySSLTest(boolean backendUsesSSL, boolean proxyUsesSSL, int backendPort, int proxyPort) {
-        this.backendUsesSSL = backendUsesSSL;
-        this.proxyUsesSSL = proxyUsesSSL;
-        this.backendPort = backendPort;
-        this.proxyPort = proxyPort;
-    }
-
-    @Test
-    public void test() throws Exception {
+    @ParameterizedTest
+    @MethodSource("data")
+    public void test(boolean backendUsesSSL, boolean proxyUsesSSL, int backendPort, int proxyPort) throws Exception {
         // Step 1: create the backend
         Router backend = new Router();
         backend.setHotDeploy(false);
@@ -130,8 +117,8 @@ public class ProxySSLTest {
         }
         hc.call(exc);
 
-        Assert.assertEquals(200, exc.getResponse().getStatusCode());
-        Assert.assertEquals("Did the request go through the proxy?", 1, proxyCounter.get());
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals(1, proxyCounter.get(), "Did the request go through the proxy?");
 
         proxyRouter.shutdown();
         backend.shutdown();

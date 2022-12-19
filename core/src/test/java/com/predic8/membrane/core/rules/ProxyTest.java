@@ -32,9 +32,9 @@ import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.security.KeyManagementException;
@@ -43,16 +43,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxyTest {
 
-    HttpRouter router;
-    AtomicReference<String> lastMethod = new AtomicReference<>();
+    static HttpRouter router;
+    static AtomicReference<String> lastMethod = new AtomicReference<>();
 
-    @Before
-    public void init() throws Exception {
+    @BeforeAll
+    public static void init() throws Exception {
 
         router = new HttpRouter();
         router.setHotDeploy(false);
@@ -95,7 +95,7 @@ public class ProxyTest {
         router.start();
     }
 
-    @After
+    @AfterAll
     public void done() throws IOException {
         router.shutdown();
     }

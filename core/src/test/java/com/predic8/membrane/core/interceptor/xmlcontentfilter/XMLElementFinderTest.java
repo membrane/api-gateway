@@ -19,9 +19,10 @@ import java.util.List;
 
 import javax.xml.namespace.QName;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Assert;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 public class XMLElementFinderTest {
 	private final static String DOC = "<a xmlns:s=\"space-s\" xmlns=\"space-default\"><b /><s:c></a>";
@@ -30,7 +31,7 @@ public class XMLElementFinderTest {
 		List<QName> names2 = new ArrayList<QName>();
 		for (QName name : names)
 			names2.add(name);
-		Assert.assertEquals(isExpectedToContainOneOf,
+		assertEquals(isExpectedToContainOneOf,
 				new XMLElementFinder(names2).matches(new ByteArrayInputStream(doc.getBytes())));
 	}
 

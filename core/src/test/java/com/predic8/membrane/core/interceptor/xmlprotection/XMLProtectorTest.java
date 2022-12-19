@@ -22,13 +22,14 @@ import java.io.OutputStreamWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import junit.framework.TestCase;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector;
 import com.predic8.membrane.core.util.ByteUtil;
 
-public class XMLProtectorTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class XMLProtectorTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(XMLProtectorTest.class);
 	private XMLProtector xmlProtector;

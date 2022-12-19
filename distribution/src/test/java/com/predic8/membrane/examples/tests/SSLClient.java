@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;

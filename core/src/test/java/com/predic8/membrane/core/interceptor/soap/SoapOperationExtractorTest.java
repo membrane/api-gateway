@@ -15,21 +15,22 @@ package com.predic8.membrane.core.interceptor.soap;
 
 import java.io.IOException;
 
-import org.junit.Assert;
-
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 public class SoapOperationExtractorTest {
 
-	private SoapOperationExtractor extractor;
+	private static SoapOperationExtractor extractor;
 
-	@Before
-	public void setUp() {
+	@BeforeAll
+	public static void setUp() {
 		extractor = new SoapOperationExtractor();
 	}
 
@@ -40,8 +41,8 @@ public class SoapOperationExtractorTest {
 
 		extractor.handleRequest(exc);
 
-		Assert.assertEquals("getBuecher", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
-		Assert.assertEquals("http://predic8.de", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
+		assertEquals("getBuecher", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
+		assertEquals("http://predic8.de", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
 
 	}
 
@@ -52,8 +53,8 @@ public class SoapOperationExtractorTest {
 
 		extractor.handleRequest(exc);
 
-		Assert.assertNull(exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
-		Assert.assertNull(exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
+		assertNull(exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
+		assertNull(exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
 
 	}
 
@@ -64,8 +65,8 @@ public class SoapOperationExtractorTest {
 
 		extractor.handleRequest(exc);
 
-		Assert.assertEquals("getBuecher", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
-		Assert.assertEquals("http://predic8.de", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
+		assertEquals("getBuecher", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
+		assertEquals("http://predic8.de", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
 
 	}
 

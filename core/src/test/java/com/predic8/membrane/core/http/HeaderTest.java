@@ -14,21 +14,20 @@
 
 package com.predic8.membrane.core.http;
 
-import static org.junit.Assert.*;
+import com.predic8.membrane.core.Constants;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import jakarta.activation.MimeType;
 import java.io.UnsupportedEncodingException;
 
-import javax.activation.MimeType;
-
-import org.junit.*;
-
-import com.predic8.membrane.core.Constants;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HeaderTest {
 
 	private static Header header = new Header();
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		header.setContentType("text/xml; charset=utf-8");
 		header.add("host", "127.0.0.1:2000");

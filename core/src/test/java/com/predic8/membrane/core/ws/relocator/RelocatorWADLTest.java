@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.ws.relocator;
 
 import static com.predic8.membrane.core.Constants.WADL_NS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.*;
 import java.util.Iterator;
@@ -21,11 +22,10 @@ import java.util.Iterator;
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
-import junit.framework.TestCase;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.xml.sax.InputSource;
 
-public class RelocatorWADLTest extends TestCase {
+public class RelocatorWADLTest {
 
 	NamespaceContext nsCtx = new NamespaceContext() {
 		public String getNamespaceURI(String prefix) {
@@ -50,8 +50,8 @@ public class RelocatorWADLTest extends TestCase {
 	private StringWriter writer;
 	private XPath xpath = XPathFactory.newInstance().newXPath();
 
-	@Override
-	protected void setUp() throws Exception {
+	@BeforeEach
+	public void setUp() throws Exception {
 
 		xpath.setNamespaceContext(nsCtx);
 
@@ -62,8 +62,6 @@ public class RelocatorWADLTest extends TestCase {
 				new QName(WADL_NS, "resources"), "base");
 		relocator.getRelocatingAttributes().put(new QName(WADL_NS, "include"),
 				"href");
-
-		super.setUp();
 	}
 
 	public void testWADLRelocate() throws Exception {

@@ -14,9 +14,9 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.HttpRouter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WellknownFileTest {
 

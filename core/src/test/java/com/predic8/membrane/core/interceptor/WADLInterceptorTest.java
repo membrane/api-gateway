@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +23,8 @@ import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
@@ -34,7 +34,7 @@ import com.predic8.membrane.core.util.MessageUtil;
 
 public class WADLInterceptorTest {
 
-	NamespaceContext nsCtx = new NamespaceContext() {
+	static NamespaceContext nsCtx = new NamespaceContext() {
 		public String getNamespaceURI(String prefix) {
 			if (prefix.equals("wadl")) {
 				return "http://wadl.dev.java.net/2009/02";
@@ -53,11 +53,11 @@ public class WADLInterceptorTest {
 		}
 	};
 
-	private XPath xpath = XPathFactory.newInstance().newXPath();
-	private WADLInterceptor interceptor;
+	private static XPath xpath = XPathFactory.newInstance().newXPath();
+	private static WADLInterceptor interceptor;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 
 		xpath.setNamespaceContext(nsCtx);
 

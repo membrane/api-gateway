@@ -19,8 +19,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;

@@ -17,7 +17,7 @@ import java.io.IOException;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;

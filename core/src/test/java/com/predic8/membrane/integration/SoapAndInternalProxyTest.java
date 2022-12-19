@@ -41,7 +41,7 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -56,7 +56,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Checks the combination of a soapProxy and internalProxy, using "service:internalProxyName/path/to/the?wsdl".

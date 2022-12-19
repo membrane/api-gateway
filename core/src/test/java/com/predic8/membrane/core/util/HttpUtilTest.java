@@ -15,15 +15,15 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.Constants;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpUtilTest {
 
@@ -31,7 +31,7 @@ public class HttpUtilTest {
 			+ Constants.CRLF;
 	private static InputStream is1;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		is1 = new ByteArrayInputStream(s1.getBytes());
 	}

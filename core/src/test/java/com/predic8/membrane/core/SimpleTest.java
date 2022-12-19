@@ -13,13 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import org.junit.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class SimpleTest {
 
 	private Router router;
 
-	@Before
+	@BeforeAll
 	public void setUp() throws Exception {
 		router = Router.init("classpath:/test-proxies.xml");
 	}
@@ -29,7 +31,7 @@ public class SimpleTest {
 
 	}
 
-	@After
+	@AfterAll
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

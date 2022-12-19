@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.net.URL;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -26,13 +26,14 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.util.MessageUtil;
+
 public class DispatchingInterceptorTest {
 
 	private DispatchingInterceptor dispatcher;
 
 	private Exchange exc;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		dispatcher = new DispatchingInterceptor();
 		exc = new Exchange(null);

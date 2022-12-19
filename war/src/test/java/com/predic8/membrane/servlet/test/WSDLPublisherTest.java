@@ -18,16 +18,17 @@ import java.io.IOException;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.http.ParseException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.WSDLUtil;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WSDLPublisherTest {
 
 	@Test
 	public void doit() throws ParseException, IOException, XMLStreamException {
-		Assert.assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
+		assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
 	}
 
 }

@@ -18,7 +18,8 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import io.swagger.v3.oas.models.*;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
@@ -27,13 +28,13 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.Y
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.X_MEMBRANE_VALIDATION;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static com.predic8.membrane.core.openapi.util.TestUtils.getSingleOpenAPIRecord;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIProxyTest {
 
     Router router;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         router = new Router();
     }

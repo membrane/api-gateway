@@ -23,15 +23,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.http.client.ClientProtocolException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class AdminConsoleTest {
 
-	@Parameters
 	public static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
 				{ 3021 }, // jetty port embedding membrane
@@ -42,25 +39,21 @@ public class AdminConsoleTest {
 	private static final String BASIC_AUTH_USER = "admin";
 	private static final String BASIC_AUTH_PASSWORD = "membrane";
 
-	private final int port;
-
-	public AdminConsoleTest(int port) {
-		this.port = port;
-	}
-
-	@Test
-	public void testAdminConsoleReachable() throws ClientProtocolException, IOException {
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void testAdminConsoleReachable(int port) throws ClientProtocolException, IOException {
 		setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
-		assertContains("ServiceProxies", getAndAssert200(getBaseURL() + "admin/"));
+		assertContains("ServiceProxies", getAndAssert200(getBaseURL(port) + "admin/"));
 	}
 
-	@Test
-	public void testAdminConsoleJavascriptDownloadable() throws ClientProtocolException, IOException {
+	@ParameterizedTest
+	@MethodSource("getPorts")
+	public void testAdminConsoleJavascriptDownloadable(int port) throws ClientProtocolException, IOException {
 		setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
-		assertContains("jQuery", getAndAssert200(getBaseURL() + "admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js"));
+		assertContains("jQuery", getAndAssert200(getBaseURL(port) + "admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js"));
 	}
 
-	private String getBaseURL() {
+	private String getBaseURL(int port) {
 		return "http://localhost:" + port + "/";
 	}
 

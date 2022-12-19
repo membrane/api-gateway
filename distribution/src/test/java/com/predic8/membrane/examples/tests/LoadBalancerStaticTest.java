@@ -17,12 +17,13 @@ package com.predic8.membrane.examples.tests;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LoadBalancerStaticTest extends DistributionExtractingTestcase {
 
@@ -35,7 +36,7 @@ public class LoadBalancerStaticTest extends DistributionExtractingTestcase {
 		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 			for (int i = 0; i < 7; i++)
-				Assert.assertEquals(
+				assertEquals(
 						i % 3 + 1,
 						LoadBalancerUtil.getRespondingNode("http://localhost:3023/service"));
 		} finally {

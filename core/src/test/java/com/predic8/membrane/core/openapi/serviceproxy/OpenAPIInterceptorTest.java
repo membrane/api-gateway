@@ -21,7 +21,8 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
@@ -30,7 +31,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.Y
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIInterceptorTest {
 
@@ -44,7 +45,7 @@ public class OpenAPIInterceptorTest {
     OpenAPIInterceptor interceptor1Server;
     OpenAPIInterceptor interceptor3Server;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         router = new Router();
 

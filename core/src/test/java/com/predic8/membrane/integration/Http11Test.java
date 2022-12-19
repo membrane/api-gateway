@@ -14,9 +14,9 @@
 package com.predic8.membrane.integration;
 
 import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,9 +28,9 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
@@ -41,18 +41,18 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class Http11Test {
 
-	private HttpRouter router;
+	private static HttpRouter router;
 
-	@Before
-	public void setUp() throws Exception {
+	@BeforeAll
+	public static void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
 	}
 
-	@After
-	public void tearDown() throws Exception {
+	@AfterAll
+	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
 

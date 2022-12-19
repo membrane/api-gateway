@@ -18,9 +18,7 @@ import java.io.IOException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.core.Router;
 
@@ -28,7 +26,7 @@ public class InternalInvocationTest {
 
 	private Router router;
 
-	@Before
+	@BeforeEach
 	public void setUp() throws Exception {
 		router = Router.init("classpath:/internal-invocation/proxies.xml");
 		MockInterceptor.clear();
@@ -54,7 +52,7 @@ public class InternalInvocationTest {
 				new String[] { });
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}

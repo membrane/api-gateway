@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class HostColonPortTest {
 

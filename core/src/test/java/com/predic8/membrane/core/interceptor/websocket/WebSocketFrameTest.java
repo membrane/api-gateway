@@ -16,13 +16,13 @@ package com.predic8.membrane.core.interceptor.websocket;
 
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WebSocketFrameTest {
     static int numberOfFrames = 100000;

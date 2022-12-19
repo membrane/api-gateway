@@ -19,8 +19,8 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import org.apache.commons.io.IOUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -28,7 +28,7 @@ import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class XmlPathExtractorInterceptorTest {
@@ -36,7 +36,7 @@ public class XmlPathExtractorInterceptorTest {
     XmlPathExtractorInterceptor xpe;
     Exchange exc;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         xpe = new XmlPathExtractorInterceptor();
         exc = new Exchange(null);
@@ -67,35 +67,42 @@ public class XmlPathExtractorInterceptorTest {
     }
 
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void nonExistentPathTest() throws Exception {
-        //TODO maybe throw exception here null pointer is not that clear
-        xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/project[5]/title", "title"));
-        xpe.handleRequest(exc);
+        assertThrows(NullPointerException.class, () -> {
+            //TODO maybe throw exception here null pointer is not that clear
+            xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/project[5]/title", "title"));
+            xpe.handleRequest(exc);
+        });
     }
 
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void invalidXpathTest() throws Exception {
-        xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/project[5]<>/title", "title"));
-        xpe.handleRequest(exc);
+        assertThrows(RuntimeException.class, () -> {
+            xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/project[5]<>/title", "title"));
+            xpe.handleRequest(exc);
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void xpathMissingTest() throws Exception {
-        XmlPathExtractorInterceptor.Property prop = new XmlPathExtractorInterceptor.Property();
-        prop.setName("title");
-        xpe.getMappings().add(prop);
-        xpe.handleRequest(exc);
+        assertThrows(NullPointerException.class, () -> {
+            XmlPathExtractorInterceptor.Property prop = new XmlPathExtractorInterceptor.Property();
+            prop.setName("title");
+            xpe.getMappings().add(prop);
+            xpe.handleRequest(exc);
+        });
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void nameMissingTest() throws Exception {
-        XmlPathExtractorInterceptor.Property prop = new XmlPathExtractorInterceptor.Property();
-        prop.setXpath("/project/project[5]<>/title");
-        xpe.getMappings().add(prop);
-        xpe.handleRequest(exc);
-
+        assertThrows(RuntimeException.class, () -> {
+            XmlPathExtractorInterceptor.Property prop = new XmlPathExtractorInterceptor.Property();
+            prop.setXpath("/project/project[5]<>/title");
+            xpe.getMappings().add(prop);
+            xpe.handleRequest(exc);
+        });
     }
     
     

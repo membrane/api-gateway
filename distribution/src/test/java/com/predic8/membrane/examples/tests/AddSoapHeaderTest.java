@@ -17,8 +17,7 @@ package com.predic8.membrane.examples.tests;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -29,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AddSoapHeaderTest extends DistributionExtractingTestcase {
     @Test
@@ -55,7 +55,7 @@ public class AddSoapHeaderTest extends DistributionExtractingTestcase {
             Thread.sleep(1000);
 
 
-            Assert.assertTrue(proxyWatcher.toString().contains("wss:Security"));
+            assertTrue(proxyWatcher.toString().contains("wss:Security"));
         } finally {
             sl.killScript();
         }

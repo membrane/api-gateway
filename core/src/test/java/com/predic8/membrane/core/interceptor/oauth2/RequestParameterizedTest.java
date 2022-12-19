@@ -15,14 +15,17 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class RequestParameterizedTest {
 
@@ -31,31 +34,25 @@ public abstract class RequestParameterizedTest {
 
 
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception{
         oasit = new OAuth2AuthorizationServerInterceptorNormalTest();
         oasit.setUp();
     }
 
-    @Parameterized.Parameter
-    public String testName;
-    @Parameterized.Parameter(value = 1)
-    public Callable<Object> modification;
-    @Parameterized.Parameter(value = 2)
-    public int expectedStatusCode;
-    @Parameterized.Parameter(value = 3)
-    public Callable<Object> expectedResult;
-    @Parameterized.Parameter(value = 4)
-    public Callable<Object> actualResult;
-
-    @Test
-    public void test() throws Exception {
+    @ParameterizedTest(name="{0}")
+    @MethodSource("data")
+    public void test(String testName,
+        Callable<Object> modification,
+        int expectedStatusCode,
+        Callable<Object> expectedResult,
+        Callable<Object> actualResult) throws Exception {
         modification.call();
         OAuth2TestUtil.makeExchangeValid(exc);
         oasit.oasi.handleRequest(exc);
 
-        Assert.assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
-        Assert.assertEquals(expectedResult.call(),actualResult.call());
+        assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
+        assertEquals(expectedResult.call(),actualResult.call());
     }
 
     static Callable<Exchange> getExchange(){

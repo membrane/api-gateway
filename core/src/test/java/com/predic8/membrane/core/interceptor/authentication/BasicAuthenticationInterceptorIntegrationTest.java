@@ -21,22 +21,22 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.test.AssertUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BasicAuthenticationInterceptorIntegrationTest {
 
-	private HttpRouter router = new HttpRouter();
+	private static HttpRouter router = new HttpRouter();
 
-	@Before
-	public void setup() throws Exception {
+	@BeforeAll
+	public static void setup() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 
@@ -81,8 +81,8 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		}
 	}
 
-	@After
-	public void teardown() throws IOException {
+	@AfterAll
+	public static void teardown() throws IOException {
 		AssertUtils.closeConnections();
 		router.shutdown();
 	}

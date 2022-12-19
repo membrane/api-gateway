@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.groovy;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
 
 import com.predic8.membrane.core.HttpRouter;

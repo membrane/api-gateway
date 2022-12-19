@@ -20,12 +20,11 @@ import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@SuiteClasses({
+@Suite
+@SelectClasses({
 	AntInPath.class,
 	ConsistentVersionNumbers.class,
 	DefaultConfigTest.class,

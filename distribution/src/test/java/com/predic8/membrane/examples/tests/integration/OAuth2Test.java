@@ -13,43 +13,20 @@
 
 package com.predic8.membrane.examples.tests.integration;
 
-import com.google.common.collect.Lists;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.test.AssertUtils;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(Parameterized.class)
 public class OAuth2Test {
 
-    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() throws Exception {
         return Arrays.asList(new Object[][] {
                 testParams(),
@@ -65,17 +42,11 @@ public class OAuth2Test {
         return new Object[] { "proxies-subpath.xml", "/server", "/client" };
     }
 
-    @Parameterized.Parameter(value = 0)
-    public String proxies;
-    @Parameterized.Parameter(value = 1)
-    public String serverBasePath;
-    @Parameterized.Parameter(value = 2)
-    public String clientBasePath;
-
     private Router router;
 
-    @Before
-    public void setUp() throws Exception {
+    public void setUp(String proxies) throws Exception {
+        if (router != null)
+            return;
         router = HttpRouter.init(getBasePath() + "/src/test/resources/OAuth2/" + proxies);
     }
 
@@ -84,8 +55,14 @@ public class OAuth2Test {
         return basePath.startsWith("/") ? "file://" + basePath : basePath;
     }
 
-    @Test
-    public void testGoodLoginRequest() throws Exception {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void testGoodLoginRequest(
+            String proxies,
+            String serverBasePath,
+            String clientBasePath) throws Exception {
+        setUp(proxies);
+
         AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
         String[] headers = new String[2];
         headers[0] = "Content-Type";
@@ -94,8 +71,14 @@ public class OAuth2Test {
         assertEquals("Hello john.", AssertUtils.getAndAssert200("http://localhost:2000" + serverBasePath + "/"));
     }
 
-    @Test
-    public void testBadUserCredentials() throws Exception {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void testBadUserCredentials(
+            String proxies,
+            String serverBasePath,
+            String clientBasePath) throws Exception {
+        setUp(proxies);
+
         AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
         String[] headers = new String[2];
         headers[0] = "Content-Type";
@@ -104,26 +87,45 @@ public class OAuth2Test {
         AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
     }
 
-    @Test
-    public void testMissingHeader() throws Exception {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void testMissingHeader(
+            String proxies,
+            String serverBasePath,
+            String clientBasePath) throws Exception {
+        setUp(proxies);
+
         AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
         assertEquals(true, AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", "target=&username=john&password=password").contains("Invalid password."));
         AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
     }
 
-    @Test
-    public void testBypassingAuthorizationService() throws Exception {
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void testBypassingAuthorizationService(
+            String proxies,
+            String serverBasePath,
+            String clientBasePath) throws Exception {
+        setUp(proxies);
+
         AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/oauth2/auth");
     }
 
-    @Test
-    public void testLogout() throws Exception {
-        testGoodLoginRequest();
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("data")
+    public void testLogout(
+            String proxies,
+            String serverBasePath,
+            String clientBasePath) throws Exception {
+        setUp(proxies);
+
+        testGoodLoginRequest(proxies, serverBasePath, clientBasePath);
         AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath + "/login/logout");
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         router.stopAll();
+        router = null;
     }
 }
