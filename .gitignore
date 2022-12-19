@@ -110,3 +110,6 @@ _*.swp
 maven-plugin/target/surefire/
 /distribution/conf/consentFile.json
 /distribution/conf/logindialog/
+
+# Mac
+.DS_Store
