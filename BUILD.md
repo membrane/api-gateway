@@ -1,16 +1,16 @@
-#Building Membrane Service Proxy
+# Building Membrane Service Proxy
 
-###What you need
-* Java JDK 1.8
+### What you need
+* Java JDK 17
 * Apache Maven
 * git
 
 Check the JAVA Version.
 
 	java -version
-	java version "1.8.0_162"
+	openjdk version "18.0.2" 2022-07-19
 
-###Building
+### Building
 
 	git clone https://github.com/membrane/service-proxy
 	cd service-proxy
