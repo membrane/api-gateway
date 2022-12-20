@@ -3,21 +3,22 @@ Membrane API Gateway
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-Open Source API Gateway written in Java that supports REST APIs, WebSockets, STOMP and legacy Web Services with SOAP/WSDL. Featuring:
+Open Source API Gateway written in Java that supports REST APIs, WebSockets, STOMP and legacy Web Services. Featuring:
 
 **API Security:**
 * Authentification with [OAuth2](), [API Keys]() and [Basic Auth]() 
-* Own [OAuth2 Authorization server]() and support for Google, Azure AD, ...
-* XML Protection
+* [OAuth2 Authorization server]() 
 * Rate Limiting
+* XML Protection
+
 
 **OpenAPI:**
 * Deployment of [OpenAPI](distribution/examples/openapi) documents as APIs
-* [OpenAPI validation](distribution/examples/openapi/openapi-validation-simple)
+*  [Message validation](distribution/examples/openapi/openapi-validation-simple) against OpenAPI
 
 **Legacy Web Services:**
 * SOAP Message Routing
-* [WSDL Validation]() and [WSDL rewritting]()
+* WSDL configuration, [message Validation](#legacy-soap-and-xml-web-services) and [WSDL rewritting]()
 
 **Other:**
 * Admin Web console
