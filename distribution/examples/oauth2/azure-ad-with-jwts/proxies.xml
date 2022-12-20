@@ -1,0 +1,30 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy port="8080">
+			<!-- only allow requests with valid tokens from Microsoft's Azure AD to continue beyond this point -->
+			<jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
+				<jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys" />
+			</jwtAuth>
+
+			<!-- this will act as the secret resource to make the example simple. See below in the comments for an alternative -->
+			<groovy>
+				exc.response = Response.ok("Hello there, " + exc.getProperty("jwt")["oid"] + ".").build()
+				RETURN
+			</groovy>
+
+			<!--
+			Use the <target> instead of the <groovy> interceptor to forward requests to another host:
+			<target host="membrane-soa.org" port="80" />
+			-->
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>
