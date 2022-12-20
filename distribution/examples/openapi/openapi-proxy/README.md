@@ -8,7 +8,7 @@ Make sure to use Membrane version 5 or newer.
 
 1. Go to the _examples/openapi/openapi-proxy_ directory and start Membrane:
 
-```
+```shell
 ./service-proxy.sh
 ```
 
@@ -21,7 +21,7 @@ service.proxy.bat
 
 2. You can _curl_ now for a JSON description of deployed APIs from  OpenAPI. 
 
-```
+```JSON
 curl localhost:2000/api-docs
 
 {
@@ -54,7 +54,7 @@ Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc)
 
 6. Change the _price_ to a negative number like _-2.7_ and _execute_ the call again.
 
-```
+```JSON
 {
   "name": "Feigen",
   "price": -2.7
@@ -63,7 +63,7 @@ Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc)
 
 The validator checks the request against the OpenAPI definition. Cause the value for price is invalid a _400 Bad Request_ status code and an error message is returned.
 	
-```
+```JSON
 {
   "method": "POST",
   "uriTemplate": "/products/",

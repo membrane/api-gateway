@@ -1,21 +1,52 @@
-### GROOVY INTERCEPTOR
+# Access and manipulate messages with Groovy Scripts - Example
 
-With the `GroovyInterceptor` you can run groovy scripts to manipulate or monitor messages.
+Using the `groovy` element you can run Groovy scripts to manipulate or monitor messages.
 
 
-#### RUNNING THE EXAMPLE
-
-In this example we will use the `GroovyInterceptor` to add a header to the request and to print all headers of the response to the console.
+## Running the example
 
 Execute the following steps:
 
-1. Execute `examples/groovy/service-proxy.bat`
+1. Open a commandline session or a terminal.
+2. Run `service-proxy.bat` or `./service-proxy.sh` in this folder
+2. Open a secound terminal and run:
 
-2. Open the URL http://localhost:2000 in your browser.
+```shell
+curl localhost:2000 -v
+```
 
-3. Take a look at the output of the console where Membrane Service Proxy is running.
+You should get the following output:
 
+```
+> GET / HTTP/1.1
+> Host: localhost:2000
+> User-Agent: curl/7.79.1
+> Accept: */*
+> 
+< HTTP/1.1 200 Ok
+< Server: Membrane Service Proxy 5.0.0. See http://membrane-soa.org
+< Content-Length: 21
+< X-Groovy: 42
 
-#### TROUBLESHOOTING
+Greatings from Spring                              
+```
 
-If your console does not generate any Output, make sure your browser did not load the URL from Cache. Also have a look at the FAQ-Section https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ
+The response body an the `X-Groovy` header were produced by Groovy scripts.
+
+3. Take a look at the output of the `service-proxy.sh/bat` script. You should see the output from a Groovy script, printing the request header fields.
+
+```
+Request headers:
+Host: localhost:2000
+User-Agent: curl/7.79.1
+Accept: */*
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Proto: http
+X-Forwarded-Host: localhost:2000
+```
+
+4. Take a look at the configuration file `proxies.xml`. There you'll find the Groovy scripts together with commends explaing the details.
+
+## Troubleshooting
+
+Have a look at the FAQ-Section https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ

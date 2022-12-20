@@ -21,7 +21,7 @@ The **openAPIProxy** is featured in Membrane version 5 and newer and supports Op
 
 An _openAPIProxy_ can be added to the _proxies.xml_ configuration file. See the example in the [openapi-proxy/](openapi-proxy/) folder.
 
-```
+```xml
 <router>
     <openAPIProxy port="2000">
         <spec location="fruitshop-api.yml"/>
@@ -37,7 +37,7 @@ The _spec_ element adds OpenAPI documents to the configuration. You can add _*.j
 
 The addresses of the backend servers and the basepaths are taken from the OpenAPI specification. Suppose an OpenAPI document contains the _servers_ field below. The proxy will match requests against the basepath ```/shop``` and in case of a match it will forward the request to the backend server ```api.predic8.de``` using TLS.
 
-```
+```yaml
 servers:
   - url: https://api.predic8.de/shop
 ```
@@ -46,7 +46,7 @@ If the basepath does not match, the next API is checked.
 
 It is also possilbe to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
 
-```
+```xml
 <serviceProxy>
     <openAPIProxy port="2000">
         <spec dir="openapi"/>
@@ -67,7 +67,7 @@ Membrane can validate requests and responses against OpenAPI definitions and che
 
 Validation can be activated for requests and responses separatly. Set _validationDetails_ to _no_ if you do not want to send validation errors in detail to the client.
 
-```
+```xml
 <spec location="fruitshop-api.yml" 
       validateRequests="yes" 
       validateResponses="yes" 
@@ -76,7 +76,7 @@ Validation can be activated for requests and responses separatly. Set _validatio
 
 As an alternative way validation can be turned on in the OpenAPI documents using the _x-membrane-validation_ field. The configuration in the _proxies.xml_ file will overwrite the _x-membrane-validation_ field.
 
-```
+```yaml
 x-membrane-validation:
   requests: true
   responses: true
@@ -108,21 +108,21 @@ The _openAPIProxy_ exposes the OpenAPI specifications in the UI and over an endp
 
 The addresses in the OpenAPI's _/servers_ field are rewritten to the address the endpoint is called on the gateway. Suppose the OpenAPI has the following servers field:
 
-```
+```yaml
 servers:
 - url: "http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop"
 ```
 
 And you send a request to Membrane like this:
 
-```
+```http request
 GET /api-doc/fruit-shop-api-v1-0
 Host: api.predic8.de:443
 ```
 
 Then the rewritter of the _openAPIProxy_ will turn the _servers_ field into:
 
-```
+```yaml
 servers:
 - url: "https://api.predic8.de:443/shop"
 ```
@@ -134,7 +134,7 @@ If you use the rewritten OpenAPI document for your client, than requests will be
 
 TLS for incoming and outgoing connections can be configured in the same way as for the _serviceProxy_. See the documentation for the [ssl](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/ssl.htm) element.
 
-```
+```xml
 <openAPIProxy port="2000">
     <spec dir="openapi"/>
     <ssl>
@@ -155,7 +155,7 @@ TLS for incoming and outgoing connections can be configured in the same way as f
 
 The behaviour of the _openAPIProxy_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-soa.org/service-proxy-doc/4.8/configuration/reference/).
 
-```
+```xml
 <openAPIProxy port="2000">
     <spec dir="openapi"/>
     <tokenValidator endpoint="https://login.predic8.de/oauth2/userinfo"/>
@@ -167,7 +167,7 @@ The behaviour of the _openAPIProxy_ can be modified like other proxies with plug
 
 Membrane needs unique ids for each OpenAPI document to provide a Swagger UI and the _/api-docs/{id}_ endpoint. The id is generated from the title and version of the API. For the following document Membrane will generate the id _fruit-shop-api-v1-0_.
 
-```
+```yaml
 info:
   title: "Fruit Shop API"
   version: "1.0"
@@ -175,7 +175,7 @@ info:
 
 To give an API a custom id the _x-membrane-id_ field can be used.
 
-```
+```yaml
 info:
   title: Fruit Shop API
   version: '1.0'

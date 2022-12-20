@@ -16,13 +16,13 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UriUtilTest {
 

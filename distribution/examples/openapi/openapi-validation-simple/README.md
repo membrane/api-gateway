@@ -22,7 +22,7 @@ service.proxy.bat
 
 3. Send a request using curl:
 
-```
+```shell
 curl -X POST http://localhost:2000/persons \
   -H "Content-Type: application/json" \
   -d '{"name": "Johannes Gutenberg","age": 78}'
@@ -30,7 +30,7 @@ curl -X POST http://localhost:2000/persons \
 
 As the request is exactly as specified in the OpenAPI you should get the answer from the backend:
 
-```
+```json
 {
   "success" : true
 }
@@ -38,7 +38,7 @@ As the request is exactly as specified in the OpenAPI you should get the answer 
 
 4. Now send an invalid request:
 
-```
+```shell
 curl -X POST http://localhost:2000/persons \
   -H "Content-Type: application/json" \
   -d '{"name": "Johannes Gutenberg","age": -10}'
@@ -46,7 +46,7 @@ curl -X POST http://localhost:2000/persons \
 
 5. Have a look at the validation error in the response.
 
-```
+```json
 {
   "method" : "POST",
   "uriTemplate" : "/persons",
@@ -68,7 +68,7 @@ You can also execute the requests in the _requests.http_ file.
 
 1. In the _proxies.xml_ configuration there is an **OpenAPIProxy** that reads the OpenAPI document and creates the APIs in Membrane.   
 
-```
+```xml
 <OpenAPIProxy port="2000">
     <spec location="contacts-api-v1.yml" validate="requests"/>
 </OpenAPIProxy>
@@ -76,7 +76,7 @@ You can also execute the requests in the _requests.http_ file.
 
 2. Have a look at the OpenAPI document _contacts-api-v1.yml_. The _age_ property must be 0 or higher.
 
-```
+```yaml
 age:
   type: integer
   minimum: 0
@@ -88,7 +88,7 @@ age:
 
 The request is sent to the backend with the address from the OpenAPI definition:
 
-```
+```yaml
 info:
   ...
 servers:
@@ -101,7 +101,7 @@ Then Membrane routes the answer of the backend back to the client.
 
 In case of a validation failure an error message is returned to client without calling the backend. 
 
-```
+```json
 {
   "method" : "POST",
   "uriTemplate" : "/persons",

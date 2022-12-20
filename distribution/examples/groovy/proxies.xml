@@ -4,33 +4,47 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<spring:bean name="mySpringBean" class="java.lang.String">
-		<spring:constructor-arg value="Groovy interceptor"/>
+	<spring:bean name="myBean" class="java.lang.String">
+		<spring:constructor-arg value="Greatings from Spring"/>
 	</spring:bean>
 
 	<router>
 	
 		<serviceProxy port="2000">
+			<!-- Execute groovy-Interceptor in request flow -->
 			<request>
 				<groovy>
-					def value = spring.getBean('mySpringBean')
-					exc.request.header.add("X-Groovy", value)
-					println "X-Groovy header added with value :" + value
+					println "Request headers:"
+					exc.request.header.allHeaderFields.each {
+						print it 
+					}
+				
 					CONTINUE
 				</groovy>
 			</request>
+			<!-- Execute groovy-Interceptor in response flow -->
 			<response>
 				<groovy>
-					println "Response headers:"
-					exc.response.header.allHeaderFields.each {
-						println it 
-					}				
+					exc.response.header.add("X-Groovy", "42") // Set Header
+
 					CONTINUE
 				</groovy>
 			</response>
-			<target host="membrane-soa.org" port="80" />
+			<target host="localhost" port="3000" />
 		</serviceProxy>
 		
+		<serviceProxy port="3000">
+			<request>
+				<groovy>
+					// Create response and set the body to the value of the Spring Bean
+					exc.setResponse(Response.ok().body(spring.getBean('myBean')).build())
+
+					// To not forward request to target. Instead return to the client.
+					RETURN
+				</groovy>
+			</request>
+		</serviceProxy>
+
 	</router>
 	
 </spring:beans>

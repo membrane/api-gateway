@@ -13,7 +13,7 @@ Make sure to use Membrane version 5 or newer.
 
 2. Start Membrane with the script inside this directory:
 
-```
+```shell
 ./service-proxy.sh
 ```
 
@@ -40,7 +40,7 @@ Run the file _curl-requests.sh_ or parts of it.
 
 1. In the _proxies.xml_ configuration there is an **OpenAPIProxy** that reads the OpenAPI document and creates the APIs in Membrane.   
 
-```
+```xml
 <OpenAPIProxy port="2000">
     <spec location="contacts-xxl-api-v1.yml" validateRequests="true" validateResponses="false" validationDetails="true"/>
 </OpenAPIProxy>
@@ -50,7 +50,7 @@ Run the file _curl-requests.sh_ or parts of it.
 
 3. The request is sent to the backend server with the server url from the OpenAPI definition:
 
-```
+```yaml
 info:
   ...
 servers:

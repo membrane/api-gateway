@@ -1,4 +1,4 @@
-### SWITCH INTERCEPTOR
+### Content Based Routing using XPath
 
 Using the switch interceptor Membrane allows you to route XML messages based on XPath expressions.
 

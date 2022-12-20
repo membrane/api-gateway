@@ -2,19 +2,19 @@
 
 | Example        | Description or Summary| 
 | ------------- |-------------|
-|[acl](https://github.com/membrane/service-proxy/tree/master/distribution/examples/acl) |The AccessControlInterceptor can be used to restrict access to services and resources.|
+|[acl](https://github.com/membrane/service-proxy/tree/master/distribution/examples/acl) |Restrict access to APIs by ip address or hostname.|
 |[api-management](https://github.com/membrane/service-proxy/tree/master/distribution/examples/api-management)|A simple file based api management approach.|
-|[basic-auth](https://github.com/membrane/service-proxy/tree/master/distribution/examples/basic-auth)|BasicAuthenticationInterceptor to secure services or web pages by HTTP Basic Authentication.|
+|[basic-auth](https://github.com/membrane/service-proxy/tree/master/distribution/examples/basic-auth)|_HTTP Basic Authentication_ to secure APIs or Web pages with username and password.|
 |[basic-xml-interceptor](https://github.com/membrane/service-proxy/tree/master/distribution/examples/basic-xml-interceptor)|BasicXmlInterceptor adds date element with current time information inside bar element.|
-|[cbr](https://github.com/membrane/service-proxy/tree/master/distribution/examples/cbr)|Route based on XPathExpressions using switch.|
-|[custom-interceptor](https://github.com/membrane/service-proxy/tree/master/distribution/examples/custom-interceptor)|Custom interceptors extending the `AbstractInterceptor` class.|
+|[cbr](https://github.com/membrane/service-proxy/tree/master/distribution/examples/cbr)|Content based routing using XPath.
+|[custom-interceptor](https://github.com/membrane/service-proxy/tree/master/distribution/examples/custom-interceptor)|How to write custom interceptors in Java.|
 |[custom-websocket-interceptor](https://github.com/membrane/service-proxy/tree/master/distribution/examples/custom-websocket-interceptor)|Please visit https://www.membrane-soa.org/service-proxy-doc/current/websockets/create-websocket-interceptor.htm to learn how to create custom WebSocket interceptors.|
-|[docker](https://github.com/membrane/service-proxy/tree/master/distribution/examples/docker)|Creates a Membrane docker image and copies the proxies.xml configuration file from this folder.|
-|[embedding-java](https://github.com/membrane/service-proxy/tree/master/distribution/examples/embedding-java)|          |
-|[file-exchangestore](https://github.com/membrane/service-proxy/tree/master/distribution/examples/file-exchangestore)|Membrane Service Proxy uses exchange stores to save requests and responses. Using the ExchangeStoreInterceptor you can plugin different exchange stores. Each exchange store implements a different storing strategy. The `FileExchangeStore` saves exchanges onto the file system.|
-|[groovy](https://github.com/membrane/service-proxy/tree/master/distribution/examples/groovy)|With the `GroovyInterceptor` you can run groovy scripts to manipulate or monitor messages.|
-|[javascript](https://github.com/membrane/service-proxy/tree/master/distribution/examples/javascript)|The Javascript interceptor runs Javascript scripts to manipulate and monitor messages.|
-|[json2json-transformation](https://github.com/membrane/service-proxy/tree/master/distribution/examples/json2json-transformation)|Transforms a JSON object into another JSON object using Javascript.|
+|[docker](https://github.com/membrane/service-proxy/tree/master/distribution/examples/docker)|How to create a Membrane docker image.|
+|[embedding-java](https://github.com/membrane/service-proxy/tree/master/distribution/examples/embedding-java)|How to embed Membrane into Java applications.|
+|[file-exchangestore](https://github.com/membrane/service-proxy/tree/master/distribution/examples/file-exchangestore)|Membrane uses exchange stores to save requests and responses on disc or memory.|
+|[groovy](https://github.com/membrane/service-proxy/tree/master/distribution/examples/groovy)|Run groovy scripts to manipulate or monitor messages.|
+|[javascript](https://github.com/membrane/service-proxy/tree/master/distribution/examples/javascript)|Manipulate and monitor messages with Javascript.|
+|[json2json-transformation](https://github.com/membrane/service-proxy/tree/master/distribution/examples/json2json-transformation)|Transforms a JSON document into another JSON document using Javascript.|
 |[json-2-xml](https://github.com/membrane/service-proxy/tree/master/distribution/examples/json-2-xml)|Using `json2xml` interceptor you can convert JSON content to XML in both request and response.|
 |[loadbalancer-basic-1](https://github.com/membrane/service-proxy/tree/master/distribution/examples/loadbalancer-basic-1)|By using the `LoadBalancerInterceptor` you can balance requests to a number of different nodes.|
 |[loadbalancer-client-2](https://github.com/membrane/service-proxy/tree/master/distribution/examples/loadbalancer-client-2)|In the previous example we set up a load balancer with 3 nodes. We used a URL based interface to register the nodes with the balancer. That interface can be called from a simple client that supports encrypted parameters.|
