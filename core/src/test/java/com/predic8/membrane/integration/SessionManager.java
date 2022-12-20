@@ -68,7 +68,7 @@ public class SessionManager {
     }
 
     public static final String REMEMBER_HEADER = "X-Remember-This";
-    public static final int GATEWAY_PORT = 31337;
+    public static final int GATEWAY_PORT = 3061;
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("data")

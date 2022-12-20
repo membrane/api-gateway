@@ -37,7 +37,9 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
-		copyDerbyJarToMembraneLib();
+		copyDerbyJarToMembraneLib("org.apache.derby.jdbc.EmbeddedDriver");
+		copyDerbyJarToMembraneLib("org.apache.derby.iapi.jdbc.JDBCBoot");
+		copyDerbyJarToMembraneLib("org.apache.derby.shared.common.error.StandardException");
 
 		File baseDir = getExampleDir("logging-jdbc");
 		File beansConfig = new File(baseDir, "proxies.xml");
@@ -88,8 +90,8 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 		}
 	}
 
-	private void copyDerbyJarToMembraneLib() throws IOException {
-		String classJar = getClass().getResource("/" + "org.apache.derby.jdbc.EmbeddedDriver".replace('.', '/') + ".class").getPath();
+	private void copyDerbyJarToMembraneLib(String clazz) throws IOException {
+		String classJar = getClass().getResource("/" + clazz.replace('.', '/') + ".class").getPath();
 		File derbyJar = new File(classJar.split("!")[0].substring(Process2.isWindows() ? 6 : 5));
 
 		if (!derbyJar.exists())
