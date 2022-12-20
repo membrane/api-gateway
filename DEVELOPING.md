@@ -1,6 +1,6 @@
 Prequisites
 ===========
-* Java Development Kit (Membrane's source is Java 1.8 compatible.)
+* Java Development Kit (Membrane's source is Java 17 compatible.)
 * Maven 3
 * IntelliJ or Eclipse (3.7, 4.2, ...) with the m2e plugin
 * some git client
