@@ -45,26 +45,18 @@ Try the following snippets by copying them into the `conf/proxies.xml` file.
 
 ## REST
 
-Routing requests from port `8080`. 
-
-```xml
-<serviceProxy port="8080">
-  <target host="api.predic8.de" port="80" />
-</serviceProxy>
-```
-
-Routing only when the path starts with `/foo`:
+Routing requests from port `8080` to `api.predic8.de` when the path starts with `/foo`. 
 
 ```xml
 <serviceProxy port="8080">
   <path>/foo</path>
-  <target host="localhost" port="8080" />
+  <target host="api.predic8.de" port="80" />
 </serviceProxy>
 ```
 
 ### OpenAPI Configuration & Validation
 
-Configures an APIs from OpenAPI documents and validates messages against it. [more...](distribution/examples/openapi)
+Configures APIs from OpenAPI documents and validates messages against it. [more...](distribution/examples/openapi)
 
 ```xml
 <router>
