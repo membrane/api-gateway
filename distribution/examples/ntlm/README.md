@@ -1,9 +1,9 @@
-### NTLM AUTHENTICATION EXAMPLE
+# NTLM Authentication for APIs
 
-In this example we are going to see how NTLM authentication is handled with Membrane Service Proxy.
+In this example we are going to see how NTLM authentication is handled with Membrane API Gateway.
 
 
-#### PREPARATIONS
+## Setup
 1. Setup IIS server on the Windows machine.
     1. Let the IIS server listen on port `8111`.
     2. Configure the IIS server to use NTLM authentication.
@@ -11,7 +11,7 @@ In this example we are going to see how NTLM authentication is handled with Memb
 3. (optional) Configure additional Windows credentials for usage with this example.
 
 
-#### RUNNING THE EXAMPLE
+## Running the Example
 
 To run the example execute the following steps:
 
@@ -29,16 +29,16 @@ To run the example execute the following steps:
 
 
 
-#### HOW IT IS DONE
+## How it is done
 
 Have a look at the configuration in the `proxies.xml` of this example.
 ```
-    <router>
-		<serviceProxy port="80">
-			<ntlm user="X-Username" pass="X-Password" />
-			<target host="localhost" port="8111"/>
-		</serviceProxy>
-	</router>
+<router>
+  <serviceProxy port="80">
+    <ntlm user="X-Username" pass="X-Password" />
+    <target host="localhost" port="8111"/>
+  </serviceProxy>
+</router>
 ```
 * Membrane is configured as a simple virtual endpoint listening on port `80`.
   

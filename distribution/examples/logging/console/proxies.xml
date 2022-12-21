@@ -6,9 +6,11 @@
 
 	<router>
 
-		<serviceProxy name="predic8.com" port="2000">
-			<log level="WARN"/>
-			<target host="membrane-soa.org" port="80" />
+		<serviceProxy port="2000">
+			<statisticsCSV file="./log.csv" />
+			<target host="api.predic8.de">
+				<ssl/>
+			</target>
 		</serviceProxy>
 		
 	</router>

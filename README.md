@@ -6,7 +6,7 @@ Membrane API Gateway
 Open Source API Gateway written in Java that supports REST APIs, WebSockets, STOMP and legacy Web Services. Featuring:
 
 **API Security:**
-* Authentification with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management) and [Basic Auth](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/basicAuthentication.htm) 
+* Authentification with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/basicAuthentication.htm) 
 * [OAuth2 Authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.htm) 
 * Rate Limiting
 * XML Protection
@@ -107,10 +107,16 @@ Try also the [Groovy example](distribution/examples/groovy) and [Javascript Exam
 ```
 
 ### Log HTTP
+
+Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv) or [JSON](distribution/examples/logging/json) file.
+
 ```xml
 <serviceProxy port="2000">
-    <log/>
-    <target host="localhost" port="8080" />
+  <log/> <!-- Logs to the console -->
+  <statisticsCSV file="./log.csv" /> <!-- Logs finegrained CSV --> 
+  <target host="api.predic8.de">
+    <ssl/>
+  </target>
 </serviceProxy>
 ```
 
