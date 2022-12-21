@@ -5,29 +5,22 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-	
+
 		<serviceProxy name="Balancer" port="8080">
-			<path>/service</path>
 			<balancer />
 		</serviceProxy>
-		
-		<serviceProxy name="Up/Down Push Interface" port="9010">
-			<clusterNotification />
+
+		<!-- Mock nodes for testing. Remove them in production. -->
+		<serviceProxy name="Node 1" port="4000">
+			<counter name="Node 1 " />
 		</serviceProxy>
-	
-		<!-- 
-	
-		The Mocks below are providing the counters and emulating the services amongst which you want to devide the amount of users.
-	
-		-->
-		<serviceProxy name="Mock Node 1" port="4000">
-			<counter name="Mock Node 1" />
+
+		<serviceProxy name="Node 2" port="4001">
+			<counter name="Node 2 " />
 		</serviceProxy>
-		<serviceProxy name="Mock Node 2" port="4001">
-			<counter name="Mock Node 2" />
-		</serviceProxy>
-		<serviceProxy name="Mock Node 3" port="4002">
-			<counter name="Mock Node 3" />
+
+		<serviceProxy name="Node 3" port="4002">
+			<counter name="Node 3 " />
 		</serviceProxy>
 		
 		<serviceProxy name="Administration" port="9000">

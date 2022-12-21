@@ -11,16 +11,16 @@ homeSet() {
 
 terminate() {
 	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the MEMBRANE_HOME/examples/loadbalancer-session-3 directory"
+	echo "Please execute this script from the MEMBRANE_HOME/examples/loadbalancer-multiple-4 directory"
 	
 }
 
 homeNotSet() {
   echo "MEMBRANE_HOME variable is not set"
 
-  if [ -f  "`pwd`/../../starter.jar" ]
+  if [ -f  "`pwd`/../../../starter.jar" ]
     then 
-    	export MEMBRANE_HOME="`pwd`/../.."
+    	export MEMBRANE_HOME="`pwd`/../../.."
     	homeSet	
     else
     	terminate    

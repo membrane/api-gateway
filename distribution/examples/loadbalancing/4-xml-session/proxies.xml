@@ -7,11 +7,12 @@
 	<router>
 
 		<serviceProxy name="Balancer" port="8080">
-			<balancer sessionTimeout="3600000">    <!-- timeout is 1 hour -->
+			<balancer sessionTimeout="3600000">  <!-- 1 hour timeout -->
 				<xmlSessionIdExtractor namespace="http://chat.predic8.com/"
 					localName="session" />
 			</balancer>
 		</serviceProxy>
+
 		<serviceProxy name="Administration" port="9000">
 			<adminConsole />
 		</serviceProxy>

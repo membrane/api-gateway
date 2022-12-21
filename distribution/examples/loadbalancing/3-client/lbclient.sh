@@ -19,7 +19,7 @@ terminate() {
 homeNotSet() {
 	echo "MEMBRANE_HOME variable is not set"
 
-	if [ -f  "`pwd`/../../starter.jar" ] ; then 
+	if [ -f  "`pwd`/../../../starter.jar" ] ; then 
 		export MEMBRANE_HOME="`pwd`/../.."
 		homeSet
 	else

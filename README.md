@@ -229,7 +229,7 @@ Limit the number of incoming requests:
 
 # Loadbalancing
 
-Distribute workload to multiple nodes:
+Distribute workload to multiple backend nodes. 
 ```xml
 <serviceProxy name="Balancer" port="8080">
   <balancer name="balancer">
@@ -246,19 +246,21 @@ Distribute workload to multiple nodes:
 
 # Legacy SOAP and XML Web Services
 
+## API configuration from WSDL
+
 SOAP proxies configure themselves by analysing WSDL:
 
 ```xml
-<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
-</soapProxy>
+<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl"/>
 ```
 
-Add features like logging or XML Schema validation against a WSDL document:
+## Message Validation against WSDL and XSD
+
+The _validator_ checks SOAP messages against a WSDL document including referenced XSD schemas.
 
 ```xml
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
   <validator />
-  <log />
 </soapProxy>
 ```
 
