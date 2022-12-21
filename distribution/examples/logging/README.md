@@ -1,21 +1,22 @@
-### LOG INTERCEPTOR
+# Logging Requests and Responses - Example
 
-Using the `LogInterceptor`, Membrane Monitor and Service Proxy can log requests and responses.
+Membrane can log the body and header fields of requests and responses.
 
 
-#### RUNNING THE EXAMPLE
+## Running the Example
 
 In this example we will visit a web site and take a look at the logs in the console. 
 
-To run the example execute the following steps:
-
 1. Go to the `examples/logging` directory.
+2. Execute in a terminal window:
 
-2. Execute `service-proxy.bat`
+    `service-proxy.bat` or `service-proxy.sh`
 
-3. Open the URL http://localhost:2000/ in your browser.
+3. Open in the browser:
+   
+    `http://localhost:2000` 
 
-4. Take a look at the output of the console.
+4. Take a look at the output of the console where you started Membrane.
 
 
 #### Troubleshooting:

@@ -6,8 +6,8 @@ Membrane API Gateway
 Open Source API Gateway written in Java that supports REST APIs, WebSockets, STOMP and legacy Web Services. Featuring:
 
 **API Security:**
-* Authentification with [OAuth2](), [API Keys]() and [Basic Auth]() 
-* [OAuth2 Authorization server]() 
+* Authentification with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management) and [Basic Auth](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/basicAuthentication.htm) 
+* [OAuth2 Authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.htm) 
 * Rate Limiting
 * XML Protection
 
@@ -221,15 +221,15 @@ Limit the number of incoming requests:
 
 # Loadbalancing
 
-Distribute workload to multiple backend nodes. 
+Distribute workload to multiple backend nodes. [more ...](distribution/examples/loadbalancing)
 ```xml
 <serviceProxy name="Balancer" port="8080">
   <balancer name="balancer">
     <clusters>
       <cluster name="Default">
-        <node host="my.backend.service-1" port="4000"/>
-        <node host="my.backend.service-2" port="4000"/>
-        <node host="my.backend.service-3" port="4000"/>
+        <node host="my.backend-1" port="4000"/>
+        <node host="my.backend-2" port="4000"/>
+        <node host="my.backend-3" port="4000"/>
       </cluster>
     </clusters>
   </balancer>
