@@ -836,7 +836,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h3().text("Impressum").end();
-				p().text("predic8 GmbH").br().text("Moltkestr. 40").br().br().text("53173 Bonn").end();
+				p().text("predic8 GmbH").br().text("Koblenzer Str. 65").br().br().text("53173 Bonn").end();
 			}
 
 		}.createPage();
