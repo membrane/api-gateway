@@ -1,3 +1,4 @@
+<!-- title: OpenAPI Configuration and Validation -->
 # openAPIProxy - OpenAPI Configuration and Validation
 
 Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/OpenAPI-Specification) and provides the following features:
