@@ -26,6 +26,11 @@
 		<version>5.0.0-SNAPSHOT</version>
 	</parent>
 
+	<!-- Only the Starter is in Java 1.8, so it can startup and display an error if the Java version is wrong -->
+	<properties>
+		<maven.compiler.release>8</maven.compiler.release>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.membrane-soa</groupId>
@@ -83,6 +88,15 @@
 
 	<build>
 		<plugins>
+			<!-- Skip the enforcement of Java 17 in the parent POM cause we want to compile the starter in
+			     the distribution project with Java 8.
+			-->
+			<plugin>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>

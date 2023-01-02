@@ -19,19 +19,39 @@ import com.predic8.membrane.core.util.*;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 
+import static java.lang.Integer.parseInt;
+
 /**
  * Main class for memrouter.bat file.
  */
 public class Starter {
 
 	public static void main(String[] args) throws Exception {
+
+		if (getJavaVersion() < 17) {
+			System.err.println("---------------------------------------");
+			System.err.println();
+			System.err.println("Wrong Java Version!");
+			System.err.println();
+			System.err.println("Membrane requires Java 17 or newer. The current Java version is " + System.getProperty("java.version") + ".");
+			System.err.println("You can check with:");
+			System.err.println();
+			System.err.println("java -version");
+			if (System.getProperty("os.name").contains("Windows")) {
+				System.err.println("echo %JAVA_JOME%");
+			} else {
+				System.err.println("echo $JAVA_JOME");
+			}
+			System.err.println("---------------------------------------");
+			System.exit(1);
+		}
+
 		getMainMethod().invoke(null, new Object[]{args});
 	}
 
 	private static Method getMainMethod() throws NoSuchMethodException,
 	ClassNotFoundException {
-		return getRouterCLIClass().getDeclaredMethod("main",
-				new Class[] { String[].class });
+		return getRouterCLIClass().getDeclaredMethod("main", String[].class);
 	}
 
 	private static Class<?> getRouterCLIClass() throws ClassNotFoundException {
@@ -43,4 +63,14 @@ public class Starter {
 				+ System.getenv("MEMBRANE_HOME"));
 	}
 
+	private static int getJavaVersion() {
+		String version = System.getProperty("java.version");
+		if(version.startsWith("1."))
+			return parseInt(version.substring(2, 3));
+
+		if(version.contains(".")) {
+			return parseInt(version.substring(0, version.indexOf(".")));
+		}
+		return parseInt(version);
+	}
 }
