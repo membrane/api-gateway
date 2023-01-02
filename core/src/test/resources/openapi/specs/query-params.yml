@@ -25,6 +25,11 @@ paths:
           schema:
             type: integer
             minimum: 0
+        - in: query
+          name: name
+          schema:
+            type: string
+            maxLength: 10
       responses:
         '200':
           description: OK

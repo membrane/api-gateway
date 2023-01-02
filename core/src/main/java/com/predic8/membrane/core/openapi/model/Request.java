@@ -60,20 +60,6 @@ public class Request extends Message<Request> {
         return this;
     }
 
-    /**
-     * Method is not in base class so the "builder" still works
-     */
-//    public Request body(String s) {
-//        this.body = new StringBody(s);
-//        return this;
-//    }
-//
-//    public Request body(JsonNode n) {
-//        this.body = new JsonBody(n);
-//        this.mediaType("application/json");
-//        return this;
-//    }
-
     public String getMethod() {
         return method;
     }
@@ -82,6 +68,7 @@ public class Request extends Message<Request> {
         return path;
     }
 
+    // TODO
     public Map<String,String> getQueryParams() {
         return UriUtil.parseQueryString(path);
     }

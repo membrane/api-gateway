@@ -150,7 +150,7 @@ public class OpenAPIProxy extends ServiceProxy {
         apiRecords.forEach((id,record) -> record.api.getServers().forEach(server -> {
             try {
                 basePaths.put(UriUtil.getPathFromURL(server.getUrl()), record.api);
-            } catch (MalformedURLException e) {
+            } catch (URISyntaxException e) {
                 e.printStackTrace();
                 // @TODO
                 throw new RuntimeException();

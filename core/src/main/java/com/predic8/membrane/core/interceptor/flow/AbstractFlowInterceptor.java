@@ -23,7 +23,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
-	private List<Interceptor> interceptors = new ArrayList<Interceptor>();
+	private List<Interceptor> interceptors = new ArrayList<>();
 
 	public List<Interceptor> getInterceptors() {
 		return interceptors;

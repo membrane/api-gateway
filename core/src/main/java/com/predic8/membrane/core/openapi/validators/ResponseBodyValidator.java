@@ -17,27 +17,21 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.*;
+import jakarta.mail.internet.*;
 
-import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
-import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.MEDIA_TYPE;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static java.lang.String.*;
 
-public class ResponseBodyValidator {
-
-    OpenAPI api;
-    ValidationErrors errors = new ValidationErrors();
+public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
 
     public ResponseBodyValidator(OpenAPI api) {
-        this.api = api;
+        super(api);
     }
 
     ValidationErrors validateResponseBody(ValidationContext ctx, Response response, Operation operation) {
@@ -65,33 +59,11 @@ public class ResponseBodyValidator {
         });
 
         if (!foundMatchingResponse.get()) {
-
-            Set<String> statusCodesInSpec = operation.getResponses().keySet();
-
-            errors.add(ctx.statusCode(500),String.format("Server returned a status code of %d but allowed are only %s",response.getStatusCode(), joinByComma(statusCodesInSpec)));
+            errors.add(ctx.statusCode(500), format("Server returned a status code of %d but allowed are only %s",
+                    response.getStatusCode(), joinByComma(operation.getResponses().keySet())));
         }
 
         return errors;
-    }
-
-    private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) {
-
-        if (response.getMediaType() == null) {
-            errors.add(ctx.statusCode(500),"The response has a body, but no Content-Type header.");
-            return;
-        }
-
-        if (!response.getMediaType().equalsIgnoreCase(mediaType)) {
-            errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE).validatedEntity(response.getMediaType()), format("Response with status code %d has mediatype %s instead of the expected type %s.",response.getStatusCode(),response.getMediaType(),mediaType));
-            return;
-        }
-
-        if (mediaType.equals("application/json")) {
-            if (mediaTypeObj.getSchema().get$ref() != null) {
-                ctx.schemaType(mediaTypeObj.getSchema().get$ref());
-            }
-            errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx.statusCode(500), response.getBody()));
-        }
     }
 
     private void validateResponseBodyInternal(ValidationContext ctx, Response response, ApiResponse apiResponse) {
@@ -99,6 +71,30 @@ public class ResponseBodyValidator {
         if (apiResponse.getContent() == null)
             return;
 
-        apiResponse.getContent().forEach((s, mediaType) -> validateMediaType(ctx, s, mediaType, response));
+        apiResponse.getContent().forEach((s, mediaType) -> {
+            try {
+                validateMediaType(ctx, s, mediaType, response);
+            } catch (ParseException e) {
+                errors.add(ctx.statusCode(500),format("Validating error. Something is wrong with the mediaType %s",mediaType));
+            }
+        });
+    }
+
+    private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) throws ParseException {
+
+        if (response.getMediaType() == null) {
+            errors.add(ctx.statusCode(500),"The response has a body, but no Content-Type header.");
+            return;
+        }
+
+        // Check if the mediaType of the message is the same as the one declared for that status code
+        // in the OpenAPI document.
+        if (!response.isOfMediaType(mediaType)) {
+            errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE)
+                    .validatedEntity(response.getMediaType().toString()),
+                    format("Response with status code %d has mediatype %s instead of the expected type %s.",response.getStatusCode(),response.getMediaType(),mediaType));
+            return;
+        }
+        validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, response, 500);
     }
 }

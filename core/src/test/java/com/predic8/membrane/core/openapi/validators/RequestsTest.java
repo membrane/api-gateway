@@ -16,11 +16,15 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import jakarta.mail.internet.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,9 +39,9 @@ public class RequestsTest {
     }
 
     @Test
-    public void wrongMediaTypeRequest() {
+    public void wrongMediaTypeRequest() throws ParseException {
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType("text/plain").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType(TEXT_PLAIN).body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationContext ctx = errors.get(0).getContext();
@@ -54,7 +58,7 @@ public class RequestsTest {
     @Test
     public void noContentInRequestSentPayload() {
 
-        ValidationErrors errors = validator.validate(Request.get().path("/customers").mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
+        ValidationErrors errors = validator.validate(Request.get().path("/customers").json().body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

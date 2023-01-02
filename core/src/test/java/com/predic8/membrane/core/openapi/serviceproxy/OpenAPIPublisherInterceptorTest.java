@@ -61,7 +61,7 @@ public class OpenAPIPublisherInterceptorTest {
 
     @Test
     public void constuctor() {
-        assertEquals(23, interceptor.apis.size());
+        assertEquals(24, interceptor.apis.size());
         assertNotNull(interceptor.apis.get("references-test-v1-0"));
         assertNotNull(interceptor.apis.get("strings-test-api-v1-0"));
         assertNotNull(interceptor.apis.get("extension-sample-v1-4"));
@@ -74,7 +74,7 @@ public class OpenAPIPublisherInterceptorTest {
     public void getApiDirectory() throws Exception {
         get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertEquals(23, TestUtils.getMapFromResponse(get).size());
+        assertEquals(24, TestUtils.getMapFromResponse(get).size());
     }
 
     @Test
@@ -97,7 +97,7 @@ public class OpenAPIPublisherInterceptorTest {
     }
 
     @Test
-    public void rewriteOpenAPIaccordingToRequestTest() throws MalformedURLException {
+    public void rewriteOpenAPIaccordingToRequestTest() throws MalformedURLException, URISyntaxException {
         OpenAPIRecord rec = records.get("servers-1-api-v1-0");
         interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
         assertEquals("http://api.predic8.de/base/v2",rec.node.get("servers").get(0).get("url").asText());
@@ -105,7 +105,7 @@ public class OpenAPIPublisherInterceptorTest {
     }
 
     @Test
-    public void rewriteOpenAPIaccordingToRequest3Servers() throws MalformedURLException {
+    public void rewriteOpenAPIaccordingToRequest3Servers() throws MalformedURLException, URISyntaxException {
         OpenAPIRecord rec = records.get("servers-3-api-v1-0");
         interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
         assertEquals(3,rec.node.get("servers").size());

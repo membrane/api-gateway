@@ -16,11 +16,16 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import jakarta.mail.internet.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,8 +48,8 @@ public class ReferencesResponseTest {
     }
 
     @Test
-    public void refResponseInvalid()  {
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer-invalid.json")));
+    public void refResponseInvalid() throws ParseException {
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

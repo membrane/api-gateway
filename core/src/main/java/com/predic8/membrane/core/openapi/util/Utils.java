@@ -21,6 +21,7 @@ import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.servers.*;
+import jakarta.mail.internet.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -140,7 +141,7 @@ public class Utils {
         return ve.size() > 0;
     }
 
-    public static Request getOpenapiValidatorRequest(Exchange exc) throws IOException {
+    public static Request getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
         Request request = new Request(exc.getRequest().getMethod()).path(exc.getRequestURI()).mediaType(exc.getRequest().getHeader().getContentType());
         if (!exc.getRequest().isBodyEmpty()) {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
@@ -148,7 +149,7 @@ public class Utils {
         return request;
     }
 
-    public static Response getOpenapiValidatorResponse(Exchange exc) throws IOException {
+    public static Response getOpenapiValidatorResponse(Exchange exc) throws IOException, ParseException {
         Response response = Response.statusCode(exc.getResponse().getStatusCode()).mediaType(exc.getResponse().getHeader().getContentType());
 
         if (!exc.getResponse().isBodyEmpty()) {

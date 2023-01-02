@@ -21,6 +21,7 @@ import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
@@ -55,21 +56,15 @@ public class OperationValidator {
         }
     }
 
-    private Operation getOperation(String method, PathItem pathItem) throws MethodNotAllowException {
-        switch (method.toUpperCase()) {
-            case "GET":
-                return pathItem.getGet();
-            case "POST":
-                return pathItem.getPost();
-            case "PUT":
-                return pathItem.getPut();
-            case "DELETE":
-                return pathItem.getDelete();
-            case "PATCH":
-                return pathItem.getPatch();
-            default:
-                throw new MethodNotAllowException();
-        }
+    private Operation getOperation(String method, PathItem pi) throws MethodNotAllowException {
+        return switch (method.toUpperCase()) {
+            case "GET" -> pi.getGet();
+            case "POST" -> pi.getPost();
+            case "PUT" -> pi.getPut();
+            case "DELETE" -> pi.getDelete();
+            case "PATCH" -> pi.getPatch();
+            default -> throw new MethodNotAllowException();
+        };
     }
 
     private void isMethodDeclaredInAPI(ValidationContext ctx, String method, Object apiMethod) {

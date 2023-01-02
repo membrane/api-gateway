@@ -17,13 +17,19 @@
 package com.predic8.membrane.core.openapi.validators;
 
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import jakarta.mail.internet.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,17 +44,17 @@ public class ResponseTest {
     }
 
     @Test
-    public void validCustomerResponse() {
+    public void validCustomerResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void invalidCustomerResponse() {
+    public void invalidCustomerResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/invalid-customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream(this, "/openapi/messages/invalid-customer.json")));
 
 //        System.out.println("errors = " + errors);
 
@@ -80,9 +86,9 @@ public class ResponseTest {
     }
 
     @Test
-    public void wrongMediaTypeResponse() {
+    public void wrongMediaTypeResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType("application/xml").body(getResourceAsStream(this, "/openapi/messages/customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_XML).body(getResourceAsStream(this, "/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -96,9 +102,9 @@ public class ResponseTest {
      * The OpenAPI does not specify a content for a response, but der backend is sending a body.
      */
     @Test
-    public void noContentInResponseSendPayload() {
+    public void noContentInResponseSendPayload() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")), Response.statusCode(200).mediaType("application/json").body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream(this, "/openapi/messages/customer.json")), Response.statusCode(200).mediaType("application/json").body("{ }"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -109,9 +115,9 @@ public class ResponseTest {
     }
 
     @Test
-    public void statusCodeNotInResponse() {
+    public void statusCodeNotInResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType("application/json").body(getResourceAsStream(this, "/openapi/messages/customer.json")), Response.statusCode(202).mediaType("application/json").body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream(this, "/openapi/messages/customer.json")), Response.statusCode(202).mediaType("application/json").body("{ }"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

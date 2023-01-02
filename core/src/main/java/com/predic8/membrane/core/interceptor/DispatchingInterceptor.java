@@ -13,19 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.rules.InternalProxy;
-import com.predic8.membrane.core.util.URLUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.*;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-
-import static com.predic8.membrane.core.util.URLUtil.getHost;
+import static com.predic8.membrane.core.util.URLUtil.*;
 
 /**
  * @description This interceptor adds the destination specified in the target
@@ -40,7 +36,7 @@ import static com.predic8.membrane.core.util.URLUtil.getHost;
 @MCElement(name="dispatching")
 public class DispatchingInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
 
 	public DispatchingInterceptor() {
 		name = "Dispatching Interceptor";
@@ -96,12 +92,16 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		return null;
 	}
 
-	private static String handleAbstractServiceProxy(Exchange exc) throws MalformedURLException {
+	protected static String handleAbstractServiceProxy(Exchange exc) throws MalformedURLException, URISyntaxException {
 		AbstractServiceProxy p = (AbstractServiceProxy) exc.getRule();
 
 		if (p.getTargetURL() != null) {
 			if (p.getTargetURL().startsWith("service:") && !p.getTargetURL().contains("/")) {
 				return "service://" + getHost(p.getTargetURL()) + exc.getRequest().getUri();
+			}
+			// @TODO UriUtil ersetzen
+			if (p.getTargetURL().startsWith("http") && !UriUtil.getPathFromURL(p.getTargetURL()).contains("/")) {
+				return p.getTargetURL() + exc.getRequestURI();
 			}
 			return p.getTargetURL();
 		}
@@ -110,5 +110,4 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
 		return null;
 	}
-
 }

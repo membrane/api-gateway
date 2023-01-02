@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
+import jakarta.mail.internet.*;
 import redis.clients.jedis.*;
 
 import java.io.*;
@@ -101,7 +102,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return null;
     }
 
-    private ValidationErrors validateRequest(OpenAPI api, Exchange exc) throws IOException {
+    private ValidationErrors validateRequest(OpenAPI api, Exchange exc) throws IOException, ParseException {
         ValidationErrors errors = new ValidationErrors();
         if (!shouldValidate(api, REQUESTS))
             return errors;
@@ -109,7 +110,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return new OpenAPIValidator(api).validate(getOpenapiValidatorRequest(exc));
     }
 
-    private ValidationErrors validateResponse(OpenAPI api, Exchange exc) throws IOException {
+    private ValidationErrors validateResponse(OpenAPI api, Exchange exc) throws IOException, ParseException {
         ValidationErrors errors = new ValidationErrors();
         if (!shouldValidate(api, RESPONSES))
             return errors;

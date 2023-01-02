@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.model;
 
 import com.fasterxml.jackson.databind.*;
+import jakarta.mail.internet.*;
 
 import java.io.*;
 
@@ -28,9 +29,9 @@ public class Response extends Message<Response> {
         this.statusCode = statusCode;
     }
 
-    public Response(int statusCode, String mediaType) {
+    public Response(int statusCode, String mediaType) throws ParseException {
+        super(mediaType);
         this.statusCode = statusCode;
-        this.mediaType = mediaType;
     }
 
     public static Response statusCode(int statusCode) {

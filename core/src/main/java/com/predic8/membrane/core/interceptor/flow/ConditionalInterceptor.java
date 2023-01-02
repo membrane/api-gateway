@@ -14,28 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.groovy.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import java.util.*;
+import java.util.function.*;
 
-import com.google.common.base.Function;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.lang.LanguageSupport;
-import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.*;
 
 /**
- * @description
- * <p>
- * 	The "if" interceptor supports conditional execution of a group of executors.
+ * @description <p>
+ * The "if" interceptor supports conditional execution of a group of executors.
  * </p>
  *
  * <p>
@@ -47,87 +42,85 @@ import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
  * <li>What happens to ABORT handling of interceptor A in <code>&lt;request&gt;&lt;if test="..."&gt;&lt;A /&gt;&lt;/if&gt;&lt;/response&gt;</code></li>
  * </ul>
  */
-@MCElement(name="if")
+@MCElement(name = "if")
 public class ConditionalInterceptor extends AbstractFlowInterceptor {
-	private static final Logger log = LoggerFactory.getLogger(InterceptorFlowController.class);
+    private static final Logger log = LoggerFactory.getLogger(InterceptorFlowController.class);
 
-	// configuration
-	private String test;
-	private LanguageType language = LanguageType.GROOVY;
+    // configuration
+    private String test;
+    private LanguageType language = GROOVY;
 
-	// state
-	private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
-	private Function<Map<String, Object>, Boolean> condition;
+    // state
+    private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
+    private Function<Map<String, Object>, Boolean> condition;
 
-	public enum LanguageType {
-		GROOVY,
-	}
+    public enum LanguageType {
+        GROOVY,
+    }
 
-	public ConditionalInterceptor() {
-		name = "Conditional Interceptor";
-	}
+    public ConditionalInterceptor() {
+        name = "Conditional Interceptor";
+    }
 
-	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-		LanguageSupport ls = new GroovyLanguageSupport();
-		condition = ls.compileExpression(router, test);
-	}
+    @Override
+    public void init(Router router) throws Exception {
+        super.init(router);
+        condition = ((LanguageSupport) new GroovyLanguageSupport()).compileExpression(router, test);
+    }
 
-	private boolean testCondition(Exchange exc) {
-		HashMap<String, Object> parameters = new HashMap<String, Object>();
-		parameters.put("exc", exc);
-		return condition.apply(parameters);
-	}
+    private boolean testCondition(Exchange exc) {
+        HashMap<String, Object> parameters = new HashMap<>();
+        parameters.put("exc", exc);
+        return condition.apply(parameters);
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exchange) throws Exception {
-		boolean logDebug = log.isDebugEnabled();
+    @Override
+    public Outcome handleRequest(Exchange exchange) throws Exception {
 
-		boolean handleRequest = testCondition(exchange);
-		if (logDebug)
-			log.debug("ConditionalInterceptor: expression evaluated to " + handleRequest);
+        boolean handleRequest = testCondition(exchange);
+        if (log.isDebugEnabled())
+            log.debug("Expression evaluated to " + handleRequest);
 
-		if (handleRequest) {
-			return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
-		} else
-			return Outcome.CONTINUE;
-	}
+        if (handleRequest)
+            return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
 
-	public LanguageType getLanguage() {
-		return language;
-	}
-	/**
-	 * @description the language of the 'test' condition
-	 * @example groovy
-	 */
-	@MCAttribute
-	public void setLanguage(LanguageType language) {
-		this.language = language;
-	}
+        return CONTINUE;
+    }
 
-	public String getTest() {
-		return test;
-	}
-	/**
-	 * @description the condition to be tested
-	 * @example exc.request.header.userAgentSupportsSNI
-	 */
-	@Required
-	@MCAttribute
-	public void setTest(String test) {
-		this.test = test;
-	}
+    public LanguageType getLanguage() {
+        return language;
+    }
 
+    /**
+     * @description the language of the 'test' condition
+     * @example groovy
+     */
+    @MCAttribute
+    public void setLanguage(LanguageType language) {
+        this.language = language;
+    }
 
-	@Override
-	public String getShortDescription() {
-		String ret = "if (" + test + ") {";
-		for (Interceptor i : getInterceptors()) {
-			ret += "<br/>&nbsp;&nbsp;&nbsp;&nbsp;" + i.getDisplayName();
-		}
-		ret += "<br/>}";
-		return ret;
-	}
+    public String getTest() {
+        return test;
+    }
 
+    /**
+     * @description the condition to be tested
+     * @example exc.request.header.userAgentSupportsSNI
+     */
+    @Required
+    @MCAttribute
+    public void setTest(String test) {
+        this.test = test;
+    }
+
+    @Override
+    public String getShortDescription() {
+        StringBuilder ret = new StringBuilder("if (" + test + ") {");
+        for (Interceptor i : getInterceptors()) {
+            ret.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").append(i.getDisplayName());
+        }
+        ret.append("<br/>}");
+        return ret.toString();
+    }
 }

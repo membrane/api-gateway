@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -164,7 +163,7 @@ public class Response extends Message {
 				status(400, "Bad Request").
 				header("Server", SERVER_HEADER).
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Bad Request", message));
+				body(HttpUtil.htmlMessage("Bad Request", message));
 	}
 
 	public static ResponseBuilder badRequest(String message, boolean escape) {
@@ -172,7 +171,7 @@ public class Response extends Message {
 				status(400, "Bad Request").
 				header("Server", SERVER_HEADER).
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(escape ? htmlMessage("Bad Request", message) : unescapedHtmlMessage("Bad Request", message));
+				body(escape ? HttpUtil.htmlMessage("Bad Request", message) : HttpUtil.unescapedHtmlMessage("Bad Request", message));
 	}
 
 	public static ResponseBuilder continue100() {
@@ -186,7 +185,7 @@ public class Response extends Message {
 				status(permanent ? 301 : 307, permanent ? "Moved Permanently" : "Temporary Redirect").
 				header("Location", uri).
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
+				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
 
 	public static ResponseBuilder redirectGet(String uri){
@@ -195,7 +194,7 @@ public class Response extends Message {
 				status(303, "Temporary Redirect").
 				header("Location", uri).
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
+				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
 
 	public static ResponseBuilder redirectWithout300(String uri) {
@@ -215,87 +214,74 @@ public class Response extends Message {
 						"</body>");
 	}
 
-	private static String unescapedHtmlMessage(String caption, String text) {
-		return "<html><head><title>" + caption
-				+ "</title></head>" + "<body><h1>"
-				+ caption + "</h1><p>"
-				+ text + "</p></body></html>";
-	}
-
-	private static String htmlMessage(String caption, String text) {
-		return unescapedHtmlMessage(
-				StringEscapeUtils.escapeHtml4(caption),
-				StringEscapeUtils.escapeHtml4(text));
-	}
-
 	public static ResponseBuilder serverUnavailable(String message) {
 		return ResponseBuilder.newInstance().
 				status(503, "Service Unavailable").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Service Unavailable", message));
+				body(HttpUtil.htmlMessage("Service Unavailable", message));
 	}
 
 	public static ResponseBuilder internalServerError() {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Internal Server Error", ""));
+				body(HttpUtil.htmlMessage("Internal Server Error", ""));
 	}
 
 	public static ResponseBuilder notImplemented() {
 		return ResponseBuilder.newInstance().
 				status(501, "	Not Implemented").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Not Implemented", ""));
+				body(HttpUtil.htmlMessage("Not Implemented", ""));
 	}
 
 	public static ResponseBuilder internalServerError(String message) {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Internal Server Error", message));
+				body(HttpUtil.htmlMessage("Internal Server Error", message));
 	}
 
 	public static ResponseBuilder badGateway(String message) {
 		return ResponseBuilder.newInstance().
 				status(502, "Bad Gateway").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Bad Gateway", message));
+				body(HttpUtil.htmlMessage("Bad Gateway", message));
 	}
 
 	public static ResponseBuilder gatewayTimeout(String message) {
 		return ResponseBuilder.newInstance().
 				status(504, "Gateway timeout").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Gateway timeout", message));
+				body(HttpUtil.htmlMessage("Gateway timeout", message));
 	}
 
 	public static ResponseBuilder forbidden() {
 		return ResponseBuilder.newInstance().
 				status(403, "Forbidden").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Forbidden", ""));
+				body(HttpUtil.htmlMessage("Forbidden", ""));
 	}
 
 	public static ResponseBuilder notFound() {
 		return ResponseBuilder.newInstance().
 				status(404, "Not Found").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("404 Page Not Found", ""));
+				body(HttpUtil.htmlMessage("404 Page Not Found", ""));
 	}
 
 	public static ResponseBuilder forbidden(String message) {
 		return ResponseBuilder.newInstance().
 				status(403, "Forbidden").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Forbidden", message));
+				body(HttpUtil.htmlMessage("Forbidden", message));
 	}
 
 	public static ResponseBuilder unauthorized(String message) {
 		return ResponseBuilder.newInstance().
 				status(401, "Unauthorized.").
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Unauthorized.", message));
+				body(HttpUtil.htmlMessage("Unauthorized.", message));
 	}
 
 	public static ResponseBuilder unauthorized() {
@@ -431,9 +417,7 @@ public class Response extends Message {
 			return false;
 		if (header.hasContentLength())
 			return false;
-		if (header.getContentType() != null)
-			return false;
-		return true;
+		return header.getContentType() == null;
 	}
 
 	@Override

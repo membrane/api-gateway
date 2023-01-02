@@ -17,15 +17,27 @@
 package com.predic8.membrane.core.openapi.model;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
+import jakarta.mail.internet.*;
+import org.slf4j.*;
 
 import java.io.*;
 
-abstract class Message<T> {
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_CONTENT_TYPE;
+
+public abstract class Message<T> {
+
+    private static Logger log = LoggerFactory.getLogger(Message.class.getName());
 
     protected Body body = new NoBody();
-    protected String mediaType;
+    protected ContentType mediaType;
+
+
+    protected Message(String mediaType) throws ParseException {
+        this.mediaType = new ContentType(mediaType);
+    }
+
+    protected Message() {
+    }
 
     public Body getBody() {
         return body;
@@ -35,7 +47,7 @@ abstract class Message<T> {
     public T body(Body body) {
         this.body = body;
         if (body instanceof JsonBody)
-            this.mediaType("application/json");
+            this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
         return (T) this;
     }
 
@@ -54,14 +66,18 @@ abstract class Message<T> {
     @SuppressWarnings("unchecked")
     public T body(JsonNode n) {
         this.body = new JsonBody(n);
-        this.mediaType("application/json");
+        this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
         return (T) this;
     }
 
     @SuppressWarnings("unchecked")
-    public T mediaType(String mediaType) {
-        this.mediaType = Utils.getMediaTypeFromContentTypeHeader(mediaType);
+    public T mediaType(String mediaType) throws ParseException {
+        this.mediaType = new ContentType(mediaType);
         return (T) this;
+    }
+
+    public boolean isOfMediaType(String mediaType) {
+        return this.mediaType.match(mediaType);
     }
 
     public boolean hasBody() {
@@ -72,11 +88,13 @@ abstract class Message<T> {
 
     @SuppressWarnings("unchecked")
     public T json() {
-        this.mediaType("application/json");
+        this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
         return (T) this;
     }
 
-    public String getMediaType() {
+    public ContentType getMediaType() {
         return mediaType;
     }
+
+
 }

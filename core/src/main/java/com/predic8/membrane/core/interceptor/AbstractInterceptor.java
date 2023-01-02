@@ -23,6 +23,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
 import com.predic8.membrane.core.rules.Rule;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 public class AbstractInterceptor implements Interceptor {
 
 	protected String name = this.getClass().getName();
@@ -38,11 +40,11 @@ public class AbstractInterceptor implements Interceptor {
 	}
 
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	public void handleAbort(Exchange exchange) {
@@ -114,16 +116,14 @@ public class AbstractInterceptor implements Interceptor {
 						.getInterceptors() != null)
 				.filter(rule -> rule
 						.getInterceptors()
-						.stream()
-						.filter(interceptor -> hasSameReferenceAs(interceptor))
-						.count() > 0)
+						.stream().anyMatch(this::hasSameReferenceAs))
 				.findAny()
 				.get();
 	}
 
 	private boolean hasSameReferenceAs(Interceptor i){
 		if(i instanceof AbstractFlowInterceptor){
-			return ((AbstractFlowInterceptor) i).getInterceptors().stream().filter(interceptor -> hasSameReferenceAs(interceptor)).count() > 0;
+			return ((AbstractFlowInterceptor) i).getInterceptors().stream().anyMatch(this::hasSameReferenceAs);
 		}
 		return i == this;
 	}

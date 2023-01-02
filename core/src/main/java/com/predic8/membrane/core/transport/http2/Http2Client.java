@@ -122,10 +122,8 @@ public class Http2Client implements Runnable {
 
     private void updateThreadName(boolean fromConnection) {
         if (fromConnection) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("HTTP2 Client ");
-            sb.append(getRemoteAddr(con.socket));
-            Thread.currentThread().setName(sb.toString());
+            Thread.currentThread().setName("HTTP2 Client " +
+                    getRemoteAddr(con.socket));
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
         }
@@ -136,9 +134,7 @@ public class Http2Client implements Runnable {
     }
 
     public boolean reserveStream() {
-        int max = logic.peerSettings.getMaxConcurrentStreams();
-        if (max == -1)
-            max = Integer.MAX_VALUE;
+        int max = getMax();
 
         synchronized(this) {
             int current = logic.streams.size() + reserved;
@@ -147,6 +143,13 @@ public class Http2Client implements Runnable {
             reserved += 1;
             return true;
         }
+    }
+
+    private int getMax() {
+        int max = logic.peerSettings.getMaxConcurrentStreams();
+        if (max == -1)
+            return Integer.MAX_VALUE;
+        return max;
     }
 
     public void close() {

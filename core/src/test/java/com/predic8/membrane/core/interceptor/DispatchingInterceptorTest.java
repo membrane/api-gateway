@@ -13,23 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+
+import java.net.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.net.URL;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.util.MessageUtil;
 
 public class DispatchingInterceptorTest {
 
 	private DispatchingInterceptor dispatcher;
+	private ServiceProxy serviceProxy;
 
 	private Exchange exc;
 
@@ -37,14 +35,15 @@ public class DispatchingInterceptorTest {
 	public void setUp() throws Exception {
 		dispatcher = new DispatchingInterceptor();
 		exc = new Exchange(null);
+		serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
 	}
 
 	@Test
 	public void testServiceProxy() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
-		exc.setRule(getServiceProxy());
+		exc.setRule(serviceProxy);
 
-		assertEquals(Outcome.CONTINUE, dispatcher.handleRequest(exc));
+		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
 		URL url = new URL(exc.getDestinations().get(0));
 		assertEquals(80, url.getPort());
@@ -57,7 +56,7 @@ public class DispatchingInterceptorTest {
 		exc.setRequest(MessageUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
 		exc.setRule(getProxyrRule());
 
-		assertEquals(Outcome.CONTINUE, dispatcher.handleRequest(exc));
+		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
 		URL url = new URL(exc.getDestinations().get(0));
 
@@ -66,16 +65,46 @@ public class DispatchingInterceptorTest {
 		assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
 	}
 
-	@Test
-	public void testProxyRuleHttps() throws Exception {
-
-	}
-
-	private ServiceProxy getServiceProxy() {
-		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
-	}
-
 	private ProxyRule getProxyrRule() {
 		return new ProxyRule(new ProxyRuleKey(3090));
+	}
+
+    @Test
+    void handleAbstractServiceProxyTargetWithHostAndPort() throws MalformedURLException, URISyntaxException {
+		exc.setRule(serviceProxy);
+		exc.setRequest(new Request.Builder().get("/foo").build());
+		assertEquals("http://thomas-bayer.com:80/foo", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+    }
+
+	@Test
+	void handleAbstractServiceProxyTargetWithURL() throws MalformedURLException, URISyntaxException {
+		serviceProxy.setTargetURL("http://api.predic8.de");
+		exc.setRule(serviceProxy);
+		exc.setOriginalRequestUri("/foo");
+		assertEquals("http://api.predic8.de/foo", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+	}
+
+	@Test
+	void handleAbstractServiceProxyTargetWithURLHTTPS() throws MalformedURLException, URISyntaxException {
+		serviceProxy.setTargetURL("https://api.predic8.de");
+		exc.setRule(serviceProxy);
+		exc.setOriginalRequestUri("/foo");
+		assertEquals("https://api.predic8.de/foo", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+	}
+
+	@Test
+	void handleAbstractServiceProxyTargetWithSlash() throws MalformedURLException, URISyntaxException {
+		serviceProxy.setTargetURL("https://api.predic8.de/");
+		exc.setRule(serviceProxy);
+		exc.setOriginalRequestUri("/foo");
+		assertEquals("https://api.predic8.de/", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+	}
+
+	@Test
+	void handleAbstractServiceProxyTargetWithPath() throws MalformedURLException, URISyntaxException {
+		serviceProxy.setTargetURL("https://api.predic8.de/baz");
+		exc.setRule(serviceProxy);
+		exc.setOriginalRequestUri("/foo");
+		assertEquals("https://api.predic8.de/baz", DispatchingInterceptor.handleAbstractServiceProxy(exc));
 	}
 }

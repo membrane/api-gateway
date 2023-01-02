@@ -41,8 +41,8 @@ public class BooleanTest {
 
     @Test
     public void validInBody() {
-        ValidationErrors errors = validator.validate(Request.post().path("/boolean").body(new JsonBody(getBoolean("good",true))));
-//        System.out.println("errors = " + errors);
+        ValidationErrors errors = validator.validate(Request.post().path("/boolean").json().body(new JsonBody(getBoolean("good",true))));
+        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 

@@ -16,13 +16,18 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import jakarta.mail.internet.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
@@ -107,7 +112,7 @@ public class RequiredTest {
     }
 
     @Test
-    public void responseRequiredWriteOnlyValid() {
+    public void responseRequiredWriteOnlyValid() throws ParseException {
 
         Map<String,Integer> props = new HashMap<>();
         props.put("b",3);
@@ -116,7 +121,7 @@ public class RequiredTest {
         Map<String,Map<String,Integer>> writeOnlyResponse = new HashMap<>();
         writeOnlyResponse.put("write-only-response", props);
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200).mediaType("application/json").body(mapToJson(writeOnlyResponse)));
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(mapToJson(writeOnlyResponse)));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }

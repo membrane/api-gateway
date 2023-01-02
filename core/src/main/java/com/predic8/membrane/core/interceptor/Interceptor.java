@@ -27,7 +27,7 @@ import com.predic8.membrane.core.exchange.Exchange;
  */
 public interface Interceptor {
 
-	public enum Flow {
+	enum Flow {
 		REQUEST, RESPONSE, ABORT;
 
 		public static class Set {
@@ -37,8 +37,8 @@ public interface Interceptor {
 		}
 	}
 
-	public Outcome handleRequest(Exchange exc) throws Exception;
-	public Outcome handleResponse(Exchange exc) throws Exception;
+	Outcome handleRequest(Exchange exc) throws Exception;
+	Outcome handleResponse(Exchange exc) throws Exception;
 
 	/**
 	 * Called when any {@link #handleRequest(Exchange)} or
@@ -48,27 +48,27 @@ public interface Interceptor {
 	 * handleAbort is called in the reverse order of the chain (as
 	 * handleResponse is).
 	 */
-	public void handleAbort(Exchange exchange);
+	void handleAbort(Exchange exchange);
 
-	public String getDisplayName();
-	public void setDisplayName(String name);
+	String getDisplayName();
+	void setDisplayName(String name);
 
-	public String getId();
-	public void setId(String id);
+	String getId();
+	void setId(String id);
 
-	public Router getRouter();
+	Router getRouter();
 
-	public void setFlow(EnumSet<Flow> flow);
-	public EnumSet<Flow> getFlow();
+	void setFlow(EnumSet<Flow> flow);
+	EnumSet<Flow> getFlow();
 
-	public String getShortDescription();
-	public String getLongDescription();
+	String getShortDescription();
+	String getLongDescription();
 
 	/**
 	 * @return "accessControl" if https://membrane-soa.org/service-proxy-doc/current/configuration/reference/accessControl.htm is the documentation page
 	 * for this interceptor, or null if there is no such page.
 	 */
-	public String getHelpId();
+	String getHelpId();
 
-	public void init(Router router) throws Exception;
+	void init(Router router) throws Exception;
 }

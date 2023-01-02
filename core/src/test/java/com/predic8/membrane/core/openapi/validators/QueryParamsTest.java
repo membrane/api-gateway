@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
+import org.checkerframework.checker.units.qual.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -81,5 +82,21 @@ public class QueryParamsTest {
         assertEquals("integer",e.getContext().getSchemaType());
         assertEquals(400,e.getContext().getStatusCode());
         assertEquals("REQUEST/QUERY_PARAMETER/foo", e.getContext().getLocationForRequest());
+    }
+
+//    @Test
+//    public void escapedTest() {
+//        ValidationErrors errors = validator.validate(Request.get().path("/cities?name=Bad%20Godesberg&limit=10"));
+//        System.out.println("errors = " + errors);
+//        assertEquals(1,errors.size());
+//        ValidationError e = errors.get(0);
+//        assertEquals("REQUEST/QUERY_PARAMETER", e.getContext().getLocationForRequest());
+//    }
+
+    @Test
+    public void utf8Test() {
+        ValidationErrors errors = validator.validate(Request.get().path("/cities?name=K%C3%B6%C3%B6%C3%B6ln&limit=10"));
+        System.out.println("errors = " + errors);
+        assertEquals(0,errors.size());
     }
 }

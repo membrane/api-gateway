@@ -63,9 +63,9 @@ public class OpenAPIValidator {
             log.debug("Found server " + url);
             try {
                 basePath = UriUtil.getPathFromURL(url);
-            } catch (MalformedURLException e) {
+            } catch (URISyntaxException e) {
                 // @TODO
-                throw new RuntimeException("Config Error" + e);
+                throw new RuntimeException("Config Error ", e);
             }
         }
     }

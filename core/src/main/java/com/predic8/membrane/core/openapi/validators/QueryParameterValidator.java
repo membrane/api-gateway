@@ -16,15 +16,20 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.google.common.collect.*;
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNullElseGet;
 
 public class QueryParameterValidator {
 
@@ -36,10 +41,21 @@ public class QueryParameterValidator {
         this.pathItem = pathItem;
     }
 
-    ValidationErrors validateQueryParameters(ValidationContext ctx, Request request, Operation operation) {
+    ValidationErrors validateQueryParameters(ValidationContext ctx, Request request, Operation operation)  {
 
         ValidationErrors errors = new ValidationErrors();
-        Map<String, String> qparams = request.getQueryParams();
+
+//        Map<String, String> qparams = request.getQueryParams();
+
+        // TODO
+        // Router?
+        String query = (new URIFactory().createWithoutException(request.getPath())).getQuery();
+        Map<String, String> qparams;
+        if (query != null) {
+            qparams = URLParamUtil.parseQueryString(query);
+        } else {
+            qparams = new HashMap<>();
+        }
 
         getAllParameterSchemas(operation).forEach(param -> {
             if (!(param instanceof QueryParameter)) {
@@ -60,10 +76,7 @@ public class QueryParameterValidator {
 
     private static List<Parameter> concat(List<Parameter> l1, List<Parameter> l2) {
         if (l1 == null) {
-            if (l2 != null)
-                return l2;
-            else
-                return new ArrayList<>();
+            return requireNonNullElseGet(l2, ArrayList::new);
         }
         if (l2!=null)
             l1.addAll(l2);

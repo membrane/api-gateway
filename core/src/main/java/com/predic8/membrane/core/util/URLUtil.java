@@ -39,5 +39,4 @@ public class URLUtil {
 		int i = p.lastIndexOf('/');
 		return i == -1 ? p : p.substring(i+1);
 	}
-
 }

@@ -47,42 +47,42 @@ public class UtilsTest {
     }
 
     @Test
-    public void getPathFromURLHostAndPath() throws MalformedURLException {
-        assertEquals("/foo", UriUtil.getPathFromURL("localhost/foo"));
-    }
-
-    @Test
-    public void getPathFromURLSchemeHostPath() throws MalformedURLException {
+    public void getPathFromURLHostAndPath() throws URISyntaxException {
         assertEquals("/foo", UriUtil.getPathFromURL("http://localhost/foo"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPath() throws MalformedURLException {
-        assertEquals("/foo", UriUtil.getPathFromURL("localhost.de/foo"));
+    public void getPathFromURLSchemeHostPath() throws URISyntaxException {
+        assertEquals("/foo", UriUtil.getPathFromURL("http://localhost/foo"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPortPath() throws MalformedURLException {
-        assertEquals("/foo", UriUtil.getPathFromURL("localhost.de:3000/foo"));
+    public void getPathFromURLHostToplevelPath() throws URISyntaxException {
+        assertEquals("/foo", UriUtil.getPathFromURL("http://localhost.de/foo"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPortPathComponents() throws MalformedURLException {
+    public void getPathFromURLHostToplevelPortPath() throws URISyntaxException {
+        assertEquals("/foo", UriUtil.getPathFromURL("http://localhost.de:3000/foo"));
+    }
+
+    @Test
+    public void getPathFromURLHostToplevelPortPathComponents() throws URISyntaxException {
         assertEquals("/demo-api/v2/", UriUtil.getPathFromURL("http://localhost:3000/demo-api/v2/"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPortPathComponentsNoTrailingSlash() throws MalformedURLException {
+    public void getPathFromURLHostToplevelPortPathComponentsNoTrailingSlash() throws URISyntaxException {
         assertEquals("/demo-api/v2", UriUtil.getPathFromURL("http://localhost:3000/demo-api/v2"));
     }
 
     @Test
-    public void getPathFromURLHTTPS() throws MalformedURLException {
+    public void getPathFromURLHTTPS() throws URISyntaxException {
         assertEquals("/demo-api/v2", UriUtil.getPathFromURL("https://localhost:3000/demo-api/v2"));
     }
 
     @Test
-    public void getPathFromURLNoPath() throws MalformedURLException {
+    public void getPathFromURLNoPath() throws URISyntaxException {
         assertEquals("", UriUtil.getPathFromURL("http://localhost:4567"));
     }
     

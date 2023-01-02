@@ -43,6 +43,9 @@ import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static java.lang.Boolean.TRUE;
+
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
  * switch destinations on failures.
@@ -139,31 +142,36 @@ public class HttpClient {
 			http2ClientPool.shutdownWhenDone();
 	}
 
-	private void setRequestURI(Request req, String dest) throws MalformedURLException {
-		if (proxy != null || req.isCONNECTRequest())
-			req.setUri(dest);
-		else {
-			if (!dest.startsWith("http"))
-				throw new MalformedURLException("The exchange's destination URL ("+dest+") does not start with 'http'. Please specify a <target> within your <serviceProxy>.");
-			String originalUri = req.getUri();
-			try {
-				req.setUri(HttpUtil.getPathAndQueryString(dest));
-			} catch (MalformedURLException e) {
-				throw new RuntimeException("while handling destination '" + dest + "'", e);
-			}
-			if("/".equals(originalUri) && req.getUri().isEmpty())
-				req.setUri("/");
-		}
-	}
+    private void setRequestURI(Request req, String dest) throws MalformedURLException {
+        if (proxy != null || req.isCONNECTRequest()) {
+            req.setUri(dest);
+            return;
+        }
 
-	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
+        if (!dest.startsWith("http"))
+            throw new MalformedURLException("The exchange's destination URL (" + dest + ") does not start with 'http'. Please specify a <target> within your <serviceProxy>.");
+        String originalUri = req.getUri();
+        try {
+            req.setUri(HttpUtil.getPathAndQueryString(dest));
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("while handling destination '" + dest + "'", e);
+        }
+
+        // Make sure if the request had no path and the destination has also no path
+        // to continure with no path. Maybe for STOMP?
+        if ("/".equals(originalUri) && req.getUri().isEmpty())
+            req.setUri("/");
+
+    }
+
+	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException {
 		if (connect)
 			return new HostColonPort(false, dest);
 
 		return new HostColonPort(new URL(dest));
 	}
 
-	private HostColonPort init(Exchange exc, String dest, boolean adjustHostHeader) throws UnknownHostException, IOException, MalformedURLException {
+	private HostColonPort init(Exchange exc, String dest, boolean adjustHostHeader) throws IOException {
 		setRequestURI(exc.getRequest(), dest);
 		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 
@@ -208,7 +216,7 @@ public class HttpClient {
 		int counter = 0;
 		Exception exception = null;
 		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
-		boolean trackNodeStatus = trackNodeStatusObj != null && trackNodeStatusObj instanceof Boolean && (Boolean)trackNodeStatusObj;
+		boolean trackNodeStatus = trackNodeStatusObj instanceof Boolean && (Boolean) trackNodeStatusObj;
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
@@ -280,19 +288,7 @@ public class HttpClient {
 						if (trackNodeStatus)
 							exc.setNodeStatusCode(counter, response.getStatusCode());
 
-						if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToResponse(response, "websocket")) {
-							log.debug("Upgrading to WebSocket protocol.");
-							newProtocol = "WebSocket";
-							//TODO should we report to the httpClientStatusEventBus here somehow?
-						}
-						if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
-							log.debug("Upgrading to TCP protocol.");
-							newProtocol = "TCP";
-						}
-						if (exc.getProperty(Exchange.ALLOW_SPDY) == Boolean.TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
-							log.debug("Upgrading to SPDY/3.1 protocol.");
-							newProtocol = "SPDY/3.1";
-						}
+						newProtocol = upgradeProtocol(exc, response, newProtocol);
 					}
 
 					if (newProtocol != null) {
@@ -383,6 +379,23 @@ public class HttpClient {
 			}
 		}
 		throw exception;
+	}
+
+	private String upgradeProtocol(Exchange exc, Response response, String newProtocol) {
+		if (exc.getProperty(ALLOW_WEBSOCKET) == TRUE && isUpgradeToResponse(response, "websocket")) {
+			log.debug("Upgrading to WebSocket protocol.");
+			return "WebSocket";
+			//TODO should we report to the httpClientStatusEventBus here somehow?
+		}
+		if (exc.getProperty(ALLOW_TCP) == TRUE && isUpgradeToResponse(response, "tcp")) {
+			log.debug("Upgrading to TCP protocol.");
+			return "TCP";
+		}
+		if (exc.getProperty(ALLOW_SPDY) == TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
+			log.debug("Upgrading to SPDY/3.1 protocol.");
+			return "SPDY/3.1";
+		}
+		return newProtocol;
 	}
 
 	private String getSNIServerName(Exchange exc) {

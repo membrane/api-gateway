@@ -80,7 +80,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return handleOverviewOpenAPIDoc(exc);
     }
 
-    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws JsonProcessingException, MalformedURLException {
+    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws JsonProcessingException, MalformedURLException, URISyntaxException {
         Matcher m = patternMeta.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
@@ -113,13 +113,13 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws JsonProcessingException, MalformedURLException {
+    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws JsonProcessingException, MalformedURLException, URISyntaxException {
         rewriteOpenAPIaccordingToRequest(exc, rec);
         exc.setResponse(Response.ok().contentType("application/x-yaml").body(omYaml.writeValueAsBytes(rec.node)).build());
         return RETURN;
     }
 
-    protected void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws MalformedURLException {
+    protected void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws MalformedURLException, URISyntaxException {
         // The /info/servers field is not in every document present.
         if (rec.node.get("servers") == null)
             return;
@@ -128,7 +128,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         }
     }
 
-    private String rewriteServerNode(Exchange exc, JsonNode server) throws MalformedURLException {
+    private String rewriteServerNode(Exchange exc, JsonNode server) throws MalformedURLException, URISyntaxException {
         return rewrite(server.get("url").asText(),
                 getProtocol(exc),
                 exc.getOriginalHostHeaderHost(),

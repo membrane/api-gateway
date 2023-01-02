@@ -26,15 +26,19 @@ import java.util.TimeZone;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.LineTooLongException;
-import org.apache.commons.lang3.StringEscapeUtils;
+
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import org.apache.commons.lang3.*;
+
+import static com.predic8.membrane.core.Constants.CRLF;
+import static org.apache.commons.lang3.StringEscapeUtils.*;
 
 public class HttpUtil {
 
-	private static DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
+	private static final DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
 	private final static int MAX_LINE_LENGTH;
 
 	static {
@@ -56,6 +60,7 @@ public class HttpUtil {
 		int l = 0;
 		while ((b = in.read()) != -1) {
 			if (b == 13) {
+				//noinspection ResultOfMethodCallIgnored
 				in.read();
 				return line.toString();
 			}
@@ -103,7 +108,7 @@ public class HttpUtil {
 		buf.append(comment);
 		buf.append("</p>\r\n");
 		buf.append("<pre id=\"msg\">");
-		buf.append(StringEscapeUtils.escapeHtml4(text));
+		buf.append(escapeHtml4(text));
 		buf.append("</pre>");
 		buf.append("<p class=\"footer\">");
 		buf.append(Constants.HTML_FOOTER);
@@ -131,27 +136,27 @@ public class HttpUtil {
 		StringBuilder buf = new StringBuilder(256);
 
 		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP11_NS + "\">");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("<soapenv:Body>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("<soapenv:Fault>");
 
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 
 		buf.append("<faultcode>soapenv:Server</faultcode>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("<faultstring>");
-		buf.append(StringEscapeUtils.escapeXml(title));
+		buf.append(escapeXml11(title));
 		buf.append("</faultstring>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 
-		buf.append("<detail>" + StringEscapeUtils.escapeXml(text) + "</detail>");
+		buf.append("<detail>" + escapeXml11(text) + "</detail>");
 
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("</soapenv:Fault>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("</soapenv:Body>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("</soapenv:Envelope>");
 		return buf.toString();
 	}
@@ -160,32 +165,32 @@ public class HttpUtil {
 		StringBuilder buf = new StringBuilder(256);
 
 		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP12_NS + "\">");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("<soapenv:Body>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("<soapenv:Fault>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 
 		buf.append("<soapenv:Code>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("<soapenv:Value>soapenv:Receiver</soapenv:Value>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("</soapenv:Code>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 
 
 		buf.append("<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">");
-		buf.append(StringEscapeUtils.escapeXml(title));
+		buf.append(escapeXml11(title));
 		buf.append("</soapenv:Text></soapenv:Reason>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 
-		buf.append("<soapenv:Detail><Text>" + StringEscapeUtils.escapeXml(text) + "</Text></soapenv:Detail>");
+		buf.append("<soapenv:Detail><Text>" + escapeXml11(text) + "</Text></soapenv:Detail>");
 
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("</soapenv:Fault>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("</soapenv:Body>");
-		buf.append(Constants.CRLF);
+		buf.append(CRLF);
 		buf.append("</soapenv:Envelope>");
 		return buf.toString();
 	}
@@ -252,30 +257,43 @@ public class HttpUtil {
 	 * @return
 	 */
 	public static String getMessageForStatusCode(int code) {
-		switch (code) {
-			case 100: return "Continue";
-			case 200: return "Ok";
-			case 201: return "Created";
-			case 202: return "Accepted";
-			case 204: return "No Content";
-			case 206: return "Partial Content";
-			case 301: return "Moved Permanently";
-			case 302: return "Found";
-			case 304: return "Not Modified";
-			case 307: return "Temporary Redirect";
-			case 308: return "Permanent Redirect";
-			case 400: return "Bad Request";
-			case 401: return "Unauthorized";
-			case 403: return "Forbidden";
-			case 404: return "Not Found";
-			case 405: return "Method not Allowed";
-			case 409: return "Conflict";
-			case 415: return "Unsupported Mediatype";
-			case 422: return "Unprocessable Entity";
-			case 500: return "Internal Server Error";
-			case 501: return "Not Implemented";
-			case 502: return "Bad Gateway";
-			default: return "";
-		}
+		return switch (code) {
+			case 100 -> "Continue";
+			case 200 -> "Ok";
+			case 201 -> "Created";
+			case 202 -> "Accepted";
+			case 204 -> "No Content";
+			case 206 -> "Partial Content";
+			case 301 -> "Moved Permanently";
+			case 302 -> "Found";
+			case 304 -> "Not Modified";
+			case 307 -> "Temporary Redirect";
+			case 308 -> "Permanent Redirect";
+			case 400 -> "Bad Request";
+			case 401 -> "Unauthorized";
+			case 403 -> "Forbidden";
+			case 404 -> "Not Found";
+			case 405 -> "Method not Allowed";
+			case 409 -> "Conflict";
+			case 415 -> "Unsupported Mediatype";
+			case 422 -> "Unprocessable Entity";
+			case 500 -> "Internal Server Error";
+			case 501 -> "Not Implemented";
+			case 502 -> "Bad Gateway";
+			default -> "";
+		};
 	}
+
+    public static String unescapedHtmlMessage(String caption, String text) {
+        return "<html><head><title>" + caption
+                + "</title></head>" + "<body><h1>"
+                + caption + "</h1><p>"
+                + text + "</p></body></html>";
+    }
+
+    public static String htmlMessage(String caption, String text) {
+        return unescapedHtmlMessage(
+                escapeHtml4(caption),
+                escapeHtml4(text));
+    }
 }

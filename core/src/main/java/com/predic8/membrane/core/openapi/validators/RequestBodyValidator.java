@@ -18,20 +18,17 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
 
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.MEDIA_TYPE;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static java.lang.String.*;
 
-public class RequestBodyValidator {
-
-    private OpenAPI api;
-    ValidationErrors errors = new ValidationErrors();
+public class RequestBodyValidator extends AbstractBodyValidator<Request> {
 
     public RequestBodyValidator(OpenAPI api) {
-        this.api = api;
+        super(api);
     }
 
     ValidationErrors validateRequestBody(ValidationContext ctx, Operation operation, Request request) {
@@ -72,16 +69,10 @@ public class RequestBodyValidator {
             return;
         }
 
-        if (!request.getMediaType().equalsIgnoreCase(mediaType)) {
-            errors.add(ctx.statusCode(415).validatedEntityType(MEDIA_TYPE).validatedEntity(request.getMediaType()), String.format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
+        if (!request.isOfMediaType(mediaType)) {
+            errors.add(ctx.statusCode(415).validatedEntityType(MEDIA_TYPE).validatedEntity(request.getMediaType().toString()), format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
             return;
         }
-
-        if (mediaType.equals("application/json")) {
-            if (mediaTypeObj.getSchema().get$ref() != null) {
-                ctx.schemaType(mediaTypeObj.getSchema().get$ref());
-            }
-            errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx.statusCode(400), request.getBody()));
-        }
+        validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, request, 400);
     }
 }

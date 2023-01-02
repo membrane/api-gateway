@@ -16,6 +16,8 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.util.*;
+
 import java.net.*;
 import java.util.*;
 
@@ -32,6 +34,7 @@ public class UriUtil {
         return path.substring(0, path.indexOf('?'));
     }
 
+    // TODO migrate to core
     public static Map<String, String> parseQueryString(String url) {
 
         int idxQM = url.indexOf('?');
@@ -78,7 +81,7 @@ public class UriUtil {
         return ":"+url.getPort();
     }
 
-    public static String rewrite(String url, String scheme, String host, int port) throws MalformedURLException {
+    public static String rewrite(String url, String scheme, String host, int port) throws MalformedURLException, URISyntaxException {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme);
         sb.append("://");
@@ -87,7 +90,12 @@ public class UriUtil {
             sb.append(":");
             sb.append(port);
         }
-        sb.append(getPathFromURL(url));
+
+        String path = getPathFromURL(url);
+        if (path != null) {
+            sb.append(path);
+        }
+
         return sb.toString() ;
     }
 
@@ -95,11 +103,15 @@ public class UriUtil {
         return !((port == 80 && scheme.equals("http")) || (port == 443 && scheme.equals("https")));
     }
 
-    public static String getPathFromURL(String str) throws MalformedURLException {
-        try {
-            return new URL(str).getPath();
-        } catch (Exception e) {
-            return new URL("http://" + str).getPath();
-        }
+    // TODO
+    public static String getPathFromURL(String str) throws URISyntaxException {
+
+        return new URIFactory().create(str).getPath();
+
+//        try {
+//            return new URL(str).getPath();
+//        } catch (Exception e) {
+//            return new URL("http://" + str).getPath();
+//        }
     }
 }
