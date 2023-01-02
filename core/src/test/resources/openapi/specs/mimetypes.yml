@@ -1,0 +1,67 @@
+openapi: '3.0.2'
+info:
+  title: MimeTypes API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /mimetypes:
+    get: 
+      responses:
+        '200':
+          description: OK
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/Person"
+        '201':
+          description: OK
+          content:
+            text/xml:
+              schema:
+                $ref: "#/components/schemas/Person"
+        '202':
+          description: OK
+          content:
+            application/x-www-form-urlencoded:
+              schema:
+                $ref: "#/components/schemas/Person"
+  /application-xml:
+    post:
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/Person" 
+      responses:
+        '200':
+          description: OK
+  /text-xml:
+    post:
+      requestBody:
+        content:
+          text/xml:
+            schema:
+              $ref: "#/components/schemas/Person" 
+      responses:
+        '200':
+          description: OK
+  /x-www-form-urlencoded:
+    post:
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/Person" 
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        name:
+          type: string
+
