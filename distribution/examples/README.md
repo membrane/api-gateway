@@ -17,14 +17,12 @@
 |[json2json-transformation](https://github.com/membrane/service-proxy/tree/master/distribution/examples/json2json-transformation)|Transforms a JSON document into another JSON document using Javascript.|
 |[json-2-xml](https://github.com/membrane/service-proxy/tree/master/distribution/examples/json-2-xml)|Using `json2xml` interceptor you can convert JSON content to XML in both request and response.|
 |[loadbalancing](loadbalancing)|From simple static laodbalancers to dynamic node management|
-|[logging](https://github.com/membrane/service-proxy/tree/master/distribution/examples/logging)|Using the `LogInterceptor`, Membrane Monitor and Service Proxy can log requests and responses.|
-|[logging-csv](https://github.com/membrane/service-proxy/tree/master/distribution/examples/logging-csv)|Using the `StatisticsCSVInterceptor`, Membrane Monitor and Service Proxy can log access data to a file. The fields will be separated by semicolon (;), for an easy import into Excel.|
-|[logging-jdbc](https://github.com/membrane/service-proxy/tree/master/distribution/examples/logging-jdbc)|Using the `StatisticsJDBCInterceptor`, Membrane Monitor and Service Proxy can log metadata about service invocation to any database that can be accessed via JDBC.|
-|[login](https://github.com/membrane/service-proxy/tree/master/distribution/examples/login)|The `LoginInterceptor`, Membrane Service Proxy can log requests and responses.|
-|[ntlm](https://github.com/membrane/service-proxy/tree/master/distribution/examples/ntlm)|In this example we are going to see how NTLM authentication is handled with Membrane Service Proxy.|
+|[logging](https://github.com/membrane/service-proxy/tree/master/distribution/examples/logging)|How to log requests and responses into a file and database in text, CSV and JSON format.|
+|[login page](https://github.com/membrane/service-proxy/tree/master/distribution/examples/login)|Protect Web pages using a login page and passwords.|
+|[ntlm](https://github.com/membrane/service-proxy/tree/master/distribution/examples/ntlm)|Authentication against NTLM protected backends e.g. running on Microsoft IIS|
 |[oauth2](https://github.com/membrane/service-proxy/tree/master/distribution/examples/oauth2)|Please follow https://www.membrane-soa.org/service-proxy-doc/current/oauth2-password-flow-sample.htm|
-|[openapi](openapi/)|Load APIs from OpenAPI documents and validate requests and responses against OpenAPI.|
-|[proxy](https://github.com/membrane/service-proxy/tree/master/distribution/examples/proxy)|Membrane offers the functionality to forward its HTTP requests to a proxy. Membrane can also serve as an HTTP proxy itself. This example demonstrates both features.|
+|[openapi](openapi)|Load APIs from OpenAPI documents and validate requests and responses against OpenAPI.|
+|[proxy](https://github.com/membrane/service-proxy/tree/master/distribution/examples/proxy)|How to forward HTTP requests to a proxy. Membrane can also serve as an HTTP proxy itself. The example demonstrates both.|
 |[quickstart-rest](https://github.com/membrane/service-proxy/tree/master/distribution/examples/quickstart-rest)|Please follow http://membrane-soa.org/service-proxy-doc/current/rest-quickstart.htm .|
 |[quickstart-soap](https://github.com/membrane/service-proxy/tree/master/distribution/examples/quickstart-soap)|Please follow http://membrane-soa.org/service-proxy-doc/current/soap-quickstart.htm .|
 |[rateLimiter](https://github.com/membrane/service-proxy/tree/master/distribution/examples/rateLimiter)|The `RateLimiter` limits the number of requests in a given interval.|
@@ -34,8 +32,7 @@
 |[service-discovery-with-etcd](https://github.com/membrane/service-proxy/tree/master/distribution/examples/service-discovery-with-etcd)|The publisher publishes endpoint details for services to "the cloud". The configurator reads those details from "the cloud" and dynamically forwards to those services|
 |[soap/add-soap-header](https://github.com/membrane/service-proxy/tree/master/distribution/examples/soap/add-soap-header)|This interceptor adds a SOAP header to the incoming request using the Java DOM API.|
 |[spel](https://github.com/membrane/service-proxy/tree/master/distribution/examples/spel)|Using the Spring Expression language as part of router configuration.|
-|[ssl-client](https://github.com/membrane/service-proxy/tree/master/distribution/examples/ssl-client)|Using the Membrane Service Proxy, we can enable clients that do not support SSL to communicate with a SSL secured server.|
-|[ssl-server](https://github.com/membrane/service-proxy/tree/master/distribution/examples/ssl-server)|This example describes how to secure an unsecured Web Service with encryption using SSL.|
+|[SSL/TLS](ssl)|SSL for APIs and for the communication to backends|
 |[stax-interceptor](https://github.com/membrane/service-proxy/tree/master/distribution/examples/stax-interceptor)|In this example we will install an interceptor called StaxConverterInterceptor that changes tag name from `<foo>` to `<bar>` using Java STAX API.|
 |[stomp-over-websocket-intercepting](https://github.com/membrane/service-proxy/tree/master/distribution/examples/stomp-over-websocket-intercepting)|In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane Service Proxy.|
 |[swagger-proxy](https://github.com/membrane/service-proxy/tree/master/distribution/examples/swagger-proxy)|Running a proxy for Swagger using Membrane.|

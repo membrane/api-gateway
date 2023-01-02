@@ -44,7 +44,6 @@
 		<soapProxy port="2001"
 			wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"
 			wsdlHttpClientConfig="myHttpClientConfig">
-			
 		</soapProxy>
 	</router>
 	

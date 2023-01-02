@@ -14,7 +14,7 @@
     </util:properties>
 
     <router>
-        <serviceProxy name="predic8.com" port="#{myProp.LISTEN_PORT}">
+        <serviceProxy port="#{myProp.LISTEN_PORT}">
             <path isRegExp="#{myProp.PATH_RE}">.*</path>
             <target host="#{myProp.DEST_HOST}" port="#{myProp.DEST_PORT}" />
         </serviceProxy>

@@ -1,9 +1,11 @@
+# Configuration using Spring Expression Language
+
 Using the Spring Expression language as a part of router configuration.
 Documentation of Spring Expression language could be found at 
 http://docs.spring.io/spring/docs/3.1.x/spring-framework-reference/html/expressions.html
 
 
-### RUNNING THE EXAMPLE
+## Running the example
 
 In this example we will visit a website and take a look at the logs in the console. 
 

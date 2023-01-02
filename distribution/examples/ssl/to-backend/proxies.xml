@@ -6,9 +6,9 @@
 
 	<router>
 
-		<serviceProxy port="8080">
-			<target host="www.google.de" port="443">
-				<ssl ignoreTimestampCheckFailure="true" />
+		<serviceProxy port="2000">
+			<target host="api.predic8.de" port="443">
+				<ssl/>
 			</target>
 		</serviceProxy>
 		
