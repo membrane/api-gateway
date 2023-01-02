@@ -27,10 +27,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.charset.*;
+import java.util.*;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.*;
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
 
@@ -49,27 +52,25 @@ import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
 public class ConfigSerializationTest {
 
 	// list of examples that do not work
-	public static List<String> EXCLUDED = Arrays.asList(new String[] {
-			"custom-interceptor", // has external classpath dependencies
+	public static List<String> EXCLUDED = asList("custom-interceptor", // has external classpath dependencies
 			"custom-websocket-interceptor", // has external classpath dependencies
-			"logging-jdbc", // contains a reference to a DataSource bean (not serializable)
+			"jdbc-database", // contains a reference to a DataSource bean (not serializable)
 			"proxy", // contains more than one <router> (not supported by MCUtil#fromXML())
 			"custom-interceptor-maven", // has external classpath dependencies
 			"stax-interceptor", // has external classpath dependencies
 			"soap", // has external classpath dependencies
 			"basic-xml-interceptor", // has external classpath dependencies
-			"template-interceptor"
-	});
+			"template-interceptor");
 
 	public static List<Object[]> getPorts() {
-		ArrayList<Object[]> res = new ArrayList<Object[]>();
+		ArrayList<Object[]> res = new ArrayList<>();
 		recurse(new File("examples"), res);
 		return res;
 	}
 
 	private static void recurse(File file, ArrayList<Object[]> res) {
 		OUTER:
-			for (File f : file.listFiles()) {
+			for (File f : requireNonNull(file.listFiles())) {
 				if (f.isDirectory())
 					recurse(f, res);
 				if (f.isFile() && f.getName().equals("proxies.xml")) {
@@ -86,16 +87,13 @@ public class ConfigSerializationTest {
 	@MethodSource("getPorts")
 	public void doit(String configFile) throws Exception {
 		try {
-			String config = FileUtils.readFileToString(new File(configFile));
 
-			Object o = MCUtil.fromXML(Router.class, config);
+			String xml = readConfigFileAsXML(configFile);
 
-			String xml = MCUtil.toXML(o);
-
-			//prettyPrint(xml);
+			prettyPrint(xml);
 			//System.out.println(xml);
 
-			//System.out.println("ConfigFile: " + configFile);
+			System.out.println("ConfigFile: " + configFile);
 
 			AssertUtils.assertContainsNot("incomplete serialization", xml);
 
@@ -109,7 +107,11 @@ public class ConfigSerializationTest {
 		}
 	}
 
-	public void prettyPrint(String xml) throws Exception, IOException {
+	private String readConfigFileAsXML(String configFile) throws IOException {
+		return MCUtil.toXML(MCUtil.fromXML(Router.class, readFileToString(new File(configFile), UTF_8)));
+	}
+
+	public void prettyPrint(String xml) throws Exception {
 		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(System.out);
 		XMLBeautifier xmlBeautifier = new XMLBeautifier(new PlainBeautifierFormatter(outputStreamWriter, 0));
 		xmlBeautifier.parse(new StringReader(xml));
