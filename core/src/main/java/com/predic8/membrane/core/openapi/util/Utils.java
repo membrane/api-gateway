@@ -189,17 +189,4 @@ public class Utils {
     public static byte[] createErrorMessage(String msg) {
         return String.format("{ \"error\": \"%s\" }",msg).getBytes();
     }
-
-    public static String pathList(OpenAPI paths) {
-        System.out.println(paths);
-        System.out.println(paths.getClass());
-//        ArrayList<String> rp = new ArrayList<>();
-//        System.out.println(rp);
-//        for (Object path : paths) {
-//            if (!rp.contains(path))
-//                rp.add((String) path);
-//        }
-//        return joinByComma(rp);
-        return null;
-    }
 }

@@ -15,25 +15,26 @@
 package com.predic8.membrane.core.interceptor.ratelimit;
 
 import java.io.UnsupportedEncodingException;
-import java.util.Locale;
 
+import com.predic8.membrane.core.util.*;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.PeriodFormat;
-import org.joda.time.format.PeriodFormatter;
-import org.joda.time.format.PeriodFormatterBuilder;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.ErrorUtil.createAndSetErrorResponse;
+import static java.util.Locale.US;
 
 /**
  * @description Allows rate limiting (Experimental)
@@ -43,6 +44,9 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 	public RateLimitStrategy rateLimitStrategy;
 
+	protected static DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
+	protected DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withZoneUTC().withLocale(US);
+
 	public RateLimitInterceptor() {
 		this(Duration.standardHours(1), 1000);
 	}
@@ -50,7 +54,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
 		rateLimitStrategy = new LazyRateLimit(requestLimitDuration, requestLimit);
 		name = "RateLimiter";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
@@ -58,34 +62,31 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 		String addr = exc.getRemoteAddrIp();
 		if (rateLimitStrategy.isRequestLimitReached(addr)) {
 			setResponseToServiceUnavailable(exc);
-			return Outcome.RETURN;
+			return RETURN;
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 
 	}
 
-	public void setResponseToServiceUnavailable(Exchange exc) throws UnsupportedEncodingException {
+	public void setResponseToServiceUnavailable(Exchange exc) {
+		createAndSetErrorResponse(exc,429, createErrorMessage(exc));
+		exc.getResponse().setHeader(createHeaderFields(exc));
+	}
 
+	private Header createHeaderFields(Exchange exc) {
 		Header hd = new Header();
-		DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withZoneUTC()
-				.withLocale(Locale.US);
 		hd.add("Date", dateFormatter.print(DateTime.now()));
 		hd.add("X-LimitDuration", PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()));
 		hd.add("X-LimitRequests", Integer.toString(rateLimitStrategy.requestLimit));
-		String ip = exc.getRemoteAddrIp();
-		DateTime availableAgainDateTime = rateLimitStrategy.getServiceAvailableAgainTime(ip);
-		hd.add("X-LimitReset", Long.toString(availableAgainDateTime.getMillis()));
+		hd.add("X-LimitReset", Long.toString(rateLimitStrategy.getServiceAvailableAgainTime(exc.getRemoteAddrIp()).getMillis()));
+		return hd;
+	}
 
-		StringBuilder bodyString = new StringBuilder();
-		DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
-		bodyString.append(ip).append(" exceeded the rate limit of ").append(rateLimitStrategy.requestLimit)
-				.append(" requests per ")
-				.append(PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()))
-				.append(". The next request can be made at ").append(dtFormatter.print(availableAgainDateTime));
-
-		Response resp = ResponseBuilder.newInstance().status(429, "Too Many Requests.")
-				.contentType(MimeType.TEXT_PLAIN_UTF8).header(hd).body(bodyString.toString()).build();
-		exc.setResponse(resp);
+	private String createErrorMessage(Exchange exc) {
+		return exc.getRemoteAddrIp() + " exceeded the rate limit of " + rateLimitStrategy.requestLimit +
+				" requests per " +
+				PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()) +
+				". The next request can be made at " + dtFormatter.print(rateLimitStrategy.getServiceAvailableAgainTime(exc.getRemoteAddrIp()));
 	}
 
 	public int getRequestLimit() {
@@ -123,5 +124,4 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Limits incoming requests. It limits to " + rateLimitStrategy.getRequestLimit() + " requests every " + PeriodFormat.getDefault().print(rateLimitStrategy.getRequestLimitDuration().toPeriod()) + ".";
 	}
-
 }

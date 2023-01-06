@@ -14,16 +14,12 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyShell;
-import groovy.lang.Script;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.lang.*;
+import groovy.lang.*;
 
-import java.util.Map;
-
-import com.google.common.base.Function;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.lang.LanguageSupport;
-import com.predic8.membrane.core.lang.ScriptExecutorPool;
+import java.util.*;
+import java.util.function.*;
 
 public class GroovyLanguageSupport extends LanguageSupport {
 
@@ -58,7 +54,7 @@ public class GroovyLanguageSupport extends LanguageSupport {
 
 	@Override
 	public Function<Map<String, Object>, Boolean> compileExpression(Router router, String src) {
-		return new GroovyScriptExecutorPool<Boolean>(router, addImports(src)) {
+		return new GroovyScriptExecutorPool<>(router, addImports(src)) {
 			@Override
 			public Boolean apply(Map<String, Object> parameters) {
 				Object result = this.execute(parameters);
@@ -71,7 +67,7 @@ public class GroovyLanguageSupport extends LanguageSupport {
 
 	@Override
 	public Function<Map<String, Object>, Object> compileScript(Router router, String script) {
-		return new GroovyScriptExecutorPool<Object>(router, addImports(script)) {
+		return new GroovyScriptExecutorPool<>(router, addImports(script)) {
 			@Override
 			public Object apply(Map<String, Object> parameters) {
 				return this.execute(parameters);

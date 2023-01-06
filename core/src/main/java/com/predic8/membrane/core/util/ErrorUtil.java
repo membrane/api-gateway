@@ -9,6 +9,7 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
 import static com.predic8.membrane.core.util.HttpUtil.htmlMessage;
@@ -25,13 +26,13 @@ public class ErrorUtil {
         if (exc.getRequest().getHeader().getAccept().contains("html")) {
             builder
                     .contentType(TEXT_HTML_UTF8)
-                    .body(htmlMessage("Internal Server Error", message)).build();
+                    .body(htmlMessage(getMessageForStatusCode(statusCode), message)).build();
         } else {
             Map<String,String> json = new HashMap<>();
             json.put("error",message);
             try {
                 builder
-                        .contentType(MimeType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
                         .body(om.writeValueAsBytes(json))
                         .build();
             } catch (JsonProcessingException e) {

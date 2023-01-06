@@ -13,22 +13,20 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.google.common.base.Function;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.lang.javascript.JavascriptLanguageSupport;
-import com.predic8.membrane.core.util.ClassFinder;
-import com.predic8.membrane.core.util.TextUtil;
-import org.apache.commons.lang3.StringEscapeUtils;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.javascript.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.*;
 import java.util.*;
+import java.util.function.*;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "javascript", mixed = true)
 public class JavascriptInterceptor extends AbstractInterceptor {
@@ -56,11 +54,9 @@ public class JavascriptInterceptor extends AbstractInterceptor {
     @Override
     public void handleAbort(Exchange exc) {
         try {
-            runScript(exc, Flow.ABORT);
+            runScript(exc, ABORT);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -82,7 +78,7 @@ public class JavascriptInterceptor extends AbstractInterceptor {
     }
 
     private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, IOException, ClassNotFoundException {
-        HashMap<String, Object> parameters = new HashMap<String, Object>();
+        HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("exc", exc);
         parameters.put("flow", flow);
         parameters.put("spring", router.getBeanFactory());
@@ -97,13 +93,13 @@ public class JavascriptInterceptor extends AbstractInterceptor {
 
         if (res instanceof Response) {
             exc.setResponse((Response) res);
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         if (res instanceof Request) {
             exc.setRequest((Request) res);
         }
-        return Outcome.CONTINUE;
+        return CONTINUE;
 
     }
 
@@ -126,8 +122,8 @@ public class JavascriptInterceptor extends AbstractInterceptor {
 
     private void addOutcomeObjects(HashMap<String, Object> parameters) {
         parameters.put("Outcome", Outcome.class);
-        parameters.put("RETURN", Outcome.RETURN);
-        parameters.put("CONTINUE", Outcome.CONTINUE);
+        parameters.put("RETURN", RETURN);
+        parameters.put("CONTINUE", CONTINUE);
         parameters.put("ABORT", Outcome.ABORT);
     }
 

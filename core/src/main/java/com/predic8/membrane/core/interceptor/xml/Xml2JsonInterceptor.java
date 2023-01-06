@@ -44,9 +44,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @MCElement(name="xml2Json")
 public class Xml2JsonInterceptor extends AbstractInterceptor {
 
-
-
-
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         return handleInternal(exc.getRequest());
@@ -63,13 +60,12 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         }
 
         if(msg.getHeader().getContentEncoding() != null){
-            msg.setBodyContent(xml2json(msg.getBodyAsStream(), msg.getHeader().getContentEncoding()));
+            msg.setBodyContent(xml2json(msg.getBodyAsStreamDecoded(), msg.getHeader().getContentEncoding()));
         }
         else{
-            msg.setBodyContent(xml2json(loadXMLFromStream(msg.getBodyAsStream())));
+            msg.setBodyContent(xml2json(loadXMLFromStream(msg.getBodyAsStreamDecoded())));
         }
         msg.getHeader().setContentType(MimeType.APPLICATION_JSON_UTF8);
-
 
         return CONTINUE;
     }
@@ -105,5 +101,10 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         } catch (Exception ex) {
             throw new RuntimeException("Error converting to String", ex);
         }
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "XML2JSON";
     }
 }

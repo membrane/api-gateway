@@ -13,17 +13,13 @@
 
 package com.predic8.membrane.core.lang.javascript;
 
-import com.google.common.base.Function;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.lang.LanguageSupport;
-import com.predic8.membrane.core.lang.ScriptExecutorPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.lang.*;
+import org.slf4j.*;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import java.util.Map;
+import javax.script.*;
+import java.util.*;
+import java.util.function.*;
 
 public class JavascriptLanguageSupport extends LanguageSupport {
 
@@ -32,8 +28,8 @@ public class JavascriptLanguageSupport extends LanguageSupport {
     private abstract class JavascriptScriptExecutorPool<R> extends ScriptExecutorPool<ScriptEngine,R>{
         private final String javascriptCode;
 
-        ScriptEngineManager sce;
-        final static String javascriptEngineName = "nashorn";
+        final ScriptEngineManager sce;
+        final static String javascriptEngineName = "JavaScript";
 
         private JavascriptScriptExecutorPool(Router router, String expression) {
             this.javascriptCode = expression;
@@ -63,7 +59,7 @@ public class JavascriptLanguageSupport extends LanguageSupport {
 
     @Override
     public Function<Map<String, Object>, Boolean> compileExpression(Router router, String src) {
-        return new JavascriptScriptExecutorPool<Boolean>(router, getScriptWithImports(src)) {
+        return new JavascriptScriptExecutorPool<>(router, getScriptWithImports(src)) {
             @Override
             public Boolean apply(Map<String, Object> parameters) {
                 Object result = this.execute(parameters);
@@ -76,7 +72,7 @@ public class JavascriptLanguageSupport extends LanguageSupport {
 
     @Override
     public Function<Map<String, Object>, Object> compileScript(Router router, String script) {
-        return new JavascriptScriptExecutorPool<Object>(router, getScriptWithImports(script)) {
+        return new JavascriptScriptExecutorPool<>(router, getScriptWithImports(script)) {
             @Override
             public Object apply(Map<String, Object> parameters) {
                 return this.execute(parameters);

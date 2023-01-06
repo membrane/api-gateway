@@ -55,7 +55,7 @@ public class BeautifierInterceptor extends AbstractInterceptor{
         if(!msg.isJSON()){
             return CONTINUE;
         }
-        msg.setBodyContent(ow.writeValueAsBytes(om.readTree(msg.getBodyAsStream())));
+        msg.setBodyContent(ow.writeValueAsBytes(om.readTree(msg.getBodyAsStreamDecoded())));
         return CONTINUE;
     }
 }

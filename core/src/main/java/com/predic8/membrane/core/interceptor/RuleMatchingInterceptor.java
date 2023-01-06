@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
 
+import com.predic8.membrane.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,10 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.ErrorUtil.createAndSetErrorResponse;
+
 @MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
@@ -48,20 +53,20 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (exc.getRule() != null ) return Outcome.CONTINUE;
+		if (exc.getRule() != null ) return CONTINUE;
 
 		Rule rule = getRule(exc);
 		assignRule(exc, rule);
 
 		if (rule instanceof NullRule) {
-			handleNoRuleFound(exc);
-			return Outcome.ABORT;
+			createAndSetErrorResponse(exc,400,"This request was not accepted by Membrane. Please check HTTP method and path.");
+			return ABORT;
 		}
 
 		if (xForwardedForEnabled && (rule instanceof AbstractServiceProxy))
 			insertXForwardedFor(exc);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	public static void assignRule(Exchange exc, Rule rule) {
@@ -69,15 +74,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		if(exc.getRule().getSslOutboundContext() != null){
 			exc.setProperty(Exchange.SSL_CONTEXT, exc.getRule().getSslOutboundContext());
 		}
-	}
-
-	private void handleNoRuleFound(Exchange exc) throws IOException {
-		exc.setResponse(
-				Response.badRequest(
-						"This request was not accepted by " +
-								"<a href=\"" + Constants.PRODUCT_WEBSITE_DOC + "\">" + Constants.PRODUCT_NAME + "</a>" +
-								". Please correct the request and try again.",
-								false).build());
 	}
 
 	private Rule getRule(Exchange exc) {
@@ -167,11 +163,10 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private String getXForwardedProtoHeaderValue(AbstractExchange exc) {
-		String proto = ((Exchange)exc).getRule().getSslInboundContext() != null ? "https" : "http";
 		if (getXForwardedProto(exc) != null )
 			return getXForwardedProto(exc);
 
-		return proto;
+		return exc.getRule().getSslInboundContext() != null ? "https" : "http";
 	}
 
 	private String getXForwardedFor(AbstractExchange exc) {

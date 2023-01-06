@@ -14,26 +14,17 @@
 
 package com.predic8.membrane.core.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
-
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.LineTooLongException;
+import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.transport.http.*;
 
+import java.io.*;
+import java.net.*;
+import java.text.*;
+import java.util.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
-import org.apache.commons.lang3.*;
-
-import static com.predic8.membrane.core.Constants.CRLF;
+import static com.predic8.membrane.core.Constants.*;
 import static org.apache.commons.lang3.StringEscapeUtils.*;
 
 public class HttpUtil {
@@ -87,22 +78,23 @@ public class HttpUtil {
 	}
 
 	private static String getHTMLErrorBody(String text, String comment) {
+		@SuppressWarnings("StringBufferReplaceableByString")
 		StringBuilder buf = new StringBuilder(256);
 
-		buf.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \r\n" +
-				"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\r\n" +
-				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n" +
-				"<head>\r\n" +
-				"<title>Internal Server Error</title>\r\n" +
-				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n" +
-				"<style><!--\r\n" +
-				"body { font-family:sans-serif; } \r\n" +
-				".footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r\n" +
-				".footer a { color:#AAAAAA; }\r\n" +
-				".footer a:hover { color:#000000; }\r\n" +
-				"--></style>" +
-				"</head>\r\n" +
-				"<body><h1>Internal Server Error</h1>");
+		buf.append("""
+				<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" \r
+				  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\r
+				<html xmlns="http://www.w3.org/1999/xhtml">\r
+				<head>\r
+				<title>Internal Server Error</title>\r
+				<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />\r
+				<style><!--\r
+				body { font-family:sans-serif; } \r
+				.footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r
+				.footer a { color:#AAAAAA; }\r
+				.footer a:hover { color:#000000; }\r
+				--></style></head>\r
+				<body><h1>Internal Server Error</h1>""");
 		buf.append("<hr/>");
 		buf.append("<p>While processing your request, the following error was detected. ");
 		buf.append(comment);

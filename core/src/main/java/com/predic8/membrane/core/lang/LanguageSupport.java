@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.lang;
 
-import java.util.Map;
+import com.predic8.membrane.core.*;
 
-import com.google.common.base.Function;
-import com.predic8.membrane.core.Router;
+import java.util.*;
+import java.util.function.*;
 
 public abstract class LanguageSupport {
 

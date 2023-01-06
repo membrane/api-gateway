@@ -22,10 +22,11 @@ import com.predic8.membrane.core.rules.*;
 import io.swagger.v3.oas.models.*;
 import org.slf4j.*;
 
+import java.io.*;
 import java.net.*;
 import java.util.*;
 
-@MCElement(name = "openAPIProxy")
+@MCElement(name = "api")
 public class OpenAPIProxy extends ServiceProxy {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIProxy.class.getName());
@@ -44,7 +45,7 @@ public class OpenAPIProxy extends ServiceProxy {
     protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
     public OpenAPIProxy() {
-        key = new OpenAPIProxyServiceKey(getPort());
+
     }
 
     @Override
@@ -52,7 +53,7 @@ public class OpenAPIProxy extends ServiceProxy {
         return new OpenAPIProxy();
     }
 
-    @MCElement(name = "spec", topLevel = false)
+    @MCElement(name = "openapi", topLevel = false)
     public static class Spec {
 
         String location;
@@ -129,7 +130,15 @@ public class OpenAPIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
+        if (specs.size() > 0)
+            key = new OpenAPIProxyServiceKey(getPort()); // Must come before super.  init()
         super.init();
+        initOpenAPI();
+    }
+
+    private void initOpenAPI() throws IOException, ClassNotFoundException {
+        if (specs.size() == 0)
+            return;
 
         apiRecords = new OpenAPIRecordFactory(router).create(specs);
 
@@ -138,6 +147,8 @@ public class OpenAPIProxy extends ServiceProxy {
 
         interceptors.add(new OpenAPIPublisherInterceptor(apiRecords));
         interceptors.add(new OpenAPIInterceptor(this));
+
+
     }
 
     // TODO Stimmen die Pfade?

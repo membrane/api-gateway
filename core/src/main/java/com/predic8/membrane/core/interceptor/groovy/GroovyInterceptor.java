@@ -14,28 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.groovy;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.groovy.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
+import org.codehaus.groovy.control.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SSLableProxy;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import org.apache.commons.lang3.StringEscapeUtils;
-
-import com.google.common.base.Function;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
-import com.predic8.membrane.core.util.TextUtil;
-import org.codehaus.groovy.control.MultipleCompilationErrorsException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.*;
+import java.util.function.*;
 
 /**
  * @topic 4. Interceptors/Features

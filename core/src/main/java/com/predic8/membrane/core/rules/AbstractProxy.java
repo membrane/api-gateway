@@ -31,197 +31,201 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
 public abstract class AbstractProxy implements Rule {
-	private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
-	protected String name = "";
+    protected String name = "";
 
-	protected RuleKey key;
+    protected RuleKey key;
 
-	protected volatile boolean blockRequest;
-	protected volatile boolean blockResponse;
+    protected volatile boolean blockRequest;
+    protected volatile boolean blockResponse;
 
-	protected List<Interceptor> interceptors = new ArrayList<Interceptor>();
+    protected List<Interceptor> interceptors = new ArrayList<>();
 
-	/**
-	 * Used to determine the IP address for outgoing connections
-	 */
-	protected String localHost;
+    /**
+     * Used to determine the IP address for outgoing connections
+     */
+    protected String localHost;
 
-	private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
+    private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
 
-	private boolean active;
-	private String error;
+    private boolean active;
+    private String error;
 
-	protected Router router;
+    protected Router router;
 
-	private SSLContext sslInboundContext;
-	private SSLParser sslInboundParser;
+    private SSLContext sslInboundContext;
+    private SSLParser sslInboundParser;
 
-	public AbstractProxy() {
-	}
+    public AbstractProxy() {
+    }
 
-	public AbstractProxy(RuleKey ruleKey) {
-		this.key = ruleKey;
-	}
+    public AbstractProxy(RuleKey ruleKey) {
+        this.key = ruleKey;
+    }
 
-	@Override
-	public String toString() { // TODO toString, getName, setName und name=""
-		// Initialisierung vereinheitlichen.
-		return getName();
-	}
+    @Override
+    public String toString() { // TODO toString, getName, setName und name=""
+        // Initialisierung vereinheitlichen.
+        return getName();
+    }
 
-	public List<Interceptor> getInterceptors() {
-		return interceptors;
-	}
+    public List<Interceptor> getInterceptors() {
+        return interceptors;
+    }
 
-	@MCChildElement(allowForeign=true, order=100)
-	public void setInterceptors(List<Interceptor> interceptors) {
-		this.interceptors = interceptors;
-	}
+    @MCChildElement(allowForeign = true, order = 100)
+    public void setInterceptors(List<Interceptor> interceptors) {
+        this.interceptors = interceptors;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public RuleKey getKey() {
-		return key;
-	}
+    public RuleKey getKey() {
+        return key;
+    }
 
-	public boolean isBlockRequest() {
-		return blockRequest;
-	}
+    public boolean isBlockRequest() {
+        return blockRequest;
+    }
 
-	public boolean isBlockResponse() {
-		return blockResponse;
-	}
+    public boolean isBlockResponse() {
+        return blockResponse;
+    }
 
-	/**
-	 * @description The name as shown in the Admin Console.
-	 * @default By default, a name will be automatically generated from the target host, port, etc.
-	 */
-	@MCAttribute
-	public void setName(String name) {
-		if (name == null)
-			return;
-		this.name = name;
+    /**
+     * @description The name as shown in the Admin Console.
+     * @default By default, a name will be automatically generated from the target host, port, etc.
+     */
+    @MCAttribute
+    public void setName(String name) {
+        if (name == null)
+            return;
+        this.name = name;
 
-	}
+    }
 
-	public void setKey(RuleKey ruleKey) {
-		this.key = ruleKey;
-	}
+    public void setKey(RuleKey ruleKey) {
+        this.key = ruleKey;
+    }
 
-	/**
-	 * @description <i>legacy attribute</i> for usage by Membrane Monitor
-	 * @default false
-	 */
-	@MCAttribute
-	public void setBlockRequest(boolean blockStatus) {
-		this.blockRequest = blockStatus;
-	}
+    /**
+     * @description <i>legacy attribute</i> for usage by Membrane Monitor
+     * @default false
+     */
+    @MCAttribute
+    public void setBlockRequest(boolean blockStatus) {
+        this.blockRequest = blockStatus;
+    }
 
-	/**
-	 * @description <i>legacy attribute</i> for usage by Membrane Monitor
-	 * @default false
-	 */
-	@MCAttribute
-	public void setBlockResponse(boolean blockStatus) {
-		this.blockResponse = blockStatus;
-	}
+    /**
+     * @description <i>legacy attribute</i> for usage by Membrane Monitor
+     * @default false
+     */
+    @MCAttribute
+    public void setBlockResponse(boolean blockStatus) {
+        this.blockResponse = blockStatus;
+    }
 
-	protected abstract AbstractProxy getNewInstance();
+    protected abstract AbstractProxy getNewInstance();
 
-	public SSLParser getSslInboundParser() {
-		return sslInboundParser;
-	}
+    public SSLParser getSslInboundParser() {
+        return sslInboundParser;
+    }
 
-	/**
-	 * @description Configures the usage of inbound SSL (HTTPS).
-	 */
-	@MCChildElement(order=75, allowForeign = true)
-	public void setSslInboundParser(SSLParser sslInboundParser) {
-		this.sslInboundParser = sslInboundParser;
-	}
+    /**
+     * @description Configures the usage of inbound SSL (HTTPS).
+     */
+    @MCChildElement(order = 75, allowForeign = true)
+    public void setSslInboundParser(SSLParser sslInboundParser) {
+        this.sslInboundParser = sslInboundParser;
+    }
 
-	@Override
-	public SSLContext getSslInboundContext() {
-		return sslInboundContext;
-	}
+    @Override
+    public SSLContext getSslInboundContext() {
+        return sslInboundContext;
+    }
 
-	protected void setSslInboundContext(SSLContext sslInboundContext) {
-		this.sslInboundContext = sslInboundContext;
-	}
+    protected void setSslInboundContext(SSLContext sslInboundContext) {
+        this.sslInboundContext = sslInboundContext;
+    }
 
-	@Override
-	public SSLProvider getSslOutboundContext() {
-		return null;
-	}
+    @Override
+    public SSLProvider getSslOutboundContext() {
+        return null;
+    }
 
-	/**
-	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
-	 */
-	public final void init(Router router) throws Exception {
-		this.router = router;
-		try {
-			init();
-			for (Interceptor i : interceptors)
-				i.init(router);
-			active = true;
-		} catch (Exception e) {
-			if (!router.isRetryInit())
-				throw e;
-			log.error("",e);
-			active = false;
-			error = e.getMessage();
-		}
-	}
+    /**
+     * Called after parsing is complete and this has been added to the object tree (whose root is Router).
+     */
+    public final void init(Router router) throws Exception {
+        this.router = router;
+        try {
+            init();
+            for (Interceptor i : interceptors)
+                i.init(router);
+            active = true;
+        } catch (Exception e) {
+            if (!router.isRetryInit())
+                throw e;
+            log.error("", e);
+            active = false;
+            error = e.getMessage();
+        }
+    }
 
-	public void init() throws Exception {
-		if (sslInboundParser != null) {
-			if (sslInboundParser.getAcme() != null) {
-				if (!(key instanceof AbstractRuleKey))
-					throw new RuntimeException("<acme> only be used inside of <serviceProxy> and similar rules.");
-				String[] host = ((AbstractRuleKey) key).getHost().split(" +");
-				AcmeSSLContext acmeCtx = (AcmeSSLContext) getSslInboundContext(); // TODO: remove this.
-				// getSslInboundContext() of an inactive rule should not be called in the first place.
-				if (acmeCtx == null)
-					acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
-				setSslInboundContext(acmeCtx);
-				acmeCtx.init(router.getKubernetesClientFactory());
-			} else if (sslInboundParser.getKeyGenerator() != null)
-				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
-			else
-				setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
-		}
-	}
+    public void init() throws Exception {
+        if (sslInboundParser == null)
+            return;
 
-	public boolean isTargetAdjustHostHeader() {
-		return false;
-	}
+        if (sslInboundParser.getAcme() != null) {
+            if (!(key instanceof AbstractRuleKey))
+                throw new RuntimeException("<acme> only be used inside of <serviceProxy> and similar rules.");
+            String[] host = key.getHost().split(" +");
+            AcmeSSLContext acmeCtx = (AcmeSSLContext) getSslInboundContext(); // TODO: remove this.
+            // getSslInboundContext() of an inactive rule should not be called in the first place.
+            if (acmeCtx == null)
+                acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
+            setSslInboundContext(acmeCtx);
+            acmeCtx.init(router.getKubernetesClientFactory());
+            return;
+        }
 
-	@Override
-	public boolean isActive() {
-		return active;
-	}
+        if (sslInboundParser.getKeyGenerator() != null)
+            setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+        else
+            setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+    }
 
-	@Override
-	public String getErrorState() {
-		return error;
-	}
+    public boolean isTargetAdjustHostHeader() {
+        return false;
+    }
 
-	@Override
-	public AbstractProxy clone() throws CloneNotSupportedException {
-		AbstractProxy clone = (AbstractProxy) super.clone();
-		try {
-			clone.init(router);
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		return clone;
-	}
+    @Override
+    public boolean isActive() {
+        return active;
+    }
 
-	@Override
-	public RuleStatisticCollector getStatisticCollector() {
-		return ruleStatisticCollector;
-	}
+    @Override
+    public String getErrorState() {
+        return error;
+    }
+
+    @Override
+    public AbstractProxy clone() throws CloneNotSupportedException {
+        AbstractProxy clone = (AbstractProxy) super.clone();
+        try {
+            clone.init(router);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return clone;
+    }
+
+    @Override
+    public RuleStatisticCollector getStatisticCollector() {
+        return ruleStatisticCollector;
+    }
 }
