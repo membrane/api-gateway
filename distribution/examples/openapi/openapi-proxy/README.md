@@ -1,6 +1,10 @@
 # OpenAPI Configuration Example
 
-This sample shows the configuration, validation, and the UI of an **openAPIProxy**.
+This sample demonstrates:
+
+* How to use OpenAPI as a source of API Gateway configuration
+* How to validate requests and responses against OpenAPI definitions
+* How to publish a Swagger UI for depolyed APIs
 
 ## Running the Example
 

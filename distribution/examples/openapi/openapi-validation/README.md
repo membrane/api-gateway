@@ -1,6 +1,6 @@
 # Request & Response Validation against OpenAPI - Detailed Example
 
-The **OpenAPIProxy** can validate requests and responses against OpenAPI specifications. The specifications can be in YAML or JSON format on disk or reachable over the network.
+Membrane can validate requests and responses against OpenAPI specifications. The specifications can be in YAML or JSON format on disk or reachable over the network.
 
 For a basic example see the _openapi-validation-simple_ folder.
 
@@ -38,12 +38,12 @@ Run the file _curl-requests.sh_ or parts of it.
 
 ## How it works
 
-1. In the _proxies.xml_ configuration there is an **OpenAPIProxy** that reads the OpenAPI document and creates the APIs in Membrane.   
+1. In the _proxies.xml_ configuration there is an **api** that reads the OpenAPI document and creates the API accordingly in Membrane.   
 
 ```xml
-<OpenAPIProxy port="2000">
+<api port="2000">
     <spec location="contacts-xxl-api-v1.yml" validateRequests="true" validateResponses="false" validationDetails="true"/>
-</OpenAPIProxy>
+</api>
 ```
 
 2. Incomming requests are validated against the definitions in the OpenAPI specification. In case of an validation failure an error message is returned. 

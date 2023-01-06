@@ -6,12 +6,12 @@
 
 	<router>
 
-		<openAPIProxy port="2000">
-            <spec location="fruitshop-api.yml"
+		<api port="2000">
+            <openapi location="fruitshop-api.yml"
 				  validateRequests="yes"
 				  validateResponses="yes"
 				  validationDetails="yes"/>
-        </openAPIProxy>
+        </api>
 		
 	</router>
 	

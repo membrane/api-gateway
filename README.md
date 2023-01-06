@@ -18,7 +18,7 @@ Open Source API Gateway written in Java that supports REST APIs, WebSockets, STO
 
 **Legacy Web Services:**
 * SOAP Message Routing
-* WSDL configuration, [message Validation](#legacy-soap-and-xml-web-services) and [WSDL rewritting]()
+* WSDL configuration, [message Validation](#legacy-soap-and-xml-web-services) and WSDL rewritting
 
 **Other:**
 * Admin Web console
@@ -36,7 +36,7 @@ Get Started
 
 4. Look at the configuration `conf/proxies.xml` and change to your needs.
 
-Run the [samples](distribution/examples#readme), follow the [REST](https://www.membrane-soa.org/service-proxy-doc/4.8/rest-quickstart.htm) or [SOAP](https://www.membrane-soa.org/service-proxy-doc/4.4/soap-quickstart.htm) tutorial, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
+Run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/) or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
 
 Configuration
 -------

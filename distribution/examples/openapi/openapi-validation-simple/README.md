@@ -1,6 +1,6 @@
 # Validate Requests and Responses against OpenAPI
 
-The **OpenAPIProxy** can validate requests and responses against OpenAPI. The specifications can be in YAML or JSON format on disk or reachable over the network.
+Membrane can validate requests and responses against OpenAPI. The specifications can be in YAML or JSON format on disk or reachable over the network.
 
 ## Running the example
 
@@ -69,9 +69,9 @@ You can also execute the requests in the _requests.http_ file.
 1. In the _proxies.xml_ configuration there is an **OpenAPIProxy** that reads the OpenAPI document and creates the APIs in Membrane.   
 
 ```xml
-<OpenAPIProxy port="2000">
-    <spec location="contacts-api-v1.yml" validate="requests"/>
-</OpenAPIProxy>
+<api port="2000">
+    <openapi location="contacts-api-v1.yml" validate="requests"/>
+</api>
 ```
 
 2. Have a look at the OpenAPI document _contacts-api-v1.yml_. The _age_ property must be 0 or higher.

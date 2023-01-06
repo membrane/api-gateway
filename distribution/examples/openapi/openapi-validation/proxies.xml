@@ -7,14 +7,14 @@
 	<router>
 
 		<!-- Configures Membrane as an API Gateway for the given OpenAPI specification -->
-		<openAPIProxy port="2000">
-            <spec location="contacts-xxl-api-v1.yml" validateRequests="yes" validateResponses="no" validationDetails="yes"/>
-        </openAPIProxy>
+		<api port="2000">
+            <openapi location="contacts-xxl-api-v1.yml" validateRequests="yes" validateResponses="no" validationDetails="yes"/>
+        </api>
 
 		<!-- These proxies provides mock backend implementations for the API in this demo. Instead
 			 of mocks use the backends for your API.
 		-->
-		<serviceProxy port="3000">
+		<api port="3000">
 			<path isRegExp="true">/demo-api/v2/persons/.*</path>
 			<response>
 				<template pretty="true" contentType="application/json">
@@ -26,9 +26,9 @@
 				</template>
 			</response>
             <return statusCode="201"/>
-        </serviceProxy>
+        </api>
 
-		<serviceProxy port="3000" method="GET">
+		<api port="3000" method="GET">
 			<path>/demo-api/v2/persons</path>
 			<response>
 				<template pretty="true" contentType="application/json">
@@ -42,13 +42,13 @@
 				</template>
 			</response>
             <return statusCode="200"/>
-        </serviceProxy>
+        </api>
 
 		<!-- Monitoring endpoint for prometheus -->
-		<serviceProxy name="Prometheus Monitoring" port="8888">
+		<api name="Prometheus Monitoring" port="8888">
 			<path>/metrics</path>
 			<prometheus/>
-		</serviceProxy>
+		</api>
 	
 	</router>
 	
