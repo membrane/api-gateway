@@ -280,7 +280,8 @@
 					<annotationProcessors>
 						<annotationProcessor>com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor</annotationProcessor>
 					</annotationProcessors>
-				</configuration>
+                    <compilerArgs>--enable-preview</compilerArgs>
+                </configuration>
 			</plugin>
 
 			<plugin>

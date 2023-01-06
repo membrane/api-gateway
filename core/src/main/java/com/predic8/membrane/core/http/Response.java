@@ -304,6 +304,7 @@ public class Response extends Message {
 		return ResponseBuilder.newInstance().
 				status(405).
 				contentType(TEXT_HTML_UTF8).
+				contentType(MimeType.TEXT_HTML_UTF8).
 				body(HttpUtil.htmlMessage("405 Method Not Allowed", ""));
 	}
 

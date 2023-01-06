@@ -42,6 +42,8 @@ public class MimeType {
 	public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
 	public static final String APPLICATION_APPLY_PATCH_YAML = "application/apply-patch+yaml";
 
+    public static final String APPLICATION_GRAPHQL = "application/graphql";
+
     public static final ContentType APPLICATION_JSON_CONTENT_TYPE = new ContentType("application","json",null);
     public static final ContentType APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE = new ContentType("application","x-www-form-urlencoded",null);
 
