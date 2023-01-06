@@ -1,56 +1,85 @@
- <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
-  <id>distribution</id>
-  <formats>
-    <format>zip</format>
-  </formats>
-  <dependencySets>
-  	<dependencySet>
-  		<excludes><exclude>org.membrane-soa:membrane-service-proxy</exclude></excludes>
-  		<unpack>false</unpack>
-  		<outputDirectory>/lib</outputDirectory>
-  	</dependencySet>
-  </dependencySets>
-  <fileSets>
-  	<fileSet>
-      <!-- examples fileSet: bod build folder or .sh scripts -->
-  		<directory>examples</directory>
-  		<outputDirectory>/examples</outputDirectory>
-  		<excludes><exclude>**/build/</exclude><exclude>**/*.sh</exclude></excludes>
-  	</fileSet>
-  	<fileSet>
-      <!-- examples fileSet: .sh scripts (execute permissions) -->
-  		<directory>examples</directory>
-  		<outputDirectory>/examples</outputDirectory>
-  		<includes><include>**/*.sh</include></includes>
-  		<fileMode>0755</fileMode>
-  	</fileSet>
-  	<fileSet>
-      <!-- examples fileSet: build folder -->
-  		<directory>examples</directory>
-  		<outputDirectory>/examples</outputDirectory>
-  		<includes><include>custom-interceptor/build/**/*</include></includes>
-  	</fileSet>
-  	<fileSet>
-      <!-- router folder fileSet without service-proxy.sh -->
-  		<directory>router</directory>
-  		<outputDirectory>/</outputDirectory>
-  		<excludes><exclude>service-proxy.sh</exclude></excludes>
-  	</fileSet>
-  	<fileSet>
-      <!-- extra fileSet for service-proxy.sh with execute permissions -->
-  		<directory>router</directory>
-  		<outputDirectory>/</outputDirectory>
-  		<includes><include>service-proxy.sh</include></includes>
-  		<fileMode>0755</fileMode>
-  	</fileSet>
-  </fileSets>
-  <files>
-  	<file>
-  		<source>${project.build.directory}/${project.name}-${project.version}.jar</source>
-  		<outputDirectory>/</outputDirectory>
-  		<destName>starter.jar</destName>
-  	</file>
-  </files>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+    <id>distribution</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <dependencySets>
+        <dependencySet>
+            <excludes>
+                <exclude>org.membrane-soa:membrane-service-proxy</exclude>
+            </excludes>
+            <unpack>false</unpack>
+            <outputDirectory>/lib</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+    <fileSets>
+        <fileSet>
+            <!-- examples fileSet: bod build folder or .sh scripts -->
+            <directory>examples</directory>
+            <outputDirectory>/examples</outputDirectory>
+            <excludes>
+                <exclude>**/build/</exclude>
+                <exclude>**/*.sh</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <!-- examples fileSet: .sh scripts (execute permissions) -->
+            <directory>examples</directory>
+            <outputDirectory>/examples</outputDirectory>
+            <includes>
+                <include>**/*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <!-- examples fileSet: build folder -->
+            <directory>examples</directory>
+            <outputDirectory>/examples</outputDirectory>
+            <includes>
+                <include>custom-interceptor/build/**/*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <!-- router folder fileSet without service-proxy.sh -->
+            <directory>router</directory>
+            <outputDirectory>/</outputDirectory>
+            <excludes>
+                <exclude>service-proxy.sh</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <!-- extra fileSet for service-proxy.sh with execute permissions -->
+            <directory>router</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>service-proxy.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>tutorials</directory>
+            <outputDirectory>/tutorials</outputDirectory>
+            <excludes>
+                <exclude>**/build/</exclude>
+                <exclude>**/*.sh</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>tutorials</directory>
+            <outputDirectory>/tutorials</outputDirectory>
+			<includes>
+				<include>**/*.sh</include>
+			</includes>
+			<fileMode>0755</fileMode>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>${project.build.directory}/${project.name}-${project.version}.jar</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>starter.jar</destName>
+        </file>
+    </files>
 </assembly>
