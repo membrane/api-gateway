@@ -47,6 +47,8 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 public class LoginDialog2 {
     private static Logger log = LoggerFactory.getLogger(com.predic8.membrane.core.interceptor.authentication.session.LoginDialog.class.getName());
 
@@ -95,7 +97,7 @@ public class LoginDialog2 {
     }
 
     private void showPage(Exchange exc, int page, Object... params) throws Exception {
-        String target = StringUtils.defaultString(URLParamUtil.getParams(uriFactory, exc).get("target"));
+        String target = StringUtils.defaultString(URLParamUtil.getParams(uriFactory, exc, ERROR).get("target"));
 
         exc.getDestinations().set(0, "/index.html");
         wsi.handleRequest(exc);
@@ -152,7 +154,7 @@ public class LoginDialog2 {
             if (s == null || !s.isVerified()) {
                 if (exc.getRequest().getMethod().equals("POST")) {
                     Map<String, String> userAttributes;
-                    Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+                    Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
                     String username = params.get("username");
                     if (username == null) {
                         showPage(exc, 0, "error", "INVALID_PASSWORD");
@@ -209,7 +211,7 @@ public class LoginDialog2 {
                     return;
                 }
                 if (exc.getRequest().getMethod().equals("POST")) {
-                    String token = URLParamUtil.getParams(uriFactory, exc).get("token");
+                    String token = URLParamUtil.getParams(uriFactory, exc, ERROR).get("token");
                     try {
                         if(tokenProvider != null)
                             tokenProvider.verifyToken(s.get().entrySet().stream().collect(Collectors.toMap(k -> k.getKey(), v -> v.getValue().toString(), (m1,m2) -> m1)), token);
@@ -229,7 +231,7 @@ public class LoginDialog2 {
                     }
                     if (accountBlocker != null)
                         accountBlocker.unblock(s.getUsername());
-                    String target = URLParamUtil.getParams(uriFactory, exc).get("target");
+                    String target = URLParamUtil.getParams(uriFactory, exc, ERROR).get("target");
                     if (StringUtils.isEmpty(target))
                         target = "/";
 
@@ -266,7 +268,7 @@ public class LoginDialog2 {
     }
 
     private void redirectAfterConsent(Exchange exc) throws Exception {
-        String target = URLParamUtil.getParams(uriFactory, exc).get("target");
+        String target = URLParamUtil.getParams(uriFactory, exc, ERROR).get("target");
         if (StringUtils.isEmpty(target))
             target = "/";
         exc.setResponse(Response.redirectWithout300(target).build());
@@ -275,7 +277,7 @@ public class LoginDialog2 {
     private void putConsentInSession(Exchange exc, Session s) throws Exception {
         if(s == null)
             return;
-        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
         String consentResult = "false";
         if(params.get("consent").equals("Accept"))
             consentResult = "true";

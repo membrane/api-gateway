@@ -21,6 +21,8 @@ import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 public class TokenFlowDecider {
 
     private static final String AUTHORIZATION_CODE = "authorization_code";
@@ -33,7 +35,7 @@ public class TokenFlowDecider {
     ParameterizedRequest flow;
 
     public TokenFlowDecider(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
-        params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc);
+        params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc, ERROR);
         flow = new ErrorFlow(authServer,exc);
         if(getGrantType() == null)
             return;

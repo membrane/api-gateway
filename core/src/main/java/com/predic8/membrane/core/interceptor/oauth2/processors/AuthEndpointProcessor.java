@@ -22,6 +22,8 @@ import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithSessionReque
 import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithoutSessionRequest;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 public class AuthEndpointProcessor extends EndpointProcessor {
 
     public AuthEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
@@ -49,6 +51,6 @@ public class AuthEndpointProcessor extends EndpointProcessor {
     }
 
     private String getState(Exchange exc) throws Exception {
-        return URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc).get(ParamNames.STATE);
+        return URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc, ERROR).get(ParamNames.STATE);
     }
 }

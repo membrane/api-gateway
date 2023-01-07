@@ -45,6 +45,12 @@ public class Response extends Message {
 			return res;
 		}
 
+		public ResponseBuilder status(int code) {
+			res.setStatusCode(code);
+			res.setStatusMessage(HttpUtil.getMessageForStatusCode(code));
+			return this;
+		}
+
 		public ResponseBuilder status(int code, String msg) {
 			res.setStatusCode(code);
 			res.setStatusMessage(msg);
@@ -289,6 +295,13 @@ public class Response extends Message {
 				status(401, "Unauthorized.").
 				contentType(MimeType.TEXT_HTML_UTF8).
 				bodyEmpty();
+	}
+
+	public static ResponseBuilder methodNotAllowed() {
+		return ResponseBuilder.newInstance().
+				status(405).
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(htmlMessage("405 Method Not Allowed", ""));
 	}
 
 	@Override

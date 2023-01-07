@@ -23,6 +23,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.util.URLParamUtil;
 
 public class URI extends AbstractXmlElement {
 
@@ -88,7 +89,7 @@ public class URI extends AbstractXmlElement {
 		if (jUri.getQuery() == null) return;
 
 		Query q = new Query();
-		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery()).entrySet()) {
+		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery(), URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA).entrySet()) {
 			q.getParams().add(new Param(e.getKey(),e.getValue()));
 		}
 		setQuery(q);

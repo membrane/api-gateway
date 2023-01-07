@@ -16,6 +16,7 @@
 package com.predic8.membrane.core.util;
 
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLUtil.getHost;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,15 +46,15 @@ public class URLUtilTest {
 
 	@Test
 	public void testParseQueryString() throws IOException {
-		assertEquals("http://node1.clustera", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1").get("endpoint"));
-		assertEquals("c1", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1").get("cluster"));
+		assertEquals("http://node1.clustera", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1", ERROR).get("endpoint"));
+		assertEquals("c1", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1", ERROR).get("cluster"));
 	}
 
 	@Test
 	public void testParamsWithoutValueString() throws IOException {
-		assertEquals("jim", parseQueryString("name=jim&male").get("name"));
-		assertEquals("", parseQueryString("name=jim&male").get("male"));
-		assertEquals("", parseQueryString("name=anna&age=").get("age"));
+		assertEquals("jim", parseQueryString("name=jim&male", ERROR).get("name"));
+		assertEquals("", parseQueryString("name=jim&male", ERROR).get("male"));
+		assertEquals("", parseQueryString("name=anna&age=", ERROR).get("age"));
 	}
 
 	@Test

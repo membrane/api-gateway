@@ -51,8 +51,6 @@ import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -364,7 +362,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private void handleOriginalRequest(Exchange exc) throws Exception {
-        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
         String oa2redirect = params.get(OA2REDIRECT);
 
         Session session = getSessionManager().getSession(exc);
@@ -641,7 +639,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if(path.endsWith("/" + callbackPath)) {
 
             try {
-                Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+                Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
 
                 String state2 = params.get("state");
 
@@ -784,7 +782,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if (state2 == null)
             throw new RuntimeException("No CSRF token.");
 
-        Map<String, String> param = URLParamUtil.parseQueryString(state2);
+        Map<String, String> param = URLParamUtil.parseQueryString(state2, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
 
         if (param == null || !param.containsKey("security_token"))
             throw new RuntimeException("No CSRF token.");

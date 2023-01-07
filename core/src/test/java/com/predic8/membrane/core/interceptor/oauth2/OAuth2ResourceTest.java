@@ -503,7 +503,7 @@ public class OAuth2ResourceTest {
                 if(exc.getRequestURI().endsWith("/.well-known/openid-configuration")){
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 }else if(exc.getRequestURI().startsWith("/auth?")){
-                    Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc);
+                    Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     exc.setResponse(Response.redirect(getClientAddress()+"/oauth2callback?code=1234&state=" + params.get("state"),false).build());
                 }else if(exc.getRequestURI().startsWith("/token")){
                     ObjectMapper om = new ObjectMapper();

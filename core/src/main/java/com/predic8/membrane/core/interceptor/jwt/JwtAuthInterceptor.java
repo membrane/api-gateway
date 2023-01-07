@@ -26,6 +26,8 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.jose4j.base64url.Base64Url;
 import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.InvalidJwtSignatureException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.slf4j.Logger;
@@ -155,7 +157,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                 .setVerificationKey(key.getRsaPublicKey());
 
         if(expectedAud != null && !expectedAud.isEmpty())
-        jwtConsumerBuilder
+            jwtConsumerBuilder
                 .setExpectedAudience(expectedAud);
         if (expectedAud.equals("any!!"))
             jwtConsumerBuilder.setSkipDefaultAudienceValidation();
@@ -166,8 +168,12 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     }
 
     private Outcome setJsonErrorAndReturn(Exception e, Exchange exc, int code, String description){
-        if(e != null)
-            LOG.error("",e);
+        if(e != null) {
+            if (e instanceof InvalidJwtException)
+                LOG.error(e.getMessage());
+            else
+                LOG.error("", e);
+        }
         try {
             exc.setResponse(Response.ResponseBuilder.newInstance()
                     .status(code, "Bad Request")
