@@ -265,7 +265,7 @@ public class HttpUtil {
 			case 401 -> "Unauthorized";
 			case 403 -> "Forbidden";
 			case 404 -> "Not Found";
-			case 405 -> "Method not Allowed";
+			case 405 -> "Method Not Allowed";
 			case 409 -> "Conflict";
 			case 415 -> "Unsupported Mediatype";
 			case 422 -> "Unprocessable Entity";
