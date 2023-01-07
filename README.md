@@ -3,7 +3,7 @@ Membrane API Gateway
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-Open Source API Gateway written in Java that supports REST APIs, WebSockets, STOMP and legacy Web Services. Featuring:
+Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services. Featuring:
 
 **API Security:**
 * Authentification with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/basicAuthentication.htm) 
@@ -49,7 +49,7 @@ Routing requests from port `8080` to `api.predic8.de` when the path starts with 
 
 ```xml
 <serviceProxy port="8080">
-  <path>/foo</path>
+  <path>/shop</path>
   <target host="api.predic8.de" port="80" />
 </serviceProxy>
 ```
