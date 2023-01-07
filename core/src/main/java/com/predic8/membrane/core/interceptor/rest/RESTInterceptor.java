@@ -34,6 +34,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.administration.Mapping;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 public abstract class RESTInterceptor extends AbstractInterceptor {
 	private static Logger log = LoggerFactory.getLogger(RESTInterceptor.class.getName());
 	private boolean readOnly;
@@ -76,10 +78,10 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 				Object[] parameters;
 				switch (m.getParameterTypes().length) {
 				case 2:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc), matcher), getRelativeRootPath(path) };
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc, ERROR), matcher), getRelativeRootPath(path) };
 					break;
 				case 3:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc), matcher), getRelativeRootPath(path), exc };
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc, ERROR), matcher), getRelativeRootPath(path), exc };
 					break;
 				default:
 					throw new InvalidParameterException("@Mapping is supposed to annotate a 2-parameter method.");

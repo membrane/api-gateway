@@ -36,6 +36,8 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 /**
  * @description Using the formValidation interceptor you can validate the input of HTML forms.
  * @topic 4. Interceptors/Features
@@ -117,7 +119,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 		logMappings();
 
-		Map<String, String> propMap = URLParamUtil.getParams(router.getUriFactory(), exc);
+		Map<String, String> propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
 		for (Field f : fields) {
 			if ( !propMap.containsKey(f.name) ) continue;
 

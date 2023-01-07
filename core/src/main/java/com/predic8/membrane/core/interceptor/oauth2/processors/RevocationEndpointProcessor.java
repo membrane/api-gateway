@@ -25,6 +25,8 @@ import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.Map;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 public class RevocationEndpointProcessor extends EndpointProcessor {
 
     public RevocationEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
@@ -38,7 +40,7 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
 
         if (!params.containsKey("token")) {
             exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_request"));

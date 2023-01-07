@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.administration;
 
 import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
 import java.io.StringWriter;
@@ -855,7 +856,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
-		return URLParamUtil.getParams(router.getUriFactory(), exc);
+		return URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
 	}
 
 	private Response respond(String page) throws Exception {

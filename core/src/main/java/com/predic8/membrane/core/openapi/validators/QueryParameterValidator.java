@@ -28,6 +28,7 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -52,7 +53,7 @@ public class QueryParameterValidator {
         String query = (new URIFactory().createWithoutException(request.getPath())).getQuery();
         Map<String, String> qparams;
         if (query != null) {
-            qparams = URLParamUtil.parseQueryString(query);
+            qparams = URLParamUtil.parseQueryString(query, ERROR);
         } else {
             qparams = new HashMap<>();
         }

@@ -26,6 +26,8 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 public abstract class ParameterizedRequest {
 
     protected Exchange exc;
@@ -57,7 +59,7 @@ public abstract class ParameterizedRequest {
     }
 
     private Map<String, String> getValidParams(Exchange exc) throws Exception {
-        Map<String, String> params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc);
+        Map<String, String> params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc, ERROR);
         params.putAll(parseAuthentication(exc));
         removeEmptyParams(params);
         return params;

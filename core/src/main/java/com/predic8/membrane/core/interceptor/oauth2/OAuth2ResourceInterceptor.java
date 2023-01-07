@@ -61,6 +61,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
  * authorization server as response.
@@ -283,7 +285,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private void handleOriginalRequest(Exchange exc) throws Exception {
-        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
         String oa2redirect = params.get(OA2REDIRECT);
 
         Exchange originalExchange = null;
@@ -445,7 +447,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private void showPage(Exchange exc, String state, Object... params) throws Exception {
-        String target = StringUtils.defaultString(URLParamUtil.getParams(router.getUriFactory(), exc).get("target"));
+        String target = StringUtils.defaultString(URLParamUtil.getParams(router.getUriFactory(), exc, ERROR).get("target"));
 
         exc.getDestinations().set(0, "/index.html");
         wsi.handleRequest(exc);
@@ -530,14 +532,14 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if(path.endsWith("/oauth2callback")) {
 
             try {
-                Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+                Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
 
                 String state2 = params.get("state");
 
                 if (state2 == null)
                     throw new RuntimeException("No CSRF token.");
 
-                Map<String, String> param = URLParamUtil.parseQueryString(state2);
+                Map<String, String> param = URLParamUtil.parseQueryString(state2, ERROR);
 
                 if (param == null || !param.containsKey("security_token"))
                     throw new RuntimeException("No CSRF token.");

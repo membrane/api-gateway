@@ -174,7 +174,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 				exc.getResponse().getHeader().setContentType(MimeType.TEXT_XML);
 			}
 			if (exc.getRequestURI().contains("?xsd=")) {
-				Map<String, String> params = URLParamUtil.getParams(router.getUriFactory(), exc);
+				Map<String, String> params = URLParamUtil.getParams(router.getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
 				if (params.containsKey("xsd")) {
 					int n = Integer.parseInt(params.get("xsd"));
 					String path;

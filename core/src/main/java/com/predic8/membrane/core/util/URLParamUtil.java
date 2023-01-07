@@ -22,10 +22,12 @@ import java.util.regex.*;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+
 public class URLParamUtil {
 	private static Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
 
-	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc) throws Exception {
+	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) throws Exception {
 		URI jUri = uriFactory.create(exc.getRequest().getUri());
 		String q = jUri.getRawQuery();
 		if (q == null) {
@@ -34,15 +36,15 @@ public class URLParamUtil {
 			q = new String(exc.getRequest().getBody().getContent(), exc.getRequest().getCharset());
 		}
 
-		return parseQueryString(q);
+		return parseQueryString(q, duplicateKeyOrInvalidFormStrategy);
 	}
 
 	public static String getStringParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {
-		return getParams(uriFactory, exc).get(name);
+		return getParams(uriFactory, exc, ERROR).get(name);
 	}
 
 	public static int getIntParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {
-		return Integer.parseInt(getParams(uriFactory, exc).get(name));
+		return Integer.parseInt(getParams(uriFactory, exc, ERROR).get(name));
 	}
 
 
@@ -68,15 +70,45 @@ public class URLParamUtil {
 		}
 	}
 
-	public static Map<String, String> parseQueryString(String query) {
+	public enum DuplicateKeyOrInvalidFormStrategy {
+		ERROR,
+		MERGE_USING_COMMA
+	}
+
+	/**
+	 * Parse a URL query into parameter pairs. The query is expected to be application/x-www-form-urlencoded .
+	 *
+	 * Note that this method does not really support multiple parameters with the same key. <b>This method should
+	 * therefore only be used in contexts where this is not an issue.</b>
+	 *
+	 * Background:
+	 * Note that according to the original RFC 3986 Section 3.4, there is no defined format of the query string.
+	 *
+	 * HTML5 defines in https://html.spec.whatwg.org/#form-submission how HTML forms should be serialized.
+	 * The URLSearchParams class behaviour is defined in https://url.spec.whatwg.org/#concept-urlsearchparams-list
+	 * where handling of parameters with the same key is supported.
+	 */
+	public static Map<String, String> parseQueryString(String query, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) {
 		try {
 			Map<String, String> params = new HashMap<String, String>();
 
 			for (String p : query.split("&")) {
 				Matcher m = paramsPat.matcher(p);
-				m.matches();
-				params.put(URLDecoder.decode(m.group(1), Constants.UTF_8),
-						URLDecoder.decode(m.group(2), Constants.UTF_8));
+				if (m.matches()) {
+					String key = URLDecoder.decode(m.group(1), Constants.UTF_8);
+					String value = URLDecoder.decode(m.group(2), Constants.UTF_8);
+					String oldValue = params.get(key);
+					if (oldValue == null)
+						params.put(key, value);
+					else
+						switch (duplicateKeyOrInvalidFormStrategy) {
+							case ERROR -> throw new RuntimeException("Could not parse query: " + query);
+							case MERGE_USING_COMMA -> params.put(key, oldValue + "," + value);
+						}
+				} else {
+					if (duplicateKeyOrInvalidFormStrategy == ERROR)
+						throw new RuntimeException("Could not parse query: " + query);
+				}
 			}
 			return params;
 		} catch (UnsupportedEncodingException e) {

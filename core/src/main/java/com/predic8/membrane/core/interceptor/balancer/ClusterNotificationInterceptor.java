@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
 import java.util.HashMap;
@@ -118,7 +119,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		Cipher cipher = Cipher.getInstance("AES");
 		SecretKeySpec skeySpec = new SecretKeySpec(Hex.decodeHex(keyHex.toCharArray()), "AES");
 		cipher.init(Cipher.DECRYPT_MODE, skeySpec);
-		return parseQueryString(new String(cipher.doFinal(Base64.decodeBase64(data.getBytes("UTF-8"))),"UTF-8"));
+		return parseQueryString(new String(cipher.doFinal(Base64.decodeBase64(data.getBytes("UTF-8"))),"UTF-8"), ERROR);
 	}
 
 	private int getPortParam(Map<String, String> params) throws Exception {
@@ -134,12 +135,13 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
+
 		String uri = exc.getOriginalRequestUri();
 		int qStart = uri.indexOf('?');
 		if (qStart == -1 || qStart + 1 == uri.length())
 			return new HashMap<String, String>();
 		return parseQueryString(exc.getOriginalRequestUri().substring(
-				qStart + 1));
+				qStart + 1), ERROR);
 	}
 
 	public boolean isValidateSignature() {
