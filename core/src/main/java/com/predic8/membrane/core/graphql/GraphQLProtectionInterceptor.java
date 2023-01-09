@@ -203,11 +203,15 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                 LOG.error("Selection is null.");
                 return "See server log.";
             }
-            String err = switch(selection) {
-                case Field field -> checkField(field, ed, od, selections, fieldStack, fragmentNamesVisited);
-                case FragmentSpread fs -> checkFragmentSpread(fs, ed, od, selections, fieldStack, fragmentNamesVisited);
-                case InlineFragment ifr -> checkSelections(ed, od, ifr.getSelections(), fieldStack, fragmentNamesVisited);
-                default -> checkUnhandled(selection);
+            String err;
+            if (selection instanceof Field) {
+                err = checkField((Field) selection, ed, od, selections, fieldStack, fragmentNamesVisited);
+            } else if (selection instanceof FragmentSpread) {
+                err = checkFragmentSpread((FragmentSpread) selection, ed, od, selections, fieldStack, fragmentNamesVisited);
+            } else if (selection instanceof InlineFragment) {
+                err = checkSelections(ed, od, ((InlineFragment) selection).getSelections(), fieldStack, fragmentNamesVisited);
+            } else {
+                err = checkUnhandled(selection);
             };
             if (err != null)
                 return err;
