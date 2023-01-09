@@ -75,7 +75,7 @@ public class Utils {
     }
 
     public static InputStream stringToInputStream(String s) {
-        return new ByteArrayInputStream(s.getBytes());
+        return new ByteArrayInputStream(s.getBytes(UTF_8));
     }
 
     public static String inputStreamToString(InputStream is) throws IOException {
