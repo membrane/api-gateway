@@ -66,8 +66,7 @@ import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorWADLTest;
 import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
@@ -114,6 +113,7 @@ import org.junit.platform.suite.api.Suite;
 		ProxyTest.class, Http2ClientServerTest.class, ChunkedBodyTest.class
 
 })
+@SelectPackages("com.predic8.membrane.core.openapi")
 public class UnitTests {
     /*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

@@ -57,7 +57,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 			RuleMatchingInterceptor.assignRule(exc, newRule);
 			// dispatching
 			exc.getDestinations().clear();
-			exc.getDestinations().add(DispatchingInterceptor.getForwardingDestination(exc));
+			exc.getDestinations().add(DispatchingInterceptor.getForwardingDestination(router.getUriFactory(),exc));
 			// user feature
 			outcome = flowController.invokeRequestHandlers(exc, newRule.getInterceptors());
 		}

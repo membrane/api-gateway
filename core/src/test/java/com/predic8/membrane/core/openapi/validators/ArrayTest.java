@@ -16,28 +16,22 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static java.lang.Boolean.*;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ArrayTest {
+public class ArrayTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/array.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/array.yml";
     }
 
     @Test

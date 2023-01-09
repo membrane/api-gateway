@@ -17,10 +17,12 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.URLUtil.*;
 
 /**
@@ -47,14 +49,14 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 
 		if (exc.getRule() instanceof AbstractServiceProxy) {
-			exc.getDestinations().add(getForwardingDestination(exc));
+			exc.getDestinations().add(getForwardingDestination(router.getUriFactory(),exc));
 			setSNIPropertyOnExchange(exc);
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		exc.getDestinations().add(exc.getRequest().getUri());
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void setSNIPropertyOnExchange(Exchange exc) {
@@ -66,13 +68,13 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	public static String getForwardingDestination(Exchange exc) throws Exception {
+	public static String getForwardingDestination(URIFactory uriFactory, Exchange exc) throws Exception {
 		String urlResult = null;
 
 		if(exc.getRule() instanceof InternalProxy)
 			urlResult = handleInternalProxy(exc);
 		if(exc.getRule() instanceof AbstractServiceProxy)
-			urlResult = handleAbstractServiceProxy(exc);
+			urlResult = handleAbstractServiceProxy(uriFactory, exc);
 
 		log.debug("destination: " + urlResult);
 		return urlResult != null ? urlResult : exc.getRequest().getUri();
@@ -92,15 +94,14 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		return null;
 	}
 
-	protected static String handleAbstractServiceProxy(Exchange exc) throws MalformedURLException, URISyntaxException {
+	protected static String handleAbstractServiceProxy(URIFactory uriFactory, Exchange exc) throws MalformedURLException, URISyntaxException {
 		AbstractServiceProxy p = (AbstractServiceProxy) exc.getRule();
 
 		if (p.getTargetURL() != null) {
 			if (p.getTargetURL().startsWith("service:") && !p.getTargetURL().contains("/")) {
 				return "service://" + getHost(p.getTargetURL()) + exc.getRequest().getUri();
 			}
-			// @TODO UriUtil ersetzen
-			if (p.getTargetURL().startsWith("http") && !UriUtil.getPathFromURL(p.getTargetURL()).contains("/")) {
+			if (p.getTargetURL().startsWith("http") && !UriUtil.getPathFromURL(uriFactory, p.getTargetURL()).contains("/")) {
 				return p.getTargetURL() + exc.getRequestURI();
 			}
 			return p.getTargetURL();

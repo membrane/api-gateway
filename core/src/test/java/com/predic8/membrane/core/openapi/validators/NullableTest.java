@@ -16,26 +16,20 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class NullableTest {
+public class NullableTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/nullable.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/nullable.yml";
     }
 
     @Test

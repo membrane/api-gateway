@@ -16,22 +16,17 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH_PARAMETER;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OpenAPIValidatorJSONSchemaTest {
+public class OpenAPIValidatorJSONSchemaTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/customers.yml";
     }
 
     @Test

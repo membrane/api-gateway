@@ -13,10 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -33,7 +35,9 @@ public class DispatchingInterceptorTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
+		Router router = new Router();
 		dispatcher = new DispatchingInterceptor();
+		dispatcher.init(router);
 		exc = new Exchange(null);
 		serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
 	}
@@ -73,7 +77,7 @@ public class DispatchingInterceptorTest {
     void handleAbstractServiceProxyTargetWithHostAndPort() throws MalformedURLException, URISyntaxException {
 		exc.setRule(serviceProxy);
 		exc.setRequest(new Request.Builder().get("/foo").build());
-		assertEquals("http://thomas-bayer.com:80/foo", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+		assertEquals("http://thomas-bayer.com:80/foo", getHandleAbstractServiceProxy());
     }
 
 	@Test
@@ -81,7 +85,7 @@ public class DispatchingInterceptorTest {
 		serviceProxy.setTargetURL("http://api.predic8.de");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("http://api.predic8.de/foo", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+		assertEquals("http://api.predic8.de/foo", getHandleAbstractServiceProxy());
 	}
 
 	@Test
@@ -89,7 +93,7 @@ public class DispatchingInterceptorTest {
 		serviceProxy.setTargetURL("https://api.predic8.de");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("https://api.predic8.de/foo", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+		assertEquals("https://api.predic8.de/foo", getHandleAbstractServiceProxy());
 	}
 
 	@Test
@@ -97,7 +101,7 @@ public class DispatchingInterceptorTest {
 		serviceProxy.setTargetURL("https://api.predic8.de/");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("https://api.predic8.de/", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+		assertEquals("https://api.predic8.de/", getHandleAbstractServiceProxy());
 	}
 
 	@Test
@@ -105,6 +109,11 @@ public class DispatchingInterceptorTest {
 		serviceProxy.setTargetURL("https://api.predic8.de/baz");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("https://api.predic8.de/baz", DispatchingInterceptor.handleAbstractServiceProxy(exc));
+		assertEquals("https://api.predic8.de/baz", getHandleAbstractServiceProxy());
+	}
+
+	@Nullable
+	private String getHandleAbstractServiceProxy() throws MalformedURLException, URISyntaxException {
+		return DispatchingInterceptor.handleAbstractServiceProxy(new URIFactory(), exc);
 	}
 }

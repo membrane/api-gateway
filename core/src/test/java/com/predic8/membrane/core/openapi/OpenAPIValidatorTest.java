@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi;
 
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,7 @@ public class OpenAPIValidatorTest {
 
     @BeforeEach
     public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
+        validator = new OpenAPIValidator(new URIFactory(),getResourceAsStream(this, "/openapi/specs/customers.yml"));
     }
 
     @Test

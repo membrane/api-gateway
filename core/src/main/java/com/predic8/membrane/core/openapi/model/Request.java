@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.model;
 
 import com.predic8.membrane.core.openapi.util.*;
 
+import java.io.*;
 import java.util.*;
 
 public class Request extends Message<Request> {
@@ -77,7 +78,7 @@ public class Request extends Message<Request> {
         return pathParameters;
     }
 
-    public Map<String, String> parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
+    public Map<String, String> parsePathParameters(String uriTemplate) throws PathDoesNotMatchException, UnsupportedEncodingException {
         if (pathParameters == null) {
             pathParameters = uriTemplateMatcher.match(uriTemplate, path);
         }

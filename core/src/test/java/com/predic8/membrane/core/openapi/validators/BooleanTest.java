@@ -18,25 +18,18 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.io.*;
+import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class BooleanTest {
+public class BooleanTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-    private final static ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/boolean.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/boolean.yml";
     }
 
     @Test
@@ -88,9 +81,4 @@ public class BooleanTest {
         root.put(name,value);
         return root;
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

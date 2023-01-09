@@ -16,34 +16,29 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class NestedObjectArrayTest {
+public class NestedObjectArrayTest extends AbstractValidatorTest{
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/nested-objects-arrays.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/nested-objects-arrays.yml";
     }
 
     @Test
     public void nestedOk()  {
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this, "/openapi/messages/nested-objects-arrays.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/messages/nested-objects-arrays.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void nestedInvalid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream(this, "/openapi/messages/nested-objects-arrays-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/messages/nested-objects-arrays-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

@@ -17,26 +17,21 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.math.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ObjectTest {
+public class ObjectTest extends AbstractValidatorTest{
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/object.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/object.yml";
     }
 
     @Test

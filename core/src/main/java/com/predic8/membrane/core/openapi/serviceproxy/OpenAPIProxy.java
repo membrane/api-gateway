@@ -131,7 +131,7 @@ public class OpenAPIProxy extends ServiceProxy {
     @Override
     public void init() throws Exception {
         if (specs.size() > 0)
-            key = new OpenAPIProxyServiceKey(getPort()); // Must come before super.  init()
+            key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
         super.init();
         initOpenAPI();
     }
@@ -160,7 +160,7 @@ public class OpenAPIProxy extends ServiceProxy {
         Map<String, OpenAPI> basePaths = new HashMap<>();
         apiRecords.forEach((id,record) -> record.api.getServers().forEach(server -> {
             try {
-                basePaths.put(UriUtil.getPathFromURL(server.getUrl()), record.api);
+                basePaths.put(UriUtil.getPathFromURL(router.getUriFactory(),server.getUrl()), record.api);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
                 // @TODO

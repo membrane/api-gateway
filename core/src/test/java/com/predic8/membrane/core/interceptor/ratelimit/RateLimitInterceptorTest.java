@@ -14,11 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.predic8.membrane.core.http.*;
 import org.joda.time.Duration;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +34,7 @@ public class RateLimitInterceptorTest {
 	@Test
 	public void testHandleRequestRateLimit1Second() throws Exception {
 		Exchange exc = new Exchange(null);
+		exc.setRequest(new Request.Builder().header("accept","html").build());
 		exc.setResponse(ResponseBuilder.newInstance().build());
 		exc.setRemoteAddrIp("192.168.1.100");
 
@@ -39,17 +43,17 @@ public class RateLimitInterceptorTest {
 		RateLimitInterceptor rli = new RateLimitInterceptor(Duration.standardSeconds(rateLimitSeconds), tryLimit);
 
 		for (int i = 0; i < tryLimit; i++) {
-			assertEquals(Outcome.CONTINUE, rli.handleRequest(exc));
+			assertEquals(CONTINUE, rli.handleRequest(exc));
 		}
 
-		assertEquals(Outcome.RETURN, rli.handleRequest(exc));
+		assertEquals(RETURN, rli.handleRequest(exc));
 
 		Thread.sleep(1000);
 		for (int i = 0; i < tryLimit; i++) {
-			assertEquals(Outcome.CONTINUE, rli.handleRequest(exc));
+			assertEquals(CONTINUE, rli.handleRequest(exc));
 		}
 
-		assertEquals(Outcome.RETURN, rli.handleRequest(exc));
+		assertEquals(RETURN, rli.handleRequest(exc));
 
 	}
 	
@@ -57,6 +61,7 @@ public class RateLimitInterceptorTest {
 	public void testHandleRequestRateLimit1SecondConcurrency() throws Exception
 	{
 		final Exchange exc = new Exchange(null);
+		exc.setRequest(new Request.Builder().header("accept","*/*").build());
 		exc.setResponse(ResponseBuilder.newInstance().build());
 		exc.setRemoteAddrIp("192.168.1.100");
 
@@ -72,11 +77,11 @@ public class RateLimitInterceptorTest {
 			Thread t = new Thread(() -> {
 				try {
 					Outcome out = rli.handleRequest(exc);
-					if(out == Outcome.CONTINUE)
+					if(out == CONTINUE)
 					{
 						continues.incrementAndGet();
 					}
-					else if(out == Outcome.RETURN)
+					else if(out == RETURN)
 					{
 						returns.incrementAndGet();
 					}

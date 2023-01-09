@@ -16,30 +16,25 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OpenAPIValidatorObjectTest {
+public class OpenAPIValidatorObjectTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/customers.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/customers.yml";
     }
 
     @Test
     public void invalidJSON() {
 
-        InputStream is = getResourceAsStream(this, "/openapi/messages/invalid.json");
+        InputStream is = getResourceAsStream( "/openapi/messages/invalid.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
@@ -53,7 +48,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void validateRequestBody() {
 
-        InputStream is = getResourceAsStream(this, "/openapi/messages/customer.json");
+        InputStream is = getResourceAsStream("/openapi/messages/customer.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
@@ -64,7 +59,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void invalidRequestBody() {
 
-        InputStream is = getResourceAsStream(this, "/openapi/messages/invalid-customer.json");
+        InputStream is = getResourceAsStream("/openapi/messages/invalid-customer.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 
@@ -84,7 +79,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void requiredPropertyMissing() {
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream(this, "/openapi/messages/missing-required-property.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream( "/openapi/messages/missing-required-property.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -102,7 +97,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void requiredPropertiesMissing() {
 
-        InputStream is = getResourceAsStream(this, "/openapi/messages/missing-required-properties.json");
+        InputStream is = getResourceAsStream("/openapi/messages/missing-required-properties.json");
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
@@ -117,7 +112,7 @@ public class OpenAPIValidatorObjectTest {
     @Test
     public void additionalPropertiesInvalid() {
 
-        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream(this, "/openapi/messages/customer-additional-properties-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(getResourceAsStream("/openapi/messages/customer-additional-properties-invalid.json")));
 
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

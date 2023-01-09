@@ -16,28 +16,21 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.util.JsonUtil.mapToJson;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
-public class CompositionTest {
+public class CompositionTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/composition.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/composition.yml";
     }
 
     @Test

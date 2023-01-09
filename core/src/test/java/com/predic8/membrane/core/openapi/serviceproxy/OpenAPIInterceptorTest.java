@@ -48,6 +48,7 @@ public class OpenAPIInterceptorTest {
     @BeforeEach
     public void setUp() throws Exception {
         router = new Router();
+        router.setUriFactory(new URIFactory());
 
         specInfoServers = new OpenAPIProxy.Spec();
         specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
@@ -61,7 +62,9 @@ public class OpenAPIInterceptorTest {
         exc.setRequest(new Request.Builder().method("GET").build());
 
         interceptor1Server = new OpenAPIInterceptor(createProxy(router, specInfoServers));
+        interceptor1Server.init(router);
         interceptor3Server = new OpenAPIInterceptor(createProxy(router, specInfo3Servers));
+        interceptor3Server.init(router);
     }
 
     @Test
@@ -132,7 +135,9 @@ public class OpenAPIInterceptorTest {
         exc.setOriginalRequestUri("/customers");
         exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType("application/json").body(convert2JSON(customer)).build());
 
-        assertEquals(RETURN, new OpenAPIInterceptor(createProxy(router,specCustomers)).handleRequest(exc));
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+        assertEquals(RETURN, interceptor.handleRequest(exc));
         assertEquals(400,exc.getResponse().getStatusCode());
 
         assertEquals("POST", getMapFromResponse(exc).get("method"));
@@ -161,6 +166,7 @@ public class OpenAPIInterceptorTest {
         exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType("application/json").build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, spec));
+        interceptor.init(router);
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
 

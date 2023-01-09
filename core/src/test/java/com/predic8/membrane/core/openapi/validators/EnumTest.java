@@ -16,26 +16,22 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class EnumTest {
+public class EnumTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/enum.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/enum.yml";
     }
 
     @Test
@@ -81,10 +77,4 @@ public class EnumTest {
 //        System.out.println("errors = " + errors);
 //        assertEquals(0,errors.size());
 //    }
-
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

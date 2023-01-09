@@ -27,8 +27,8 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
     ArrayList<String> basePaths = new ArrayList<>();
 
-    public OpenAPIProxyServiceKey(int port) {
-        super(port);
+    public OpenAPIProxyServiceKey(String ip, String host, int port) {
+        super(host, "*", null, port, ip);
 
         // Add basePaths of OpenAPIPublisherInterceptor to accept them also
         basePaths.add(OpenAPIPublisherInterceptor.PATH);

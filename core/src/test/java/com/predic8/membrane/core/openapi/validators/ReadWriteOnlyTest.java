@@ -16,30 +16,22 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.model.Request;
-import com.predic8.membrane.core.openapi.model.Response;
 import jakarta.mail.internet.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ReadWriteOnlyTest {
+public class ReadWriteOnlyTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/read-write-only.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/read-write-only.yml";
     }
 
     @Test

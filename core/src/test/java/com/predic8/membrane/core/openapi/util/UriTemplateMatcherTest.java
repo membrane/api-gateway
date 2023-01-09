@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.openapi.validators;
+package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;

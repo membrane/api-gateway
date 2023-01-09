@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -48,42 +49,46 @@ public class UtilsTest {
 
     @Test
     public void getPathFromURLHostAndPath() throws URISyntaxException {
-        assertEquals("/foo", UriUtil.getPathFromURL("http://localhost/foo"));
+        assertEquals("/foo", getPathFromURL("http://localhost/foo"));
     }
 
     @Test
     public void getPathFromURLSchemeHostPath() throws URISyntaxException {
-        assertEquals("/foo", UriUtil.getPathFromURL("http://localhost/foo"));
+        assertEquals("/foo", getPathFromURL("http://localhost/foo"));
     }
 
     @Test
     public void getPathFromURLHostToplevelPath() throws URISyntaxException {
-        assertEquals("/foo", UriUtil.getPathFromURL("http://localhost.de/foo"));
+        assertEquals("/foo", getPathFromURL("http://localhost.de/foo"));
     }
 
     @Test
     public void getPathFromURLHostToplevelPortPath() throws URISyntaxException {
-        assertEquals("/foo", UriUtil.getPathFromURL("http://localhost.de:3000/foo"));
+        assertEquals("/foo", getPathFromURL("http://localhost.de:3000/foo"));
     }
 
     @Test
     public void getPathFromURLHostToplevelPortPathComponents() throws URISyntaxException {
-        assertEquals("/demo-api/v2/", UriUtil.getPathFromURL("http://localhost:3000/demo-api/v2/"));
+        assertEquals("/demo-api/v2/", getPathFromURL("http://localhost:3000/demo-api/v2/"));
     }
 
     @Test
     public void getPathFromURLHostToplevelPortPathComponentsNoTrailingSlash() throws URISyntaxException {
-        assertEquals("/demo-api/v2", UriUtil.getPathFromURL("http://localhost:3000/demo-api/v2"));
+        assertEquals("/demo-api/v2", getPathFromURL("http://localhost:3000/demo-api/v2"));
     }
 
     @Test
     public void getPathFromURLHTTPS() throws URISyntaxException {
-        assertEquals("/demo-api/v2", UriUtil.getPathFromURL("https://localhost:3000/demo-api/v2"));
+        assertEquals("/demo-api/v2", getPathFromURL("https://localhost:3000/demo-api/v2"));
     }
 
     @Test
     public void getPathFromURLNoPath() throws URISyntaxException {
-        assertEquals("", UriUtil.getPathFromURL("http://localhost:4567"));
+        assertEquals("", getPathFromURL("http://localhost:4567"));
+    }
+
+    private String getPathFromURL(String s) throws URISyntaxException {
+        return UriUtil.getPathFromURL(new URIFactory(), s);
     }
     
     @Test

@@ -51,12 +51,7 @@ public class QueryParameterValidator {
         // TODO
         // Router?
         String query = (new URIFactory().createWithoutException(request.getPath())).getQuery();
-        Map<String, String> qparams;
-        if (query != null) {
-            qparams = URLParamUtil.parseQueryString(query, ERROR);
-        } else {
-            qparams = new HashMap<>();
-        }
+        Map<String, String> qparams = getQueryParams(query);
 
         getAllParameterSchemas(operation).forEach(param -> {
             if (!(param instanceof QueryParameter)) {
@@ -69,6 +64,12 @@ public class QueryParameterValidator {
         errors.add(checkForAdditionalQueryParameters(ctx, qparams));
 
         return errors;
+    }
+
+    private Map<String, String> getQueryParams(String query) {
+        if (query != null)
+            return URLParamUtil.parseQueryString(query, ERROR);
+        return new HashMap<>();
     }
 
     private List<Parameter> getAllParameterSchemas(Operation operation) {

@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.util.*;
 
 import java.net.*;
@@ -81,7 +82,7 @@ public class UriUtil {
         return ":"+url.getPort();
     }
 
-    public static String rewrite(String url, String scheme, String host, int port) throws MalformedURLException, URISyntaxException {
+    public static String rewrite(URIFactory uriFactory, String url, String scheme, String host, int port) throws MalformedURLException, URISyntaxException {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme);
         sb.append("://");
@@ -91,7 +92,7 @@ public class UriUtil {
             sb.append(port);
         }
 
-        String path = getPathFromURL(url);
+        String path = getPathFromURL(uriFactory, url);
         if (path != null) {
             sb.append(path);
         }
@@ -103,15 +104,7 @@ public class UriUtil {
         return !((port == 80 && scheme.equals("http")) || (port == 443 && scheme.equals("https")));
     }
 
-    // TODO
-    public static String getPathFromURL(String str) throws URISyntaxException {
-
-        return new URIFactory().create(str).getPath();
-
-//        try {
-//            return new URL(str).getPath();
-//        } catch (Exception e) {
-//            return new URL("http://" + str).getPath();
-//        }
+    public static String getPathFromURL(URIFactory factory, String str) throws URISyntaxException {
+        return factory.create(str).getPath();
     }
 }

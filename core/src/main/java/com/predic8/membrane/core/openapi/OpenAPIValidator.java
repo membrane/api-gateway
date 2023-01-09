@@ -37,20 +37,24 @@ public class OpenAPIValidator {
     private static final Logger log = LoggerFactory.getLogger(OpenAPIValidator.class.getName());
 
     private final OpenAPI api;
+    private URIFactory uriFactory;
     private String basePath = "";
 
-    public OpenAPIValidator(OpenAPI api) {
+    public OpenAPIValidator(URIFactory uriFactory, OpenAPI api) {
         this.api = api;
+        this.uriFactory = uriFactory;
         init();
     }
 
-    public OpenAPIValidator(InputStream openApiIs) {
+    public OpenAPIValidator(URIFactory uriFactory, InputStream openApiIs) {
         api = new OpenAPIParser().readContents(FileUtil.readInputStream(openApiIs), null, null).getOpenAPI();
+        this.uriFactory = uriFactory;
         init();
     }
 
-    public OpenAPIValidator(String openApiUrl) {
+    public OpenAPIValidator(String openApiUrl, URIFactory uriFactory) {
         api = new OpenAPIParser().readLocation(openApiUrl, null, null).getOpenAPI();
+        this.uriFactory = uriFactory;
         init();
     }
 
@@ -62,7 +66,7 @@ public class OpenAPIValidator {
             String url = api.getServers().get(0).getUrl();
             log.debug("Found server " + url);
             try {
-                basePath = UriUtil.getPathFromURL(url);
+                basePath = UriUtil.getPathFromURL(uriFactory,url);
             } catch (URISyntaxException e) {
                 // @TODO
                 throw new RuntimeException("Config Error ", e);
@@ -95,6 +99,9 @@ public class OpenAPIValidator {
                 req.parsePathParameters(normalizeUri(basePath + uriTemplate));
                 pathFound.set(true);
             } catch (PathDoesNotMatchException ignore) {
+                return;
+            } catch (UnsupportedEncodingException e) {
+                log.warn(format("Cannot decode path %s/%s. Request will be rejected.", basePath, uriTemplate));
                 return;
             }
 

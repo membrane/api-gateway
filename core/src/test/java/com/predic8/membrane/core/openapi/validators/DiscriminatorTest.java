@@ -16,12 +16,9 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
@@ -29,13 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
-public class DiscriminatorTest {
+public class DiscriminatorTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream("/openapi/specs/discriminator.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/discriminator.yml";
     }
 
     @Test
@@ -78,9 +73,4 @@ public class DiscriminatorTest {
         ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
         assertTrue(allOf.getMessage().contains("subschemas"));
     }
-
-    private InputStream getResourceAsStream(String fileName) {
-        return this.getClass().getResourceAsStream(fileName);
-    }
-
 }

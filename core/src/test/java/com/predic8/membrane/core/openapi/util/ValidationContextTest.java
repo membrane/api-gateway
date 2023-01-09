@@ -14,9 +14,10 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.openapi.validators;
+package com.predic8.membrane.core.openapi.util;
 
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.openapi.validators.*;
+import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,7 +26,7 @@ public class ValidationContextTest {
 
     @Test
     public void getLocation() {
-        assertEquals("REQUEST/BODY#/only-numbers/1",
+        Assertions.assertEquals("REQUEST/BODY#/only-numbers/1",
                 new ValidationContext().path("/array")
                         .complexType("Array")
                         .validatedEntityType(BODY)

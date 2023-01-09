@@ -147,12 +147,9 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
             this.message = message;
         }
 
+        @SuppressWarnings("rawtypes")
         public Map getJson() throws IOException {
             return om.readValue(message.getBodyAsStreamDecoded(), Map.class);
-        }
-
-        public void setJson(Map<String, Object> json) {
-//            this.json = json;
         }
     }
 }

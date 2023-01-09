@@ -16,23 +16,18 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ReferencesTest {
+public class ReferencesTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/references.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/references.yml";
     }
 
     @Test
@@ -98,14 +93,14 @@ public class ReferencesTest {
 
     @Test
     public void objRefsObjOK() {
-        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream(this, "/openapi/messages/references-customer-ok.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream("/openapi/messages/references-customer-ok.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void objRefsObjOKInvalid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream(this, "/openapi/messages/references-customer-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream("/openapi/messages/references-customer-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationContext ctx = errors.get(0).getContext();

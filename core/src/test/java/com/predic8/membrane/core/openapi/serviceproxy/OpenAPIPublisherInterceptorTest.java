@@ -23,6 +23,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
 import io.swagger.v3.parser.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,8 +45,9 @@ public class OpenAPIPublisherInterceptorTest {
     Exchange get = new Exchange(null);
 
     @BeforeEach
-    public void setUp() throws IOException, ClassNotFoundException {
+    public void setUp() throws Exception {
         Router router = new Router();
+        router.setUriFactory(new URIFactory());
         router.setBaseLocation("");
         openAPIRecordFactory = new OpenAPIRecordFactory(router);
         OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
@@ -53,6 +55,7 @@ public class OpenAPIPublisherInterceptorTest {
         records = openAPIRecordFactory.create(Collections.singletonList(spec));
 
         interceptor = new OpenAPIPublisherInterceptor(records);
+        interceptor.init(router);
 
         get.setRequest(new Request.Builder().method("GET").build());
         get.setRule(new NullRule());

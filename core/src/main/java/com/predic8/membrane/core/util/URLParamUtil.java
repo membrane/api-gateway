@@ -14,25 +14,27 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.exchange.*;
+
 import java.io.*;
 import java.net.*;
+import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static java.net.URLDecoder.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class URLParamUtil {
-	private static Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
+	private static final Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
 
 	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) throws Exception {
 		URI jUri = uriFactory.create(exc.getRequest().getUri());
 		String q = jUri.getRawQuery();
 		if (q == null) {
 			if (hasNoFormParams(exc))
-				return new HashMap<String, String>();
+				return new HashMap<>();
 			q = new String(exc.getRequest().getBody().getContent(), exc.getRequest().getCharset());
 		}
 
@@ -56,18 +58,14 @@ public class URLParamUtil {
 
 
 	public static String createQueryString( String... params ) {
-		try {
-			StringBuilder buf = new StringBuilder();
-			for (int i = 0; i < params.length; i+=2) {
-				if (i != 0) buf.append('&');
-				buf.append(URLEncoder.encode(params[i], Constants.UTF_8));
-				buf.append('=');
-				buf.append(URLEncoder.encode(params[i+1], Constants.UTF_8));
-			}
-			return buf.toString();
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
+		StringBuilder buf = new StringBuilder();
+		for (int i = 0; i < params.length; i+=2) {
+			if (i != 0) buf.append('&');
+			buf.append(URLEncoder.encode(params[i], StandardCharsets.UTF_8));
+			buf.append('=');
+			buf.append(URLEncoder.encode(params[i+1], StandardCharsets.UTF_8));
 		}
+		return buf.toString();
 	}
 
 	public enum DuplicateKeyOrInvalidFormStrategy {
@@ -89,56 +87,48 @@ public class URLParamUtil {
 	 * where handling of parameters with the same key is supported.
 	 */
 	public static Map<String, String> parseQueryString(String query, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) {
-		try {
-			Map<String, String> params = new HashMap<String, String>();
+		Map<String, String> params = new HashMap<>();
 
-			for (String p : query.split("&")) {
-				Matcher m = paramsPat.matcher(p);
-				if (m.matches()) {
-					String key = URLDecoder.decode(m.group(1), Constants.UTF_8);
-					String value = URLDecoder.decode(m.group(2), Constants.UTF_8);
-					String oldValue = params.get(key);
-					if (oldValue == null)
-						params.put(key, value);
-					else
-						switch (duplicateKeyOrInvalidFormStrategy) {
-							case ERROR -> throw new RuntimeException("Could not parse query: " + query);
-							case MERGE_USING_COMMA -> params.put(key, oldValue + "," + value);
-						}
-				} else {
-					if (duplicateKeyOrInvalidFormStrategy == ERROR)
-						throw new RuntimeException("Could not parse query: " + query);
-				}
+		for (String p : query.split("&")) {
+			Matcher m = paramsPat.matcher(p);
+			if (m.matches()) {
+				String key = decode(m.group(1), UTF_8);
+				String value = decode(m.group(2), UTF_8);
+				String oldValue = params.get(key);
+				if (oldValue == null)
+					params.put(key, value);
+				else
+					switch (duplicateKeyOrInvalidFormStrategy) {
+						case ERROR -> throw new RuntimeException("Could not parse query: " + query);
+						case MERGE_USING_COMMA -> params.put(key, oldValue + "," + value);
+					}
+			} else {
+				if (duplicateKeyOrInvalidFormStrategy == ERROR)
+					throw new RuntimeException("Could not parse query: " + query);
 			}
-			return params;
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
 		}
+		return params;
 	}
 
 	public static String encode(Map<String, String> params) {
-		try {
-			StringBuilder sb = new StringBuilder();
-			boolean first = true;
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
 
-			for (Map.Entry<String, String> p : params.entrySet()) {
-				if (first)
-					first = false;
-				else
-					sb.append("&");
-				sb.append(URLEncoder.encode(p.getKey(), Constants.UTF_8));
-				sb.append("=");
-				sb.append(URLEncoder.encode(p.getValue(), Constants.UTF_8));
-			}
-
-			return sb.toString();
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
+		for (Map.Entry<String, String> p : params.entrySet()) {
+			if (first)
+				first = false;
+			else
+				sb.append("&");
+			sb.append(URLEncoder.encode(p.getKey(), UTF_8));
+			sb.append("=");
+			sb.append(URLEncoder.encode(p.getValue(), UTF_8));
 		}
+
+		return sb.toString();
 	}
 
 	public static class ParamBuilder {
-		HashMap<String, String> params = new HashMap<String, String>();
+		HashMap<String, String> params = new HashMap<>();
 
 		public ParamBuilder add(String key, String value) {
 			params.put(key, value);

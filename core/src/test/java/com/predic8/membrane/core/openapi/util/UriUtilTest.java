@@ -16,6 +16,8 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -82,30 +84,35 @@ public class UriUtilTest {
 
     @Test
     public void rewriteStartsWithHttp() throws MalformedURLException, URISyntaxException {
-        assertEquals("http://localhost:8080", rewrite("http://predic8.de", "http","localhost", 8080));
+        assertEquals("http://localhost:8080", doRewrite("http://predic8.de", "http", "localhost", 8080));
     }
 
     @Test
     public void rewriteStartsWithHttps() throws MalformedURLException, URISyntaxException {
-        assertEquals("https://localhost", rewrite("http://predic8.de", "https","localhost", 443));
-        assertEquals("https://localhost:8443", rewrite("http://predic8.de", "https","localhost", 8443));
+        assertEquals("https://localhost", doRewrite("http://predic8.de", "https", "localhost", 443));
+        assertEquals("https://localhost:8443", doRewrite("http://predic8.de", "https", "localhost", 8443));
     }
 
     @Test
     public void rewriteWithoutHttp() throws MalformedURLException, URISyntaxException {
-        assertEquals("http://predic8.de:2000", rewrite("localhost:3000","http","predic8.de",2000));
-        assertEquals("http://predic8.de", rewrite("localhost:3000","http","predic8.de",80));
+        assertEquals("http://predic8.de:2000", doRewrite("localhost:3000", "http", "predic8.de", 2000));
+        assertEquals("http://predic8.de", doRewrite("localhost:3000", "http", "predic8.de", 80));
     }
 
     @Test
     public void rewriteWithoutHttps() throws MalformedURLException, URISyntaxException {
-        assertEquals("https://predic8.de:2000", rewrite("localhost:3000","https","predic8.de",2000));
-        assertEquals("https://predic8.de", rewrite("localhost:3000","https","predic8.de",443));
+        assertEquals("https://predic8.de:2000", doRewrite("localhost:3000", "https", "predic8.de", 2000));
+        assertEquals("https://predic8.de", doRewrite("localhost:3000", "https", "predic8.de", 443));
     }
 
     @Test
     public void rewritePath() throws MalformedURLException, URISyntaxException {
-        assertEquals("https://predic8.de:2000/foo", rewrite("http://localhost:3000/foo","https","predic8.de",2000));
-        assertEquals("https://predic8.de/foo", rewrite("http://localhost:3000/foo","https","predic8.de",443));
+        assertEquals("https://predic8.de:2000/foo", doRewrite("http://localhost:3000/foo", "https", "predic8.de", 2000));
+        assertEquals("https://predic8.de/foo", doRewrite("http://localhost:3000/foo", "https", "predic8.de", 443));
+    }
+
+    @NotNull
+    private String doRewrite(String url, String protocol, String host, int port) throws MalformedURLException, URISyntaxException {
+        return rewrite(new URIFactory(), url, protocol, host, port);
     }
 }

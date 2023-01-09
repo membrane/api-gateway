@@ -129,7 +129,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private String rewriteServerNode(Exchange exc, JsonNode server) throws MalformedURLException, URISyntaxException {
-        return rewrite(server.get("url").asText(),
+        return rewrite(router.getUriFactory(), server.get("url").asText(),
                 getProtocol(exc),
                 exc.getOriginalHostHeaderHost(),
                 parseInt(exc.getOriginalHostHeaderPort()));

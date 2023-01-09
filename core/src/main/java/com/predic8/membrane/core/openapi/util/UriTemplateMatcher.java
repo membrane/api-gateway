@@ -16,10 +16,14 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import java.io.*;
+import java.net.*;
+import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class UriTemplateMatcher {
 

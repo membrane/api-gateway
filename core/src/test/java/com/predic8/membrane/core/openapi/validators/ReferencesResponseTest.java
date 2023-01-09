@@ -30,26 +30,24 @@ import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStre
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ReferencesResponseTest {
+public class ReferencesResponseTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/references-response.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/references-response.yml";
     }
 
     @Test
     public void refRequestOk()  {
         ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"),Response.statusCode(200)
-                .json().body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer.json")));
+                .json().body(getResourceAsStream("/openapi/messages/references-requests-responses-customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void refResponseInvalid() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer-invalid.json")));
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/ref-response"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/references-requests-responses-customer-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);

@@ -107,14 +107,14 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (!shouldValidate(api, REQUESTS))
             return errors;
 
-        return new OpenAPIValidator(api).validate(getOpenapiValidatorRequest(exc));
+        return new OpenAPIValidator(router.getUriFactory(), api).validate(getOpenapiValidatorRequest(exc));
     }
 
     private ValidationErrors validateResponse(OpenAPI api, Exchange exc) throws IOException, ParseException {
         ValidationErrors errors = new ValidationErrors();
         if (!shouldValidate(api, RESPONSES))
             return errors;
-        return new OpenAPIValidator(api).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
+        return new OpenAPIValidator(router.getUriFactory(), api).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
     }
 
     public boolean validationDetails(OpenAPI api) {

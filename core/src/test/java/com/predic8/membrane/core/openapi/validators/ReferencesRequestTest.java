@@ -26,25 +26,23 @@ import static com.predic8.membrane.core.openapi.validators.ValidationContext.Val
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ReferencesRequestTest {
+public class ReferencesRequestTest extends AbstractValidatorTest {
 
-    OpenAPIValidator validator;
-
-    @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(getResourceAsStream(this, "/openapi/specs/references-request.yml"));
+    @Override
+    String getOpenAPIFileName() {
+        return "/openapi/specs/references-request.yml";
     }
 
     @Test
     public void refRequestOk()  {
-        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/messages/references-requests-responses-customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void refRequestInvalid()  {
-        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream(this, "/openapi/messages/references-requests-responses-customer-invalid.json")));
+        ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/messages/references-requests-responses-customer-invalid.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
