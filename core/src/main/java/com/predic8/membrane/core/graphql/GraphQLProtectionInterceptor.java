@@ -316,4 +316,22 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
             if (!"GET".equals(allowedMethod) && !"POST".equals(allowedMethod))
                 throw new InvalidParameterException("<graphQLProtectionInterceptor allowedMethods=\"...\" /> may only allow GET or POST.");
     }
+
+    public int getMaxRecursion() {
+        return maxRecursion;
+    }
+
+    @MCAttribute
+    public void setMaxRecursion(int maxRecursion) {
+        this.maxRecursion = maxRecursion;
+    }
+
+    public int getMaxDepth() {
+        return maxDepth;
+    }
+
+    @MCAttribute
+    public void setMaxDepth(int maxDepth) {
+        this.maxDepth = maxDepth;
+    }
 }
