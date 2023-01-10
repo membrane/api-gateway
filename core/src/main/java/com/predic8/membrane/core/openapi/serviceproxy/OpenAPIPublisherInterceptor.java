@@ -32,6 +32,8 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_YAML;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.rewrite;
 import static com.predic8.membrane.core.openapi.util.Utils.createErrorMessage;
@@ -99,7 +101,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnJsonOverview(Exchange exc) throws JsonProcessingException {
-        exc.setResponse(Response.ok().contentType("application/json").body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
+        exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
         return RETURN;
     }
 
@@ -109,13 +111,13 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnNoFound(Exchange exc,String id) {
-        exc.setResponse(Response.notFound().contentType("application/json").body(createErrorMessage(format("OpenAPI document with the id '%s' not found.",id))).build());
+        exc.setResponse(Response.notFound().contentType(APPLICATION_JSON).body(createErrorMessage(format("OpenAPI document with the id '%s' not found.",id))).build());
         return RETURN;
     }
 
     private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws JsonProcessingException, MalformedURLException, URISyntaxException {
         rewriteOpenAPIaccordingToRequest(exc, rec);
-        exc.setResponse(Response.ok().contentType("application/x-yaml").body(omYaml.writeValueAsBytes(rec.node)).build());
+        exc.setResponse(Response.ok().contentType(APPLICATION_X_YAML).body(omYaml.writeValueAsBytes(rec.node)).build());
         return RETURN;
     }
 
@@ -157,6 +159,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         tempCtx.put("apis", apis);
         tempCtx.put("pathUi", PATH_UI);
         tempCtx.put("path", PATH);
+        tempCtx.put("uriFactory", router.getUriFactory());
         return apiOverviewHtmlTemplate.make(tempCtx).toString();
     }
 

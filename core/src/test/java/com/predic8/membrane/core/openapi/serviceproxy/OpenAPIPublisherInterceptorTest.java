@@ -81,6 +81,16 @@ public class OpenAPIPublisherInterceptorTest {
     }
 
     @Test
+    public void getHTMLOverview() throws Exception {
+        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
+        Header header = new Header();
+        header.setAccept("html");
+        get.getRequest().setHeader(header);
+        assertEquals( RETURN, interceptor.handleRequest(get));
+        assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"/api-doc/ui/servers-1-api-v1-0\">Servers 1 API</a>"));
+    }
+
+    @Test
     public void getSwaggerUI() throws Exception {
         get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI + "/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));

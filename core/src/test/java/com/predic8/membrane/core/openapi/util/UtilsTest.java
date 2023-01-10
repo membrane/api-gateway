@@ -16,7 +16,10 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.mail.internet.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -195,4 +198,13 @@ public class UtilsTest {
         assertEquals("a-3b-c12", Utils.normalizeForId("a-+# 3b C12"));
     }
 
+    @Test
+    void getOpenapiValidatorRequestFromExchange() throws IOException, ParseException {
+        Exchange exc = new Exchange(null);
+        exc.setOriginalRequestUri("/foo");
+        exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().method("POST").build());
+        Request request = Utils.getOpenapiValidatorRequest(exc);
+        assertEquals("/foo",request.getPath());
+        assertEquals("POST", request.getMethod());
+    }
 }

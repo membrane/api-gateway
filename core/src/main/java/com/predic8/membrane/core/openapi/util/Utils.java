@@ -142,7 +142,10 @@ public class Utils {
     }
 
     public static Request getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
-        Request request = new Request(exc.getRequest().getMethod()).path(exc.getRequestURI()).mediaType(exc.getRequest().getHeader().getContentType());
+        Request request = new Request(exc.getRequest().getMethod()).path(exc.getRequestURI());
+        if (exc.getRequest().getHeader().getContentType() != null) {
+            request.mediaType(exc.getRequest().getHeader().getContentType());
+        }
         if (!exc.getRequest().isBodyEmpty()) {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }

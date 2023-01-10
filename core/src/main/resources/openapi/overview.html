@@ -68,7 +68,7 @@
     <td>
         <ul>
         <% for (server in api.value.api.servers) { %>
-            <li><%= com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(server.url) %><br>
+            <li><%= com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory,server.url) %><br>
                 <%= server.description != null ? server.description : "" %>
             </li>
         <% } %>

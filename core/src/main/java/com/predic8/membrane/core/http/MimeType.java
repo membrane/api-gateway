@@ -37,6 +37,9 @@ public class MimeType {
 
 	public static final String APPLICATION_JOSE_JSON = "application/jose+json";
 
+    public static final String APPLICATION_X_YAML = "application/x-yaml";
+
+
 	public static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
 
 	public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";

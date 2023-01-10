@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 /**
  * @description Based on <a href="https://tools.ietf.org/html/draft-ietf-appsawg-json-pointer-03">JSON pointer.</a>
  * The interceptor takes values from JSON request body and puts them into Exchange object as properties. If the pointer is not found,
@@ -75,10 +77,10 @@ public class JsonPointerExtractorInterceptor extends AbstractInterceptor{
 
     private Outcome handleInternal(Exchange exc, Message msg) throws IOException {
         if(!msg.isJSON()){
-            return Outcome.CONTINUE;
+            return CONTINUE;
         }
         setProperties(exc, msg.getBodyAsStream());
-        return Outcome.CONTINUE;
+        return CONTINUE;
     }
 
     private JsonNode parseJson(InputStream body) throws IOException {
