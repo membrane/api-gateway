@@ -23,7 +23,7 @@ public class ErrorUtil {
     public static void createAndSetErrorResponse(Exchange exc, int statusCode, String message) {
         Response.ResponseBuilder builder = Response.ResponseBuilder.newInstance().
                 status(statusCode, getMessageForStatusCode(statusCode));
-        if (exc.getRequest().getHeader().getAccept().contains("html")) {
+        if (exc.getRequest().getHeader().getAccept() != null &&  exc.getRequest().getHeader().getAccept().contains("html")) {
             builder
                     .contentType(TEXT_HTML_UTF8)
                     .body(htmlMessage(getMessageForStatusCode(statusCode), message)).build();

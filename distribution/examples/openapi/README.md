@@ -24,11 +24,11 @@ An _openAPIProxy_ can be added to the _proxies.xml_ configuration file. See the 
 ```xml
 <router>
     <openAPIProxy port="2000">
-        <spec location="fruitshop-api.yml"/>
-        <spec dir="openapi"/>
-        <spec location="https://developer.lufthansa.com/swagger/export/21516"/>
-        <spec location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
-        <spec location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
+        <openapi location="fruitshop-api.yml"/>
+        <openapi dir="openapi"/>
+        <openapi location="https://developer.lufthansa.com/swagger/export/21516"/>
+        <openapi location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
+        <openapi location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
     </openAPIProxy>
 </router>
 ```
@@ -49,7 +49,7 @@ It is also possilbe to configure the backend address using a [target](https://ww
 ```xml
 <serviceProxy>
     <openAPIProxy port="2000">
-        <spec dir="openapi"/>
+        <openapi dir="openapi"/>
         <target host="api.predic8.de" port="8080"/>
     </openAPIProxy>
 </serviceProxy>
@@ -68,7 +68,7 @@ Membrane can validate requests and responses against OpenAPI definitions and che
 Validation can be activated for requests and responses separatly. Set _validationDetails_ to _no_ if you do not want to send validation errors in detail to the client.
 
 ```xml
-<spec location="fruitshop-api.yml" 
+<openapi location="fruitshop-api.yml" 
       validateRequests="yes" 
       validateResponses="yes" 
       validationDetails="yes"/>
@@ -136,7 +136,7 @@ TLS for incoming and outgoing connections can be configured in the same way as f
 
 ```xml
 <openAPIProxy port="2000">
-    <spec dir="openapi"/>
+    <openapi dir="openapi"/>
     <ssl>
         <keystore location="..."/>
         <truststore location="..."/>
@@ -156,11 +156,11 @@ TLS for incoming and outgoing connections can be configured in the same way as f
 The behaviour of the _openAPIProxy_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-soa.org/service-proxy-doc/4.8/configuration/reference/).
 
 ```xml
-<openAPIProxy port="2000">
-    <spec dir="openapi"/>
+<api port="2000">
+    <openapi dir="openapi"/>
     <tokenValidator endpoint="https://login.predic8.de/oauth2/userinfo"/>
     <log/>
-</openAPIProxy>
+</api>
 ```
 
 ## Ids of OpenAPI Documents

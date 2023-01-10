@@ -86,6 +86,17 @@ The validator checks the request against the OpenAPI definition. Cause the value
 
 7. Try also a value for _name_ that is longer than 10 characters.
 
+8. Have a look at the configuration in the `proxies.xml`file:
+
+```xml
+<api port="2000">
+  <openapi location="fruitshop-api.yml"
+           validateRequests="yes"
+           validateResponses="yes"
+           validationDetails="yes"/>
+</api>
+```
+
 For more about the OpenAPI Validation features of Membrane have a look at:
 
 - [Simple Validation Example](../openapi-validation-simple)
