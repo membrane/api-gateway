@@ -12,7 +12,7 @@ In this example we will distribute requests to 3 different nodes.
 
 To run the example execute the following steps:
 
-1. Go to the `examples/loadbalancing/loadbalancer-1-basic` directory.
+1. Go to the `examples/loadbalancing/2-dynamic` directory.
 2. Execute `service-proxy.bat` or `service-proxy.sh`
 3. Open the URL http://localhost:4000 in your browser. 
    You will see a simple web app that counts how often it was called. There are 2 more web apps of the same kind
@@ -46,3 +46,5 @@ http://localhost:9010/clustermanager/down?balancer=default&host=localhost&port=4
 ```
 
 You find more balancer configurations at the [Loadbalancing](..) page.
+
+Note that the `adminConsole` and the `clusterNotification` are optional, you can take them out of the `proxies.xml` if you want to.

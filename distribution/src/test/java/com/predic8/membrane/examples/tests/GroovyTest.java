@@ -14,32 +14,25 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import com.predic8.membrane.examples.util.*;
+import org.apache.http.*;
+import org.junit.jupiter.api.*;
+
+import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 public class GroovyTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		Process2 sl = new Process2.Builder().in(getExampleDir("groovy"))
-				//.withWatcher(new com.predic8.membrane.examples.util.ConsoleLogger())
-				.script("service-proxy").waitForMembrane().start();
-		try {
-			SubstringWaitableConsoleEvent groovyCalled =
-					new SubstringWaitableConsoleEvent(sl, "X-Groovy header added with value :Groovy interceptor");
-			getAndAssert200("http://localhost:2000/");
-			assertTrue(groovyCalled.occurred());
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "groovy";
 	}
 
+	@Test
+	public void test() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2000/", null);
+			assertEquals("42",res.getFirstHeader("X-Groovy").getValue());
+		}
+	}
 }

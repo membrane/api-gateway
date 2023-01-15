@@ -18,17 +18,19 @@ import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.jupiter.api.Test;
+import org.apache.logging.log4j.core.util.*;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.ProxiesXmlUtil;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.examples.util.ProxiesXmlUtil;
 import com.predic8.membrane.test.AssertUtils;
 
+// TODO Remove when test for new Quickstart is written
 public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 
 	@Test
@@ -78,7 +80,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 
 			AssertUtils.setupHTTPAuthentication("localhost", 9000, "admin", "membrane");
 			result = getAndAssert200("http://localhost:9000/admin/");
-			result.contains("BLZService");
+			assertTrue(result.contains("BLZService"));
 
 			String invalidRequest =
 					"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:blz=\"http://thomas-bayer.com/blz/\">\r\n" +
@@ -152,17 +154,13 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 							"	</router>\r\n" +
 							"</spring:beans>", sl);
 
-			result = postAndAssert(400, endpoint, invalidRequest);
-			assertContains("Validation failed", result);
+			assertContains("Validation failed", postAndAssert(400, endpoint, invalidRequest));
 
-			result = getAndAssert200("http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000");
-			result.contains("1 of 1 messages have been invalid");
+			assertContains("1 of 1 messages have been invalid", getAndAssert200("http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000"));
 
-			result = getAndAssert200(endpoint);
-			assertContains("Target Namespace", result);
+			assertContains("Target Namespace", getAndAssert200(endpoint));
 
-			result = getAndAssert200(endpoint + "/operation/BLZServiceSOAP11Binding/BLZServicePortType/getBank");
-			assertContains("blz&gt;?XXX?", result);
+			assertContains("blz&gt;?XXX?", getAndAssert200(endpoint + "/operation/BLZServiceSOAP11Binding/BLZServicePortType/getBank"));
 
 			AssertUtils.closeConnections();
 

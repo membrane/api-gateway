@@ -65,7 +65,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-        condition = ((LanguageSupport) new GroovyLanguageSupport()).compileExpression(router, test);
+        condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, test);
     }
 
     private boolean testCondition(Exchange exc) {

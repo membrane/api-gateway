@@ -18,7 +18,9 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.lang.*;
 import groovy.lang.*;
 
+import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.*;
 
 public class GroovyLanguageSupport extends LanguageSupport {
@@ -27,9 +29,9 @@ public class GroovyLanguageSupport extends LanguageSupport {
 	ScriptExecutorPool<Script, R> {
 		private final String groovyCode;
 
-		private GroovyScriptExecutorPool(Router router, String expression) {
+		private GroovyScriptExecutorPool(ExecutorService executorService, String expression) {
 			this.groovyCode = expression;
-			init(router);
+			init(executorService);
 		}
 
 		@Override
@@ -53,8 +55,8 @@ public class GroovyLanguageSupport extends LanguageSupport {
 	private static final GroovyShell shell = new GroovyShell();
 
 	@Override
-	public Function<Map<String, Object>, Boolean> compileExpression(Router router, String src) {
-		return new GroovyScriptExecutorPool<>(router, addImports(src)) {
+	public Function<Map<String, Object>, Boolean> compileExpression(ExecutorService executorService, ClassLoader classLoader, String src) {
+		return new GroovyScriptExecutorPool<>(executorService, addImports(src)) {
 			@Override
 			public Boolean apply(Map<String, Object> parameters) {
 				Object result = this.execute(parameters);
@@ -66,8 +68,8 @@ public class GroovyLanguageSupport extends LanguageSupport {
 	}
 
 	@Override
-	public Function<Map<String, Object>, Object> compileScript(Router router, String script) {
-		return new GroovyScriptExecutorPool<>(router, addImports(script)) {
+	public Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader classLoader, String script) {
+		return new GroovyScriptExecutorPool<>(executorService, addImports(script)) {
 			@Override
 			public Object apply(Map<String, Object> parameters) {
 				return this.execute(parameters);
@@ -81,5 +83,4 @@ public class GroovyLanguageSupport extends LanguageSupport {
 				"import com.predic8.membrane.core.http.*\n" +
 				src;
 	}
-
 }

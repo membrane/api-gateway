@@ -6,9 +6,9 @@
 
     <router>
 
-        <serviceProxy name="Authorization Server" port="7000">
+        <serviceProxy name="Authorization Server" port="7007">
 
-            <oauth2authserver issuer="http://localhost:7000">
+            <oauth2authserver issuer="http://localhost:7007">
 
                 <!-- UserDataProvider is exchangeable, e.g. for a database table -->
                 <staticUserDataProvider>

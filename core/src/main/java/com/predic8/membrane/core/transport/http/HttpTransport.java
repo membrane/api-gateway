@@ -39,6 +39,11 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 import javax.annotation.Nullable;
 
+import static com.google.common.base.Objects.equal;
+import static java.lang.Integer.MAX_VALUE;
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  * @description <p>
  *              The transport receives messages from clients and invokes interceptors in the request and response flow.
@@ -59,14 +64,12 @@ public class HttpTransport extends Transport {
 	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
 
-	private final Map<Integer, Map<IpPort, HttpEndpointListener>> portListenerMapping
-	        = new HashMap<Integer, Map<IpPort, HttpEndpointListener>>();
-	private final List<WeakReference<HttpEndpointListener>> stillRunning
-	        = new ArrayList<WeakReference<HttpEndpointListener>>();
+	private final Map<Integer, Map<IpPort, HttpEndpointListener>> portListenerMapping = new HashMap<>();
+	private final List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<>();
 
-	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
-			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
+	private final ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
+			MAX_VALUE, 60L, SECONDS,
+			new SynchronousQueue<>(), new HttpServerThreadFactory());
 
 	@Override
 	public void init(Router router) throws Exception {
@@ -97,7 +100,7 @@ public class HttpTransport extends Transport {
 		if (mih.isEmpty()) {
 		    portListenerMapping.remove(p.getPort());
 		}
-		stillRunning.add(new WeakReference<HttpEndpointListener>(plt));
+		stillRunning.add(new WeakReference<>(plt));
 
 		for (IPortChangeListener listener : menuListeners) {
 			listener.removePort(p.getPort());
@@ -109,7 +112,7 @@ public class HttpTransport extends Transport {
 	public synchronized void closeAll(boolean waitForCompletion) throws IOException {
 
 		log.debug("Closing all network server sockets.");
-		List<IpPort> all = new ArrayList<IpPort>();
+		List<IpPort> all = new ArrayList<>();
 		for (Map<IpPort, HttpEndpointListener> v : portListenerMapping.values()) {
 		    all.addAll(v.keySet());
 		}
@@ -129,7 +132,7 @@ public class HttpTransport extends Transport {
 				while (true) {
 					boolean onlyIdle = System.currentTimeMillis() - now <= forceSocketCloseOnHotDeployAfter;
 					closeConnections(onlyIdle);
-					if (executorService.awaitTermination(5, TimeUnit.SECONDS))
+					if (executorService.awaitTermination(5, SECONDS))
 						break;
 					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"" + forceSocketCloseOnHotDeployAfter + "\"> to a lower value to forcibly close connections more quickly.");
 				}
@@ -140,7 +143,7 @@ public class HttpTransport extends Transport {
 	}
 
 	private void closeConnections(boolean onlyIdle) throws IOException {
-		ArrayList<WeakReference<HttpEndpointListener>> remove = new ArrayList<WeakReference<HttpEndpointListener>>();
+		ArrayList<WeakReference<HttpEndpointListener>> remove = new ArrayList<>();
 		for (WeakReference<HttpEndpointListener> whel : stillRunning) {
 			HttpEndpointListener hel = whel.get();
 			if (hel == null)
@@ -154,27 +157,23 @@ public class HttpTransport extends Transport {
 	}
 
 	/**
-	 * @param port
-	 * @param timerManager
-	 * @throws IOException
+	 * @param port Port to open
+	 * @param timerManager timerManager
+	 * @throws IOException If port can not be opened
 	 */
 	@Override
 	public synchronized void openPort(String ip, int port, SSLProvider sslProvider, @Nullable TimerManager timerManager) throws IOException {
 	    if (port == -1)
 	        throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 
-	    Map<IpPort, HttpEndpointListener> mih = portListenerMapping.get(port);
-	    if (mih == null) {
-	        mih = new HashMap<IpPort, HttpEndpointListener>();
-	        portListenerMapping.put(port, mih);
-	    }
-	    IpPort p = new IpPort(ip, port);
+		Map<IpPort, HttpEndpointListener> mih = portListenerMapping.computeIfAbsent(port, k -> new HashMap<>());
+		IpPort p = new IpPort(ip, port);
 	    HttpEndpointListener hel = mih.get(p);
 	    if (hel != null) { // already listen on the same "ip:port"
-	        if (Objects.equal(sslProvider, hel.getSslProvider())) {
+	        if (equal(sslProvider, hel.getSslProvider())) {
 	            return; // O.K. both use the equivalent ssl provider
 	        }
-	        throw new RuntimeException("Lister thread on " + p.toShortString() + " should use the same SSL config");
+	        throw new RuntimeException(format("Lister thread on %s should use the same SSL config", p.toShortString()));
 	    }
 	    if ((ip == null && !mih.isEmpty())                             // '*:port' vs 'XXX:port'
 	      || (ip != null && mih.containsKey(new IpPort(null, port)))   // 'XXX:port' vs '*:port'

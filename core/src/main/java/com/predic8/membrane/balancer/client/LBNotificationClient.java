@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.charset.*;
 import java.security.SecureRandom;
 import java.util.Properties;
 
@@ -37,6 +38,10 @@ import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.Cluster;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
+
+import static java.nio.charset.StandardCharsets.*;
+import static javax.crypto.Cipher.ENCRYPT_MODE;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 public class LBNotificationClient {
 
@@ -81,8 +86,7 @@ public class LBNotificationClient {
 		r.setBodyContent(new byte[0]);
 		exc.setRequest(r);
 		exc.getDestinations().add(getRequestURL());
-		Response res = client.call(exc).getResponse();
-		return res;
+		return client.call(exc).getResponse();
 	}
 
 	private void parseArguments(CommandLine cl) throws Exception {
@@ -114,11 +118,8 @@ public class LBNotificationClient {
 
 		if (prop != null && new File(propertiesFile).exists()) {
 			Properties props = new Properties();
-			InputStream is = new FileInputStream(propertiesFile);
-			try {
+			try (InputStream is = new FileInputStream(propertiesFile)) {
 				props.load(is);
-			} finally {
-				is.close();
 			}
 			if (props.containsKey(prop)) {
 				return props.getProperty(prop);
@@ -141,7 +142,7 @@ public class LBNotificationClient {
 	private String getRequestURL() throws Exception {
 		if (skeySpec!=null) {
 			return cmURL + "/" + cmd + "?data="+
-					URLEncoder.encode(getEncryptedQueryString(),"UTF-8");
+					URLEncoder.encode(getEncryptedQueryString(), UTF_8);
 		}
 		String time = String.valueOf(System.currentTimeMillis());
 		return cmURL + "/" + cmd + "?balancer=" + balancer + "&cluster=" + cluster + "&host=" + host + "&port=" + port + "&time=" + time;
@@ -150,8 +151,8 @@ public class LBNotificationClient {
 	private String getEncryptedQueryString() throws Exception {
 		Cipher cipher = Cipher.getInstance("AES");
 
-		cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-		return new String(Base64.encodeBase64(cipher.doFinal(getQueryString().getBytes("UTF-8"))),"UTF-8");
+		cipher.init(ENCRYPT_MODE, skeySpec);
+		return new String(encodeBase64(cipher.doFinal(getQueryString().getBytes(UTF_8))), UTF_8);
 	}
 
 	private void logArguments() {

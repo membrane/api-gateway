@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import java.io.File;
 
 import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
@@ -31,100 +32,122 @@ public class RouterCLI {
 
     private static final Logger LOG = LoggerFactory.getLogger(RouterCLI.class);
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
 
-		MembraneCommandLine cl = new MembraneCommandLine();
-		Router router = null;
-		try {
-			cl.parse(args);
-			if (cl.needHelp()) {
-				cl.printUsage();
-				return;
-			}
+        MembraneCommandLine cl = new MembraneCommandLine();
+        Router router = null;
+        try {
+            cl.parse(args);
+            if (cl.needHelp()) {
+                cl.printUsage();
+                return;
+            }
 
-			try {
-				router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
-			} catch (XmlBeanDefinitionStoreException e) {
-				TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
-			}
-		} catch (InvalidConfigurationException e) {
-			System.err.println("Fatal error: " + e.getMessage());
-			System.exit(1);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			System.exit(1);
-		}
+            try {
+                router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
+            } catch (XmlBeanDefinitionStoreException e) {
+                TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
+            }
+        } catch (InvalidConfigurationException e) {
+            System.err.println("Fatal error: " + e.getMessage());
+            System.exit(1);
+        } catch (Exception ex) {
+            handleExitException(ex);
+            ex.printStackTrace();
+            System.exit(1);
+        }
 
-		try {
-			if (router != null)
-				router.waitFor();
-		} catch (InterruptedException e) {
-			// do nothing
-		}
-	}
+        try {
+            if (router != null)
+                router.waitFor();
+        } catch (InterruptedException e) {
+            // do nothing
+        }
+    }
 
-	private static String getRulesFile(MembraneCommandLine line) {
-		ResolverMap rm = new ResolverMap();
-		if (line.hasConfiguration()) {
-			String s = line.getConfiguration().replaceAll("\\\\", "/");
-			if (s.startsWith("file:") || s.startsWith("/") || s.length() > 3 && s.substring(1, 3).equals(":/")) {
-				// absolute
-				try {
-					rm.resolve(s);
-					return s;
-				} catch (ResourceRetrievalException e) {
-					System.err.println("Could not open Membrane's configuration file: " + s + " not found.");
-					System.exit(1);
-				}
-			}
-			return getRulesFileFromRelativeSpec(rm, s, "");
-		} else {
-			String errorNotice = "Please specify the location of Membrane's proxies.xml configuration file using the -c command line option.";
-			if (System.getenv("MEMBRANE_HOME") != null) {
-				errorNotice += " Or create the file in MEMBRANE_HOME/conf (" + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml).";
-			} else {
-				errorNotice += " You can also point the MEMBRANE_HOME environment variable to Membrane's distribution root directory "+
-						"and ensure that MEMBRANE_HOME/conf/proxies.xml exists.";
-			}
-			return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", errorNotice);
-		}
-	}
+    private static void handleExitException(Exception ex) {
+        ExitException exitException = extractExitExcetpion(ex);
+        if (exitException == null)
+            return;
 
-	private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-		String membraneHome = System.getenv("MEMBRANE_HOME");
-		String userDir = System.getProperty("user.dir").replaceAll("\\\\", "/");
-		if (!userDir.endsWith("/"))
-			userDir += "/";
-		String try1 = ResolverMap.combine(prefix(userDir), relativeFile);
-		try {
-			rm.resolve(try1);
-			return try1;
-		} catch (ResourceRetrievalException e) {
-		}
-		String try2 = null;
-		if (membraneHome != null) {
-			try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);
-			try {
-				rm.resolve(try2);
-				return try2;
-			} catch (ResourceRetrievalException e) {
-			}
-		}
-		System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " . " + errorNotice);
-		System.exit(1);
-		throw new RuntimeException();
-	}
+        System.err.println("**********************************************************************************");
+        System.err.println();
+        System.err.println(exitException.getMessage());
+        System.err.println();
+        System.err.println("**********************************************************************************");
+        System.exit(1);
+    }
 
-	private static String prefix(String dir) {
+    private static ExitException extractExitExcetpion(Throwable ex) {
+        if (ex instanceof ExitException)
+            return (ExitException) ex;
+        if (ex.getCause() == null)
+            return null;
+        if (ex.getCause() instanceof ExitException)
+            return (ExitException) ex.getCause();
+        return extractExitExcetpion(ex.getCause());
+    }
 
-		String result = dir;
+    private static String getRulesFile(MembraneCommandLine line) {
+        ResolverMap rm = new ResolverMap();
+        if (line.hasConfiguration()) {
+            String s = line.getConfiguration().replaceAll("\\\\", "/");
+            if (s.startsWith("file:") || s.startsWith("/") || s.length() > 3 && s.startsWith(":/", 1)) {
+                // absolute
+                try {
+                    rm.resolve(s);
+                    return s;
+                } catch (ResourceRetrievalException e) {
+                    System.err.println("Could not open Membrane's configuration file: " + s + " not found.");
+                    System.exit(1);
+                }
+            }
+            return getRulesFileFromRelativeSpec(rm, s, "");
+        } else {
+            String errorNotice = "Please specify the location of Membrane's proxies.xml configuration file using the -c command line option.";
+            if (System.getenv("MEMBRANE_HOME") != null) {
+                errorNotice += " Or create the file in MEMBRANE_HOME/conf (" + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml).";
+            } else {
+                errorNotice += " You can also point the MEMBRANE_HOME environment variable to Membrane's distribution root directory " +
+                        "and ensure that MEMBRANE_HOME/conf/proxies.xml exists.";
+            }
+            return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", errorNotice);
+        }
+    }
 
-		File file = new File(dir);
-		if (file.isAbsolute()) {
-			result = file.toURI().toString();
-		}
+    private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
+        String membraneHome = System.getenv("MEMBRANE_HOME");
+        String userDir = System.getProperty("user.dir").replaceAll("\\\\", "/");
+        if (!userDir.endsWith("/"))
+            userDir += "/";
+        String try1 = ResolverMap.combine(prefix(userDir), relativeFile);
+        try {
+            rm.resolve(try1);
+            return try1;
+        } catch (ResourceRetrievalException e) {
+            // ignored
+        }
+        String try2 = null;
+        if (membraneHome != null) {
+            try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);
+            try {
+                rm.resolve(try2);
+                return try2;
+            } catch (ResourceRetrievalException e) {
+                // ignored
+            }
+        }
+        System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " . " + errorNotice);
+        System.exit(1);
+        throw new RuntimeException();
+    }
 
-		return result;
-	}
+    private static String prefix(String dir) {
+        File file = new File(dir);
+        if (file.isAbsolute()) {
+            return file.toURI().toString();
+        }
 
+        return dir;
+    }
 }

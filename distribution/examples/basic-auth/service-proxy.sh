@@ -12,13 +12,16 @@ homeSet() {
 terminate() {
 	echo "Starting of Membrane Router failed."
 	echo "Please execute this script from the appropriate subfolder of MEMBRANE_HOME/examples/"
-	
 }
 
 homeNotSet() {
   echo "MEMBRANE_HOME variable is not set"
+  echo "In $(pwd)"
+  echo "ls $(ls)"
+  echo "---"
+  echo "ls $(ls ../..)"
 
-  if [ -f  "`pwd`/../../starter.jar" ]
+  if [ -f  "$(pwd)/../../starter.jar" ]
     then 
     	export MEMBRANE_HOME="`pwd`/../.."
     	homeSet	

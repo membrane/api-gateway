@@ -22,9 +22,15 @@
 		<serviceProxy name="Node 3" port="4002">
 			<counter name="Node 3 " />
 		</serviceProxy>
-		
+
+		<!-- API to add and remove nodes (Optional) -->
 		<serviceProxy name="Administration" port="9000">
 			<adminConsole />
+		</serviceProxy>
+
+		<!-- API to add and remove nodes (Optional) -->
+		<serviceProxy name="Balancer Management" port="9010">
+			<clusterNotification />
 		</serviceProxy>
 	
 	</router>

@@ -9,7 +9,7 @@ param (
 
 $clientId = "abc"
 $clientSecret = "def"
-$tokenEndpoint = "http://localhost:7000/oauth2/token"
+$tokenEndpoint = "http://localhost:7007/oauth2/token"
 $target = "http://localhost:2000"
 
 function getToken{ 

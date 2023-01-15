@@ -26,53 +26,36 @@ public class ClassloaderUtil {
 
 		File file = new File(folder);
 		if (!file.isDirectory())
-			return new ArrayList<URL>();
+			return new ArrayList<>();
 
-		String[] jars = file.list(new FilenameFilter() {
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".jar");
-			}
-		});
-
-		List<URL> urls = new ArrayList<URL>();
-
-		for (int i = 0; i < jars.length; i++) {
+		List<URL> urls = new ArrayList<>();
+		for (String jar : getJarFilenames(file)) {
 			try {
-				urls.add(new URL("file:" + folder + jars[i]));
+				urls.add(new URL("file:" + folder + jar));
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			}
 		}
-
 		return urls;
-
 	}
 
-	public static boolean fileExists(String configFileName)
-			throws MalformedURLException, IOException {
-		if (configFileName.startsWith("file:"))
-			return new File(new URL(configFileName).getPath()).exists();
-		return new File(configFileName).exists();
+	private static String[] getJarFilenames(File file) {
+		return file.list((dir, name) -> name.endsWith(".jar"));
 	}
 
-	public static String getFullQualifiedFolderName(String rootDir,
-			String folder) throws IOException {
-		return rootDir + System.getProperty("file.separator") + folder
-				+ System.getProperty("file.separator");
+	public static String getFullQualifiedFolderName(String rootDir, String folder) {
+		return rootDir + System.getProperty("file.separator") + folder + System.getProperty("file.separator");
 	}
 
 	public static URLClassLoader getExternalClassloader(String rootDir) {
 		try {
-			List<URL> urls = getJarUrls(getFullQualifiedFolderName(rootDir,
-					"lib"));
+			List<URL> urls = getJarUrls(getFullQualifiedFolderName(rootDir, "lib"));
 			urls.add(new URL(getFullQualifiedFolderName(rootDir, "classes")));
-			return new URLClassLoader(urls.toArray(new URL[urls.size()]),
-					ClassloaderUtil.class.getClassLoader());
+			return new URLClassLoader(urls.toArray(new URL[0]), ClassloaderUtil.class.getClassLoader());
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
 		return null;
 	}
-
 }

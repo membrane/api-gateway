@@ -14,36 +14,36 @@
 
 package com.predic8.membrane.examples.tests;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
 import java.io.File;
 import java.io.IOException;
 
+import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.AssertUtils;
 
 public class REST2SOAPJSONTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("rest2soap-json");
-		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "2000", "2043");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			assertContains("\"bic\":\"COLSDE33XXX\"",
-					getAndAssert200("http://localhost:2043/bank/37050198",
-							new String[] { "Accept", "application/json" } ));
-			assertContains("\"bic\":\"GENODE61KIR\"",
-					getAndAssert200("http://localhost:2043/bank/66762332",
-							new String[] { "Accept", "application/json" } ));
-		} finally {
-			sl.killScript();
-		}
+	static final String[] ACCEPT_HEADER = new String[] { "Accept", APPLICATION_JSON};
+
+	@Override
+	protected String getExampleDirName() {
+		return "rest2soap-json";
 	}
 
-
+	@Test
+	public void test() throws Exception {
+		replaceInFile2("proxies.xml", "2000", "2043");
+		try(Process2 ignored = startServiceProxyScript()) {
+			assertContains("\"bic\":\"COLSDE33XXX\"",
+					getAndAssert200("http://localhost:2043/bank/37050198",ACCEPT_HEADER));
+			assertContains("\"bic\":\"GENODE61KIR\"",
+					getAndAssert200("http://localhost:2043/bank/66762332", ACCEPT_HEADER ));
+		}
+	}
 }

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.examples.tests;
 
+import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
@@ -21,22 +22,22 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 public class LoggingTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		Process2 sl = new Process2.Builder().in(getExampleDir("logging")).script("service-proxy").waitForMembrane().start();
-		try {
-			SubstringWaitableConsoleEvent logged = new SubstringWaitableConsoleEvent(sl, "HTTP/1.1");
-			AssertUtils.getAndAssert200("http://localhost:2000/");
-			assertEquals(true, logged.occurred());
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "logging/console";
 	}
 
+	@Test
+	public void test() throws Exception {
+		try(Process2 sl = startServiceProxyScript()) {
+			SubstringWaitableConsoleEvent logged = new SubstringWaitableConsoleEvent(sl, "HTTP/1.1");
+			getAndAssert200("http://localhost:2000/");
+			assertTrue(logged.occurred());
+		}
+	}
 }

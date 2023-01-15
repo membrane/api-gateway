@@ -7,7 +7,7 @@
 	<router>
 
 		<serviceProxy port="2000">
-			<statisticsCSV file="./log.csv" />
+			<log headerOnly="false"/>
 			<target host="api.predic8.de">
 				<ssl/>
 			</target>

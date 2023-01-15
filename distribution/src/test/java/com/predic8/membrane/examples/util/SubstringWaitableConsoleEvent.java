@@ -14,8 +14,7 @@
 
 package com.predic8.membrane.examples.util;
 
-import com.google.common.base.Predicate;
-import com.predic8.membrane.examples.Process2;
+import com.google.common.base.*;
 
 /**
  * Watches the console until "substring" is found.
@@ -23,12 +22,9 @@ import com.predic8.membrane.examples.Process2;
 public class SubstringWaitableConsoleEvent extends WaitableConsoleEvent {
 
 	public SubstringWaitableConsoleEvent(Process2 launcher, final String substring) {
-		super(launcher, new Predicate<String>() {
-			@Override
-			public boolean apply(String line) {
-				return line.contains(substring);
-			}
+		super(launcher, (Predicate<String>) line -> {
+			assert line != null;
+			return line.contains(substring);
 		});
 	}
-
 }

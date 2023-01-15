@@ -16,35 +16,36 @@ package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert200;
+import static java.lang.Thread.sleep;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.*;
 
+import com.predic8.membrane.examples.util.*;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 
 public class CBRTest extends DistributionExtractingTestcase {
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("cbr");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			Thread.sleep(2000);
-			String result = postAndAssert200("http://localhost:2000/shop", FileUtils.readFileToString(new File(baseDir, "order.xml")));
-			assertContains("Normal order received.", result);
 
-			result = postAndAssert200("http://localhost:2000/shop", FileUtils.readFileToString(new File(baseDir, "express.xml")));
-			assertContains("Express order received.", result);
-
-			result = postAndAssert200("http://localhost:2000/shop", FileUtils.readFileToString(new File(baseDir, "import.xml")));
-			assertContains("Order contains import items.", result);
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "cbr";
 	}
 
+	@Test
+	public void test() throws Exception {
+
+		try(Process2 ignored = startServiceProxyScript()) {
+			sleep(1000);
+			assertContains("Normal order received.", postAndAssert200("http://localhost:2000", readFile("order.xml")));
+			assertContains("Express order received.", postAndAssert200("http://localhost:2000", readFile("express.xml")));
+			assertContains("Order contains import items.", postAndAssert200("http://localhost:2000", readFile("import.xml")));
+		}
+	}
 
 }

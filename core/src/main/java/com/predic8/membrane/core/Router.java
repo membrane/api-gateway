@@ -62,6 +62,9 @@ import com.predic8.membrane.core.util.URIFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import static com.predic8.membrane.core.jmx.JmxExporter.JMX_EXPORTER_NAME;
+import static java.util.stream.Collectors.toList;
+
 /**
  * @description <p>
  *              Membrane Service Proxy's main object.
@@ -93,7 +96,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	 * app context, we track them here, so they start only one
 	 * HotDeploymentThread.
 	 */
-	protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<ApplicationContext>();
+	protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<>();
 
 	private ApplicationContext beanFactory;
 	private String baseLocation;
@@ -158,6 +161,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		return (Router) beanFactory.getBean("router");
 	}
 
+	@SuppressWarnings("NullableProblems")
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		beanFactory = applicationContext;
@@ -202,7 +206,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
 	}
 
-	@MCChildElement(order=0)
+	@MCChildElement()
 	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
 		resolverMap.getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
 	}
@@ -270,14 +274,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	private void initRemainingRules() throws Exception {
-		List<Rule> otherRules = getRuleManager().getRules().stream().filter(r -> !(r instanceof InternalProxy)).collect(Collectors.toList());
-		for (Rule rule : otherRules)
+		for (Rule rule : getRuleManager().getRules().stream().filter(r -> !(r instanceof InternalProxy)).collect(toList()))
 			rule.init(this);
 	}
 
 	private void initInternalProxies() throws Exception {
-		List<Rule> internalProxies = getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).collect(Collectors.toList());
-		for (Rule rule : internalProxies)
+		for (Rule rule : getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).collect(toList()))
 			rule.init(this);
 	}
 
@@ -321,12 +323,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	private void startJmx() {
 		if(getBeanFactory() != null) {
 			try{
-				Object exporterObj = getBeanFactory().getBean(JmxExporter.JMX_EXPORTER_NAME);
-				if (exporterObj != null) {
-					((JmxExporter) exporterObj).initAfterBeansAdded();
-				}
+				((JmxExporter) getBeanFactory().getBean(JMX_EXPORTER_NAME)).initAfterBeansAdded();
 			}catch(NoSuchBeanDefinitionException ignored){
-				// If bean is not available, then dont start jmx
+				// If bean is not available, then don't start jmx
 			}
 		}
 	}
@@ -334,13 +333,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	private void initJmx() {
 		if (beanFactory != null) {
 			try {
-				Object exporterObj = beanFactory.getBean(JmxExporter.JMX_EXPORTER_NAME);
-				if (exporterObj != null) {
-					JmxExporter exporter = (JmxExporter) exporterObj;
-					String prefix = "org.membrane-soa:00=routers, name=";
-					//exporter.removeBean(prefix + jmxRouterName);
-					exporter.addBean(prefix + jmxRouterName, new JmxRouter(this, exporter));
-				}
+				JmxExporter exporter = (JmxExporter) beanFactory.getBean(JMX_EXPORTER_NAME);
+				//exporter.removeBean(prefix + jmxRouterName);
+				exporter.addBean("org.membrane-soa:00=routers, name=" + jmxRouterName, new JmxRouter(this, exporter));
 			}catch(NoSuchBeanDefinitionException ignored){
 				// If bean is not available, then dont init jmx
 			}
@@ -459,7 +454,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	 * is created by a Spring Application Context which supports monitoring.
 	 * </p>
 	 * @default true
-	 * @param hotDeploy
+	 * @param hotDeploy If true the hot deploy feature is activated
 	 */
 	@MCAttribute
 	public void setHotDeploy(boolean hotDeploy) {
@@ -490,7 +485,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	private ArrayList<Rule> getInactiveRules() {
-		ArrayList<Rule> inactive = new ArrayList<Rule>();
+		ArrayList<Rule> inactive = new ArrayList<>();
 		for (Rule rule : getRuleManager().getRules())
 			if (!rule.isActive())
 				inactive.add(rule);
@@ -558,6 +553,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		return jmxRouterName;
 	}
 
+	@SuppressWarnings("NullableProblems")
 	@Override
 	public void setBeanName(String s) {
 		this.id = s;

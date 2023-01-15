@@ -14,91 +14,86 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.apache.commons.io.FileUtils.copyFileToDirectory;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.*;
+import java.sql.*;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.io.File.separator;
+import static java.lang.Thread.sleep;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.io.FileUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LoggingJDBCTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
-		copyDerbyJarToMembraneLib("org.apache.derby.jdbc.EmbeddedDriver");
-		copyDerbyJarToMembraneLib("org.apache.derby.iapi.jdbc.JDBCBoot");
-		copyDerbyJarToMembraneLib("org.apache.derby.shared.common.error.StandardException");
+    @Override
+    protected String getExampleDirName() {
+        return "logging" + separator + "jdbc-database";
+    }
 
-		File baseDir = getExampleDir("logging-jdbc");
-		File beansConfig = new File(baseDir, "proxies.xml");
-		FileUtils.writeStringToFile(beansConfig, FileUtils.readFileToString(beansConfig).
-				replace("org.apache.derby.jdbc.ClientDriver", "org.apache.derby.jdbc.EmbeddedDriver").
-				replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true")
-				);
+    @Test
+    public void test() throws Exception {
+        copyDerbyLibraries();
 
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			getAndAssert200("http://localhost:2000/");
-		} finally {
-			sl.killScript();
-		}
+        writeStringToFile(new File(baseDir, "proxies.xml"),  readFileFromBaseDir("proxies.xml").
+                replace("org.apache.derby.jdbc.ClientDriver", "org.apache.derby.jdbc.EmbeddedDriver").
+                replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true"), UTF_8);
 
-		assertLogToDerbySucceeded(baseDir);
-	}
+        try (Process2 ignored = startServiceProxyScript()) {
+            getAndAssert200("http://localhost:2000/");
+        }
 
-	private void assertLogToDerbySucceeded(File baseDir)
-			throws InstantiationException, IllegalAccessException,
-			ClassNotFoundException, SQLException {
-		String driver = "org.apache.derby.jdbc.EmbeddedDriver";
-		Class.forName(driver).newInstance();
+        assertLogToDerbySucceeded();
+    }
 
-		File db = new File(baseDir, "derbyDB");
-		Connection conn = DriverManager.getConnection("jdbc:derby:" + db.getAbsolutePath().replace("\\", "/"));
-		try {
-			Statement stmt = conn.createStatement();
-			try {
-				ResultSet rs = stmt.executeQuery("select METHOD from MEMBRANE.STATISTIC");
-				try {
-					assertTrue(rs.next());
-					assertEquals("GET", rs.getString(1));
-				} finally {
-					rs.close();
-				}
-			} finally {
-				stmt.close();
-			}
-		} finally {
-			conn.close();
-		}
+    private void copyDerbyLibraries() throws IOException {
+        copyDerbyJarToMembraneLib("org.apache.derby.jdbc.EmbeddedDriver");
+        copyDerbyJarToMembraneLib("org.apache.derby.iapi.jdbc.JDBCBoot");
+        copyDerbyJarToMembraneLib("org.apache.derby.shared.common.error.StandardException");
+    }
 
-		try {
-			DriverManager.getConnection("jdbc:derby:;shutdown=true");
-		} catch (SQLException e) {
-			// do nothing
-		}
-	}
+    private void assertLogToDerbySucceeded() throws Exception {
+        sleep(1000); // We have to wait till the Membrane process is terminated, otherwise the derbyDB file is still used by Membrane
+        Class.forName("org.apache.derby.jdbc.EmbeddedDriver").getDeclaredConstructor().newInstance();
 
-	private void copyDerbyJarToMembraneLib(String clazz) throws IOException {
-		String classJar = getClass().getResource("/" + clazz.replace('.', '/') + ".class").getPath();
-		File derbyJar = new File(classJar.split("!")[0].substring(Process2.isWindows() ? 6 : 5));
+        try (Connection conn = getConnection()) {
+            try (Statement stmt = conn.createStatement()) {
+                //noinspection SqlResolve,SqlNoDataSourceInspection
+                try (ResultSet rs = stmt.executeQuery("select METHOD from MEMBRANE.STATISTIC")) {
+                    assertTrue(rs.next());
+                    assertEquals("GET", rs.getString(1));
+                }
+            }
+        }
+    }
 
-		if (!derbyJar.exists())
-			throw new AssertionError("derby jar not found in classpath (it's either missing or the detection logic broken). classJar=" + classJar);
+    private Connection getConnection() throws SQLException {
+        return DriverManager.getConnection("jdbc:derby:" + getDBFile("derbyDB").getAbsolutePath().replace("\\", "/"));
+    }
 
-		copyFileToDirectory(derbyJar, new File(getMembraneHome(), "lib"));
-	}
+    private File getDBFile(String derbyDB) {
+        return new File(baseDir, derbyDB);
+    }
 
+    private void copyDerbyJarToMembraneLib(String clazz) throws IOException {
 
+        File derbyJar = getDerbyJarFile(getClassJar(clazz));
+
+        if (!derbyJar.exists())
+            throw new AssertionError("derby jar not found in classpath (it's either missing or the detection logic broken). classJar=" + getClassJar(clazz));
+
+        copyFileToDirectory(derbyJar, new File(getMembraneHome(), "lib"));
+    }
+
+    private String getClassJar(String clazz) {
+        return requireNonNull(getClass().getResource("/" + clazz.replace('.', '/') + ".class")).getPath();
+    }
+
+    private File getDerbyJarFile(String classJar) {
+        return new File(classJar.split("!")[0].substring(Process2.isWindows() ? 6 : 5));
+    }
 }

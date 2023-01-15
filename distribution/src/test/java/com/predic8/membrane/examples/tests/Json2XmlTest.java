@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 import org.junit.jupiter.api.Test;
 
@@ -24,29 +24,26 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
+import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Json2XmlTest extends DistributionExtractingTestcase {
 
-    @Test
-    public void test() throws IOException, InterruptedException {
-        File baseDir = getExampleDir("json-2-xml");
-        BufferLogger b = new BufferLogger();
-        Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(b).start();
-        try {
-            String body = new String(Files.readAllBytes(Paths.get(baseDir + FileSystems.getDefault().getSeparator()
-                    + "customers.json")));
-            String[] headers = {"Content-Type", "application/json"};
-            String response = postAndAssert(200,"http://localhost:2000/", headers, body);
-            Thread.sleep(1000);
-
-            assertTrue(b.toString().contains("<count>269</count>"));
-
-        } finally {
-            sl.killScript();
-        }
+    @Override
+    protected String getExampleDirName() {
+        return "json-2-xml";
     }
 
-
+    @Test
+    public void test() throws Exception {
+        BufferLogger logger = new BufferLogger();
+        try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
+            sleep(1000);
+            postAndAssert(200,"http://localhost:2000/", new String[]{"Content-Type", APPLICATION_JSON}, readFileFromBaseDir("customers.json"));
+            sleep(500);
+            assertTrue(logger.toString().contains("<count>269</count>"));
+        }
+    }
 }

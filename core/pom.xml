@@ -51,6 +51,11 @@
 			<groupId>commons-discovery</groupId>
 			<artifactId>commons-discovery</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
+			<version>1.10.0</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
@@ -74,7 +79,7 @@
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
-			<version>20211205</version>
+			<version>20220924</version>
 		</dependency>
 
 		<dependency>
@@ -153,6 +158,29 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
+		</dependency>
+
+		<!-- Rhino Javascript Engine, for tests only. Will not be shipped! -->
+		<dependency>
+			<groupId>org.mozilla</groupId>
+			<artifactId>rhino-engine</artifactId>
+			<version>1.7.14</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.graalvm.sdk</groupId>
+			<artifactId>graal-sdk</artifactId>
+			<version>22.3.0</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- GraalVM Javascript Engine, for tests only. Will not be shipped! -->
+		<dependency>
+			<groupId>org.graalvm.js</groupId>
+			<artifactId>js</artifactId>
+			<version>22.3.0</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>

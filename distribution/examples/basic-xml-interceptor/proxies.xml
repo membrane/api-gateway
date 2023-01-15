@@ -28,7 +28,6 @@
 			</groovy>
     	</serviceProxy>
 
-		
 	</router>
 	
 </spring:beans>

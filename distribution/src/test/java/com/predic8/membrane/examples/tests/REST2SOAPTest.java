@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.examples.tests;
 
+import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
 import java.io.File;
@@ -22,22 +23,20 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 
 public class REST2SOAPTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("rest2soap");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			AssertUtils.assertContains("<ns1:bic>COLSDE33XXX</ns1:bic>", getAndAssert200("http://localhost:2000/bank/37050198"));
-			AssertUtils.assertContains("<ns1:bic>GENODE61KIR</ns1:bic>", getAndAssert200("http://localhost:2000/bank/66762332"));
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "rest2soap";
 	}
 
-
+	@Test
+	public void test() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			assertContains("<ns1:bic>COLSDE33XXX</ns1:bic>", getAndAssert200("http://localhost:2000/bank/37050198"));
+			assertContains("<ns1:bic>GENODE61KIR</ns1:bic>", getAndAssert200("http://localhost:2000/bank/66762332"));
+		}
+	}
 }

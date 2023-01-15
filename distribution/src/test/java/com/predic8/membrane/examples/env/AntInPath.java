@@ -18,10 +18,11 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.test.AssertUtils;
 
+import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AntInPath {
@@ -34,7 +35,7 @@ public class AntInPath {
 		BufferLogger antOutput = new BufferLogger();
 		Process2 ant = new Process2.Builder().in(new File(".")).executable("ant -version").withWatcher(antOutput).start();
 		assertEquals(0, ant.waitFor(20000));
-		AssertUtils.assertContains("Apache Ant", antOutput.toString());
+		assertContains("Apache Ant", antOutput.toString());
 	}
 
 }

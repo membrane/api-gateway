@@ -55,7 +55,7 @@ public class OAuth2RaceCondition {
     }
 
     @AfterEach
-    public void tearDown() throws MalformedURLException {
+    public void tearDown() {
         server.stop();
         client.stopAll();
     }
@@ -65,7 +65,6 @@ public class OAuth2RaceCondition {
         HttpClient hc = HttpClientBuilder.create().build();
 
         login(hc);
-        System.out.println("Logged in");
         ExecutorService executor = Executors.newFixedThreadPool(2);
         for (int i = 0; i < 10; i++) {
 

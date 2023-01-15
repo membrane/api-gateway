@@ -14,29 +14,23 @@
 
 package com.predic8.membrane.examples.util;
 
-import java.util.concurrent.TimeoutException;
-
-import com.google.common.base.Predicate;
-import com.predic8.membrane.examples.AbstractConsoleWatcher;
-import com.predic8.membrane.examples.Process2;
+import java.util.concurrent.*;
+import java.util.function.*;
 
 /**
  * Watches the console output until the predicate turns true.
  */
 public class WaitableConsoleEvent {
-	private AbstractConsoleWatcher watcher;
+	private ConsoleWatcher watcher;
 	private boolean event;
 
 	public WaitableConsoleEvent(final Process2 scriptLauncher, final Predicate<String> predicate) {
-		watcher = new AbstractConsoleWatcher() {
-			@Override
-			public void outputLine(boolean error, String line) {
-				if (predicate.apply(line)) {
-					synchronized (WaitableConsoleEvent.this) {
-						event = true;
-						scriptLauncher.removeConsoleWatcher(watcher);
-						WaitableConsoleEvent.this.notifyAll();
-					}
+		watcher = (error, line) -> {
+			if (predicate.test(line)) {
+				synchronized (WaitableConsoleEvent.this) {
+					event = true;
+					scriptLauncher.removeConsoleWatcher(watcher);
+					WaitableConsoleEvent.this.notifyAll();
 				}
 			}
 		};

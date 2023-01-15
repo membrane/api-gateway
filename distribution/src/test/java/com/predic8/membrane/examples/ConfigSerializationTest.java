@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.examples.config;
+package com.predic8.membrane.examples;
 
 import com.predic8.beautifier.PlainBeautifierFormatter;
 import com.predic8.beautifier.XMLBeautifier;
@@ -91,9 +91,6 @@ public class ConfigSerializationTest {
 			String xml = readConfigFileAsXML(configFile);
 
 			prettyPrint(xml);
-			//System.out.println(xml);
-
-			System.out.println("ConfigFile: " + configFile);
 
 			AssertUtils.assertContainsNot("incomplete serialization", xml);
 

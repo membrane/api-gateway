@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.examples.util;
 
-import com.predic8.membrane.examples.AbstractConsoleWatcher;
+public class BufferLogger implements ConsoleWatcher {
 
-public class BufferLogger extends AbstractConsoleWatcher {
+	private final StringBuffer b = new StringBuffer();
+	private final String newline = System.getProperty("line.separator");
 
-	private StringBuffer b = new StringBuffer();
-	private String newline = System.getProperty("line.separator");
+	public boolean contains(String s) {
+		return b.toString().contains(s);
+	}
 
 	@Override
 	public void outputLine(boolean error, String line) {

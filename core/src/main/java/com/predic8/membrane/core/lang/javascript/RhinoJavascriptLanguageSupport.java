@@ -18,23 +18,30 @@ import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
 import javax.script.*;
+import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.*;
 
-public class JavascriptLanguageSupport extends LanguageSupport {
+public class RhinoJavascriptLanguageSupport extends LanguageSupport {
 
-    private static final Logger log = LoggerFactory.getLogger(JavascriptLanguageSupport.class);
+    private static final Logger log = LoggerFactory.getLogger(RhinoJavascriptLanguageSupport.class);
 
-    private abstract class JavascriptScriptExecutorPool<R> extends ScriptExecutorPool<ScriptEngine,R>{
+
+    private abstract static class JavascriptScriptExecutorPool<R> extends ScriptExecutorPool<ScriptEngine,R>{
         private final String javascriptCode;
 
-        final ScriptEngineManager sce;
-        final static String javascriptEngineName = "JavaScript";
+        protected final ScriptEngineManager sce;
+        protected final static String javascriptEngineName = "rhino";
 
-        private JavascriptScriptExecutorPool(Router router, String expression) {
+        private JavascriptScriptExecutorPool(ExecutorService executorService, ClassLoader classLoader, String expression) {
             this.javascriptCode = expression;
-            sce = new ScriptEngineManager();
-            init(router);
+
+            // The ScriptEngineManager should search the engine in the classloader of the router
+            // otherwise the engine will not be found
+            sce = new ScriptEngineManager(classLoader);
+
+            init(executorService);
         }
 
         @Override
@@ -58,8 +65,8 @@ public class JavascriptLanguageSupport extends LanguageSupport {
     }
 
     @Override
-    public Function<Map<String, Object>, Boolean> compileExpression(Router router, String src) {
-        return new JavascriptScriptExecutorPool<>(router, getScriptWithImports(src)) {
+    public Function<Map<String, Object>, Boolean> compileExpression(ExecutorService executorService, ClassLoader classLoader, String src) {
+        return new JavascriptScriptExecutorPool<>(executorService, classLoader, src) {
             @Override
             public Boolean apply(Map<String, Object> parameters) {
                 Object result = this.execute(parameters);
@@ -71,21 +78,12 @@ public class JavascriptLanguageSupport extends LanguageSupport {
     }
 
     @Override
-    public Function<Map<String, Object>, Object> compileScript(Router router, String script) {
-        return new JavascriptScriptExecutorPool<>(router, getScriptWithImports(script)) {
+    public Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader classLoader, String script) {
+        return new JavascriptScriptExecutorPool<>(executorService, classLoader, script) {
             @Override
             public Object apply(Map<String, Object> parameters) {
                 return this.execute(parameters);
             }
         };
-    }
-
-    private String getScriptWithImports(String src) {
-        return "var imports = new JavaImporter(com.predic8.membrane.core.interceptor.Outcome," +
-                "com.predic8.membrane.core.http" +
-                ")\n" +
-                "with(imports){\n" +
-                src +
-                "\n}";
     }
 }

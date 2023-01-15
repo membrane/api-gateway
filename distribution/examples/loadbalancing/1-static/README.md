@@ -12,7 +12,7 @@ This example sets up a loadbalancer to distribute requests to 3 different nodes.
 
 Execute the following steps:
 
-1. Go to the `examples/loadbalancing/static` directory.
+1. Go to the `examples/loadbalancing/1-static` directory.
 2. Run `service-proxy.sh` or `service-proxy.bat` in a terminal.
 3. Open the URL:
 

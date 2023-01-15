@@ -17,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +40,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
@@ -56,20 +58,17 @@ public class ConsistentVersionNumbers {
 
 		validateBase(base);
 
-		handler = new Handler() {
-			@Override
-			public String handle(File file, String old) {
-				if (version == null)
-					version = old;
-				else {
-					try {
-						assertEquals(version, old);
-					} catch (RuntimeException e) {
-						throw new RuntimeException("in file " + file.getAbsolutePath(), e);
-					}
+		handler = (file, old) -> {
+			if (version == null)
+				version = old;
+			else {
+				try {
+					assertEquals(version, old);
+				} catch (RuntimeException e) {
+					throw new RuntimeException("in file " + file.getAbsolutePath(), e);
 				}
-				return old;
 			}
+			return old;
 		};
 
 		run(base);
@@ -77,30 +76,19 @@ public class ConsistentVersionNumbers {
 
 	public static void main(String[] args) throws Exception {
 		File base = new File("..");
-		//base = new File("C:\\Users\\tobias\\git\\membrane\\service-proxy");
-
 		validateBase(base);
 
-		handler = new Handler() {
-			@Override
-			public String handle(File file, String old) {
-				System.out.println(old + " " + file.getAbsolutePath());
-				return old;
-			}
+		handler = (file, old) -> {
+			System.out.println(old + " " + file.getAbsolutePath());
+			return old;
 		};
 
 		run(base);
 
 		System.out.println("Please enter the new version:");
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		final String version = br.readLine();
+		final String version = new BufferedReader(new InputStreamReader(System.in)).readLine();
 
-		handler = new Handler() {
-			@Override
-			public String handle(File file, String old) {
-				return version;
-			}
-		};
+		handler = (file, old) -> version;
 
 		run(base);
 	}
@@ -127,7 +115,7 @@ public class ConsistentVersionNumbers {
 	private static void recurse(File base, int i) throws Exception {
 		if (i == 0)
 			return;
-		for (File child : base.listFiles()) {
+		for (File child : requireNonNull(base.listFiles())) {
 			if (child.isFile() && child.getName().equals("pom.xml"))
 				handlePOM(child, true);
 			if (child.isFile() && child.getName().equals(".factorypath"))
@@ -137,7 +125,7 @@ public class ConsistentVersionNumbers {
 		}
 	}
 
-	private static void handlePOM(File child, boolean isPartOfProject) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerConfigurationException, TransformerException, TransformerFactoryConfigurationError {
+	private static void handlePOM(File child, boolean isPartOfProject) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerException, TransformerFactoryConfigurationError {
 		//System.out.println(child.getName());
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		//dbf.setNamespaceAware(true);
@@ -157,7 +145,7 @@ public class ConsistentVersionNumbers {
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(child));
 	}
 
-	private static void handleFactoryPath(File child) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerConfigurationException, TransformerException, TransformerFactoryConfigurationError {
+	private static void handleFactoryPath(File child) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerException, TransformerFactoryConfigurationError {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		//dbf.setNamespaceAware(true);
 		Document d = dbf.newDocumentBuilder().parse(child);
@@ -176,8 +164,7 @@ public class ConsistentVersionNumbers {
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(child));
 	}
 
-	private static interface Handler {
-		public String handle(File file, String old);
+	private interface Handler {
+		String handle(File file, String old);
 	}
-
 }

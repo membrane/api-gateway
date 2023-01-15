@@ -30,6 +30,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -60,30 +61,35 @@ public class HelpLinkExistenceTest {
 		StringBuilder errors = new StringBuilder();
 		for (Class<?> clazz : classes) {
 			if (Interceptor.class.isAssignableFrom(clazz)) {
-				Interceptor i = (Interceptor) clazz.newInstance();
+				Interceptor i = (Interceptor) clazz.getDeclaredConstructor().newInstance();
 				String helpId = i.getHelpId();
 
-				String url = "http://membrane-soa.org/service-proxy-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm";
-
-				Response r = hc.call(new Request.Builder().get(url).buildExchange()).getResponse();
+				Response r = hc.call(new Request.Builder().get(getDocumentationReferenceURL(helpId)).buildExchange()).getResponse();
 
 				if (r.getStatusCode() != 200)
-					errors.append(url + " returned " + r.getStatusCode() + "." + System.lineSeparator());
+					errors.append(getDocumentationReferenceURL(helpId))
+							.append(" returned ")
+							.append(r.getStatusCode())
+							.append(".")
+							.append(System.lineSeparator());
 			}
 		}
-		assertTrue(errors.length() == 0, errors.toString());
+		assertEquals(0, errors.length(), errors.toString());
+	}
+
+	private String getDocumentationReferenceURL(String helpId) {
+		return "http://membrane-soa.org/service-proxy-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm";
 	}
 
 	@SuppressWarnings("unchecked")
 	private Set<Class<?>> getElementClasses() {
 		try {
-			HashSet<Class<?>> currentSet = new HashSet<Class<?>>();
+			HashSet<Class<?>> currentSet = new HashSet<>();
 
-			BufferedReader r = new BufferedReader(new InputStreamReader(Router.class.getResourceAsStream("/META-INF/membrane.cache")));
-			try {
+			try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(Router.class.getResourceAsStream("/META-INF/membrane.cache"))))) {
 				if (!CACHE_FILE_FORMAT_VERSION.equals(r.readLine()))
 					throw new RuntimeException();
-				Class<? extends Annotation> annotationClass = null;
+				Class<? extends Annotation> annotationClass;
 				boolean collecting = false;
 				while (true) {
 					String line = r.readLine();
@@ -109,13 +115,10 @@ public class HelpLinkExistenceTest {
 						collecting = annotationClass.equals(MCElement.class);
 					}
 				}
-			} finally {
-				r.close();
 			}
 			return currentSet;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
 }

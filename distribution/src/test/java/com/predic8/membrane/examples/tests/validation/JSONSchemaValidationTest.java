@@ -14,34 +14,29 @@
 
 package com.predic8.membrane.examples.tests.validation;
 
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static org.apache.commons.io.FileUtils.readFileToString;
+import com.predic8.membrane.examples.tests.*;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.io.File.*;
+import static java.lang.Thread.sleep;
 
 public class JSONSchemaValidationTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("validation" + File.separator + "json-schema");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			for (int port : new int[] { 2000, 2001 }) {
-				Thread.sleep(1000);
-				postAndAssert(200, "http://localhost:" + port + "/", readFileToString(new File(baseDir, "good" + port + ".json")));
-				postAndAssert(400, "http://localhost:" + port + "/", readFileToString(new File(baseDir, "bad" + port + ".json")));
-			}
-
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "validation" + separator + "json-schema";
 	}
 
-
+	@Test
+	public void test() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			for (int port : new int[] { 2000, 2001 }) {
+				sleep(1000);
+				postAndAssert(200, "http://localhost:" + port + "/",readFileFromBaseDir("good" + port + ".json"));
+				postAndAssert(400, "http://localhost:" + port + "/",readFileFromBaseDir("bad" + port + ".json"));
+			}
+		}
+	}
 }

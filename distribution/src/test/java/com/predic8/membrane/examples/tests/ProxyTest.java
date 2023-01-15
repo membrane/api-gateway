@@ -21,22 +21,20 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 
 public class ProxyTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("proxy");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
-			getAndAssert200("http://localhost:2001/axis2/services/BLZService?wsdl");
-
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "proxy";
 	}
 
+	@Test
+	public void test() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
+			getAndAssert200("http://localhost:2001/axis2/services/BLZService?wsdl");
+		}
+	}
 }

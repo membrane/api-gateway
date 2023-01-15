@@ -1,9 +1,31 @@
+/*
+ *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
 import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
@@ -15,9 +37,9 @@ public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
 
     @Test
     public void notImplementedResponse() throws ParseException {
-        testNotImplementedResponse(200, "application/xml");
-        testNotImplementedResponse(201, "text/xml");
-        testNotImplementedResponse(202, "application/x-www-form-urlencoded");
+        testNotImplementedResponse(200, APPLICATION_XML);
+        testNotImplementedResponse(201, TEXT_XML);
+        testNotImplementedResponse(202, APPLICATION_X_WWW_FORM_URLENCODED);
     }
 
     private void testNotImplementedResponse(int statusCode, String mimeType) throws ParseException {
@@ -31,13 +53,9 @@ public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
 
     @Test
     public void notImplementedRequest() throws ParseException {
-        testNotImplementedRequest("application/xml","/application-xml");
-        testNotImplementedRequest("text/xml", "/text-xml");
-        testNotImplementedRequest("application/x-www-form-urlencoded", "/x-www-form-urlencoded");
-    }
-
-    private void testNotImplementedRequest(String mimeType) throws ParseException {
-        testNotImplementedRequest(mimeType,"/mimetypes" );
+        testNotImplementedRequest(APPLICATION_XML,"/application-xml");
+        testNotImplementedRequest(TEXT_XML, "/text-xml");
+        testNotImplementedRequest(APPLICATION_X_WWW_FORM_URLENCODED, "/x-www-form-urlencoded");
     }
 
     private void testNotImplementedRequest(String mimeType, String path) throws ParseException {

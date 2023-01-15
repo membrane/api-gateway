@@ -15,6 +15,7 @@ package com.predic8.membrane.examples.tests.integration;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.test.AssertUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,15 +24,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE;
+import static com.predic8.membrane.test.AssertUtils.getAndAssert;
+import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OAuth2Test {
 
-    public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(new Object[][] {
-                testParams(),
-                testParamsForSubPath()
-        });
+    public static Collection<Object[]> data() {
+        return asList(testParams(), testParamsForSubPath());
     }
 
     private static Object[] testParams() {
@@ -63,12 +67,16 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
+        getAndAssert200("http://localhost:2001" + clientBasePath);
+        AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=password");
+        assertEquals("Hello john.", getAndAssert200("http://localhost:2000" + serverBasePath + "/"));
+    }
+
+    private String[] getWWWFormEncodedContentTypeHeader() {
         String[] headers = new String[2];
         headers[0] = "Content-Type";
-        headers[1] = "application/x-www-form-urlencoded";
-        AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", headers, "target=&username=john&password=password");
-        assertEquals("Hello john.", AssertUtils.getAndAssert200("http://localhost:2000" + serverBasePath + "/"));
+        headers[1] = APPLICATION_X_WWW_FORM_URLENCODED;
+        return headers;
     }
 
     @ParameterizedTest(name = "{0}")
@@ -79,12 +87,9 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
-        String[] headers = new String[2];
-        headers[0] = "Content-Type";
-        headers[1] = "application/x-www-form-urlencoded";
-        assertEquals(true, AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", headers, "target=&username=john&password=wrongPassword").contains("Invalid password."));
-        AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        getAndAssert200("http://localhost:2001" + clientBasePath);
+        assertTrue(AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", getWWWFormEncodedContentTypeHeader(), "target=&username=john&password=wrongPassword").contains("Invalid password."));
+        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
     }
 
     @ParameterizedTest(name = "{0}")
@@ -95,9 +100,9 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath);
-        assertEquals(true, AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", "target=&username=john&password=password").contains("Invalid password."));
-        AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
+        getAndAssert200("http://localhost:2001" + clientBasePath);
+        assertTrue(AssertUtils.postAndAssert(200, "http://localhost:2000" + serverBasePath + "/login/", "target=&username=john&password=password").contains("Invalid password."));
+        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/");
     }
 
     @ParameterizedTest(name = "{0}")
@@ -108,7 +113,7 @@ public class OAuth2Test {
             String clientBasePath) throws Exception {
         setUp(proxies);
 
-        AssertUtils.getAndAssert(400, "http://localhost:2000" + serverBasePath + "/oauth2/auth");
+        getAndAssert(400, "http://localhost:2000" + serverBasePath + "/oauth2/auth");
     }
 
     @ParameterizedTest(name = "{0}")
@@ -120,11 +125,11 @@ public class OAuth2Test {
         setUp(proxies);
 
         testGoodLoginRequest(proxies, serverBasePath, clientBasePath);
-        AssertUtils.getAndAssert200("http://localhost:2001" + clientBasePath + "/login/logout");
+        getAndAssert200("http://localhost:2001" + clientBasePath + "/login/logout");
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() {
         router.stopAll();
         router = null;
     }

@@ -16,6 +16,7 @@ package com.predic8.membrane.test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -57,6 +58,11 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.util.EntityUtils;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.io.FileUtils.writeStringToFile;
+import static org.apache.http.client.protocol.HttpClientContext.CREDS_PROVIDER;
+import static org.apache.http.client.protocol.HttpClientContext.TARGET_AUTH_STATE;
+import static org.apache.http.protocol.HttpCoreContext.HTTP_TARGET_HOST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AssertUtils {
@@ -88,6 +94,7 @@ public class AssertUtils {
 	}
 
 	public static String getAndAssert(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
+		HttpResponse result;
 		if (hc == null)
 			hc = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet(url);
@@ -106,13 +113,37 @@ public class AssertUtils {
 		} finally {
 			get.releaseConnection();
 		}
+
 	}
 
-	public static String postAndAssert200(String url, String body) throws ClientProtocolException, IOException {
+	public static HttpResponse getAndAssertWithResponse(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
+		if (hc == null)
+			hc = HttpClientBuilder.create().build();
+		HttpGet get = new HttpGet(url);
+		try {
+			if (header != null)
+				for (int i = 0; i < header.length; i += 2)
+					get.addHeader(header[i], header[i+1]);
+			HttpResponse res = hc.execute(get);
+			try {
+				assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+			} catch (AssertionError e) {
+				throw new AssertionError(e.getMessage() + " while fetching " + url);
+			}
+			System.out.println(res);
+			res.getEntity();
+			return res;
+		} finally {
+			get.releaseConnection();
+		}
+	}
+
+	public static String postAndAssert200(String url, String body) throws IOException {
+		System.out.println("url = " + url + ", body = " + body);
 		return postAndAssert(200, url, body);
 	}
 
-	public static String assertStatusCode(int expectedHttpStatusCode, HttpUriRequest request) throws ClientProtocolException, IOException {
+	public static String assertStatusCode(int expectedHttpStatusCode, HttpUriRequest request) throws IOException {
 		if (hc == null)
 			hc = HttpClientBuilder.create().build();
 		HttpResponse res = hc.execute(request);
@@ -120,11 +151,11 @@ public class AssertUtils {
 		return EntityUtils.toString(res.getEntity());
 	}
 
-	public static String postAndAssert(int expectedHttpStatusCode, String url, String body) throws ClientProtocolException, IOException {
+	public static String postAndAssert(int expectedHttpStatusCode, String url, String body) throws IOException {
 		return postAndAssert(expectedHttpStatusCode, url, new String[0], body);
 	}
 
-	public static String postAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws ClientProtocolException, IOException {
+	public static String postAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
 		if (hc == null)
 			hc = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(url);
@@ -154,26 +185,28 @@ public class AssertUtils {
 		Credentials defaultcreds = new UsernamePasswordCredentials(user, pass);
 		BasicCredentialsProvider bcp = new BasicCredentialsProvider();
 		bcp.setCredentials(new AuthScope(host, port, AuthScope.ANY_REALM), defaultcreds);
-		HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
-			public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
-				AuthState authState = (AuthState) context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
-				CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(HttpClientContext.CREDS_PROVIDER);
-				HttpHost targetHost = (HttpHost) context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST);
-				if (authState.getAuthScheme() == null) {
-					AuthScope authScope = new AuthScope(targetHost.getHostName(), targetHost.getPort());
-					Credentials creds = credsProvider.getCredentials(authScope);
-					if (creds != null) {
-						authState.update(new BasicScheme(), creds);
-					}
+		HttpRequestInterceptor preemptiveAuth = (request, context) -> {
+			AuthState authState = (AuthState) context.getAttribute(TARGET_AUTH_STATE);
+			if (authState.getAuthScheme() == null) {
+				Credentials creds = getCredentials(context);
+				if (creds != null) {
+					authState.update(new BasicScheme(), creds);
 				}
 			}
 		};
-		HttpClient hc = HttpClientBuilder.create()
+		return HttpClientBuilder.create()
 				.setDefaultCookieStore(new BasicCookieStore())
 				.setDefaultCredentialsProvider(bcp)
 				.addInterceptorFirst(preemptiveAuth)
 				.build();
-		return hc;
+	}
+
+	private static Credentials getCredentials(HttpContext context) {
+		return ((CredentialsProvider) context.getAttribute(CREDS_PROVIDER)).getCredentials(getAuthScope((HttpHost) context.getAttribute(HTTP_TARGET_HOST)));
+	}
+
+	private static AuthScope getAuthScope(HttpHost targetHost) {
+		return new AuthScope(targetHost.getHostName(), targetHost.getPort());
 	}
 
 	public static void trustAnyHTTPSServer(int port) throws NoSuchAlgorithmException, KeyManagementException {
@@ -185,22 +218,19 @@ public class AssertUtils {
 			}
 
 			@Override
-			public void checkServerTrusted(X509Certificate[] arg0, String arg1)
-					throws CertificateException {
+			public void checkServerTrusted(X509Certificate[] arg0, String arg1) {
 			}
 
 			@Override
-			public void checkClientTrusted(X509Certificate[] arg0, String arg1)
-					throws CertificateException {
+			public void checkClientTrusted(X509Certificate[] arg0, String arg1) {
 			}
 		} }, new SecureRandom());
 
-		SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(context, NoopHostnameVerifier.INSTANCE);
-		hc = HttpClientBuilder.create().setSSLSocketFactory(sslsf).build();
+		hc = HttpClientBuilder.create().setSSLSocketFactory(new SSLConnectionSocketFactory(context, NoopHostnameVerifier.INSTANCE)).build();
 	}
 
 	public static void replaceInFile(File file, String from, String to_) throws IOException {
-		FileUtils.writeStringToFile(file, FileUtils.readFileToString(file).replace(from, to_));
+		writeStringToFile(file, FileUtils.readFileToString(file, UTF_8).replace(from, to_), UTF_8);
 
 	}
 
@@ -210,5 +240,4 @@ public class AssertUtils {
 			hc = null;
 		}
 	}
-
 }

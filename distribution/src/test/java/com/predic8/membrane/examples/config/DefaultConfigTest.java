@@ -12,29 +12,40 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.env;
+package com.predic8.membrane.examples.config;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static com.predic8.membrane.test.AssertUtils.replaceInFile;
 import static com.predic8.membrane.test.AssertUtils.setupHTTPAuthentication;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.*;
 
-import com.predic8.membrane.examples.util.ConsoleLogger;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.ProxiesXmlUtil;
+import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.examples.util.ProxiesXmlUtil;
 
 public class DefaultConfigTest extends DistributionExtractingTestcase {
 
+	@Override
+	protected String getExampleDirName() {
+		return "..";
+	}
+
+	@BeforeEach
+	void setup() {
+		baseDir = getMembraneHome();
+	}
+
 	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getMembraneHome();
+	public void test() throws Exception {
 
 		File proxies = new File(baseDir, "conf/proxies.xml");
 		File proxiesFull = new File(baseDir, "conf/proxies-full-sample.xml");
@@ -42,19 +53,14 @@ public class DefaultConfigTest extends DistributionExtractingTestcase {
 		replaceInFile(proxies, "9000", "2003");
 		replaceInFile(proxiesFull, "9000", "2003");
 
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
+		try(Process2 sl = startServiceProxyScript()) {
 			setupHTTPAuthentication("localhost", 2003, "admin", "membrane");
 			assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:2003/admin/"));
 
-			ProxiesXmlUtil pxu = new ProxiesXmlUtil(proxies);
-			pxu.updateWith(FileUtils.readFileToString(proxiesFull), sl);
+			new ProxiesXmlUtil(proxies).updateWith(readFileToString(proxiesFull, UTF_8), sl);
 
 			setupHTTPAuthentication("localhost", 2001, "admin", "membrane");
 			assertContains("Routing Configuration", getAndAssert200("http://localhost:2001/static/proxies.xml"));
-		} finally {
-			sl.killScript();
 		}
 	}
-
 }

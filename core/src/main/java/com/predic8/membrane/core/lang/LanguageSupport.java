@@ -15,14 +15,17 @@
 package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.util.*;
 
+import java.io.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.*;
 
 public abstract class LanguageSupport {
 
-	public abstract Function<Map<String, Object>, Boolean> compileExpression(Router router, String expression);
+	public abstract Function<Map<String, Object>, Boolean> compileExpression(ExecutorService executorService, ClassLoader classLoader, String expression) throws IOException, ClassNotFoundException;
 
-	public abstract Function<Map<String, Object>, Object> compileScript(Router router, String script);
+	public abstract Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader classLoader, String script) throws IOException, ClassNotFoundException;
 
 }

@@ -17,8 +17,6 @@ import com.predic8.membrane.examples.tests.integration.OAuth2Test;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
-import com.predic8.membrane.examples.config.ConfigSerializationTest;
-
 @Suite
 @SelectClasses({
 	ConfigSerializationTest.class,

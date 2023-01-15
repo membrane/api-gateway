@@ -12,9 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.tests;
-
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+package com.predic8.membrane.examples.tests.ssl;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,24 +22,25 @@ import java.security.NoSuchAlgorithmException;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.test.AssertUtils;
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
 
-public class SSLClient extends DistributionExtractingTestcase {
+import static com.predic8.membrane.test.AssertUtils.*;
 
-	@Test
-	public void test() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
-		File baseDir = getExampleDir("ssl-client");
+public class SSLServerApiWithTlsTest extends DistributionExtractingTestcase {
 
-		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "8080", "3023");
-
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			AssertUtils.assertContains("<title>Google", getAndAssert200("http://localhost:3023/"));
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "ssl/api-with-tls";
 	}
 
+	@Test
+	public void test() throws Exception {
+		replaceInFile2("proxies.xml", "443", "3023");
 
+		try(Process2 ignored = startServiceProxyScript()) {
+			trustAnyHTTPSServer(3023);
+			assertContains("success", getAndAssert200("https://localhost:3023/axis2/services/BLZService?wsdl"));
+		}
+	}
 }

@@ -14,30 +14,22 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.test.AssertUtils;
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import static com.predic8.membrane.test.AssertUtils.*;
 
 public class RewriterTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("rewriter");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			String result = getAndAssert200("http://localhost:2000/bank/services/BLZService?wsdl");
-			AssertUtils.assertContains("wsdl:documentation", result);
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "rewriter";
 	}
 
-
+	@Test
+	public void test() throws Exception {
+		try(Process2 ignore = startServiceProxyScript()) {
+			assertContains("wsdl:documentation", getAndAssert200(BLZ_SERVICE_WSDL));
+		}
+	}
 }

@@ -14,26 +14,17 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+
+import javax.annotation.*;
+import java.io.*;
 import java.net.*;
-import java.net.BindException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.security.InvalidParameterException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.predic8.membrane.core.util.TimerManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.transport.PortOccupiedException;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-
-import javax.annotation.Nullable;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 public class HttpEndpointListener extends Thread {
 
@@ -43,14 +34,14 @@ public class HttpEndpointListener extends Thread {
 	private final ServerSocket serverSocket;
 	private final HttpTransport transport;
 	private final SSLProvider sslProvider;
-	private final ConcurrentHashMap<Socket, Boolean> idleSockets = new ConcurrentHashMap<Socket, Boolean>();
-	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<Socket, Boolean>();
+	private final ConcurrentHashMap<Socket, Boolean> idleSockets = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<InetAddress, ClientInfo> ipConnectionCount = new ConcurrentHashMap<>();
 	private TimerManager timerManager; // a TimerManager we have created ourselves
 
 	private volatile boolean closed;
 
-	private class ClientInfo {
+	private static class ClientInfo {
 		public AtomicInteger count;
 		public volatile long lastUse;
 
@@ -212,16 +203,12 @@ public class HttpEndpointListener extends Thread {
 		}
 	}
 
-	void setOpenStatus(Socket socket, boolean isOpen) {
-		if (isOpen)
-			throw new InvalidParameterException("isOpen");
+	void setOpenStatus(Socket socket) {
 		openSockets.remove(socket);
 
-		InetAddress remoteIp = getRemoteIp(socket);
-		ClientInfo clientInfo = ipConnectionCount.get(remoteIp);
+		ClientInfo clientInfo = ipConnectionCount.get(getRemoteIp(socket));
 		if (clientInfo != null) {
-			AtomicInteger connectionCount = clientInfo.count;
-			connectionCount.decrementAndGet();
+			clientInfo.count.decrementAndGet();
 		}
 	}
 
@@ -251,16 +238,19 @@ public class HttpEndpointListener extends Thread {
 				.append("Concurrent connection limit reached for IP: ").append(ip.toString()).append(System.lineSeparator())
 				.append("Received the following content").append(System.lineSeparator())
 				.append("===START===").append(System.lineSeparator())
-				.append(new String(receivedContent.getKey(),0,receivedContent.getValue().intValue())).append(System.lineSeparator())
+				.append(new String(receivedContent.getKey(),0, receivedContent.getValue())).append(System.lineSeparator())
 				.append("===END===").toString();
 	}
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	private AbstractMap.SimpleEntry<byte[],Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
 		int available = sourceSocket.getInputStream().available();
 		int offset = 0;
 		while(available > 0){
 			if(available > buffer.length-offset){
 				available = buffer.length-offset;
+
+				//noinspection ResultOfMethodCallIgnored
 				sourceSocket.getInputStream().read(buffer,offset,available);
 				offset += available;
 				break;

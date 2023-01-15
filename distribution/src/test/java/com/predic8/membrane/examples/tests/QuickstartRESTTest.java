@@ -14,27 +14,31 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.*;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.ProxiesXmlUtil;
+import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.examples.util.ProxiesXmlUtil;
 import com.predic8.membrane.test.AssertUtils;
 
 public class QuickstartRESTTest extends DistributionExtractingTestcase {
 
+	@Override
+	protected String getExampleDirName() {
+		return "quickstart-rest";
+	}
+
 	@Test
 	public void doit() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("quickstart-rest");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
+		Process2 sl = startServiceProxyScript();
 		try {
 			String result = getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
 			assertContains("Italy", result);
@@ -75,15 +79,12 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 			assertContains("Italy, Spain", result);
 			assertContainsNot(",<", result);
 
-			String csvLog = FileUtils.readFileToString(new File(baseDir, "log.csv"));
-			assertContains("Pia", csvLog);
+			assertContains("Pia", readFileFromBaseDir("log.csv"));
 
-			AssertUtils.setupHTTPAuthentication("localhost", 9000, "alice", "membrane");
-			result = getAndAssert200("http://localhost:9000/admin/");
-			assertContains("ServiceProxies", result);
+			setupHTTPAuthentication("localhost", 9000, "alice", "membrane");
+			assertContains("ServiceProxies", getAndAssert200("http://localhost:9000/admin/"));
 		} finally {
 			sl.killScript();
 		}
 	}
-
 }

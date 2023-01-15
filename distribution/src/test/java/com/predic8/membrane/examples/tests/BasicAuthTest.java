@@ -24,18 +24,22 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 
 public class BasicAuthTest extends DistributionExtractingTestcase {
 	public static final String CUSTOMER_HOST_LOCAL = "http://localhost:2000/";
 	public static final String CUSTOMER_HOST_REMOTE = "http://www.thomas-bayer.com/";
 	public static final String CUSTOMER_PATH = "samples/sqlrest/CUSTOMER/7/";
 
+
+	@Override
+	protected String getExampleDirName() {
+		return "basic-auth";
+	}
+
 	@Test
 	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("basic-auth");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
+		Process2 sl = startServiceProxyScript();
 		try {
 			disableHTTPAuthentication();
 			getAndAssert(401, CUSTOMER_HOST_LOCAL + CUSTOMER_PATH);
@@ -46,5 +50,4 @@ public class BasicAuthTest extends DistributionExtractingTestcase {
 			sl.killScript();
 		}
 	}
-
 }

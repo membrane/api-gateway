@@ -142,16 +142,16 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (SocketException se) {
 			log.debug("client socket closed");
 		} catch (SSLException s) {
+			SSLException ex = s;
 			if(showSSLExceptions) {
-				if (s.getCause() instanceof SSLException)
-					s = (SSLException) s.getCause();
-				if (s.getCause() instanceof SocketException)
+				if (ex.getCause() instanceof SSLException cause) {
+					ex = cause;
+				}
+				if (ex.getCause() instanceof SocketException)
 					log.debug("ssl socket closed");
 				else
-					log.error("", s);
+					log.error("", ex);
 			}
-		} catch (IOException e) {
-			log.error("", e);
 		} catch (EndOfStreamException e) {
 			log.debug("stream closed");
 		} catch (AbortException e) {
@@ -165,10 +165,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 					+ e.getLineSoFar() + ")");
 		} catch (Exception e) {
 			log.error("", e);
-		}
-
-		finally {
-			endpointListener.setOpenStatus(rawSourceSocket, false);
+		} finally {
+			endpointListener.setOpenStatus(rawSourceSocket);
 
 			if (boundConnection != null)
 				try {
@@ -183,7 +181,6 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 			updateThreadName(false);
 		}
-
 	}
 
 	private void closeConnections() {
@@ -266,7 +263,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			sb.append(" ");
 			InetAddress ia = sourceSocket.getInetAddress();
 			if (ia != null)
-				sb.append(ia.toString());
+				sb.append(ia);
 			sb.append(":");
 			sb.append(sourceSocket.getPort());
 			Thread.currentThread().setName(sb.toString());

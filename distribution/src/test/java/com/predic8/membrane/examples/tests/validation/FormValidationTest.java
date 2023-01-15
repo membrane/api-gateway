@@ -15,28 +15,28 @@
 package com.predic8.membrane.examples.tests.validation;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert;
+import static java.io.File.separator;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
 
 public class FormValidationTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("validation" + File.separator + "form");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			getAndAssert(400, "http://localhost:2000/?name=Abcde0");
-			getAndAssert(200, "http://localhost:2000/?name=Abcde");
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "validation" + separator + "form";
 	}
 
-
+	@Test
+	public void test() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			getAndAssert(400, "http://localhost:2000/?name=Abcde0");
+			getAndAssert(200, "http://localhost:2000/?name=Abcde");
+		}
+	}
 }

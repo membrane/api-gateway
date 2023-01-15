@@ -14,151 +14,44 @@
 package com.predic8.membrane.core.interceptor.javascript;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.javascript.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
-import org.apache.commons.lang3.*;
+import org.slf4j.*;
 
 import java.io.*;
-import java.util.*;
-import java.util.function.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 @MCElement(name = "javascript", mixed = true)
-public class JavascriptInterceptor extends AbstractInterceptor {
+public class JavascriptInterceptor extends AbstractScriptInterceptor {
 
-    private String src = "";
+    private static final Logger log = LoggerFactory.getLogger(JavascriptInterceptor.class);
 
-    private Function<Map<String, Object>, Object> script;
-    private JavascriptLanguageSupport jls;
-    private HashMap<String, Object> implicitClasses;
+    protected LanguageAdapter adapter;
 
     public JavascriptInterceptor() {
         name = "Javascript";
     }
 
-    @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        return runScript(exc, Flow.REQUEST);
-    }
+    protected void initInternal() throws IOException, ClassNotFoundException {
+        // For tests to set an adapter from outside.
+        if (adapter == null)
+            adapter = LanguageAdapter.instance(router);
 
-    @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return runScript(exc, Flow.RESPONSE);
-    }
-
-    @Override
-    public void handleAbort(Exchange exc) {
-        try {
-            runScript(exc, ABORT);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void init() throws IOException, ClassNotFoundException {
-        if (router == null)
-            return;
-        if ("".equals(src))
-            return;
-
-        jls = new JavascriptLanguageSupport();
-        implicitClasses = getJavascriptTypesForHttpClasses();
-        script = jls.compileScript(router, src);
-
-    }
-
-    private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, IOException, ClassNotFoundException {
-        HashMap<String, Object> parameters = new HashMap<>();
-        parameters.put("exc", exc);
-        parameters.put("flow", flow);
-        parameters.put("spring", router.getBeanFactory());
-        addOutcomeObjects(parameters);
-
-        parameters.putAll(implicitClasses);
-        Object res = script.apply(parameters);
-
-        if (res instanceof Outcome) {
-            return (Outcome) res;
-        }
-
-        if (res instanceof Response) {
-            exc.setResponse((Response) res);
-            return RETURN;
-        }
-
-        if (res instanceof Request) {
-            exc.setRequest((Request) res);
-        }
-        return CONTINUE;
-
-    }
-
-    private HashMap<String, Object> getJavascriptTypesForHttpClasses() throws IOException, ClassNotFoundException {
-        return getJavascriptTypesForClasses(getHttpPackageClasses());
-    }
-
-    private HashMap<String, Object> getJavascriptTypesForClasses(HashMap<String, Object> classes) {
-        HashMap<String, Object> result = new HashMap<>();
-        for(Object clazz : classes.values()){
-            Class<?> clazzz = (Class<?>) clazz;
-            String scriptSrc = clazzz.getSimpleName() + ".static;";
-            //TODO this is hacky, do this differently ( maybe do this one time at startup )
-            Object jsType = jls.compileScript(router, scriptSrc).apply(classes);
-
-            result.put(clazzz.getSimpleName(),jsType);
-        }
-        return result;
-    }
-
-    private void addOutcomeObjects(HashMap<String, Object> parameters) {
-        parameters.put("Outcome", Outcome.class);
-        parameters.put("RETURN", RETURN);
-        parameters.put("CONTINUE", CONTINUE);
-        parameters.put("ABORT", Outcome.ABORT);
-    }
-
-    private HashMap<String, Object> getHttpPackageClasses() throws IOException, ClassNotFoundException {
-        String httpPackage = "com.predic8.membrane.core.http";
-        HashMap<String, Object> result = new HashMap<>();
-        List<Class<?>> classes = ClassFinder.find(router.getBeanFactory().getClassLoader(), httpPackage);
-        for(Class c : classes) {
-            if(c.getPackage().getName().equals(httpPackage) && !c.getSimpleName().isEmpty())
-                result.put(c.getSimpleName(), c);
-        }
-        return result;
-    }
-
-    public String getSrc() {
-        return src;
-    }
-
-    @MCTextContent
-    public void setSrc(String src) {
-        this.src = src;
+        script = adapter.compileScript(src);
     }
 
     @Override
     public String getShortDescription() {
-        return "Executes a Javascript script.";
+        return "Executes Javascript.";
     }
 
     @Override
     public String getLongDescription() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(TextUtil.removeFinalChar(getShortDescription()));
-        sb.append(":<br/><pre style=\"overflow-x:auto\">");
-        sb.append(StringEscapeUtils.escapeHtml4(TextUtil.removeCommonLeadingIndentation(src)));
-        sb.append("</pre>");
-        return sb.toString();
+        return removeFinalChar(getShortDescription()) +
+               ":<br/><pre style=\"overflow-x:auto\">" +
+               escapeHtml4(TextUtil.removeCommonLeadingIndentation(src)) +
+               "</pre>";
     }
 }

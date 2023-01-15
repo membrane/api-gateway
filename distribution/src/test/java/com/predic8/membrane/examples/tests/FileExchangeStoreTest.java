@@ -15,65 +15,57 @@
 package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static java.io.File.createTempFile;
+import static java.lang.Thread.sleep;
+import static java.util.Calendar.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.Calendar;
 
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 
 public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 
+	@Override
+	protected String getExampleDirName() {
+		return "file-exchangestore";
+	}
+
 	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("file-exchangestore");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
+	public void test() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
 			getAndAssert200("http://localhost:2000/");
 
-			Thread.sleep(1000);
+			sleep(300);
 
-			File exchangesDir = new File(baseDir, "exchanges");
-			if (!containsRecursively(exchangesDir, new FilenameFilter() {
-				@Override
-				public boolean accept(File dir, String name) {
-					return name.endsWith(".msg");
-				}
-			}))
+			if (!containsRecursively(new File(baseDir, "exchanges"), this::filterDotMsg))
 				throw new AssertionError("Did not find *.msg in exchanges dir.");
-		} finally {
-			sl.killScript();
 		}
+	}
+
+	private boolean filterDotMsg(File dir, String name) {
+		return name.endsWith(".msg");
 	}
 
 	@Test
 	public void testDeleteOldFolders() throws Exception {
 
-		Calendar c = Calendar.getInstance();
-		c.set(Calendar.YEAR, 2015);
-		c.set(Calendar.MONTH, 2); // 2 = March
-		c.set(Calendar.DAY_OF_MONTH, 15);
+		File t = createTempFile("fes", null);
 
-		File t = File.createTempFile("fes", null);
+		//noinspection ResultOfMethodCallIgnored
 		t.delete();
 
 		File base = new File(t, "FileExchangeStoreTest");
+
+		//noinspection ResultOfMethodCallIgnored
 		base.mkdirs();
 
-		for (int m = 1; m<=3; m++)
-			for (int d = 1; d<=31; d++)
-				if (!(m == 2 && d > 28))
-					new File(base, "2015/"+m+"/"+d).mkdirs();
-
-		FileExchangeStore fes = new FileExchangeStore();
-		fes.setDir(base.getAbsolutePath());
-		fes.setMaxDays(30);
+		renameMe(base);
 
 		// before
 		for (int m = 1; m<=3; m++)
@@ -81,7 +73,7 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 				if (!(m == 2 && d > 28))
 					assertTrue(new File(base, "2015/"+m+"/"+d).exists());
 
-		fes.deleteOldFolders(c);
+		getFileExchangeStore(base).deleteOldFolders(getCalendar());
 
 		// after
 		for (int d = 1; d<=31; d++)
@@ -97,16 +89,41 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 		recursiveDelete(base);
 	}
 
+	private void renameMe(File base) {
+		for (int m = 1; m<=3; m++)
+			for (int d = 1; d<=31; d++)
+				if (!(m == 2 && d > 28))
+					//noinspection ResultOfMethodCallIgnored
+					new File(base, "2015/"+m+"/"+d).mkdirs();
+	}
+
+	private Calendar getCalendar() {
+		Calendar c = Calendar.getInstance();
+		c.set(YEAR, 2015);
+		c.set(MONTH, 2); // 2 = March
+		c.set(DAY_OF_MONTH, 15);
+		return c;
+	}
+
+	private FileExchangeStore getFileExchangeStore(File base) {
+		FileExchangeStore fes = new FileExchangeStore();
+		fes.setDir(base.getAbsolutePath());
+		fes.setMaxDays(30);
+		return fes;
+	}
+
 	private void recursiveDelete(File file) {
 		if (file.isDirectory())
+
+			//noinspection ConstantConditions
 			for (File child : file.listFiles())
 				recursiveDelete(child);
 		if (!file.delete())
 			throw new RuntimeException("could not delete " + file.getAbsolutePath());
 	}
 
-
 	private boolean containsRecursively(File base, FilenameFilter filter) {
+		//noinspection ConstantConditions
 		for (File f : base.listFiles()) {
 			if (f.isDirectory())
 				if (containsRecursively(f, filter))
@@ -116,5 +133,4 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 		}
 		return false;
 	}
-
 }

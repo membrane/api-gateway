@@ -76,9 +76,9 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	private Header createHeaderFields(Exchange exc) {
 		Header hd = new Header();
 		hd.add("Date", dateFormatter.print(DateTime.now()));
-		hd.add("X-LimitDuration", PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()));
+		hd.add("X-LimitDuration", rateLimitStrategy.getLimitDurationPeriod());
 		hd.add("X-LimitRequests", Integer.toString(rateLimitStrategy.requestLimit));
-		hd.add("X-LimitReset", Long.toString(rateLimitStrategy.getServiceAvailableAgainTime(exc.getRemoteAddrIp()).getMillis()));
+		hd.add("X-LimitReset", rateLimitStrategy.getLimitReset(exc.getRemoteAddrIp()));
 		return hd;
 	}
 

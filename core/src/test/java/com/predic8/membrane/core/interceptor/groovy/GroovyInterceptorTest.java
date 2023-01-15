@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.groovy;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -38,12 +39,13 @@ public class GroovyInterceptorTest {
 		exc.setRequest(new Request());
 
 		GroovyInterceptor i = new GroovyInterceptor();
-		i.setSrc("exc.setProperty('foo', 'bar')\n"+
-				"def b = spring.getBean('abc')\n"+
-				"CONTINUE");
+		i.setSrc("""
+				exc.setProperty('foo', 'bar')
+				def b = spring.getBean('abc')
+				CONTINUE""");
 		i.init(r);
 
-		assertEquals(Outcome.CONTINUE, i.handleRequest(exc));
+		assertEquals(CONTINUE, i.handleRequest(exc));
 		assertEquals("bar", exc.getProperty("foo"));
 		verify(applicationContext, times(1)).getBean("abc");
 	}

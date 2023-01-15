@@ -14,47 +14,31 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
+import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BasicXmlInterceptorTest extends DistributionExtractingTestcase {
-    @Test
-    public void test() throws IOException, InterruptedException, ParserConfigurationException, SAXException {
-        File baseDir = getExampleDir("basic-xml-interceptor");
 
-        BufferLogger b = new BufferLogger();
-        Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(b).start();
-        try {
-            int exitCode = mvn.waitFor(60000);
-            if (exitCode != 0)
-                throw new RuntimeException("Maven exited with code " + exitCode + ": " + b.toString());
-        } finally {
-            mvn.killScript();
-        }
-
-        BufferLogger p = new BufferLogger();
-        Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(p).start();
-        try {
-            String body = new String(Files.readAllBytes(Paths.get(baseDir + FileSystems.getDefault().getSeparator()
-                    + "example.xml")));
-            postAndAssert(200,"http://localhost:2000/", new String[]{"Content-Type", "application/xml"}, body);
-            assertTrue(p.toString().contains("<date>"));
-        } finally {
-            sl.killScript();
-        }
+    @Override
+    protected String getExampleDirName() {
+        return "basic-xml-interceptor";
     }
 
+    @Test
+    public void test() throws Exception {
+        BufferLogger logger = new BufferLogger();
+        try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(logger).start()) {
+            if (mvn.waitFor(60000) != 0)
+                throw new RuntimeException("Maven exited with code " + mvn.waitFor(60000) + ": " + logger);
+        }
+
+        logger = new BufferLogger();
+        try(Process2 ignored = startServiceProxyScript(logger)) {
+            postAndAssert(200,URL_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("example.xml"));
+            assertTrue(logger.contains("<date>"));
+        }
+    }
 }

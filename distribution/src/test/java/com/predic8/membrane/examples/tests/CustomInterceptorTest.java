@@ -14,8 +14,7 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
@@ -27,29 +26,24 @@ import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CustomInterceptorTest extends DistributionExtractingTestcase {
-    @Test
-    public void test() throws IOException, InterruptedException {
-        File baseDir = getExampleDir("custom-interceptor");
 
-        BufferLogger b = new BufferLogger();
-        Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(b).start();
-        try {
-            int exitCode = mvn.waitFor(60000);
-            if (exitCode != 0)
-                throw new RuntimeException("Maven exited with code " + exitCode + ": " + b.toString());
-        } finally {
-            mvn.killScript();
-        }
-
-
-        Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-        try {
-            SubstringWaitableConsoleEvent invoked = new SubstringWaitableConsoleEvent(sl, "MyInterceptor maven at request invoked.");
-            getAndAssert200("http://localhost:2000/");
-            assertTrue(invoked.occurred());
-        } finally {
-            sl.killScript();
-        }
+    @Override
+    protected String getExampleDirName() {
+        return "custom-interceptor";
     }
 
+    @Test
+    public void test() throws Exception {
+        BufferLogger logger = new BufferLogger();
+        try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(logger).start()) {
+            if (mvn.waitFor(60000) != 0)
+                throw new RuntimeException("Maven exited with code " + mvn.waitFor(60000) + ": " + logger);
+        }
+
+        try(Process2 sl = startServiceProxyScript()) {
+            SubstringWaitableConsoleEvent invoked = new SubstringWaitableConsoleEvent(sl, "MyInterceptor maven at request invoked.");
+            getAndAssert200(URL_2000);
+            assertTrue(invoked.occurred());
+        }
+    }
 }

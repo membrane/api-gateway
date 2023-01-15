@@ -22,9 +22,12 @@ import jakarta.mail.internet.*;
  */
 public class MimeType {
 
+    public static final String APPLICATION = "application";
+
 	public static final String APPLICATION_SOAP = "application/soap+xml";
 	public static final String APPLICATION_XML = "application/xml";
 	public static final String TEXT_XML = "text/xml";
+    public static final String TEXT_HTML = "text/html";
 	public static final String TEXT_XML_UTF8 = TEXT_XML + ";charset=UTF-8";
 
 	public static final String TEXT_HTML_UTF8 = "text/html;charset=UTF-8";
@@ -46,9 +49,13 @@ public class MimeType {
 	public static final String APPLICATION_APPLY_PATCH_YAML = "application/apply-patch+yaml";
 
     public static final String APPLICATION_GRAPHQL = "application/graphql";
+    public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
 
-    public static final ContentType APPLICATION_JSON_CONTENT_TYPE = new ContentType("application","json",null);
-    public static final ContentType APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE = new ContentType("application","x-www-form-urlencoded",null);
+    public static final ContentType APPLICATION_JSON_CONTENT_TYPE = new ContentType(APPLICATION,"json",null);
+
+
+
+    public static final ContentType APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE = new ContentType(APPLICATION,APPLICATION_X_WWW_FORM_URLENCODED,null);
 
     public static boolean isXML(String mediaType) {
         try {
@@ -67,7 +74,7 @@ public class MimeType {
 
     public static boolean isWWWFormUrlEncoded(String mediaType) {
         try {
-            return new ContentType(mediaType).match(APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE);
+            return new ContentType(mediaType).match(APPLICATION_X_WWW_FORM_URLENCODED);
         } catch (ParseException e) {
             // ignore
         }

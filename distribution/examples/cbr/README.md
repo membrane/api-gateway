@@ -12,16 +12,33 @@ http://curl.haxx.se/download.html
 
 To run the example execute the following steps:
 
-1. Execute `examples/cbr/service-proxy.bat`
+1. Go to the folder `examples/cbr`
 
-2. Execute `examples/curl -d @order.xml localhost/shop`
+2. Start Membrane:
 
-3. Take a look at the output of the console. You should see the line: `"Normal order received."`
+`service-proxy.sh` or 
+`service-proxy.bat`
 
-4. Execute `examples/curl -d @express.xml localhost/shop`
+3. Send an order XML document to the API:
 
-5. This time the following line should be printed to the console:`"Express order received."`
+```sh
+curl -d @order.xml localhost:2000
+```
 
-6. Execute `examples/curl -d @import.xml localhost/shop`
+4. Take a look at the output of the console. You should see the line:
 
-7. The final output should look like this:`"Order contains import items."` 	
+`"Normal order received."`
+
+5. Send an express order to the API:
+
+```sh
+curl -d @express.xml localhost:2000
+Express order received.
+```
+
+6. Send an import document:
+
+```sh
+curl -d @import.xml localhost:2000
+Order contains import items.
+```

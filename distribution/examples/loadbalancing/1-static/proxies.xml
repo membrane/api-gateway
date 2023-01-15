@@ -21,15 +21,15 @@
 		
 		<!-- Mock nodes for testing. Remove them in production. -->
 		<serviceProxy name="Node 1" port="4000">
-			<counter name="Node 1 " />
+			<counter name="Node 1" />
 		</serviceProxy>
 
 		<serviceProxy name="Node 2" port="4001">
-			<counter name="Node 2 " />
+			<counter name="Node 2" />
 		</serviceProxy>
 
 		<serviceProxy name="Node 3" port="4002">
-			<counter name="Node 3 " />
+			<counter name="Node 3" />
 		</serviceProxy>
 	
 	</router>

@@ -13,41 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.lang.Thread.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Xml2JsonTest extends DistributionExtractingTestcase {
 
-    @Test
-    public void test() throws IOException, InterruptedException {
-        File baseDir = getExampleDir("xml-2-json");
-        BufferLogger b = new BufferLogger();
-        Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(b).start();
-        try {
-            String body = new String(Files.readAllBytes(Paths.get(baseDir + FileSystems.getDefault().getSeparator()
-                    + "jobs.xml")));
-            String[] headers = {"Content-Type", "application/xml"};
-            Thread.sleep(2000);
-            String response = postAndAssert(200,"http://localhost:2000/", headers, body);
-            Thread.sleep(1000);
-
-            assertTrue(b.toString().contains("{\"jobs\":{\"job\":"));
-
-        } finally {
-            sl.killScript();
-        }
+    @Override
+    protected String getExampleDirName() {
+        return "xml-2-json";
     }
 
-
+    @Test
+    public void test() throws Exception {
+        BufferLogger logger = new BufferLogger();
+        try(Process2 ignored = startServiceProxyScript(logger)) {
+            sleep(2000);
+            postAndAssert(200,URL_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("jobs.xml"));
+            sleep(100);
+            assertTrue(logger.contains("{\"jobs\":{\"job\":"));
+        }
+    }
 }

@@ -10,7 +10,7 @@
 		<serviceProxy name="Token Validator" port="2000">
 
 			<!-- Validates tokens against authorization server - blocks request on invalid tokens -->
-			<tokenValidator endpoint="http://localhost:7000/oauth2/userinfo"/>
+			<tokenValidator endpoint="http://localhost:7007/oauth2/userinfo"/>
 
 			<target host="localhost" port="3000"/>
 
@@ -19,7 +19,7 @@
 
 		<serviceProxy port="3000">
 			<groovy>
-				exc.setResponse(Response.ok("You accessed the protected resource!").build())
+				exc.setResponse(Response.ok('{"success":"true"}\n').contentType("application/json").build())
 				RETURN
 			</groovy>
 		</serviceProxy>

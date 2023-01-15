@@ -63,3 +63,33 @@ To run the integration tests in an isolated environment, run
     docker build .
 	
 if you have a Docker Engine available.
+
+
+Examples Tests
+==============
+
+The example tests try to run the service-proxy.sh/bat scripts in the examples folders of a
+distribution build in the target folder. Remember to build after any change otherwise old code
+is tested:
+
+Build a distribution in target/ . Then run the example tests.
+```sh
+mvn clean install -DskipTests
+```
+
+
+## Prequisites
+
+On Mac OS the `setsid` command is needed. It can be installed with:
+
+```sh
+brew install util-linux
+```
+
+## Running
+
+Run Testclass `ExampleTests`
+
+## Troubleshooting
+
+- 

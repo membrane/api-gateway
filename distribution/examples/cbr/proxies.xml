@@ -14,19 +14,19 @@
 			</switch>
 		</serviceProxy>
 	
-		<serviceProxy port="2000" name="ImportItems">
+		<serviceProxy name="ImportItems">
 			<groovy>
 				Response.ok("Order contains import items.").build()			
 			</groovy>
 		</serviceProxy>
 	
-		<serviceProxy port="2000" name="Order">
+		<serviceProxy name="Order">
 			<groovy>
 				Response.ok("Normal order received.").build()						
 			</groovy>
 		</serviceProxy>
 		
-		<serviceProxy port="2000" name="Express">
+		<serviceProxy name="Express">
 			<groovy>
 				Response.ok("Express order received.").build()			
 			</groovy>

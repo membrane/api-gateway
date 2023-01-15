@@ -14,32 +14,26 @@
 
 package com.predic8.membrane.core.lang;
 
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Function;
-import com.predic8.membrane.core.Router;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
 
 public abstract class ScriptExecutorPool<T, R> implements Function<Map<String, Object>, R> {
 	private static final Logger log = LoggerFactory.getLogger(ScriptExecutorPool.class);
 
 	private static final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-	ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<T>(concurrency);
+	ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<>(concurrency);
 
-	public void init(Router router) {
+	public void init(ExecutorService executorService) {
 		scripts.add(createOneScript());
-		router.getBackgroundInitializator().execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					for (int i = 1; i < concurrency; i++)
-						scripts.add(createOneScript());
-				} catch (Exception e) {
-					log.error("Error compiling script:", e);
-				}
+		executorService.execute(() -> {
+			try {
+				for (int i = 1; i < concurrency; i++)
+					scripts.add(createOneScript());
+			} catch (Exception e) {
+				log.error("Error compiling script:", e);
 			}
 		});
 	}

@@ -27,6 +27,7 @@ import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
+import com.predic8.membrane.core.interceptor.javascript.*;
 import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
@@ -110,7 +111,8 @@ import org.junit.platform.suite.api.*;
 		Xml2JsonInterceptorTest.class, Json2XmlInterceptorTest.class, TemplateInterceptorTest.class,
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
 		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class,
-		ProxyTest.class, Http2ClientServerTest.class, ChunkedBodyTest.class
+		ProxyTest.class, Http2ClientServerTest.class, ChunkedBodyTest.class,
+		JavascriptInterceptor.class
 
 })
 @SelectPackages("com.predic8.membrane.core.openapi")

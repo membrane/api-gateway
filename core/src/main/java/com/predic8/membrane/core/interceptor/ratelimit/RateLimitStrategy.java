@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.ratelimit;
 
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.joda.time.format.*;
 
 public abstract class RateLimitStrategy {
 
@@ -38,6 +39,14 @@ public abstract class RateLimitStrategy {
 	public void setRequestLimit(int requestLimit) {
 		this.requestLimit = requestLimit;
 		updateAfterConfigChange();
+	}
+
+	public String getLimitDurationPeriod() {
+		return PeriodFormat.getDefault().print(requestLimitDuration.toPeriod());
+	}
+
+	public String getLimitReset(String ip) {
+		return Long.toString(getServiceAvailableAgainTime(ip).getMillis());
 	}
 
 	public abstract boolean isRequestLimitReached(String ip);

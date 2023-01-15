@@ -49,8 +49,7 @@ public class Starter {
 		getMainMethod().invoke(null, new Object[]{args});
 	}
 
-	private static Method getMainMethod() throws NoSuchMethodException,
-	ClassNotFoundException {
+	private static Method getMainMethod() throws NoSuchMethodException, ClassNotFoundException {
 		return getRouterCLIClass().getDeclaredMethod("main", String[].class);
 	}
 
@@ -59,8 +58,7 @@ public class Starter {
 	}
 
 	private static URLClassLoader getLoader() {
-		return ClassloaderUtil.getExternalClassloader("file:"
-				+ System.getenv("MEMBRANE_HOME"));
+		return ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMBRANE_HOME"));
 	}
 
 	private static int getJavaVersion() {

@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.tests;
+package com.predic8.membrane.examples.tests.ssl;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
@@ -22,29 +22,28 @@ import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.test.AssertUtils;
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
 
-public class SSLServer extends DistributionExtractingTestcase {
+public class ToBackendTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
-		File baseDir = getExampleDir("ssl-server");
-
-		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "443", "3023");
-
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			AssertUtils.trustAnyHTTPSServer(3023);
-
-			assertContains("wsdl:documentation", getAndAssert200("https://localhost:3023/axis2/services/BLZService?wsdl"));
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "ssl/to-backend";
 	}
 
+	@BeforeEach
+	void setup() throws IOException {
+		replaceInFile2("proxies.xml", "2000", "3023");
+	}
 
+	@Test
+	public void test() throws Exception {
+		try(Process2 ingore = startServiceProxyScript()) {
+			assertContains("shop", getAndAssert200("http://localhost:3023/"));
+		}
+	}
 }

@@ -26,7 +26,7 @@
 			<response>
 				<groovy>
 					exc.response.header.add("X-Groovy", "42") // Set Header
-
+					println "X-Groovy header added with value :" + value
 					CONTINUE
 				</groovy>
 			</response>

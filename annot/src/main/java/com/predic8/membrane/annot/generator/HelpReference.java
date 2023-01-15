@@ -47,6 +47,8 @@ import com.predic8.membrane.annot.model.Model;
 import com.predic8.membrane.annot.model.OtherAttributesInfo;
 import com.predic8.membrane.annot.model.doc.Doc;
 
+import static java.util.Comparator.comparing;
+
 public class HelpReference {
 
 	private final ProcessingEnvironment processingEnv;
@@ -63,7 +65,7 @@ public class HelpReference {
 			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
 			if (path == null)
 				return;
-			path = path.replace("%VERSION%", "4.8");
+			path = path.replace("%VERSION%", "5.0");
 
 			sw = new StringWriter();
 			XMLOutputFactory output = XMLOutputFactory.newInstance();
@@ -87,7 +89,7 @@ public class HelpReference {
 	}
 
 	private String getFileName(Model m) {
-		ArrayList<String> packages = new ArrayList<String>();
+		ArrayList<String> packages = new ArrayList<>();
 		for (MainInfo mi : m.getMains())
 			packages.add(mi.getAnnotation().outputPackage());
 		Collections.sort(packages);
@@ -111,15 +113,7 @@ public class HelpReference {
 		xew.writeStartElement("namespace");
 		xew.writeAttribute("package", main.getAnnotation().outputPackage());
 		xew.writeAttribute("targetNamespace", main.getAnnotation().targetNamespace());
-		Collections.sort(main.getIis(), new Comparator<ElementInfo>() {
-			@Override
-			public int compare(ElementInfo o1, ElementInfo o2) {
-				int res = o1.getAnnotation().name().compareTo(o2.getAnnotation().name());
-				if (res == 0)
-					res = o1.getElement().getQualifiedName().toString().compareTo(o2.getElement().getQualifiedName().toString());
-				return res;
-			}
-		});
+		main.getIis().sort(comparing((ElementInfo o) -> o.getAnnotation().name()).thenComparing(o -> o.getElement().getQualifiedName().toString()));
 		for (ElementInfo ei : main.getIis())
 			handle(m, main, ei);
 		xew.writeEndElement();
@@ -141,14 +135,7 @@ public class HelpReference {
 		handleDoc(ei);
 
 		List<AttributeInfo> ais = ei.getAis();
-		Collections.sort(ais, new Comparator<AttributeInfo>() {
-
-			@Override
-			public int compare(AttributeInfo o1, AttributeInfo o2) {
-				return o1.getXMLName().compareTo(o2.getXMLName());
-			}
-
-		});
+		ais.sort(comparing(AttributeInfo::getXMLName));
 		OtherAttributesInfo oai = ei.getOai();
 
 		if (ais.size() > 0 && ais.get(0).getXMLName().equals("id"))
@@ -179,7 +166,7 @@ public class HelpReference {
 
 	private String getPrimaryParentId(Model m, MainInfo mi, ElementInfo ei) {
 		// choose a random parent (TODO: choose a better one)
-		Set<ElementInfo> possibleParents = new HashSet<ElementInfo>();
+		Set<ElementInfo> possibleParents = new HashSet<>();
 		for (Map.Entry<TypeElement, ChildElementDeclarationInfo> e : mi.getChildElementDeclarations().entrySet())
 			if (e.getValue().getElementInfo().contains(ei)) {
 				for (ChildElementInfo usedBy : e.getValue().getUsedBy()) {
@@ -217,7 +204,7 @@ public class HelpReference {
 
 		handleDoc(cei);
 
-		SortedSet<String> possibilities = new TreeSet<String>();
+		SortedSet<String> possibilities = new TreeSet<>();
 		for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
 			possibilities.add(ei.getId());
 		}

@@ -16,48 +16,51 @@ package com.predic8.membrane.examples.tests;
 
 import java.io.IOException;
 
+import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.AssertUtils;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.test.AssertUtils.*;
 
 public class LoginTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		Process2 sl = new Process2.Builder().in(getExampleDir("login")).script("service-proxy").waitForMembrane().start();
-		try {
-			String form = AssertUtils.getAndAssert200("http://localhost:2000/");
-			AssertUtils.assertContains("Username:", form);
-			AssertUtils.assertContains("Password:", form);
+	@Override
+	protected String getExampleDirName() {
+		return "login";
+	}
 
-			form = AssertUtils.postAndAssert(200, "http://localhost:2000/login/",
+	@Test
+	public void test() throws Exception {
+		try (Process2 ignored =startServiceProxyScript()) {
+			String form = getAndAssert200("http://localhost:2000/");
+			assertContains("Username:", form);
+			assertContains("Password:", form);
+
+			form = postAndAssert(200, "http://localhost:2000/login/",
 					new String[] { "Content-Type", "application/x-www-form-urlencoded" },
 					"username=john&password=password");
-			AssertUtils.assertContains("token:", form);
+			assertContains("token:", form);
 
-			String token = new OtpProvider().getNextCode("abcdefghijklmnop", System.currentTimeMillis());
-
-			form = AssertUtils.postAndAssert(200, "http://localhost:2000/login/",
-					new String[] { "Content-Type", "application/x-www-form-urlencoded" },
-					"token=" + token);
+			form = postAndAssert(200, "http://localhost:2000/login/",
+					new String[] { "Content-Type", APPLICATION_X_WWW_FORM_URLENCODED },
+					"token=" + getToken());
 
 			// successful login?
-			AssertUtils.assertContains("This page has moved to", form);
+			assertContains("This page has moved to", form);
 
 			// access the "protected" page
-			form = AssertUtils.getAndAssert200("http://localhost:2000/");
-			AssertUtils.assertContains("predic8.com", form);
+			assertContains("predic8.com", getAndAssert200("http://localhost:2000/"));
 
 			// logout
-			form = AssertUtils.getAndAssert200("http://localhost:2000/login/logout");
-			AssertUtils.assertContains("Username:", form);
-
-		} finally {
-			sl.killScript();
+			assertContains("Username:", getAndAssert200("http://localhost:2000/login/logout"));
 		}
 	}
 
+	private String getToken() {
+		return new OtpProvider().getNextCode("abcdefghijklmnop", System.currentTimeMillis());
+	}
 }

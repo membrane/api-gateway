@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.tests;
+package com.predic8.membrane.examples.tests.loadbalancing;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.assertStatusCode;
@@ -20,7 +20,7 @@ import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,18 +32,17 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 
 public class LoadBalancerUtil {
-	private static Pattern nodePattern = Pattern.compile("Mock Node (\\d+)");
+	private static final Pattern nodePattern = Pattern.compile("Node (\\d+)");
 
 	public static int getRespondingNode(String url) throws ParseException, IOException {
 		Matcher m = nodePattern.matcher(getAndAssert200(url));
 		assertTrue(m.find());
 		return Integer.parseInt(m.group(1));
-
 	}
 
-	public static void addLBNodeViaHTML(String adminBaseURL, String nodeHost, int nodePort) throws ClientProtocolException, IOException {
+	public static void addLBNodeViaHTML(String adminBaseURL, String nodeHost, int nodePort) throws IOException {
 		HttpPost post = new HttpPost(adminBaseURL + "node/save");
-		ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+		ArrayList<NameValuePair> params = new ArrayList<>();
 		params.add(new BasicNameValuePair("balancer", "Default"));
 		params.add(new BasicNameValuePair("cluster", "Default"));
 		params.add(new BasicNameValuePair("host", nodeHost));
@@ -67,5 +66,16 @@ public class LoadBalancerUtil {
 		throw new AssertionError("Node " + nodeHost + ":" + nodePort + " not found in " + adminPageHTML);
 	}
 
+	public static void checkWhatNodesAreResponding(int[] nodes) throws IOException {
+		List<Integer> nodeNumbers  = new ArrayList<>();
+		nodeNumbers.add(getRespondingNode("http://localhost:3023/service"));
+		nodeNumbers.add(getRespondingNode("http://localhost:3023/service"));
+		nodeNumbers.add(getRespondingNode("http://localhost:3023/service"));
+		nodeNumbers.add(getRespondingNode("http://localhost:3023/service"));
+		nodeNumbers.add(getRespondingNode("http://localhost:3023/service"));
 
+		for (int node: nodes) {
+			assertTrue(nodeNumbers.contains(node));
+		}
+	}
 }

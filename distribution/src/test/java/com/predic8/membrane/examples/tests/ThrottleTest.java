@@ -22,25 +22,23 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.Process2;
 
 public class ThrottleTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("throttle");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			getAndAssert200("http://localhost:2000/");
-			long start = System.currentTimeMillis();
-			getAndAssert200("http://localhost:2000/");
-			long elapsedMillis = System.currentTimeMillis() - start;
-			assertTrue(elapsedMillis >= 1000);
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "throttle";
 	}
 
-
+	@Test
+	public void test() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			getAndAssert200(URL_2000);
+			long start = System.currentTimeMillis();
+			getAndAssert200(URL_2000);
+			long elapsedMillis = System.currentTimeMillis() - start;
+			assertTrue(elapsedMillis >= 1000);
+		}
+	}
 }

@@ -14,32 +14,35 @@
 
 package com.predic8.membrane.examples.tests.validation;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
+import static java.io.File.separator;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.*;
 
+import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
 
 public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 
-	@Test
-	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("validation" + File.separator + "soap-Proxy");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
-		try {
-			String url = "http://localhost:2000/axis2/services/BLZService/getBankResponse";
-			String[] headers = new String[] { "Content-Type", "application/soap+xml" };
-			postAndAssert(200, url, headers, readFileToString(new File(baseDir, "blz-soap.xml")));
-			postAndAssert(400, url, headers, readFileToString(new File(baseDir, "invalid-blz-soap.xml")));
-		} finally {
-			sl.killScript();
-		}
+	@Override
+	protected String getExampleDirName() {
+		return "validation" + separator + "soap-Proxy";
 	}
 
-
+	@Test
+	public void test() throws Exception {
+		try(Process2 igored = startServiceProxyScript()) {
+			String url = "http://localhost:2000/axis2/services/BLZService/getBankResponse";
+			postAndAssert(200, url, CONTENT_TYPE_SOAP_HEADER, readFile("blz-soap.xml"));
+			postAndAssert(400, url, CONTENT_TYPE_SOAP_HEADER, readFile("invalid-blz-soap.xml"));
+		}
+	}
 }

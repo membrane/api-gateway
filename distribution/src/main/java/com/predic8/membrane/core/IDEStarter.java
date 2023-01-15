@@ -29,12 +29,10 @@ public class IDEStarter {
 		// for testing or development purposes
 		// Start in "distribution" folder
 		try {
-			File file = new File("conf/log4j2.xml");
-			Configurator.initialize(null, new ConfigurationSource(new FileInputStream(file)));
+			Configurator.initialize(null, new ConfigurationSource(new FileInputStream("conf/log4j2.xml")));
 		} catch (IOException e) {
 			LoggerFactory.getLogger(IDEStarter.class).error("Error loading log configuration.");
 		}
-
 		RouterCLI.main(args);
 	}
 

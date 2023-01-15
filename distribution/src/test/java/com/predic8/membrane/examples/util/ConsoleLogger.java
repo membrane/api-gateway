@@ -14,9 +14,7 @@
 
 package com.predic8.membrane.examples.util;
 
-import com.predic8.membrane.examples.AbstractConsoleWatcher;
-
-public class ConsoleLogger extends AbstractConsoleWatcher {
+public class ConsoleLogger implements ConsoleWatcher {
 
 	@Override
 	public void outputLine(boolean error, String line) {

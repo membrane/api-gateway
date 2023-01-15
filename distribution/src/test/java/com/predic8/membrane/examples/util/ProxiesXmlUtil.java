@@ -12,24 +12,21 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples;
+package com.predic8.membrane.examples.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.*;
 
+import com.predic8.membrane.examples.util.*;
 import org.apache.commons.io.FileUtils;
 
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.io.FileUtils.writeStringToFile;
 
 public class ProxiesXmlUtil {
 
-	private File proxiesXml;
-
-	public ProxiesXmlUtil(String file) {
-		proxiesXml = new File(file);
-		if (!proxiesXml.exists())
-			throw new IllegalArgumentException("File " + file + " does not exist.");
-	}
+	private final File proxiesXml;
 
 	public ProxiesXmlUtil(File file) {
 		proxiesXml = file;
@@ -39,8 +36,7 @@ public class ProxiesXmlUtil {
 
 	public void updateWith(String proxiesXmlContent, Process2 sl) throws IOException {
 		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "Spring Hot Deployment Thread started.");
-		FileUtils.writeStringToFile(proxiesXml, proxiesXmlContent);
-		reloaded.waitFor(10000);
+		writeStringToFile(proxiesXml, proxiesXmlContent, UTF_8);
+		reloaded.waitFor(60000);
 	}
-
 }
