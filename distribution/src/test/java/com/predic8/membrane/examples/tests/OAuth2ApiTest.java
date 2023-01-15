@@ -29,19 +29,14 @@ public class OAuth2ApiTest extends DistributionExtractingTestcase {
 
     @Test
     public void test() throws Exception {
-        try (Process2 sl = new Process2.Builder().in(getExampleDir("oauth2/api/authorization_server")).script("service-proxy").waitForMembrane().start()) {
-
-            Process2 sl2 = new Process2.Builder().in(getExampleDir("oauth2/api/token_validator")).script("service-proxy").waitForMembrane().start();
-
-            BufferLogger logger = new BufferLogger();
-            Process2 sl3 = new Process2.Builder().in(getExampleDir("oauth2/api")).withWatcher(logger).script("client").parameters("john password").waitAfterStartFor("200 O").start();
-            // sl3 can fail because at least the start.sh is very fragile in parsing the response for the access token. If the number or order of the params changes then client.sh will fail.
-            try {
-                //This is kind of redundant as sl3 already waits until "OK" is written or timeouts when its not
-                assertTrue(logger.toString().contains("200 O"));
-            } finally {
-                sl2.killScript();
-                sl3.killScript();
+        try (Process2 ignored1 = new Process2.Builder().in(getExampleDir("oauth2/api/authorization_server")).script("service-proxy").waitForMembrane().start()) {
+            try (Process2 ignored2 = new Process2.Builder().in(getExampleDir("oauth2/api/token_validator")).script("service-proxy").waitForMembrane().start()) {
+                BufferLogger logger = new BufferLogger();
+                // sl3 can fail because at least the start.sh is very fragile in parsing the response for the access token. If the number or order of the params changes then client.sh will fail.
+                try(Process2 ignored3 = new Process2.Builder().in(getExampleDir("oauth2/api")).withWatcher(logger).script("client").parameters("john password").waitAfterStartFor("200 O").start()) {
+                    //This is kind of redundant as sl3 already waits until "OK" is written or timeouts when its not
+                    assertTrue(logger.contains("200 O"));
+                }
             }
         }
     }

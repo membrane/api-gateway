@@ -22,8 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 // TODO Include in Testsuite, See also OAuth2ApiTest
 public class OAuth2MembraneTest extends DistributionExtractingTestcase {
 
-
-
     @Test
     public void test() throws Exception {
         Process2 sl = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("service-proxy").waitForMembrane()
