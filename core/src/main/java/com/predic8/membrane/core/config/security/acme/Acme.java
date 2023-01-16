@@ -37,43 +37,6 @@ import java.util.Objects;
  *         </li>
  *     </ol>
  * </p>
- * <code>
- * &lt;serviceProxy port="80"&gt;
- *     &lt;acmeHttpChallenge /&gt;
- *     &lt;groovy&gt;
- *         exc.setResponse(Response.ok("here").build());
- *         RETURN
- *     &lt;/groovy&gt;
- * &lt;/serviceProxy&gt;
- * </code>
- * <code>
- * &lt;serviceProxy host="test.example.com" port="443"&gt;
- *     &lt;ssl&gt;
- *         &lt;acme
- *                 directoryUrl="https://acme-staging-v02.api.letsencrypt.org/directory"
- *                 contacts="mailto:webmaster@example.com"
- *                 termsOfServiceAgreed="true"&gt;
- *             &lt;fileStorage dir="C:\tmp" /&gt;
- *         &lt;/acme&gt;
- *     &lt;/ssl&gt;
- *     ...
- * &lt;/serviceProxy&gt;
- * </code>
- * <code>
- * &lt;serviceProxy host="test.example.com" port="443"&gt;
- *     &lt;ssl&gt;
- *         &lt;acme
- *                 directoryUrl="https://acme-staging-v02.api.letsencrypt.org/directory"
- *                 contacts="mailto:webmaster@example.com"
- *                 termsOfServiceAgreed="true"&gt;
- *             &lt;kubernetesStorage namespace="membrane"
- *                 masterLease="membrane" accountSecret="acme-account" prefix="acme-" /&gt;
- *         &lt;/acme&gt;
- *     &lt;/ssl&gt;
- *     ...
- * &lt;/serviceProxy&gt;
- * </code>
- *
  * @topic 6. Security
  */
 @MCElement(name="acme")
