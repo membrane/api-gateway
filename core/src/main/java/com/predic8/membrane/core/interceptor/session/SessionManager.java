@@ -330,7 +330,8 @@ public abstract class SessionManager {
         return Stream.of(
                 VALUE_TO_EXPIRE_SESSION_IN_BROWSER,
                 "Path=/",
-                domain != null ? "Domain=" + domain + "; " : null
+                domain != null ? "Domain=" + domain + "; " : null,
+                sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(attr -> attr != null)
                 .collect(Collectors.toList());
