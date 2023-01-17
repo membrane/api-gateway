@@ -160,12 +160,11 @@
 			<artifactId>spring-web</artifactId>
 		</dependency>
 
-		<!-- Rhino Javascript Engine, for tests only. Will not be shipped! -->
+		<!-- Rhino Javascript Engine -->
 		<dependency>
 			<groupId>org.mozilla</groupId>
 			<artifactId>rhino-engine</artifactId>
 			<version>1.7.14</version>
-			<scope>test</scope>
 		</dependency>
 
 		<dependency>

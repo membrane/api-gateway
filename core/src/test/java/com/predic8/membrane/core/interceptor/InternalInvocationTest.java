@@ -57,7 +57,7 @@ public class InternalInvocationTest {
 		router.shutdown();
 	}
 
-	private void callService(int port) throws HttpException, IOException {
+	private void callService(int port) throws IOException {
 		new HttpClient().executeMethod(new GetMethod("http://localhost:"+port));
 	}
 

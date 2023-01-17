@@ -42,6 +42,8 @@ import com.predic8.membrane.annot.model.Model;
 import com.predic8.membrane.annot.model.OtherAttributesInfo;
 import com.predic8.membrane.annot.model.TextContentInfo;
 
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
+
 /**
  * The annotation processor for the annotations defining Membrane's configuration language ({@link MCMain} and others).
  *
@@ -76,12 +78,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		if (cache != null)
 			return;
 
-		cache = new HashMap<Class<? extends Annotation>, HashSet<Element>>();
+		cache = new HashMap<>();
 
 		try {
-			FileObject o = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/membrane.cache");
-			BufferedReader r = new BufferedReader(o.openReader(false));
-			try {
+			FileObject o = processingEnv.getFiler().getResource(CLASS_OUTPUT, "", "META-INF/membrane.cache");
+			try (BufferedReader r = new BufferedReader(o.openReader(false))) {
 				if (!CACHE_FILE_FORMAT_VERSION.equals(r.readLine()))
 					return;
 				HashSet<Element> currentSet = null;
@@ -108,12 +109,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						} catch (ClassNotFoundException e) {
 							throw new RuntimeException(e);
 						}
-						currentSet = new HashSet<Element>();
+						currentSet = new HashSet<>();
 						cache.put(annotationClass, currentSet);
 					}
 				}
-			} finally {
-				r.close();
 			}
 		} catch (FileNotFoundException e) {
 			// do nothing (Maven)
@@ -130,9 +129,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 	private void write() {
 		try {
-			FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/membrane.cache");
-			BufferedWriter bw = new BufferedWriter(o.openWriter());
-			try {
+			FileObject o = processingEnv.getFiler().createResource(CLASS_OUTPUT, "", "META-INF/membrane.cache");
+			try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
 				bw.write("1\n");
 
 				for (Map.Entry<Class<? extends Annotation>, HashSet<Element>> e : cache.entrySet()) {
@@ -140,12 +138,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					bw.write("\n");
 					for (Element f : e.getValue()) {
 						bw.write(" ");
-						bw.write(((TypeElement)f).getQualifiedName().toString());
+						bw.write(((TypeElement) f).getQualifiedName().toString());
 						bw.write("\n");
 					}
 				}
-			} finally {
-				bw.close();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -162,7 +158,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		HashSet<Element> result = cache.get(annotation);
 		if (result == null) {
 			// update cache
-			cache.put(annotation, result = new HashSet<Element>(roundEnv.getElementsAnnotatedWith(annotation)));
+			cache.put(annotation, result = new HashSet<>(roundEnv.getElementsAnnotatedWith(annotation)));
 		} else {
 			for (Element e : roundEnv.getElementsAnnotatedWith(annotation)) {
 				result.remove(e);
@@ -202,8 +198,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 				status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size() + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size();
 				log(status);
-
-
 
 				Model m = new Model();
 
@@ -354,7 +348,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				ii.setTci(tci);
 			}
 		}
-		HashSet<Integer> childOrders = new HashSet<Integer>();
+		HashSet<Integer> childOrders = new HashSet<>();
 		for (ChildElementInfo cei : ii.getCeis()) {
 			if (!childOrders.add(cei.getAnnotation().order()))
 				throw new ProcessingException("@MCChildElement(order=...) must be unique.", cei.getE());
@@ -381,6 +375,4 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			new BlueprintParsers(processingEnv).writeParsers(m);
 		}
 	}
-
-
 }

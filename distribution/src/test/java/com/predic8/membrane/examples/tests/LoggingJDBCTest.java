@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.examples.tests;
 
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.sql.*;
 
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static java.io.File.separator;
 import static java.lang.Thread.sleep;
@@ -94,6 +96,6 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
     }
 
     private File getDerbyJarFile(String classJar) {
-        return new File(classJar.split("!")[0].substring(Process2.isWindows() ? 6 : 5));
+        return new File(classJar.split("!")[0].substring(isWindows() ? 6 : 5));
     }
 }

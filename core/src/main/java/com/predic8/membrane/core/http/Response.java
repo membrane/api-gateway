@@ -14,27 +14,34 @@
 
 package com.predic8.membrane.core.http;
 
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoResponseException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.Constants.CRLF;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 
 public class Response extends Message {
 
 	private static final Logger log = LoggerFactory.getLogger(Response.class.getName());
+
+	private static final ObjectMapper om = new ObjectMapper();
+
 	private static final Pattern pattern = Pattern.compile("HTTP/(\\d\\.\\d) (\\d\\d\\d)( (.*?))?$");
 
 	private int statusCode;
@@ -65,6 +72,20 @@ public class Response extends Message {
 		 */
 		public ResponseBuilder body(String msg) {
 			res.setBodyContent(msg.getBytes(Constants.UTF_8_CHARSET));
+			return this;
+		}
+
+		/**
+		 * Used for returning JSON from JavascriptInterceptor
+		 * JSON MAP
+		 *
+		 * @param map
+		 * @return
+		 * @throws JsonProcessingException
+		 */
+		public ResponseBuilder body(Map<String,Object> map) throws JsonProcessingException {
+			res.setBodyContent(om.writeValueAsBytes(map));
+			res.getHeader().setContentType(APPLICATION_JSON);
 			return this;
 		}
 

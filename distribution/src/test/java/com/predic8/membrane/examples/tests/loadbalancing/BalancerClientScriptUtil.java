@@ -18,8 +18,8 @@ import com.predic8.membrane.examples.util.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.examples.util.Process2.isWindows;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.util.OSUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BalancerClientScriptUtil {
 

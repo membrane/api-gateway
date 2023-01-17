@@ -42,7 +42,7 @@ public class ToBackendTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ingore = startServiceProxyScript()) {
+		try(Process2 ignore = startServiceProxyScript()) {
 			assertContains("shop", getAndAssert200("http://localhost:3023/"));
 		}
 	}

@@ -14,11 +14,14 @@
 
 package com.predic8.membrane.examples.util;
 
+import com.predic8.membrane.core.util.*;
+
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
 
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static java.lang.String.format;
 import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.UTF_16;
@@ -266,10 +269,6 @@ public class Process2 implements AutoCloseable {
 
 	private String createStartCommand(String startCommand, String pidFile) {
 		return format("\"\" + [System.Diagnostics.Process]::GetCurrentProcess().Id > \"%s\"\r\n%s\r\nexit $LASTEXITCODE", pidFile, startCommand);
-	}
-
-	public static boolean isWindows() {
-		return System.getProperty("os.name").contains("Windows");
 	}
 
 	public void addConsoleWatcher(ConsoleWatcher watcher) {

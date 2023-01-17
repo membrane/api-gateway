@@ -51,7 +51,9 @@ public class RhinoJavascriptLanguageSupport extends LanguageSupport {
             try {
                 return script.eval(javascriptCode);
             } catch (ScriptException e) {
-                log.error("Error compiling script:", e);
+                log.error("Error compiling script:" + e.getMessage());
+                log.error("Script:");
+                log.error(javascriptCode);
                 throw new RuntimeException("Error compiling script:", e);
             }
         }

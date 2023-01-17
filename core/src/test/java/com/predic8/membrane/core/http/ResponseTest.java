@@ -104,8 +104,8 @@ public class ResponseTest {
 	public void testUnchunkedHtmlRead() throws Exception {
 		res1.read(in1, true);
 		assertEquals(200, res1.getStatusCode());
-		assertEquals(true, res1.isHTTP11());
-		assertEquals(true, res1.isKeepAlive());
+		assertTrue(res1.isHTTP11());
+		assertTrue(res1.isKeepAlive());
 		assertNotNull(res1.getBody());
 		assertEquals(6122, res1.getBody().getLength());
 		assertEquals(6122, res1.getHeader().getContentLength());
@@ -125,16 +125,16 @@ public class ResponseTest {
 
 		assertEquals(res1.getStatusCode(), resTemp.getStatusCode());
 		assertEquals(res1.getStatusMessage(), resTemp.getStatusMessage());
-		assertTrue(Arrays.equals(res1.getBody().getContent(), resTemp.getBody().getContent()));
-		assertTrue(Arrays.equals(res1.getBody().getRaw(), resTemp.getBody().getRaw()));
+		assertArrayEquals(res1.getBody().getContent(), resTemp.getBody().getContent());
+		assertArrayEquals(res1.getBody().getRaw(), resTemp.getBody().getRaw());
 	}
 
 	@Test
 	public void testUnchunkedImageRead() throws Exception {
 		res2.read(in2, true);
 		assertEquals(200, res2.getStatusCode());
-		assertEquals(true, res2.isHTTP11());
-		assertEquals(true, res2.isKeepAlive());
+		assertTrue(res2.isHTTP11());
+		assertTrue(res2.isKeepAlive());
 		assertNotNull(res2.getBody());
 		assertEquals(21621, res2.getBody().getLength());
 		assertEquals(21621, res2.getHeader().getContentLength());
@@ -157,7 +157,7 @@ public class ResponseTest {
 		assertEquals(res2.getStatusMessage(), resTemp.getStatusMessage());
 
 		assertEquals(res2.getBody().getContent().length, resTemp.getBody().getContent().length);
-		assertTrue(Arrays.equals(res2.getBody().getContent(), resTemp.getBody().getContent()));
+		assertArrayEquals(res2.getBody().getContent(), resTemp.getBody().getContent());
 	}
 
 
@@ -165,8 +165,8 @@ public class ResponseTest {
 	public void testChunkedHtmlRead() throws Exception {
 		res3.read(in3, true);
 		assertEquals(200, res3.getStatusCode());
-		assertEquals(true, res3.isHTTP11());
-		assertEquals(true, res3.isKeepAlive());
+		assertTrue(res3.isHTTP11());
+		assertTrue(res3.isKeepAlive());
 		assertNotNull(res3.getBody());
 	}
 
@@ -188,7 +188,7 @@ public class ResponseTest {
 
 		if(!res3.getBody().wasStreamed()) {
 			assertEquals(res3.getBody().getContent().length, resTemp.getBody().getContent().length);
-			assertTrue(Arrays.equals(res3.getBody().getContent(), resTemp.getBody().getContent()));
+			assertArrayEquals(res3.getBody().getContent(), resTemp.getBody().getContent());
 		}else
 			assertEquals(res3.getBody().getContent().length, 0);
 
@@ -199,5 +199,15 @@ public class ResponseTest {
 		InputStream in = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-no-content-length.txt");
 		res3.read(in, true);
 		assertEquals(185, res3.getBody().getLength());
+	}
+
+	@Test
+	public void isEmpty() throws IOException {
+		assertTrue(Response.ok().build().isBodyEmpty());
+	}
+
+	@Test
+	public void isNotEmpty() throws Exception {
+		assertFalse(Response.ok("ABC").build().isBodyEmpty());
 	}
 }

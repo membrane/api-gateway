@@ -35,5 +35,4 @@ public class IDEStarter {
 		}
 		RouterCLI.main(args);
 	}
-
 }

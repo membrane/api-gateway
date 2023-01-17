@@ -21,6 +21,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
  *              &lt;response&gt; Element you can limit their applictaion to responses only.
@@ -34,12 +37,10 @@ public class ResponseInterceptor extends AbstractFlowInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		for (Interceptor i : getInterceptors()) {
-			EnumSet<Flow> f = i.getFlow();
-
-			if (f.contains(Flow.RESPONSE))
+			if (i.getFlow().contains(RESPONSE))
 				exc.pushInterceptorToStack(i);
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 }

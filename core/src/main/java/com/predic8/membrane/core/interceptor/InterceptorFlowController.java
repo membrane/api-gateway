@@ -23,6 +23,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.transport.http.AbortException;
 
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+
 /**
  * Controls the flow of an exchange through a chain of interceptors.
  *
@@ -125,7 +127,7 @@ public class InterceptorFlowController {
 			if (logDebug)
 				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exchange);
 
-			if (i.handleResponse(exchange) == Outcome.ABORT) {
+			if (i.handleResponse(exchange) == ABORT) {
 				throw new AbortException();
 			}
 		}

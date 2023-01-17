@@ -74,6 +74,8 @@ public class HelpReference {
 			handle(m);
 			xew.writeEndDocument();
 
+			System.out.println(sw.toString());
+
 			// indent
 			TransformerFactory factory = TransformerFactory.newInstance();
 			Transformer transformer = factory.newTransformer();

@@ -12,12 +12,14 @@ parseResponse(){
 }
 
 getToken(){
-    call=$(curl -o - -v --data "grant_type=password&username=${username}&password=${password}&client_id=${clientId}&client_secret=${clientSecret}" $tokenEndpoint)
+    call=$(curl -v --data "grant_type=password&username=${username}&password=${password}&client_id=${clientId}&client_secret=${clientSecret}" $tokenEndpoint)
+    echo $call
     parseResponse $call
 }
 
 sendRequestToTarget(){
-    targetResult=$(curl -v -o - -H "$authHeader" $target)
+    targetResult=$(curl -v-H "$authHeader" $target)
+    echo $targetResult
 }
 
 getToken

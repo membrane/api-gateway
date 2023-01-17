@@ -22,6 +22,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 
+import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION;
+import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION_NS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -41,8 +43,8 @@ public class SoapOperationExtractorTest {
 
 		extractor.handleRequest(exc);
 
-		assertEquals("getBuecher", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
-		assertEquals("http://predic8.de", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
+		assertEquals("getBuecher", exc.getProperty(SOAP_OPERATION));
+		assertEquals("http://predic8.de", exc.getProperty(SOAP_OPERATION_NS));
 
 	}
 
@@ -53,8 +55,8 @@ public class SoapOperationExtractorTest {
 
 		extractor.handleRequest(exc);
 
-		assertNull(exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
-		assertNull(exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
+		assertNull(exc.getProperty(SOAP_OPERATION));
+		assertNull(exc.getProperty(SOAP_OPERATION_NS));
 
 	}
 
@@ -65,8 +67,8 @@ public class SoapOperationExtractorTest {
 
 		extractor.handleRequest(exc);
 
-		assertEquals("getBuecher", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
-		assertEquals("http://predic8.de", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
+		assertEquals("getBuecher", exc.getProperty(SOAP_OPERATION));
+		assertEquals("http://predic8.de", exc.getProperty(SOAP_OPERATION_NS));
 
 	}
 

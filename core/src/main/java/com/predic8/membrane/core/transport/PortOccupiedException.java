@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport;
 
+import java.io.*;
 import java.net.BindException;
 import java.net.InetAddress;
 
@@ -20,10 +21,10 @@ import com.predic8.membrane.core.transport.http.IpPort;
 
 public class PortOccupiedException extends BindException {
 
-	private IpPort ipPort;
+	private final IpPort ipPort;
 
+	@Serial
 	private static final long serialVersionUID = 7778568148191933733L;
-
 
 	public PortOccupiedException(IpPort p) {
 		this.ipPort = p;

@@ -14,12 +14,15 @@
 
 package com.predic8.membrane.core.http;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.*;
+import java.nio.charset.*;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.*;
@@ -107,28 +110,39 @@ public class RequestTest {
 		assertEquals(reqPost.getUri(), reqTemp.getUri());
 		assertEquals(reqPost.getMethod(), reqTemp.getMethod());
 
-		assertTrue(Arrays.equals(reqPost.getBody().getContent(), reqTemp.getBody().getContent()));
-		assertTrue(Arrays.equals(reqPost.getBody().getRaw(), reqTemp.getBody().getRaw()));
+		assertArrayEquals(reqPost.getBody().getContent(), reqTemp.getBody().getContent());
+		assertArrayEquals(reqPost.getBody().getRaw(), reqTemp.getBody().getRaw());
 	}
 
 	@Test
-	public void testIsHTTP11() throws Exception {
+	public void testIsHTTP11() {
 		assertTrue(reqPost.isHTTP11());
 	}
 
 	@Test
-	public void testIsHTTP11Chunked() throws Exception {
+	public void testIsHTTP11Chunked() {
 		assertTrue(reqChunked.isHTTP11());
 	}
 
 	@Test
-	public void testIsKeepAlive() throws Exception {
+	public void testIsKeepAlive() {
 		assertTrue(reqPost.isKeepAlive());
 	}
 
 	@Test
-	public void testIsKeepAliveChunked() throws Exception {
+	public void testIsKeepAliveChunked() {
 		assertTrue(reqChunked.isKeepAlive());
 	}
 
+	@Test
+	public void isEmpty() throws IOException, URISyntaxException {
+		assertTrue(new Request.Builder().body("").build().isBodyEmpty());
+		assertTrue(new Request.Builder().body("".getBytes(UTF_8)).build().isBodyEmpty());
+		assertTrue(new Request.Builder().get("http://predic8.de").build().isBodyEmpty());
+	}
+
+	@Test
+	public void isNotEmpty() throws IOException {
+		assertFalse(new Request.Builder().body("ABC").build().isBodyEmpty());
+	}
 }

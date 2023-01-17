@@ -71,7 +71,7 @@ class JavascriptInterceptorTest {
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     public void simpleScript(Class<LanguageSupport> engine) throws Exception {
-        executeSript("var x = 1", engine);
+        executeSript("var x = 1;", engine);
     }
 
     @ParameterizedTest
@@ -89,6 +89,11 @@ class JavascriptInterceptorTest {
         executeSript("var e = message;", engine);
         executeSript("var e = header;", engine);
         executeSript("var e = body;", engine);
+    }
+
+    void dummy() {
+//        Response.ok("dsf").contentType("application/json").build();
+//        Response.ok().body().build();
     }
 
     @ParameterizedTest
@@ -142,6 +147,16 @@ class JavascriptInterceptorTest {
     void setReturnResponse(Class<LanguageSupport> engine) throws Exception {
         executeSript("Response.ok('baz').build()", engine);
         assertEquals("baz", exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void setReturnMAPAsJSONResponse(Class<LanguageSupport> engine) throws Exception {
+        executeSript("""
+                var o = {"foo": 7};
+                Response.ok().body(o).build();
+                """, engine);
+        assertEquals("{\"foo\":7}", exc.getResponse().getBodyAsStringDecoded());
     }
 
     @SafeVarargs

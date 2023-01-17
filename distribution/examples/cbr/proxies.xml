@@ -13,24 +13,25 @@
 				<case xPath="//order" service="Order" />
 			</switch>
 		</serviceProxy>
-	
-		<serviceProxy name="ImportItems">
+
+		<!-- Instead of returning a response you can forward to a remote target -->
+		<serviceProxy name="ImportItems" port="3000">
 			<groovy>
 				Response.ok("Order contains import items.").build()			
 			</groovy>
 		</serviceProxy>
 	
-		<serviceProxy name="Order">
+		<internalProxy name="Order">
 			<groovy>
 				Response.ok("Normal order received.").build()						
 			</groovy>
-		</serviceProxy>
+		</internalProxy>
 		
-		<serviceProxy name="Express">
+		<internalProxy name="Express">
 			<groovy>
 				Response.ok("Express order received.").build()			
 			</groovy>
-		</serviceProxy>
+		</internalProxy>
 
 	</router>
 	

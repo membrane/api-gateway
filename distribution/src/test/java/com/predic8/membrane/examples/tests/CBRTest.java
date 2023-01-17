@@ -41,10 +41,10 @@ public class CBRTest extends DistributionExtractingTestcase {
 	public void test() throws Exception {
 
 		try(Process2 ignored = startServiceProxyScript()) {
-			sleep(1000);
-			assertContains("Normal order received.", postAndAssert200("http://localhost:2000", readFile("order.xml")));
-			assertContains("Express order received.", postAndAssert200("http://localhost:2000", readFile("express.xml")));
-			assertContains("Order contains import items.", postAndAssert200("http://localhost:2000", readFile("import.xml")));
+			sleep(200);
+			assertContains("Normal order received.", postAndAssert200(URL_2000, readFile("order.xml")));
+			assertContains("Express order received.", postAndAssert200(URL_2000, readFile("express.xml")));
+			assertContains("Order contains import items.", postAndAssert200(URL_2000, readFile("import.xml")));
 		}
 	}
 

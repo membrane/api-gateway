@@ -131,5 +131,4 @@ public class AbstractInterceptor implements Interceptor {
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
 	}
-
 }

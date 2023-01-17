@@ -16,8 +16,10 @@ package com.predic8.membrane.core;
 
 import java.io.File;
 
-import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
+import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.util.*;
+import org.apache.commons.cli.*;
+import org.apache.commons.lang3.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
@@ -27,6 +29,10 @@ import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationC
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
+import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException;
+import static com.predic8.membrane.core.util.OSUtil.getOS;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
+
 
 public class RouterCLI {
 
@@ -34,26 +40,26 @@ public class RouterCLI {
 
     public static void main(String[] args) {
 
-        MembraneCommandLine cl = new MembraneCommandLine();
+        MembraneCommandLine cl = getMembraneCommandLine(args);
+
         Router router = null;
         try {
-            cl.parse(args);
-            if (cl.needHelp()) {
-                cl.printUsage();
-                return;
-            }
-
             try {
                 router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
             } catch (XmlBeanDefinitionStoreException e) {
-                TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
+                handleXmlBeanDefinitionStoreException(e);
             }
         } catch (InvalidConfigurationException e) {
             System.err.println("Fatal error: " + e.getMessage());
             System.exit(1);
         } catch (Exception ex) {
-            handleExitException(ex);
-            ex.printStackTrace();
+            Throwable rootCause = getRootCause(ex);
+            if (rootCause instanceof ExitException ee)
+                handleExitException(ee);
+            else if (rootCause instanceof PortOccupiedException poe)
+                handlePortOccupiedException(poe);
+            else
+                ex.printStackTrace();
             System.exit(1);
         }
 
@@ -65,27 +71,68 @@ public class RouterCLI {
         }
     }
 
-    private static void handleExitException(Exception ex) {
-        ExitException exitException = extractExitExcetpion(ex);
-        if (exitException == null)
-            return;
+    private static MembraneCommandLine getMembraneCommandLine(String[] args) {
+        MembraneCommandLine cl = new MembraneCommandLine();
 
-        System.err.println("**********************************************************************************");
+        try {
+            cl.parse(args);
+        } catch (ParseException e) {
+            System.err.println("Error parsing commandline " + e.getMessage());
+            cl.printUsage();
+            System.exit(1);
+        }
+
+        if (cl.needHelp()) {
+            cl.printUsage();
+            System.exit(0);
+        }
+        return cl;
+    }
+
+    private static void handlePortOccupiedException(PortOccupiedException poe) {
+        printStars();
+        System.err.println();
+        System.err.printf("Membrane is configured to open port %d. But this port is alreay in\n", poe.getPort());
+        System.err.println("""
+                use by a different program. To start Membrane do one of the following:
+                                
+                1. Find and stop the program that is occupying the port. Then restart Membrane.""");
+        System.err.println();
+        switch (getOS()) {
+            case WINDOWS -> printHowToFindPortWindows();
+            case LINUX, MAC -> printHowToFindPortLinux();
+        }
+        System.err.println("""       
+                2. Configure Membrane to use a different port. Propably in the conf/proxies.xml
+                file. Then restart Membrane.
+                """);
+    }
+
+    private static void printHowToFindPortWindows() {
+        System.err.println("""
+                netstat -aon | find /i "listening"
+                """);
+    }
+
+    private static void printHowToFindPortLinux() {
+        System.err.println("""
+                e.g.:
+                > lsof -i :2000
+                COMMAND    PID    USER  TYPE
+                java     80910 predic8  IPv6  TCP  (LISTEN)
+                > kill -9 80910
+                """);
+    }
+
+    private static void handleExitException(ExitException exitException) {
+        printStars();
         System.err.println();
         System.err.println(exitException.getMessage());
         System.err.println();
-        System.err.println("**********************************************************************************");
-        System.exit(1);
     }
 
-    private static ExitException extractExitExcetpion(Throwable ex) {
-        if (ex instanceof ExitException)
-            return (ExitException) ex;
-        if (ex.getCause() == null)
-            return null;
-        if (ex.getCause() instanceof ExitException)
-            return (ExitException) ex.getCause();
-        return extractExitExcetpion(ex.getCause());
+    private static void printStars() {
+        System.err.println("**********************************************************************************");
     }
 
     private static String getRulesFile(MembraneCommandLine line) {
@@ -109,7 +156,7 @@ public class RouterCLI {
                 errorNotice += " Or create the file in MEMBRANE_HOME/conf (" + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml).";
             } else {
                 errorNotice += " You can also point the MEMBRANE_HOME environment variable to Membrane's distribution root directory " +
-                        "and ensure that MEMBRANE_HOME/conf/proxies.xml exists.";
+                               "and ensure that MEMBRANE_HOME/conf/proxies.xml exists.";
             }
             return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", errorNotice);
         }
@@ -147,7 +194,6 @@ public class RouterCLI {
         if (file.isAbsolute()) {
             return file.toURI().toString();
         }
-
         return dir;
     }
 }
