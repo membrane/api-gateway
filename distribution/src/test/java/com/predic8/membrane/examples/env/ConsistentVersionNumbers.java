@@ -13,10 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.examples.env;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -98,6 +97,41 @@ public class ConsistentVersionNumbers {
 
 		handlePOM(new File(base.getAbsolutePath() + "/distribution/examples/embedding-java/pom.xml"), false);
 		handlePOM(new File(base.getAbsolutePath() + "/distribution/examples/stax-interceptor/pom.xml"), false);
+
+		handleHelpReference(new File(base.getAbsolutePath() + "/annot/src/main/java/com/predic8/membrane/annot/generator/HelpReference.java"));
+	}
+
+	private static void handleHelpReference(File file) throws Exception {
+		// path.replace("%VERSION%", "5.0")
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		ArrayList<String> content = new ArrayList<>();
+		while(true) {
+			String line = br.readLine();
+			if (line == null)
+				break;
+			content.add(line);
+		}
+		br.close();
+		boolean found = false;
+		Pattern pattern = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
+		for (int i = 0; i < content.size(); i++) {
+			Matcher m = pattern.matcher(content.get(i));
+			if (m.find()) {
+				found = true;
+				String v = handler.handle(file, m.group(2));
+				// only put "$major.$minor" into HelpReference.java
+				v = v.replaceAll("([^.]+\\.[^.]+)\\..*", "$1");
+				content.set(i, m.replaceFirst(m.group(1) + v + m.group(3)));
+			}
+		}
+		if (!found)
+			throw new RuntimeException("Did not find version in HelpReference.java .");
+		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+		for (String line : content) {
+			bw.write(line);
+			bw.write(System.lineSeparator());
+		}
+		bw.close();
 	}
 
 
