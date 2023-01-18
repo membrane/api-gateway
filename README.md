@@ -48,10 +48,10 @@ Try the following snippets by copying them into the `conf/proxies.xml` file.
 Routing requests from port `8080` to `api.predic8.de` when the path starts with `/foo`. 
 
 ```xml
-<serviceProxy port="8080">
+<api port="8080">
   <path>/shop</path>
   <target host="api.predic8.de" port="80" />
-</serviceProxy>
+</api>
 ```
 
 ### OpenAPI Configuration & Validation
@@ -59,12 +59,9 @@ Routing requests from port `8080` to `api.predic8.de` when the path starts with 
 Configures APIs from OpenAPI documents and validates messages against it. [more...](distribution/examples/openapi)
 
 ```xml
-<router>
-  <openAPIProxy port="2000">
-    <spec location="https://petstore3.swagger.io/api/v3/openapi.json"
-          validateRequests="yes"/>
-  </openAPIProxy>
-</router>
+<api port="2000">
+    <openapi location="fruitshop-api.yml" validateRequests="yes"/>
+</api>
 ```
 
 ### Monitoring and Message Manipulation using Groovy or Javascript
@@ -72,25 +69,25 @@ Configures APIs from OpenAPI documents and validates messages against it. [more.
 Dynamically manipulate and monitor messages with Groovy:
 
 ```xml
-<serviceProxy port="2000">
+<api port="2000">
   <groovy>
     exc.request.header.add("X-Groovy", "Hello from Groovy")
     CONTINUE
   </groovy>
   <target host="localhost" port="8080" />
-</serviceProxy>
+</api>
 ```
 
-or Javascript(Nashorn):
+or Javascript:
 
 ```xml
-<serviceProxy port="2000">
+<api port="2000">
   <javascript>
     exc.getRequest().getHeader().add("X-Javascript", "Hello from JavaScript");
     CONTINUE;
   </javascript>
   <target host="localhost" port="8080" />
-</serviceProxy>
+</api>
 ```
 
 Try also the [Groovy example](distribution/examples/groovy) and [Javascript Example](distribution/examples/javascript).
@@ -98,12 +95,12 @@ Try also the [Groovy example](distribution/examples/groovy) and [Javascript Exam
 ### Rewrite URLs for Hypermedia
 
 ```xml
-<serviceProxy port="2000">
+<api port="2000">
     <rewriter>
     	<map from="^/goodlookingpath/(.*)" to="/backendpath/$1" />
     </rewriter>
     <target host="my.backend.server" port="80" />
-</serviceProxy>
+</api>
 ```
 
 ### Log HTTP
@@ -111,13 +108,13 @@ Try also the [Groovy example](distribution/examples/groovy) and [Javascript Exam
 Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv) or [JSON](distribution/examples/logging/json) file.
 
 ```xml
-<serviceProxy port="2000">
+<api port="2000">
   <log/> <!-- Logs to the console -->
   <statisticsCSV file="./log.csv" /> <!-- Logs finegrained CSV --> 
   <target host="api.predic8.de">
     <ssl/>
   </target>
-</serviceProxy>
+</api>
 ```
 
 # Websockets
@@ -125,12 +122,12 @@ Log data about requests and responses to a file or [database](distribution/examp
 Route and intercept WebSocket traffic:
 
 ```xml
-<serviceProxy port="2000">
+<api port="2000">
   <webSocket url="http://my.websocket.server:1234">
     <wsLog/>
   </webSocket>
   <target port="8080" host="localhost"/>
-</serviceProxy>
+</api>
 ```
 (_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.htm)_)
 
@@ -143,7 +140,7 @@ Route and intercept WebSocket traffic:
 Use the widely adopted OAuth2/OpenID Framework to secure endpoints against Google, Azure AD, github, Keycloak or Membrane authentication servers.
 
 ```xml
-<serviceProxy name="Resource Service" port="2001">
+<api name="Resource Service" port="2001">
   <oauth2Resource>
     <membrane src="https://accounts.google.com" clientId="INSERT_CLIENT_ID" clientSecret="INSERT_CLIENT_SECRET" scope="email profile" subject="sub"/>
   </oauth2Resource>    
@@ -154,7 +151,7 @@ Use the widely adopted OAuth2/OpenID Framework to secure endpoints against Googl
     CONTINUE
   </groovy>
   <target host="thomas-bayer.com" port="80"/>
-</serviceProxy>
+</api>
 ```
 (_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-openid.htm)_)
 
@@ -162,7 +159,7 @@ Use the widely adopted OAuth2/OpenID Framework to secure endpoints against Googl
 
 Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
 ```xml
-<serviceProxy name="Authorization Server" port="2000">
+<api name="Authorization Server" port="2000">
   <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
     <staticUserDataProvider>
       <user username="john" password="password" email="john@predic8.de" />
@@ -176,7 +173,7 @@ Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
       <scope id="profile" claims="username email password"/>
     </claims>
   </oauth2authserver>
-</serviceProxy>
+</api>
 ```
 (_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.htm)_)
 
@@ -184,34 +181,34 @@ Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
 
 Secure an endpoint with basic authentication:
 ```xml
-<serviceProxy port="2000">
+<api port="2000">
     <basicAuthentication>
         <user name="bob" password="secret" />
     </basicAuthentication>
     <target host="localhost" port="8080" />
-</serviceProxy>
+</api>
 ```
 
 ## SSL/TLS
 
 Route to SSL/TLS secured endpoints:
 ```xml
-<serviceProxy port="8080">
+<api port="8080">
   <target host="www.predic8.de" port="443">
     <ssl/>
   </target>
-</serviceProxy>
+</api>
 ```
 
 Secure endpoints with SSL/TLS:
 ```xml
-<serviceProxy port="443">
+<api port="443">
   <ssl>
     <keystore location="membrane.jks" password="secret" keyPassword="secret" />
     <truststore location="membrane.jks" password="secret" />
   </ssl>
   <target host="localhost" port="8080"  />
-</serviceProxy>
+</api>
 ```
 
 ## Rate Limiting
@@ -219,17 +216,17 @@ Secure endpoints with SSL/TLS:
 Limit the number of incoming requests:
 
 ```xml
-<serviceProxy port="2000">
+<api port="2000">
   <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
   <target host="localhost" port="8080" />
-</serviceProxy>
+</api>
 ```
 
 # Loadbalancing
 
 Distribute workload to multiple backend nodes. [more ...](distribution/examples/loadbalancing)
 ```xml
-<serviceProxy name="Balancer" port="8080">
+<api name="Balancer" port="8080">
   <balancer name="balancer">
     <clusters>
       <cluster name="Default">
@@ -239,7 +236,7 @@ Distribute workload to multiple backend nodes. [more ...](distribution/examples/
       </cluster>
     </clusters>
   </balancer>
-</serviceProxy>
+</api>
 ```
 
 # Legacy SOAP and XML Web Services
