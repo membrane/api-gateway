@@ -242,7 +242,7 @@ public abstract class SessionManager {
 
     private List<String> cookiesToExpire(Exchange exc, String currentSessionCookieValue) {
         if (getCookieHeader(exc) != null)
-            return expireCookies(getInvalidCookies(exc, ttlExpiryRefreshOnAccess ? UUID.randomUUID().toString() : currentSessionCookieValue));
+            return expireCookies(exc, getInvalidCookies(exc, ttlExpiryRefreshOnAccess ? UUID.randomUUID().toString() : currentSessionCookieValue));
 
         return new ArrayList<>();
     }
@@ -255,10 +255,10 @@ public abstract class SessionManager {
                 .orElseThrow(Exception::new) + "=true";
     }
 
-    private List<String> expireCookies(List<String> invalidCookies) {
+    private List<String> expireCookies(Exchange exc, List<String> invalidCookies) {
         return invalidCookies
                 .stream()
-                .map(cookie -> cookie + ";" + String.join(";", createInvalidationAttributes()))
+                .map(cookie -> cookie + ";" + String.join(";", createInvalidationAttributes(exc)))
                 .collect(Collectors.toList());
     }
 
@@ -326,11 +326,13 @@ public abstract class SessionManager {
         return exc.getRule().getSslInboundContext() != null || secure;
     }
 
-    public List<String> createInvalidationAttributes() {
+    public List<String> createInvalidationAttributes(Exchange exc) {
         return Stream.of(
                 VALUE_TO_EXPIRE_SESSION_IN_BROWSER,
                 "Path=/",
+                needsSecureAttribute(exc) ? "Secure" : null,
                 domain != null ? "Domain=" + domain + "; " : null,
+                httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(attr -> attr != null)
