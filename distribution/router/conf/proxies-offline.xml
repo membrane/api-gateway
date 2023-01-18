@@ -1,0 +1,59 @@
+<!--
+
+	Offline Configuration
+	==================
+
+	For more details see:
+	- https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
+	- proxies-full-sample.xml.
+	- The examples/* folders with working samples for proxies.xml
+
+	Start with:
+	./service-proxy.sh -c conf/proxies-offline.xml
+
+-->
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans
+	                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<!-- 
+			 Read configuration from OpenAPI
+			 Open http://localhost:2000/api-doc and use the Swagger UI 
+			 You can explore the API, but "try-it" would not work offline
+		-->
+		<api port="2000">
+			<openapi location="fruitshop-api.yml" validateRequests="yes"/>
+		</api>
+
+		<!-- Forward from port localhost:2000 to localhost:3000 -->
+		<api name="MyAPI" port="2000" >
+			<!-- Point to your backend instead. -->
+			<target host="localhost" port="3000"/>
+		</api>
+
+		<api name="JSON Tempate" port="3000">
+			<log headerOnly="false"/><!-- See console for logs -->
+			<template contentType="application/json">
+				{ "success": true }
+			</template>
+			<return />
+		</api>
+
+		<!-- 
+			 Administration UI
+             Open http://localhost:9000 
+
+             Secure access for production: See proxies-secure-sample.xml
+		-->
+		<api name="Console" port="9000">
+			<adminConsole />
+		</api>
+
+	</router>
+
+</spring:beans>

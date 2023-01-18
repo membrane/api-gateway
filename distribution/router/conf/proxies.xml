@@ -1,11 +1,15 @@
 <!--
 
-	Main configuration
+	 Main Configuration
+	 ==================
 
-	See https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
-	or proxies-full-sample.xml.
+	 For more details see:
+	 - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
+	 - proxies-full-sample.xml.
+	 - The examples/* folders with working samples for proxies.xml
 
-	In the examples/* folders are working samples for proxies.xml
+	 Start with:
+	 ./service-proxy.sh
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
@@ -17,38 +21,75 @@
 
 	<router>
 
-
-		<!-- Forwards from port 2000 to localhost:3000. -->
-		<serviceProxy name="My Reverse Proxy" port="2000" >
-			<!-- Point to your backend instead. -->
-			<target host="localhost" port="3000"/>
-		</serviceProxy>
-
-
-		<serviceProxy name="Simulated Resource" port="3000">
-			<groovyTemplate><![CDATA[
-				html {
-					head {
-						title('Resource')
-					}
-					body{
-					  p('Hello from Membrane!')
-					 }
-				}
-				]]></groovyTemplate>
-		</serviceProxy>
-
-
-		<!--  Administration UI
-         Open http://localhost:9000 and log in as admin with password membrane.
+		<!-- 
+			 You need direct Internet access to run this configuration!
+			 Otherwise see proxies-offline.xml 
 		-->
-		<serviceProxy name="Console" port="9000">
-			<basicAuthentication>
-				<user name="admin" password="membrane" />
-			</basicAuthentication>
-			<accessControl file="acl.xml" />
+
+
+		<!-- 
+			 Reads the configuration from OpenAPI document
+			 Open http://localhost:2000/api-doc and use the Swagger UI there
+		-->
+		<api port="2000">
+			<openapi location="fruitshop-api.yml" validateRequests="yes"/>
+		</api>
+
+
+		<!-- 
+			
+			Open http://localhost:2000/names/Paula
+			See: https://membrane-api.io/tutorials/rest/
+		 -->
+		<api port="2000">
+			<path>/names</path>
+			<rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+			<rewriter>
+				<map from="^/names/(.*)" to="/restnames/name\.groovy\?name=$1" />
+			</rewriter> 
+			<response>
+				<beautifier/>
+				<log headerOnly="false"/> <!-- See console for logs -->
+				<xml2Json/>
+				<log headerOnly="false"/> 
+			</response>
+			<target url="http://www.thomas-bayer.com"/>
+		</api>
+
+		
+		<!-- 
+			 Dump HTTP headers and respond with an error
+			 Open: localhost:2000/header an lool at the console
+		-->
+		<api name="Groovy" port="2000">
+			<path>/header</path>
+			<request>
+				<groovy>
+					println "Request headers:"
+					exc.request.header.allHeaderFields.each {
+						print it 
+					}
+					CONTINUE
+				</groovy>
+			</request>
+			<template contentType="application/json">{ "ok": 1 }</template>
+			<return statusCode="200"/>
+		</api>
+
+		<!-- Forward all other requests on port 2000 to https://api.predic8.de -->
+		<api port="2000">
+			<target url="https://api.predic8.de"/>
+		</api>
+
+		<!-- 
+			 Administration UI
+             Open http://localhost:9000 
+
+             Secure access for production: See proxies-secure-sample.xml
+		-->
+		<api name="Console" port="9000">
 			<adminConsole />
-		</serviceProxy>
+		</api>
 
 	</router>
 

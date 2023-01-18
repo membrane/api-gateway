@@ -1,27 +1,25 @@
 <!--
+
+	Only for Reference!
+	===================
 	This file is a demo for various features only. The configuration will not work
 	in most environments (because of the HTTP proxy configuration). See the 
 	examples/* directory for working configuration files.
 	
-	
 
 	Routing Configuration
-	
-	Here you can configure routing rules for Membrane Service Proxy. It
-	contains some rules to show how to setup routing. Please make sure to
-	remove these rules before you put the router into production. More sample
-	configurations you can find in the examples directory.
+	=====================
+	Here you can configure routing rules for Membrane API Gateway. It
+	contains rules to show how to setup routing. Please make sure to
+	remove these rules before you put the router into production.
 
 	Have a look at
 	http://membrane-soa.org/service-proxy-doc/current/configuration/proxy-configuration.htm for
 	documentation and a reference explaining what XML elements can be used
 	how and where.
-	
-	See the proxies.xml files in the /examples/* directories in the Service Proxy
-	distribution for several examples of how to configure different Service Proxy
-	features within this file.
 
-	Use an XML editor with XML Schema syntax completion for easy editing.
+	Use an XML editor with XML Schema syntax completion for easy editing like
+	Visual Studio Code or Intellij.
 	
 	Changes to this file will be picked up almost instantly if Membrane is
 	running	once this file has been saved. Any dynamic configuration changes
@@ -200,14 +198,9 @@
 		<!--
 			Acts as a webserver. 
 		 -->
-		<serviceProxy port="2001">
+		<api port="2001">
 			<!-- Answers all requests incoming on port 2001 starting with "/static/". -->
 			<path>/static/</path>
-			
-			<!-- Requires the admin password. -->
-			<basicAuthentication>
-				<user name="admin" password="membrane" />
-			</basicAuthentication>
 			
 			<!-- Removes the leading "/static" from the request's destination -->
 			<rewriter>
@@ -221,15 +214,15 @@
 				or "404 Not Found".
 			-->
 			<webServer docBase="." /> 
-		</serviceProxy>
+		</api>
 	
 		<!--
 			Forwards HTTP requests on port 2001 to a local web container
 			running on port 8080, maybe a Tomcat server.
 		-->
-		<serviceProxy port="2001">
+		<api port="2001">
 			<target host="localhost" port="8080"/>
-		</serviceProxy>
+		</api>
 
 		<!--
 			Sets up the Administration Web Interface on port 9000.

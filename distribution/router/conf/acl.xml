@@ -1,9 +1,19 @@
+<!--
+
+Access Control List
+===================
+
+Configuration for the accessControl plugin.
+
+See: https://www.membrane-soa.org/service-proxy-doc/current/web-soap-acl.htm
+
+-->
 <accessControl>
-  <resource uri="*">
-    <clients>
-      <hostname>localhost</hostname>
-	  <ip>127.0.0.1</ip>
-	  <ip>0:0:0:0:0:0:0:1</ip>
-	 </clients>
-  </resource>
+    <resource uri="*">
+        <clients>
+            <hostname>localhost</hostname>
+            <ip>127.0.0.1</ip>
+            <ip>0:0:0:0:0:0:0:1</ip>
+        </clients>
+    </resource>
 </accessControl>

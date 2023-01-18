@@ -1,0 +1,56 @@
+<!--
+
+	Secure Configuration Sample
+	=========================== 
+
+	Start with:
+	./service-proxy.sh -c conf/proxies-security.xml 
+
+	In the examples/* folders are more working samples for proxies.xml
+
+-->
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans
+	                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>	
+
+		<!--  
+			Administration UI with secured access
+			
+			- Open https://localhost:9000/admin
+			- Login: admin membrane
+		-->
+		<api name="Console" port="9000">
+			<ssl>
+				<!-- Replace keystore for production! -->
+				<keystore location="membrane.jks" password="secret" keyPassword="secret" />
+				<truststore location="membrane.jks" password="secret" />
+			</ssl>
+			<basicAuthentication>
+				<!--		
+					The password can be specified as a hash. To create the hash use:
+					
+					> openssl passwd -6
+					Password:
+					Verifying - Password:
+					$6$.U1CweqYwN/6.DgE$xy96juzfqrp37.Z.QQ/jdx80gVJROds8VPVh/ZuLRrGwEUhfTqSgwsNWezYtYMxMDWuPUVohqC7i8Bzbwt1C9.
+				-->
+				<user name="admin" password="$6$OO0ThN.5$ARC/SklqDFfI0hEa7A.A0f9o.Ke0hIDQuXyP75m2xDBhqjyZh1MU9CoGiDL4HYqQ5Bd1e7CltzikW4Ry1JHJt0"/>
+			</basicAuthentication>
+			<!-- 
+				restrict access to localhost
+				
+				See: acl.xml
+			
+			-->
+			<accessControl file="acl.xml" /> 
+			<adminConsole />
+		</api>
+
+	</router>
+
+</spring:beans>
