@@ -1,0 +1,84 @@
+openapi: '3.0.2'
+info:
+  title: Fruit Shop API
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de/shop
+#x-validation:
+#  - request: true
+paths:
+  /products/:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: 
+            type: integer
+            maximum: 100
+            example: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductList"
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+
+      responses:
+        '200':
+          description: OK
+  /products/{pid}:
+    parameters:
+      - in: path
+        name: pid
+        schema:
+          type: integer
+          minimum: 0
+        required: true
+    get:
+      responses:
+        '200':
+          description: OK      
+
+components:
+  schemas:
+    ProductList:
+      type: object
+      properties:
+        meta:
+          type: object
+        products:
+          type: object
+          properties:
+            name:
+              type: string
+            product_url:
+              type: string
+    Product:
+      type: object
+      required: ["name","price"]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          example: Feigen
+        price:
+          type: number
+          example: 2.70
+          minimum: 0
+        category_url:
+          type: string
+          example: /shop/categories/Fruits
+        vendor_url:
+          type: string
+          example: /shop/vendors/672
+
+
+
