@@ -14,12 +14,10 @@
 
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.util.*;
+import java.lang.reflect.*;
+import java.net.*;
 
-import java.lang.reflect.Method;
-import java.net.URLClassLoader;
-
-import static java.lang.Integer.parseInt;
+import static java.lang.Integer.*;
 
 /**
  * Main class for memrouter.bat file.

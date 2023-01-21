@@ -89,9 +89,6 @@
 
 	<build>
 		<plugins>
-			<!-- Skip the enforcement of Java 17 in the parent POM cause we want to compile the starter in
-			     the distribution project with Java 8.
-			-->
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>

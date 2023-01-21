@@ -77,7 +77,7 @@
     </fileSets>
     <files>
         <file>
-            <source>${project.build.directory}/${project.name}-${project.version}.jar</source>
+            <source>../starter/target/starter-${project.version}.jar</source>
             <outputDirectory>/</outputDirectory>
             <destName>starter.jar</destName>
         </file>

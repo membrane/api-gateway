@@ -65,6 +65,7 @@
 	<modules>
 		<module>annot</module>
 		<module>core</module>
+		<module>starter</module>
 		<module>distribution</module>
 		<module>war</module>
 		<module>test</module>
