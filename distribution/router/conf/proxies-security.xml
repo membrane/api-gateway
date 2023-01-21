@@ -3,7 +3,7 @@
 	Secure Configuration Sample
 	=========================== 
 
-	Start with:
+	Start Membrane with:
 	./service-proxy.sh -c conf/proxies-security.xml 
 
 	In the examples/* folders are more working samples for proxies.xml

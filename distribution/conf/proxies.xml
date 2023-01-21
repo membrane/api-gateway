@@ -31,6 +31,18 @@
             <target url="http://www.thomas-bayer.com"/>
         </api>
 
+        http://localhost:2001/blz-service
+        <serviceProxy port="2001">
+            <rewriter>
+                <map from="^/blz-service/(.*)" to="/axis2/services/BLZService?$1" />
+            </rewriter>
+            <webServiceExplorer wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl" />
+            <wsdlRewriter  />
+            <wsdlPublisher wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"/>
+            <validator wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"/>
+            <target host="www.thomas-bayer.com"/>
+        </serviceProxy>
+
     </router>
 
 </spring:beans>

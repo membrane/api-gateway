@@ -8,7 +8,7 @@
 	- proxies-full-sample.xml.
 	- The examples/* folders with working samples for proxies.xml
 
-	Start with:
+	Start Membrane with:
 	./service-proxy.sh -c conf/proxies-offline.xml
 
 -->
