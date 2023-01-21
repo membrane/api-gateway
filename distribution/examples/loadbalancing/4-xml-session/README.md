@@ -10,8 +10,8 @@ In this example we will set up a load balancer, two nodes and one client. The co
 To run the example execute the following steps:
 
 0. Setup
-   Download the Apache Maven from https://maven.apache.org/download.cgi and unpack it (lets
-   say to C:\work\apache-maven-3.8.6 . Let us also say your Java resides in C:\Program Files\Java\jdk-17.0.2 . 
+   Download the Apache Maven from https://maven.apache.org/download.cgi and unpack it. Let's
+   say to C:\work\apache-maven-3.8.6 . Let us also say your Java installation resides in `C:\Program Files\Java\jdk-17.0.2`. 
 
    Execute the following commands:
    ```
@@ -46,7 +46,7 @@ To run the example execute the following steps:
 ```
 9. Take a look at the console output of node 1 and node 2. You will notice that only node 1 received requests, because of the session id. Membrane sends messages with the same session id to the same node.  
 
-10. Run the client again and you will notice that this time all requests are send to node 2. 
+10. Run the client again, and you will notice that this time all requests are sent to node 2. 
      
      
 

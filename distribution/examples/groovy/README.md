@@ -31,7 +31,7 @@ You should get the following output:
 Greatings from Spring                              
 ```
 
-The response body an the `X-Groovy` header were produced by Groovy scripts.
+The response body and the `X-Groovy` header were produced by Groovy scripts.
 
 3. Take a look at the output of the `service-proxy.sh/bat` script. You should see the output from a Groovy script, printing the request header fields.
 

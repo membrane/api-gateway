@@ -3,7 +3,7 @@
 Membrane API Gateway can balance requests to a number of different nodes. The nodes can be added and removed dynamically at runtime.
 
 The nodes can be organized in clusters. A Web based administration interface allows you to create and remove nodes and
-clusters. In addition a simple URL based interface can be used to add clusters and nodes. 
+clusters. In addition, a simple URL based interface can be used to add clusters and nodes. 
 
 
 ## Get Started

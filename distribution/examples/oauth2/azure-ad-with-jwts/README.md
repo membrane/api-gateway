@@ -15,7 +15,7 @@ Membrane API Gateway exposes the Backend e.g. to the hostile internet. Only requ
 
 # Azure AD Setup
 
-Both the Client as well as the Backend are registered in Azure AD with an "App registration". Don't get confused. ;)
+Both the Client and the Backend are registered in Azure AD with an "App registration". Don't get confused. ;)
 
 ## 1. Register the backend
 
@@ -41,7 +41,7 @@ Both the Client as well as the Backend are registered in Azure AD with an "App r
 
 ## 2. Get a valid token
 
-There are several possibilities of getting a valid token. For this demo, we use the the OAuth 2.0 client credentials flow. (This is an example of the *Access without a user* scenario described on https://learn.microsoft.com/en-us/azure/active-directory/develop/permissions-consent-overview .)
+There are several possibilities of getting a valid token. For this demo, we use the OAuth 2.0 client credentials flow. (This is an example of the *Access without a user* scenario described on https://learn.microsoft.com/en-us/azure/active-directory/develop/permissions-consent-overview .)
 
 ### 2.a. Register your client
 

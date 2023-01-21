@@ -1,6 +1,5 @@
 ### WEBSOCKET STOMP EXAMPLE
 
-
 In this example we are going to send STOMP over WebSocket, all handled by
 Membrane Service Proxy.
 
@@ -9,7 +8,7 @@ text based protocol for messaging, supported by ActiveMQ. Because of this, we
 can connect ActiveMQ with our browser (utilizing a STOMP JavaScript library).
 
 WebSocket is another protocol which allows full-duplex communication with a
-single TCP connection. One can "upgrade" a HTTP connection by sending a header
+single TCP connection. One can "upgrade" an HTTP connection by sending a header
 specific HTTP header. More on this is covered at the end of this guide, after
 the Running instructions.
 
@@ -20,7 +19,7 @@ the Running instructions.
 1.	Download ActiveMQ and unpack it.
 	ActiveMQ DL Site:
 		http://activemq.apache.org/download.html
-	(Latest stable is probably a good idea.)
+	(The latest stable is probably a good idea.)
 	  
 2.	Start ActiveMQ by executing `bin/activemq start` in the ActiveMQ directory.
 	  

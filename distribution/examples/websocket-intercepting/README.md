@@ -3,7 +3,7 @@
 In this example we are going to see how Websocket frames are routed through Membrane Service Proxy. Additionally, 
 Membrane Service Proxy logs the content of the WebSocket stream by intercepting and processing it.
 
-WebSocket is a protocol which allows full-duplex communication with a single TCP connection. One can "upgrade" a
+WebSocket is a protocol which allows full-duplex communication with a single TCP connection. One can "upgrade" an
 HTTP connection by sending specific WebSocket HTTP headers. You will find more information on WebSockets on
 https://tools.ietf.org/html/rfc6455
 

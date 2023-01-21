@@ -51,7 +51,7 @@ Now take a closer look at the transform element.
 <transform xslt="examples/xslt/customer2person.xsl" />
 ```
 
-You can reference stylesheets that will be applied to the request and response with the `xslt` attribute. If you leave the attribute blank or do not specify them at all, no transformation will be done. With the element above the interceptor will apply the specified XSLT stylesheet to the response and request. To limit the transformation only to the request or response, use request or response elements to wrap the interceptor. In this example we wrapped the interceptor with an response element so that the transformation is only applied to the response. 
+You can reference stylesheets that will be applied to the request and response with the `xslt` attribute. If you leave the attribute blank or do not specify them at all, no transformation will be done. With the element above the interceptor will apply the specified XSLT stylesheet to the response and request. To limit the transformation only to the request or response, use request or response elements to wrap the interceptor. In this example we wrapped the interceptor with a response element so that the transformation is only applied to the response. 
 
 ```
 <response>

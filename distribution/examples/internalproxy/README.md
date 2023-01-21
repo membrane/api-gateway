@@ -8,7 +8,7 @@ In this example we will have a look at the `<internalProxy>` and its usages
 
 #### RUNNING THE EXAMPLE
 
-Lets start first example with the `<soapProxy>`
+Let's start first example with the `<soapProxy>`
 
 1. Go to the `examples/internalProxy` directory
 

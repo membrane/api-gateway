@@ -1,6 +1,6 @@
 # Logging Requests and Responses to CSV Files 
 
-Membrane can log the access to APIs to a CSV file. The fields will be separated by semicolon (;), so that you can import the data into Excel.
+Membrane can log the access to APIs to a CSV file. The fields will be separated by semicolon `;`, so that you can import the data into Excel.
 
 
 ## Running the Example

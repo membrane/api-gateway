@@ -8,7 +8,7 @@ of the proxies.xml file.
 
 1. Prepare a WebSocket client and server. The server should listen on port 8080. The client should connect through port 9999.
    (Membrane Service Proxy already ships with an example WebSocket client and server (requiring NodeJS). Take a look at
-   the "websocket-intercepting" example and run the startWebsocket.[bat|sh]. This will startup a server and client and
+   the "websocket-intercepting" example and run the startWebsocket.[bat|sh]. This will start up a server and client and
    do some communication.)
 
    

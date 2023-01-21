@@ -27,7 +27,7 @@ To run the example execute the following steps:
 
 8. Start the ij program to query the database: `DERBY_HOME/bin/ij.bat`
 
-9. Connect to the database using the the following command:
+9. Connect to the database using the following command:
 ```
 connect 'jdbc:derby://localhost:1527/membranedb';
 ```

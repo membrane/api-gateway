@@ -46,7 +46,7 @@ First take a look at the proxies.xml file.
 ```
 
 
-You will see that there is a serviceProxy that directs calls to the port `2000` to www.thomas-bayer.com:80. Additionally the REST2SOAPInterceptor is set for the rule. The interceptor will be called during the processing of each request.
+You will see that there is a serviceProxy that directs calls to the port `2000` to www.thomas-bayer.com:80. Additionally, the REST2SOAPInterceptor is set for the rule. The interceptor will be called during the processing of each request.
 
 Now take a closer look at the rest2Soap element:
 

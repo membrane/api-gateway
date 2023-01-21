@@ -16,7 +16,7 @@ To run the example execute the following steps:
 2. Execute `service-proxy.bat`
 
 3. Open the URL http://localhost:2000/ in your browser. 
-   The predic8.de web site will be displayed in your browser.
+   The predic8.de website will be displayed in your browser.
 
 4. Open the URL http://localhost:2000/contact/
    The predic8 contacts site will be displayed. 

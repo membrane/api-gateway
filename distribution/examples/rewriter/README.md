@@ -50,7 +50,7 @@ The interceptor is configured with one regular expression `^/bank/(.*)` . This w
 /bank/services/BLZService
 ```
 
-In the regular expression, we use a group that we can reference when replacing the path-query part of an URI. The value to replace the part is given by the `to` attribute and is set to `/axis/$1` . The `$1` is the reference to the group and will contain the value matched by the group. So the above parts will be replaced by the following:
+In the regular expression, we use a group that we can reference when replacing the path-query part of a URI. The value to replace the part is given by the `to` attribute and is set to `/axis/$1` . The `$1` is the reference to the group and will contain the value matched by the group. So the above parts will be replaced by the following:
 
 ```
 /axis2/services/BLZService?wsdl

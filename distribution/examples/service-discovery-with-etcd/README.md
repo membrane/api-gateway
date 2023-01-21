@@ -71,7 +71,7 @@ Now take a look at the `proxies.xml` file in the configurator folder.
 		</serviceProxy>
 	</router>
 ```
-You will see a service proxy that provides the admin console on port `9001`. Additionally on top you can see the etcdBasedConfigurator that reads from an etcd and creates service proxies for those services dynamically.
+You will see a service proxy that provides the admin console on port `9001`. Additionally, on top you can see the etcdBasedConfigurator that reads from an etcd and creates service proxies for those services dynamically.
 The `etcdBasedConfigurator` has 3 values that you can set and by default it is set to read from an etcd on http://localhost:4001 and provides its service on port `8080`.
 
 * `baseUrl` is the url the etcd is residing on

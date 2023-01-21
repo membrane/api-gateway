@@ -18,7 +18,7 @@ To run the example execute the following steps:
 
 3. Open the URL http://localhost:4000/ in your browser.
 
-    You will see a simple web app that counts how often it was called. There are 2 more endpoints of the same kind listening at port `4001` and `4002`. However it is possible that it will count twice a single connection, due to the browser checking for the favicon.
+    You will see a simple web app that counts how often it was called. There are 2 more endpoints of the same kind listening at port `4001` and `4002`. However, it is possible that it will count twice a single connection, due to the browser checking for the favicon.
 
 4. Register a node on `localhost` on port `4000` by runing the `lbclient.sh/bat` script.
 
@@ -77,4 +77,4 @@ To run the example execute the following steps:
 8. Login with admin/admin and notice the node you just added.
 
 
-Of course you can protect the management API like any other Membrane proxy using SSL, a password or token.
+Of course, you can protect the management API like any other Membrane proxy using SSL, a password or token.

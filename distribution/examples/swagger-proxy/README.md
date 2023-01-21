@@ -73,7 +73,7 @@ The `<swaggerProxy>` only lets through
 2) Swagger calls which are part of the Swagger specification (swagger.json)
 3) and calls to the Swagger UI. (if swaggerProxy's 'allowUI' attribute is true (default=true))
 
-The second method - with a `<swaggerRewriter>` inside a `<serviceProxy>` - let's through
+The second method - with a `<swaggerRewriter>` inside a `<serviceProxy>` - lets through
 all calls and redirects them to `petstore.swagger.io` on port `80.`
 The `<swaggerRewriter>` takes care of rewriting the `swagger.json` specification, and
 the Swagger UI (if `<swaggerRewriter>`'s attribute `rewriteUI` is set (default=true)).

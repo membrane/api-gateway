@@ -39,7 +39,7 @@ First take a look at the `proxies.xml` file.
 </proxies>
 ```
 
-You will see that there is a `<serviceProxy>` that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the BasicAuthentictionInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
+You will see that there is a `<serviceProxy>` that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally, the BasicAuthentictionInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
 Now take a closer look at the `<basicAuthentication>` element:
 
@@ -49,9 +49,9 @@ Now take a closer look at the `<basicAuthentication>` element:
 </basicAuthentication>
 ```
 
-The `<basicAuthentication>` elements sets up a `BasicAuthenticationInterceptor`. You can add users by using nested user elements. The user name and the password are given by the attributes name and password of the user element. In our example there is one user with the username membrane who has got the password membrane. 
+The `<basicAuthentication>` elements sets up a `BasicAuthenticationInterceptor`. You can add users by using nested user elements. The username and the password are given by the attributes name and password of the user element. In our example there is one user with the username membrane who has got the password membrane. 
 
-When you open the URL http://localhost:2000/samples/sqlrest/CUSTOMER/7/ in your browser the monitor will response with a 401 Not Authorized message.
+When you open the URL http://localhost:2000/samples/sqlrest/CUSTOMER/7/ in your browser the monitor will respond with a 401 Not Authorized message.
 
 ```
 HTTP/1.1 401 Unauthorized
@@ -64,7 +64,7 @@ Connection: close
 <HTML><HEAD><TITLE>Error</TITLE><META HTTP-EQUIV='Content-Type' CONTENT='text/html; charset=utf-8'></HEAD><BODY><H1>401 Unauthorized.</H1></BODY></HTML>
 ```
 
-The response will have the `WWW-Authenticate` Header set. First the browser will ask you for your username and password. Than it will send the following request:
+The response will have the `WWW-Authenticate` Header set. First the browser will ask you for your username and password. Then it will send the following request:
 
 ```
 GET /samples/sqlrest/CUSTOMER/7/ HTTP/1.1

@@ -1,20 +1,20 @@
 ### STOMP OVER WEBSOCKET INTERCEPTING
 
 In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane Service Proxy.
-Additionally regular interceptors can be run on those messages (with limitations) in addition to all WebSocket
+Additionally, regular interceptors can be run on those messages (with limitations) in addition to all WebSocket
 interceptors.
 
 `STOMP` is an abbreviation for Streaming Text Oriented Messaging Protocol. It's a text based protocol for messaging,
 supported by ActiveMQ. You will find more information on STOMP on https://stomp.github.io/stomp-specification-1.2.html
 
-`WebSocket` is another protocol which allows full-duplex communication with a single TCP connection. One can "upgrade" a
+`WebSocket` is another protocol which allows full-duplex communication with a single TCP connection. One can "upgrade" an
 HTTP connection by sending specific WebSocket HTTP headers. You will find more information on WebSockets on
 https://tools.ietf.org/html/rfc6455
 
 
 #### PREPARATIONS
 
-1. Download the latest ActiveMQ release at https://github.com/apache/activemq/releases (v5.14.5 as of now)
+1. Download the latest ActiveMQ-release at https://github.com/apache/activemq/releases (v5.14.5 as of now)
    
 2. Navigate to the `bin/activemq` folder in a console
    
@@ -66,7 +66,7 @@ First, take a look at the proxies.xml file.
 </serviceProxy>
 ```
 
-* In it you will find a service proxy that listens on port `9998`. 
+* In it, you will find a service proxy that listens on port `9998`. 
 * In this service proxy you will find a webSocket element that contains `<wsStompReassembler>` and `<wsLog>` elements. The
 webSocket element can read and write WebSocket frames and has ActiveMQ on port `61614` as a target.
 * The `<wsStompReassembler>` element wraps a STOMP message in a Membrane-typical exchange for further processing.

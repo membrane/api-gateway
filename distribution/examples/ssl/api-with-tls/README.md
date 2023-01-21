@@ -10,7 +10,7 @@ This example describes how to secure an API with SSL/TLS.
 
     `https://localhost/`
 
-    You should get a warning that the certificate is not trustworthy. Here you can ignore the warning. In production you should use your own certificates.
+    You should get a warning that the certificate is not trustworthy. Here you can ignore the warning. In production, you should use your own certificates.
 
 3. You can also access the API using `curl`. The option `-k` suppresses the check for self-signed certificates.
 
@@ -56,7 +56,7 @@ The output should look like this:
 
 ## Configuration
 
-Just put a SSL element into a proxy. See the [documentation](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/ssl.htm).
+Just put an SSL element into a proxy. See the [documentation](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/ssl.htm).
 
 ```xml
 <serviceProxy port="443">
