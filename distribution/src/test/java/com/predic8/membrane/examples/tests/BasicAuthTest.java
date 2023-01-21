@@ -19,9 +19,6 @@ import static com.predic8.membrane.test.AssertUtils.getAndAssert;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static com.predic8.membrane.test.AssertUtils.setupHTTPAuthentication;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.examples.util.Process2;

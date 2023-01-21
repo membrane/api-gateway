@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.test.AssertUtils;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;

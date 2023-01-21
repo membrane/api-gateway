@@ -19,9 +19,6 @@ import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.IOException;
-
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static org.junit.jupiter.api.Assertions.*;
 

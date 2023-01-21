@@ -17,12 +17,14 @@ import com.predic8.membrane.examples.config.*;
 import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.*;
+import com.predic8.membrane.examples.tests.openapi.*;
 import com.predic8.membrane.examples.tests.ssl.*;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
+import com.predic8.membrane.examples.tutorials.rest.*;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -34,9 +36,13 @@ import org.junit.platform.suite.api.Suite;
  */
 @Suite
 @SelectClasses({
+
+
+        GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
+
         AntInPath.class,
         ConsistentVersionNumbers.class,
-        DefaultConfigTest.class,
+        DefaultConfigAdminConsoleTest.class,
         HelpLinkExistenceTest.class,
         JavaLicenseInfoTest.class,
 
@@ -76,7 +82,16 @@ import org.junit.platform.suite.api.Suite;
         RoutingTest.class,
         XsltExampleTest.class,
         RoutingTest.class,
-        OAuth2ApiTest.class
+        OAuth2ApiTest.class,
+
+        // OpenAPI
+        OpenAPIProxy.class,
+        OpenAPIValidationSimple.class,
+        OpenAPIValidation.class,
+
+        // Tutorials
+        TurorialRestStepsTest.class,
+        TurorialRestInitialTest.class
 })
 public class ExampleTests {
 }

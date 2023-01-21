@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2022 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,26 +12,31 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.tests;
+package com.predic8.membrane.examples.config;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import com.predic8.membrane.examples.tests.*;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import org.junit.jupiter.api.Test;
+import static com.predic8.membrane.test.AssertUtils.*;
 
-import com.predic8.membrane.examples.util.Process2;
-
-public class ProxyTest extends DistributionExtractingTestcase {
+/**
+ * Tests the Guide at:
+ * https://membrane-api.io/getting-started
+ *
+ * Needs an Internet connection to work!
+ */
+public class GettingStartedTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "proxy";
+		return "..";
 	}
 
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
-			getAndAssert200("http://localhost:2001/axis2/services/BLZService?wsdl");
+			assertContains("Shop API", getAndAssert200(URL_2000));
 		}
 	}
 }

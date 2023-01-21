@@ -22,17 +22,14 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.*;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.ProxiesXmlUtil;
 
-public class DefaultConfigTest extends DistributionExtractingTestcase {
+public class DefaultConfigAdminConsoleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -58,6 +55,7 @@ public class DefaultConfigTest extends DistributionExtractingTestcase {
 			assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:2003/admin/"));
 
 			new ProxiesXmlUtil(proxies).updateWith(readFileToString(proxiesFull, UTF_8), sl);
+			readFileFromBaseDir("conf/proxies-full-sample.xml");
 
 			setupHTTPAuthentication("localhost", 2001, "admin", "membrane");
 			assertContains("Routing Configuration", getAndAssert200("http://localhost:2001/static/proxies.xml"));

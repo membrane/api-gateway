@@ -13,20 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests.versioning;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static com.predic8.membrane.test.AssertUtils.replaceInFile;
 import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.*;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.examples.util.BufferLogger;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;

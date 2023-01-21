@@ -13,17 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.FileSystems;
-import java.nio.file.Paths;
-
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
 import static com.predic8.membrane.test.AssertUtils.*;
-import static java.nio.file.Files.readAllBytes;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InternalProxyTest extends DistributionExtractingTestcase {

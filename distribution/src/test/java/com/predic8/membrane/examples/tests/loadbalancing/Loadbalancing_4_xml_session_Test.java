@@ -18,8 +18,6 @@ import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-
 import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static java.lang.Thread.sleep;

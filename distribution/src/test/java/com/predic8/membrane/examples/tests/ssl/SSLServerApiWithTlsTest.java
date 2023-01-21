@@ -14,14 +14,8 @@
 
 package com.predic8.membrane.examples.tests.ssl;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 

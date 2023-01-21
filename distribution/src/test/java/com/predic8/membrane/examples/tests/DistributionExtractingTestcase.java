@@ -24,9 +24,7 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.examples.util.*;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -53,6 +51,7 @@ public abstract class DistributionExtractingTestcase {
 
     public static  final String[] CONTENT_TYPE_APP_XML_HEADER = {"Content-Type", APPLICATION_XML};
     public static  final String[] CONTENT_TYPE_TEXT_XML_HEADER = {"Content-Type", TEXT_XML};
+    public static  final String[] CONTENT_TYPE_APP_JSON_HEADER = {"Content-Type", APPLICATION_JSON};
 
     public static  final String[] CONTENT_TYPE_SOAP_HEADER = {"Content-Type", APPLICATION_SOAP};
 

@@ -13,16 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;

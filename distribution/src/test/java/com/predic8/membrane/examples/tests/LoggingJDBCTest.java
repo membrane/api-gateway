@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
@@ -74,11 +73,11 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
     }
 
     private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:derby:" + getDBFile("derbyDB").getAbsolutePath().replace("\\", "/"));
+        return DriverManager.getConnection("jdbc:derby:" + getDBFile().getAbsolutePath().replace("\\", "/"));
     }
 
-    private File getDBFile(String derbyDB) {
-        return new File(baseDir, derbyDB);
+    private File getDBFile() {
+        return new File(baseDir, "derbyDB");
     }
 
     private void copyDerbyJarToMembraneLib(String clazz) throws IOException {

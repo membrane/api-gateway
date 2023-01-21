@@ -15,7 +15,6 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
-import org.apache.http.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
@@ -31,8 +30,7 @@ public class GroovyTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2000/", null);
-			assertEquals("42",res.getFirstHeader("X-Groovy").getValue());
+			assertEquals("42", getAndAssertWithResponse(200,URL_2000, null).getFirstHeader("X-Groovy").getValue());
 		}
 	}
 }

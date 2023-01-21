@@ -18,14 +18,9 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
-import java.io.File;
-import java.io.IOException;
-
-import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.test.AssertUtils;
 
 public class REST2SOAPJSONTest extends DistributionExtractingTestcase {
 

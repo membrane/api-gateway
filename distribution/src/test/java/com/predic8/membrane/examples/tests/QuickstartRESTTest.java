@@ -15,14 +15,10 @@
 package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.*;
 
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.examples.util.Process2;
@@ -45,35 +41,36 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 			AssertUtils.closeConnections();
 
 			new ProxiesXmlUtil(new File(baseDir, "proxies.xml")).updateWith(
-					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" +
-							"	xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n" +
-							"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" +
-							"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd\r\n" +
-							"					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" +
-							"\r\n" +
-							"	<router>\r\n" +
-							"\r\n" +
-							"       <serviceProxy name=\"names\" port=\"2000\">\r\n" +
-							"         <path isRegExp=\"true\">/(rest)?names.*</path>\r\n" +
-							"         <rewriter>\r\n" +
-							"           <map from=\"/names/(.*)\" to=\"/restnames/name\\.groovy\\?name=$1\" />\r\n" +
-							"         </rewriter>\r\n" +
-							"         <statisticsCSV file=\"log.csv\" />\r\n" +
-							"         <response>\r\n" +
-							"           <regExReplacer regex=\"\\s*,\\s*&lt;\" replace=\"&lt;\" />\r\n" +
-							"           <transform xslt=\"restnames.xsl\" />\r\n" +
-							"         </response>\r\n" +
-							"         <target host=\"thomas-bayer.com\" port=\"80\" />\r\n" +
-							"       </serviceProxy>\r\n" +
-							"     \r\n" +
-							"       <serviceProxy name=\"Console\" port=\"9000\">\r\n" +
-							"         <basicAuthentication>\r\n" +
-							"           <user name=\"alice\" password=\"membrane\" />\r\n" +
-							"         </basicAuthentication>			\r\n" +
-							"         <adminConsole />\r\n" +
-							"       </serviceProxy>	\r\n" +
-							"     </router>\r\n" +
-							"</spring:beans>", sl);
+					"""
+							<spring:beans xmlns="http://membrane-soa.org/proxies/1/"\r
+								xmlns:spring="http://www.springframework.org/schema/beans"\r
+								xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\r
+								xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd\r
+												    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">\r
+							\r
+								<router>\r
+							\r
+							       <serviceProxy name="names" port="2000">\r
+							         <path isRegExp="true">/(rest)?names.*</path>\r
+							         <rewriter>\r
+							           <map from="/names/(.*)" to="/restnames/name\\.groovy\\?name=$1" />\r
+							         </rewriter>\r
+							         <statisticsCSV file="log.csv" />\r
+							         <response>\r
+							           <regExReplacer regex="\\s*,\\s*&lt;" replace="&lt;" />\r
+							           <transform xslt="restnames.xsl" />\r
+							         </response>\r
+							         <target host="thomas-bayer.com" port="80" />\r
+							       </serviceProxy>\r
+							     \r
+							       <serviceProxy name="Console" port="9000">\r
+							         <basicAuthentication>\r
+							           <user name="alice" password="membrane" />\r
+							         </basicAuthentication>			\r
+							         <adminConsole />\r
+							       </serviceProxy>	\r
+							     </router>\r
+							</spring:beans>""", sl);
 
 			result = getAndAssert200("http://localhost:2000/names/Pia");
 			assertContains("Italy, Spain", result);

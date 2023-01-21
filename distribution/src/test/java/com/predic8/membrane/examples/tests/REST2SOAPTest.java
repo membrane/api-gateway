@@ -17,12 +17,8 @@ package com.predic8.membrane.examples.tests;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.util.Process2;
 
 public class REST2SOAPTest extends DistributionExtractingTestcase {

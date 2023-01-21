@@ -18,8 +18,6 @@ import com.predic8.beautifier.XMLBeautifier;
 import com.predic8.membrane.annot.bean.MCUtil;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.test.AssertUtils;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -27,7 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
-import java.nio.charset.*;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -52,7 +49,7 @@ import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
 public class ConfigSerializationTest {
 
 	// list of examples that do not work
-	public static List<String> EXCLUDED = asList("custom-interceptor", // has external classpath dependencies
+	public static final List<String> EXCLUDED = asList("custom-interceptor", // has external classpath dependencies
 			"custom-websocket-interceptor", // has external classpath dependencies
 			"jdbc-database", // contains a reference to a DataSource bean (not serializable)
 			"proxy", // contains more than one <router> (not supported by MCUtil#fromXML())

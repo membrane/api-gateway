@@ -16,18 +16,12 @@ package com.predic8.membrane.examples.tests.versioning;
 import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.readFileToString;
 
 public class XsltExampleTest extends DistributionExtractingTestcase {
 
