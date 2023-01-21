@@ -1,15 +1,15 @@
 # Request & Response Validation against OpenAPI - Detailed Example
 
-Membrane can validate requests and responses against OpenAPI specifications. The specifications can be in YAML or JSON format on disk or reachable over the network.
+Membrane can validate requests and responses against OpenAPI descriptions. The specifications can be in YAML or JSON format on disk or reachable over the network.
 
-For a basic example see the _openapi-validation-simple_ folder.
+For a basic example see the _validation-simple_ folder.
 
 
 ## Running the example
 
 Make sure to use Membrane version 5 or newer.
 
-1. Go to the _examples/openapi/openapi-validation_ directory
+1. Go to the _examples/openapi/validation_ directory
 
 2. Start Membrane with the script inside this directory:
 
@@ -46,7 +46,7 @@ Run the file _curl-requests.sh_ or parts of it.
 </api>
 ```
 
-2. Incomming requests are validated against the definitions in the OpenAPI specification. In case of an validation failure an error message is returned. 
+2. Incomming requests are validated against the definitions in the OpenAPI specification. In case of a validation failure an error message is returned. 
 
 3. The request is sent to the backend server with the server url from the OpenAPI definition:
 

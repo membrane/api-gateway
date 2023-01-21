@@ -10,8 +10,8 @@ Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/
 This page serves as a reference for the functions and configuration. See also the examples:
 
 - [openAPIProxy, UI and Swagger UI](openapi-proxy)
-- [OpenAPI validation](openapi-validation-simple)
-- [OpenAPI validation extended sample](openapi-validation)
+- [OpenAPI validation](validation-simple)
+- [OpenAPI validation extended sample](validation)
 
 The **openAPIProxy** is featured in Membrane version 5 and newer and supports OpenAPI from version 3.0.0. Version 2 is not supported.
 
@@ -85,11 +85,11 @@ x-membrane-validation:
 
 # Overview and Swagger UI
 
-The __openAPIProxy__ has an UI that can be reached on its port e.g. [http://localhost:2000/api-doc](http://localhost:2000/api-doc). Follow the links on the left to access the Swagger UI or the link on the right to download the OpenAPI document.
+The __openAPIProxy__ has a UI that can be reached on its port e.g. [http://localhost:2000/api-doc](http://localhost:2000/api-doc). Follow the links on the left to access the Swagger UI or the link on the right to download the OpenAPI document.
 
 ![Overview UI](openapi-proxy/api-overview.png)
 
-To get a JSON description of the deployed OpenAPI documents call the same <a href="curl http://localhost:2000/api-doc">URL</a> outside of the browser e.g. in curl or Postman:
+To get a JSON description of the deployed OpenAPI documents call the same <a href="curl http://localhost:2000/api-doc">URL</a> outside the browser e.g. in curl or Postman:
 
 ```
 curl http://localhost:2000/api-doc
@@ -127,7 +127,7 @@ servers:
 - url: "https://api.predic8.de:443/shop"
 ```
 
-If you use the rewritten OpenAPI document for your client, than requests will be sent to Membrane at _https://api.predic8.de:443/shop_ and then forwared to the destination _http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop_.
+If you use the rewritten OpenAPI-document for your client, then requests will be sent to Membrane at _https://api.predic8.de:443/shop_ and then forwared to the destination _http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop_.
 
 
 # SSL/TLS

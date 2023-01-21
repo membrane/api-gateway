@@ -39,7 +39,7 @@ curl localhost:2000/api-docs
 }
 ```
 
-Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc) in the browser and you get an UI.
+Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc) in the browser, and you get a UI.
 
 ![API Overview](api-overview.png)
 
@@ -60,7 +60,7 @@ Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc)
 
 ```JSON
 {
-  "name": "Feigen",
+  "name": "Figs",
   "price": -2.7
 }
 ```
@@ -99,7 +99,7 @@ The validator checks the request against the OpenAPI definition. Cause the value
 
 For more about the OpenAPI Validation features of Membrane have a look at:
 
-- [Simple Validation Example](../openapi-validation-simple)
-- [Extended Validation Example](../openapi-validation/)
+- [Simple Validation Example](../validation-simple)
+- [Extended Validation Example](git/predic8/service-proxy/distribution/examples/openapi/validation/)
 
 
