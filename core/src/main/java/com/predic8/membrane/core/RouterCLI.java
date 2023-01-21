@@ -29,10 +29,11 @@ import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationC
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
+import static com.predic8.membrane.core.Constants.MEMBRANE_HOME;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException;
+import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
 import static com.predic8.membrane.core.util.OSUtil.getOS;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
-
 
 public class RouterCLI {
 
@@ -138,8 +139,8 @@ public class RouterCLI {
     private static String getRulesFile(MembraneCommandLine line) {
         ResolverMap rm = new ResolverMap();
         if (line.hasConfiguration()) {
-            String s = line.getConfiguration().replaceAll("\\\\", "/");
-            if (s.startsWith("file:") || s.startsWith("/") || s.length() > 3 && s.startsWith(":/", 1)) {
+            String s = fixBackslashes(line.getConfiguration());
+            if (shouldResolveFile(s)) {
                 // absolute
                 try {
                     rm.resolve(s);
@@ -150,24 +151,30 @@ public class RouterCLI {
                 }
             }
             return getRulesFileFromRelativeSpec(rm, s, "");
-        } else {
-            String errorNotice = "Please specify the location of Membrane's proxies.xml configuration file using the -c command line option.";
-            if (System.getenv("MEMBRANE_HOME") != null) {
-                errorNotice += " Or create the file in MEMBRANE_HOME/conf (" + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml).";
-            } else {
-                errorNotice += " You can also point the MEMBRANE_HOME environment variable to Membrane's distribution root directory " +
-                               "and ensure that MEMBRANE_HOME/conf/proxies.xml exists.";
-            }
-            return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", errorNotice);
         }
+        return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", getErrorNotice());
     }
 
+    private static String getErrorNotice() {
+        String errorNotice = "Please specify the location of Membrane's proxies.xml configuration file using the -c command line option.";
+        if (System.getenv(MEMBRANE_HOME) != null) {
+            return errorNotice + " Or create the file in MEMBRANE_HOME/conf (" + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml).";
+        }
+        return errorNotice + """
+                You can also point the MEMBRANE_HOME environment variable to Membrane's distribution root directory
+                and ensure that MEMBRANE_HOME/conf/proxies.xml exists.
+                """;
+    }
+
+    private static boolean shouldResolveFile(String s) {
+        return s.startsWith("file:") || s.startsWith("/") || s.length() > 3 && s.startsWith(":/", 1);
+    }
+
+
+
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-        String membraneHome = System.getenv("MEMBRANE_HOME");
-        String userDir = System.getProperty("user.dir").replaceAll("\\\\", "/");
-        if (!userDir.endsWith("/"))
-            userDir += "/";
-        String try1 = ResolverMap.combine(prefix(userDir), relativeFile);
+        String membraneHome = System.getenv(MEMBRANE_HOME);
+        String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
         try {
             rm.resolve(try1);
             return try1;
@@ -187,6 +194,13 @@ public class RouterCLI {
         System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " . " + errorNotice);
         System.exit(1);
         throw new RuntimeException();
+    }
+
+    public static String getUserDir() {
+        String userDir = fixBackslashes(System.getProperty("user.dir"));
+        if (!userDir.endsWith("/"))
+            return userDir + "/";
+        return userDir;
     }
 
     private static String prefix(String dir) {

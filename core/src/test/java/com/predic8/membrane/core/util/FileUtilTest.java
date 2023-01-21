@@ -16,12 +16,12 @@
 
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.util.FileUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FileUtilTest {
 
@@ -34,7 +34,16 @@ public class FileUtilTest {
 
     @Test
     public void read() {
-        assertEquals("Hello", FileUtil.readInputStream(is));
+        assertEquals("Hello", readInputStream(is));
     }
 
+    @Test
+    void writeInputStreamToFileTest() throws IOException {
+        writeInputStreamToFile(getTmpFilename(), is);
+        assertEquals("Hello", readInputStream(new FileInputStream(getTmpFilename())));
+    }
+
+    private String getTmpFilename() {
+        return System.getProperty("java.io.tmpdir") + "test.tmp";
+    }
 }

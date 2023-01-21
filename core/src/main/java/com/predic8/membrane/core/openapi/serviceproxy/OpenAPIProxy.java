@@ -37,16 +37,13 @@ public class OpenAPIProxy extends ServiceProxy {
     public static final String RESPONSES = "responses";
     public static final String VALIDATION_DETAILS = "details";
 
-
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
     protected Map<String, OpenAPI> basePaths;
 
     protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
-    public OpenAPIProxy() {
-
-    }
+    public OpenAPIProxy() {}
 
     @Override
     protected AbstractProxy getNewInstance() {
@@ -147,8 +144,6 @@ public class OpenAPIProxy extends ServiceProxy {
 
         interceptors.add(new OpenAPIPublisherInterceptor(apiRecords));
         interceptors.add(new OpenAPIInterceptor(this));
-
-
     }
 
     // TODO Stimmen die Pfade?

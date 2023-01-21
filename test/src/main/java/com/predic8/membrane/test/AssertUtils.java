@@ -42,9 +42,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.*;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -139,7 +137,6 @@ public class AssertUtils {
 	}
 
 	public static String postAndAssert200(String url, String body) throws IOException {
-		System.out.println("url = " + url + ", body = " + body);
 		return postAndAssert(200, url, body);
 	}
 
@@ -156,18 +153,25 @@ public class AssertUtils {
 	}
 
 	public static String postAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
+		return invokeAndAssert(new HttpPost(url),expectedHttpStatusCode,url,headers,body);
+	}
+
+	public static String putAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
+		return invokeAndAssert(new HttpPut(url),expectedHttpStatusCode,url,headers,body);
+	}
+
+	public static String invokeAndAssert(HttpEntityEnclosingRequestBase requestBase, int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
 		if (hc == null)
 			hc = HttpClientBuilder.create().build();
-		HttpPost post = new HttpPost(url);
 		for (int i = 0; i < headers.length; i+=2)
-			post.setHeader(headers[i], headers[i+1]);
-		post.setEntity(new StringEntity(body));
+			requestBase.setHeader(headers[i], headers[i+1]);
+		requestBase.setEntity(new StringEntity(body));
 		try {
-			HttpResponse res = hc.execute(post);
+			HttpResponse res = hc.execute(requestBase);
 			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
 			return EntityUtils.toString(res.getEntity());
 		} finally {
-			post.releaseConnection();
+			requestBase.releaseConnection();
 		}
 	}
 

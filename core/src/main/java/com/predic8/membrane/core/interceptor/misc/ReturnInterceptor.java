@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
+import static java.lang.String.format;
 
 
 /**
@@ -71,8 +72,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
         return "text/plain";
     }
 
-
-
     @Override
     public String getDisplayName() {
         return "Return";
@@ -80,6 +79,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return String.format("Sends an response with a status code of %d and an content type of %s.",statusCode,contentType);
+        return format("Sends an response with a status code of %d and an content type of %s.",statusCode,contentType);
     }
 }

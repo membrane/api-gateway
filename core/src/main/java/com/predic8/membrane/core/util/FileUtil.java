@@ -17,20 +17,22 @@ package com.predic8.membrane.core.util;
 import java.io.*;
 import java.util.stream.*;
 
+import static java.util.stream.Collectors.joining;
+
 public class FileUtil {
-	public static File prefixMembraneHomeIfNeeded(File f) {
-		if ( f.isAbsolute() )
-			return f;
-
-		return new File(System.getenv("MEMBRANE_HOME"), f.getPath());
-
-	}
 
 	public static String readInputStream(InputStream is) {
-		InputStreamReader in = new InputStreamReader(is);
-		Stream<String> lines = new BufferedReader(in).lines();
-		return lines.collect(Collectors.joining("\n"));
+		return new BufferedReader(new InputStreamReader(is)).lines().collect(joining("\n"));
 	}
 
-
+	public static void writeInputStreamToFile(String filepath, InputStream is) throws IOException {
+		try (OutputStream os = new BufferedOutputStream(new FileOutputStream(filepath))) {
+			byte[] buffer = new byte[1024];
+			int len;
+			while ((len = is.read(buffer)) > 0) {
+				os.write(buffer, 0, len);
+				os.flush();
+			}
+		}
+	}
 }

@@ -39,4 +39,8 @@ public class OSUtil {
     }
 
     public enum OS { WINDOWS, MAC, LINUX, UNKNOWN }
+
+    public static String fixBackslashes(String s) {
+        return s.replaceAll("\\\\", "/");
+    }
 }
