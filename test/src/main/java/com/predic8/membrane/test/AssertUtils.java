@@ -97,15 +97,7 @@ public class AssertUtils {
 			hc = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet(url);
 		try {
-			if (header != null)
-				for (int i = 0; i < header.length; i += 2)
-					get.addHeader(header[i], header[i+1]);
-			HttpResponse res = hc.execute(get);
-			try {
-				assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-			} catch (AssertionError e) {
-				throw new AssertionError(e.getMessage() + " while fetching " + url);
-			}
+			HttpResponse res = invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
 			HttpEntity entity = res.getEntity();
 			return entity == null ? "" : EntityUtils.toString(entity);
 		} finally {
@@ -119,21 +111,25 @@ public class AssertUtils {
 			hc = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet(url);
 		try {
-			if (header != null)
-				for (int i = 0; i < header.length; i += 2)
-					get.addHeader(header[i], header[i+1]);
-			HttpResponse res = hc.execute(get);
-			try {
-				assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-			} catch (AssertionError e) {
-				throw new AssertionError(e.getMessage() + " while fetching " + url);
-			}
-			System.out.println(res);
+			HttpResponse res = invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
 			res.getEntity();
 			return res;
 		} finally {
 			get.releaseConnection();
 		}
+	}
+
+	private static HttpResponse invokeAndAssertInternal(int expectedHttpStatusCode, String url, String[] header, HttpGet get) throws IOException {
+		if (header != null)
+			for (int i = 0; i < header.length; i += 2)
+				get.addHeader(header[i], header[i + 1]);
+		HttpResponse res = hc.execute(get);
+		try {
+			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+		} catch (AssertionError e) {
+			throw new AssertionError(e.getMessage() + " while fetching " + url);
+		}
+		return res;
 	}
 
 	public static String postAndAssert200(String url, String body) throws IOException {

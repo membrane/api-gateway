@@ -16,12 +16,16 @@ package com.predic8.membrane.examples.tutorials.rest;
 
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
+import org.apache.http.*;
+import org.apache.http.HttpResponse;
+import org.apache.http.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static com.predic8.membrane.test.AssertUtils.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * See: https://membrane-api.io/tutorials/rest/
@@ -37,9 +41,7 @@ public class TurorialRestStepsTest extends DistributionExtractingTestcase {
 
 	@BeforeEach
 	void setup() throws IOException {
-		InputStream stepsProxiesAsStream = getStepsProxiesAsStream();
-		System.out.println(stepsProxiesAsStream);
-		writeInputStreamToFile(baseDir + "/proxies.xml", stepsProxiesAsStream);
+		writeInputStreamToFile(baseDir + "/proxies.xml", getStepsProxiesAsStream());
 	}
 
 	@Test
@@ -62,8 +64,40 @@ public class TurorialRestStepsTest extends DistributionExtractingTestcase {
 	public void step2() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
 			assertContains("products_url", getAndAssert200("http://localhost:2002/shop/"));
-			assertContains("country", getAndAssert200("http://thomas-bayer.com/restnames/namesincountry.groovy?country=Germany"));
+
+			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2002/restnames/name.groovy?name=Pia",null);
+			assertContains("xml", getContentTypeValue(res));
+			assertContains("nameinfo",EntityUtils.toString(res.getEntity()));
 		}
+	}
+
+	@Test
+	public void step3() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2003/restnames/name.groovy?name=Pia",null);
+			assertContains("json", getContentTypeValue(res));
+			assertContains("nameinfo",EntityUtils.toString(res.getEntity()));
+		}
+	}
+
+	/**
+	 * Same as Step 3 but with beautifier and ratelimiter
+	 */
+	@Test
+	public void step4() throws Exception {
+		try(Process2 ignored = startServiceProxyScript()) {
+			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
+			assertContains("json", getContentTypeValue(res));
+			assertContains("nameinfo",EntityUtils.toString(res.getEntity()));
+
+			getAndAssert(200,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
+			getAndAssert(200,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
+			getAndAssert(429,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
+		}
+	}
+
+	private String getContentTypeValue(HttpResponse res) {
+		return res.getEntity().getContentType().getValue();
 	}
 
 	private InputStream getStepsProxiesAsStream() {

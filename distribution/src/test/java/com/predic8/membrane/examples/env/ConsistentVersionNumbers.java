@@ -13,31 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.examples.env;
 
+import org.junit.jupiter.api.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
+
+import javax.xml.parsers.*;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.*;
+import javax.xml.transform.stream.*;
+import javax.xml.xpath.*;
 import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
-import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.examples.util.TestFileUtil.*;
+import static java.util.Objects.*;
+import static javax.xml.xpath.XPathConstants.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test checks that all version numbers in the miscellaneous project files
@@ -51,7 +43,6 @@ public class ConsistentVersionNumbers {
 	@Test
 	public void doit() throws Exception {
 		File base = new File("..");
-
 		validateBase(base);
 
 		handler = (file, old) -> {
@@ -59,6 +50,7 @@ public class ConsistentVersionNumbers {
 				version = old;
 			else {
 				try {
+					System.out.println(file);
 					assertEquals(version, old);
 				} catch (RuntimeException e) {
 					throw new RuntimeException("in file " + file.getAbsolutePath(), e);
@@ -66,7 +58,6 @@ public class ConsistentVersionNumbers {
 			}
 			return old;
 		};
-
 		run(base);
 	}
 
@@ -100,15 +91,7 @@ public class ConsistentVersionNumbers {
 
 	private static void handleHelpReference(File file) throws Exception {
 		// path.replace("%VERSION%", "5.0")
-		BufferedReader br = new BufferedReader(new FileReader(file));
-		ArrayList<String> content = new ArrayList<>();
-		while(true) {
-			String line = br.readLine();
-			if (line == null)
-				break;
-			content.add(line);
-		}
-		br.close();
+		List<String> content = getFileContentAsLines(file);
 		boolean found = false;
 		Pattern pattern = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
 		for (int i = 0; i < content.size(); i++) {
@@ -123,14 +106,8 @@ public class ConsistentVersionNumbers {
 		}
 		if (!found)
 			throw new RuntimeException("Did not find version in HelpReference.java .");
-		BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-		for (String line : content) {
-			bw.write(line);
-			bw.write(System.lineSeparator());
-		}
-		bw.close();
+		writeLinesToFile(file, content);
 	}
-
 
 	private static void validateBase(File base) throws Exception {
 		if (!base.exists() || !base.isDirectory())
@@ -167,11 +144,10 @@ public class ConsistentVersionNumbers {
 				isPartOfProject ?
 						"//project/version | //project/parent/version" :
 							"//project/dependencies/dependency[./artifactId='service-proxy-core']/version"
-				).evaluate(d, XPathConstants.NODESET);
+				).evaluate(d, NODESET);
 		for (int i = 0; i < l.getLength(); i++) {
 			Element e = (Element) l.item(i);
-			String newValue = handler.handle(child, e.getFirstChild().getNodeValue());
-			e.getFirstChild().setNodeValue(newValue);
+			e.getFirstChild().setNodeValue(handler.handle(child, e.getFirstChild().getNodeValue()));
 		}
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(child));
 	}
@@ -182,7 +158,7 @@ public class ConsistentVersionNumbers {
 		Document d = dbf.newDocumentBuilder().parse(child);
 		XPathFactory pf = XPathFactory.newInstance();
 		XPath p = pf.newXPath();
-		NodeList l = (NodeList) p.compile("//factorypath/factorypathentry[@kind='VARJAR' and contains(@id, 'service-proxy-annot')]").evaluate(d, XPathConstants.NODESET);
+		NodeList l = (NodeList) p.compile("//factorypath/factorypathentry[@kind='VARJAR' and contains(@id, 'service-proxy-annot')]").evaluate(d, NODESET);
 		for (int i = 0; i < l.getLength(); i++) {
 			Element e = (Element) l.item(i);
 			// "M2_REPO/org/membrane-soa/service-proxy-annot/4.0.3/service-proxy-annot-4.0.3.jar"
