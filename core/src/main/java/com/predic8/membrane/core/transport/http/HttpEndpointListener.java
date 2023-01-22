@@ -30,6 +30,9 @@ public class HttpEndpointListener extends Thread {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpEndpointListener.class.getName());
 	public static final byte[] RATE_LIMIT_RESPONSE_MESSAGE = "HTTP/1.1 429\r\nContent-Length: 0\r\n\r\n".getBytes();
+	byte[] TLS_ALERT_INTERNAL_ERROR = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+			2 /* fatal */, 80 /* unrecognized_name */ };
+
 
 	private final ServerSocket serverSocket;
 	private final HttpTransport transport;
@@ -125,7 +128,6 @@ public class HttpEndpointListener extends Thread {
 					int currentConnections = connectionCount.get();
 					// TODO: if count == -1 -> try to get the counter in a while loop
 					if (currentConnections >= concurrentConnectionLimitPerIp) {
-						// TODO: send an SSL response, if this is an SSL server socket
 						log.warn(constructLogMessage(new StringBuilder(), remoteIp, readUpTo1KbOfDataFrom(socket, new byte[1023])));
 						writeRateLimitReachedToSource(socket);
 						socket.close();
@@ -229,7 +231,10 @@ public class HttpEndpointListener extends Thread {
 	}
 
 	private void writeRateLimitReachedToSource(Socket sourceSocket) throws IOException {
-		sourceSocket.getOutputStream().write(RATE_LIMIT_RESPONSE_MESSAGE,0,RATE_LIMIT_RESPONSE_MESSAGE.length);
+		if (sslProvider != null)
+			sourceSocket.getOutputStream().write(TLS_ALERT_INTERNAL_ERROR,0,TLS_ALERT_INTERNAL_ERROR.length);
+		else
+			sourceSocket.getOutputStream().write(RATE_LIMIT_RESPONSE_MESSAGE,0,RATE_LIMIT_RESPONSE_MESSAGE.length);
 		sourceSocket.getOutputStream().flush();
 	}
 
