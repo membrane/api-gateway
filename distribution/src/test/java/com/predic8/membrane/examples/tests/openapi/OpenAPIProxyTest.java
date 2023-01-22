@@ -24,9 +24,10 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
+import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class OpenAPIProxy extends DistributionExtractingTestcase {
+public class OpenAPIProxyTest extends DistributionExtractingTestcase {
 
     final ObjectMapper om = new ObjectMapper();
 
@@ -42,6 +43,7 @@ public class OpenAPIProxy extends DistributionExtractingTestcase {
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         process = startServiceProxyScript();
+        sleep(100);
     }
 
     @AfterEach
@@ -49,6 +51,7 @@ public class OpenAPIProxy extends DistributionExtractingTestcase {
         process.killScript();
     }
 
+    @SuppressWarnings("JsonSchemaCompliance")
     @Test
     void api_doc() throws IOException {
         String andAssert = getAndAssert(200, URL_2000 + "/api-doc");

@@ -36,11 +36,6 @@ public class DefaultConfigAdminConsoleTest extends DistributionExtractingTestcas
 		return "..";
 	}
 
-	@BeforeEach
-	void setup() {
-		baseDir = getMembraneHome();
-	}
-
 	@Test
 	public void test() throws Exception {
 

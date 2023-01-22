@@ -14,17 +14,15 @@
 
 package com.predic8.membrane.examples.util;
 
-import com.predic8.membrane.core.util.*;
-
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static java.lang.String.format;
-import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_16;
+import static com.predic8.membrane.core.util.OSUtil.*;
+import static java.lang.String.*;
+import static java.lang.Thread.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
@@ -105,6 +103,7 @@ public class Process2 implements AutoCloseable {
 				throw new IllegalStateException("line not set");
 
 			line += " " + parameters;
+			System.out.println("Starting: " + line);
 			return new Process2(baseDir, id, line, watchers, waitAfterStartFor);
 		}
 	}
