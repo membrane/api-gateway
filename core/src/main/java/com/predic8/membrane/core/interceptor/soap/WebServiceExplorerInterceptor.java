@@ -44,10 +44,16 @@ import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.wstool.creator.RequestTemplateCreator;
 import com.predic8.wstool.creator.SOARequestCreator;
 
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.regex.Pattern.*;
+
 @MCElement(name="webServiceExplorer")
 public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class.getName());
+
+	private static final Pattern wsdlRequest = compile(".*\\?(wsdl|xsd=.*)", CASE_INSENSITIVE);
 
 	private String wsdl;
 	private String portName;
@@ -62,10 +68,8 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			if (!isWSDLRequest(exc.getRequest()))
 				return super.handleRequest(exc);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
-
-	private static final Pattern wsdlRequest = Pattern.compile(".*\\?(wsdl|xsd=.*)", Pattern.CASE_INSENSITIVE);
 
 	private boolean isWSDLRequest(Request request) {
 		return wsdlRequest.matcher(request.getUri()).matches();
@@ -182,17 +186,16 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 						h2().text("Port Type: " + pt.getName()).end();
 						Documentation d = pt.getDocumentation();
 						if (d != null) {
-							p().text("Documentation: " + d.toString()).end();
+							p().text("Documentation: " + d).end();
 						}
 					}
 
 					Binding binding = port.getBinding();
-					PortType portType = binding.getPortType();
 					List<Operation> bindingOperations = getOperationsByBinding(w, binding);
 					if (bindingOperations.isEmpty())
 						p().text("There are no operations defined.").end();
 					else
-						createOperationsTable(w, bindingOperations, binding, portType);
+						createOperationsTable(w, bindingOperations, binding, binding.getPortType());
 
 					h2().text("Virtual Endpoint").end();
 					p().a().href(getClientURL(exc)).text(getClientURL(exc)).end().end();
@@ -217,8 +220,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 						if ("HTTP".equals(getProtocolVersion(binding))) {
 							text(o.getName());
 						} else {
-							String link = myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName();
-							a().href(link).text(o.getName()).end();
+							a().href(getLinkForOperation(binding, portType, o, myPath)).text(o.getName()).end();
 						}
 						end();
 						td();
@@ -265,32 +267,37 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		}
 	}
 
-	private abstract class StandardPage extends Html {
+	private String getLinkForOperation(Binding binding, PortType portType, Operation o, String path) {
+		return path + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName();
+	}
+
+	private abstract static class StandardPage extends Html {
 
 		public StandardPage(Writer writer, String title) {
 			super(writer);
 
 			html();
 			head();
-			title().text(Constants.PRODUCT_NAME + (title == null ? "" : ": " + title)).end();
+			title().text(PRODUCT_NAME + (title == null ? "" : ": " + title)).end();
 			style();
-			raw("<!--\r\n" +
-					"body { font-family: sans-serif; }\r\n" +
-					"h1 { font-size: 24pt; }\r\n" +
-					"h2 { font-size: 16pt; }\r\n" +
-					"h3 { font-size: 12pt; }\r\n" +
-					"td, th { border: 1px solid black; padding: 0pt 10pt; }\r\n" +
-					"table { border-collapse: collapse; }\r\n" +
-					".help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r\n" +
-					".footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r\n" +
-					".footer a { color:#AAAAAA; }\r\n" +
-					".footer a:hover { color:#000000; }\r\n" +
-					"-->");
+			raw("""
+					<!--\r
+					body { font-family: sans-serif; }\r
+					h1 { font-size: 24pt; }\r
+					h2 { font-size: 16pt; }\r
+					h3 { font-size: 12pt; }\r
+					td, th { border: 1px solid black; padding: 0pt 10pt; }\r
+					table { border-collapse: collapse; }\r
+					.help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r
+					.footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r
+					.footer a { color:#AAAAAA; }\r
+					.footer a:hover { color:#000000; }\r
+					-->""");
 			end();
 			end();
 			body();
 			createContent();
-			p().classAttr("footer").raw(Constants.HTML_FOOTER).end();
+			p().classAttr("footer").raw(HTML_FOOTER).end();
 			end();
 			end();
 		}
@@ -299,7 +306,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	private List<Operation> getOperationsByBinding(final Definitions w, Binding binding) {
-		List<Operation> bindingOperations = new ArrayList<Operation>();
+		List<Operation> bindingOperations = new ArrayList<>();
 		for (Operation o : w.getOperations())
 			if (binding.getOperation(o.getName()) != null)
 				bindingOperations.add(o);
@@ -311,7 +318,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		if (location == null)
 			throw new IllegalArgumentException("Location not set for port in WSDL.");
 
-		final List<Port> ports = new ArrayList<Port>();
+		final List<Port> ports = new ArrayList<>();
 		for (Port p : service.getPorts())
 			if (location.equals(p.getAddress().getLocation()))
 				ports.add(p);
@@ -319,14 +326,18 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	private String getProtocolVersion(Binding binding) {
-		String transport = ((javax.xml.namespace.QName) binding.getBinding().getElementName()).getNamespaceURI();
-		if (Constants.WSDL_SOAP11_NS.equals(transport))
+		String transport = getNamespaceURI(binding);
+		if (WSDL_SOAP11_NS.equals(transport))
 			transport = "SOAP 1.1";
-		if (Constants.WSDL_SOAP12_NS.equals(transport))
+		if (WSDL_SOAP12_NS.equals(transport))
 			transport = "SOAP 1.2";
-		if (Constants.WSDL_HTTP_NS.equals(transport))
+		if (WSDL_HTTP_NS.equals(transport))
 			transport = "HTTP";
 		return transport;
+	}
+
+	private String getNamespaceURI(Binding binding) {
+		return ((javax.xml.namespace.QName) binding.getBinding().getElementName()).getNamespaceURI();
 	}
 
 	private String generateSampleRequest(final String portName, final String operationName,

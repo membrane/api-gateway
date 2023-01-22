@@ -34,10 +34,15 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.administration.Mapping;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 
 public abstract class RESTInterceptor extends AbstractInterceptor {
-	private static Logger log = LoggerFactory.getLogger(RESTInterceptor.class.getName());
+
+	private static final Logger log = LoggerFactory.getLogger(RESTInterceptor.class.getName());
 	private boolean readOnly;
 
 	private final JsonFactory jsonFactory = new JsonFactory(); // thread-safe after configuration
@@ -64,7 +69,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 		gen.flush();
 
 		return Response.ok()
-				.header(Header.CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8)
+				.header(CONTENT_TYPE, APPLICATION_JSON_UTF8)
 				.body(jsonTxt.toString()).build();
 	}
 
@@ -75,28 +80,29 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 			if (a==null) continue;
 			Matcher matcher = Pattern.compile(a.value()).matcher(path);
 			if (matcher.matches()) {
-				Object[] parameters;
-				switch (m.getParameterTypes().length) {
-				case 2:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc, ERROR), matcher), getRelativeRootPath(path) };
-					break;
-				case 3:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc, ERROR), matcher), getRelativeRootPath(path), exc };
-					break;
-				default:
-					throw new InvalidParameterException("@Mapping is supposed to annotate a 2-parameter method.");
-				}
-				exc.setResponse((Response)m.invoke(this, parameters));
-				return Outcome.RETURN;
+				exc.setResponse((Response)m.invoke(this, getParameters(exc, path, m, matcher)));
+				return RETURN;
 			}
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
+	}
+
+	private Object[] getParameters(Exchange exc, String path, Method m, Matcher matcher) throws Exception {
+		return switch (m.getParameterTypes().length) {
+			case 2 -> new Object[]{getQueryParameter(exc, matcher), getRelativeRootPath(path)};
+			case 3 -> new Object[]{getQueryParameter(exc, matcher), getRelativeRootPath(path), exc};
+			default -> throw new InvalidParameterException("@Mapping is supposed to annotate a 2-parameter method.");
+		};
+	}
+
+	private QueryParameter getQueryParameter(Exchange exc, Matcher matcher) throws Exception {
+		return new QueryParameter(getParams(router.getUriFactory(), exc, ERROR), matcher);
 	}
 
 	/**
 	 * For example, returns "../.." for the input "/admin/clusters/".
 	 */
-	public static String getRelativeRootPath(String path) throws MalformedURLException {
+	public static String getRelativeRootPath(String path) {
 		// count '/'s
 		int depth = 0;
 		for (int i = 0; i < path.length(); i++)
@@ -125,5 +131,4 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
 	}
-
 }

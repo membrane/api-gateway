@@ -52,6 +52,8 @@ import com.predic8.wsdl.WSDLParserContext;
 
 import javax.xml.namespace.QName;
 
+import static com.predic8.membrane.core.Constants.*;
+
 /**
  * @description <p>
  *              A SOAP proxy can be deployed on front of a SOAP Web Service. It conceals the server and offers the same
@@ -85,9 +87,6 @@ public class SOAPProxy extends AbstractServiceProxy {
 		return new SOAPProxy();
 	}
 
-	/**
-	 * @return error or null for success
-	 */
 	private void parseWSDL() throws Exception {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
@@ -141,13 +140,11 @@ public class SOAPProxy extends AbstractServiceProxy {
 				} catch (MalformedURLException e) {
 					throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
 				}
-				return;
 		} catch (Exception e) {
 			Throwable f = e;
 			while (f.getCause() != null && ! (f instanceof ResourceRetrievalException))
 				f = f.getCause();
-			if (f instanceof ResourceRetrievalException) {
-				ResourceRetrievalException rre = (ResourceRetrievalException) f;
+			if (f instanceof ResourceRetrievalException rre) {
 				if (rre.getStatus() >= 400)
 					throw rre;
 				Throwable cause = rre.getCause();
@@ -169,9 +166,13 @@ public class SOAPProxy extends AbstractServiceProxy {
 					return port;
 			throw new IllegalArgumentException("No port with name '" + portName + "' found.");
 		}
-		Port port = getPortByNamespace(ports, Constants.WSDL_SOAP11_NS);
+		return getPort(ports);
+	}
+
+	private static Port getPort(List<Port> ports) {
+		Port port = getPortByNamespace(ports, WSDL_SOAP11_NS);
 		if (port == null)
-			port = getPortByNamespace(ports, Constants.WSDL_SOAP12_NS);
+			port = getPortByNamespace(ports, WSDL_SOAP12_NS);
 		if (port == null)
 			throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
 		return port;
@@ -233,26 +234,23 @@ public class SOAPProxy extends AbstractServiceProxy {
 		if (key.getPath() != null) {
 			final String keyPath = key.getPath();
 			final String name = URLUtil.getName(router.getUriFactory(), keyPath);
-			wsdlInterceptor.setPathRewriter(new PathRewriter() {
-				@Override
-				public String rewrite(String path2) {
-
-					try {
-						if (path2.contains("://")) {
-							path2 = new URL(new URL(path2), keyPath).toString();
-						} else {
-							Matcher m = relativePathPattern.matcher(path2);
-							path2 = m.replaceAll("./" + name + "?");
-						}
-					} catch (MalformedURLException e) {
+			wsdlInterceptor.setPathRewriter(path2 -> {
+				try {
+					if (path2.contains("://")) {
+						return new URL(new URL(path2), keyPath).toString();
+					} else {
+						Matcher m = relativePathPattern.matcher(path2);
+						return m.replaceAll("./" + name + "?");
 					}
-					return path2;
+				} catch (MalformedURLException e) {
+					log.error("Cannot parse URL " + path2);
 				}
+				return path2;
 			});
 		}
 
 		if (hasRewriter && !hasPublisher)
-			log.warn("A <soapProxy> contains a <wsdlRewriter>, but no <wsdlPublisher>. Probably you want to insert a <wsdlPublisher> just after the <wsdlRewriter>. (Or, if this is a valid use case, please notify us at " + Constants.PRODUCT_CONTACT_EMAIL + ".)");
+			log.warn("A <soapProxy> contains a <wsdlRewriter>, but no <wsdlPublisher>. Probably you want to insert a <wsdlPublisher> just after the <wsdlRewriter>. (Or, if this is a valid use case, please notify us at " + PRODUCT_CONTACT_EMAIL + ".)");
 
 		if (targetPath != null) {
 			RewriteInterceptor ri = new RewriteInterceptor();
