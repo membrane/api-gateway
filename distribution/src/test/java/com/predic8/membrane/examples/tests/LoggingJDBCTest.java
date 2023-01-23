@@ -70,6 +70,11 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
                 }
             }
         }
+        try {
+            DriverManager.getConnection("jdbc:derby:;shutdown=true");
+        } catch (SQLException e) {
+            // do nothing
+        }
     }
 
     private Connection getConnection() throws SQLException {
