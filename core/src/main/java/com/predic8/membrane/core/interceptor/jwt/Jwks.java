@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.TextUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -111,5 +112,11 @@ public class Jwks {
                     })
                     .findFirst().get();
         }
+    }
+
+    String getLongDescription() {
+        if (jwksUris != null)
+            return "JWKs from " + TextUtil.toEnglishList("and", jwksUris.split(" "));
+        return "a predefined set of JWKs";
     }
 }

@@ -24,11 +24,16 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import io.swagger.util.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.EnumSet;
+
 import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static java.util.EnumSet.of;
 
 @MCElement(name = "jsonProtection")
 public class JsonProtectionInterceptor extends AbstractInterceptor {
@@ -40,6 +45,11 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             .configure(STRICT_DUPLICATE_DETECTION, true);
 
     private int maxTokens = 10000;
+
+    public JsonProtectionInterceptor() {
+        name = "JSON protection";
+        setFlow(of(REQUEST));
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -76,5 +86,22 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Protects against several JSON attack classes.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return "<div>Enforces the following constraints:<br/><ul>" +
+                "<li>HTTP request body must be well-formed JSON, if the HTTP verb is not" +
+                "<font style=\"font-family: monospace\">GET</font>.</li>" +
+                "<li>Limits the maximum number of tokens to " + maxTokens + ". (Each string and opening bracket counts" +
+                "as a token: <font style=\"font-family: monospace\">{\"a\":\"b\"}</font> counts as 3 tokens)</li>" +
+                "<li>Forbids duplicate keys. (<font style=\"font-family: monospace\">{\"a\":\"b\", \"a\":\"c\"}</font> " +
+                "will be rejected.)</li>" +
+                "</ul></div>";
     }
 }

@@ -25,6 +25,7 @@ import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
@@ -69,6 +70,10 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private List<String> allowedMethods = Lists.newArrayList("GET", "POST");
     private int maxRecursion = 3;
     private int maxDepth = 7;
+
+    public GraphQLProtectionInterceptor() {
+        name = "GraphQL protection";
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -333,5 +338,28 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setMaxDepth(int maxDepth) {
         this.maxDepth = maxDepth;
+    }
+
+    @Override
+    public String toString() {
+        return "GraphQL protection";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Let only well-formed GraphQL requests pass. Apply restrictions.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return
+                "<div>Protects against some GraphQL attack classes (checks HTTP request against <a href=\"https://" +
+                        "spec.graphql.org/October2021/\">GraphQL</a> and <a href=\"https://github.com/graphql/" +
+                        "graphql-over-http/blob/a1e6d8ca248c9a19eb59a2eedd988c204909ee3f/spec/GraphQLOverHTTP.md\">" +
+                        "GraphQL-over-HTTP</a> specs).<br/>" +
+                        "GraphQL extensions: " + (allowExtensions ? "Allowed." : "Forbidden.") + "<br/>" +
+                        "Allowed HTTP verbs: " + TextUtil.toEnglishList("and", allowedMethods.toArray(new String[0])) + ".<br/>" +
+                        "Maximum allowed nested query levels: " + maxDepth + "<br/>" +
+                        "Maximum allowed recursion levels (nested repetitions of the same word): " + maxRecursion + ".</div>";
     }
 }

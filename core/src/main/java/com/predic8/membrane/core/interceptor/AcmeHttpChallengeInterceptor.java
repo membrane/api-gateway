@@ -41,6 +41,10 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
 
     private boolean ignorePort;
 
+    public AcmeHttpChallengeInterceptor() {
+        name = "ACME HTTP Challenge";
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (exc.getRequest().getUri().startsWith(PREFIX)) {
@@ -91,4 +95,18 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
     public void setIgnorePort(boolean ignorePort) {
         this.ignorePort = ignorePort;
     }
+
+    @Override
+    public String getShortDescription() {
+        return "Responds to HTTP requests starting with <font style=\"font-family: monospace\">/.well-known/acme-challenge/</font>.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return "<div>Responds to HTTP requests starting with <font style=\"font-family: monospace\">/.well-known/acme-" +
+                "challenge/</font>.<br/>" +
+                "See ACME (RFC 8555, also known as \"Let's Encrypt\") <a href=\"https://www.rfc-editor.org/rfc/rfc8555." +
+                "html#section-8.3\">HTTP Challenges</a> for details.</div>";
+    }
+
 }

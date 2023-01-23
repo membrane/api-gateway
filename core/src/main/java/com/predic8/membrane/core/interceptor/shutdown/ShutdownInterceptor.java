@@ -39,7 +39,11 @@ import com.predic8.membrane.core.interceptor.Outcome;
  */
 @MCElement(name="shutdown")
 public class ShutdownInterceptor extends AbstractInterceptor {
-    
+
+    public ShutdownInterceptor() {
+        name = "Shutdown Interceptor";
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (getRouter().isRunning()) {
@@ -61,4 +65,15 @@ public class ShutdownInterceptor extends AbstractInterceptor {
         return Outcome.RETURN;
     }
 
+    @Override
+    public String getShortDescription() {
+        return "Triggers Membrane to initiate a shutdown.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return "Triggers Membrane to initiate a shutdown.<br/>" +
+                "Note that the shutdown is triggered asynchronously after 100ms to allow the shutdown HTTP request to be completed successfully.<br/>" +
+                "Also note that the shutdown is not immediate, but pending HTTP Exchanges are given a grace period to complete.";
+    }
 }
