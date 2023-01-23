@@ -46,6 +46,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     static final Logger LOG = LoggerFactory.getLogger(PrometheusInterceptor.class);
     static volatile boolean issuedDuplicateRuleNameWarning = false;
 
+    public PrometheusInterceptor() {
+        name = "Prometheus Interceptor";
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         Context ctx = new Context();
@@ -353,5 +357,15 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     public String getBuckets() {
         return joinByComma(TimeCollector.getBuckets().stream().map(Object::toString).collect(toList()));
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Returns Membrane's internal metrics in the Prometheus format.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return "Returns Membrane's internal metrics in the <a href=\"https://prometheus.io/docs/concepts/data_model/\">Prometheus</a> format.";
     }
 }

@@ -22,6 +22,11 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.TextUtil;
+import org.springframework.web.util.HtmlUtils;
+
+import static com.predic8.membrane.core.util.TextUtil.removeCommonLeadingIndentation;
+import static org.springframework.web.util.HtmlUtils.htmlEscape;
 
 /**
  * @description
@@ -50,6 +55,10 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     String src = "";
 
     GroovyInterceptor groovyInterceptor;
+
+    public GroovyTemplateInterceptor() {
+        name = "Groovy Template";
+    }
 
     @Override
     public void init(Router router) throws Exception {
@@ -87,5 +96,18 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     @MCTextContent
     public void setSrc(String src) {
         this.src = src;
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Responds with the result of a Groovy Template.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return "<div>Responds with the result of a the Groovy Template (see <a href=\"https://docs.groovy-lang.org/docs/next/html/documentation/template-engine" +
+                "s.html#_the_markuptemplateengine\">MarkupTemplateEngine</a>):<br/><br/><pre>"+
+                htmlEscape(removeCommonLeadingIndentation(src)) +
+                "</pre></div>";
     }
 }

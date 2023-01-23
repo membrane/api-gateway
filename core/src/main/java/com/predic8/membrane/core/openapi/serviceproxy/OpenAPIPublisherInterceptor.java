@@ -60,6 +60,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Template apiOverviewHtmlTemplate;
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
+        name = "OpenAPI Publisher";
         this.apis = apis;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
@@ -190,5 +191,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         if (exc.getRequest().getHeader().getAccept() == null)
             return false;
         return exc.getRequest().getHeader().getAccept().contains("html");
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Publishes the OpenAPI description and Swagger UI.";
     }
 }

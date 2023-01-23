@@ -24,6 +24,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.jose4j.base64url.Base64Url;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwt.consumer.InvalidJwtException;
@@ -33,9 +34,14 @@ import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static java.util.EnumSet.of;
+import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
 
 @MCElement(name = "jwtAuth")
 public class JwtAuthInterceptor extends AbstractInterceptor {
@@ -56,6 +62,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     // Hashmap done on purpose as only here the read only thread safety is guaranteed
     volatile HashMap<String, RsaJsonWebKey> kidToKey;
 
+    public JwtAuthInterceptor() {
+        name = "JWT Checker.";
+        setFlow(of(REQUEST));
+    }
 
     @Override
     public void init(Router router) throws Exception {
@@ -156,15 +166,21 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                 .setRequireSubject()
                 .setVerificationKey(key.getRsaPublicKey());
 
-        if(expectedAud != null && !expectedAud.isEmpty())
-            jwtConsumerBuilder
-                .setExpectedAudience(expectedAud);
-        if (expectedAud.equals("any!!"))
+        if (acceptAnyAud())
             jwtConsumerBuilder.setSkipDefaultAudienceValidation();
+        else {
+            if (expectedAud != null && !expectedAud.isEmpty())
+                jwtConsumerBuilder
+                        .setExpectedAudience(expectedAud);
+        }
 
 
         JwtConsumer jwtValidator = jwtConsumerBuilder.build();
         return jwtValidator;
+    }
+
+    private boolean acceptAnyAud() {
+        return expectedAud != null && expectedAud.equals("any!!");
     }
 
     private Outcome setJsonErrorAndReturn(Exception e, Exchange exc, int code, String description){
@@ -220,4 +236,19 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         this.expectedAud = expectedAud;
         return this;
     }
+
+    @Override
+    public String getShortDescription() {
+        return "Checks for a valid JWT.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return "Checks for a valid JWT.<br/>" +
+                (acceptAnyAud() ?
+                        "Accepts any value for the <font style=\"font-family: monospace\">aud</font> field. <b>THIS IS STRONGLY DISCOURAGED!</b><br/>" :
+                        "Accepts <font style=\"font-family: monospace\">" + escapeHtml4(expectedAud) + "</font> as valid value for the <font style=\"font-family: monospace\">aud</font> payload entry.<br/>") +
+                (jwks != null ? "Validates the JWT signature against " + jwks.getLongDescription() + " ." : "");
+    }
+
 }
