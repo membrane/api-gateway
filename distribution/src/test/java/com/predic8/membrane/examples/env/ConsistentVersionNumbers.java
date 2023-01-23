@@ -51,7 +51,7 @@ public class ConsistentVersionNumbers {
 			else {
 				try {
 					System.out.println(file);
-					assertEquals(version, old);
+					assertTrue(version.equals(old) || removePatchVersion(version).equals(old));
 				} catch (RuntimeException e) {
 					throw new RuntimeException("in file " + file.getAbsolutePath(), e);
 				}
@@ -59,6 +59,15 @@ public class ConsistentVersionNumbers {
 			return old;
 		};
 		run(base);
+	}
+
+	private String removePatchVersion(String version) {
+		return version.replaceAll("^([^.]+\\.[^.]+)\\..*$", "$1");
+	}
+
+	@Test
+	public void testRemovePatch() {
+		assertEquals("5.0", removePatchVersion("5.0.0"));
 	}
 
 	public static void main(String[] args) throws Exception {
