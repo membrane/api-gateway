@@ -17,7 +17,6 @@ package com.predic8.membrane.examples.tutorials.rest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.apache.http.*;
-import org.apache.http.HttpResponse;
 import org.apache.http.util.*;
 import org.junit.jupiter.api.*;
 
@@ -25,14 +24,13 @@ import java.io.*;
 
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static com.predic8.membrane.test.AssertUtils.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * See: https://membrane-api.io/tutorials/rest/
  *
  * Needs an Internet connection to work!
  */
-public class TurorialRestStepsTest extends DistributionExtractingTestcase {
+public class TutorialRestStepsTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {

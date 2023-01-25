@@ -90,6 +90,13 @@ _*.swp
 /sar/.project
 /sar/target
 
+# /starter/
+/starter/.settings
+/starter/.classpath
+/starter/.project
+/starter/target
+
+
 # /test/
 /test/.settings
 /test/.project

@@ -25,7 +25,7 @@ import static com.predic8.membrane.test.AssertUtils.*;
  *
  * Needs an Internet connection to work!
  */
-public class TurorialRestInitialTest extends DistributionExtractingTestcase {
+public class TutorialRestInitialTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {

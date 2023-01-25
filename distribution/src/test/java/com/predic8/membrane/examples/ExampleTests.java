@@ -85,13 +85,19 @@ import org.junit.platform.suite.api.Suite;
         OAuth2ApiTest.class,
 
         // OpenAPI
-        OpenAPIProxy.class,
+        OpenAPIProxyTest.class,
         OpenAPIValidationSimple.class,
         OpenAPIValidation.class,
 
         // Tutorials
-        TurorialRestStepsTest.class,
-        TurorialRestInitialTest.class
+        TutorialRestStepsTest.class,
+        TutorialRestInitialTest.class,
+
+        // Configuration
+        ProxiesXMLTest.class,
+        ProxiesXMLOfflineTest.class,
+        ProxiesXMLSecurityTest.class,
+        ProxiesXMLSoapTest.class
 })
 public class ExampleTests {
 }
