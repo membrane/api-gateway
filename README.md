@@ -13,7 +13,7 @@ Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and leg
 
 
 **OpenAPI:**
-* Deployment of [OpenAPI](distribution/examples/openapi) documents as APIs
+* Deployment of [OpenAPI](https://membrane-api.io/openapi/) documents as APIs
 *  [Message validation](distribution/examples/openapi/openapi-validation-simple) against OpenAPI
 
 **Legacy Web Services:**

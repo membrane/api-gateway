@@ -54,7 +54,6 @@ public class OpenAPIProxyTest extends DistributionExtractingTestcase {
     @Test
     void api_doc() throws IOException {
         String andAssert = getAndAssert(200, LOCALHOST_2000 + "/api-doc");
-        System.out.println(andAssert);
         JSONAssert.assertEquals("""
                 {
                   "fruitshop-v1-0" : {

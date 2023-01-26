@@ -279,7 +279,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	private void initInternalProxies() throws Exception {
-		for (Rule rule : getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).collect(toList()))
+		for (Rule rule : getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).toList())
 			rule.init(this);
 	}
 

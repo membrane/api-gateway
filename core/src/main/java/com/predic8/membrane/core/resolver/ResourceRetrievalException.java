@@ -14,13 +14,14 @@
 
 package com.predic8.membrane.core.resolver;
 
-import java.io.IOException;
+import java.io.*;
 
 public class ResourceRetrievalException extends IOException {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	private int status;
-	private String url;
+	private final String url;
 
 	public ResourceRetrievalException(String url) {
 		super();
