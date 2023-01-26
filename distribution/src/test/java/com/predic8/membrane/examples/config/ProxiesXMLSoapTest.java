@@ -14,74 +14,61 @@
 
 package com.predic8.membrane.examples.config;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-import java.net.*;
-import java.net.http.*;
-
 import static com.predic8.membrane.core.http.MimeType.*;
-import static java.net.http.HttpResponse.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
-public class ProxiesXMLSoapTest extends DistributionExtractingTestcase {
+public class ProxiesXMLSoapTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
         return "..";
     }
 
-    private Process2 process;
-
     @BeforeEach
     void startMembrane() throws Exception {
         process = new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-soap.xml").waitForMembrane().start();
-    }
 
-    @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
-    }
-
-    @Test
-    void getWebServicesExplorer2000() throws Exception {
-        testWebServiceExplorer(URL_2000 + "/blz-service");
+        // Dump HTTP
+//         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test
-    void getWebServicesExplorer2001() throws Exception {
-        testWebServiceExplorer("http://localhost:2001/blz-service");
-    }
-
-    private void testWebServiceExplorer(String url) throws Exception {
-        HttpResponse<String> response = getHttpClient().send(HttpRequest.newBuilder().uri(new URI(url)).build(), BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertTrue(response.body().contains("BLZService"));
-    }
-
-    @Test
-    void getWSDL2000() throws Exception {
-        testGetWSDL(URL_2000 + "/blz-service?wsdl");
+    void getWebServicesExplorer2000() {
+        get(LOCALHOST_2000 + "/blz-service")
+        .then().assertThat()
+            .statusCode(200)
+            .contentType(TEXT_HTML)
+            .body("html.head.title",containsString("BLZService"));
     }
 
     @Test
-    void getWSDL2001() throws Exception {
-        testGetWSDL("http://localhost:2001/blz-service?wsdl");
+    void getWebServicesExplorer2001() {
+        get("http://localhost:2001/blz-service")
+                .then().assertThat()
+                .statusCode(200)
+                .contentType(TEXT_HTML)
+                .body("html.head.title",containsString("BLZService"));
     }
 
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private void testGetWSDL(String url) throws Exception {
-        HttpResponse<String> response = getHttpClient().send(HttpRequest.newBuilder().uri(new URI(url)).build(), BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertEquals(TEXT_XML, response.headers().firstValue("Content-Type").get());
-        assertTrue(response.body().contains("BLZService"));
-        assertTrue(response.body().contains("binding"));
+    @Test
+    void getWSDL2000() {
+        get("http://localhost:2000/blz-service?wsdl")
+                .then().assertThat()
+                .statusCode(200)
+                .contentType(TEXT_XML)
+                .body("definitions.documentation.",containsString("BLZService"));
     }
 
-
-    private HttpClient getHttpClient()  {
-        return HttpClient.newBuilder().build();
+    @Test
+    void getWSDL2001() {
+        get("http://localhost:2001/blz-service?wsdl")
+                .then().assertThat()
+                .statusCode(200)
+                .contentType(TEXT_XML)
+                .body("definitions.documentation.",containsString("BLZService"));
     }
 }

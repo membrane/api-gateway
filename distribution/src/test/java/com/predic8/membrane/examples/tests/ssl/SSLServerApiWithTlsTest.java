@@ -16,7 +16,7 @@ package com.predic8.membrane.examples.tests.ssl;
 
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 
 import static com.predic8.membrane.test.AssertUtils.*;

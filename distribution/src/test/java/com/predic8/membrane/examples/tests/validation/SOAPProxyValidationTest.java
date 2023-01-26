@@ -14,21 +14,11 @@
 
 package com.predic8.membrane.examples.tests.validation;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP;
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static java.io.File.separator;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.readFileToString;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.*;
-
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.io.File.*;
 
 public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 
@@ -39,7 +29,7 @@ public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 igored = startServiceProxyScript()) {
+		try(Process2 ignored = startServiceProxyScript()) {
 			String url = "http://localhost:2000/axis2/services/BLZService/getBankResponse";
 			postAndAssert(200, url, CONTENT_TYPE_SOAP_HEADER, readFile("blz-soap.xml"));
 			postAndAssert(400, url, CONTENT_TYPE_SOAP_HEADER, readFile("invalid-blz-soap.xml"));

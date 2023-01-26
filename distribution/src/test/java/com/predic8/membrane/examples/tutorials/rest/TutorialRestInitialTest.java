@@ -14,14 +14,13 @@
 
 package com.predic8.membrane.examples.tutorials.rest;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
 
 /**
- * See: https://membrane-api.io/tutorials/rest/
+ * See: <a href="https://membrane-api.io/tutorials/rest/">REST tutorials</a>
  *
  * Needs an Internet connection to work!
  */
@@ -35,7 +34,7 @@ public class TutorialRestInitialTest extends DistributionExtractingTestcase {
 	@Test
 	public void testStart() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("Shop API", getAndAssert200(URL_2000));
+			assertContains("Shop API", getAndAssert200(LOCALHOST_2000));
 			assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:9000/admin/"));
 		}
 	}

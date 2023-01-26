@@ -18,15 +18,12 @@ import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil
 import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 
-public class Loadbalancing_5_multiple_Test extends DistributionExtractingTestcase {
+public class Loadbalancing5MultipleTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {

@@ -14,9 +14,7 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
@@ -39,7 +37,7 @@ public class CustomInterceptorTest extends DistributionExtractingTestcase {
 
         try(Process2 sl = startServiceProxyScript()) {
             SubstringWaitableConsoleEvent invoked = new SubstringWaitableConsoleEvent(sl, "MyInterceptor maven at request invoked.");
-            getAndAssert200(URL_2000);
+            getAndAssert200(LOCALHOST_2000);
             assertTrue(invoked.occurred());
         }
     }

@@ -14,8 +14,7 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
@@ -39,7 +38,7 @@ public class StaxExampleInterceptorTest extends DistributionExtractingTestcase {
 
         BufferLogger proxyWatcher = new BufferLogger();
         try(Process2 ignored = startServiceProxyScript(proxyWatcher)) {
-            postAndAssert(200,URL_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("example.xml"));
+            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("example.xml"));
             assertTrue(proxyWatcher.contains("<bar>42</bar>"));
         }
     }

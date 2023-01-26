@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests.versioning;
 
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 import org.junit.jupiter.api.*;
@@ -52,12 +52,12 @@ public class XsltExampleTest extends DistributionExtractingTestcase {
                 throw new RuntimeException("Maven exited with code " + exitCode + ": " + logger);
         }
 
-        try(Process2 jarNode1 = new Process2.Builder().in(baseDir).waitAfterStartFor("ContactService v20 up.")
+        try(Process2 ignored = new Process2.Builder().in(baseDir).waitAfterStartFor("ContactService v20 up.")
                 .executable("java -jar ./target/xslt-maven-1.0-SNAPSHOT.jar").start()) {
             sleep(2000);
             assertContains("404", postAndAssert(404, "http://localhost:3027/ContactService/v11", CONTENT_TYPE_TEXT_XML_HEADER, request_v11));
 
-            try(Process2 ignored = startServiceProxyScript()) {
+            try(Process2 ignored1 = startServiceProxyScript()) {
                 sleep(1000); // wait for Endpoints to start
 
                 // talk to proxy

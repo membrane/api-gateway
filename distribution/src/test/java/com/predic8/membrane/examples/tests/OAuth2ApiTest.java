@@ -13,8 +13,7 @@
 
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 

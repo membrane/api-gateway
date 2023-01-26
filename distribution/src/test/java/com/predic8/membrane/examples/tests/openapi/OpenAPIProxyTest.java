@@ -15,7 +15,6 @@
 package com.predic8.membrane.examples.tests.openapi;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
@@ -54,7 +53,7 @@ public class OpenAPIProxyTest extends DistributionExtractingTestcase {
     @SuppressWarnings("JsonSchemaCompliance")
     @Test
     void api_doc() throws IOException {
-        String andAssert = getAndAssert(200, URL_2000 + "/api-doc");
+        String andAssert = getAndAssert(200, LOCALHOST_2000 + "/api-doc");
         System.out.println(andAssert);
         JSONAssert.assertEquals("""
                 {
@@ -71,7 +70,7 @@ public class OpenAPIProxyTest extends DistributionExtractingTestcase {
 
     @Test
     void apiOverview() throws IOException {
-        String body = getAndAssert(200, URL_2000 + "/api-doc", ACCEPT_HTML_HEADER);
+        String body = getAndAssert(200, LOCALHOST_2000 + "/api-doc", ACCEPT_HTML_HEADER);
         assertContains("""
                 <h1 class="title">APIs</h1>
                 """, body);
@@ -81,7 +80,7 @@ public class OpenAPIProxyTest extends DistributionExtractingTestcase {
 
     @Test
     void swaggerUi() throws IOException {
-        String body = getAndAssert(200, URL_2000 + "/api-doc/ui/fruitshop-v1-0", ACCEPT_HTML_HEADER);
+        String body = getAndAssert(200, LOCALHOST_2000 + "/api-doc/ui/fruitshop-v1-0", ACCEPT_HTML_HEADER);
         assertContains("""
                 content="SwaggerUI""", body);
         assertContains("/api-doc/fruitshop-v1-0", body);
@@ -91,7 +90,7 @@ public class OpenAPIProxyTest extends DistributionExtractingTestcase {
     @Test
     void postLikeSwaggerUI() throws Exception {
 
-        Map<String,Object> json = om.readValue(postAndAssert(201, URL_2000 + "/shop/products/", CONTENT_TYPE_APP_JSON_HEADER, """
+        Map<String,Object> json = om.readValue(postAndAssert(201, LOCALHOST_2000 + "/shop/products/", CONTENT_TYPE_APP_JSON_HEADER, """
                 {
                      "name": "Figs",
                      "price": 2.7
@@ -117,7 +116,7 @@ public class OpenAPIProxyTest extends DistributionExtractingTestcase {
                   }
                 }
                 """
-                , postAndAssert(400, URL_2000 + "/shop/products/", CONTENT_TYPE_APP_JSON_HEADER, """
+                , postAndAssert(400, LOCALHOST_2000 + "/shop/products/", CONTENT_TYPE_APP_JSON_HEADER, """
                         {
                              "name": "Figs",
                              "price": -2.7

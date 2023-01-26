@@ -12,30 +12,21 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples.tests;
+package com.predic8.membrane.examples.util;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.zip.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.test.AssertUtils.replaceInFile;
-import static java.io.File.separator;
-import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNull;
-import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.io.File.*;
+import static java.lang.Thread.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.*;
+import static org.apache.commons.io.FileUtils.*;
 
 /**
  * Extracts the .zip distribution built by Maven.
@@ -47,7 +38,8 @@ public abstract class DistributionExtractingTestcase {
     public static final String BLZ_SERVICE = "http://localhost:2000/bank/services/BLZService";
     public static final String BLZ_SERVICE_WSDL = BLZ_SERVICE + "?wsdl";
 
-    public static final String URL_2000 = "http://localhost:2000";
+    public static final String LOCALHOST_2000 = "http://localhost:2000";
+    public static final String LOCALHOST_3000 = "http://localhost:3000";
 
     public static  final String[] CONTENT_TYPE_APP_XML_HEADER = {"Content-Type", APPLICATION_XML};
     public static  final String[] CONTENT_TYPE_TEXT_XML_HEADER = {"Content-Type", TEXT_XML};

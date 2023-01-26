@@ -15,46 +15,27 @@
 package com.predic8.membrane.examples.config;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
-import org.apache.http.*;
-import org.apache.http.client.methods.*;
-import org.apache.http.util.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
-import java.io.*;
-import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ProxiesXMLTest extends DistributionExtractingTestcase {
-
-    final ObjectMapper om = new ObjectMapper();
+public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
         return "..";
     }
 
-    private Process2 process;
-
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        process = startServiceProxyScript();
-    }
-
-    @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
-    }
-
+    @SuppressWarnings("JsonSchemaCompliance")
     @Test
-    void api_doc() throws IOException {
-        String andAssert = getAndAssert(200, URL_2000 + "/api-doc");
-        System.out.println(andAssert);
+    void api_doc() {
         JSONAssert.assertEquals("""
                 {
                   "fruitshop-v1-0" : {
@@ -65,36 +46,55 @@ public class ProxiesXMLTest extends DistributionExtractingTestcase {
                     "ui_link" : "/api-doc/ui/fruitshop-v1-0"
                   }
                 }
-                """, andAssert, true);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    void postLikeSwaggerUI() throws Exception {
-
-        Map<String, Object> json = om.readValue(postAndAssert(201, URL_2000 + "/shop/products/", CONTENT_TYPE_APP_JSON_HEADER, """
-                {
-                     "name": "Figs",
-                     "price": 2.7
-                 }
-                """), Map.class);
-        assertEquals("Figs", json.get("name"));
-        assertEquals(2.7, json.get("price"));
+                """, get(LOCALHOST_2000 + "/api-doc").asString(), true);
     }
 
     @Test
-    public void names() throws Exception {
-        HttpResponse res = getAndAssertWithResponse(200, URL_2000 + "/names/Pia", null);
-        assertContains("json", getContentTypeValue(res));
-        assertContains("Pia", EntityUtils.toString(res.getEntity()));
-
-        getAndAssert(200, URL_2000 + "/names/Pia", null);
-        getAndAssert(200, URL_2000 + "/names/Pia", null);
-        getAndAssert(429, URL_2000 + "/names/Pia", null);
+    void postLikeSwaggerUI() {
+        given()
+                .contentType(APPLICATION_JSON)
+                .body("""
+                        {
+                             "name": "Figs",
+                             "price": 2.7
+                         }
+                        """)
+        .when()
+                .post(LOCALHOST_2000 + "/shop/products/")
+        .then().assertThat()
+                .statusCode(201)
+                .contentType(APPLICATION_JSON)
+                .body("name", equalTo("Figs"))
+                .body("price", equalTo(2.7F));
     }
 
     @Test
-    public void groovy() throws Exception {
+    public void names() {
+        get(LOCALHOST_2000 + "/names/Pia")
+                .then()
+                .assertThat()
+                .statusCode(200)
+                .contentType(APPLICATION_JSON)
+                .body("restnames.nameinfo.name", equalTo("Pia"));
+
+        get(LOCALHOST_2000 + "/names/Pia")
+                .then()
+                .assertThat()
+                .statusCode(200);
+
+        get(LOCALHOST_2000 + "/names/Pia")
+                .then()
+                .assertThat()
+                .statusCode(200);
+
+        get(LOCALHOST_2000 + "/names/Pia")
+                .then()
+                .assertThat()
+                .statusCode(429);
+    }
+
+    @Test
+    public void groovy() {
         AtomicBoolean headingFound = new AtomicBoolean();
         AtomicBoolean hostFound = new AtomicBoolean();
         process.addConsoleWatcher((error, line) -> {
@@ -103,31 +103,22 @@ public class ProxiesXMLTest extends DistributionExtractingTestcase {
             if (line.contains("Host: localhost:2000"))
                 hostFound.set(true);
         });
-        HttpResponse res = getAndAssertWithResponse(200, URL_2000 + "/header", null);
-        assertContains("json", getContentTypeValue(res));
-        assertContains("ok", EntityUtils.toString(res.getEntity()));
 
-//        Thread.sleep(500);
+        get(LOCALHOST_2000 + "/header")
+        .then().assertThat()
+                .contentType(APPLICATION_JSON)
+                .body("ok", equalTo(1));
+
         assertTrue(headingFound.get());
         assertTrue(hostFound.get());
-
     }
 
     @Test
-    public void normalAPI() throws Exception {
-        // Low level to get the Entity and to close the request
-        HttpGet get = new HttpGet(URL_2000);
-        try {
-            HttpResponse r = invokeAndAssertInternal(200, URL_2000, null, get);
-            HttpEntity e = r.getEntity();
-            assertContains("shop", EntityUtils.toString(e));
-            assertContains("json", e.getContentType().getValue());
-        } finally {
-            get.releaseConnection();
-        }
-    }
-
-    private String getContentTypeValue(HttpResponse res) {
-        return res.getEntity().getContentType().getValue();
+    public void normalAPI() {
+       get(LOCALHOST_2000)
+               .then().assertThat()
+               .statusCode(200)
+               .contentType(APPLICATION_JSON)
+               .body("apis[0]['name']",equalTo("Shop API Showcase"));
     }
 }

@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.examples.tests.openapi;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
@@ -23,7 +22,7 @@ import java.io.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
 
-public class OpenAPIValidation extends DistributionExtractingTestcase {
+public class OpenAPIValidationTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -44,12 +43,12 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     public void validRequest() throws Exception {
-        getAndAssert(200, URL_2000 + "/demo-api/v2/persons?limit=10");
+        getAndAssert(200, LOCALHOST_2000 + "/demo-api/v2/persons?limit=10");
     }
 
     @Test
     void OneOfWithRightInteger() throws Exception {
-        putAndAssert(201, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+        putAndAssert(201, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 {
                 	"name": "Jan Vermeer",
                 	"countryCode": "DE",
@@ -64,7 +63,7 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     void OneOfWithWrongStringPattern() throws Exception {
-        String res = putAndAssert(400, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 {
                 	"name": "Jan Vermeer",
                 	"countryCode": "DE",
@@ -93,7 +92,7 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     void nestedObject() throws Exception {
-            putAndAssert(201, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+            putAndAssert(201, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                     {
                     	"name": "Jan Vermeer",
                     	"countryCode": "DE",
@@ -108,7 +107,7 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     void wrongRegexPattern() throws Exception {
-        String res = putAndAssert(400, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 {
                 	"name": "Jan Vermeer",
                 	"countryCode": "Germany"
@@ -136,7 +135,7 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     void additionalPropertyRole() throws IOException {
-        String res = putAndAssert(400, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 {
                 	"name": "Jan Vermeer",
                 	"role": "admin"
@@ -160,7 +159,7 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     void RequiredPropertyIsMissing() throws IOException {
-        String res = putAndAssert(400, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                   {
                       "email": "jan@predic8.de"
                   }
@@ -183,14 +182,14 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     void wrongContentType() throws IOException {
-        putAndAssert(415, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_XML_HEADER, """
+        putAndAssert(415, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_XML_HEADER, """
                 	<name>Jan</name>
                 """);
     }
 
     @Test
     void invalidUUIDEmailAndEnum() throws IOException {
-        String res = putAndAssert(400, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 	{
                 		"name": "Jan Vermeer",
                 		"email": "jan(at)schilderei.nl",
@@ -224,7 +223,7 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
 
     @Test
     void validPut() throws IOException {
-        putAndAssert(201, URL_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+        putAndAssert(201, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 	{
                 		"name": "Jan Vermeer"
                 	}
@@ -245,7 +244,7 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
                 	  } ]
                 	}
                   }
-                """, getAndAssert(400, URL_2000 + "/demo-api/v2/persons?limit=200"), true);
+                """, getAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons?limit=200"), true);
     }
 
     @Test
@@ -260,6 +259,6 @@ public class OpenAPIValidation extends DistributionExtractingTestcase {
                 	  } ]
                 	}
                  }
-                """, getAndAssert(404, URL_2000 + "/demo-api/v2/wrong"), true);
+                """, getAndAssert(404, LOCALHOST_2000 + "/demo-api/v2/wrong"), true);
     }
 }

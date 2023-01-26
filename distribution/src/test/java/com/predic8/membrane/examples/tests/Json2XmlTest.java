@@ -13,8 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;

@@ -51,10 +51,10 @@ import org.junit.platform.suite.api.Suite;
         CBRTest.class,
         FileExchangeStoreTest.class,
         GroovyTest.class,
-        Loadbalancing_1_static_Test.class,
-        Loadbalancing_3_client_Test.class,
-        Loadbalancing_5_multiple_Test.class,
-        Loadbalancing_4_xml_session_Test.class,
+        Loadbalancing1StaticTest.class,
+        Loadbalancing3ClientTest.class,
+        Loadbalancing5MultipleTest.class,
+        Loadbalancing4XmlSessionTest.class,
         LoggingCSVTest.class,
         LoggingJDBCTest.class,
         LoggingTest.class,
@@ -86,8 +86,8 @@ import org.junit.platform.suite.api.Suite;
 
         // OpenAPI
         OpenAPIProxyTest.class,
-        OpenAPIValidationSimple.class,
-        OpenAPIValidation.class,
+        OpenAPIValidationSimpleTest.class,
+        OpenAPIValidationTest.class,
 
         // Tutorials
         TutorialRestStepsTest.class,

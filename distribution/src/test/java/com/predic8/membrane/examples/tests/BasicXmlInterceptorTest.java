@@ -37,7 +37,7 @@ public class BasicXmlInterceptorTest extends DistributionExtractingTestcase {
 
         logger = new BufferLogger();
         try(Process2 ignored = startServiceProxyScript(logger)) {
-            postAndAssert(200,URL_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("example.xml"));
+            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("example.xml"));
             assertTrue(logger.contains("<date>"));
         }
     }

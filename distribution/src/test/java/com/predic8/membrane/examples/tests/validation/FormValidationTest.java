@@ -17,12 +17,9 @@ package com.predic8.membrane.examples.tests.validation;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert;
 import static java.io.File.separator;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 
 public class FormValidationTest extends DistributionExtractingTestcase {

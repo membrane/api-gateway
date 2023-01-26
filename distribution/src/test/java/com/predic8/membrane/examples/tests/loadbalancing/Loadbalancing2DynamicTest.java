@@ -14,18 +14,14 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
-import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
-
-import java.io.*;
 
 import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class Loadbalancing_2_dynamic_Test extends DistributionExtractingTestcase {
+public class Loadbalancing2DynamicTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -36,7 +32,7 @@ public class Loadbalancing_2_dynamic_Test extends DistributionExtractingTestcase
 	public void addingNodesDynamicallyUsingTheAdminConsole() throws Exception {
 		replaceInFile2("proxies.xml", "8080", "3023");
 
-		try(Process2 sl = startServiceProxyScript()) {
+		try(Process2 ignored = startServiceProxyScript()) {
 
 			// Make sure backends are running
 			assertEquals(1, getRespondingNode("http://localhost:4000/"));
