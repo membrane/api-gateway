@@ -14,21 +14,13 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
+
 import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil.*;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.test.AssertUtils;
-
-public class Loadbalancing_1_static_Test extends DistributionExtractingTestcase {
+public class Loadbalancing1StaticTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {

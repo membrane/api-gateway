@@ -40,7 +40,7 @@ public class AddSoapHeaderTest extends DistributionExtractingTestcase {
 
         BufferLogger proxyWatcher = new BufferLogger();
         try(Process2 ignored = startServiceProxyScript(proxyWatcher)) {
-            postAndAssert(200, URL_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("soap-message-without-header.xml"));
+            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("soap-message-without-header.xml"));
             sleep(500);
             assertTrue(proxyWatcher.contains("wss:Security"));
         }

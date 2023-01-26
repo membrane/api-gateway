@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.examples.tests.validation;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 

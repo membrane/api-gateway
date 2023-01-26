@@ -24,10 +24,10 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Calendar;
 
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
-import com.predic8.membrane.examples.util.Process2;
 
 public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 

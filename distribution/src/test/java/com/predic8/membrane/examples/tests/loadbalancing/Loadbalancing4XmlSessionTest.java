@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
@@ -22,7 +21,7 @@ import static com.predic8.membrane.examples.tests.loadbalancing.LoadBalancerUtil
 import static com.predic8.membrane.test.AssertUtils.*;
 import static java.lang.Thread.sleep;
 
-public class Loadbalancing_4_xml_session_Test extends DistributionExtractingTestcase {
+public class Loadbalancing4XmlSessionTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -40,7 +39,7 @@ public class Loadbalancing_4_xml_session_Test extends DistributionExtractingTest
 		replaceInFile2("src/main/java/com/predic8/chat/Client.java", "8080", "3023");
 		replaceInFile2("data/ChatService.wsdl", "8080", "3023");
 
-		try(Process2 sl = startServiceProxyScript()) {
+		try(Process2 ignored = startServiceProxyScript()) {
 			// call "ant compile" now so that both antNodeX processes do call it at the same time
 			BufferLogger loggerCompile = new BufferLogger();
 			try(Process2  antCompile = new Process2.Builder().in(baseDir).withWatcher(loggerCompile).executable("mvn package").start()) {

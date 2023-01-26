@@ -30,7 +30,7 @@ public class GroovyTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			assertEquals("42", getAndAssertWithResponse(200,URL_2000, null).getFirstHeader("X-Groovy").getValue());
+			assertEquals("42", getAndAssertWithResponse(200, LOCALHOST_2000, null).getFirstHeader("X-Groovy").getValue());
 		}
 	}
 }

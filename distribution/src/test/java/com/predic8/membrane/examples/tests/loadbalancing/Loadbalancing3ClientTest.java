@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.examples.tests.loadbalancing;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
@@ -28,7 +27,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.io.FileUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class Loadbalancing_3_client_Test extends DistributionExtractingTestcase {
+public class Loadbalancing3ClientTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {

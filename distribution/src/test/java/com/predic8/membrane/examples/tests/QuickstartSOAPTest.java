@@ -23,10 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.ProxiesXmlUtil;
 import com.predic8.membrane.test.AssertUtils;
 
 // TODO Remove when test for new Quickstart is written

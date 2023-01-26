@@ -13,8 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
@@ -32,7 +31,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
 
     @Test
     public void testWsdl() throws Exception {
-        try(Process2 sl = startServiceProxyScript()) {
+        try(Process2 ignored = startServiceProxyScript()) {
             assertContains("Service Proxy: BLZService", getAndAssert200(ENDPOINT_URL));
         }
     }

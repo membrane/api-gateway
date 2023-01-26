@@ -17,15 +17,11 @@ package com.predic8.membrane.examples.tests.ssl;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
-import java.io.File;
 import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.test.AssertUtils;
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 
 public class ToBackendTest extends DistributionExtractingTestcase {

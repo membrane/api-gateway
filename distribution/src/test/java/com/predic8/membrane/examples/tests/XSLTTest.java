@@ -18,9 +18,8 @@ import static com.predic8.membrane.examples.tests.BasicAuthTest.*;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.examples.util.Process2;
 
 public class XSLTTest extends DistributionExtractingTestcase {
 

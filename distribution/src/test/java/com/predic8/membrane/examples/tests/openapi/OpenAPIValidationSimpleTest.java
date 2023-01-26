@@ -14,14 +14,13 @@
 
 package com.predic8.membrane.examples.tests.openapi;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
 
-public class OpenAPIValidationSimple extends DistributionExtractingTestcase {
+public class OpenAPIValidationSimpleTest extends DistributionExtractingTestcase {
 
 	final String createPersonValid = """
 			{"name": "Johannes Gutenberg","age": 78}
@@ -55,8 +54,8 @@ public class OpenAPIValidationSimple extends DistributionExtractingTestcase {
 	public void test() throws Exception {
 
 		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("success", postAndAssert(201, URL_2000 + "/persons", CONTENT_TYPE_APP_JSON_HEADER, createPersonValid));
-			JSONAssert.assertEquals(validationResult, postAndAssert(400, URL_2000 + "/persons", CONTENT_TYPE_APP_JSON_HEADER, createPersonInvalid), true);
+			assertContains("success", postAndAssert(201, LOCALHOST_2000 + "/persons", CONTENT_TYPE_APP_JSON_HEADER, createPersonValid));
+			JSONAssert.assertEquals(validationResult, postAndAssert(400, LOCALHOST_2000 + "/persons", CONTENT_TYPE_APP_JSON_HEADER, createPersonInvalid), true);
 		}
 	}
 }

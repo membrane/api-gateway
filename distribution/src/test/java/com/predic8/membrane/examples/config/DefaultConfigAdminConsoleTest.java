@@ -25,7 +25,7 @@ import java.io.File;
 
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.examples.util.ProxiesXmlUtil;
 

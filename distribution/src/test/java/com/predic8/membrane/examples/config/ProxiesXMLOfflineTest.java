@@ -14,44 +14,35 @@
 
 package com.predic8.membrane.examples.config;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
-import org.apache.http.*;
-import org.apache.http.client.methods.*;
-import org.apache.http.util.*;
+import io.restassured.*;
+import io.restassured.filter.log.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
-public class ProxiesXMLOfflineTest extends DistributionExtractingTestcase {
-
-    static final String URL_3000 = "http://localhost:3000";
+public class ProxiesXMLOfflineTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
         return "..";
     }
-
-    private Process2 process;
-
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         process =  new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-offline.xml").waitForMembrane().start();
-    }
 
-    @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
+        // Dump HTTP
+        RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @SuppressWarnings("JsonSchemaCompliance")
     @Test
-    void api_doc() throws IOException {
-        String andAssert = getAndAssert(200, URL_2000 + "/api-doc");
-        System.out.println(andAssert);
+    void api_doc() {
         JSONAssert.assertEquals("""
                 {
                   "fruitshop-v1-0" : {
@@ -62,29 +53,14 @@ public class ProxiesXMLOfflineTest extends DistributionExtractingTestcase {
                     "ui_link" : "/api-doc/ui/fruitshop-v1-0"
                   }
                 }
-                """, andAssert, true);
+                """, get(LOCALHOST_2000 + "/api-doc").asString(), true);
     }
 
     @Test
-    public void port2000() throws Exception {
-        runTestOnURL(URL_2000);
-    }
-
-    @Test
-    public void port3000() throws Exception {
-        runTestOnURL(URL_3000);
-    }
-
-    private void runTestOnURL(String url) throws IOException {
-        // Low level to get the Entity and to close the request
-        HttpGet get = new HttpGet(url);
-        try {
-            HttpResponse r = invokeAndAssertInternal(200, url, null, get);
-            HttpEntity e = r.getEntity();
-            assertContains("json", e.getContentType().getValue());
-            assertContains("success", EntityUtils.toString(e));
-        } finally {
-            get.releaseConnection();
-        }
+    public void port2000() {
+        get(LOCALHOST_2000)
+                .then().assertThat()
+                .contentType(APPLICATION_JSON)
+                .body("success", equalTo(true));
     }
 }

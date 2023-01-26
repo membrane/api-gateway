@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.examples.config;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
@@ -31,7 +30,7 @@ import static java.nio.file.StandardOpenOption.*;
 import static javax.net.ssl.TrustManagerFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ProxiesXMLSecurityTest extends DistributionExtractingTestcase {
+public class ProxiesXMLSecurityTest extends AbstractSampleMembraneStartStopTestcase {
 
     static final String DISABLE_HOSTNAME_VERIFICATION = "jdk.internal.httpclient.disableHostnameVerification";
 
@@ -40,19 +39,12 @@ public class ProxiesXMLSecurityTest extends DistributionExtractingTestcase {
         return "..";
     }
 
-    private Process2 process;
-
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
 
         System.getProperties().setProperty(DISABLE_HOSTNAME_VERIFICATION, TRUE.toString());
 
         process = new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-security.xml").waitForMembrane().start();
-    }
-
-    @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
     }
 
     @Test

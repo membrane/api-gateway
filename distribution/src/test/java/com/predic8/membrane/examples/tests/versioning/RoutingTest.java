@@ -22,7 +22,7 @@ import java.io.IOException;
 import com.predic8.membrane.examples.util.BufferLogger;
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.examples.tests.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 
 public class RoutingTest extends DistributionExtractingTestcase {

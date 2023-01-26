@@ -14,29 +14,32 @@
 
 package com.predic8.membrane.examples.config;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 /**
- * Tests the Guide at:
- * https://membrane-api.io/getting-started
- *
+ * Tests the guide at:
+ * <a href="https://membrane-api.io/getting-started">...</a>
+ * <p>
  * Needs an Internet connection to work!
  */
-public class GettingStartedTest extends DistributionExtractingTestcase {
+public class GettingStartedTest extends AbstractSampleMembraneStartStopTestcase {
 
-	@Override
-	protected String getExampleDirName() {
-		return "..";
-	}
+    @Override
+    protected String getExampleDirName() {
+        return "..";
+    }
 
-	@Test
-	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("Shop API", getAndAssert200(URL_2000));
-		}
-	}
+    @Test
+    public void test() throws Exception {
+        get(LOCALHOST_2000 + "/shop/products/")
+                .then().assertThat()
+                .statusCode(200)
+                .contentType(APPLICATION_JSON)
+                .body("meta.page",equalTo(1));
+    }
 }

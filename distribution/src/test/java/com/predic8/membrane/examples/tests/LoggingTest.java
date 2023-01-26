@@ -17,10 +17,8 @@ package com.predic8.membrane.examples.tests;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 public class LoggingTest extends DistributionExtractingTestcase {
 

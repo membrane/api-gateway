@@ -14,91 +14,127 @@
 
 package com.predic8.membrane.examples.tutorials.rest;
 
-import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.util.*;
-import org.apache.http.*;
-import org.apache.http.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 /**
- * See: https://membrane-api.io/tutorials/rest/
- *
+ * See: <a href="https://membrane-api.io/tutorials/rest/">REST Tutorial</a>
+ * <p>
  * Needs an Internet connection to work!
  */
 public class TutorialRestStepsTest extends DistributionExtractingTestcase {
 
-	@Override
-	protected String getExampleDirName() {
-		return "../tutorials/rest";
-	}
+    @Override
+    protected String getExampleDirName() {
+        return "../tutorials/rest";
+    }
 
-	@BeforeEach
-	void setup() throws IOException {
-		writeInputStreamToFile(baseDir + "/proxies.xml", getStepsProxiesAsStream());
-	}
+    private Process2 process;
 
-	@Test
-	public void start() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("Shop API", getAndAssert200(URL_2000));
-			assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:9000/admin/"));
-		}
-	}
+    @BeforeEach
+    void startMembrane() throws IOException, InterruptedException {
+        // In the distribution is only the start of the tutorial but not alle the steps
+        writeInputStreamToFile(baseDir + "/proxies.xml", getStepsProxiesAsStream());
+        process = startServiceProxyScript();
+    }
 
-	@Test
-	public void step1() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("products_url", getAndAssert200("http://localhost:2001/shop/"));
-			getAndAssert(400, "http://localhost:2001");
-		}
-	}
+    @AfterEach
+    void stopMembrane() throws IOException, InterruptedException {
+        process.killScript();
+    }
 
-	@Test
-	public void step2() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("products_url", getAndAssert200("http://localhost:2002/shop/"));
+    @Test
+    public void start() throws Exception {
+        get(LOCALHOST_2000)
+                .then()
+                .assertThat()
+                    .contentType(APPLICATION_JSON)
+                    .body(containsString("Shop API"));
 
-			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2002/restnames/name.groovy?name=Pia",null);
-			assertContains("xml", getContentTypeValue(res));
-			assertContains("nameinfo",EntityUtils.toString(res.getEntity()));
-		}
-	}
+        get("http://localhost:9000/admin/")
+                .then()
+                .assertThat()
+                    .contentType(TEXT_HTML)
+                    .body(containsString("Administration"));
 
-	@Test
-	public void step3() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2003/restnames/name.groovy?name=Pia",null);
-			assertContains("json", getContentTypeValue(res));
-			assertContains("nameinfo",EntityUtils.toString(res.getEntity()));
-		}
-	}
+    }
 
-	/**
-	 * Same as Step 3 but with beautifier and ratelimiter
-	 */
-	@Test
-	public void step4() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			HttpResponse res = getAndAssertWithResponse(200,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
-			assertContains("json", getContentTypeValue(res));
-			assertContains("nameinfo",EntityUtils.toString(res.getEntity()));
+    @Test
+    public void step1() {
+        get("http://localhost:2001/shop/products/")
+                .then()
+                .assertThat()
+                    .contentType(APPLICATION_JSON)
+                    .body("meta.count",greaterThan(10));
 
-			getAndAssert(200,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
-			getAndAssert(200,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
-			getAndAssert(429,"http://localhost:2004/restnames/name.groovy?name=Pia",null);
-		}
-	}
+        get("http://localhost:2001")
+                .then()
+                .assertThat()
+                    .statusCode(400);
+    }
 
-	private String getContentTypeValue(HttpResponse res) {
-		return res.getEntity().getContentType().getValue();
-	}
+    @Test
+    public void step2() {
+        get("http://localhost:2001/shop/products/")
+                .then()
+                .assertThat()
+                    .contentType(APPLICATION_JSON)
+                    .body("meta.count",greaterThan(10));
 
-	private InputStream getStepsProxiesAsStream() {
-		return getClass().getClassLoader().getResourceAsStream("com/predic8/membrane/examples/tutorials/rest/rest-tutorial-steps-proxies.xml");
-	}
+        get("http://localhost:2002/restnames/name.groovy?name=Pia")
+                .then()
+                .assertThat()
+                .contentType(APPLICATION_XML)
+                .statusCode(200)
+                .body("restnames.nameinfo.name", equalTo("Pia"));
+    }
+
+    @Test
+    public void step3() {
+        get("http://localhost:2003/restnames/name.groovy?name=Pia")
+                .then()
+                .assertThat()
+                    .contentType(APPLICATION_JSON)
+                    .statusCode(200)
+                    .body("restnames.nameinfo.name", equalTo("Pia"));
+    }
+
+    /**
+     * Same as Step 3 but with beautifier and ratelimiter
+     */
+    @Test
+    public void step4() {
+            get("http://localhost:2004/restnames/name.groovy?name=Pia")
+                    .then()
+                    .assertThat()
+                    .statusCode(200)
+                    .contentType(APPLICATION_JSON)
+                    .body("restnames.nameinfo.name", equalTo("Pia"));
+
+            get("http://localhost:2004/restnames/name.groovy?name=Pia")
+                    .then()
+                    .assertThat()
+                    .statusCode(200);
+
+            get("http://localhost:2004/restnames/name.groovy?name=Pia")
+                    .then()
+                    .assertThat()
+                    .statusCode(200);
+
+            get("http://localhost:2004/restnames/name.groovy?name=Pia")
+                    .then()
+                    .assertThat()
+                    .statusCode(429);
+    }
+
+    private InputStream getStepsProxiesAsStream() {
+        return getClass().getClassLoader().getResourceAsStream("com/predic8/membrane/examples/tutorials/rest/rest-tutorial-steps-proxies.xml");
+    }
 }
