@@ -29,25 +29,18 @@ import static org.hamcrest.Matchers.*;
  * <p>
  * Needs an Internet connection to work!
  */
-public class TutorialRestStepsTest extends DistributionExtractingTestcase {
+public class TutorialRestStepsTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
         return "../tutorials/rest";
     }
 
-    private Process2 process;
-
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         // In the distribution is only the start of the tutorial but not alle the steps
-        writeInputStreamToFile(baseDir + "/proxies.xml", getStepsProxiesAsStream());
+        writeInputStreamToFile(baseDir + "/proxies.xml", getFileAsStream("com/predic8/membrane/examples/tutorials/rest/rest-tutorial-steps-proxies.xml"));
         process = startServiceProxyScript();
-    }
-
-    @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
     }
 
     @Test
@@ -132,9 +125,5 @@ public class TutorialRestStepsTest extends DistributionExtractingTestcase {
                     .then()
                     .assertThat()
                     .statusCode(429);
-    }
-
-    private InputStream getStepsProxiesAsStream() {
-        return getClass().getClassLoader().getResourceAsStream("com/predic8/membrane/examples/tutorials/rest/rest-tutorial-steps-proxies.xml");
     }
 }

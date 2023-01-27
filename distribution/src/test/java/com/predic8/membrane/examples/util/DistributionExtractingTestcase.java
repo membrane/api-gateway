@@ -224,4 +224,8 @@ public abstract class DistributionExtractingTestcase {
     protected void replaceInFile2(String filename, String a, String b) throws IOException {
         replaceInFile(new File(baseDir, filename), a, b);
     }
+
+    public InputStream getFileAsStream(String filename) {
+        return getClass().getClassLoader().getResourceAsStream(filename);
+    }
 }

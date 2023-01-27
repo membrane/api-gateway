@@ -55,7 +55,7 @@ import static java.lang.Boolean.TRUE;
 public class HttpClient {
 	public static final String HTTP2 = "h2";
 
-	private static Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
 	@GuardedBy("HttpClient.class")
 	private static SSLProvider defaultSSLProvider;
