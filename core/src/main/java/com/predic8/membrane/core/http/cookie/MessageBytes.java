@@ -13,17 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.cookie;
 
-import java.io.UnsupportedEncodingException;
+import com.predic8.membrane.core.http.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Request;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Adapter between Tomcat classes ({@link ServerCookie} etc.) and Membrane
  * classes ({@link Request} etc.).
  */
 public final class MessageBytes  {
-	private static byte[] empty = new byte[0];
+	private static final byte[] empty = new byte[0];
 
 	private byte[] bytes;
 	private int offset;
@@ -43,6 +44,7 @@ public final class MessageBytes  {
 		return b;
 	}
 
+	// @Todo Why is this always false?
 	public boolean isNull() {
 		return false;
 	}
@@ -61,15 +63,15 @@ public final class MessageBytes  {
 
 	@Override
 	public String toString() {
-		try {
-			return new String(bytes, offset, length, Constants.ISO_8859_1);
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
+		return new String(bytes, offset, length, ISO_8859_1);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return toString().equals(obj);
+		if (obj instanceof String str)
+			return toString().equals(str);
+		if (obj instanceof MessageBytes mb)
+			return offset == mb.offset && length == mb.length && Arrays.equals(bytes,mb.bytes);
+		return false;
 	}
 }

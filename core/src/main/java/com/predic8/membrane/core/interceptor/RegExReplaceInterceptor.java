@@ -13,18 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Message;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.TargetType.*;
 
 /**
  * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
@@ -33,11 +28,11 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="regExReplacer")
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(RegExReplaceInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(RegExReplaceInterceptor.class.getName());
 
 	private String regex;
 	private String replace;
-	private TargetType target = TargetType.BODY;
+	private TargetType target = BODY;
 
 	public enum TargetType {
 		BODY,
@@ -50,21 +45,20 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (target == TargetType.HEADER)
-			replaceHeader(exc.getRequest().getHeader());
-		else
-			replaceBody(exc.getRequest());
-
-		return Outcome.CONTINUE;
+		return handleInternal(exc.getRequest());
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		if (target == TargetType.HEADER)
-			replaceHeader(exc.getResponse().getHeader());
+		return handleInternal(exc.getResponse());
+	}
+
+	private Outcome handleInternal(Message message) throws Exception {
+		if (target == HEADER)
+			replaceHeader(message.getHeader());
 		else
-			replaceBody(exc.getResponse());
-		return Outcome.CONTINUE;
+			replaceBody(message);
+		return CONTINUE;
 	}
 
 	private void replaceHeader(Header header) {
@@ -72,7 +66,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 			hf.setValue(hf.getValue().replaceAll(regex, replace));
 	}
 
-	private void replaceBody(Message res) throws IOException, Exception {
+	private void replaceBody(Message res) throws Exception {
 		if(res.getHeader().isBinaryContentType())
 			return;
 		log.debug("pattern: " +regex);
