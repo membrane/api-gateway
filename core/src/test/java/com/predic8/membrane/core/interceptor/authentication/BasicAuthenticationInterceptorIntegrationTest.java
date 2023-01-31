@@ -14,26 +14,21 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.test.AssertUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
+import com.predic8.membrane.core.rules.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
+import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BasicAuthenticationInterceptorIntegrationTest {
 
-	private static HttpRouter router = new HttpRouter();
+	private static final HttpRouter router = new HttpRouter();
 
 	@BeforeAll
 	public static void setup() throws Exception {
@@ -42,7 +37,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 
 		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
 
-		List<User> users = new ArrayList<User>();
+		List<User> users = new ArrayList<>();
 		users.add(new User("admin", "admin"));
 		interceptor.setUsers(users );
 
@@ -52,19 +47,19 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 
 	@Test
 	public void testDeny() throws Exception {
-		AssertUtils.disableHTTPAuthentication();
-		AssertUtils.getAndAssert(401, "http://localhost:3001/axis2/services/BLZService?wsdl");
+		disableHTTPAuthentication();
+		getAndAssert(401, "http://localhost:3001/axis2/services/BLZService?wsdl");
 	}
 
 	@Test
 	public void testAccept() throws Exception {
-		AssertUtils.setupHTTPAuthentication("localhost", 3001, "admin", "admin");
-		AssertUtils.getAndAssert200("http://localhost:3001/axis2/services/BLZService?wsdl");
+		setupHTTPAuthentication("localhost", 3001, "admin", "admin");
+		getAndAssert200("http://localhost:3001/axis2/services/BLZService?wsdl");
 	}
 
 	@Test
-	public void testHashedPassword() throws Exception {
-		List<User> users = new ArrayList<User>();
+	public void testHashedPassword() {
+		List<User> users = new ArrayList<>();
 		User user = new User("admin", "$6$12345678$jwCsYagMo/KNcTDqnrWL25Dy3AfAT5U94abA5a/iPFO.Cx2zAkMpPxZBNKY/P/xiRrCfCFDxdBp7pvNEMoBcr0");
 		users.add(user);
 
@@ -72,10 +67,8 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		StaticUserDataProvider provider = (StaticUserDataProvider) interceptor.getUserDataProvider();
 		interceptor.setUsers(users);
 
-		User postData = new User("admin","admin");
-
 		try {
-			provider.verify(postData.getAttributes());
+			provider.verify(new User("admin","admin").getAttributes());
 		}catch(Exception e){
 			fail();
 		}
@@ -83,7 +76,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 
 	@AfterAll
 	public static void teardown() throws IOException {
-		AssertUtils.closeConnections();
+		closeConnections();
 		router.shutdown();
 	}
 

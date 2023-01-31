@@ -84,6 +84,7 @@
 		<slf4j.version>2.0.6</slf4j.version>
 		<log4j.version>2.19.0</log4j.version>
 		<junit.version>5.9.1</junit.version>
+		<groovy.version>4.0.8</groovy.version>
 	</properties>
 
 
@@ -162,12 +163,12 @@
 			<dependency>
 				<groupId>org.apache.groovy</groupId>
 				<artifactId>groovy</artifactId>
-				<version>4.0.6</version>
+				<version>${groovy.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.groovy</groupId>
 				<artifactId>groovy-templates</artifactId>
-				<version>4.0.6</version>
+				<version>${groovy.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>

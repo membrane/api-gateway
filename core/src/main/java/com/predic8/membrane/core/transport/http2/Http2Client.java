@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.transport.http2.Http2ExchangeHandler.wri
 import static com.predic8.membrane.core.transport.http2.Http2Logic.getRemoteAddr;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.PREFACE;
 
-public class Http2Client implements Runnable {
+public class Http2Client implements Runnable, AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Http2Client.class);
 
     private static final ExecutorService executor = Util.createNewThreadPool();
@@ -40,7 +40,6 @@ public class Http2Client implements Runnable {
     private final ConcurrentHashMap<Integer, ResponseInfo> responses = new ConcurrentHashMap<>();
     private final Connection con;
     private final Http2Logic logic;
-    private final Thread thread;
     @GuardedBy("this")
     private int reserved;
 
@@ -70,7 +69,7 @@ public class Http2Client implements Runnable {
             }
         });
 
-        thread = new Thread(this);
+        Thread thread = new Thread(this);
         thread.start();
     }
 

@@ -57,7 +57,7 @@ public class ConfigSerializationTest {
 			"stax-interceptor", // has external classpath dependencies
 			"soap", // has external classpath dependencies
 			"basic-xml-interceptor", // has external classpath dependencies
-			"template-interceptor");
+			"template");
 
 	public static List<Object[]> getPorts() {
 		ArrayList<Object[]> res = new ArrayList<>();

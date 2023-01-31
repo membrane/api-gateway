@@ -10,7 +10,7 @@
 				<xpathExtractor>
 					<property name="name" xpath="jobs/@user"/>
 				</xpathExtractor>
-				<template content-type="text/plain">Dear ${name}, unfortunately our service is currently not available.</template>
+				<template contentType="text/plain">Dear ${name}, unfortunately our service is currently not available.</template>
 			</request>
 			<response>
 				<groovy>

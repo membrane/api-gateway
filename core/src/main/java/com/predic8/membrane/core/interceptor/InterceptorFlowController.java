@@ -23,6 +23,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.transport.http.AbortException;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 /**
@@ -71,12 +73,12 @@ public class InterceptorFlowController {
 	public void invokeHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
 		try {
 			switch (invokeRequestHandlers(exchange, interceptors)) {
-			case CONTINUE:
-				throw new Exception("The last interceptor in the main chain may not return CONTINUE. Change it to RETURN.");
-			case RETURN:
-				break;
-			case ABORT:
-				throw new AbortException();
+				case CONTINUE:
+					throw new Exception("The last interceptor in the main chain may not return CONTINUE. Change it to RETURN.");
+				case RETURN:
+					break;
+				case ABORT:
+					throw new AbortException();
 			}
 			invokeResponseHandlers(exchange);
 		} catch (Exception e) {
@@ -97,7 +99,7 @@ public class InterceptorFlowController {
 
 		for (Interceptor i : interceptors) {
 			EnumSet<Flow> f = i.getFlow();
-			if (f.contains(Flow.RESPONSE) && !f.contains(Flow.REQUEST)) {
+			if (f.contains(RESPONSE) && !f.contains(REQUEST)) {
 				exchange.pushInterceptorToStack(i);
 				continue;
 			}
@@ -106,13 +108,13 @@ public class InterceptorFlowController {
 				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exchange);
 
 			Outcome o = i.handleRequest(exchange);
-			if (o != Outcome.CONTINUE)
+			if (o != CONTINUE)
 				return o;
 
-			if (f.contains(Flow.RESPONSE))
+			if (f.contains(RESPONSE))
 				exchange.pushInterceptorToStack(i);
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	/**
@@ -120,11 +122,10 @@ public class InterceptorFlowController {
 	 * the exchange's stack so far.
 	 */
 	public void invokeResponseHandlers(Exchange exchange) throws Exception {
-		boolean logDebug = log.isDebugEnabled();
 
 		Interceptor i;
 		while ((i = exchange.popInterceptorFromStack()) != null) {
-			if (logDebug)
+			if (log.isDebugEnabled())
 				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exchange);
 
 			if (i.handleResponse(exchange) == ABORT) {

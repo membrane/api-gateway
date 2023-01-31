@@ -23,14 +23,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.NO;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.YES;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.X_MEMBRANE_VALIDATION;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_VALIDATION;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static com.predic8.membrane.core.openapi.util.TestUtils.getSingleOpenAPIRecord;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OpenAPIProxyTest {
+public class APIProxyTest {
 
     Router router;
 
@@ -42,10 +42,10 @@ public class OpenAPIProxyTest {
     @Test
     public void noOptionsNoExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -64,11 +64,11 @@ public class OpenAPIProxyTest {
     @Test
     public void validationRequestNoExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateRequests = YES;
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -86,11 +86,11 @@ public class OpenAPIProxyTest {
     @Test
     public void validationResponsesNoExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateResponses = YES;
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -109,12 +109,12 @@ public class OpenAPIProxyTest {
     @Test
     public void validationAllNoExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateRequests = YES;
         spec.validateResponses = YES;
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -132,10 +132,10 @@ public class OpenAPIProxyTest {
     @Test
     public void requestsExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/validate-requests-extensions.yml";
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -153,10 +153,10 @@ public class OpenAPIProxyTest {
     @Test
     public void responsesExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/validate-responses-extensions.yml";
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -175,12 +175,12 @@ public class OpenAPIProxyTest {
     @Test
     public void validationRequestNoDetailsNoExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateRequests = YES;
         spec.validationDetails = NO;
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
         OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
@@ -199,11 +199,11 @@ public class OpenAPIProxyTest {
     @Test
     public void validationDetailsFalseExtensions() throws Exception {
 
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.location = "src/test/resources/openapi/openapi-proxy/validation-details-false-extensions.yml";
         spec.validateRequests = YES;
 
-        OpenAPIProxy proxy = createProxy(router,spec);
+        APIProxy proxy = createProxy(router,spec);
 
         assertEquals(1, proxy.apiRecords.size());
 

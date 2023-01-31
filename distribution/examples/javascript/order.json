@@ -1,0 +1,22 @@
+{
+    "id": 731,
+    "date": "7 Apr 2023",
+    "customer": 17,
+    "items": [
+        {
+            "quantity": 5,
+            "description": "Oolong",
+            "price": 5.90
+        },
+        {
+            "quantity": 2,
+            "description": "Assam",
+            "price": 2.95
+        },
+        {
+            "quantity": 1,
+            "description": "Darjeeling",
+            "price": 2.95
+        }
+    ]
+}

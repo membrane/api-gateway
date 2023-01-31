@@ -13,34 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http2;
 
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http2.frame.*;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.twitter.hpack.Decoder;
-import com.twitter.hpack.Encoder;
-import com.twitter.hpack.HeaderListener;
-import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.util.*;
+import com.twitter.hpack.*;
+import org.apache.commons.lang3.*;
+import org.slf4j.*;
 
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.*;
-import static com.predic8.membrane.core.transport.http2.frame.SettingsFrame.ID_SETTINGS_MAX_HEADER_LIST_SIZE;
 
 public class Http2Logic {
     private static final Logger log = LoggerFactory.getLogger(Http2Logic.class.getName());
@@ -79,11 +67,10 @@ public class Http2Logic {
 
         log.debug("started HTTP2 connection " + remoteAddr);
 
-        int maxHeaderSize = MAX_LINE_LENGTH;
         int maxHeaderTableSize = 4096; // TODO: update with SETTINGS_HEADER_TABLE_SIZE https://datatracker.ietf.org/doc/html/rfc9113#section-4.3.1
-        decoder = new Decoder(maxHeaderSize, maxHeaderTableSize);
-        Encoder encoder = new Encoder(maxHeaderTableSize); // TODO: update this value
-        this.sender = new FrameSender(srcOut, encoder, peerSettings, streams, remoteAddr);
+        decoder = new Decoder(MAX_LINE_LENGTH, maxHeaderTableSize);
+        // TODO: update this value
+        this.sender = new FrameSender(srcOut, new Encoder(maxHeaderTableSize), peerSettings, streams, remoteAddr);
         flowControl = new FlowControl(0, sender, ourSettings);
         peerFlowControl = new PeerFlowControl(0, sender, peerSettings);
 
@@ -102,7 +89,7 @@ public class Http2Logic {
         StringBuilder sb = new StringBuilder();
         InetAddress ia = sourceSocket.getInetAddress();
         if (ia != null)
-            sb.append(ia.toString());
+            sb.append(ia);
         sb.append(":");
         sb.append(sourceSocket.getPort());
         return sb.toString();
@@ -170,9 +157,7 @@ public class Http2Logic {
     }
 
     private void handleFrame(GoawayFrame goawayFrame) throws IOException {
-        int streamId = goawayFrame.getFrame().getStreamId();
-
-        if (streamId != 0)
+        if (goawayFrame.getFrame().getStreamId() != 0)
             throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         // TODO: implement this, once sending PUSH_PROMISE is implemented
@@ -325,34 +310,31 @@ public class Http2Logic {
             sb.append(":\n");
         }
 
-        decoder.decode(getPackedHeaderStream(headerFrames), new HeaderListener() {
-            @Override
-            public void addHeader(byte[] name, byte[] value, boolean sensitive) {
-                String key = new String(name);
-                String val = new String(value);
+        decoder.decode(getPackedHeaderStream(headerFrames), (name, value, sensitive) -> {
+            String key = new String(name);
+            String val = new String(value);
 
-                if (sb != null) {
-                    sb.append(key);
-                    sb.append(": ");
-                    sb.append(val);
-                    sb.append("\n");
-                }
-
-                if (":method".equals(key) && request instanceof Request)
-                    ((Request)request).setMethod(val);
-                else if (":scheme".equals(key))
-                    ; // ignore
-                else if (":authority".equals(key))
-                    request.getHeader().setHost(val);
-                else if (":path".equals(key) && request instanceof Request) {
-                    ((Request) request).setUri(val);
-                    log.debug("streamId=" + streamId1 + " uri=" + val);
-                } else if (":status".equals(key) && request instanceof Response) {
-                    ((Response) request).setStatusCode(Integer.parseInt(val));
-                    log.debug("streamId=" + streamId1 + " status=" + val);
-                } else
-                    header.add(key, val);
+            if (sb != null) {
+                sb.append(key);
+                sb.append(": ");
+                sb.append(val);
+                sb.append("\n");
             }
+
+            if (":method".equals(key) && request instanceof Request)
+                ((Request)request).setMethod(val);
+            else if (":scheme".equals(key))
+                ; // ignore
+            else if (":authority".equals(key))
+                request.getHeader().setHost(val);
+            else if (":path".equals(key) && request instanceof Request) {
+                ((Request) request).setUri(val);
+                log.debug("streamId=" + streamId1 + " uri=" + val);
+            } else if (":status".equals(key) && request instanceof Response) {
+                ((Response) request).setStatusCode(Integer.parseInt(val));
+                log.debug("streamId=" + streamId1 + " status=" + val);
+            } else
+                header.add(key, val);
         });
         if (decoder.endHeaderBlock())
             log.warn("dropped header exceeding configured maximum size of " + MAX_LINE_LENGTH + ".");
@@ -415,48 +397,45 @@ public class Http2Logic {
         for (int i = 0; i < settings.getSettingsCount(); i++) {
             long settingsValue = settings.getSettingsValue(i);
             switch (settings.getSettingsId(i)) {
-                case ID_SETTINGS_MAX_FRAME_SIZE:
+                case ID_SETTINGS_MAX_FRAME_SIZE -> {
                     if (settingsValue < 16384 || settingsValue > 16777215)
                         throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
                     peerSettings.setMaxFrameSize((int) settingsValue);
-                    break;
-                case ID_SETTINGS_ENABLE_PUSH:
+                }
+                case ID_SETTINGS_ENABLE_PUSH -> {
                     if (settingsValue != 0 && settingsValue != 1)
                         throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
                     peerSettings.setEnablePush((int) settingsValue);
-                    break;
-                case ID_SETTINGS_HEADER_TABLE_SIZE:
+                }
+                case ID_SETTINGS_HEADER_TABLE_SIZE -> {
                     if (settingsValue > Integer.MAX_VALUE) {
                         System.err.println("HEADER_TABLE_SIZE > Integer.MAX_VALUE received: " + settingsValue);
                         throw new FatalConnectionException(ERROR_PROTOCOL_ERROR); // this is limited by our implementation
                     }
                     peerSettings.setHeaderTableSize((int) settingsValue);
-                    break;
-                case ID_SETTINGS_MAX_CONCURRENT_STREAMS:
+                }
+                case ID_SETTINGS_MAX_CONCURRENT_STREAMS -> {
                     if (settingsValue > Integer.MAX_VALUE)
                         peerSettings.setMaxConcurrentStreams(Integer.MAX_VALUE); // this is the limit in our implementation
                     else
                         peerSettings.setMaxConcurrentStreams((int) settingsValue);
-                    break;
-                case ID_SETTINGS_INITIAL_WINDOW_SIZE:
+                }
+                case ID_SETTINGS_INITIAL_WINDOW_SIZE -> {
                     if (settingsValue > 1 << 31 - 1)
                         throw new FatalConnectionException(ERROR_FLOW_CONTROL_ERROR);
-
                     int delta = (int) settingsValue - peerSettings.getInitialWindowSize();
                     for (StreamInfo si : streams.values()) {
                         si.getPeerFlowControl().increment(delta);
                     }
-
                     peerSettings.setInitialWindowSize((int) settingsValue);
-                    break;
-                case ID_SETTINGS_MAX_HEADER_LIST_SIZE:
+                }
+                case ID_SETTINGS_MAX_HEADER_LIST_SIZE -> {
                     if (settingsValue > Integer.MAX_VALUE)
                         peerSettings.setMaxHeaderListSize(Integer.MAX_VALUE); // this is the limit in our implementation
                     else
                         peerSettings.setMaxHeaderListSize((int) settingsValue);
-                    break;
-                default:
-                    System.err.println("not implemented: setting " + settings.getSettingsId(i));
+                }
+                default -> System.err.println("not implemented: setting " + settings.getSettingsId(i));
             }
         }
         sender.send(SettingsFrame.ack());

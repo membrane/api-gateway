@@ -27,8 +27,8 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 
@@ -38,7 +38,7 @@ public class OpenAPIRecordFactory {
 
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    private Router router;
+    private final Router router;
 
     public OpenAPIRecordFactory(Router router) {
         this.router = router;

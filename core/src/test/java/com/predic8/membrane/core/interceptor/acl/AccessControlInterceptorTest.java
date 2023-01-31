@@ -49,7 +49,7 @@ public class AccessControlInterceptorTest {
 	}
 
 	@Test
-	public void testGetAccessControl() throws Exception {
+	public void testGetAccessControl() {
 		assertNotNull(interceptor.getAccessControl());
 	}
 
@@ -72,5 +72,4 @@ public class AccessControlInterceptorTest {
 	public static void tearDown() throws Exception {
 		router.shutdown();
 	}
-
 }

@@ -52,10 +52,10 @@ import static java.lang.Boolean.TRUE;
  *
  * Instances are thread-safe.
  */
-public class HttpClient {
+public class HttpClient implements AutoCloseable {
 	public static final String HTTP2 = "h2";
 
-	private static Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
 	@GuardedBy("HttpClient.class")
 	private static SSLProvider defaultSSLProvider;
@@ -137,9 +137,7 @@ public class HttpClient {
 
 	@Override
 	protected void finalize() throws Throwable {
-		conMgr.shutdownWhenDone();
-		if (http2ClientPool != null)
-			http2ClientPool.shutdownWhenDone();
+		close();
 	}
 
     private void setRequestURI(Request req, String dest) throws MalformedURLException {
@@ -248,12 +246,8 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					String[] applicationProtocols = null;
-					if (useHttp2) {
-						applicationProtocols = HTTP2_PROTOCOLS;
-					}
 					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout,
-							sniServerName, proxy, proxySSLContext, applicationProtocols);
+							sniServerName, proxy, proxySSLContext, getApplicationProtocols());
 					if (useHttp2 && Http2TlsSupport.isHttp2(con.socket))
 						usingHttp2 = true;
 					else
@@ -379,6 +373,13 @@ public class HttpClient {
 			}
 		}
 		throw exception;
+	}
+
+	private String[] getApplicationProtocols() {
+		if (useHttp2) {
+			return HTTP2_PROTOCOLS;
+		}
+		return null;
 	}
 
 	private String upgradeProtocol(Exchange exc, Response response, String newProtocol) {
@@ -540,5 +541,12 @@ public class HttpClient {
 
 	ConnectionManager getConnectionManager() {
 		return conMgr;
+	}
+
+	@Override
+	public void close() throws Exception {
+		conMgr.shutdownWhenDone();
+		if (http2ClientPool != null)
+			http2ClientPool.shutdownWhenDone();
 	}
 }

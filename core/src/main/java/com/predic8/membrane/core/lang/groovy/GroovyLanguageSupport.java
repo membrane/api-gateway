@@ -14,18 +14,16 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.lang.*;
 import groovy.lang.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
 public class GroovyLanguageSupport extends LanguageSupport {
 
-	private abstract class GroovyScriptExecutorPool<R> extends
+	private abstract static class GroovyScriptExecutorPool<R> extends
 	ScriptExecutorPool<Script, R> {
 		private final String groovyCode;
 
@@ -43,13 +41,16 @@ public class GroovyLanguageSupport extends LanguageSupport {
 
 		@Override
 		protected Object invoke(Script script, Map<String, Object> parameters) {
-			Binding b = new Binding();
-			for (Map.Entry<String, Object> parameter : parameters.entrySet())
-				b.setVariable(parameter.getKey(), parameter.getValue());
-			script.setBinding(b);
+			script.setBinding(getBinding(parameters));
 			return script.run();
 		}
 
+		private static Binding getBinding(Map<String, Object> parameters) {
+			Binding b = new Binding();
+			for (Map.Entry<String, Object> parameter : parameters.entrySet())
+				b.setVariable(parameter.getKey(), parameter.getValue());
+			return b;
+		}
 	}
 
 	private static final GroovyShell shell = new GroovyShell();
@@ -59,9 +60,8 @@ public class GroovyLanguageSupport extends LanguageSupport {
 		return new GroovyScriptExecutorPool<>(executorService, addImports(src)) {
 			@Override
 			public Boolean apply(Map<String, Object> parameters) {
-				Object result = this.execute(parameters);
-				if (result instanceof Boolean)
-					return (Boolean)result;
+				if (this.execute(parameters) instanceof Boolean result)
+					return result;
 				return false;
 			}
 		};
@@ -78,9 +78,9 @@ public class GroovyLanguageSupport extends LanguageSupport {
 	}
 
 	private String addImports(String src) {
-		return
-				"import static com.predic8.membrane.core.interceptor.Outcome.*\n" +
-				"import com.predic8.membrane.core.http.*\n" +
-				src;
+		return """
+				import static com.predic8.membrane.core.interceptor.Outcome.*
+				import com.predic8.membrane.core.http.*
+				""" + src;
 	}
 }

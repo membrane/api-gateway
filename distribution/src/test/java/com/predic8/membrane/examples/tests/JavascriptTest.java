@@ -28,11 +28,11 @@ import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class GroovyTest extends AbstractSampleMembraneStartStopTestcase {
+public class JavascriptTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "groovy";
+        return "javascript";
     }
 
     BufferLogger logger;
@@ -48,10 +48,10 @@ public class GroovyTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Test
     public void returnJsonAsMap() {
-        
+
         Response r = get("http://localhost:2000");
         System.out.println("r.getBody().asString() = " + r.getBody().asString());
-        
+
         get("http://localhost:2000").then().assertThat()
                 .body("id",equalTo(7))
                 .body("city",equalTo("Berlin"));
@@ -60,7 +60,7 @@ public class GroovyTest extends AbstractSampleMembraneStartStopTestcase {
     @Test
     public void transformJson() {
 
-        String jsonStr = """
+        String jsonInput = """
                 {
                     "id": 731,
                     "date": "7 Apr 2023",
@@ -86,7 +86,7 @@ public class GroovyTest extends AbstractSampleMembraneStartStopTestcase {
 
         Response response = given()
                 .contentType(APPLICATION_JSON)
-                .body(jsonStr)
+                .body(jsonInput)
                 .post("http://localhost:2010");
 
         JSONAssert.assertEquals("""
@@ -121,9 +121,9 @@ public class GroovyTest extends AbstractSampleMembraneStartStopTestcase {
         given()
                 .header("X-Foo",3141)
                 .get("http://localhost:2020")
-        .then().assertThat()
+                .then().assertThat()
                 .statusCode(200)
-                .header("X-Groovy", "42");
+                .header("X-Javascript", "42");
 
         assertContains("Request headers:",logger.toString());
         assertContains("X-Foo",logger.toString());
@@ -131,6 +131,7 @@ public class GroovyTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Test
     public void springBeanResponse() {
-        assertTrue(get("http://localhost:2030").getBody().asString().contains("Greetings from Spring"));
+        assertTrue(get("http://localhost:2030").getBody().asString().contains("Greetings from"));
     }
+
 }

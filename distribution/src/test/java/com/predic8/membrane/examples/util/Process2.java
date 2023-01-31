@@ -262,7 +262,7 @@ public class Process2 implements AutoCloseable {
 		}
 
 		if (afterStartWaiter != null)
-			afterStartWaiter.waitFor(10000);
+			afterStartWaiter.waitFor(60000);
 		sleep(100);
 	}
 

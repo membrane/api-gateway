@@ -13,19 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import org.junit.jupiter.api.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.URISyntaxException;
-
-import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientTest {
@@ -37,16 +29,17 @@ public class Http2ClientTest {
         ConnectionConfiguration connection = new ConnectionConfiguration();
         connection.setKeepAliveTimeout(100);
         configuration.setConnection(connection);
-        HttpClient hc = new HttpClient(configuration);
+
         Exchange e = new Request.Builder().get("https://www.google.de").buildExchange();
-        hc.call(e);
 
-        assertEquals(200, e.getResponse().getStatusCode());
+        try(HttpClient hc = new HttpClient(configuration)) {
+            hc.call(e);
 
-        String body = e.getResponse().getBodyAsStringDecoded();
-        assertTrue(body.startsWith("<!doctype html>"));
-        assertTrue(body.endsWith("</html>"));
+            assertEquals(200, e.getResponse().getStatusCode());
 
-        hc.finalize();
+            String body = e.getResponse().getBodyAsStringDecoded();
+            assertTrue(body.startsWith("<!doctype html>"));
+            assertTrue(body.endsWith("</html>"));
+        }
     }
 }

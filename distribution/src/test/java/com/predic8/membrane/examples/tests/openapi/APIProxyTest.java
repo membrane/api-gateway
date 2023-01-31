@@ -26,7 +26,7 @@ import static com.predic8.membrane.test.AssertUtils.*;
 import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class OpenAPIProxyTest extends DistributionExtractingTestcase {
+public class APIProxyTest extends DistributionExtractingTestcase {
 
     final ObjectMapper om = new ObjectMapper();
 

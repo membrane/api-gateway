@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
+import java.io.*;
 import java.util.*;
 
 import org.slf4j.Logger;
@@ -27,13 +28,13 @@ import com.predic8.membrane.core.interceptor.balancer.Node.Status;
 @MCElement(name="cluster", topLevel=false)
 public class Cluster {
 
-	private static Logger log = LoggerFactory.getLogger(Cluster.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Cluster.class.getName());
 
 	public static final String DEFAULT_NAME = "Default";
 
 	private String name = DEFAULT_NAME;
-	private List<Node> nodes = Collections.synchronizedList(new LinkedList<Node>());
-	private Map<String, Session> sessions = new Hashtable<String, Session>();
+	private final List<Node> nodes = Collections.synchronizedList(new LinkedList<>());
+	private final Map<String, Session> sessions = new Hashtable<>();
 
 	public Cluster() {
 	}
@@ -64,7 +65,7 @@ public class Cluster {
 	}
 
 	public List<Node> getAvailableNodes(long timeout) {
-		List<Node> l = new LinkedList<Node>();
+		List<Node> l = new LinkedList<>();
 		synchronized (nodes) {
 			for (Node n : getAllNodes(timeout)) {
 				if ( n.isUp() ) l.add(n);
@@ -101,7 +102,8 @@ public class Cluster {
 	}
 
 	public List<Node> getNodes() {
-		return new ArrayList<Node>(nodes) {
+		return new ArrayList<>(nodes) {
+			@Serial
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -147,7 +149,7 @@ public class Cluster {
 	}
 
 	public List<Session> getSessionsByNode(Node node) {
-		List<Session> l = new LinkedList<Session>();
+		List<Session> l = new LinkedList<>();
 		synchronized (sessions) {
 			for (Session s : sessions.values()) {
 				if ( s.getNode().equals(node))

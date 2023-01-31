@@ -14,31 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.CountingInputStream;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import io.swagger.util.Json;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.io.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
+import static com.fasterxml.jackson.core.JsonParser.Feature.*;
 import static com.fasterxml.jackson.core.JsonTokenId.*;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static java.util.EnumSet.of;
+import static com.fasterxml.jackson.databind.DeserializationFeature.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static java.util.EnumSet.*;
 
 /**
  * Enforces JSON restrictions.
@@ -48,7 +40,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
 
-    private ObjectMapper om = new ObjectMapper()
+    private final ObjectMapper om = new ObjectMapper()
             .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
             .configure(STRICT_DUPLICATE_DETECTION, true);
 
@@ -72,7 +64,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             maxKeyLength = maxStringLength;
     }
 
-    private abstract class Context {
+    private abstract static class Context {
         public abstract void check(JsonToken jsonToken, JsonParser parser) throws IOException;
     }
 
@@ -113,7 +105,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
             JsonParser parser = om.createParser(cis);
             int tokenCount = 0;
             int depth = 0;
-            List<Context> contexts = new ArrayList();
+            List<Context> contexts = new ArrayList<>();
             Context currentContext = null;
             while (true) {
                 JsonToken jsonToken = parser.nextValue();

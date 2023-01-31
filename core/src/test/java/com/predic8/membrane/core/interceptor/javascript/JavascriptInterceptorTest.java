@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -28,10 +29,16 @@ import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 import org.springframework.context.support.*;
 
+import java.util.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class JavascriptInterceptorTest {
+@SuppressWarnings("unchecked")
+public class JavascriptInterceptorTest {
+
+    private final static ObjectMapper om = new ObjectMapper();
 
     Router router = new Router();
     JavascriptInterceptor interceptor;
@@ -71,96 +78,142 @@ class JavascriptInterceptorTest {
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     public void simpleScript(Class<LanguageSupport> engine) throws Exception {
-        executeSript("var x = 1;", engine);
+        executeScript("var x = 1;", engine);
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     public void scriptWithError(Class<LanguageSupport> engine) {
-        assertThrows(Exception.class, () -> executeSript("var x=;", engine));
+        assertThrows(Exception.class, () -> executeScript("var x=;", engine));
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     public void exchangeAccess(Class<LanguageSupport> engine) throws Exception {
-        executeSript("var e = exc;", engine);
-        executeSript("var e = flow;", engine);
-        executeSript("var e = spring;", engine);
-        executeSript("var e = message;", engine);
-        executeSript("var e = header;", engine);
-        executeSript("var e = body;", engine);
-    }
-
-    void dummy() {
-//        Response.ok("dsf").contentType("application/json").build();
-//        Response.ok().body().build();
+        executeScript("var e = exc;", engine);
+        executeScript("var e = flow;", engine);
+        executeScript("var e = spring;", engine);
+        executeScript("var e = message;", engine);
+        executeScript("var e = header;", engine);
+        executeScript("var e = body;", engine);
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void wrongScript(Class<LanguageSupport> engine) throws Exception {
-        assertEquals(CONTINUE, executeSript("var x = 1/0;", engine));
+        assertEquals(CONTINUE, executeScript("var x = 1/0;", engine));
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void outcomeContinue(Class<LanguageSupport> engine) throws Exception {
-        assertEquals(CONTINUE, executeSript("CONTINUE", engine));
+        assertEquals(CONTINUE, executeScript("CONTINUE", engine));
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void outcomeReturn(Class<LanguageSupport> engine) throws Exception {
-        assertEquals(RETURN, executeSript("RETURN;", engine));
+        assertEquals(RETURN, executeScript("RETURN;", engine));
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void setRequestHeader(Class<LanguageSupport> engine) throws Exception {
-        executeSript("header.setValue('baz','7');", engine);
+        executeScript("header.setValue('baz','7');", engine);
         assertEquals("7", exc.getRequest().getHeader().getFirstValue("baz"));
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void setRequest(Class<LanguageSupport> engine) throws Exception {
-        executeSript("exc.setRequest(new Request.Builder().body('foo').build());", engine);
+        executeScript("exc.setRequest(new Request.Builder().body('foo').build());", engine);
         assertEquals("foo", exc.getRequest().getBodyAsStringDecoded());
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
-    void setReturnRequest(Class<LanguageSupport> engine) throws Exception {
-        executeSript("new Request.Builder().body('foo').build();", engine);
+    void returnRequest(Class<LanguageSupport> engine) throws Exception {
+        executeScript("new Request.Builder().body('foo').build();", engine);
         assertEquals("foo", exc.getRequest().getBodyAsStringDecoded());
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void setResponse(Class<LanguageSupport> engine) throws Exception {
-        executeSript("exc.setResponse(Response.ok('baz').build())", engine);
+        executeScript("exc.setResponse(Response.ok('baz').build())", engine);
         assertEquals("baz", exc.getResponse().getBodyAsStringDecoded());
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
-    void setReturnResponse(Class<LanguageSupport> engine) throws Exception {
-        executeSript("Response.ok('baz').build()", engine);
+    void returnResponse(Class<LanguageSupport> engine) throws Exception {
+        executeScript("Response.ok('baz').build()", engine);
         assertEquals("baz", exc.getResponse().getBodyAsStringDecoded());
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void setReturnMAPAsJSONResponse(Class<LanguageSupport> engine) throws Exception {
-        executeSript("""
-                var o = {"foo": 7};
-                Response.ok().body(o).build();
+        executeScript("""
+                Response.ok().body({"foo": 7}).build();
                 """, engine);
         assertEquals("{\"foo\":7}", exc.getResponse().getBodyAsStringDecoded());
     }
 
+
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    void returnObject(Class<LanguageSupport> engine) throws Exception {
+        // Object must be nested in () otherwise it won't compile
+        executeScript("""
+               ({id:7, name: 'Roller', desc: 'äöüÄÖÜ'});
+                """, engine);
+
+        Map<String,Object> m = om.readValue(exc.getRequest().getBodyAsStringDecoded(),Map.class);
+        assertEquals(7, m.get("id"));
+        assertEquals("Roller", m.get("name"));
+        assertEquals("äöüÄÖÜ", m.get("desc"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    public void testProperties(Class<LanguageSupport> engine) throws Exception {
+
+        exc.getProperties().put("answer","42");
+
+        executeScript("""
+				properties.put('thing','towel');
+				header.add('answer',properties.get('answer'));
+				CONTINUE;
+				""", engine);
+
+        assertEquals("42", exc.getRequest().getHeader().getFirstValue("answer"));
+        assertEquals("towel", exc.getProperty("thing"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
+    public void jsonRequest(Class<LanguageSupport> engine) throws Exception {
+
+        exc.getRequest().setBodyContent("""
+				{"id":7,"city":"Bonn"}""".getBytes());
+        exc.getRequest().getHeader().setContentType(APPLICATION_JSON);
+
+        executeScript("""
+                console.log(json);
+                console.log(json['id']);
+                header.add('id','id-'+json.id);
+                header.add('city',json.city);
+                """, engine);
+
+        assertEquals("id-7", exc.getRequest().getHeader().getFirstValue("id"));
+        assertEquals("Bonn", exc.getRequest().getHeader().getFirstValue("city"));
+    }
+
+
     @SafeVarargs
-    private Outcome executeSript(String src, Class<LanguageSupport>... engine) throws Exception {
+    private Outcome executeScript(String src, Class<LanguageSupport>... engine) throws Exception {
         interceptor.setSrc(src);
 
         // Needed because GraalVMJavascriptSupport is not found using Class.forname() in the Interceptor!
