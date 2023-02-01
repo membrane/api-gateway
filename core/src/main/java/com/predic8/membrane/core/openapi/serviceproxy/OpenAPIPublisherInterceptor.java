@@ -22,9 +22,7 @@ import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.util.*;
 import groovy.text.*;
-import io.swagger.models.auth.*;
 import io.swagger.v3.parser.*;
 import org.slf4j.*;
 
@@ -33,14 +31,13 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_YAML;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.rewrite;
-import static com.predic8.membrane.core.openapi.util.Utils.createErrorMessage;
-import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.util.ErrorUtil.*;
+import static java.lang.Integer.*;
+import static java.lang.String.*;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
@@ -59,8 +56,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     protected Map<String, OpenAPIRecord> apis;
 
-    private Template swaggerUiHtmlTemplate;
-    private Template apiOverviewHtmlTemplate;
+    private final Template swaggerUiHtmlTemplate;
+    private final Template apiOverviewHtmlTemplate;
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
         name = "OpenAPI Publisher";
@@ -153,7 +150,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(getOpenAPIiD(exc))).build());
             return RETURN;
         } catch (Exception e) {
-            exc.setResponse(Response.notFound().contentType(HTML_UTF_8).body("cant find OpenAPI with id " + id).build());
+            createAndSetErrorResponse(exc,400,"Path %s does not contain an id of an OpenAPI document. Please go back to /api-doc".formatted(exc.getRequest().getUri()));
             return RETURN;
         }
     }
