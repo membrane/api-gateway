@@ -31,7 +31,7 @@ import static com.predic8.membrane.core.util.HttpUtil.htmlMessage;
 
 public class ErrorUtil {
 
-    private static Logger log = LoggerFactory.getLogger(ErrorUtil.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ErrorUtil.class.getName());
 
     public static ObjectMapper om = new ObjectMapper(); // GSON ?
 

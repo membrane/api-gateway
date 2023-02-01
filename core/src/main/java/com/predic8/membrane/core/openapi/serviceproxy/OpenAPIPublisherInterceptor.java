@@ -26,6 +26,7 @@ import com.predic8.membrane.core.openapi.util.*;
 import groovy.text.*;
 import io.swagger.models.auth.*;
 import io.swagger.v3.parser.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
@@ -42,6 +43,8 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
     public static final String HTML_UTF_8 = "text/html; charset=utf-8";
     private final ObjectMapper om = new ObjectMapper();
@@ -146,13 +149,22 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleSwaggerUi(Exchange exc) {
-        Matcher m = patternUI.matcher(exc.getRequest().getUri());
-        if (!m.matches()) { // No id specified
-            exc.setResponse(Response.ok().contentType("application/json").body("Please specify an Id").build());
+        try {
+            exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(getOpenAPIiD(exc))).build());
+            return RETURN;
+        } catch (Exception e) {
+            exc.setResponse(Response.notFound().contentType(HTML_UTF_8).body("cant find OpenAPI with id " + id).build());
             return RETURN;
         }
-        exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(m.group(1))).build());
-        return RETURN;
+    }
+
+    private static String getOpenAPIiD(Exchange exc) {
+        Matcher m = patternUI.matcher(exc.getRequest().getUri());
+        if (!m.matches()) { // No id specified
+            log.warn("Cannot parse Id from URL: "+ exc.getRequest().getUri());
+            throw new RuntimeException("Cannot parse Id from URL: " + exc.getRequest().getUri());
+        }
+        return m.group(1);
     }
 
     private String renderOverviewTemplate() {
