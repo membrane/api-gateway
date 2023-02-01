@@ -22,26 +22,26 @@ import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.util.*;
 import groovy.text.*;
-import io.swagger.models.auth.*;
 import io.swagger.v3.parser.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_YAML;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.rewrite;
-import static com.predic8.membrane.core.openapi.util.Utils.createErrorMessage;
-import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.util.ErrorUtil.*;
+import static java.lang.Integer.*;
+import static java.lang.String.*;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
     public static final String HTML_UTF_8 = "text/html; charset=utf-8";
     private final ObjectMapper om = new ObjectMapper();
@@ -56,8 +56,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     protected Map<String, OpenAPIRecord> apis;
 
-    private Template swaggerUiHtmlTemplate;
-    private Template apiOverviewHtmlTemplate;
+    private final Template swaggerUiHtmlTemplate;
+    private final Template apiOverviewHtmlTemplate;
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
         name = "OpenAPI Publisher";
@@ -146,13 +146,22 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleSwaggerUi(Exchange exc) {
-        Matcher m = patternUI.matcher(exc.getRequest().getUri());
-        if (!m.matches()) { // No id specified
-            exc.setResponse(Response.ok().contentType("application/json").body("Please specify an Id").build());
+        try {
+            exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(getOpenAPIiD(exc))).build());
+            return RETURN;
+        } catch (Exception e) {
+            createAndSetErrorResponse(exc,400,"Path %s does not contain an id of an OpenAPI document. Please go back to /api-doc".formatted(exc.getRequest().getUri()));
             return RETURN;
         }
-        exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(m.group(1))).build());
-        return RETURN;
+    }
+
+    private static String getOpenAPIiD(Exchange exc) {
+        Matcher m = patternUI.matcher(exc.getRequest().getUri());
+        if (!m.matches()) { // No id specified
+            log.warn("Cannot parse Id from URL: "+ exc.getRequest().getUri());
+            throw new RuntimeException("Cannot parse Id from URL: " + exc.getRequest().getUri());
+        }
+        return m.group(1);
     }
 
     private String renderOverviewTemplate() {
