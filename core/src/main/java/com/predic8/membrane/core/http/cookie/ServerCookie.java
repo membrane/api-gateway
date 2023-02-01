@@ -16,13 +16,15 @@
  */
 package com.predic8.membrane.core.http.cookie;
 
-import java.io.Serializable;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import static com.predic8.membrane.core.http.cookie.CookieSupport.*;
 
 
 /**
@@ -41,6 +43,7 @@ import java.util.TimeZone;
  */
 public class ServerCookie implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	// Version 0 (Netscape) attributes
@@ -187,10 +190,10 @@ public class ServerCookie implements Serializable {
 
 		// If it is v0, check if we need to switch
 		if (newVersion == 0 &&
-				(!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isHttpToken(value) ||
-						CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isV0Token(value))) {
+				(!ALLOW_HTTP_SEPARATORS_IN_V0 &&
+				 isHttpToken(value) ||
+						ALLOW_HTTP_SEPARATORS_IN_V0 &&
+						isV0Token(value))) {
 			// HTTP token in value - need to use v1
 			newVersion = 1;
 		}
@@ -201,19 +204,19 @@ public class ServerCookie implements Serializable {
 		}
 
 		if (newVersion == 0 &&
-				(!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isHttpToken(path) ||
-						CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isV0Token(path))) {
+				(!ALLOW_HTTP_SEPARATORS_IN_V0 &&
+				 isHttpToken(path) ||
+						ALLOW_HTTP_SEPARATORS_IN_V0 &&
+						isV0Token(path))) {
 			// HTTP token in path - need to use v1
 			newVersion = 1;
 		}
 
 		if (newVersion == 0 &&
-				(!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isHttpToken(domain) ||
-						CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isV0Token(domain))) {
+				(!ALLOW_HTTP_SEPARATORS_IN_V0 &&
+				 isHttpToken(domain) ||
+						ALLOW_HTTP_SEPARATORS_IN_V0 &&
+						isV0Token(domain))) {
 			// HTTP token in domain - need to use v1
 			newVersion = 1;
 		}
@@ -292,10 +295,10 @@ public class ServerCookie implements Serializable {
 			buf.append('"');
 			buf.append(escapeDoubleQuotes(value,1,value.length()-1));
 			buf.append('"');
-		} else if (CookieSupport.isHttpToken(value) &&
-				!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 ||
-				CookieSupport.isV0Token(value) &&
-				CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0) {
+		} else if (isHttpToken(value) &&
+				   !ALLOW_HTTP_SEPARATORS_IN_V0 ||
+				isV0Token(value) &&
+				ALLOW_HTTP_SEPARATORS_IN_V0) {
 			buf.append('"');
 			buf.append(escapeDoubleQuotes(value,0,value.length()));
 			buf.append('"');
