@@ -51,7 +51,7 @@ public abstract  class LanguageAdapter {
         } catch (Exception e) {
             // Ignore
         }
-        throw new ExitException("""
+        throw new ConfigurationException("""
             Fatal Error: No Javascript Engine!
                     
             Membrane is configured to use Javascript, maybe in the proxies.xml file.

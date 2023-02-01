@@ -14,18 +14,16 @@
 
 package com.predic8.membrane.core;
 
-import java.io.File;
+import java.io.*;
 
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.lang3.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
 
 import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfigurationException;
-import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
@@ -55,8 +53,8 @@ public class RouterCLI {
             System.exit(1);
         } catch (Exception ex) {
             Throwable rootCause = getRootCause(ex);
-            if (rootCause instanceof ExitException ee)
-                handleExitException(ee);
+            if (rootCause instanceof ConfigurationException ee)
+                handleConfigurationException(ee);
             else if (rootCause instanceof PortOccupiedException poe)
                 handlePortOccupiedException(poe);
             else
@@ -125,32 +123,32 @@ public class RouterCLI {
                 """);
     }
 
-    private static void handleExitException(ExitException exitException) {
+    private static void handleConfigurationException(ConfigurationException ce) {
         printStars();
         System.err.println();
-        System.err.println(exitException.getMessage());
+        System.err.println(ce.getMessage());
         System.err.println();
+        System.err.println("giving up.");
     }
 
     private static void printStars() {
         System.err.println("**********************************************************************************");
     }
 
-    private static String getRulesFile(MembraneCommandLine line) {
+    private static String getRulesFile(MembraneCommandLine line) throws IOException {
         ResolverMap rm = new ResolverMap();
         if (line.hasConfiguration()) {
-            String s = fixBackslashes(line.getConfiguration());
-            if (shouldResolveFile(s)) {
+            String filename = fixBackslashes(line.getConfiguration());
+            if (shouldResolveFile(filename)) {
                 // absolute
-                try {
-                    rm.resolve(s);
-                    return s;
+                try(InputStream ignored = rm.resolve(filename)) {
+                    return filename;
                 } catch (ResourceRetrievalException e) {
-                    System.err.println("Could not open Membrane's configuration file: " + s + " not found.");
+                    System.err.println("Could not open Membrane's configuration file: " + filename + " not found.");
                     System.exit(1);
                 }
             }
-            return getRulesFileFromRelativeSpec(rm, s, "");
+            return getRulesFileFromRelativeSpec(rm, filename, "");
         }
         return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", getErrorNotice());
     }
@@ -175,19 +173,17 @@ public class RouterCLI {
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
         String membraneHome = System.getenv(MEMBRANE_HOME);
         String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
-        try {
-            rm.resolve(try1);
+        try(InputStream is = rm.resolve(try1)) {
             return try1;
-        } catch (ResourceRetrievalException e) {
+        } catch (Exception e) {
             // ignored
         }
         String try2 = null;
         if (membraneHome != null) {
             try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);
-            try {
-                rm.resolve(try2);
+            try(InputStream ignored =  rm.resolve(try2)) {
                 return try2;
-            } catch (ResourceRetrievalException e) {
+            } catch (Exception e) {
                 // ignored
             }
         }

@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
+import com.predic8.membrane.errorhandling.*;
 import com.predic8.membrane.examples.config.*;
 import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
@@ -98,7 +99,10 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLTest.class,
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,
-        ProxiesXMLSoapTest.class
+        ProxiesXMLSoapTest.class,
+
+        // Not an example test. Maybe we can find a better location?
+        OpenAPIConfigErrorTest.class
 })
 public class ExampleTests {
 }
