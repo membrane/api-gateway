@@ -14,30 +14,21 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.cookie.Cookies;
-import com.predic8.membrane.core.http.cookie.MimeHeaders;
-import com.predic8.membrane.core.http.cookie.ServerCookie;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-import org.apache.commons.codec.binary.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.http.cookie.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+import org.springframework.http.*;
 
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import javax.mail.internet.*;
+import java.io.*;
+import java.security.*;
+import java.util.*;
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.codec.binary.Base64.*;
 
 /**
  * The headers of a HTTP message.
@@ -133,7 +124,7 @@ public class Header {
 
 
 
-	private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
+	private final ArrayList<HeaderField> fields = new ArrayList<>();
 
 	public Header() {
 	}
@@ -143,7 +134,6 @@ public class Header {
 
 		while ((line = HttpUtil.readLine(in)).length() > 0) {
 			try {
-
 				add(new HeaderField(line));
 			} catch (StringIndexOutOfBoundsException sie) {
 				log.error("Header read line that caused problems: " + line);
@@ -176,7 +166,7 @@ public class Header {
 	}
 
 	public void removeFields(String name) {
-		List<HeaderField> deleteValues = new ArrayList<HeaderField>();
+		List<HeaderField> deleteValues = new ArrayList<>();
 		for (HeaderField field : fields) {
 			if (field.getHeaderName().equals(name))
 				deleteValues.add(field);
@@ -185,7 +175,7 @@ public class Header {
 	}
 
 	public List<HeaderField> getValues(HeaderName headerName) {
-		List<HeaderField> res = new ArrayList<HeaderField>();
+		List<HeaderField> res = new ArrayList<>();
 		for (HeaderField headerField : fields) {
 			if (headerField.getHeaderName().equals(headerName))
 				res.add(headerField);
@@ -237,7 +227,6 @@ public class Header {
 		if (found)
 			return;
 		fields.add(new HeaderField(name, value));
-		return;
 	}
 
 	public void setHost(String value) {
@@ -347,14 +336,10 @@ public class Header {
 		return res.toString();
 	}
 
-	public void setAuthorization(String user, String password)
-			throws UnsupportedEncodingException {
-
-		String value = "Basic "
-				+ new String(Base64.encodeBase64((user + ":" + password)
-						.getBytes("UTF-8")), "UTF-8");
-
-		setValue("Authorization", value);
+	public void setAuthorization(String user, String password) {
+		setValue("Authorization", "Basic "
+								  + new String(encodeBase64((user + ":" + password)
+						.getBytes(UTF_8)), UTF_8));
 	}
 
 	public void setXForwardedFor(String value) {
@@ -402,7 +387,7 @@ public class Header {
 			log.debug("parameters: " + m.group(3));
 		}
 
-		Map<String, String> map = new HashMap<String, String>();
+		Map<String, String> map = new HashMap<>();
 		if (m.group(3) == null)
 			return map;
 
@@ -417,7 +402,7 @@ public class Header {
 				map.put(paramMat.group(1).trim(), paramMat.group(2));
 			} else {
 				if (logDebug)
-					log.debug("parameter did not match " + parameterPattern.toString());
+					log.debug("parameter did not match " + parameterPattern);
 			}
 		}
 		return map;
@@ -435,7 +420,7 @@ public class Header {
 		Cookies c = new Cookies(new MimeHeaders(this));
 		for (int i = 0; i < c.getCookieCount(); i++) {
 			ServerCookie sc = c.getCookie(i);
-			if (sc.getName().equals(cookieName))
+			if (sc.getName().toString().equals(cookieName))
 				return sc.getValue().toString();
 		}
 		return null;
@@ -461,7 +446,7 @@ public class Header {
 		} catch (IllegalArgumentException e) {
 			return -1;
 		}
-		MediaType.sortByQualityValue(m);
+		MediaType.sortByQualityValue(m); // @Todo Replace
 		for (MediaType t : m)
 			for (int i = 0; i < supported.length; i++)
 				if (t.includes(supported[i]))
@@ -485,15 +470,15 @@ public class Header {
 	}
 
 	/**
-	 * @param keepAliveHeaderValue the value of the "Keep-Alive" header, see http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Keep-Alive
+	 * @param keepAliveHeaderValue the value of the <a href="http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Keep-Alive">Keep-Alive</a> header
 	 * @param paramName either {@link #TIMEOUT} or {@link #MAX}.
 	 * @return the extracted parameter value of the "Keep-Alive" header
 	 */
 	public static long parseKeepAliveHeader(String keepAliveHeaderValue, String paramName) {
 		Pattern p;
-		if (paramName == TIMEOUT) {
+		if (paramName.equals(TIMEOUT)) {
 			p = timeoutPattern;
-		} else if (paramName == MAX) {
+		} else if (paramName.equals(MAX)) {
 			p = maxPattern;
 		} else {
 			throw new InvalidParameterException("paramName must be one of Header.TIMEOUT and .MAX .");
@@ -580,15 +565,7 @@ public class Header {
 	}
 
 	public boolean isBinaryContentType() {
-		String contentType = getContentType();
-		if(contentType == null)
-			return false;
-
-		// incomplete list - better safe than sorry!
-		return contentType.startsWith("audio/")
-				|| contentType.startsWith("image/")
-				|| contentType.startsWith("video/")
-				|| contentType.startsWith("application/octet-stream");
+		return isBinary(getContentType());
 	}
 
 	public String getXForwardedHost() {

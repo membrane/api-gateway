@@ -13,31 +13,49 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
+
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
-
-import java.util.regex.Pattern;
 
 public class RegExReplaceInterceptorTest {
 
-	private Router router;
+	private RegExReplaceInterceptor interceptor;
+
+	@BeforeEach
+	void setUp() {
+		interceptor = new RegExReplaceInterceptor();
+		interceptor.setRegex("\\bb.*?\\b");
+		interceptor.setReplace("boo");
+	}
+
+	@Test
+	public void testHandleRequest() throws Exception {
+		Exchange exc = new Request.Builder().contentType(TEXT_PLAIN).body("foo bar baz").buildExchange();
+		interceptor.handleRequest(exc);
+		assertEquals("foo boo boo",exc.getRequest().getBodyAsStringDecoded());
+	}
+
+	@Test
+	public void testHandleResponse() throws Exception {
+		Exchange exc = new Request.Builder().buildExchange();
+		exc.setResponse(Response.ok().contentType(TEXT_PLAIN).body("foo bar baz").build());
+		interceptor.handleResponse(exc);
+		assertEquals("foo boo boo",exc.getResponse().getBodyAsStringDecoded());
+	}
 
 	@Test
 	public void testReplace() throws Exception {
-		router = Router.init("src/test/resources/regex-monitor-beans.xml");
+		Router router = Router.init("src/test/resources/regex-monitor-beans.xml");
 		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3009), "www.predic8.de", 80);
 		router.getRuleManager().addProxyAndOpenPortIfNew(serverRule);
 		router.init();
@@ -46,8 +64,8 @@ public class RegExReplaceInterceptorTest {
 			HttpClient client = new HttpClient();
 
 			GetMethod method = new GetMethod("http://localhost:3009");
-			method.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-			method.setRequestHeader(Header.SOAP_ACTION, "");
+			method.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+			method.setRequestHeader(SOAP_ACTION, "");
 
 			assertEquals(200, client.executeMethod(method));
 
@@ -68,10 +86,11 @@ public class RegExReplaceInterceptorTest {
 		Exchange exc = new Request.Builder().body(example).header("Content-Type","text/plain").buildExchange();
 
 		regexp.handleRequest(exc);
-		assertTrue(exc.getRequest().getBodyAsStringDecoded().equals("Membrane"));
+		assertEquals("Membrane", exc.getRequest().getBodyAsStringDecoded());
 
 		exc = new Request.Builder().body(example).header("Content-Type","application/octet-stream").buildExchange();
 		regexp.handleRequest(exc);
-		assertTrue(exc.getRequest().getBodyAsStringDecoded().equals(example));
+		assertEquals(exc.getRequest().getBodyAsStringDecoded(), example);
 	}
+
 }
