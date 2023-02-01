@@ -38,6 +38,11 @@ import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 import javax.annotation.Nullable;
 
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static java.lang.Thread.sleep;
+
 @MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
 
@@ -59,7 +64,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
                 try {
                     for (String url : watchedUrlMd5s.keySet()) {
                         md5.reset();
-                        Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
+                        Exchange exc = new Builder().method(METHOD_GET).url(uriFactory, url).header(USER_AGENT, PRODUCT_NAME + " " + VERSION).buildExchange();
                         Response response = client.call(exc).getResponse();
                         if (response.getStatusCode() != 200) {
                             ResourceRetrievalException rde = new ResourceRetrievalException(url, response.getStatusCode());
@@ -80,7 +85,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
                 } catch (Exception ignored) {
                 }
                 try {
-                    Thread.sleep(httpWatchIntervalInSeconds * 1000);
+                    sleep(httpWatchIntervalInSeconds * 1000L);
                 } catch (InterruptedException ignored) {
                 }
             }
@@ -114,7 +119,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
         try {
-            Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
+            Exchange exc = new Builder().method(METHOD_GET).url(uriFactory, url).header(USER_AGENT, PRODUCT_NAME + " " + VERSION).buildExchange();
             Response response = getHttpClient().call(exc).getResponse();
             response.readBody();
 

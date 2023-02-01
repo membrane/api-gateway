@@ -13,7 +13,7 @@ This page serves as a reference for the functions and configuration. See also th
 - [OpenAPI validation](validation-simple)
 - [OpenAPI validation extended sample](validation)
 
-The **openAPIProxy** is featured in Membrane version 5 and newer and supports OpenAPI from version 3.0.0. Version 2 is not supported.
+The **openAPIProxy** is featured in Membrane version 5 and newer and supports OpenAPI from version 2.
 
 
 

@@ -32,6 +32,7 @@ public class ProxiesXMLOfflineTest extends AbstractSampleMembraneStartStopTestca
     protected String getExampleDirName() {
         return "..";
     }
+
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         process =  new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-offline.xml").waitForMembrane().start();

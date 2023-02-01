@@ -14,18 +14,18 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.Constants;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import jakarta.activation.MimeType;
-import java.io.UnsupportedEncodingException;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HeaderTest {
 
-	private static Header header = new Header();
+	private static final Header header = new Header();
 
 	@BeforeEach
 	public void setUp() throws Exception {
@@ -43,39 +43,50 @@ public class HeaderTest {
 	}
 
 	@Test
-	public void testAuthorization() throws UnsupportedEncodingException {
+	public void testAuthorization() {
 		assertEquals("Basic YWxpY2U6c2VjcmV0",
 				header.getFirstValue("Authorization"));
 	}
 
 	@Test
 	public void testGetMimeType() throws Exception {
-		assertTrue(new MimeType(header.getContentType()).match("text/xml"));
+		assertTrue(new MimeType(header.getContentType()).match(TEXT_XML));
 	}
 
 	@Test
-	public void testGetCharsetNull() throws Exception {
+	public void testGetCharsetNull() {
 		Header header = new Header();
-		header.setContentType("text/xml");
-		assertEquals(Constants.UTF_8, header.getCharset());
+		header.setContentType(TEXT_XML);
+		assertEquals(UTF_8, header.getCharset());
 	}
 
 	@Test
-	public void testStringCharset() throws Exception {
+	public void testStringCharset() {
 		Header header = new Header();
 		header.setContentType("text/xml ;charset=\"UTF-8\"");
-		assertEquals("UTF-8", header.getCharset());
+		assertEquals(UTF_8, header.getCharset());
 	}
 
 	@Test
-	public void testGetCharsetCTNull() throws Exception {
-		assertEquals(Constants.UTF_8, new Header().getCharset());
+	public void testGetCharsetCTNull() {
+		assertEquals(UTF_8, new Header().getCharset());
 	}
 
 	@Test
-	public void testGetCharset() throws Exception {
+	public void testGetCharset() {
 		header.setContentType("text/xml; charset=utf-8");
 		assertEquals("utf-8", header.getCharset());
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = {"zip","octet-stream"})
+	void isBinaryContentTypeSubtypes(String subtype) {
+		assertTrue(isBinary("foo/" + subtype),subtype);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = {"audio","image","video"})
+	void isBinaryContentTypePrimaryTypes(String primary) {
+		assertTrue(isBinary(primary + "/foo"),primary);
+	}
 }

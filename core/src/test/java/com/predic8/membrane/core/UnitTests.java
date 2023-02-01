@@ -20,6 +20,7 @@ import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTe
 import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
@@ -112,7 +113,10 @@ import org.junit.platform.suite.api.*;
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
 		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class,
 		ProxyTest.class, Http2ClientServerTest.class, ChunkedBodyTest.class,
-		JavascriptInterceptor.class
+		JavascriptInterceptor.class,
+		MimeTypeTest.class,
+		MessageBytesTest.class,
+		RegExReplaceInterceptorTest.class
 
 })
 @SelectPackages("com.predic8.membrane.core.openapi")

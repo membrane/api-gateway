@@ -66,8 +66,39 @@ public class MimeType {
             if (contentType.getSubType().equals("xhtml")) {
                 return true;
             }
+            if (contentType.getSubType().equals("svg")) {
+                return true;
+            }
         } catch (ParseException e) {
            // ignore
+        }
+        return false;
+    }
+
+    public static boolean isBinary(String mediaType) {
+        try {
+            ContentType contentType = new ContentType(mediaType);
+
+            // Primarytypes
+            if (contentType.getPrimaryType().equals("image")) {
+                return true;
+            }
+            if (contentType.getPrimaryType().equals("audio")) {
+                return true;
+            }
+            if (contentType.getPrimaryType().equals("video")) {
+                return true;
+            }
+
+            // Subtypes
+            if (contentType.getSubType().equals("octet-stream")) {
+                return true;
+            }
+            if (contentType.getSubType().equals("zip")) {
+                return true;
+            }
+        } catch (ParseException e) {
+            // ignore
         }
         return false;
     }

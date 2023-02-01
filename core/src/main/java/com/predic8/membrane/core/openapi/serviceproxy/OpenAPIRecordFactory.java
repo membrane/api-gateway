@@ -19,18 +19,22 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
+import org.apache.commons.lang3.exception.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
+import static java.lang.String.*;
 
 public class OpenAPIRecordFactory {
 
@@ -38,7 +42,7 @@ public class OpenAPIRecordFactory {
 
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    private Router router;
+    private final Router router;
 
     public OpenAPIRecordFactory(Router router) {
         this.router = router;
@@ -61,7 +65,7 @@ public class OpenAPIRecordFactory {
         log.info("Parsing specs from dir " + spec.dir);
         File[] openAPIFiles = getOpenAPIFiles(spec.dir);
         if (openAPIFiles == null) {
-            log.warn(String.format("Directory %s does not contain any OpenAPI documents.", spec.dir));
+            log.warn(format("Directory %s does not contain any OpenAPI documents.", spec.dir));
             return;
         }
         for (File file : openAPIFiles) {
@@ -71,12 +75,30 @@ public class OpenAPIRecordFactory {
         }
     }
 
-    private void addOpenApisFromLocation(Map<String, OpenAPIRecord> apiRecords, Spec spec) throws IOException {
+    private void addOpenApisFromLocation(Map<String, OpenAPIRecord> apiRecords, Spec spec) {
         if (spec.location == null)
             return;
 
-        log.info("Parsing spec " + spec.location);
-        apiRecords.put(getUniqueId(apiRecords, create(spec)), create(spec));
+        try {
+            log.info("Parsing spec " + spec.location);
+            OpenAPIRecord rec = create(spec);
+            apiRecords.put(getUniqueId(apiRecords, rec), rec);
+        } catch (Exception e) {
+            Throwable root = ExceptionUtils.getRootCause(e);
+            if (root instanceof UnknownHostException) {
+                throw new ConfigurationException(format("""
+                    Error accessing OpenAPI specification from location: %s
+                    
+                    The hostname cannot be resolved to an IP address. Maybe the internet
+                    is not reachable or a proxy server configuration is needed.
+                    
+                    Have a look at: ...
+                        """,spec.location));
+            }
+
+            log.error("Cannot read OpenAPI specification from location " + spec.location);
+            throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
+        }
     }
 
     private String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
@@ -103,8 +125,13 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPI getOpenAPI(Router router, Spec spec) throws ResourceRetrievalException {
-        return new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
-                null, null).getOpenAPI();
+
+            OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
+                    null, null).getOpenAPI();
+            if (openAPI != null)
+                return openAPI;
+
+            throw new RuntimeException(); // Is handled and turned into a nice Exception further up
     }
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
@@ -164,9 +191,11 @@ public class OpenAPIRecordFactory {
         return option == YES;
     }
 
-    private File[] getOpenAPIFiles(String dir) {
-        File file = new File(dir);
-        log.info("Reading from folder: " + file.getAbsolutePath());
-        return file.listFiles((d, name) -> name.endsWith(".yml") || name.endsWith(".yaml") || name.endsWith(".json"));
+    private File[] getOpenAPIFiles(String directoryName) {
+        File dir = new File(directoryName);
+        if (!dir.exists() || !dir.isDirectory()) {
+            throw new ConfigurationException(format("Cannot open directory %s. Please check the OpenAPI configuration of your API.",dir.getAbsolutePath()));
+        }
+        return dir.listFiles((d, name) -> name.endsWith(".yml") || name.endsWith(".yaml") || name.endsWith(".json"));
     }
 }

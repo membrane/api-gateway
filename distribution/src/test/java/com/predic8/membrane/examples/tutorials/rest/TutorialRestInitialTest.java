@@ -21,21 +21,19 @@ import static com.predic8.membrane.test.AssertUtils.*;
 
 /**
  * See: <a href="https://membrane-api.io/tutorials/rest/">REST tutorials</a>
- *
+ * <p>
  * Needs an Internet connection to work!
  */
-public class TutorialRestInitialTest extends DistributionExtractingTestcase {
+public class TutorialRestInitialTest extends AbstractSampleMembraneStartStopTestcase {
 
-	@Override
-	protected String getExampleDirName() {
-		return "../tutorials/rest";
-	}
+    @Override
+    protected String getExampleDirName() {
+        return "../tutorials/rest";
+    }
 
-	@Test
-	public void testStart() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("Shop API", getAndAssert200(LOCALHOST_2000));
-			assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:9000/admin/"));
-		}
-	}
+    @Test
+    public void testStart() throws Exception {
+        assertContains("Shop API", getAndAssert200(LOCALHOST_2000));
+        assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:9000/admin/"));
+    }
 }
