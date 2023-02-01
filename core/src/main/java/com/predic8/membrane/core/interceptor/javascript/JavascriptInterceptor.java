@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.javascript;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -23,6 +22,11 @@ import java.io.*;
 import static com.predic8.membrane.core.util.TextUtil.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
+/**
+ * @description Executes a Javascript. The script can access and manipulate data from the request and response.
+ * Use this or the Groovy plugin to extend the functions of Membrane by scripting. See the samples in examples/javascript.
+ * @topic 4. Interceptors/Features
+ */
 @MCElement(name = "javascript", mixed = true)
 public class JavascriptInterceptor extends AbstractScriptInterceptor {
 
@@ -50,8 +54,9 @@ public class JavascriptInterceptor extends AbstractScriptInterceptor {
     @Override
     public String getLongDescription() {
         return removeFinalChar(getShortDescription()) +
-               ":<br/><pre style=\"overflow-x:auto\">" +
-               escapeHtml4(TextUtil.removeCommonLeadingIndentation(src)) +
+               """
+               :<br/><pre style="overflow-x:auto">""" +
+               escapeHtml4(removeCommonLeadingIndentation(src)) +
                "</pre>";
     }
 }

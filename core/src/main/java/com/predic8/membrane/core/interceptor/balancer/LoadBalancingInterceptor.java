@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +39,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class
+	private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class
 			.getName());
 
 	/**
@@ -261,14 +262,15 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	 */
 	@MCChildElement(order=2)
 	public void setClustersFromSpring(List<Balancer> balancers) {
-		List<Cluster> clusters = new ArrayList<Cluster>();
+		List<Cluster> clusters = new ArrayList<>();
 		for (Balancer balancer : balancers)
 			clusters.addAll(balancer.getClusters());
 		this.balancer.setClusters(clusters);
 	}
 
 	public List<Balancer> getClustersFromSpring() {
-		return new ArrayList<Balancer>(Lists.newArrayList(balancer)) {
+		return new ArrayList<>(Lists.newArrayList(balancer)) {
+			@Serial
 			private static final long serialVersionUID = 1L;
 
 			@Override
@@ -311,5 +313,4 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			for (Node n : c.getNodes())
 				c.nodeUp(n);
 	}
-
 }

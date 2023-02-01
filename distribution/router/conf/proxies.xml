@@ -23,9 +23,8 @@
 
 		<!-- 
 			 You need direct Internet access to run this configuration!
-			 Otherwise see proxies-offline.xml 
+			 Otherwise see proxies-offline.xml
 		-->
-
 
 		<!-- 
 			 Reads the configuration from OpenAPI document

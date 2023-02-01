@@ -24,7 +24,6 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.rules.TimeCollector;
@@ -35,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static java.util.stream.Collectors.toList;
@@ -58,7 +56,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         return Outcome.RETURN;
     }
 
-    private class Context {
+    private static class Context {
         StringBuilder sb = new StringBuilder();
 
         List<StringBuilder> dynamic = new ArrayList<>();
@@ -141,8 +139,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
                     buildSSLLines(ctx, r, sslib);
             }
 
-            if (r instanceof OpenAPIProxy) {
-                buildOpenAPIValidatorLines(ctx, (OpenAPIProxy) r);
+            if (r instanceof APIProxy) {
+                buildOpenAPIValidatorLines(ctx, (APIProxy) r);
             }
 
         }
@@ -151,7 +149,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     }
 
-    private void buildOpenAPIValidatorLines(Context ctx, OpenAPIProxy proxy) {
+    private void buildOpenAPIValidatorLines(Context ctx, APIProxy proxy) {
         for (Map.Entry<ValidationStatsKey, Integer> e : proxy.getValidationStatisticCollector().getStats().entrySet()) {
             buildLine(ctx.s10, proxy.getName(), e.getValue(), e.getKey().getLabels(), "openapi_validation");
         }
@@ -294,7 +292,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * see https://prometheus.io/docs/instrumenting/exposition_formats/ .
+     * see <a href="https://prometheus.io/docs/instrumenting/exposition_formats/">Exposition Formats</a> .
      */
     private StringBuilder buildLine(StringBuilder sb, String ruleName, long value, String labelName, int labelValue, String postFix) {
         String prometheusName = prometheusCompatibleName("membrane_" + postFix);

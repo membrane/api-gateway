@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.NO;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,9 +37,9 @@ public class OpenAPIInterceptorTest {
 
     Router router;
 
-    OpenAPIProxy.Spec specInfoServers;
-    OpenAPIProxy.Spec specInfo3Servers;
-    OpenAPIProxy.Spec specCustomers;
+    APIProxy.Spec specInfoServers;
+    APIProxy.Spec specInfo3Servers;
+    APIProxy.Spec specCustomers;
 
     Exchange exc = new Exchange(null);
     OpenAPIInterceptor interceptor1Server;
@@ -50,13 +50,13 @@ public class OpenAPIInterceptorTest {
         router = new Router();
         router.setUriFactory(new URIFactory());
 
-        specInfoServers = new OpenAPIProxy.Spec();
+        specInfoServers = new APIProxy.Spec();
         specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
 
-        specInfo3Servers = new OpenAPIProxy.Spec();
+        specInfo3Servers = new APIProxy.Spec();
         specInfo3Servers.location = "src/test/resources/openapi/specs/info-3-servers.yml";
 
-        specCustomers = new OpenAPIProxy.Spec();
+        specCustomers = new APIProxy.Spec();
         specCustomers.location = "src/test/resources/openapi/specs/customers.yml";
 
         exc.setRequest(new Request.Builder().method("GET").build());
@@ -114,7 +114,7 @@ public class OpenAPIInterceptorTest {
     @Test
     public void destinationsTargetSet() throws Exception {
         exc.getRequest().setUri("/foo/boo");
-        OpenAPIProxy proxy = createProxy(router, specInfo3Servers);
+        APIProxy proxy = createProxy(router, specInfo3Servers);
         proxy.getTarget().setHost("api.predic8.de");
         assertEquals(CONTINUE, new OpenAPIInterceptor(proxy).handleRequest(exc));
         assertEquals(0, exc.getDestinations().size());
@@ -160,7 +160,7 @@ public class OpenAPIInterceptorTest {
     }
 
     @NotNull
-    private Exchange callPut(OpenAPIProxy.Spec spec) throws Exception {
+    private Exchange callPut(APIProxy.Spec spec) throws Exception {
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
         exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType("application/json").build());

@@ -27,10 +27,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * @description Delegates virus checks to an external Virus Scanner.
+ * @topic 6. Security
+ */
 @MCElement(name="clamav")
 public class ClamAntiVirusInterceptor extends AbstractInterceptor {
 
-    private static Logger log = LoggerFactory.getLogger(ClamAntiVirusInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(ClamAntiVirusInterceptor.class);
 
     private String host = "localhost";
     private String port = "3310";
@@ -65,12 +69,8 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
     }
 
     public boolean isNotMalicious(String str) throws IOException {
-        InputStream input = toInputStream(str);
-        try{
+        try(InputStream input = toInputStream(str)) {
             return ClamAVClient.isCleanReply(client.scan(input));
-        }finally{
-            if(input != null)
-                input.close();
         }
     }
 

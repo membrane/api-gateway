@@ -16,19 +16,28 @@
 
 package com.predic8.membrane.core.lang;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.graalvm.polyglot.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.FileUtil.*;
 
 public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractScriptInterceptor.class.getName());
+
+    protected final static ObjectMapper om = new ObjectMapper();
 
     protected String src;
     protected Function<Map<String, Object>, Object> script;
@@ -46,28 +55,55 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     public void init() throws IOException, ClassNotFoundException {
         if (router == null)
             return;
-        if ("".equals(src))
+        if (src.isEmpty())
             return;
         initInternal();
     }
 
     protected abstract void initInternal() throws IOException, ClassNotFoundException;
 
+    @SuppressWarnings("rawtypes")
     protected Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, IOException, ClassNotFoundException {
 
         Object res = script.apply(getParameterBindings(exc, flow));
 
-        if (res instanceof Outcome) {
-            return (Outcome) res;
+        if (res instanceof Outcome outcome) {
+            return outcome;
         }
 
-        if (res instanceof Response) {
-            exc.setResponse((Response) res);
+        if (res instanceof Response response) {
+            exc.setResponse(response);
             return RETURN;
         }
 
-        if (res instanceof Request) {
-            exc.setRequest((Request) res);
+        if (res instanceof Request request) {
+            exc.setRequest(request);
+        }
+
+        if(res instanceof Map m) {
+            Message msg = getMessage(exc, flow);
+            msg.getHeader().setContentType(APPLICATION_JSON);
+            msg.setBodyContent(om.writeValueAsBytes(m));
+            return CONTINUE;
+        }
+
+        // Graal code @Todo move to a Graal class
+        if(res instanceof Value value) {
+            Map m = value.as(Map.class);
+            Message msg = getMessage(exc, flow);
+            msg.getHeader().setContentType(APPLICATION_JSON);
+            msg.setBodyContent(om.writeValueAsBytes(m));
+            return CONTINUE;
+        }
+
+        if(res instanceof String s) {
+            if (s.equals("undefined")) {
+                return CONTINUE;
+            }
+            Message msg = getMessage(exc,flow);
+            msg.getHeader().setContentType(TEXT_HTML);
+            msg.setBodyContent(om.writeValueAsBytes(s));
+            return CONTINUE;
         }
 
         return CONTINUE;
@@ -94,8 +130,18 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             parameters.put("message", msg);
             parameters.put("header", msg.getHeader());
             parameters.put("body", msg.getBody());
+            if (msg.isJSON() && src.contains("json")) {
+                try {
+                    log.info("Parsing body as JSON for scripting plugins");
+                    parameters.put("json",om.readValue(readInputStream(msg.getBodyAsStream()),Map.class));  // @Todo not with Javascript
+                } catch (Exception e) {
+                    log.warn("Can't parse body as JSON: " + e);
+                }
+            }
         }
         parameters.put("spring", router.getBeanFactory());
+        parameters.put("properties", exc.getProperties());
+
         addOutcomeObjects(parameters);
         return parameters;
     }
@@ -110,8 +156,17 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     protected Message getMessage(Exchange exc, Flow flow) {
         return switch (flow) {
             case REQUEST -> exc.getRequest();
-            case RESPONSE -> exc.getResponse();
-            default -> null;
+            case RESPONSE -> {
+                if (exc.getResponse() != null)
+                    yield exc.getResponse();
+                Response response = Response.ok().build();
+                exc.setResponse(response);
+                yield response;
+            }
+            default -> {
+                log.info("Should never happen!");
+                yield null;
+            }
         };
     }
 

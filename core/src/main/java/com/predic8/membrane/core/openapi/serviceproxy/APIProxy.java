@@ -26,10 +26,15 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+/**
+ * @description The APIProxy extends the serviceProxy with API related functions like OpenAPI support.
+ *
+ * @topic 2. Proxies
+ */
 @MCElement(name = "api")
-public class OpenAPIProxy extends ServiceProxy {
+public class APIProxy extends ServiceProxy {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAPIProxy.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
 
     public static final String X_MEMBRANE_VALIDATION = "x-membrane-validation";
     public static final String X_MEMBRANE_ID = "x-membrane-id";
@@ -43,13 +48,16 @@ public class OpenAPIProxy extends ServiceProxy {
 
     protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
-    public OpenAPIProxy() {}
+    public APIProxy() {}
 
     @Override
     protected AbstractProxy getNewInstance() {
-        return new OpenAPIProxy();
+        return new APIProxy();
     }
 
+    /**
+     * @description Reads an OpenAPI description and deploys an API with the information of it.
+     */
     @MCElement(name = "openapi", topLevel = false)
     public static class Spec {
 
@@ -66,6 +74,10 @@ public class OpenAPIProxy extends ServiceProxy {
             return location;
         }
 
+        /**
+         * @description Filename or URL pointing to an OpenAPI document. Relative filenames use the %MEMBRANE_HOME%/conf folder as base directory.
+         * @example openapi/fruitstore-v1.yaml, https://api.predic8.de/shop/swagger
+         */
         @MCAttribute()
         public void setLocation(String location) {
             this.location = location;
@@ -75,6 +87,10 @@ public class OpenAPIProxy extends ServiceProxy {
             return dir;
         }
 
+        /**
+         * @description Directory containing OpenAPI definitions to deploy.
+         * @example openapi
+         */
         @MCAttribute()
         public void setDir(String dir) {
             this.dir = dir;
@@ -84,6 +100,11 @@ public class OpenAPIProxy extends ServiceProxy {
             return validateRequests;
         }
 
+        /**
+         * @description Turn validation of requests on or off.
+         * @example yes
+         * @default no
+         */
         @MCAttribute
         public void setValidateRequests(YesNoOpenAPIOption validateRequests) {
             this.validateRequests = validateRequests;
@@ -93,11 +114,21 @@ public class OpenAPIProxy extends ServiceProxy {
             return validateResponses;
         }
 
+        /**
+         * @description Turn validation of responses on or off.
+         * @example yes
+         * @default no
+         */
         @MCAttribute()
         public void setValidateResponses(YesNoOpenAPIOption validateResponses) {
             this.validateResponses = validateResponses;
         }
 
+        /**
+         * @description Show details of the validation to the caller.
+         * @example yes
+         * @default no
+         */
         @MCAttribute()
         public void setValidationDetails(YesNoOpenAPIOption validationDetails) {
             this.validationDetails = validationDetails;
@@ -120,6 +151,9 @@ public class OpenAPIProxy extends ServiceProxy {
         return specs;
     }
 
+    /**
+     * @description Deploys an API from an OpenAPI document.
+     */
     @MCChildElement(order = 25)
     public void setSpecs(List<Spec> specs) {
         this.specs = specs;

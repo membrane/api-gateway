@@ -13,41 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import java.io.File;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import com.predic8.membrane.annot.model.*;
+import com.predic8.membrane.annot.model.doc.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.TypeElement;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
+import javax.annotation.processing.*;
+import javax.lang.model.element.*;
+import javax.xml.stream.*;
+import javax.xml.transform.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
+import java.util.*;
 
-import com.predic8.membrane.annot.model.AbstractJavadocedInfo;
-import com.predic8.membrane.annot.model.AttributeInfo;
-import com.predic8.membrane.annot.model.ChildElementDeclarationInfo;
-import com.predic8.membrane.annot.model.ChildElementInfo;
-import com.predic8.membrane.annot.model.ElementInfo;
-import com.predic8.membrane.annot.model.MainInfo;
-import com.predic8.membrane.annot.model.Model;
-import com.predic8.membrane.annot.model.OtherAttributesInfo;
-import com.predic8.membrane.annot.model.doc.Doc;
-
-import static java.util.Comparator.comparing;
+import static java.util.Comparator.*;
 
 public class HelpReference {
 
@@ -67,6 +44,8 @@ public class HelpReference {
 				return;
 			path = path.replace("%VERSION%", "5.0");
 
+			System.out.println("Generating Reference in location: " + path);
+
 			sw = new StringWriter();
 			XMLOutputFactory output = XMLOutputFactory.newInstance();
 			xew = output.createXMLStreamWriter(sw);
@@ -76,18 +55,22 @@ public class HelpReference {
 
 			System.out.println(sw.toString());
 
-			// indent
-			TransformerFactory factory = TransformerFactory.newInstance();
-			Transformer transformer = factory.newTransformer();
-			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-			transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
+			writeFiles(m, path);
 
 			xew = null;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 
+	}
+
+	private void writeFiles(Model m, String path) throws TransformerException {
+		// indent
+		TransformerFactory factory = TransformerFactory.newInstance();
+		Transformer transformer = factory.newTransformer();
+		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+		transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
 	}
 
 	private String getFileName(Model m) {

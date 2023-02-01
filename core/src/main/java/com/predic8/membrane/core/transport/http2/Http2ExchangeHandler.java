@@ -14,34 +14,28 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.google.common.collect.ImmutableList;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.ExchangeState;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http2.frame.Frame;
-import com.predic8.membrane.core.transport.http2.frame.RstStreamFrame;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.twitter.hpack.Encoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.transport.http2.frame.*;
+import com.predic8.membrane.core.util.*;
+import com.twitter.hpack.*;
+import org.slf4j.*;
 
-import javax.net.ssl.SSLException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.generateErrorResponse;
-import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_INTERNAL_ERROR;
+import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.*;
+import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
-import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
-import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_STREAM;
+import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class Http2ExchangeHandler implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Http2ExchangeHandler.class.getName());
@@ -202,7 +196,7 @@ public class Http2ExchangeHandler implements Runnable {
                 sendData(content, i, length);
             }
 
-            private void sendData(byte[] content, int offset, int length) throws IOException {
+            private void sendData(byte[] content, int offset, int length) {
                 int mOffset = offset;
                 while (mOffset < offset + length) {
                     int mLength = Math.min(peerSettings.getMaxFrameSize(), length - (mOffset - offset));
@@ -272,55 +266,14 @@ public class Http2ExchangeHandler implements Runnable {
             sb.append(":\n");
         }
 
-        if (res instanceof Request) {
-            Request req = (Request)res;
-            String key = ":method";
-            String val = req.getMethod();
-            encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), val.getBytes(StandardCharsets.US_ASCII), false);
-            if (sb != null) {
-                sb.append(key);
-                sb.append(": ");
-                sb.append(val);
-                sb.append("\n");
-            }
-            key = ":scheme";
-            val = "https";
-            encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), val.getBytes(StandardCharsets.US_ASCII), false);
-            if (sb != null) {
-                sb.append(key);
-                sb.append(": ");
-                sb.append(val);
-                sb.append("\n");
-            }
-            key = ":path";
-            val = req.getUri();
-            encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), val.getBytes(StandardCharsets.US_ASCII), false);
-            if (sb != null) {
-                sb.append(key);
-                sb.append(": ");
-                sb.append(val);
-                sb.append("\n");
-            }
-            key = ":authority";
-            val = req.getHeader().getHost();
-            encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), val.getBytes(StandardCharsets.US_ASCII), false);
-            if (sb != null) {
-                sb.append(key);
-                sb.append(": ");
-                sb.append(val);
-                sb.append("\n");
-            }
+        if (res instanceof Request req) {
+            encodeHeader(encoder, baos, sb, ":method", req.getMethod());
+            encodeHeader(encoder, baos, sb, ":scheme", "https");
+            encodeHeader(encoder, baos, sb, ":path", req.getUri());
+            encodeHeader(encoder, baos, sb, ":authority", req.getHeader().getHost());
         }
-        if (res instanceof Response) {
-            String keyStatus = ":status";
-            String valStatus = "" + ((Response)res).getStatusCode();
-            encoder.encodeHeader(baos, keyStatus.getBytes(StandardCharsets.US_ASCII), valStatus.getBytes(StandardCharsets.US_ASCII), false);
-            if (sb != null) {
-                sb.append(keyStatus);
-                sb.append(": ");
-                sb.append(valStatus);
-                sb.append("\n");
-            }
+        if (res instanceof Response response) {
+            encodeHeader(encoder, baos, sb, ":status", "" + response.getStatusCode());
         }
 
         for (HeaderField hf : header.getAllHeaderFields()) {
@@ -328,44 +281,60 @@ public class Http2ExchangeHandler implements Runnable {
             if ("keep-alive".equals(key) || "proxy-connection".equals(key) || "transfer-encoding".equals(key) || "upgrade".equals(key) || "connection".equals(key) || "host".equals(key))
                 continue;
 
-            boolean sensitive = "set-cookie".equals(key);
-
-            encoder.encodeHeader(baos, key.getBytes(StandardCharsets.US_ASCII), hf.getValue().getBytes(StandardCharsets.US_ASCII), sensitive);
-            if (sb != null) {
-                sb.append(key);
-                sb.append(": ");
-                sb.append(hf.getValue());
-                if (sensitive)
-                    sb.append("    (sensitive)");
-                sb.append("\n");
-            }
+            encodeHeader(encoder, baos, sb, key, hf.getValue());
         }
 
         if (sb != null)
             log.debug(sb.toString());
 
-        byte[] buffer = baos.toByteArray();
+        return constructFrames(streamId, peerSettings, isAtEof, baos.toByteArray());
+    }
+
+    private static void encodeHeader(Encoder encoder, ByteArrayOutputStream baos, StringBuilder sb, String key, String val) throws IOException {
+        boolean sensitive = "set-cookie".equals(key);
+        encoder.encodeHeader(baos, key.getBytes(US_ASCII), val.getBytes(US_ASCII), sensitive);
+        logHeader(sb, key, val, sensitive);
+    }
+
+    private static void logHeader(StringBuilder sb, String key, String val, boolean sensitive) {
+        if (sb != null) {
+            sb.append(key);
+            sb.append(": ");
+            sb.append(val);
+            if (sensitive)
+                sb.append("    (sensitive)");
+            sb.append("\n");
+        }
+    }
+
+    private static List<Frame> constructFrames(int streamId, Settings peerSettings, boolean isAtEof, byte[] buffer) {
         List<Frame> frames = new ArrayList<>();
 
         int maxFrameSize = peerSettings.getMaxFrameSize();
         for (int offset = 0; offset < buffer.length; offset += maxFrameSize) {
-            Frame frame = new Frame();
-            boolean isLast = offset + maxFrameSize >= buffer.length;
-            frame.fill(
-                    offset == 0 ? TYPE_HEADERS : TYPE_CONTINUATION,
-                    (isLast ? FLAG_END_HEADERS : 0) + (isAtEof ? FLAG_END_STREAM : 0),
-                    streamId,
-                    buffer,
-                    offset,
-                    Math.min(maxFrameSize, buffer.length - offset)
-            );
-            frames.add(frame);
+            frames.add(constructFrame(streamId, isAtEof, buffer, maxFrameSize, offset));
         }
-
         return frames;
     }
 
-    private void removeBodyFromBuffer() throws IOException {
+    private static Frame constructFrame(int streamId, boolean isAtEof, byte[] buffer, int maxFrameSize, int offset) {
+        Frame frame = new Frame();
+        frame.fill(
+                offset == 0 ? TYPE_HEADERS : TYPE_CONTINUATION,
+                (isLast(buffer, maxFrameSize, offset) ? FLAG_END_HEADERS : 0) + (isAtEof ? FLAG_END_STREAM : 0),
+                streamId,
+                buffer,
+                offset,
+                Math.min(maxFrameSize, buffer.length - offset)
+        );
+        return frame;
+    }
+
+    private static boolean isLast(byte[] buffer, int maxFrameSize, int offset) {
+        return offset + maxFrameSize >= buffer.length;
+    }
+
+    private void removeBodyFromBuffer() {
         // TODO: is there anything to do here?
     }
 

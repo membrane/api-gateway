@@ -38,8 +38,8 @@ public class TestUtils {
         return obj.getClass().getResourceAsStream(fileName);
     }
 
-    public static OpenAPIProxy createProxy(Router router, OpenAPIProxy.Spec spec) throws Exception {
-        OpenAPIProxy proxy = new OpenAPIProxy();
+    public static APIProxy createProxy(Router router, APIProxy.Spec spec) throws Exception {
+        APIProxy proxy = new APIProxy();
         proxy.init(router);
         proxy.setSpecs(singletonList(spec));
         proxy.init();

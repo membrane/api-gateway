@@ -21,15 +21,12 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
@@ -39,9 +36,13 @@ import com.predic8.membrane.core.util.ContentTypeDetector;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
+
 public abstract class AbstractHttpHandler  {
 
-	private static Logger log = LoggerFactory.getLogger(AbstractHttpHandler.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AbstractHttpHandler.class.getName());
 
 	protected Exchange exchange;
 	protected Request srcReq;
@@ -95,66 +96,83 @@ public abstract class AbstractHttpHandler  {
 	}
 
 	public static Response generateErrorResponse(Exception e, Exchange exchange, Transport transport) {
-		String msg;
-		boolean printStackTrace = transport.isPrintStackTrace();
-		if (printStackTrace) {
-			StringWriter sw = new StringWriter();
-			e.printStackTrace(new PrintWriter(sw));
-			msg = sw.toString();
-		} else {
-			msg = e.toString();
-		}
-		String comment = "Stack traces can be " + (printStackTrace ? "dis" : "en") + "abled by setting the "+
-				"@printStackTrace attribute on <a href=\"https://membrane-soa.org/service-proxy-doc/current/configuration/reference/transport.htm\">transport</a>. " +
-				"More details might be found in the log.";
 
-		Response error = null;
+		boolean printStackTrace = transport.isPrintStackTrace();
+
+		return switch (ContentTypeDetector.detect(exchange.getRequest()).getEffectiveContentType()) {
+			case XML ->  createXMLErrorResponse( e, printStackTrace);
+			case JSON -> createJSONErrorResponse( e, printStackTrace);
+			case SOAP -> createSOAPErrorResponse( e, printStackTrace);
+			case UNKNOWN -> HttpUtil.setHTMLErrorResponse(getResponseBuilder(e), getMessage(e, printStackTrace), getComment(printStackTrace));
+		};
+	}
+
+	private static ResponseBuilder getResponseBuilder(Exception e) {
 		ResponseBuilder b = null;
 		if (e instanceof URISyntaxException)
 			b = Response.badRequest();
 		if (b == null)
 			b = Response.internalServerError();
-		switch (ContentTypeDetector.detect(exchange.getRequest()).getEffectiveContentType()) {
-			case XML:
-				error = b.
-						header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-						body(("<error><message>" +
-								StringEscapeUtils.escapeXml(msg) +
-								"</message><comment>" +
-								StringEscapeUtils.escapeXml(comment) +
-								"</comment></error>").getBytes(Constants.UTF_8_CHARSET)).
-						build();
-				break;
-			case JSON:
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				try {
-					JsonGenerator jg = new JsonFactory().createGenerator(baos);
-					jg.writeStartObject();
-					jg.writeFieldName("error");
-					jg.writeString(msg);
-					jg.writeFieldName("comment");
-					jg.writeString(comment);
-					jg.close();
-				} catch (Exception f) {
-					log.error("Error generating JSON error response", f);
-				}
+		return b;
+	}
 
-				error = b.
-						header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
-						body(baos.toByteArray()).
-						build();
-				break;
-			case SOAP:
-				error = b.
-						header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-						body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
-						build();
-				break;
-			case UNKNOWN:
-				error = HttpUtil.setHTMLErrorResponse(b, msg, comment);
-				break;
+	private static String getMessage(Exception e, boolean printStackTrace) {
+		String msg;
+		if (printStackTrace) {
+			msg = getStracktraceAsString(e);
+		} else {
+			msg = e.toString();
 		}
-		return error;
+		return msg;
+	}
+
+	private static String getStracktraceAsString(Exception e) {
+		StringWriter sw = new StringWriter();
+		e.printStackTrace(new PrintWriter(sw));
+		return sw.toString();
+	}
+
+	private static String getComment(boolean printStackTrace) {
+		return "Stack traces can be " + (printStackTrace ? "dis" : "en") + "abled by setting the " +
+			   "@printStackTrace attribute on <a href=\"https://membrane-soa.org/service-proxy-doc/current/configuration/reference/transport.htm\">transport</a>. " +
+			   "More details might be found in the log.";
+	}
+
+	private static Response createSOAPErrorResponse(Exception e, boolean printStackTrace) {
+		return getResponseBuilder(e).
+				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
+				body(HttpUtil.getFaultSOAPBody("Internal Server Error", getMessage(e, printStackTrace) + " " + getComment(printStackTrace)).getBytes(UTF_8_CHARSET)).
+				build();
+	}
+
+	private static Response createJSONErrorResponse( Exception e, boolean printStackTrace) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			JsonGenerator jg = new JsonFactory().createGenerator(baos);
+			jg.writeStartObject();
+			jg.writeFieldName("error");
+			jg.writeString(getMessage(e, printStackTrace));
+			jg.writeFieldName("comment");
+			jg.writeString(getComment(printStackTrace));
+			jg.close();
+		} catch (Exception f) {
+			log.error("Error generating JSON error response", f);
+		}
+		return getResponseBuilder(e).
+				header(HttpUtil.createHeaders(APPLICATION_JSON_UTF8)).
+				body(baos.toByteArray()).
+				build();
+	}
+
+	private static Response createXMLErrorResponse(Exception e, boolean printStackTrace) {
+		return getResponseBuilder(e).
+				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
+				body(("<error><message>" +
+					  escapeXml11(getMessage(e, printStackTrace)) +
+					  "</message><comment>" +
+					  escapeXml11(getComment(printStackTrace)) +
+					  "</comment></error>").getBytes(UTF_8_CHARSET)).
+				build();
 	}
 
 	/**

@@ -18,7 +18,7 @@ package com.predic8.membrane.core.openapi.util;
 
 import io.swagger.v3.oas.models.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.X_MEMBRANE_ID;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_ID;
 import static com.predic8.membrane.core.openapi.util.Utils.normalizeForId;
 
 public class OpenAPIUtil {

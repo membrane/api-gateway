@@ -32,7 +32,7 @@ import java.util.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
@@ -41,9 +41,9 @@ import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Dire
 
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
-    protected final OpenAPIProxy proxy;
+    protected final APIProxy proxy;
 
-    public OpenAPIInterceptor(OpenAPIProxy proxy) {
+    public OpenAPIInterceptor(APIProxy proxy) {
         this.proxy = proxy;
     }
 

@@ -13,29 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.Util;
+import com.fasterxml.jackson.core.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import org.apache.commons.codec.binary.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import org.slf4j.*;
 
-import javax.annotation.concurrent.GuardedBy;
-import java.io.ByteArrayOutputStream;
-import java.net.URLEncoder;
-import java.util.HashMap;
+import javax.annotation.concurrent.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @explanation A <i>token provider</i> using <i>Deutsche Telekom's</i> REST interface <a
@@ -78,7 +71,7 @@ import java.util.HashMap;
  */
 @MCElement(name="telekomSMSTokenProvider", topLevel=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
-	private static Logger log = LoggerFactory.getLogger(TelekomSMSTokenProvider.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(TelekomSMSTokenProvider.class.getName());
 
 	private HttpClient hc;
 
@@ -138,7 +131,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 
 			Exchange exc = new Request.Builder().
 					post("https://gateway.developer.telekom.com/plone/sms/rest/" + environment.name().toLowerCase()
-							+ "/smsmessaging/v1/outbound/" + URLEncoder.encode(senderAddress, "UTF-8") + "/requests").
+						 + "/smsmessaging/v1/outbound/" + URLEncoder.encode(senderAddress, UTF_8) + "/requests").
 							header("Host", "gateway.developer.telekom.com").
 							header("Authorization", "OAuth realm=\"developergarden.com\",oauth_token=\"" + getAccessToken() + "\"").
 							header("Accept", "application/json").
@@ -163,7 +156,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 			Exchange exc = new Request.Builder().
 					post("https://global.telekom.com/gcp-web-api/oauth").
 					header(Header.HOST, "global.telekom.com").
-					header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((clientId + ":" + clientSecret).getBytes("UTF-8")), "UTF-8")).
+					header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((clientId + ":" + clientSecret).getBytes(UTF_8)), UTF_8)).
 					header(Header.ACCEPT, "application/json").
 					header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).
 					header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded").

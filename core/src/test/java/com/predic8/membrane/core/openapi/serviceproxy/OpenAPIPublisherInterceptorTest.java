@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -50,7 +49,7 @@ public class OpenAPIPublisherInterceptorTest {
         router.setUriFactory(new URIFactory());
         router.setBaseLocation("");
         openAPIRecordFactory = new OpenAPIRecordFactory(router);
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.setDir("src/test/resources/openapi/specs");
         records = openAPIRecordFactory.create(Collections.singletonList(spec));
 

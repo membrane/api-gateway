@@ -36,6 +36,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 
 /**
@@ -104,10 +105,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	}
 
-	private static Logger log = LoggerFactory.getLogger(FormValidationInterceptor.class
+	private static final Logger log = LoggerFactory.getLogger(FormValidationInterceptor.class
 			.getName());
 
-	private List<Field> fields = new ArrayList<Field>();
+	private List<Field> fields = new ArrayList<>();
 
 	public FormValidationInterceptor() {
 		name = "FormValidation";
@@ -125,10 +126,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 			if ( !f.matchesSubstring(propMap.get(f.name)) ) {
 				setErrorResponse(exc, propMap, f);
-				return Outcome.ABORT;
+				return ABORT;
 			}
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void setErrorResponse(Exchange exc, Map<String, String> propMap, Field f) {

@@ -5,45 +5,78 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<spring:bean name="myBean" class="java.lang.String">
-		<spring:constructor-arg value="Greatings from Spring"/>
+		<spring:constructor-arg value="Greetings from Spring"/>
 	</spring:bean>
 
 	<router>
-	
-		<serviceProxy port="2000">
-			<!-- Execute groovy-Interceptor in request flow -->
+
+		<api port="2000">
+			<request>
+				<groovy>
+					// Return Json as Map
+					[id:7,city:'Berlin']
+				</groovy>
+			</request>
+			<return contentType="application/json"/><!-- Return response to client -->
+			<!-- <target host="myhost" port="myport"/> Instead forward to your backend -->
+		</api>
+
+		<api port="2010">
+			<request>
+				<groovy>
+					// JSON to JSON transformation
+					import java.text.*
+
+					def dfIn = new SimpleDateFormat("d MMM yyyy",Locale.US)
+					def dfOut = new SimpleDateFormat("yyyy-MM-dd")
+
+					[
+						id: json.id,
+						date: dfOut.format(dfIn.parse(json.date)),
+						client: json.customer,
+						total: json.items.collect { it.price * it.quantity }.sum(),
+						positions: json.items.collect {
+							[
+								pieces: it.quantity,
+								price: it.price,
+								article: it.description
+							]
+						}
+					]
+				</groovy>
+			</request>
+			<return/>
+		</api>
+
+		<api port="2020">
 			<request>
 				<groovy>
 					println "Request headers:"
-					exc.request.header.allHeaderFields.each {
+					header.allHeaderFields.each {
 						print it 
 					}
-				
 					CONTINUE
 				</groovy>
 			</request>
 			<!-- Execute groovy-Interceptor in response flow -->
 			<response>
 				<groovy>
-					exc.response.header.add("X-Groovy", "42") // Set Header
-					println "X-Groovy header added with value :" + value
+					header.add("X-Groovy", "42") // Set Header
 					CONTINUE
 				</groovy>
 			</response>
-			<target host="localhost" port="3000" />
-		</serviceProxy>
+			<target host="localhost" port="2030" />
+		</api>
 		
-		<serviceProxy port="3000">
+		<api port="2030">
 			<request>
 				<groovy>
 					// Create response and set the body to the value of the Spring Bean
-					exc.setResponse(Response.ok().body(spring.getBean('myBean')).build())
-
-					// To not forward request to target. Instead return to the client.
-					RETURN
+					Response.ok().body(spring.getBean('myBean')).build()
 				</groovy>
 			</request>
-		</serviceProxy>
+			<return/>
+		</api>
 
 	</router>
 	

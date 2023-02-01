@@ -14,41 +14,31 @@
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.membrane.core.exchange.ExchangesUtil;
-import com.predic8.membrane.core.exchangestore.ClientStatistics;
-import com.predic8.membrane.core.exchangestore.ExchangeQueryResult;
+import com.fasterxml.jackson.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.interceptor.rest.JSONContent;
-import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
-import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.ComparatorFactory;
-import com.predic8.membrane.core.util.TextUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.interceptor.statistics.util.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URLEncoder;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.*;
+import java.net.*;
+import java.sql.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
-import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
+import static com.predic8.membrane.core.util.ComparatorFactory.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@SuppressWarnings("unused")
-	private static Logger log = LoggerFactory.getLogger(AdminRESTInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AdminRESTInterceptor.class.getName());
 
 	private boolean useXForwardedForAsClientAddr;
 
@@ -56,10 +46,8 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	public Response getClients(QueryParameter params, String relativeRootPath) throws Exception {
 		final List<? extends ClientStatistics> clients = getRouter().getExchangeStore().getClientStatistics();
 
-		Collections.sort(
-				clients,
-				ComparatorFactory.getClientStatisticsComparator(params.getString("sort", "name"),
-						params.getString("order", "asc")));
+		clients.sort(getClientStatisticsComparator(params.getString("sort", "name"),
+				params.getString("order", "asc")));
 
 		int offset = params.getInt("offset", 0);
 		int max = params.getInt("max", clients.size());
@@ -68,23 +56,21 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		final List<? extends ClientStatistics> paginated = clients.subList(offset,
 				Math.min(offset + max, clients.size()));
 
-		return json( new JSONContent() {
-			public void write(JsonGenerator gen) throws Exception {
+		return json(gen -> {
+			gen.writeStartObject();
+			gen.writeArrayFieldStart("clients");
+			for (ClientStatistics s : paginated) {
 				gen.writeStartObject();
-				gen.writeArrayFieldStart("clients");
-				for (ClientStatistics s : paginated) {
-					gen.writeStartObject();
-					gen.writeStringField("name", s.getClient());
-					gen.writeNumberField("count", s.getCount());
-					gen.writeNumberField("min", s.getMinDuration());
-					gen.writeNumberField("max", s.getMaxDuration());
-					gen.writeNumberField("avg", s.getAvgDuration());
-					gen.writeEndObject();
-				}
-				gen.writeEndArray();
-				gen.writeNumberField("total", total);
+				gen.writeStringField("name", s.getClient());
+				gen.writeNumberField("count", s.getCount());
+				gen.writeNumberField("min", s.getMinDuration());
+				gen.writeNumberField("max", s.getMaxDuration());
+				gen.writeNumberField("avg", s.getAvgDuration());
 				gen.writeEndObject();
 			}
+			gen.writeEndArray();
+			gen.writeNumberField("total", total);
+			gen.writeEndObject();
 		});
 	}
 
@@ -96,10 +82,8 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			if (params.getString("order", "asc").equals("desc"))
 				Collections.reverse(proxies);
 		} else {
-			Collections.sort(
-					proxies,
-					ComparatorFactory.getAbstractServiceProxyComparator(params.getString("sort", "name"),
-							params.getString("order", "asc")));
+			proxies.sort(getAbstractServiceProxyComparator(params.getString("sort", "name"),
+					params.getString("order", "asc")));
 		}
 
 		final int offset = params.getInt("offset", 0);
@@ -108,45 +92,43 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		final List<AbstractServiceProxy> paginated = proxies.subList(offset,
 				Math.min(offset + max, proxies.size()));
 
-		return json( new JSONContent() {
-			public void write(JsonGenerator gen) throws Exception {
+		return json(gen -> {
+			gen.writeStartObject();
+			gen.writeArrayFieldStart("proxies");
+			int i = offset;
+			if (params.getString("order", "asc").equals("desc"))
+				i = proxies.size() - i + 1;
+			for (AbstractServiceProxy p : paginated) {
 				gen.writeStartObject();
-				gen.writeArrayFieldStart("proxies");
-				int i = offset;
-				if (params.getString("order", "asc").equals("desc"))
-					i = proxies.size() - i + 1;
-				for (AbstractServiceProxy p : paginated) {
-					gen.writeStartObject();
-					gen.writeNumberField("order", i += params.getString("order", "asc").equals("desc") ? -1 : 1);
-					gen.writeStringField("name", p.toString());
-					gen.writeBooleanField("active", p.isActive());
-					if (!p.isActive())
-						gen.writeStringField("error", p.getErrorState());
-					gen.writeNumberField("listenPort", p.getKey().getPort());
-					gen.writeStringField("virtualHost", p.getKey().getHost());
-					gen.writeStringField("method", p.getKey().getMethod());
-					gen.writeStringField("path", p.getKey().getPath());
-					gen.writeStringField("targetHost", p.getTargetHost());
-					gen.writeNumberField("targetPort", p.getTargetPort());
-					gen.writeNumberField("count", p.getStatisticCollector().getCount());
-					gen.writeObjectFieldStart("actions");
-					if (!isReadOnly()) {
-						gen.writeStringField("delete", "/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p),"UTF-8"));
-					}
-					if (!p.isActive())
-						gen.writeStringField("start", "/admin/service-proxy/start?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p),"UTF-8"));
-					gen.writeEndObject();
-					gen.writeEndObject();
+				gen.writeNumberField("order", i += params.getString("order", "asc").equals("desc") ? -1 : 1);
+				gen.writeStringField("name", p.toString());
+				gen.writeBooleanField("active", p.isActive());
+				if (!p.isActive())
+					gen.writeStringField("error", p.getErrorState());
+				gen.writeNumberField("listenPort", p.getKey().getPort());
+				gen.writeStringField("virtualHost", p.getKey().getHost());
+				gen.writeStringField("method", p.getKey().getMethod());
+				gen.writeStringField("path", p.getKey().getPath());
+				gen.writeStringField("targetHost", p.getTargetHost());
+				gen.writeNumberField("targetPort", p.getTargetPort());
+				gen.writeNumberField("count", p.getStatisticCollector().getCount());
+				gen.writeObjectFieldStart("actions");
+				if (!isReadOnly()) {
+					gen.writeStringField("delete", "/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
 				}
-				gen.writeEndArray();
-				gen.writeNumberField("total", proxies.size());
+				if (!p.isActive())
+					gen.writeStringField("start", "/admin/service-proxy/start?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
+				gen.writeEndObject();
 				gen.writeEndObject();
 			}
+			gen.writeEndArray();
+			gen.writeNumberField("total", proxies.size());
+			gen.writeEndObject();
 		});
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/raw")
-	public Response getRaw(QueryParameter params, String relativeRootPath) throws Exception {
+	public Response getRaw(QueryParameter params, String relativeRootPath) {
 		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupLong(1));
 
 		if (exc== null) {
@@ -212,19 +194,17 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			return Response.noContent().build();
 		}
 
-		return json( new JSONContent() {
-			public void write(JsonGenerator gen) throws Exception {
+		return json(gen -> {
+			gen.writeStartObject();
+			gen.writeArrayFieldStart("headers");
+			for (HeaderField hf : msg.getHeader().getAllHeaderFields()) {
 				gen.writeStartObject();
-				gen.writeArrayFieldStart("headers");
-				for (HeaderField hf : msg.getHeader().getAllHeaderFields()) {
-					gen.writeStartObject();
-					gen.writeStringField("name", hf.getHeaderName().toString());
-					gen.writeStringField("value", hf.getValue());
-					gen.writeEndObject();
-				}
-				gen.writeEndArray();
+				gen.writeStringField("name", hf.getHeaderName().toString());
+				gen.writeStringField("value", hf.getValue());
 				gen.writeEndObject();
 			}
+			gen.writeEndArray();
+			gen.writeEndObject();
 		});
 	}
 
@@ -237,11 +217,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			return Response.notFound().build();
 		}
 
-		return json( new JSONContent() {
-			public void write(JsonGenerator gen) throws Exception {
-				writeExchange(exc, gen);
-			}
-		});
+		return json(gen -> writeExchange(exc, gen));
 	}
 
 	@Mapping("/admin/rest/exchanges(/?\\?.*)?")
@@ -253,23 +229,21 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 		ExchangeQueryResult res = getRouter().getExchangeStore().getFilteredSortedPaged(params, useXForwardedForAsClientAddr);
 
-		return json( new JSONContent() {
-			public void write(JsonGenerator gen) throws Exception {
-				gen.writeStartObject();
-				gen.writeArrayFieldStart("exchanges");
-				for (AbstractExchange e : res.getExchanges()) {
-					writeExchange(e, gen);
-				}
-				gen.writeEndArray();
-				gen.writeNumberField("total", res.getCount());
-				gen.writeNumberField("lastModified", res.getLastModified());
-				gen.writeEndObject();
+		return json(gen -> {
+			gen.writeStartObject();
+			gen.writeArrayFieldStart("exchanges");
+			for (AbstractExchange e : res.getExchanges()) {
+				writeExchange(e, gen);
 			}
+			gen.writeEndArray();
+			gen.writeNumberField("total", res.getCount());
+			gen.writeNumberField("lastModified", res.getLastModified());
+			gen.writeEndObject();
 		});
 	}
 
 	private void writeExchange(AbstractExchange exc, JsonGenerator gen)
-			throws IOException, JsonGenerationException, SQLException {
+			throws IOException {
 		gen.writeStartObject();
 		gen.writeNumberField("id", exc.getId());
 		if (exc.getResponse() != null) {
@@ -344,7 +318,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	}
 
 	private List<AbstractServiceProxy> getServiceProxies() {
-		List<AbstractServiceProxy> rules = new LinkedList<AbstractServiceProxy>();
+		List<AbstractServiceProxy> rules = new LinkedList<>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractServiceProxy)) continue;
 			rules.add((AbstractServiceProxy) r);

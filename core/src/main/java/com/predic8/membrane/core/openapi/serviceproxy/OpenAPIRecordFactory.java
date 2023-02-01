@@ -30,8 +30,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static java.lang.String.*;

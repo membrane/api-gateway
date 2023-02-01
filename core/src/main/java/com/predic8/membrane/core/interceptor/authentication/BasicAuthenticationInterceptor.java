@@ -14,29 +14,22 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
-import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
-import com.predic8.membrane.core.util.HttpUtil;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringEscapeUtils;
-import com.predic8.membrane.annot.Required;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
+import com.predic8.membrane.core.util.*;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
+
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static org.apache.commons.codec.binary.Base64.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
@@ -74,30 +67,30 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	private String getUsername(Exchange exc) throws Exception {
+	private String getUsername(Exchange exc) {
 		return getAuthorizationHeaderDecoded(exc).split(":", 2)[0];
 	}
-	private String getPassword(Exchange exc) throws Exception {
+	private String getPassword(Exchange exc) {
 		return getAuthorizationHeaderDecoded(exc).split(":", 2)[1];
 	}
 
 	private Outcome deny(Exchange exc) {
 		exc.setResponse(Response.unauthorized("").
-				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"" + Constants.PRODUCT_NAME + " Authentication\"")).
+				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"" + PRODUCT_NAME + " Authentication\"")).
 				build());
 		return Outcome.ABORT;
 	}
 
 	private boolean hasNoAuthorizationHeader(Exchange exc) {
-		return exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION)==null;
+		return exc.getRequest().getHeader().getFirstValue(AUTHORIZATION) == null;
 	}
 
 	/**
 	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
 	 */
-	private String getAuthorizationHeaderDecoded(Exchange exc) throws Exception {
-		String value = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
-		return new String(Base64.decodeBase64(value.substring(6).getBytes(Constants.UTF_8_CHARSET)), Constants.UTF_8_CHARSET);
+	private String getAuthorizationHeaderDecoded(Exchange exc) {
+		String value = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
+		return new String(decodeBase64(value.substring(6).getBytes(UTF_8_CHARSET)), UTF_8_CHARSET);
 	}
 
 	public List<User> getUsers() {
@@ -108,7 +101,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	 * @description A list of username/password combinations to accept.
 	 */
 	@MCChildElement(order = 20)
-	public void setUsers(List<User> users) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+	public void setUsers(List<User> users) {
 		((StaticUserDataProvider)userDataProvider).setUsers(users);
 	}
 
@@ -152,7 +145,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		if (userDataProvider instanceof StaticUserDataProvider) {
 			sb.append("Users: ");
 			for (User user : ((StaticUserDataProvider)userDataProvider).getUsers()) {
-				sb.append(StringEscapeUtils.escapeHtml4(user.getUsername()));
+				sb.append(escapeHtml4(user.getUsername()));
 				sb.append(", ");
 			}
 			sb.delete(sb.length()-2, sb.length());

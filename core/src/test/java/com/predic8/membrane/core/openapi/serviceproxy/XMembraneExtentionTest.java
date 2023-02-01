@@ -29,8 +29,6 @@ import java.util.*;
 
 public class XMembraneExtentionTest {
 
-    private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
-
     OpenAPIPublisherInterceptor interceptor;
 
     Exchange get = new Exchange(null);
@@ -40,7 +38,7 @@ public class XMembraneExtentionTest {
         Router router = new Router();
         router.setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
-        OpenAPIProxy.Spec spec = new OpenAPIProxy.Spec();
+        APIProxy.Spec spec = new APIProxy.Spec();
         spec.setDir("src/test/resources/openapi/specs");
         Map<String,OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
 

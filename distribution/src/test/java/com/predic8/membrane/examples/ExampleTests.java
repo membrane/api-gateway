@@ -52,6 +52,7 @@ import org.junit.platform.suite.api.Suite;
         CBRTest.class,
         FileExchangeStoreTest.class,
         GroovyTest.class,
+        JavascriptTest.class,
         Loadbalancing1StaticTest.class,
         Loadbalancing3ClientTest.class,
         Loadbalancing5MultipleTest.class,
@@ -86,7 +87,7 @@ import org.junit.platform.suite.api.Suite;
         OAuth2ApiTest.class,
 
         // OpenAPI
-        OpenAPIProxyTest.class,
+        APIProxyTest.class,
         OpenAPIValidationSimpleTest.class,
         OpenAPIValidationTest.class,
 
