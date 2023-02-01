@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.examples.config;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;

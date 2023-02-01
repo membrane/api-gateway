@@ -15,10 +15,9 @@
 package com.predic8.membrane.core.util;
 
 import java.io.*;
-import java.util.*;
-import java.util.stream.*;
 
-import static java.util.stream.Collectors.joining;
+import static java.util.Objects.*;
+import static java.util.stream.Collectors.*;
 
 public class FileUtil {
 
@@ -27,6 +26,7 @@ public class FileUtil {
 	}
 
 	public static void writeInputStreamToFile(String filepath, InputStream is) throws IOException {
+		requireNonNull(is);
 		try (OutputStream os = new BufferedOutputStream(new FileOutputStream(filepath))) {
 			byte[] buffer = new byte[1024];
 			int len;
@@ -36,6 +36,4 @@ public class FileUtil {
 			}
 		}
 	}
-
-
 }
