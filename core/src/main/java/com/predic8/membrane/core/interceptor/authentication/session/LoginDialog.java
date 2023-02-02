@@ -13,45 +13,39 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URLEncoder;
+import com.floreysoft.jmte.*;
+import com.floreysoft.jmte.message.*;
+import com.floreysoft.jmte.token.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
+import org.slf4j.*;
+
+import java.io.*;
+import java.net.*;
 import java.util.*;
 
-import com.floreysoft.jmte.message.ErrorMessage;
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.floreysoft.jmte.Engine;
-import com.floreysoft.jmte.ErrorHandler;
-import com.floreysoft.jmte.message.ParseException;
-import com.floreysoft.jmte.token.Token;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class LoginDialog {
-	private static Logger log = LoggerFactory.getLogger(LoginDialog.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(LoginDialog.class.getName());
 
 	private final String basePath;
-	private String path;
-	private String message;
-	private boolean exposeUserCredentialsToSession;
+	private final String path;
+	private final String message;
+	private final boolean exposeUserCredentialsToSession;
 	private URIFactory uriFactory;
 
 	private final UserDataProvider userDataProvider;
@@ -119,21 +113,21 @@ public class LoginDialog {
 				log.error(arg0.key);
 			}
 		});
-		Map<String, Object> model = new HashMap<String, Object>();
-		model.put("action", StringEscapeUtils.escapeXml(basePath + path));
-		model.put("target", StringEscapeUtils.escapeXml(target));
+		Map<String, Object> model = new HashMap<>();
+		model.put("action", escapeXml11(basePath + path));
+		model.put("target", escapeXml11(target));
 		if(page == 0)
 			model.put("login", true);
 		if (page == 1)
 			model.put("token", true);
 		if(page == 2) {
 			model.put("consent", true);
-			model.put("action",StringEscapeUtils.escapeXml(basePath + path)+ "consent");
+			model.put("action", escapeXml11(basePath + path) + "consent");
 		}
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
 
-		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
+		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(UTF_8));
 	}
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
@@ -300,7 +294,7 @@ public class LoginDialog {
 	}
 
 	private Map<String, String> doubleStringArrayToMap(String[] strings) {
-		HashMap<String, String> result = new HashMap<String, String>();
+		HashMap<String, String> result = new HashMap<>();
 		for(String string : strings) {
 			String[] str = string.split(" ");
 			for(int i = 2; i < str.length;i++)
@@ -321,13 +315,13 @@ public class LoginDialog {
 	private String[] prepareStringArray(String[] array){
 		if(array[0].isEmpty())
 			return new String[0];
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for(int i = 0; i < array.length;i+=2)
 			result.add(array[i] + ": " + array[i+1]);
 		return result.toArray(new String[0]);
 	}
 
-	private String[] decodeClaimsFromSession(Session s) throws UnsupportedEncodingException {
+	private String[] decodeClaimsFromSession(Session s) {
 		if(s.getUserAttributes().containsKey(ConsentPageFile.CLAIM_DESCRIPTIONS)) {
 			String[] claims = s.getUserAttributes().get(ConsentPageFile.CLAIM_DESCRIPTIONS).split(" ");
 			for (int i = 0; i < claims.length; i++)
@@ -337,7 +331,7 @@ public class LoginDialog {
 		return new String[0];
 	}
 
-	private String[] decodeScopesFromSession(Session s) throws UnsupportedEncodingException {
+	private String[] decodeScopesFromSession(Session s) {
 		if(s.getUserAttributes().containsKey(ConsentPageFile.SCOPE_DESCRIPTIONS)) {
 			String[] scopes = s.getUserAttributes().get(ConsentPageFile.SCOPE_DESCRIPTIONS).split(" ");
 			for (int i = 0; i < scopes.length; i++)
@@ -347,13 +341,12 @@ public class LoginDialog {
 		return new String[0];
 	}
 
-	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {
+	public Outcome redirectToLogin(Exchange exc) throws UnsupportedEncodingException {
 		exc.setResponse(Response.
-				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).
+				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), UTF_8), false).
 				dontCache().
 				body("").
 				build());
-		return Outcome.RETURN;
+		return RETURN;
 	}
-
 }

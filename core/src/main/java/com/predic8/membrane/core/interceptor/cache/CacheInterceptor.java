@@ -13,37 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.cache;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.TimeZone;
-
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.codec.binary.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import org.slf4j.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import java.io.*;
+import java.text.*;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description <p>
@@ -74,7 +57,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 	@MCElement(name="inMemoryStore")
 	public static class InMemoryStore extends Store {
-		HashMap<String, Node> cache = new HashMap<String, Node>();
+		HashMap<String, Node> cache = new HashMap<>();
 
 		@Override
 		public Node get(String url) {
@@ -110,7 +93,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 		}
 
 		private String encode(String url) {
-			String res = Base64.encodeBase64String(url.getBytes(Constants.UTF_8_CHARSET));
+			String res = Base64.encodeBase64String(url.getBytes(UTF_8));
 			if (res.length() > 120) {
 				res = res.substring(0, 100) + "-" + res.hashCode();
 			}
@@ -123,11 +106,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 			if (!f.exists())
 				return null;
 			try {
-				FileInputStream fis = new FileInputStream(f);
-				try {
+				try(FileInputStream fis = new FileInputStream(f)) {
 					return (Node) new ObjectInputStream(fis).readObject();
-				} finally {
-					fis.close();
 				}
 			} catch (Exception e) {
 				log.warn("", e);
@@ -137,16 +117,10 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 		@Override
 		public void put(String url, Node node) {
-			File f = new File(dir, encode(url));
 			try {
-				FileOutputStream fos = new FileOutputStream(f);
-				try {
-					ObjectOutputStream oos = new ObjectOutputStream(fos);
-					oos.writeObject(node);
-					oos.close();
-				} finally {
-					fos.close();
-				}
+				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(dir, encode(url))));
+				oos.writeObject(node);
+				oos.close();
 			} catch (Exception e) {
 				log.warn("", e);
 			}
@@ -219,21 +193,11 @@ public class CacheInterceptor extends AbstractInterceptor {
 				if (canCache(exc.getResponse(), true)) {
 					String dest = exc.getDestinations().get(0);
 					switch (exc.getResponse().getStatusCode()) {
-					case 200:
-						store.put(dest, new PositiveNode(exc));
-						break;
-					case 401:
-					case 404:
-						store.put(dest, new NegativeNode(exc));
-						break;
-					case 301:
-					case 302:
-					case 307:
-						store.put(dest, new PositiveNode(exc));
-						break;
-					default:
-						log.warn("Could not cache HTTP response because of its status code " + exc.getResponse().getStatusCode() + ".");
-						break;
+						case 200 -> store.put(dest, new PositiveNode(exc));
+						case 401, 404 -> store.put(dest, new NegativeNode(exc));
+						case 301, 302, 307 -> store.put(dest, new PositiveNode(exc));
+						default ->
+								log.warn("Could not cache HTTP response because of its status code " + exc.getResponse().getStatusCode() + ".");
 					}
 				}
 			}
@@ -259,8 +223,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 	private boolean force = true;
 
-	private HashSet<String> allowedRequestHeaders = new HashSet<String>();
-	private HashSet<String> allowedResponseHeaders = new HashSet<String>();
+	private final HashSet<String> allowedRequestHeaders = new HashSet<>();
+	private final HashSet<String> allowedResponseHeaders = new HashSet<>();
 
 	{
 		allowedRequestHeaders.add("host");

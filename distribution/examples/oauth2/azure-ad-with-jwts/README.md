@@ -1,4 +1,4 @@
-# About
+# JWT Token Validation against Microsoft's Azure AD
 
 This tutorial shows how to use Membrane API Gateway to validate Json Web Tokens (JWTs) issued by Microsoft's Azure AD.
 

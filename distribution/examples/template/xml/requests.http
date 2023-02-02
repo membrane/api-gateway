@@ -1,0 +1,15 @@
+POST http://localhost:2000
+Content-Type: application/xml
+
+<person firstname="Juan"/>
+
+###
+
+POST http://localhost:2001
+Content-Type: application/xml
+
+<cities>
+    <city>Hong Kong</city>
+    <city>Tokio</city>
+    <city>Berlin</city>
+</cities>

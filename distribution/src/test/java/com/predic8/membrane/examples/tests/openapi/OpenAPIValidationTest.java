@@ -22,23 +22,11 @@ import java.io.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
 
-public class OpenAPIValidationTest extends DistributionExtractingTestcase {
+public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
         return "openapi/validation";
-    }
-
-    private Process2 process;
-
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        process = startServiceProxyScript();
-    }
-
-    @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
     }
 
     @Test
@@ -47,7 +35,7 @@ public class OpenAPIValidationTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void OneOfWithRightInteger() throws Exception {
+    void oneOfWithRightInteger() throws Exception {
         putAndAssert(201, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 {
                 	"name": "Jan Vermeer",
@@ -62,7 +50,7 @@ public class OpenAPIValidationTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void OneOfWithWrongStringPattern() throws Exception {
+    void oneOfWithWrongStringPattern() throws Exception {
         String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
                 {
                 	"name": "Jan Vermeer",
