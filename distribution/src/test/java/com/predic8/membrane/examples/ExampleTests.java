@@ -18,6 +18,8 @@ import com.predic8.membrane.examples.config.*;
 import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.*;
+import com.predic8.membrane.examples.tests.oauth2.*;
+import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
 import com.predic8.membrane.examples.tests.openapi.*;
 import com.predic8.membrane.examples.tests.ssl.*;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
@@ -84,7 +86,11 @@ import org.junit.platform.suite.api.Suite;
         RoutingTest.class,
         XsltExampleTest.class,
         RoutingTest.class,
-        OAuth2ApiTest.class,
+
+        // OAuth2
+        OAuth2APITest.class,
+        OAuth2MembraneTest.class,
+        OAuth2CredentialsTest.class,
 
         // OpenAPI
         APIProxyTest.class,

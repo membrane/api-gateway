@@ -114,11 +114,12 @@ import org.junit.platform.suite.api.*;
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
 		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class,
 		ProxyTest.class, Http2ClientServerTest.class, ChunkedBodyTest.class,
-		ReturnInterceptorTest.class
+		ReturnInterceptorTest.class,
 		JavascriptInterceptor.class,
 		MimeTypeTest.class,
 		MessageBytesTest.class,
-		RegExReplaceInterceptorTest.class
+		RegExReplaceInterceptorTest.class,
+		URLParamUtilTest.class
 })
 @SelectPackages("com.predic8.membrane.core.openapi")
 public class UnitTests {

@@ -13,45 +13,43 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URLEncoder;
+import com.floreysoft.jmte.*;
+import com.floreysoft.jmte.message.*;
+import com.floreysoft.jmte.token.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
+import org.apache.commons.text.*;
+import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.*;
+
+import java.io.*;
+import java.net.*;
 import java.util.*;
 
-import com.floreysoft.jmte.message.ErrorMessage;
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.floreysoft.jmte.Engine;
-import com.floreysoft.jmte.ErrorHandler;
-import com.floreysoft.jmte.message.ParseException;
-import com.floreysoft.jmte.token.Token;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile.*;
+import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class LoginDialog {
-	private static Logger log = LoggerFactory.getLogger(LoginDialog.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(LoginDialog.class.getName());
 
 	private final String basePath;
-	private String path;
-	private String message;
-	private boolean exposeUserCredentialsToSession;
+	private final String path;
+	private final String message;
+	private final boolean exposeUserCredentialsToSession;
 	private URIFactory uriFactory;
 
 	private final UserDataProvider userDataProvider;
@@ -120,15 +118,15 @@ public class LoginDialog {
 			}
 		});
 		Map<String, Object> model = new HashMap<String, Object>();
-		model.put("action", StringEscapeUtils.escapeXml(basePath + path));
-		model.put("target", StringEscapeUtils.escapeXml(target));
+		model.put("action", escapeXml11(basePath + path));
+		model.put("target", escapeXml11(target));
 		if(page == 0)
 			model.put("login", true);
 		if (page == 1)
 			model.put("token", true);
 		if(page == 2) {
 			model.put("consent", true);
-			model.put("action",StringEscapeUtils.escapeXml(basePath + path)+ "consent");
+			model.put("action", escapeXml11(basePath + path) + "consent");
 		}
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
@@ -138,7 +136,7 @@ public class LoginDialog {
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
 		Session s = sessionManager.getSession(exc);
-		
+
 		String uri = exc.getRequest().getUri().substring(basePath.length() + path.length()-1);
 		if (uri.indexOf('?') >= 0)
 			uri = uri.substring(0, uri.indexOf('?'));
@@ -258,10 +256,10 @@ public class LoginDialog {
 		if(s == null)
 			return;
 		synchronized (s) {
-			s.getUserAttributes().remove(ConsentPageFile.PRODUCT_NAME);
-			s.getUserAttributes().remove(ConsentPageFile.LOGO_URL);
-			s.getUserAttributes().remove(ConsentPageFile.SCOPE_DESCRIPTIONS);
-			s.getUserAttributes().remove(ConsentPageFile.CLAIM_DESCRIPTIONS);
+			s.getUserAttributes().remove(PRODUCT_NAME);
+			s.getUserAttributes().remove(LOGO_URL);
+			s.getUserAttributes().remove(SCOPE_DESCRIPTIONS);
+			s.getUserAttributes().remove(CLAIM_DESCRIPTIONS);
 		}
 	}
 
@@ -277,8 +275,13 @@ public class LoginDialog {
 			return;
 		Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
 		String consentResult = "false";
-		if(params.get("consent").equals("Accept"))
+		String consent = params.get("consent");
+		if (consent == null) {
+			throw new Exception("There is no form parameter consent in the request present.");
+		}
+		if(consent.equals("Accept"))
             consentResult = "true";
+
 		synchronized (s) {
 			s.getUserAttributes().put("consent", consentResult);
 		}
@@ -286,21 +289,25 @@ public class LoginDialog {
 
 	private void showConsentPage(Exchange exc, Session s) throws Exception {
 		if(s == null){
-			showPage(exc,2,ConsentPageFile.PRODUCT_NAME,null,ConsentPageFile.LOGO_URL,null,"scopes", null, "claims", null);
+			showPage(exc,2, PRODUCT_NAME,null, LOGO_URL,null,"scopes", null, "claims", null);
 			return;
 		}
 		synchronized(s) {
-			String productName = s.getUserAttributes().get(ConsentPageFile.PRODUCT_NAME);
-			String logoUrl = s.getUserAttributes().get(ConsentPageFile.LOGO_URL);
-			Map<String, String> scopes = doubleStringArrayToMap(prepareScopesFromSession(s));
-			Map<String, String> claims = doubleStringArrayToMap(prepareClaimsFromSession(s));
-			showPage(exc,2,ConsentPageFile.PRODUCT_NAME,productName,ConsentPageFile.LOGO_URL,logoUrl,"scopes", scopes, "claims", claims);
+			showPage(exc,2,
+                    PRODUCT_NAME,
+                    s.getUserAttributes().get(PRODUCT_NAME),
+                    LOGO_URL,
+                    s.getUserAttributes().get(LOGO_URL),
+                    "scopes",
+                    doubleStringArrayToMap(prepareScopesFromSession(s)),
+                    "claims",
+                    doubleStringArrayToMap(prepareClaimsFromSession(s)));
 		}
 
 	}
 
 	private Map<String, String> doubleStringArrayToMap(String[] strings) {
-		HashMap<String, String> result = new HashMap<String, String>();
+		HashMap<String, String> result = new HashMap<>();
 		for(String string : strings) {
 			String[] str = string.split(" ");
 			for(int i = 2; i < str.length;i++)
@@ -321,39 +328,36 @@ public class LoginDialog {
 	private String[] prepareStringArray(String[] array){
 		if(array[0].isEmpty())
 			return new String[0];
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 		for(int i = 0; i < array.length;i+=2)
 			result.add(array[i] + ": " + array[i+1]);
 		return result.toArray(new String[0]);
 	}
 
-	private String[] decodeClaimsFromSession(Session s) throws UnsupportedEncodingException {
-		if(s.getUserAttributes().containsKey(ConsentPageFile.CLAIM_DESCRIPTIONS)) {
-			String[] claims = s.getUserAttributes().get(ConsentPageFile.CLAIM_DESCRIPTIONS).split(" ");
-			for (int i = 0; i < claims.length; i++)
-				claims[i] = OAuth2Util.urldecode(claims[i]);
-			return claims;
-		}
-		return new String[0];
+	private String[] decodeClaimsFromSession(Session s) {
+		return getUserAttributesFor(s, CLAIM_DESCRIPTIONS);
 	}
 
-	private String[] decodeScopesFromSession(Session s) throws UnsupportedEncodingException {
-		if(s.getUserAttributes().containsKey(ConsentPageFile.SCOPE_DESCRIPTIONS)) {
-			String[] scopes = s.getUserAttributes().get(ConsentPageFile.SCOPE_DESCRIPTIONS).split(" ");
-			for (int i = 0; i < scopes.length; i++)
-				scopes[i] = OAuth2Util.urldecode(scopes[i]);
-			return scopes;
-		}
-		return new String[0];
+	private String[] decodeScopesFromSession(Session s) {
+		return getUserAttributesFor(s, SCOPE_DESCRIPTIONS);
 	}
 
-	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {
+	private static String[] getUserAttributesFor(Session s, String name) {
+		if (!s.getUserAttributes().containsKey(name))
+			return new String[0];
+
+		String[] claims = s.getUserAttributes().get(name).split(" ");
+		for (int i = 0; i < claims.length; i++)
+			claims[i] = urldecode(claims[i]);
+		return claims;
+	}
+
+	public Outcome redirectToLogin(Exchange exc) {
 		exc.setResponse(Response.
-				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).
+				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), UTF_8), false).
 				dontCache().
 				body("").
 				build());
-		return Outcome.RETURN;
+		return RETURN;
 	}
-
 }

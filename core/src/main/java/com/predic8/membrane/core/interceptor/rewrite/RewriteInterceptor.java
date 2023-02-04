@@ -13,32 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.regex.Pattern;
+import com.googlecode.jatl.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
+import org.slf4j.*;
 
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TextUtil;
-import com.predic8.membrane.core.util.URLUtil;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
 
 /**
  * @description <p>
- *              Rewrites the path of incoming requests based on a mapping or redirects requests.
+ *              Rewrites or redirects the path of incoming requests based on a mapping.
  *              </p>
  * @topic 4. Interceptors/Features
  */
@@ -69,11 +64,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			if (StringUtils.isEmpty(do_))
 				this.do_ = getDo();
 			else if (do_.equals("rewrite"))
-				this.do_ = Type.REWRITE;
+				this.do_ = REWRITE;
 			else if (do_.equals("redirect") || do_.equals("redirect-temporary"))
-				this.do_ = Type.REDIRECT_TEMPORARY;
+				this.do_ = REDIRECT_TEMPORARY;
 			else if (do_.equals("redirect-permanent"))
-				this.do_ = Type.REDIRECT_PERMANENT;
+				this.do_ = REDIRECT_PERMANENT;
 			else
 				throw new IllegalArgumentException("Unknown value '" + do_ + "' for rewriter/@do.");
 
@@ -118,7 +113,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 		public Type getDo() {
 			if (do_ == null)
-				do_ = to.contains("://") ? Type.REDIRECT_TEMPORARY : Type.REWRITE;
+				do_ = to.contains("://") ? REDIRECT_TEMPORARY : REWRITE;
 			return do_;
 		}
 
@@ -135,13 +130,13 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 	}
 
-	private static Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
-	private List<Mapping> mappings = new ArrayList<Mapping>();
+	private List<Mapping> mappings = new ArrayList<>();
 
 	public RewriteInterceptor() {
 		name = "URL Rewriter";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
@@ -175,9 +170,9 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 			String newDest = replace(pathQuery, mapping);
 
-			if (do_ == Type.REDIRECT_PERMANENT || do_ == Type.REDIRECT_TEMPORARY) {
-				exc.setResponse(Response.redirect(newDest, do_ == Type.REDIRECT_PERMANENT).build());
-				return Outcome.RETURN;
+			if (do_ == REDIRECT_PERMANENT || do_ == REDIRECT_TEMPORARY) {
+				exc.setResponse(Response.redirect(newDest, do_ == REDIRECT_PERMANENT).build());
+				return RETURN;
 			}
 
 			if (!newDest.contains("://") && schemaHostPort != null) {
@@ -189,7 +184,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		}
 
 		Mapping mapping = findFirstMatchingRegEx(exc.getRequest().getUri());
-		if (mapping != null && mapping.do_ == Type.REWRITE) {
+		if (mapping != null && mapping.do_ == REWRITE) {
 			String newDest = replace(exc.getRequest().getUri(), mapping);
 			if (newDest.contains("://")) {
 				newDest = URLUtil.getPathQuery(router.getUriFactory(), newDest);
@@ -197,7 +192,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			exc.getRequest().setUri(newDest);
 		}
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void logMappings() {
@@ -208,9 +203,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 	private String replace(String uri, Mapping mapping) {
 		String replaced = uri.replaceAll(mapping.from, mapping.to);
-
 		log.debug("replaced URI: " + replaced);
-
 		return replaced;
 	}
 
@@ -241,16 +234,14 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		for (Mapping m : mappings)
 			s.add(m.getDo());
 
-		StringBuilder sb = new StringBuilder();
-		sb.append(TextUtil.capitalize(TextUtil.toEnglishList("or",
-				s.contains(Type.REDIRECT_PERMANENT) || s.contains(Type.REDIRECT_TEMPORARY) ?
-						TextUtil.toEnglishList("or",
-								s.contains(Type.REDIRECT_PERMANENT) ? "permanently" : null,
-										s.contains(Type.REDIRECT_TEMPORARY) ? "temporarily" : null) +
-										" redirects" : null,
-										s.contains(Type.REWRITE) ? "rewrites" : null)));
-		sb.append(" URLs.");
-		return sb.toString();
+		return capitalize(toEnglishList("or",
+				s.contains(REDIRECT_PERMANENT) || s.contains(REDIRECT_TEMPORARY) ?
+						toEnglishList("or",
+								s.contains(REDIRECT_PERMANENT) ? "permanently" : null,
+								s.contains(REDIRECT_TEMPORARY) ? "temporarily" : null) +
+						" redirects" : null,
+				s.contains(REWRITE) ? "rewrites" : null)) +
+					" URLs.";
 	}
 
 	@Override
