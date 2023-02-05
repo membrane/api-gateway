@@ -23,7 +23,7 @@ import org.joda.time.Duration;
 public class LazyRateLimit extends RateLimitStrategy {
 
 	private DateTime nextCleanup = new DateTime();
-	public ConcurrentHashMap<String, AtomicInteger> requestCounterFromIP = new ConcurrentHashMap<String, AtomicInteger>();
+	public ConcurrentHashMap<String, AtomicInteger> requestCounterFromKey = new ConcurrentHashMap<>();
 
 	public LazyRateLimit(Duration requestLimitDuration, int requestLimit) {
 		this.requestLimitDuration = requestLimitDuration;
@@ -32,26 +32,26 @@ public class LazyRateLimit extends RateLimitStrategy {
 	}
 
 	@Override
-	public boolean isRequestLimitReached(String ip) {
+	public boolean isRequestLimitReached(String key) {
 		synchronized (nextCleanup) {
 			if (DateTime.now().isAfter(nextCleanup)) {
-				for (AtomicInteger info : requestCounterFromIP.values()) {
+				for (AtomicInteger info : requestCounterFromKey.values()) {
 					info.set(0);
 				}
 				incrementNextCleanupTime();
 			}
 		}
-		addRequestEntry(ip);
-		return requestCounterFromIP.get(ip).get() > requestLimit;
+		addRequestEntry(key);
+		return requestCounterFromKey.get(key).get() > requestLimit;
 	}
 
 	private void addRequestEntry(String addr) {
-		synchronized (requestCounterFromIP) {
-			if (!requestCounterFromIP.containsKey(addr)) {
-				requestCounterFromIP.put(addr, new AtomicInteger());
+		synchronized (requestCounterFromKey) {
+			if (!requestCounterFromKey.containsKey(addr)) {
+				requestCounterFromKey.put(addr, new AtomicInteger());
 			}
 		}
-		requestCounterFromIP.get(addr).incrementAndGet();
+		requestCounterFromKey.get(addr).incrementAndGet();
 	}
 
 	private void incrementNextCleanupTime() {
@@ -65,7 +65,7 @@ public class LazyRateLimit extends RateLimitStrategy {
 
 	@Override
 	public void updateAfterConfigChange() {
-		for (AtomicInteger info : requestCounterFromIP.values()) {
+		for (AtomicInteger info : requestCounterFromKey.values()) {
 			info.set(0);
 		}
 		incrementNextCleanupTime();

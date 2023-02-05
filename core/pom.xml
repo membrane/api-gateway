@@ -279,7 +279,6 @@
 			<artifactId>groovy-templates</artifactId>
 		</dependency>
 
-
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-broker</artifactId>
@@ -287,7 +286,7 @@
 			<scope>test</scope>
 		</dependency>
 
-<!--    ntlm support-->
+		<!-- ntlm support-->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>

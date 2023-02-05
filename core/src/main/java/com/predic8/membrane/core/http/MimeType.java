@@ -36,13 +36,16 @@ public class MimeType {
 
 
 	public static final String APPLICATION_JSON = "application/json";
+
 	public static final String APPLICATION_JSON_UTF8 = "application/json;charset=utf-8";
 
 	public static final String APPLICATION_JOSE_JSON = "application/jose+json";
 
     public static final String APPLICATION_X_YAML = "application/x-yaml";
 
-
+    /**
+     * See <a href="https://www.rfc-editor.org/rfc/rfc7807">Problem Details for HTTP APIs</a>
+     */
 	public static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
 
 	public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";

@@ -14,114 +14,149 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
-import java.io.UnsupportedEncodingException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.spel.*;
+import org.joda.time.*;
+import org.joda.time.format.*;
+import org.slf4j.*;
+import org.springframework.expression.*;
+import org.springframework.expression.spel.standard.*;
 
-import com.predic8.membrane.core.util.*;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.PeriodFormat;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.util.ErrorUtil.createAndSetErrorResponse;
-import static java.util.Locale.US;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ErrorUtil.*;
+import static java.util.Locale.*;
 
 /**
- * @description Allows rate limiting (Experimental)
+ * @description Rate limiting
+ *
+ * @TODO add ipaddress to Evaluation Context
  */
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractInterceptor {
 
-	public RateLimitStrategy rateLimitStrategy;
+    private static final Logger log = LoggerFactory.getLogger(RateLimitInterceptor.class.getName());
 
-	protected static DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
-	protected DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withZoneUTC().withLocale(US);
+    public RateLimitStrategy rateLimitStrategy;
 
-	public RateLimitInterceptor() {
-		this(Duration.standardHours(1), 1000);
-	}
+    protected static DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
+    protected DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withZoneUTC().withLocale(US);
+    private String keyExpression;
+    private Expression expression;
 
-	public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
-		rateLimitStrategy = new LazyRateLimit(requestLimitDuration, requestLimit);
-		name = "RateLimiter";
-		setFlow(REQUEST);
-	}
+    public RateLimitInterceptor() {
+        // Needed even if there are no usages
+        this(Duration.standardHours(1), 1000);
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		String addr = exc.getRemoteAddrIp();
-		if (rateLimitStrategy.isRequestLimitReached(addr)) {
-			setResponseToServiceUnavailable(exc);
-			return RETURN;
-		}
-		return CONTINUE;
+    public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
+        rateLimitStrategy = new LazyRateLimit(requestLimitDuration, requestLimit);
+        name = "RateLimiter";
+        setFlow(REQUEST);
+    }
 
-	}
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        if (rateLimitStrategy.isRequestLimitReached(getKey(exc))) {
+            setResponseToServiceUnavailable(exc);
+            exc.getResponse().getHeader().setContentType(APPLICATION_PROBLEM_JSON);
+            exc.getResponse().setBodyContent(createProblemDetails("http://membrane-api.io/ratelimiter/exceeded", "Rate Limit is Exceeded", null));
+            return RETURN;
+        }
+        return CONTINUE;
 
-	public void setResponseToServiceUnavailable(Exchange exc) {
-		createAndSetErrorResponse(exc,429, createErrorMessage(exc));
-		exc.getResponse().setHeader(createHeaderFields(exc));
-	}
+    }
 
-	private Header createHeaderFields(Exchange exc) {
-		Header hd = new Header();
-		hd.add("Date", dateFormatter.print(DateTime.now()));
-		hd.add("X-LimitDuration", rateLimitStrategy.getLimitDurationPeriod());
-		hd.add("X-LimitRequests", Integer.toString(rateLimitStrategy.requestLimit));
-		hd.add("X-LimitReset", rateLimitStrategy.getLimitReset(exc.getRemoteAddrIp()));
-		return hd;
-	}
+    @Override
+    public void init() throws Exception {
+        super.init();
+        expression = new SpelExpressionParser().parseExpression(keyExpression);
+    }
 
-	private String createErrorMessage(Exchange exc) {
-		return exc.getRemoteAddrIp() + " exceeded the rate limit of " + rateLimitStrategy.requestLimit +
-				" requests per " +
-				PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()) +
-				". The next request can be made at " + dtFormatter.print(rateLimitStrategy.getServiceAvailableAgainTime(exc.getRemoteAddrIp()));
-	}
+    private String getKey(Exchange exc) {
+        if (keyExpression == null)
+            return exc.getRemoteAddrIp();
 
-	public int getRequestLimit() {
-		return rateLimitStrategy.requestLimit;
-	}
+        String result = expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()).getStandardEvaluationContext(), String.class);
+        if (result != null)
+            return result;
 
-	/**
-	 * @description number of requests
-	 * @default 1000
-	 */
-	@MCAttribute
-	public void setRequestLimit(int rl) {
-		rateLimitStrategy.setRequestLimit(rl);
-	}
+        log.warn("The expression {} evaluates to null or there is an error in the expression. This may result in a wrong counting for the ratelimiter.", expression);
+        return "null";
+    }
 
-	public String getRequestLimitDuration() {
-		return rateLimitStrategy.requestLimitDuration.toString();
-	}
+    public void setResponseToServiceUnavailable(Exchange exc) {
+        createAndSetErrorResponse(exc, 429, createErrorMessage(exc));
+        exc.getResponse().setHeader(createHeaderFields(exc));
+    }
 
-	/**
-	 * @description Duration after the limit is reset in PTxS where x is the
-	 *              time in seconds
-	 * @default PT3600S
-	 */
-	@MCAttribute
-	public void setRequestLimitDuration(String rld) {
-		setRequestLimitDuration(Duration.parse(rld));
-	}
+    private Header createHeaderFields(Exchange exc) {
+        Header hd = new Header();
+        hd.add("Date", dateFormatter.print(DateTime.now()));
+        hd.add("X-LimitDuration", rateLimitStrategy.getLimitDurationPeriod());
+        hd.add("X-LimitRequests", Integer.toString(rateLimitStrategy.requestLimit));
+        hd.add("X-LimitReset", rateLimitStrategy.getLimitReset(exc.getRemoteAddrIp()));
+        return hd;
+    }
 
-	public void setRequestLimitDuration(Duration rld) {
-		rateLimitStrategy.setRequestLimitDuration(rld);
-	}
+    private String createErrorMessage(Exchange exc) {
+        return getKey(exc) + " exceeded the rate limit of " + rateLimitStrategy.requestLimit +
+               " requests per " +
+               PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()) +
+               ". The next request can be made at " + dtFormatter.print(rateLimitStrategy.getServiceAvailableAgainTime(exc.getRemoteAddrIp()));
+    }
 
-	@Override
-	public String getShortDescription() {
-		return "Limits incoming requests. It limits to " + rateLimitStrategy.getRequestLimit() + " requests every " + PeriodFormat.getDefault().print(rateLimitStrategy.getRequestLimitDuration().toPeriod()) + ".";
-	}
+    public int getRequestLimit() {
+        return rateLimitStrategy.requestLimit;
+    }
+
+    /**
+     * @description number of requests
+     * @default 1000
+     */
+    @MCAttribute
+    public void setRequestLimit(int rl) {
+        rateLimitStrategy.setRequestLimit(rl);
+    }
+
+    public String getRequestLimitDuration() {
+        return rateLimitStrategy.requestLimitDuration.toString();
+    }
+
+    /**
+     * @description Duration after the limit is reset in PTxS where x is the
+     * time in seconds
+     * @default PT3600S
+     */
+    @MCAttribute
+    public void setRequestLimitDuration(String rld) {
+        setRequestLimitDuration(Duration.parse(rld));
+    }
+
+    public void setRequestLimitDuration(Duration rld) {
+        rateLimitStrategy.setRequestLimitDuration(rld);
+    }
+
+    /**
+     * @description The ratelimiter counts requests for a key.
+     * @default ip-address
+     */
+    @MCAttribute
+    public void setKeyExpression(String expression) {
+        this.keyExpression = expression;
+    }
+
+    public String getKeyExpression() {
+        return keyExpression;
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Limits incoming requests. It limits to " + rateLimitStrategy.getRequestLimit() + " requests every " + PeriodFormat.getDefault().print(rateLimitStrategy.getRequestLimitDuration().toPeriod()) + ".";
+    }
 }

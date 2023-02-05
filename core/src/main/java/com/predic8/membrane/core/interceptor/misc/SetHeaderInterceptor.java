@@ -14,32 +14,31 @@
 
 package com.predic8.membrane.core.interceptor.misc;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
 import org.springframework.expression.spel.support.*;
 
-import java.io.*;
-import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "setHeader")
 public class SetHeaderInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(SetHeaderInterceptor.class.getName());
 
-    ObjectMapper om = new ObjectMapper();
-
     private final Pattern expressionPattern = Pattern.compile("\\$\\{(.*?)}");
 
-    private final ExpressionParser parser = new SpelExpressionParser();
+    /**
+     * SpelExpressionParser is reusable and thread-safe
+     */
+    private static final ExpressionParser parser = new SpelExpressionParser();
 
     private String name;
     private String value;
@@ -73,17 +72,8 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleMessage(Exchange exchange, Message msg) {
-        msg.getHeader().setValue(name, evaluateExpression(getEvalContext(exchange, msg)));
+        msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg).getStandardEvaluationContext()));
         return CONTINUE;
-    }
-
-    private StandardEvaluationContext getEvalContext(Exchange exchange, Message msg) {
-        EvalContext ctx = new EvalContext();
-        ctx.setExchange(exchange);
-        ctx.setProperties(exchange.getProperties());
-        ctx.setMessage(msg);
-        ctx.setHeaders(msg.getHeader());
-        return new StandardEvaluationContext(ctx);
     }
 
     protected String evaluateExpression(StandardEvaluationContext evalCtx) {
@@ -107,49 +97,5 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
     @Override
     public String getShortDescription() {
         return String.format("Sets the value of the HTTP header '%s' to %s.",name,value);
-    }
-
-    class EvalContext {
-        Exchange exchange;
-        Message message;
-        Header headers;
-        Map<String, Object> properties;
-
-        public Map<String, Object> getProperties() {
-            return properties;
-        }
-
-        public void setProperties(Map<String, Object> properties) {
-            this.properties = properties;
-        }
-
-        public Header getHeaders() {
-            return headers;
-        }
-
-        public void setHeaders(Header headers) {
-            this.headers = headers;
-        }
-
-        public Exchange getExchange() {
-            return exchange;
-        }
-
-        public void setExchange(Exchange exchange) {
-            this.exchange = exchange;
-        }
-
-        public Message getMessage() {
-            return message;
-        }
-
-        public void setMessage(Message message) {
-            this.message = message;
-        }
-
-        @SuppressWarnings("rawtypes")
-        public Map getJson() throws IOException {
-            return om.readValue(message.getBodyAsStreamDecoded(), Map.class);
-        }
     }
 }
