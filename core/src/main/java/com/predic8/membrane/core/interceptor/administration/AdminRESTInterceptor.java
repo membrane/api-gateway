@@ -22,17 +22,17 @@ import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.interceptor.statistics.util.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
-import java.sql.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static com.predic8.membrane.core.util.ComparatorFactory.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class AdminRESTInterceptor extends RESTInterceptor {
@@ -50,16 +50,12 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				params.getString("order", "asc")));
 
 		int offset = params.getInt("offset", 0);
-		int max = params.getInt("max", clients.size());
-
-		final int total = clients.size();
-		final List<? extends ClientStatistics> paginated = clients.subList(offset,
-				Math.min(offset + max, clients.size()));
 
 		return json(gen -> {
 			gen.writeStartObject();
 			gen.writeArrayFieldStart("clients");
-			for (ClientStatistics s : paginated) {
+			for (ClientStatistics s : clients.subList(offset,
+					Math.min(offset + getMax(params, clients), clients.size()))) {
 				gen.writeStartObject();
 				gen.writeStringField("name", s.getClient());
 				gen.writeNumberField("count", s.getCount());
@@ -69,9 +65,13 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				gen.writeEndObject();
 			}
 			gen.writeEndArray();
-			gen.writeNumberField("total", total);
+			gen.writeNumberField("total", clients.size());
 			gen.writeEndObject();
 		});
+	}
+
+	private static int getMax(QueryParameter params, List<? extends ClientStatistics> clients) {
+		return params.getInt("max", clients.size());
 	}
 
 	@Mapping("/admin/rest/proxies(/?\\?.*)?")
@@ -140,7 +140,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg == null) {
 			return Response.noContent().build();
 		}
-		return Response.ok().contentType(MimeType.TEXT_PLAIN_UTF8).body(msg.toString()).build();//TODO uses body.toString that doesn't handle different encodings than utf-8
+		return Response.ok().contentType(TEXT_PLAIN_UTF8).body(msg.toString()).build();//TODO uses body.toString that doesn't handle different encodings than utf-8
 	}
 
 	@Mapping("/admin/web/exchanges/(-?\\d+)/(response|request)/body")
@@ -156,7 +156,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return Response.noContent().build();
 		}
-		return Response.ok().contentType(MimeType.TEXT_HTML_UTF8).body(TextUtil.formatXML(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()), true)).build();
+		return Response.ok().contentType(TEXT_HTML_UTF8).body(formatXML(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()), true)).build();
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
@@ -176,7 +176,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		ResponseBuilder rb = Response.ok().contentType(ct).body(msg.getBodyAsStream(), false);
 		String contentEncoding = msg.getHeader().getContentEncoding();
 		if (contentEncoding != null)
-			rb.header(Header.CONTENT_ENCODING, contentEncoding);
+			rb.header(CONTENT_ENCODING, contentEncoding);
 		return rb.build();
 	}
 

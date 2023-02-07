@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
@@ -57,7 +58,7 @@ import com.predic8.membrane.core.util.URLUtil;
  * Handles the dynamic part of the admin console (= requests starting with "/admin/").
  */
 public class DynamicAdminPageInterceptor extends AbstractInterceptor {
-	private static Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
 	private boolean readOnly;
 	private boolean useXForwardedForAsClientAddr;
 
@@ -106,9 +107,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h1().text(rule.toString()+" ServiceProxy").end();
-				script().raw("$(function() {\r\n" +
-						"					$( \"#subtab\" ).tabs();\r\n" +
-						"				});").end();
+				script().raw("""
+						$(function() {
+							$( "#subtab" ).tabs();
+						});""").end();
 
 				div().id("subtab");
 				ul();
@@ -247,7 +249,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h2().text("Transport").end();
 
 				h3().text("Transport Interceptors").end();
@@ -687,11 +689,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					option(s.isEmpty()?"undefined":s, s, false);
 				}
 				end(2);
+				span().text("Search in body").end()
+				.input().type("text").id("message-filter-search").name("message-filter-search").onkeydown("membrane.onFilterUpdate();").onchange("membrane.onFilterUpdate();").end(2);
+				end();
 				br();
 				createButton("Reset Filter", "calls", null, null);
 				a().id("reload-data-button").classAttr("mb-button").text("Reload data").end();
 				label().forAttr("reload-data-checkbox").checkbox().checked("true").id("reload-data-checkbox").text("Auto Reload").end();
-				end();
 				addMessageText();
 				createMessageStatisticsTable();
 			}
@@ -724,7 +728,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	private <T extends Comparable<? super T>> List<T> sort(Set<T> data) {
 		int nulls = 0;
-		ArrayList<T> res = new ArrayList<T>(data.size());
+		ArrayList<T> res = new ArrayList<>(data.size());
 		for (T t : data)
 			if (t == null)
 				nulls++;
@@ -835,7 +839,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h3().text("Impressum").end();
 				p().text("predic8 GmbH").br().text("Koblenzer Str. 65").br().br().text("53173 Bonn").end();
 			}
@@ -849,17 +853,17 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
 				exc.setResponse((Response)m.invoke(this, new Object[] { getParams(exc), getRelativeRootPath(pathQuery) }));
-				return Outcome.RETURN;
+				return RETURN;
 			}
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
 		return URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
 	}
 
-	private Response respond(String page) throws Exception {
+	private Response respond(String page) {
 		return createResponse(200, "OK", page.getBytes(Constants.UTF_8_CHARSET), MimeType.TEXT_HTML_UTF8);
 	}
 
