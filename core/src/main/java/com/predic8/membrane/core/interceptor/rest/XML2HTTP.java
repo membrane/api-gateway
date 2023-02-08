@@ -13,42 +13,30 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import java.io.IOException;
-import java.io.StringWriter;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Reverse of {@link com.predic8.membrane.core.http.xml.Request#write(XMLStreamWriter)} and
  * {@link com.predic8.membrane.core.http.xml.Response#write(XMLStreamWriter)}.
  */
 public class XML2HTTP {
-	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	private static XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	private static final XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
-	private static Logger log = LoggerFactory.getLogger(XML2HTTP.class);
+	private static final Logger log = LoggerFactory.getLogger(XML2HTTP.class);
 
 	/**
 	 * Checks, if the response contains an XML doc with NS {@link Constants#HTTP_NS}.
@@ -80,64 +68,64 @@ public class XML2HTTP {
 				while (parser.hasNext()) {
 					XMLEvent event = parser.nextEvent();
 					switch (state) {
-					case 0:
-						if (event.isStartElement()) {
-							QName name = event.asStartElement().getName();
-							if (Constants.HTTP_NS.equals(name.getNamespaceURI())) {
-								state = 1;
-								if ("request".equals(name.getLocalPart())) {
-									Request req = (Request)message;
-									req.setMethod(requireAttribute(event.asStartElement(), "method"));
-									String httpVersion = getAttribute(event.asStartElement(), "http-version");
-									if (httpVersion == null)
-										httpVersion = "1.1";
-									req.setVersion(httpVersion);
-								}
-							} else {
-								return;
-							}
-						}
-						break;
-					case 1:
-						if (event.isStartElement()) {
-							String localName = event.asStartElement().getName().getLocalPart();
-							if ("status".equals(localName)) {
-								Response res = (Response)message;
-								res.setStatusCode(Integer.parseInt(requireAttribute(event.asStartElement(), "code")));
-								res.setStatusMessage(slurpCharacterData(parser, event.asStartElement()));
-							}
-							if ("uri".equals(localName)) {
-								Request req = (Request)message;
-								req.setUri(requireAttribute(event.asStartElement(), "value"));
-								// uri/... (port,host,path,query) structure is ignored, as value already contains everything
-								slurpXMLData(parser, event.asStartElement());
-							}
-							if ("headers".equals(localName)) {
-								foundHeaders = true;
-								keepSourceHeaders = "true".equals(getAttribute(event.asStartElement(), "keepSourceHeaders"));
-							}
-							if ("header".equals(localName)) {
-								String key = requireAttribute(event.asStartElement(), "name");
-								boolean remove = getAttribute(event.asStartElement(), "remove") != null;
-								if (remove && !keepSourceHeaders)
-									throw new XML2HTTPException("<headers keepSourceHeaders=\"false\"><header name=\"...\" remove=\"true\"> does not make sense.");
-								message.getHeader().removeFields(key);
-								if (!remove)
-									message.getHeader().add(key, slurpCharacterData(parser, event.asStartElement()));
-							}
-							if ("body".equals(localName)) {
-								foundBody = true;
-								String type = requireAttribute(event.asStartElement(), "type");
-								if ("plain".equals(type)) {
-									message.setBodyContent(slurpCharacterData(parser, event.asStartElement()).getBytes(Constants.UTF_8_CHARSET));
-								} else if ("xml".equals(type)) {
-									message.setBodyContent(slurpXMLData(parser, event.asStartElement()).getBytes(Constants.UTF_8_CHARSET));
+						case 0 -> {
+							if (event.isStartElement()) {
+								QName name = event.asStartElement().getName();
+								if (Constants.HTTP_NS.equals(name.getNamespaceURI())) {
+									state = 1;
+									if ("request".equals(name.getLocalPart())) {
+										Request req = (Request) message;
+										req.setMethod(requireAttribute(event.asStartElement(), "method"));
+										String httpVersion = getAttribute(event.asStartElement(), "http-version");
+										if (httpVersion == null)
+											httpVersion = "1.1";
+										req.setVersion(httpVersion);
+									}
 								} else {
-									throw new XML2HTTPException("XML-HTTP doc body type '" + type + "' is not supported (only 'plain' or 'xml').");
+									return;
 								}
 							}
 						}
-						break;
+						case 1 -> {
+							if (event.isStartElement()) {
+								String localName = event.asStartElement().getName().getLocalPart();
+								if ("status".equals(localName)) {
+									Response res = (Response) message;
+									res.setStatusCode(Integer.parseInt(requireAttribute(event.asStartElement(), "code")));
+									res.setStatusMessage(slurpCharacterData(parser, event.asStartElement()));
+								}
+								if ("uri".equals(localName)) {
+									Request req = (Request) message;
+									req.setUri(requireAttribute(event.asStartElement(), "value"));
+									// uri/... (port,host,path,query) structure is ignored, as value already contains everything
+									slurpXMLData(parser, event.asStartElement());
+								}
+								if ("headers".equals(localName)) {
+									foundHeaders = true;
+									keepSourceHeaders = "true".equals(getAttribute(event.asStartElement(), "keepSourceHeaders"));
+								}
+								if ("header".equals(localName)) {
+									String key = requireAttribute(event.asStartElement(), "name");
+									boolean remove = getAttribute(event.asStartElement(), "remove") != null;
+									if (remove && !keepSourceHeaders)
+										throw new XML2HTTPException("<headers keepSourceHeaders=\"false\"><header name=\"...\" remove=\"true\"> does not make sense.");
+									message.getHeader().removeFields(key);
+									if (!remove)
+										message.getHeader().add(key, slurpCharacterData(parser, event.asStartElement()));
+								}
+								if ("body".equals(localName)) {
+									foundBody = true;
+									String type = requireAttribute(event.asStartElement(), "type");
+									if ("plain".equals(type)) {
+										message.setBodyContent(slurpCharacterData(parser, event.asStartElement()).getBytes(UTF_8));
+									} else if ("xml".equals(type)) {
+										message.setBodyContent(slurpXMLData(parser, event.asStartElement()).getBytes(UTF_8));
+									} else {
+										throw new XML2HTTPException("XML-HTTP doc body type '" + type + "' is not supported (only 'plain' or 'xml').");
+									}
+								}
+							}
+						}
 					}
 				}
 
@@ -173,7 +161,7 @@ public class XML2HTTP {
 
 	private static String slurpXMLData(XMLEventReader parser, StartElement sevent) throws XML2HTTPException, XMLStreamException {
 		StringWriter bodyStringWriter = new StringWriter();
-		XMLEventWriter bodyWriter = null;
+		XMLEventWriter bodyWriter;
 		int depth = 0;
 		synchronized(xmlOutputFactory) {
 			bodyWriter = xmlOutputFactory.createXMLEventWriter(bodyStringWriter);
@@ -217,6 +205,7 @@ public class XML2HTTP {
 
 
 	private static class XML2HTTPException extends Exception {
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		public XML2HTTPException(String message) {

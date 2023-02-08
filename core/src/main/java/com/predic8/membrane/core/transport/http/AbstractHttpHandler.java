@@ -14,30 +14,20 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.InetAddress;
-import java.net.URISyntaxException;
+import com.fasterxml.jackson.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
+import java.io.*;
+import java.net.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.util.ContentTypeDetector;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 public abstract class AbstractHttpHandler  {
@@ -141,7 +131,7 @@ public abstract class AbstractHttpHandler  {
 	private static Response createSOAPErrorResponse(Exception e, boolean printStackTrace) {
 		return getResponseBuilder(e).
 				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
-				body(HttpUtil.getFaultSOAPBody("Internal Server Error", getMessage(e, printStackTrace) + " " + getComment(printStackTrace)).getBytes(UTF_8_CHARSET)).
+				body(HttpUtil.getFaultSOAPBody("Internal Server Error", getMessage(e, printStackTrace) + " " + getComment(printStackTrace)).getBytes(UTF_8)).
 				build();
 	}
 
@@ -171,7 +161,7 @@ public abstract class AbstractHttpHandler  {
 					  escapeXml11(getMessage(e, printStackTrace)) +
 					  "</message><comment>" +
 					  escapeXml11(getComment(printStackTrace)) +
-					  "</comment></error>").getBytes(UTF_8_CHARSET)).
+					  "</comment></error>").getBytes(UTF_8)).
 				build();
 	}
 

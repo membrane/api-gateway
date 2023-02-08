@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 @MCElement(name="testService")
 public class TestServiceInterceptor extends AbstractInterceptor {
@@ -108,7 +109,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		return Response.internalServerError().
 				header(SERVER, PRODUCT_NAME + " " + VERSION).
 				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
-				body(body.getBytes(UTF_8_CHARSET)).
+				body(body.getBytes(UTF_8)).
 				build();
 	}
 
@@ -273,7 +274,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		return Response.ok().
 				header(SERVER, PRODUCT_NAME + " " + VERSION).
 				header(CONTENT_TYPE, TEXT_XML_UTF8).
-				body(body.getBytes(UTF_8_CHARSET)).
+				body(body.getBytes(UTF_8)).
 				build();
 	}
 

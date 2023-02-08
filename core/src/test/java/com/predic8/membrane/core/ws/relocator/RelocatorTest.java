@@ -13,45 +13,50 @@
    limitations under the License. */
 package com.predic8.membrane.core.ws.relocator;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import org.apache.commons.io.output.NullOutputStream;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.io.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.util.ByteUtil;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.*;
+import static org.apache.commons.io.output.NullOutputStream.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RelocatorTest {
 
 	private static Relocator relocator;
 
-	@BeforeAll
-	public static void setUp() throws Exception {
+	@BeforeEach
+	public void setUp() throws Exception {
 		relocator = new Relocator(new OutputStreamWriter(
-				NullOutputStream.NULL_OUTPUT_STREAM, Constants.UTF_8), "http", "localhost",
+				NULL_OUTPUT_STREAM, UTF_8), "http", "localhost",
 				3000, "", null);
 	}
 
+	@Test
 	public void testWSDLRelocate() throws Exception {
-		byte[] contentWSDL = ByteUtil.getByteArrayData(this.getClass()
-				.getResourceAsStream("/blz-service.wsdl"));
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(
-				contentWSDL), Constants.UTF_8));
-		assertTrue(relocator.isWsdlFound());
+		relocator.relocate(getFile("/blz-service.wsdl"));
+		System.out.println("relocator.isWsdlFound() = " + relocator.isWsdlFound());
 	}
+
+	@NotNull
+	private InputStreamReader getFile(String filename) throws IOException {
+		return new InputStreamReader(new ByteArrayInputStream(
+				getFileAsBytes(filename)), UTF_8);
+	}
+
 
 	@Test
 	public void testXMLRelocate() throws Exception {
-		byte[] contentXML = ByteUtil.getByteArrayData(this.getClass()
-				.getResourceAsStream("/acl/acl.xml"));
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(
-				contentXML), Constants.UTF_8));
+		relocator.relocate(getFile("/acl/acl.xml"));
 		assertFalse(relocator.isWsdlFound());
+	}
+
+	@NotNull
+	private byte[] getFileAsBytes(String name) throws IOException {
+		return ByteUtil.getByteArrayData(requireNonNull(this.getClass()
+				.getResourceAsStream(name)));
 	}
 }

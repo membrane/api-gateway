@@ -28,6 +28,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.codec.binary.Base64.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -55,7 +56,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private boolean validUser(Exchange exc) throws Exception {
+	private boolean validUser(Exchange exc) {
 		try {
 			userDataProvider.verify(ImmutableMap.of(
 					"username", getUsername(exc),
@@ -90,7 +91,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	 */
 	private String getAuthorizationHeaderDecoded(Exchange exc) {
 		String value = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
-		return new String(decodeBase64(value.substring(6).getBytes(UTF_8_CHARSET)), UTF_8_CHARSET);
+		return new String(decodeBase64(value.substring(6).getBytes(UTF_8)), UTF_8);
 	}
 
 	public List<User> getUsers() {

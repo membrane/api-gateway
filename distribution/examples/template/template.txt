@@ -1,2 +1,0 @@
-Dear ${name}, unfortunately our service is not available for a short time.
-Here are the items you ordered

@@ -28,12 +28,15 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.regex.Pattern.*;
 import static org.apache.commons.codec.binary.Base64.*;
 
 /**
- * The headers of a HTTP message.
+ * The headers of an HTTP message.
  */
 public class Header {
+
+	private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
 
 	// Header field names
 
@@ -106,7 +109,6 @@ public class Header {
 	public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
 
 	// Header field values
-
 	public static final String CHUNKED = "chunked";
 
 	public static final String TIMEOUT = "timeout";
@@ -114,15 +116,8 @@ public class Header {
 
 	public static final String CLOSE = "close";
 
-	private static final Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
-	private static final Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
-
-	private static final Pattern timeoutPattern = Pattern.compile("timeout\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
-	private static final Pattern maxPattern = Pattern.compile("max\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
-
-	private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
-
-
+	private static final Pattern timeoutPattern = compile("timeout\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
+	private static final Pattern maxPattern = compile("max\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
 
 	private final ArrayList<HeaderField> fields = new ArrayList<>();
 
@@ -207,7 +202,7 @@ public class Header {
 			buffer.append(name).append(": ").append(value)
 			.append(Constants.CRLF);
 		}
-		out.write(buffer.toString().getBytes(Constants.ISO_8859_1_CHARSET));
+		out.write(buffer.toString().getBytes(ISO_8859_1));
 	}
 
 	public void setValue(String name, String value) {
@@ -366,46 +361,15 @@ public class Header {
 		return getFirstValue(USER_AGENT);
 	}
 
-	// TODO header value is a complex unit
 	public String getCharset() {
 		if (getContentType() == null)
-			return Constants.UTF_8;
+			return UTF_8.name();
 
-		String charset = getMediaTypeParameters().get("charset");
-		if (charset == null)
-			return Constants.UTF_8;
-		return charset;
-	}
-
-	private Map<String, String> getMediaTypeParameters() {
-		Matcher m = mediaTypePattern.matcher(getContentType());
-		m.matches();
-		boolean logDebug = log.isDebugEnabled();
-		if (logDebug) {
-			log.debug("type: " + m.group(1));
-			log.debug("subtype: " + m.group(2));
-			log.debug("parameters: " + m.group(3));
+		try {
+			return new ContentType(getContentType()).getParameter("charset").toUpperCase();
+		} catch (Exception e) {
+			return UTF_8.name();
 		}
-
-		Map<String, String> map = new HashMap<>();
-		if (m.group(3) == null)
-			return map;
-
-		for (String param : m.group(3).substring(1).split("\\s*;\\s*")) {
-			if (logDebug)
-				log.debug("parsing parameter: " + param);
-			Matcher paramMat = parameterPattern.matcher(param);
-			if (paramMat.matches()) {
-				if (logDebug)
-					log.debug("parameter: " + paramMat.group(1) + "="
-							+ paramMat.group(2));
-				map.put(paramMat.group(1).trim(), paramMat.group(2));
-			} else {
-				if (logDebug)
-					log.debug("parameter did not match " + parameterPattern);
-			}
-		}
-		return map;
 	}
 
 	public void addCookieSession(String cookieName, String value) {

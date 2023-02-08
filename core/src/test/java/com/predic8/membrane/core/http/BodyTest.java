@@ -13,34 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Constants;
 
 @SuppressWarnings("unused")
 public class BodyTest {
 
-	private static byte[] msg0 = new byte[] { 'd', 'd', 13, 10, 13, 10 };
-	private static byte[] msg1 = new byte[] { 'd', 'd', 13, 10, 13, 10, 'f', 'r' };
-	private static byte[] msg2 = new byte[10000];
-	private static byte[] msg3 = new byte[] { 'd', 'd', 13, 13, 10 };
+	private static final byte[] msg0 = new byte[] { 'd', 'd', 13, 10, 13, 10 };
+	private static final byte[] msg1 = new byte[] { 'd', 'd', 13, 10, 13, 10, 'f', 'r' };
+	private static final byte[] msg2 = new byte[10000];
+	private static final byte[] msg3 = new byte[] { 'd', 'd', 13, 13, 10 };
 
-	private String chunk = "1aa\r\n<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'><soapenv:Body><ns1:getBankResponse xmlns:ns1='http://thomas-bayer.com/blz/'><ns1:details><ns1:bezeichnung>Deutsche Bank Privat und Geschaeftskunden</ns1:bezeichnung><ns1:bic>DEUTDEDB380</ns1:bic><ns1:ort>Bonn</ns1:ort><ns1:plz>53004</ns1:plz></ns1:details></ns1:getBankResponse></soapenv:Body></soapenv:Envelope>\r\n0\r\n\r\n";
+	private final String chunk = "1aa\r\n<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'><soapenv:Body><ns1:getBankResponse xmlns:ns1='http://thomas-bayer.com/blz/'><ns1:details><ns1:bezeichnung>Deutsche Bank Privat und Geschaeftskunden</ns1:bezeichnung><ns1:bic>DEUTDEDB380</ns1:bic><ns1:ort>Bonn</ns1:ort><ns1:plz>53004</ns1:plz></ns1:details></ns1:getBankResponse></soapenv:Body></soapenv:Envelope>\r\n0\r\n\r\n";
 
-	private String chunk1 = "7\r\naaaaaaa\r\n0\r\n\r\n";
-	private String chunk1Body = "aaaaaaa";
+	private final String chunk1 = "7\r\naaaaaaa\r\n0\r\n\r\n";
+	private final String chunk1Body = "aaaaaaa";
 
-	private String chunk2 = "2\r\naa\r\n3\r\nbbb\r\n0\r\n\r\n";
-	private String chunk2Body = "aabbb";
+	private final String chunk2 = "2\r\naa\r\n3\r\nbbb\r\n0\r\n\r\n";
+	private final String chunk2Body = "aabbb";
 
 	private static AbstractBody unchunkedBody;
 	private static AbstractBody unchunkedBody2;
@@ -58,11 +53,11 @@ public class BodyTest {
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream(100);
 		unchunkedBody.write(new PlainBodyTransferrer(out), true);
-		assertEquals(new String(out.toByteArray()), new String(msg1));
+		assertEquals(out.toString(), new String(msg1));
 
 		ByteArrayOutputStream out2 = new ByteArrayOutputStream(10000);
 		unchunkedBody2.write(new PlainBodyTransferrer(out2), true);
-		assertEquals(new String(out2.toByteArray()), new String(msg2));
+		assertEquals(out2.toString(), new String(msg2));
 	}
 
 	@Test
@@ -81,14 +76,14 @@ public class BodyTest {
 	@Test
 	public void testChunkedBodyContent2() throws Exception {
 		AbstractBody body = new ChunkedBody( new ByteArrayInputStream(chunk1.getBytes()));
-		assertTrue(Arrays.equals(body.getContent(), chunk1Body.getBytes()));
+		assertArrayEquals(body.getContent(), chunk1Body.getBytes());
 
 	}
 
 	@Test
 	public void testChunkedBodyConten3() throws Exception {
 		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk2.getBytes()));
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < body.getContent().length; i ++) {
 			buf.append((char)body.getContent()[i]);
 		}
@@ -97,7 +92,7 @@ public class BodyTest {
 
 	@Test
 	public void testStringConstructor() throws Exception {
-		AbstractBody body = new Body("mmebrane Monitor is Cool".getBytes(Constants.UTF_8_CHARSET));
+		AbstractBody body = new Body("mmebrane Monitor is Cool".getBytes(UTF_8));
 		assertEquals(24, body.getContent().length);
 		assertEquals(24, body.getLength());
 	}
@@ -109,12 +104,12 @@ public class BodyTest {
 		chunked.write(new ChunkedBodyTransferrer(baos), true);
 
 		ChunkedBody ciob = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
-		assertTrue(Arrays.equals(ciob.getContent(), msg1));
+		assertArrayEquals(ciob.getContent(), msg1);
 	}
 
 	@Test
 	public void testReChunked() throws Exception {
-		byte[] content = chunk.getBytes(Constants.UTF_8_CHARSET);
+		byte[] content = chunk.getBytes(UTF_8);
 		ChunkedBody ciob = new ChunkedBody(new ByteArrayInputStream(content));
 
 		Body chunked = new Body(new ByteArrayInputStream(ciob.getContent()));
@@ -123,7 +118,7 @@ public class BodyTest {
 
 		ChunkedBody ciob2 = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
 
-		assertTrue(Arrays.equals(ciob2.getContent(), ciob.getContent()));
+		assertArrayEquals(ciob2.getContent(), ciob.getContent());
 	}
 
 }

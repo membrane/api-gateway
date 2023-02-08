@@ -14,11 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.templating;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.*;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,17 +30,20 @@ import org.mockito.Mockito;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.file.StandardCopyOption.*;
+import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TemplateInterceptorTest {
+
+    private final ObjectMapper om = new ObjectMapper();
 
     TemplateInterceptor ti;
     Exchange exc = new Exchange(null);
@@ -48,6 +53,75 @@ public class TemplateInterceptorTest {
     static Router router;
     static ResolverMap map;
     static final String separator = FileSystems.getDefault().getSeparator();
+
+    @Test
+    void accessJson() throws Exception {
+        Exchange exchange = new Request.Builder().contentType(APPLICATION_JSON).body("""
+                { "city": "Da Nang" }
+                """).buildExchange();
+
+        invokeInterceptor(exchange, """
+                City: <%= json.city %>
+                """, TEXT_PLAIN);
+
+        assertEquals("City: Da Nang", exchange.getRequest().getBodyAsStringDecoded().trim());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void createson() throws Exception {
+        Exchange exchange = new Request.Builder().contentType(APPLICATION_JSON).buildExchange();
+
+        invokeInterceptor(exchange, """
+                {"foo":7,"bar":"baz"}
+                """, APPLICATION_JSON);
+
+        assertEquals(APPLICATION_JSON, exchange.getRequest().getHeader().getContentType());
+
+        Map<String,Object> m = om.readValue(exchange.getRequest().getBodyAsStringDecoded(),Map.class);
+        assertEquals(7,m.get("foo"));
+        assertEquals("baz",m.get("bar"));
+    }
+
+    @Test
+    void accessBindings() throws Exception {
+        Exchange exchange = new Request.Builder().url(new URIFactory(),"/foo?a=1&b=2").contentType(TEXT_PLAIN).body("vlinder").buildExchange();
+        exchange.setProperty("baz",7);
+
+        invokeInterceptor(exchange, """
+<% for(h in header.allHeaderFields) { %>
+   <%= h.headerName %> : <%= h.value %>
+<% } %>
+Exchange: <%= exc %>
+Flow: <%= flow %>
+Message.version: <%= message.version %>
+Body: <%= body %>
+Properties: <%= properties.baz %>
+<% for(p in props) { %>
+   Key: <%= p.key %> : <%= p.value %>
+<% } %>
+Old: <%= baz %> Exchange property as variable (Deprecated!)
+New: <%= props.baz %> Exchange property new style
+Query Params:
+A: <%= params.a %>
+B: <%= params.b %>
+
+<% for(p in params) { %>
+    <%= p.key %> : <%= p.value %>
+<% } %>
+                """, APPLICATION_JSON);
+        
+        String body = exchange.getRequest().getBodyAsStringDecoded();
+        System.out.println("body = " + body);
+        assertTrue(body.contains("/foo"));
+        assertTrue(body.contains("Flow: REQUEST"));
+        assertTrue(body.contains("Body: vlinder"));
+        assertTrue(body.contains("Old: 7"));
+        assertTrue(body.contains("New: 7"));
+        assertTrue(body.contains("A: 1"));
+        assertTrue(body.contains("B: 2"));
+    }
+
 
     @BeforeAll
     public static void setupFiles() throws IOException {
@@ -88,7 +162,7 @@ public class TemplateInterceptorTest {
 
         XPathExpression xpath = XPathFactory.newInstance().newXPath().compile("/project/part[2]/title");
         String filled = ((NodeList) xpath.evaluate(DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                .parse(exc.getRequest().getBodyAsStream()), XPathConstants.NODESET)).item(0).getFirstChild().getNodeValue();
+                .parse(exc.getRequest().getBodyAsStream()), NODESET)).item(0).getFirstChild().getNodeValue();
 
         assertEquals("minister", filled.trim());
     }
@@ -108,7 +182,7 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    public void initTest() throws Exception {
+    public void initTest() {
         assertThrows(IllegalStateException.class, () -> {
             ti.setLocation("./template_test.json");
             ti.setTextTemplate("${minister}");
@@ -117,7 +191,7 @@ public class TemplateInterceptorTest {
     }
 
     @Test
-    public void notFoundTemplateException() throws Exception {
+    public void notFoundTemplateException() {
         assertThrows(ResourceRetrievalException.class, () -> {
             ti.setLocation("./not_existent_file");
             ti.init(router);
@@ -164,7 +238,17 @@ public class TemplateInterceptorTest {
         Files.delete(copiedJson);
     }
 
+
+
+    private static void invokeInterceptor(Exchange exchange, String template, String mimeType) throws Exception {
+        TemplateInterceptor interceptor = new TemplateInterceptor();
+        interceptor.setTextTemplate(template);
+        interceptor.setContentType(mimeType);
+        interceptor.init();
+        interceptor.handleRequest(exchange);
+    }
+
     public static void copyFiles(Path orig, Path copy) throws IOException {
-        Files.copy(orig, copy, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(orig, copy, REPLACE_EXISTING);
     }
 }

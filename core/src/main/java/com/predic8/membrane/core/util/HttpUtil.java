@@ -25,6 +25,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class HttpUtil {
@@ -76,7 +77,7 @@ public class HttpUtil {
     public static Response setHTMLErrorResponse(ResponseBuilder responseBuilder, String message, String comment) {
 		Response response = responseBuilder.build();
 		response.setHeader(createHeaders(TEXT_HTML_UTF8));
-		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(UTF_8_CHARSET));
+		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(UTF_8));
 		return response;
 	}
 
@@ -116,10 +117,8 @@ public class HttpUtil {
 		Response response = new Response();
 		response.setStatusCode(400);
 		response.setStatusMessage("Bad request");
-
 		response.setHeader(createHeaders(TEXT_XML_UTF8));
-
-		response.setBodyContent(getFaultSOAPBody(message).getBytes(UTF_8_CHARSET));
+		response.setBodyContent(getFaultSOAPBody(message).getBytes(UTF_8));
 		return response;
 	}
 
@@ -247,10 +246,6 @@ public class HttpUtil {
 		return uri.startsWith("http://") || uri.startsWith("https://");
 	}
 
-	/**
-	 * @param code
-	 * @return
-	 */
 	public static String getMessageForStatusCode(int code) {
 		return switch (code) {
 			case 100 -> "Continue";

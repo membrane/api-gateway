@@ -13,46 +13,37 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
-import java.io.StringWriter;
-import java.lang.reflect.Method;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.balancer.Balancer;
-import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
-import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.PortOccupiedException;
-import com.predic8.membrane.core.util.DateUtil;
-import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+
+import java.io.*;
+import java.lang.reflect.*;
+import java.text.*;
+import java.util.*;
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Handles the dynamic part of the admin console (= requests starting with "/admin/").
@@ -371,7 +362,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h2().text("Node " + params.get("host")+":"+params.get("port")).end();
 				h3().text("Sessions").end();
 				createSessionsTable( BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getSessionsByNode(
@@ -864,11 +855,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Response respond(String page) {
-		return createResponse(200, "OK", page.getBytes(Constants.UTF_8_CHARSET), MimeType.TEXT_HTML_UTF8);
+		return createResponse(200, "OK", page.getBytes(UTF_8), TEXT_HTML_UTF8);
 	}
 
-	private Response redirect(String ctrl, String action, String query, String relativeRootPath) throws Exception {
-		return createResponse(302, "Found", null, MimeType.TEXT_HTML_UTF8,
+	private Response redirect(String ctrl, String action, String query, String relativeRootPath) {
+		return createResponse(302, "Found", null, TEXT_HTML_UTF8,
 				Header.LOCATION, relativeRootPath + AdminPageBuilder.createHRef(ctrl, action, query));
 	}
 

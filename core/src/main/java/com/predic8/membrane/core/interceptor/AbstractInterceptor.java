@@ -14,18 +14,21 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.util.EnumSet;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
-import com.predic8.membrane.core.rules.Rule;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class AbstractInterceptor implements Interceptor {
+
+	private static final Logger log = LoggerFactory.getLogger(AbstractInterceptor.class.getName());
 
 	protected String name = this.getClass().getName();
 
@@ -130,5 +133,22 @@ public class AbstractInterceptor implements Interceptor {
 
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
+	}
+
+	public static Message getMessage(Exchange exc, Interceptor.Flow flow) {
+		return switch (flow) {
+			case REQUEST -> exc.getRequest();
+			case RESPONSE -> {
+				if (exc.getResponse() != null)
+					yield exc.getResponse();
+				Response response = Response.ok().build();
+				exc.setResponse(response);
+				yield response;
+			}
+			default -> {
+				log.info("Should never happen!");
+				yield null;
+			}
+		};
 	}
 }
