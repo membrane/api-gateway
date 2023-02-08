@@ -49,6 +49,7 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathAnalyze
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLElementFinderTest;
+import com.predic8.membrane.core.interceptor.xmlprotection.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientTest;
 import com.predic8.membrane.core.magic.MagicTest;
@@ -118,7 +119,8 @@ import org.junit.platform.suite.api.*;
 		JavascriptInterceptor.class,
 		MimeTypeTest.class,
 		MessageBytesTest.class,
-		RegExReplaceInterceptorTest.class
+		RegExReplaceInterceptorTest.class,
+		XMLProtectorTest.class
 })
 @SelectPackages("com.predic8.membrane.core.openapi")
 public class UnitTests {

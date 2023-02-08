@@ -1,0 +1,15 @@
+<destinations xmlns:gsp='http://groovy.codehaus.org/2005/gsp'>
+
+    <gsp:scriptlet>def answer = 42;</gsp:scriptlet>
+    <answer><gsp:expression>answer</gsp:expression></answer>
+
+    <gsp:scriptlet>
+        import groovy.xml.XmlSlurper
+        def xml = new XmlSlurper().parseText(body)
+    </gsp:scriptlet>
+
+    <gsp:scriptlet>xml.children().each { </gsp:scriptlet>
+        <destination><gsp:expression>it</gsp:expression></destination>
+    <gsp:scriptlet> } </gsp:scriptlet>
+
+</destinations>

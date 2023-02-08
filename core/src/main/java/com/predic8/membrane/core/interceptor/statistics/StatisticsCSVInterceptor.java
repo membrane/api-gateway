@@ -13,25 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.HashMap;
-import java.util.Map;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.apache.commons.text.*;
+import org.slf4j.*;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import java.io.*;
+import java.util.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.ExchangesUtil;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Writes statistics (time, status code, hostname, URI, etc.) about exchanges passing through into a CSV
@@ -42,13 +33,13 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="statisticsCSV")
 public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(StatisticsCSVInterceptor.class
+	private static final Logger log = LoggerFactory.getLogger(StatisticsCSVInterceptor.class
 			.getName());
 
 	// maps all fileName objects used by instances of this class to themselves.
 	// used to get unique String instances of the same file name
 	// (when two instances use the same file name)
-	private static final Map<String, String> fileNames = new HashMap<String, String>();
+	private static final Map<String, String> fileNames = new HashMap<>();
 
 	// the file name of the log file; at the same time a lock guarding the lock file
 	private String fileName;
@@ -67,9 +58,8 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	private void writeExchange(Exchange exc) throws Exception {
 		synchronized(fileName) {
-			FileOutputStream fos = new FileOutputStream(fileName, true);
-			try {
-				OutputStreamWriter w = new OutputStreamWriter(fos, Constants.UTF_8_CHARSET);
+			try(FileOutputStream fos = new FileOutputStream(fileName, true)) {
+				OutputStreamWriter w = new OutputStreamWriter(fos, UTF_8);
 
 				writeCSV(ExchangesUtil.getStatusCode(exc), w);
 				writeCSV(ExchangesUtil.getTime(exc), w);
@@ -85,8 +75,6 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 				writeCSV(ExchangesUtil.getTimeDifference(exc), w);
 				writeNewLine(w);
 				w.flush();
-			} finally {
-				fos.close();
 			}
 		}
 	}
@@ -115,8 +103,12 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 			log.debug("creating csv file at " + csvFile.getAbsolutePath());
 
 			if (csvFile.getParentFile() != null) {
+
+				//noinspection ResultOfMethodCallIgnored
 				csvFile.getParentFile().mkdirs();
 			}
+
+			//noinspection ResultOfMethodCallIgnored
 			csvFile.createNewFile();
 
 			if (!csvFile.canWrite())
@@ -141,9 +133,8 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	private void writeHeaders() throws Exception {
 		synchronized(fileName) {
-			FileOutputStream fos = new FileOutputStream(fileName, true);
-			try {
-				OutputStreamWriter w = new OutputStreamWriter(fos, Constants.UTF_8_CHARSET);
+			try(FileOutputStream fos = new FileOutputStream(fileName, true)) {
+				OutputStreamWriter w = new OutputStreamWriter(fos, UTF_8);
 
 				writeCSV("Status Code", w);
 				writeCSV("Time", w);
@@ -159,8 +150,6 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 				writeCSV("Duration", w);
 				writeNewLine(w);
 				w.flush();
-			} finally {
-				fos.close();
 			}
 		}
 	}
@@ -169,5 +158,4 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Logs access statistics into the CSV-based file " + StringEscapeUtils.escapeHtml4(fileName) + " .";
 	}
-
 }

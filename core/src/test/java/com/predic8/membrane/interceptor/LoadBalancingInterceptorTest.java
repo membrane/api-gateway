@@ -13,41 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.util.List;
-
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLUtil;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.services.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.integration.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
-import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
-import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
-import com.predic8.membrane.integration.Http11Test;
+import java.net.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Objects.*;
+import static org.apache.http.params.HttpProtocolParams.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LoadBalancingInterceptorTest {
 
@@ -69,9 +56,9 @@ public class LoadBalancingInterceptorTest {
 				"POST", ".*", 2000), "thomas-bayer.com", 80);
 		sp1.getInterceptors().add(new AbstractInterceptor(){
 			@Override
-			public Outcome handleResponse(Exchange exc) throws Exception {
+			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add("Connection", "close");
-				return Outcome.CONTINUE;
+				return CONTINUE;
 			}
 		});
 		sp1.getInterceptors().add(mockInterceptor1);
@@ -84,9 +71,9 @@ public class LoadBalancingInterceptorTest {
 				"POST", ".*", 3000), "thomas-bayer.com", 80);
 		sp2.getInterceptors().add(new AbstractInterceptor(){
 			@Override
-			public Outcome handleResponse(Exchange exc) throws Exception {
+			public Outcome handleResponse(Exchange exc) {
 				exc.getResponse().getHeader().add("Connection", "close");
-				return Outcome.CONTINUE;
+				return CONTINUE;
 			}
 		});
 		sp2.getInterceptors().add(mockInterceptor2);
@@ -123,8 +110,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testGetDestinationURLWithHostname()
-			throws MalformedURLException, URISyntaxException {
+	public void testGetDestinationURLWithHostname() throws URISyntaxException {
 		doTestGetDestinationURL(
 				"http://localhost/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
@@ -132,7 +118,7 @@ public class LoadBalancingInterceptorTest {
 
 	@Test
 	public void testGetDestinationURLWithoutHostname()
-			throws MalformedURLException, URISyntaxException {
+			throws URISyntaxException {
 		doTestGetDestinationURL("/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
@@ -150,8 +136,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
-				HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 
 		PostMethod vari = getPostMethod();
 		int status = client.executeMethod(vari);
@@ -204,10 +189,10 @@ public class LoadBalancingInterceptorTest {
 	private PostMethod getPostMethod() {
 		PostMethod post = new PostMethod(
 				"http://localhost:3054/axis2/services/BLZService");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass()
-				.getResourceAsStream("/getBank.xml")));
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "");
+		post.setRequestEntity(new InputStreamRequestEntity(requireNonNull(this.getClass()
+				.getResourceAsStream("/getBank.xml"))));
+		post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+		post.setRequestHeader(SOAP_ACTION, "");
 
 		return post;
 	}
@@ -217,7 +202,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
+		client.getParams().setParameter(PROTOCOL_VERSION,
 				HttpVersion.HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
@@ -245,7 +230,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
+		client.getParams().setParameter(PROTOCOL_VERSION,
 				HttpVersion.HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
@@ -256,11 +241,11 @@ public class LoadBalancingInterceptorTest {
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(1, mockInterceptor2.getCount());
 
-		((ServiceProxy)service1.getRuleManager().getRules().get(0)).getInterceptors().add(0, new AbstractInterceptor(){
+		service1.getRuleManager().getRules().get(0).getInterceptors().add(0, new AbstractInterceptor(){
 			@Override
-			public Outcome handleRequest(Exchange exc) throws Exception {
+			public Outcome handleRequest(Exchange exc) {
 				exc.setResponse(Response.internalServerError().build());
-				return Outcome.ABORT;
+				return ABORT;
 			}
 		});
 
@@ -274,7 +259,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testByThreadStrategy() throws Exception {
+	public void testByThreadStrategy() {
 		balancingInterceptor.setDispatchingStrategy(byThreadStrategy);
 	}
 }

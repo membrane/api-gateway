@@ -1,0 +1,5 @@
+GET http://localhost:2000/text?name=Joe
+
+###
+
+GET http://localhost:2000/variables?name=Joe

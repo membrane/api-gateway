@@ -5,21 +5,24 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 					    
 	<router>
-		<serviceProxy name="echo" port="2050">
+
+		<api port="2000">
 			<request>
 				<xpathExtractor>
-					<property name="name" xpath="jobs/@user"/>
+					<property name="fn" xpath="person/@firstname"/>
 				</xpathExtractor>
-				<template contentType="text/plain">Dear ${name}, unfortunately our service is currently not available.</template>
+				<template>Buenas Noches, ${fn}sito!</template>
 			</request>
-			<response>
-				<groovy>
-					exc.setResponse(Response.ok(exc.request.getBodyAsStringDecoded()).build())
-					RETURN
-				</groovy>
-			</response>
-			<target url="http://localhost:5000/hello"/>
-		</serviceProxy>
+			<return statusCode="200" contentType="text/plain"/> <!-- To forward to backend use target below instead of return -->
+			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->
+		</api>
+
+		<api port="2001">
+			<request>
+				<template location="template.xml"/>
+			</request>
+			<return statusCode="200"/>
+		</api>
 	
 	</router>
 	

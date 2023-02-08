@@ -19,8 +19,8 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HeaderTest {
@@ -57,25 +57,25 @@ public class HeaderTest {
 	public void testGetCharsetNull() {
 		Header header = new Header();
 		header.setContentType(TEXT_XML);
-		assertEquals(UTF_8, header.getCharset());
+		assertEquals(UTF_8.name(), header.getCharset());
 	}
 
 	@Test
 	public void testStringCharset() {
 		Header header = new Header();
 		header.setContentType("text/xml ;charset=\"UTF-8\"");
-		assertEquals(UTF_8, header.getCharset());
+		assertEquals(UTF_8.name(), header.getCharset());
 	}
 
 	@Test
 	public void testGetCharsetCTNull() {
-		assertEquals(UTF_8, new Header().getCharset());
+		assertEquals(UTF_8.name(), new Header().getCharset());
 	}
 
 	@Test
 	public void testGetCharset() {
 		header.setContentType("text/xml; charset=utf-8");
-		assertEquals("utf-8", header.getCharset());
+		assertEquals(UTF_8.name(), header.getCharset());
 	}
 
 	@ParameterizedTest

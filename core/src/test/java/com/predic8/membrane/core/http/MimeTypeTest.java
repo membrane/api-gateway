@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.http;
 
+import jakarta.mail.internet.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
@@ -37,5 +39,12 @@ public class MimeTypeTest {
     @ValueSource(strings = {"xml","xhtml","svg"})
     void isXML(String subtype) {
         assertTrue(MimeType.isXML(  "foo/" + subtype),subtype);
+    }
+
+    @Test
+    void parameters() throws ParseException {
+        ContentType ct = new ContentType("text/xml; charset=utf-8");
+        ParameterList pl = ct.getParameterList();
+        System.out.println("pl = " + pl.get("charset").toUpperCase());
     }
 }

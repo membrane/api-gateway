@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -29,9 +30,9 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
+
 
 /**
  * @description Converts REST requests into SOAP messages.
@@ -172,7 +173,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 			return Outcome.CONTINUE;
 
 		if (log.isDebugEnabled())
-			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8_CHARSET));
+			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8));
 
 		exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
 				transform(getBodySource(exc)));
@@ -185,6 +186,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
 		return Outcome.CONTINUE;
 	}
+
 
 	private static final MediaType[] supportedTypes = convertStringsToMediaType(new String[] { TEXT_XML, APPLICATION_JSON_UTF8 });
 

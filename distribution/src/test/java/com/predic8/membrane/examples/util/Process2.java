@@ -303,16 +303,18 @@ public class Process2 implements AutoCloseable {
 		ProcessBuilder pb = new ProcessBuilder(getKillCommand(ps));
 		//pb.redirectInput(Redirect.PIPE).redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE);
 
+		sleep(50); // Quickfix, sometimes Membrane gets terminated before the test is over
+
 		//System.out.println("Killing process " + ps.pid);
 		// wait for killer to complete
 		Process killer = pb.start();
 		ProcessStuff killerStuff = new ProcessStuff(killer);
 		//killerStuff.watchers.add(new ConsoleLogger());
 		killerStuff.startOutputWatchers();
-		killerStuff.waitFor(10000);
+		killerStuff.waitFor(60000);
 
 		// wait for membrane to terminate
-		ps.waitFor(10000);
+		ps.waitFor(60000);
 	}
 
 	private static ArrayList<String> getKillCommand(ProcessStuff ps) {
@@ -345,7 +347,7 @@ public class Process2 implements AutoCloseable {
 				//noinspection BusyWait
 				sleep(200);
 			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				currentThread().interrupt();
 			}
 		}
 	}

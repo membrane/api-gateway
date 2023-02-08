@@ -17,7 +17,8 @@ package com.predic8.membrane.core.http.cookie;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import java.nio.charset.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageBytesTest {
@@ -44,7 +45,7 @@ public class MessageBytesTest {
     @NotNull
     private static MessageBytes getMessageBytes(String s) {
         MessageBytes b1 = MessageBytes.newInstance();
-        byte[] buf = s.getBytes(ISO_8859_1_CHARSET);
+        byte[] buf = s.getBytes(StandardCharsets.ISO_8859_1);
         b1.setBytes(buf, 0, buf.length);
         return b1;
     }

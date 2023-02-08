@@ -14,29 +14,24 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.schema.Schema;
+import org.apache.commons.text.*;
+import org.slf4j.*;
+
+import javax.xml.transform.*;
+import javax.xml.transform.stream.*;
+import javax.xml.validation.*;
+import java.io.*;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
-	private static Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class.getName());
 
 	public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);
@@ -51,7 +46,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	protected List<Validator> createValidators() throws Exception {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
 		sf.setResourceResolver(resourceResolver.toLSResourceResolver());
-		List<Validator> validators = new ArrayList<Validator>();
+		List<Validator> validators = new ArrayList<>();
 		log.debug("Creating validator for schema: " + location);
 		StreamSource ss = new StreamSource(resourceResolver.resolve(location));
 		ss.setSystemId(location);
@@ -63,7 +58,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	}
 
 	@Override
-	protected Source getMessageBody(InputStream input) throws Exception {
+	protected Source getMessageBody(InputStream input) {
 		return new StreamSource(input);
 	}
 
@@ -72,7 +67,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 		return Response.
 				badRequest().
 				contentType(MimeType.TEXT_XML_UTF8).
-				body(("<error>" + StringEscapeUtils.escapeXml(message) + "</error>").getBytes(Constants.UTF_8_CHARSET)).
+				body(("<error>" + StringEscapeUtils.escapeXml11(message) + "</error>").getBytes(UTF_8)).
 				build();
 	}
 

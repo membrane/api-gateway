@@ -16,25 +16,18 @@ package com.predic8.membrane.core.http;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
-import com.predic8.membrane.core.transport.http.NoResponseException;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.text.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.CRLF;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class Response extends Message {
 
@@ -49,7 +42,7 @@ public class Response extends Message {
 
 
 	public static class ResponseBuilder {
-		private Response res = new Response();
+		private final Response res = new Response();
 
 		public Response build() {
 			return res;
@@ -71,7 +64,7 @@ public class Response extends Message {
 		 * Supposes UTF8 encoding.
 		 */
 		public ResponseBuilder body(String msg) {
-			res.setBodyContent(msg.getBytes(Constants.UTF_8_CHARSET));
+			res.setBodyContent(msg.getBytes(UTF_8));
 			return this;
 		}
 
@@ -79,8 +72,6 @@ public class Response extends Message {
 		 * Used for returning JSON from JavascriptInterceptor
 		 * JSON MAP
 		 *
-		 * @param map
-		 * @return
 		 * @throws JsonProcessingException
 		 */
 		public ResponseBuilder body(Map<String,Object> map) throws JsonProcessingException {
@@ -94,7 +85,7 @@ public class Response extends Message {
 			return this;
 		}
 
-		private class BodyCompleteMessageObserver extends AbstractMessageObserver implements NonRelevantBodyObserver{
+		private static class BodyCompleteMessageObserver extends AbstractMessageObserver implements NonRelevantBodyObserver{
 
 			private final InputStream stream;
 
@@ -158,7 +149,7 @@ public class Response extends Message {
 		return ok().contentType(TEXT_HTML_UTF8).body(msg);
 	}
 
-	private static String SERVER_HEADER = Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org";
+	private static final String SERVER_HEADER = PRODUCT_NAME + " " + VERSION + ". See http://membrane-soa.org";
 
 	public static ResponseBuilder ok() {
 		return ResponseBuilder.newInstance().
@@ -472,7 +463,7 @@ public class Response extends Message {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		Response result = this.createMessageSnapshot(new Response(), bodyUpdatedCallback, strategy, limit);
 
 		result.setStatusCode(this.getStatusCode());

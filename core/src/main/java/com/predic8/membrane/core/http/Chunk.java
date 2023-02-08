@@ -15,15 +15,16 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import com.predic8.membrane.core.*;
 
-import com.predic8.membrane.core.Constants;
+import java.io.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * A chunk of a HTTP message body.
  *
- * Also see http://en.wikipedia.org/wiki/Chunked_transfer_encoding .
+ * Also see <a href="http://en.wikipedia.org/wiki/Chunked_transfer_encoding">Chunked Transfer Encoding</a> .
  *
  * Used (independently of whether "Transfer-Encoding: chunked" is actually
  * present) to store the message body's data.
@@ -66,7 +67,7 @@ public class Chunk {
 	public String toString() {
 		if (content == null)
 			return "";
-		return new String(content, Constants.UTF_8_CHARSET);
+		return new String(content, UTF_8);
 	}
 
 	public int copyChunk(byte[] raw, int destPos) {
@@ -80,7 +81,7 @@ public class Chunk {
 	}
 
 	private byte[] getLengthBytes() {
-		return Long.toHexString(getLength()).getBytes(Constants.UTF_8_CHARSET);
+		return Long.toHexString(getLength()).getBytes(UTF_8);
 	}
 
 }
