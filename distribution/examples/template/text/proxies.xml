@@ -1,0 +1,58 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+					    
+	<router>
+
+		<!--
+
+        Simple text template with a variable
+
+        -->
+		<api port="2000">
+			<path>/text</path>
+			<request>
+				<template contentType="text/plain">Hello ${params.name}!</template>
+			</request>
+			<return statusCode="200"/> <!-- To send message to backend use target below instead of return -->
+			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->
+		</api>
+
+		<!--
+
+        Shows variable usage
+
+        -->
+		<api port="2000">
+			<path>/variables</path>
+			<request>
+				<template contentType="text/plain" pretty="yes"><![CDATA[
+                Header:
+                <% for(h in header.allHeaderFields) { %>
+                   <%= h.headerName %> : <%= h.value %>
+                <% } %>
+
+                Exchange: <%= exc %>
+                Flow: <%= flow %>
+                Message.version: <%= message.version %>
+                Body: <%= body %>
+
+                Exchange Properties:
+                <% for(p in props) { %>
+                   Key: <%= p.key %> : <%= p.value %>
+                <% } %>
+
+                Query Params:
+                <% for(p in params) { %>
+                    <%= p.key %> : <%= p.value %>
+                <% } %>
+            ]]></template>
+			</request>
+			<return statusCode="200"/>
+		</api>
+	
+	</router>
+	
+</spring:beans>

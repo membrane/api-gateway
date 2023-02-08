@@ -13,10 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.cookie;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Adapter between Tomcat classes ({@link ServerCookie} etc.) and Membrane
@@ -24,7 +23,7 @@ import com.predic8.membrane.core.http.Request;
  */
 public class MimeHeaders {
 
-	private final HeaderField header[];
+	private final HeaderField[] header;
 
 	public MimeHeaders(Header header) {
 		this.header = header.getAllHeaderFields();
@@ -42,7 +41,7 @@ public class MimeHeaders {
 
 	public MessageBytes getValue(int pos) {
 		MessageBytes b = MessageBytes.newInstance();
-		byte buf[] = header[pos].getValue().getBytes(Constants.ISO_8859_1_CHARSET);
+		byte[] buf = header[pos].getValue().getBytes(ISO_8859_1);
 		b.setBytes(buf, 0, buf.length);
 		return b;
 	}

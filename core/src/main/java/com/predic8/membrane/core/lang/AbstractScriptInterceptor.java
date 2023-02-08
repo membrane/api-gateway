@@ -31,7 +31,7 @@ import java.util.function.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 
 public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
@@ -41,6 +41,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
     protected String src;
     protected Function<Map<String, Object>, Object> script;
+    private boolean scriptAccessesJson;
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -57,6 +58,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return;
         if (src.isEmpty())
             return;
+        scriptAccessesJson = src.contains("json");
         initInternal();
     }
 
@@ -65,7 +67,9 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     @SuppressWarnings("rawtypes")
     protected Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, IOException, ClassNotFoundException {
 
-        Object res = script.apply(getParameterBindings(exc, flow));
+        Message msg = getMessage(exc, flow);
+
+        Object res = script.apply(getParameterBindings(exc, flow, msg));
 
         if (res instanceof Outcome outcome) {
             return outcome;
@@ -81,7 +85,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
 
         if(res instanceof Map m) {
-            Message msg = getMessage(exc, flow);
             msg.getHeader().setContentType(APPLICATION_JSON);
             msg.setBodyContent(om.writeValueAsBytes(m));
             return CONTINUE;
@@ -90,7 +93,6 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         // Graal code @Todo move to a Graal class
         if(res instanceof Value value) {
             Map m = value.as(Map.class);
-            Message msg = getMessage(exc, flow);
             msg.getHeader().setContentType(APPLICATION_JSON);
             msg.setBodyContent(om.writeValueAsBytes(m));
             return CONTINUE;
@@ -100,13 +102,19 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             if (s.equals("undefined")) {
                 return CONTINUE;
             }
-            Message msg = getMessage(exc,flow);
             msg.getHeader().setContentType(TEXT_HTML);
             msg.setBodyContent(om.writeValueAsBytes(s));
             return CONTINUE;
         }
 
         return CONTINUE;
+    }
+
+    private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
+        HashMap<String, Object> parameterBindings = createParameterBindings(exc, msg, flow, scriptAccessesJson && msg.isJSON());
+        addOutcomeObjects(parameterBindings);
+        parameterBindings.put("spring", router.getBeanFactory());
+        return parameterBindings;
     }
 
     @Override
@@ -120,54 +128,11 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
     }
 
-    private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow) {
-        HashMap<String, Object> parameters = new HashMap<>();
-        parameters.put("exc", exc);
-        parameters.put("flow", flow);
-
-        Message msg = getMessage(exc, flow);
-        if (msg != null) {
-            parameters.put("message", msg);
-            parameters.put("header", msg.getHeader());
-            parameters.put("body", msg.getBody());
-            if (msg.isJSON() && src.contains("json")) {
-                try {
-                    log.info("Parsing body as JSON for scripting plugins");
-                    parameters.put("json",om.readValue(readInputStream(msg.getBodyAsStream()),Map.class));  // @Todo not with Javascript
-                } catch (Exception e) {
-                    log.warn("Can't parse body as JSON: " + e);
-                }
-            }
-        }
-        parameters.put("spring", router.getBeanFactory());
-        parameters.put("properties", exc.getProperties());
-
-        addOutcomeObjects(parameters);
-        return parameters;
-    }
-
     private void addOutcomeObjects(HashMap<String, Object> parameters) {
         parameters.put("Outcome", Outcome.class);
         parameters.put("RETURN", RETURN);
         parameters.put("CONTINUE", CONTINUE);
         parameters.put("ABORT", Outcome.ABORT);
-    }
-
-    protected Message getMessage(Exchange exc, Flow flow) {
-        return switch (flow) {
-            case REQUEST -> exc.getRequest();
-            case RESPONSE -> {
-                if (exc.getResponse() != null)
-                    yield exc.getResponse();
-                Response response = Response.ok().build();
-                exc.setResponse(response);
-                yield response;
-            }
-            default -> {
-                log.info("Should never happen!");
-                yield null;
-            }
-        };
     }
 
     public String getSrc() {

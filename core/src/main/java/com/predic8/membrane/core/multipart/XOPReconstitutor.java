@@ -14,46 +14,30 @@
 
 package com.predic8.membrane.core.multipart;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.fileupload.*;
+import org.slf4j.*;
 
-import javax.annotation.concurrent.ThreadSafe;
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-import javax.xml.namespace.QName;
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.annotation.concurrent.*;
+import javax.mail.internet.*;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
+import java.util.*;
 
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import org.apache.commons.fileupload.MultipartStream;
-import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.MessageUtil;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Reassemble a multipart XOP message (see
- * http://en.wikipedia.org/wiki/XML-binary_Optimized_Packaging and
- * http://www.w3.org/TR/xop10/ ) into one stream (that can be used for schema
+ * <a href="http://en.wikipedia.org/wiki/XML-binary_Optimized_Packaging">XML-binary_Optimized_Packaging</a> and
+ * <a href="http://www.w3.org/TR/xop10/">xop10</a> ) into one stream (that can be used for schema
  * validation, for example).
  */
 @ThreadSafe
 public class XOPReconstitutor {
-	private static Logger log = LoggerFactory.getLogger(XOPReconstitutor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(XOPReconstitutor.class.getName());
 	private static final String XOP_NAMESPACE_URI = "http://www.w3.org/2004/08/xop/include";
 
 	private final XMLInputFactory xmlInputFactory;
@@ -64,7 +48,7 @@ public class XOPReconstitutor {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
-	public InputStream reconstituteIfNecessary(Message message) throws XMLStreamException, IOException {
+	public InputStream reconstituteIfNecessary(Message message) throws IOException {
 		try {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
 			if (reconstitutedMessage != null)
@@ -84,7 +68,7 @@ public class XOPReconstitutor {
 	/**
 	 * @return reassembled SOAP message or null if message is not SOAP or not multipart
 	 */
-	public Message getReconstitutedMessage(Message message) throws ParseException, MalformedStreamException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
+	public Message getReconstitutedMessage(Message message) throws ParseException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
 		ContentType contentType = message.getHeader().getContentTypeObject();
 		if (contentType == null || contentType.getPrimaryType() == null)
 			return null;
@@ -116,8 +100,7 @@ public class XOPReconstitutor {
 
 		Message m = new Message(){
 			@Override
-			protected void parseStartLine(InputStream in) throws IOException,
-			EndOfStreamException {
+			protected void parseStartLine(InputStream in) {
 				throw new RuntimeException("not implemented.");
 			}
 
@@ -142,10 +125,10 @@ public class XOPReconstitutor {
 
 	@SuppressWarnings("deprecation")
 	private HashMap<String, Part> split(Message message, String boundary)
-			throws IOException, EndOfStreamException, MalformedStreamException {
-		HashMap<String, Part> parts = new HashMap<String, Part>();
+			throws IOException, EndOfStreamException {
+		HashMap<String, Part> parts = new HashMap<>();
 
-		MultipartStream multipartStream = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(Constants.UTF_8_CHARSET));
+		MultipartStream multipartStream = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
 		boolean nextPart = multipartStream.skipPreamble();
 		while(nextPart) {
 			Header header = new Header(multipartStream.readHeaders());
@@ -185,8 +168,7 @@ public class XOPReconstitutor {
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
 
-				if (event instanceof StartElement) {
-					StartElement start = (StartElement)event;
+				if (event instanceof StartElement start) {
 					if (XOP_NAMESPACE_URI.equals(start.getName().getNamespaceURI()) &&
 							start.getName().getLocalPart().equals("Include")) {
 						String href = start.getAttributeByName(new QName("href")).getValue();
@@ -202,8 +184,7 @@ public class XOPReconstitutor {
 						xopIncludeOpen = true;
 						continue;
 					}
-				} else if (event instanceof EndElement) {
-					EndElement start = (EndElement)event;
+				} else if (event instanceof EndElement start) {
 					if (XOP_NAMESPACE_URI.equals(start.getName().getNamespaceURI()) &&
 							start.getName().getLocalPart().equals("Include") &&
 							xopIncludeOpen) {

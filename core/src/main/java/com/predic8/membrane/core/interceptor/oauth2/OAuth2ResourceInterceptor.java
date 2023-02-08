@@ -33,7 +33,8 @@ import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.*;
+
 import org.slf4j.*;
 
 import java.io.*;
@@ -44,7 +45,11 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+
 import static java.util.concurrent.TimeUnit.*;
+
+import static java.nio.charset.StandardCharsets.*;
+
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -63,6 +68,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
+
     private final Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, MINUTES).build();
     private final Cache<String,Exchange> stateToRedirect = CacheBuilder.newBuilder().expireAfterWrite(1, MINUTES).build();
 
@@ -458,7 +464,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         for (int i = 0; i < params.length; i += 2)
             model.put((String) params[i], params[i + 1]);
 
-        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
+        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(UTF_8));
     }
 
     public void handleLoginRequest(Exchange exc) throws Exception {

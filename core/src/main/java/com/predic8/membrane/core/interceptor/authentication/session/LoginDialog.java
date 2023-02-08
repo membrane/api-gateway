@@ -28,6 +28,7 @@ import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.*;
+
 import org.apache.commons.text.*;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.*;
@@ -39,6 +40,7 @@ import java.util.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile.*;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.*;
+
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
@@ -117,7 +119,8 @@ public class LoginDialog {
 				log.error(arg0.key);
 			}
 		});
-		Map<String, Object> model = new HashMap<String, Object>();
+
+		Map<String, Object> model = new HashMap<>();
 		model.put("action", escapeXml11(basePath + path));
 		model.put("target", escapeXml11(target));
 		if(page == 0)
@@ -131,7 +134,7 @@ public class LoginDialog {
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
 
-		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
+		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(UTF_8));
 	}
 
 	public void handleLoginRequest(Exchange exc) throws Exception {

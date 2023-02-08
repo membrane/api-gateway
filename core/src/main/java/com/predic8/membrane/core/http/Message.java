@@ -19,6 +19,7 @@ import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.nio.charset.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
@@ -94,8 +95,6 @@ public abstract class Message {
 			throw new RuntimeException("Could not get body as stream", e);
 		}
 	}
-
-
 
 	/**
 	 * <p>Returns the logical body content.</p>
@@ -235,7 +234,7 @@ public abstract class Message {
 	 * to char-by-char, we use ISO-8859-1 for output.
 	 */
 	public void writeStartLine(OutputStream out) throws IOException {
-		out.write(getStartLine().getBytes(ISO_8859_1_CHARSET));
+		out.write(getStartLine().getBytes(StandardCharsets.ISO_8859_1));
 	}
 
 	public abstract String getStartLine();

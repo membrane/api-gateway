@@ -22,6 +22,9 @@ import com.predic8.membrane.examples.tests.oauth2.*;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
 import com.predic8.membrane.examples.tests.openapi.*;
 import com.predic8.membrane.examples.tests.ssl.*;
+import com.predic8.membrane.examples.tests.template.json.*;
+import com.predic8.membrane.examples.tests.template.text.*;
+import com.predic8.membrane.examples.tests.template.xml.*;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
@@ -39,7 +42,6 @@ import org.junit.platform.suite.api.Suite;
  */
 @Suite
 @SelectClasses({
-
 
         GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
 
@@ -108,7 +110,11 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLSoapTest.class,
 
         // Not an example test. Maybe we can find a better location?
-        OpenAPIConfigErrorTest.class
+        OpenAPIConfigErrorTest.class,
+
+        TextTemplateTest.class,
+        JsonTemplateTest.class,
+        XMLTemplateTest.class
 })
 public class ExampleTests {
 }

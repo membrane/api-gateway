@@ -15,7 +15,7 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.Constants;
+import static com.predic8.membrane.core.Constants.*;
 
 public class HeaderField {
 
@@ -63,12 +63,7 @@ public class HeaderField {
 
 	@Override
 	public String toString(){
-		StringBuilder buf = new StringBuilder();
-		buf.append(headerName.toString());
-		buf.append(": ");
-		buf.append(value);
-		buf.append(Constants.CRLF);
-		return buf.toString();
+		return headerName.toString() + ": " + value + CRLF;
 	}
 
 	public int estimateHeapSize() {
