@@ -12,48 +12,41 @@
  */
 package com.predic8.membrane.core.interceptor.oauth2server;
 
-import com.floreysoft.jmte.Engine;
-import com.floreysoft.jmte.ErrorHandler;
-import com.floreysoft.jmte.message.ErrorMessage;
-import com.floreysoft.jmte.message.ParseException;
-import com.floreysoft.jmte.token.Token;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.AccountBlocker;
-import com.predic8.membrane.core.interceptor.authentication.session.TokenProvider;
-import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
-import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.interceptor.session.Session;
+import com.floreysoft.jmte.*;
+import com.floreysoft.jmte.message.*;
+import com.floreysoft.jmte.token.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
+import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.*;
 
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URLEncoder;
+import java.io.*;
+import java.net.*;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class LoginDialog2 {
-    private static Logger log = LoggerFactory.getLogger(com.predic8.membrane.core.interceptor.authentication.session.LoginDialog.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(com.predic8.membrane.core.interceptor.authentication.session.LoginDialog.class.getName());
 
-    private String path, message;
-    private boolean exposeUserCredentialsToSession;
+    private final String path;
+    private final String message;
+    private final boolean exposeUserCredentialsToSession;
     private URIFactory uriFactory;
 
     private final UserDataProvider userDataProvider;
@@ -115,22 +108,22 @@ public class LoginDialog2 {
                 log.error(arg0.key);
             }
         });
-        Map pages = ImmutableMap
+        Map<Object, Object> pages = ImmutableMap
                 .builder()
                 .put(0, "login")
                 .put(1, "token")
                 .put(2, "consent")
                 .build();
 
-        Map<String, Object> model = new HashMap<String, Object>();
-        model.put("action", StringEscapeUtils.escapeXml(path)+ pages.get(page));
-        model.put("target", StringEscapeUtils.escapeXml(target));
+        Map<String, Object> model = new HashMap<>();
+        model.put("action", StringEscapeUtils.escapeXml11(path)+ pages.get(page));
+        model.put("target", StringEscapeUtils.escapeXml11(target));
         model.put(pages.get(page).toString(),true);
 
         for (int i = 0; i < params.length; i+=2)
             model.put((String)params[i], params[i+1]);
 
-        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
+        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(UTF_8));
     }
 
     public void handleLoginRequest(Exchange exc) throws Exception {
@@ -194,12 +187,12 @@ public class LoginDialog2 {
                     }
 
 
-                    Map<String,String> conv = s.get().entrySet().stream().collect(Collectors.toMap(k -> k.getKey(), v -> v.getValue().toString(), (m1,m2) -> m1));
+                    Map<String,String> conv = s.get().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().toString(), (m1, m2) -> m1));
                     if(tokenProvider != null)
                         tokenProvider.requestToken(conv);
 
-                    s.get().keySet().stream().forEach(conv::remove);
-                    conv.entrySet().stream().forEach(e -> s.put(e.getKey(),e.getValue()));
+                    s.get().keySet().forEach(conv::remove);
+                    conv.entrySet().forEach(e -> s.put(e.getKey(),e.getValue()));
 
                     s.authorize(username);
                 } else {
@@ -214,7 +207,7 @@ public class LoginDialog2 {
                     String token = URLParamUtil.getParams(uriFactory, exc, ERROR).get("token");
                     try {
                         if(tokenProvider != null)
-                            tokenProvider.verifyToken(s.get().entrySet().stream().collect(Collectors.toMap(k -> k.getKey(), v -> v.getValue().toString(), (m1,m2) -> m1)), token);
+                            tokenProvider.verifyToken(s.get().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().toString(), (m1, m2) -> m1)), token);
                     } catch (NoSuchElementException e) {
                         List<String> params = Lists.newArrayList("error", "INVALID_TOKEN");
                         if (accountBlocker != null)
@@ -302,7 +295,7 @@ public class LoginDialog2 {
     }
 
     private Map<String, String> doubleStringArrayToMap(String[] strings) {
-        HashMap<String, String> result = new HashMap<String, String>();
+        HashMap<String, String> result = new HashMap<>();
         for(String string : strings) {
             String[] str = string.split(" ");
             for(int i = 2; i < str.length;i++)
@@ -323,13 +316,13 @@ public class LoginDialog2 {
     private String[] prepareStringArray(String[] array){
         if(array[0].isEmpty())
             return new String[0];
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         for(int i = 0; i < array.length;i+=2)
             result.add(array[i] + ": " + array[i+1]);
         return result.toArray(new String[0]);
     }
 
-    private String[] decodeClaimsFromSession(Session s) throws UnsupportedEncodingException {
+    private String[] decodeClaimsFromSession(Session s) {
         if(s.get(ConsentPageFile.CLAIM_DESCRIPTIONS) != null) {
             String[] claims = s.<String>get(ConsentPageFile.CLAIM_DESCRIPTIONS).split(" ");
             for (int i = 0; i < claims.length; i++)
@@ -339,7 +332,7 @@ public class LoginDialog2 {
         return new String[0];
     }
 
-    private String[] decodeScopesFromSession(Session s) throws UnsupportedEncodingException {
+    private String[] decodeScopesFromSession(Session s) {
         if(s.get(ConsentPageFile.SCOPE_DESCRIPTIONS) != null) {
             String[] scopes = s.<String>get(ConsentPageFile.SCOPE_DESCRIPTIONS).split(" ");
             for (int i = 0; i < scopes.length; i++)
@@ -349,13 +342,13 @@ public class LoginDialog2 {
         return new String[0];
     }
 
-    public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {
+    public Outcome redirectToLogin(Exchange exc) throws UnsupportedEncodingException {
         exc.setResponse(Response.
-                redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).
+                redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), UTF_8), false).
                 dontCache().
                 body("").
                 build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 
 }

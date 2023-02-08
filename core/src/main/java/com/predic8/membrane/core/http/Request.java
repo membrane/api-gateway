@@ -14,27 +14,20 @@
 
 package com.predic8.membrane.core.http;
 
-import com.google.common.collect.Sets;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
-import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.*;
+import java.util.*;
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.Constants.CRLF;
+import static com.predic8.membrane.core.http.Header.*;
 
 public class Request extends Message {
 
@@ -125,14 +118,7 @@ public class Request extends Message {
 
 	@Override
 	public String getStartLine() {
-		StringBuilder buf = new StringBuilder();
-		buf.append(method);
-		buf.append(" ");
-		buf.append(uri);
-		buf.append(" HTTP/");
-		buf.append(version);
-		buf.append(Constants.CRLF);
-		return buf.toString();
+		return method + " " + uri + " HTTP/" + version + CRLF;
 	}
 
 	@Override
@@ -202,7 +188,7 @@ public class Request extends Message {
 	 * the same targetConnection is used again for further requests.
 	 */
 	public boolean isBindTargetConnectionToIncoming() {
-		String auth = header.getFirstValue(Header.AUTHORIZATION);
+		String auth = header.getFirstValue(AUTHORIZATION);
 		return auth != null && (auth.startsWith("NTLM") || auth.startsWith("Negotiate"));
 	}
 
@@ -215,7 +201,7 @@ public class Request extends Message {
 	}
 
 	@Override
-	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		Request result = this.createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
 
 		result.setUri(this.getUri());
@@ -225,17 +211,17 @@ public class Request extends Message {
 	}
 
 	public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
-		out.write(getMethod().getBytes(Constants.UTF_8));
+		out.write(getMethod().getBytes(StandardCharsets.UTF_8));
 		out.write(10);
 		for (HeaderField hf : header.getAllHeaderFields())
-			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(Constants.UTF_8));
+			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(StandardCharsets.UTF_8));
 		out.write(10);
 		body.write(new PlainBodyTransferrer(out), retainBody);
 	}
 
 
 	public static class Builder {
-		private Request req;
+		private final Request req;
 		private String fullURL;
 
 		public Builder() {
@@ -271,7 +257,7 @@ public class Request extends Message {
 		}
 
 		public Builder contentType(String value) {
-			req.getHeader().add(Header.CONTENT_TYPE, value);
+			req.getHeader().add(CONTENT_TYPE, value);
 			return this;
 		}
 
@@ -293,8 +279,8 @@ public class Request extends Message {
 		public Builder body(long contentLength, InputStream body) throws IOException {
 			req.body = new Body(body, contentLength);
 			Header header = req.getHeader();
-			header.removeFields(Header.CONTENT_ENCODING);
-			header.removeFields(Header.TRANSFER_ENCODING);
+			header.removeFields(CONTENT_ENCODING);
+			header.removeFields(TRANSFER_ENCODING);
 			header.setContentLength(contentLength);
 			return this;
 		}

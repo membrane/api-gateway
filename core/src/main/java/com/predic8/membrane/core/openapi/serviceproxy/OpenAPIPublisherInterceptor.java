@@ -24,7 +24,6 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import groovy.text.*;
 import io.swagger.v3.parser.*;
-import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
@@ -35,13 +34,10 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.util.ErrorUtil.*;
 import static java.lang.Integer.*;
 import static java.lang.String.*;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
     public static final String HTML_UTF_8 = "text/html; charset=utf-8";
     private final ObjectMapper om = new ObjectMapper();
@@ -146,22 +142,13 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleSwaggerUi(Exchange exc) {
-        try {
-            exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(getOpenAPIiD(exc))).build());
-            return RETURN;
-        } catch (Exception e) {
-            createAndSetErrorResponse(exc,400,"Path %s does not contain an id of an OpenAPI document. Please go back to /api-doc".formatted(exc.getRequest().getUri()));
-            return RETURN;
-        }
-    }
-
-    private static String getOpenAPIiD(Exchange exc) {
         Matcher m = patternUI.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
-            log.warn("Cannot parse Id from URL: "+ exc.getRequest().getUri());
-            throw new RuntimeException("Cannot parse Id from URL: " + exc.getRequest().getUri());
+            exc.setResponse(Response.ok().contentType("application/json").body("Please specify an Id").build());
+            return RETURN;
         }
-        return m.group(1);
+        exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(m.group(1))).build());
+        return RETURN;
     }
 
     private String renderOverviewTemplate() {

@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 @NotThreadSafe
 public class Relocator {
-	private static Logger log = LoggerFactory.getLogger(Relocator.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
 
 	private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
@@ -52,7 +52,7 @@ public class Relocator {
 	private final XMLEventWriter writer;
 	private final PathRewriter pathRewriter;
 
-	private Map<QName, String> relocatingAttributes = new HashMap<QName, String>();
+	private Map<QName, String> relocatingAttributes = new HashMap<>();
 
 	private boolean wsdlFound;
 
@@ -119,8 +119,7 @@ public class Relocator {
 	}
 
 	public void relocate(InputStreamReader isr) throws Exception {
-		XMLEventReader parser = XMLInputFactory.newInstance()
-				.createXMLEventReader(isr);
+		XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(isr);
 
 		while (parser.hasNext()) {
 			writer.add(getEvent(parser));
@@ -168,7 +167,6 @@ public class Relocator {
 		return event.asStartElement().getName();
 	}
 
-	@SuppressWarnings("unchecked")
 	private XMLEvent replace(XMLEvent event, String attribute) {
 		StartElement startElement = event.asStartElement();
 		return fac.createStartElement(startElement.getName(),

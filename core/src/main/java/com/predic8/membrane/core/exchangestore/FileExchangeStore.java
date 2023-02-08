@@ -14,32 +14,23 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.io.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.io.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.rules.StatisticCollector;
-import com.predic8.membrane.core.util.TextUtil;
+import java.io.*;
+import java.text.*;
+import java.util.Timer;
+import java.util.*;
+import java.util.concurrent.atomic.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * The output file is UTF-8 encoded.
@@ -47,14 +38,14 @@ import com.predic8.membrane.core.util.TextUtil;
 @MCElement(name="fileExchangeStore")
 public class FileExchangeStore extends AbstractExchangeStore {
 
-	private static Logger log = LoggerFactory.getLogger(FileExchangeStore.class
+	private static final Logger log = LoggerFactory.getLogger(FileExchangeStore.class
 			.getName());
 
-	private static AtomicInteger counter = new AtomicInteger();
+	private static final AtomicInteger counter = new AtomicInteger();
 
 	private static final String DATE_FORMAT = "'h'HH'm'mm's'ss'ms'SSS";
 
-	private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<DateFormat>();
+	private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<>();
 
 	private static final String separator = System
 			.getProperty("file.separator");
@@ -63,13 +54,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private String dir;
 
-	private File directory;
-
 	private boolean raw = false;
 	private boolean saveBodyOnly = false;
 	private int maxDays = -1;
-
-	private Timer oldFilesCleanupTimer;
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		try {
@@ -88,8 +75,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 		StringBuilder buf = getDirectoryNameBuffer(exc.getTime());
 
-		directory = new File(buf.toString());
+		File directory = new File(buf.toString());
+
+		//noinspection ResultOfMethodCallIgnored
 		directory.mkdirs();
+
 		if (directory.exists() && directory.isDirectory()) {
 			buf.append(separator);
 			buf.append(getDateFormat().format(exc.getTime().getTime()));
@@ -102,19 +92,17 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			buf2.append("Response.msg");
 			try {
 				switch (flow) {
-				case REQUEST:
-					writeFile(exc.getRequest(), buf.toString(), body);
-					break;
-				case ABORT:
-				case RESPONSE:
-					if (exc.getResponse() != null)
-						writeFile(exc.getResponse(), buf2.toString(), body);
+					case REQUEST -> writeFile(exc.getRequest(), buf.toString(), body);
+					case ABORT, RESPONSE -> {
+						if (exc.getResponse() != null)
+							writeFile(exc.getResponse(), buf2.toString(), body);
+					}
 				}
 			} catch (Exception e) {
 				log.error("{}",e, e);
 			}
 		} else {
-			log.error("Directory does not exists or file is not a directory: "+ buf.toString());
+			log.error("Directory does not exists or file is not a directory: " + buf);
 		}
 
 	}
@@ -142,10 +130,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private void writeFile(Message msg, String path, AbstractBody body) throws Exception {
 		File file = new File(path);
+
+		//noinspection ResultOfMethodCallIgnored
 		file.createNewFile();
 
-		FileOutputStream os = new FileOutputStream(file);
-		try {
+		try(FileOutputStream os = new FileOutputStream(file)) {
 			if (raw || !saveBodyOnly) {
 				msg.writeStartLine(os);
 				msg.getHeader().write(os);
@@ -159,12 +148,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 					os.write(TextUtil.formatXML(
 							new InputStreamReader(body.getContentAsStream(), msg
 									.getHeader().getCharset()))
-							.getBytes(Constants.UTF_8));
+							.getBytes(UTF_8));
 				} else
 					IOUtils.copy(body.getContentAsStream(), os);
 			}
-		} finally {
-			os.close();
 		}
 	}
 
@@ -173,7 +160,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			return; // don't do anything if this feature is deactivated
 		}
 
-		oldFilesCleanupTimer = new Timer("Clean up old log files", true);
+		Timer oldFilesCleanupTimer = new Timer("Clean up old log files", true);
 
 		// schedule first run for the night
 		Calendar firstRun = Calendar.getInstance();
@@ -210,10 +197,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 		ArrayList<File> folders3 = new DepthWalker(3).getDirectories(new File(dir));
 
-		ArrayList<File> deletion = new ArrayList<File>();
+		ArrayList<File> deletion = new ArrayList<>();
 
 		for (File f : folders3) {
-
 			int day =  Integer.parseInt(f.getName());
 			int mon =  Integer.parseInt(f.getParentFile().getName());
 			int year = Integer.parseInt(f.getParentFile().getParentFile().getName());

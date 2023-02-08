@@ -14,37 +14,27 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.http2.Http2Client;
-import com.predic8.membrane.core.transport.http2.Http2ClientPool;
-import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.TimerManager;
-import com.predic8.membrane.core.util.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.http2.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import javax.annotation.*;
+import javax.annotation.concurrent.*;
+import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
+import java.nio.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static java.lang.Boolean.TRUE;
+import static java.lang.Boolean.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
@@ -442,7 +432,7 @@ public class HttpClient implements AutoCloseable {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			exc.getRequest().writeStartLine(baos);
 			exc.getRequest().getHeader().write(baos);
-			msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
+			msg.append(ISO_8859_1.decode(ByteBuffer.wrap(baos.toByteArray())));
 
 			if (e != null)
 				log.debug("{}",msg, e);

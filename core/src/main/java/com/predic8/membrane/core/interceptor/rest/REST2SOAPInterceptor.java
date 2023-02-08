@@ -13,38 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
+import org.springframework.http.*;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.events.XMLEvent;
-import javax.xml.transform.stream.StreamSource;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-import org.springframework.http.MediaType;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Converts REST requests into SOAP messages.
@@ -152,9 +139,9 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		}
 	}
 
-	private static Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
 
-	private List<Mapping> mappings = new ArrayList<Mapping>();
+	private List<Mapping> mappings = new ArrayList<>();
 	private Boolean isSOAP12;
 
 	public REST2SOAPInterceptor() {
@@ -185,13 +172,13 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 			return Outcome.CONTINUE;
 
 		if (log.isDebugEnabled())
-			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), Constants.UTF_8_CHARSET));
+			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8));
 
 		exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
 				transform(getBodySource(exc)));
 		Header header = exc.getResponse().getHeader();
 		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(MimeType.TEXT_XML_UTF8);
+		header.setContentType(TEXT_XML_UTF8);
 
 		XML2HTTP.unwrapMessageIfNecessary(exc.getResponse());
 		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), mapping, exc.getResponse(), exc.getStringProperties());
@@ -199,9 +186,9 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		return Outcome.CONTINUE;
 	}
 
-	private static MediaType[] supportedTypes = Header.convertStringsToMediaType(new String[] { MimeType.TEXT_XML, MimeType.APPLICATION_JSON_UTF8 });
+	private static final MediaType[] supportedTypes = Header.convertStringsToMediaType(new String[] { TEXT_XML, APPLICATION_JSON_UTF8 });
 
-	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response, Map<String, String> properties) throws IOException, Exception {
+	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response, Map<String, String> properties) throws Exception {
 		boolean inputIsXml = response.isXML();
 		int wantedType = requestHeader.getBestAcceptedType(supportedTypes);
 		if (inputIsXml && wantedType >= 1) {
@@ -237,7 +224,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
 		Header header = exc.getRequest().getHeader();
 		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(isSOAP12(exc) ? MimeType.APPLICATION_SOAP : MimeType.TEXT_XML_UTF8);
+		header.setContentType(isSOAP12(exc) ? APPLICATION_SOAP : TEXT_XML_UTF8);
 
 		exc.setProperty("mapping", mapping);
 		setServiceEndpoint(exc, mapping);
@@ -266,7 +253,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
 	private void setJSONContentType(Header header) {
 		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(MimeType.APPLICATION_JSON_UTF8);
+		header.setContentType(APPLICATION_JSON_UTF8);
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {
