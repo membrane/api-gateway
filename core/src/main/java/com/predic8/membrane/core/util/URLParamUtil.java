@@ -22,6 +22,7 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -50,10 +51,9 @@ public class URLParamUtil {
 	}
 
 
-	private static boolean hasNoFormParams(Exchange exc) throws IOException {
-		return !"application/x-www-form-urlencoded".equals(exc.getRequest()
-				.getHeader().getContentType())
-				|| exc.getRequest().isBodyEmpty();
+	public static boolean hasNoFormParams(Exchange exc) throws IOException {
+		// @TODO turn around in hasFormParams!
+		return !isWWWFormUrlEncoded(exc.getRequest().getHeader().getContentType()) || exc.getRequest().isBodyEmpty();
 	}
 
 
@@ -82,8 +82,8 @@ public class URLParamUtil {
 	 * Background:
 	 * Note that according to the original RFC 3986 Section 3.4, there is no defined format of the query string.
 	 *
-	 * HTML5 defines in https://html.spec.whatwg.org/#form-submission how HTML forms should be serialized.
-	 * The URLSearchParams class behaviour is defined in https://url.spec.whatwg.org/#concept-urlsearchparams-list
+	 * HTML5 defines in <a href="https://html.spec.whatwg.org/#form-submission">form-submission</a> how HTML forms should be serialized.
+	 * The URLSearchParams class behaviour is defined in <a href="https://url.spec.whatwg.org/#concept-urlsearchparams-list">URLSearchParams</a>
 	 * where handling of parameters with the same key is supported.
 	 */
 	public static Map<String, String> parseQueryString(String query, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) {

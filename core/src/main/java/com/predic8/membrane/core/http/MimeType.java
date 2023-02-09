@@ -107,8 +107,12 @@ public class MimeType {
     }
 
     public static boolean isWWWFormUrlEncoded(String mediaType) {
+        return isMediaType(APPLICATION_X_WWW_FORM_URLENCODED, mediaType);
+    }
+
+    public static boolean isMediaType(String expectedType, String actualType) {
         try {
-            return new ContentType(mediaType).match(APPLICATION_X_WWW_FORM_URLENCODED);
+            return new ContentType(actualType).match(expectedType);
         } catch (ParseException e) {
             // ignore
         }

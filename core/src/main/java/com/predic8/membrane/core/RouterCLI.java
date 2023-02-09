@@ -107,13 +107,15 @@ public class RouterCLI {
     }
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-        String membraneHome = System.getenv(MEMBRANE_HOME);
+
         String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
         try(InputStream ignored = rm.resolve(try1)) {
             return try1;
         } catch (Exception e) {
             // ignored
         }
+
+        String membraneHome = System.getenv(MEMBRANE_HOME);
         String try2 = null;
         if (membraneHome != null) {
             try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);

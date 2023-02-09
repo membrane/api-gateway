@@ -34,6 +34,7 @@ import com.predic8.membrane.core.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.*;
+
 import org.slf4j.*;
 
 import java.io.*;
@@ -44,7 +45,11 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+
+import static java.util.concurrent.TimeUnit.*;
+
 import static java.nio.charset.StandardCharsets.*;
+
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -63,8 +68,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
-    private final Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
-    private final Cache<String,Exchange> stateToRedirect = CacheBuilder.newBuilder().expireAfterWrite(1,TimeUnit.MINUTES).build();
+
+    private final Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, MINUTES).build();
+    private final Cache<String,Exchange> stateToRedirect = CacheBuilder.newBuilder().expireAfterWrite(1, MINUTES).build();
 
     private int revalidateTokenAfter = -1;
 
@@ -536,11 +542,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if(!csrfMatch)
                     throw new RuntimeException("CSRF token mismatch.");
 
-
                 Exchange originalRequest = stateToOriginalUrl.get(param.get("security_token"));
-                String url = originalRequest.getRequest().getUri();
-                if (url == null)
-                    url = "/";
                 stateToOriginalUrl.remove(state2);
 
                 if (log.isDebugEnabled())
@@ -698,5 +700,4 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     public String getShortDescription() {
         return "Client of the oauth2 authentication process.\n" + statistics.toString();
     }
-
 }

@@ -8,9 +8,11 @@
 
         <serviceProxy name="Resource Service" port="2000">
 
+            <log/>
+
             <!-- Protects a resource with OAuth2 - blocks on invalid login -->
             <oauth2Resource publicURL="http://localhost:2000/">
-                <membrane src="http://localhost:7000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
+                <membrane src="http://localhost:8000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
             </oauth2Resource>
 
             <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
