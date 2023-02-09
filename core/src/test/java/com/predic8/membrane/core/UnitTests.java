@@ -120,6 +120,7 @@ import org.junit.platform.suite.api.*;
 		MimeTypeTest.class,
 		MessageBytesTest.class,
 		RegExReplaceInterceptorTest.class,
+		URLParamUtilTest.class,
 		XMLProtectorTest.class
 })
 @SelectPackages("com.predic8.membrane.core.openapi")

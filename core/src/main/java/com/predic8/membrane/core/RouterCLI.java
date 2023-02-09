@@ -99,7 +99,7 @@ public class RouterCLI {
         System.err.println();
         switch (getOS()) {
             case WINDOWS -> printHowToFindPortWindows();
-            case LINUX, MAC -> printHowToFindPortLinux();
+            case LINUX, MAC -> printHowToFindPortLinux(poe.getPort());
         }
         System.err.println("""       
                 2. Configure Membrane to use a different port. Propably in the conf/proxies.xml
@@ -113,10 +113,11 @@ public class RouterCLI {
                 """);
     }
 
-    private static void printHowToFindPortLinux() {
+    private static void printHowToFindPortLinux(int port) {
         System.err.println("""
                 e.g.:
-                > lsof -i :2000
+                > lsof -i :""" + port + """
+                
                 COMMAND    PID    USER  TYPE
                 java     80910 predic8  IPv6  TCP  (LISTEN)
                 > kill -9 80910
@@ -171,13 +172,15 @@ public class RouterCLI {
 
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-        String membraneHome = System.getenv(MEMBRANE_HOME);
+
         String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
-        try(InputStream is = rm.resolve(try1)) {
+        try(InputStream ignored = rm.resolve(try1)) {
             return try1;
         } catch (Exception e) {
             // ignored
         }
+
+        String membraneHome = System.getenv(MEMBRANE_HOME);
         String try2 = null;
         if (membraneHome != null) {
             try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);

@@ -18,7 +18,7 @@ getToken(){
 }
 
 sendRequestToTarget(){
-    targetResult=$(curl -v-H "$authHeader" $target)
+    targetResult=$(curl -v -H "$authHeader" $target)
     echo $targetResult
 }
 
