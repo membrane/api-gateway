@@ -14,22 +14,67 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
+
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.lang.Thread.*;
+import static org.joda.time.Duration.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.predic8.membrane.core.http.*;
-import org.joda.time.Duration;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.interceptor.Outcome;
-
 public class RateLimitInterceptorTest {
+
+	private final static ObjectMapper om = new ObjectMapper();
+
+	@ParameterizedTest
+	@ValueSource( strings = {"properties[a]","path","json[foo]","method","path + method","headers.host","exchange.remoteAddrIp"})
+	void simplePropertyExpression(String expression) throws Exception {
+
+		Exchange exc1 = prepareRequest("aaa");
+		Exchange exc2 = prepareRequest("bbb");
+
+		RateLimitInterceptor interceptor = new RateLimitInterceptor(standardSeconds(10),3);
+		interceptor.setKeyExpression(expression);
+		interceptor.init();
+
+		assertEquals(CONTINUE, interceptor.handleRequest(exc1));
+		assertEquals(CONTINUE, interceptor.handleRequest(exc2));
+		assertEquals(CONTINUE, interceptor.handleRequest(exc1));
+		assertEquals(CONTINUE, interceptor.handleRequest(exc2));
+		assertEquals(CONTINUE, interceptor.handleRequest(exc1));
+		assertEquals(CONTINUE, interceptor.handleRequest(exc2));
+		assertEquals(RETURN, interceptor.handleRequest(exc1));
+		assertEquals(RETURN, interceptor.handleRequest(exc2));
+	}
+
+	@NotNull
+	private static Exchange prepareRequest(String value) throws URISyntaxException, JsonProcessingException {
+		Exchange exc = new Request.Builder()
+				.method(value)
+				.url(new URIFactory(),"/" + value)
+				.header("Host",value)
+				.buildExchange();
+		exc.setProperty("a",value);
+		exc.setRemoteAddrIp(value);
+
+		Map<String,String> m = new HashMap<>();
+		m.put("foo",value);
+		exc.getRequest().setBodyContent(om.writeValueAsBytes(m));
+		return exc;
+	}
 
 	@Test
 	public void testHandleRequestRateLimit1Second() throws Exception {
@@ -40,7 +85,7 @@ public class RateLimitInterceptorTest {
 
 		int tryLimit = 16;
 		int rateLimitSeconds = 1;
-		RateLimitInterceptor rli = new RateLimitInterceptor(Duration.standardSeconds(rateLimitSeconds), tryLimit);
+		RateLimitInterceptor rli = new RateLimitInterceptor(standardSeconds(rateLimitSeconds), tryLimit);
 
 		for (int i = 0; i < tryLimit; i++) {
 			assertEquals(CONTINUE, rli.handleRequest(exc));
@@ -48,7 +93,7 @@ public class RateLimitInterceptorTest {
 
 		assertEquals(RETURN, rli.handleRequest(exc));
 
-		Thread.sleep(1000);
+		sleep(1000);
 		for (int i = 0; i < tryLimit; i++) {
 			assertEquals(CONTINUE, rli.handleRequest(exc));
 		}
@@ -60,14 +105,9 @@ public class RateLimitInterceptorTest {
 	@Test
 	public void testHandleRequestRateLimit1SecondConcurrency() throws Exception
 	{
-		final Exchange exc = new Exchange(null);
-		exc.setRequest(new Request.Builder().header("accept","*/*").build());
-		exc.setResponse(ResponseBuilder.newInstance().build());
-		exc.setRemoteAddrIp("192.168.1.100");
-
 		int tryLimit = 16;
 		int rateLimitSeconds = 1;
-		final RateLimitInterceptor rli = new RateLimitInterceptor(Duration.standardSeconds(rateLimitSeconds), tryLimit);
+		final RateLimitInterceptor rli = new RateLimitInterceptor(standardSeconds(rateLimitSeconds), tryLimit);
 		
 		ArrayList<Thread> threads = new ArrayList<>();
 		final AtomicInteger continues = new AtomicInteger();
@@ -76,7 +116,7 @@ public class RateLimitInterceptorTest {
 		{
 			Thread t = new Thread(() -> {
 				try {
-					Outcome out = rli.handleRequest(exc);
+					Outcome out = rli.handleRequest(getExchange());
 					if(out == CONTINUE)
 					{
 						continues.incrementAndGet();
@@ -85,7 +125,8 @@ public class RateLimitInterceptorTest {
 					{
 						returns.incrementAndGet();
 					}
-				} catch (Exception ignored) {
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			});
 			threads.add(t);
@@ -97,5 +138,14 @@ public class RateLimitInterceptorTest {
 		}
 		assertEquals(16, continues.get());
 		assertEquals(984, returns.get());
+	}
+
+	@NotNull
+	private static Exchange getExchange() {
+		final Exchange exc = new Exchange(null);
+		exc.setRequest(new Request.Builder().header("accept","*/*").build());
+		exc.setResponse(ResponseBuilder.newInstance().build());
+		exc.setRemoteAddrIp("192.168.1.100");
+		return exc;
 	}
 }

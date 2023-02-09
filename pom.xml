@@ -78,8 +78,7 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>17</javac.source>
 		<javac.target>17</javac.target>
-		<jackson.databind.version>2.14.1</jackson.databind.version>
-		<jackson.version>2.14.1</jackson.version>
+		<jackson.version>2.14.2</jackson.version>
 		<spring.version>6.0.3</spring.version>
 		<slf4j.version>2.0.6</slf4j.version>
 		<log4j.version>2.19.0</log4j.version>
@@ -183,7 +182,7 @@
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
 				<artifactId>jackson-databind</artifactId>
-				<version>${jackson.databind.version}</version>
+				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.logging.log4j</groupId>
@@ -583,7 +582,6 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
 
 	<profiles>
 		<profile>

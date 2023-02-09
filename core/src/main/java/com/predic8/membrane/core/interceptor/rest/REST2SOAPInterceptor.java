@@ -33,6 +33,7 @@ import java.util.regex.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 
+
 /**
  * @description Converts REST requests into SOAP messages.
  * @topic 8. SOAP based Web Services
@@ -177,7 +178,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
 				transform(getBodySource(exc)));
 		Header header = exc.getResponse().getHeader();
-		header.removeFields(Header.CONTENT_TYPE);
+		header.removeFields(CONTENT_TYPE);
 		header.setContentType(TEXT_XML_UTF8);
 
 		XML2HTTP.unwrapMessageIfNecessary(exc.getResponse());
@@ -186,7 +187,8 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		return Outcome.CONTINUE;
 	}
 
-	private static final MediaType[] supportedTypes = Header.convertStringsToMediaType(new String[] { TEXT_XML, APPLICATION_JSON_UTF8 });
+
+	private static final MediaType[] supportedTypes = convertStringsToMediaType(new String[] { TEXT_XML, APPLICATION_JSON_UTF8 });
 
 	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response, Map<String, String> properties) throws Exception {
 		boolean inputIsXml = response.isXML();
@@ -223,7 +225,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
 		Header header = exc.getRequest().getHeader();
-		header.removeFields(Header.CONTENT_TYPE);
+		header.removeFields(CONTENT_TYPE);
 		header.setContentType(isSOAP12(exc) ? APPLICATION_SOAP : TEXT_XML_UTF8);
 
 		exc.setProperty("mapping", mapping);
@@ -233,7 +235,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	private boolean isSOAP12(AbstractExchange exc) {
 		if (isSOAP12 != null)
 			return isSOAP12;
-		isSOAP12 = Constants.SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
+		isSOAP12 = SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
 		return isSOAP12;
 	}
 
@@ -252,7 +254,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	}
 
 	private void setJSONContentType(Header header) {
-		header.removeFields(Header.CONTENT_TYPE);
+		header.removeFields(CONTENT_TYPE);
 		header.setContentType(APPLICATION_JSON_UTF8);
 	}
 

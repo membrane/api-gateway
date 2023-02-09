@@ -14,22 +14,20 @@
 
 package com.predic8.membrane.core;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.config.spring.CheckableBeanFactory.*;
+import com.predic8.membrane.core.exceptions.*;
+import org.slf4j.*;
+import org.springframework.context.support.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.support.AbstractRefreshableApplicationContext;
-
-import com.predic8.membrane.core.config.spring.CheckableBeanFactory;
-import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfigurationException;
+import java.io.*;
+import java.util.*;
 
 public class HotDeploymentThread extends Thread {
 
-	private static Logger log = LoggerFactory.getLogger(HotDeploymentThread.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(HotDeploymentThread.class.getName());
 
-	private List<HotDeploymentThread.FileInfo> files = new ArrayList<HotDeploymentThread.FileInfo>();
+	private final List<HotDeploymentThread.FileInfo> files = new ArrayList<>();
 	protected AbstractRefreshableApplicationContext applicationContext;
 	private boolean reloading;
 
@@ -72,6 +70,7 @@ public class HotDeploymentThread extends Thread {
 		while (!isInterrupted()) {
 			try {
 				while (!configurationChanged()) {
+					//noinspection BusyWait
 					sleep(1000);
 				}
 
@@ -92,15 +91,17 @@ public class HotDeploymentThread extends Thread {
 				// InterruptedException clears interrupt flag. see javadoc Thread.interrupt();
 				// So reset it.
 				interrupt();
-			} catch (Exception e) {
-				log.error("Could not redeploy.", e);
+			} 
+			catch (Exception e) {
+				log.error("Could not redeploy, there are errors in the configuration.");
+				SpringConfigurationErrorHandler.handleRootCause(e,log);
 				updateLastModified();
 			}
 		}
 		log.debug("Spring Hot Deployment Thread interrupted.");
 	}
 
-	protected void reload() throws Exception {
+	protected void reload() {
 		synchronized(this) {
 			reloading = true;
 		}
