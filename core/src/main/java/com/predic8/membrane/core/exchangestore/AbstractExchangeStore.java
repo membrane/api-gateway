@@ -14,24 +14,25 @@
 
 package com.predic8.membrane.core.exchangestore;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.rules.*;
+import org.apache.commons.lang3.*;
+import org.slf4j.*;
+
 import java.util.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.ComparatorFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.getClientAddr;
+import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.*;
+import static com.predic8.membrane.core.util.ComparatorFactory.*;
 
 public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchangeStore.class);
 
-	protected Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<IExchangesStoreListener>();
+	protected Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
 
 	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangesStoreListeners.add(viewer);
@@ -100,43 +101,76 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		synchronized (getAllExchangesAsList()) {
 			lm = getLastModified();
 
-			exchanges = new ArrayList<AbstractExchange>(
-					getAllExchangesAsList());
+			exchanges = new ArrayList<>(getAllExchangesAsList());
 		}
 
 		exchanges = filter(params, useXForwardedForAsClientAddr, exchanges);
 
-		Collections.sort(
-				exchanges,
-				ComparatorFactory.getAbstractExchangeComparator(params.getString("sort", "time"),
-						params.getString("order", "desc")));
+		exchanges.sort(getAbstractExchangeComparator(params.getString("sort", "time"),
+				params.getString("order", "desc")));
 
-		int offset = params.getInt("offset", 0);
-		int max = params.getInt("max", exchanges.size());
+		return new ExchangeQueryResult(getPaginated(params, exchanges, params.getInt("offset", 0)), exchanges.size(), lm);
+	}
 
-		final int total = exchanges.size();
-		final List<AbstractExchange> paginated = exchanges.subList(offset,
-				Math.min(offset + max, exchanges.size()));
+	private static List<AbstractExchange> getPaginated(QueryParameter params, List<AbstractExchange> exchanges, int offset) {
+		return exchanges.subList(offset,
+				Math.min(offset + getMax(params, exchanges), exchanges.size()));
+	}
 
-		return new ExchangeQueryResult(paginated, total, lm);
+	protected static int getMax(QueryParameter params, List<AbstractExchange> exchanges) {
+		return params.getInt("max", exchanges.size());
 	}
 
 	private List<AbstractExchange> filter(QueryParameter params,
 										  boolean useXForwardedForAsClientAddr,
-										  List<AbstractExchange> exchanges) throws Exception {
+										  List<AbstractExchange> exchanges) {
 
-		List<AbstractExchange> list = new ArrayList<AbstractExchange>();
+		// Speed up search
+		boolean noStatuscode = !params.has("statuscode");
+		boolean noClient = !params.has("client");
+		boolean noServer = !params.has("server");
+		boolean noMethod = !params.has("method");
+		boolean noReqcontenttypn = !params.has("reqcontenttype");
+		boolean noRespcontenttype = !params.has("respcontenttype");
+		boolean noSearch =  !params.has("search");
+		int statuscode = -1;
+		if (!noStatuscode)
+			 statuscode = params.getInt("statuscode");
+		String client = params.getString("client");
+		String server = params.getString("server");
+		String method = params.getString("method");
+		String reqcontenttype = params.getString("reqcontenttype");
+		String respcontenttype = params.getString("respcontenttype");
+		String search = params.getString("search");
+
+		List<AbstractExchange> list = new ArrayList<>();
 		for (AbstractExchange e : exchanges) {
 			if ((!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
-					(!params.has("statuscode") || e.getResponse().getStatusCode() == params.getInt("statuscode")) &&
-					(!params.has("client") || getClientAddr(useXForwardedForAsClientAddr, e).equals(params.getString("client"))) &&
-					(!params.has("server") || params.getString("server").equals(e.getServer()==null?"":e.getServer())) &&
-					(!params.has("method") || e.getRequest().getMethod().equals(params.getString("method"))) &&
-					(!params.has("reqcontenttype") || e.getRequestContentType().equals(params.getString("reqcontenttype"))) &&
-					(!params.has("respcontenttype") || e.getResponseContentType().equals(params.getString("respcontenttype")))) {
+				(noStatuscode || e.getResponse().getStatusCode() == statuscode) &&
+				(noClient || getClientAddr(useXForwardedForAsClientAddr, e).equals(client)) &&
+				(noServer || server.equals(e.getServer() == null?"":e.getServer())) &&
+				(noMethod || e.getRequest().getMethod().equals(method)) &&
+				(noReqcontenttypn || e.getRequestContentType().equals(reqcontenttype)) &&
+				(noRespcontenttype || e.getResponseContentType().equals(respcontenttype)) &&
+				(noSearch || containsString(search,e))
+			) {
 				list.add(e);
 			}
 		}
 		return list;
+	}
+
+	private static boolean containsString(String search, AbstractExchange e) {
+		return bodyContainsString(search, e.getRequest()) || bodyContainsString(search, e.getResponse());
+	}
+
+	private static boolean bodyContainsString(String search, Message msg) {
+		try {
+			if (msg.isBodyEmpty())
+				return false;
+			return StringUtils.containsIgnoreCase(msg.getBodyAsStringDecoded(),search);
+		} catch (Exception e) {
+			return false;
+		}
 	}
 }

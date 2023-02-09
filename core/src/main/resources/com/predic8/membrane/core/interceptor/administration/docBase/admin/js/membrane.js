@@ -384,6 +384,7 @@ $(function() {
         	  addFilterProps('server');
         	  addFilterProps('reqcontenttype');
         	  addFilterProps('respcontenttype');
+			  addFilterProps('search');
 
         	  var queryKey = JSON.stringify(queryData)
         	  if (membrane.lastQuery && queryKey != membrane.lastQuery) {

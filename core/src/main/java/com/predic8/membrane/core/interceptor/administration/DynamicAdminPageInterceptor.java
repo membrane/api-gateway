@@ -13,6 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
+import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
+import static com.predic8.membrane.core.util.HttpUtil.createResponse;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
@@ -90,9 +98,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h1().text(rule.toString()+" ServiceProxy").end();
-				script().raw("$(function() {\r\n" +
-						"					$( \"#subtab\" ).tabs();\r\n" +
-						"				});").end();
+				script().raw("""
+						$(function() {
+							$( "#subtab" ).tabs();
+						});""").end();
 
 				div().id("subtab");
 				ul();
@@ -231,7 +240,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h2().text("Transport").end();
 
 				h3().text("Transport Interceptors").end();
@@ -671,11 +680,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					option(s.isEmpty()?"undefined":s, s, false);
 				}
 				end(2);
+				span().text("Search in body").end()
+				.input().type("text").id("message-filter-search").name("message-filter-search").onkeydown("membrane.onFilterUpdate();").onchange("membrane.onFilterUpdate();").end(2);
+				end();
 				br();
 				createButton("Reset Filter", "calls", null, null);
 				a().id("reload-data-button").classAttr("mb-button").text("Reload data").end();
 				label().forAttr("reload-data-checkbox").checkbox().checked("true").id("reload-data-checkbox").text("Auto Reload").end();
-				end();
 				addMessageText();
 				createMessageStatisticsTable();
 			}
@@ -833,10 +844,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
 				exc.setResponse((Response)m.invoke(this, new Object[] { getParams(exc), getRelativeRootPath(pathQuery) }));
-				return Outcome.RETURN;
+				return RETURN;
 			}
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {

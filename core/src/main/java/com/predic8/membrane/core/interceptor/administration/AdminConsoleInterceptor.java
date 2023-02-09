@@ -13,21 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
-import java.util.Arrays;
-import java.util.List;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.server.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.Header.*;
 
 /**
  * @description Displays up-to-date statistics, recent exchanges and, by default, allows live modification of Membrane's configuration.
@@ -58,8 +53,8 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Outcome result = flowController.invokeRequestHandlers(exc, interceptors);
 
-		if (exc.getRequest().getHeader().getFirstValue(Header.X_REQUESTED_WITH) != null && exc.getResponse() != null)
-			exc.getResponse().getHeader().add(Header.EXPIRES, "-1");
+		if (exc.getRequest().getHeader().getFirstValue(X_REQUESTED_WITH) != null && exc.getResponse() != null)
+			exc.getResponse().getHeader().add(EXPIRES, "-1");
 
 		return result;
 	}
@@ -111,5 +106,4 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		sb.append("admin console.");
 		return sb.toString();
 	}
-
 }
