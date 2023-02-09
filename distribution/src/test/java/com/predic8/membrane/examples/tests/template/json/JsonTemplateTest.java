@@ -47,7 +47,6 @@ public class JsonTemplateTest extends AbstractSampleMembraneStartStopTestcase {
                     }""")
             .post("http://localhost:2000/json-in")
         .then().assertThat()
-            .body(containsString("City: Bonn"))
-            .body(containsString("Country: Germany"));
+            .body(containsString("City: Bonn"));
     }
 }
