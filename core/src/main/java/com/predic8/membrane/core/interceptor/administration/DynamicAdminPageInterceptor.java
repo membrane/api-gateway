@@ -13,14 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
-import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
-import static com.predic8.membrane.core.util.HttpUtil.createResponse;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
@@ -39,6 +31,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
@@ -374,7 +367,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/node/save/?(\\?.*)?")
-	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
@@ -392,7 +385,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/node/up/?(\\?.*)?")
-	public Response handleNodeUpRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeUpRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
@@ -400,7 +393,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/node/takeout/?(\\?.*)?")
-	public Response handleNodeTakeoutRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeTakeoutRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).takeout(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
@@ -408,7 +401,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/node/down/?(\\?.*)?")
-	public Response handleNodeDownRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeDownRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).down(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
@@ -416,7 +409,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/node/delete/?(\\?.*)?")
-	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
@@ -427,7 +420,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/node/reset/?(\\?.*)?")
-	public Response handleNodeResetRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeResetRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port"))).clearCounter();
