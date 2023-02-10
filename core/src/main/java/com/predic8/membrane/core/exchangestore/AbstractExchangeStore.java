@@ -20,13 +20,14 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.rules.*;
-import org.apache.commons.lang3.*;
 import org.slf4j.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.administration.AdminRESTInterceptor.*;
 import static com.predic8.membrane.core.util.ComparatorFactory.*;
+import static java.util.stream.Collectors.*;
+import static org.apache.commons.lang3.StringUtils.*;
 
 public abstract class AbstractExchangeStore implements ExchangeStore {
 
@@ -126,49 +127,92 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 										  List<AbstractExchange> exchanges) {
 
 		// Speed up search
-		boolean noStatuscode = !params.has("statuscode");
 		boolean noClient = !params.has("client");
 		boolean noServer = !params.has("server");
 		boolean noMethod = !params.has("method");
 		boolean noReqcontenttypn = !params.has("reqcontenttype");
 		boolean noRespcontenttype = !params.has("respcontenttype");
 		boolean noSearch =  !params.has("search");
-		int statuscode = -1;
-		if (!noStatuscode)
-			 statuscode = params.getInt("statuscode");
+		boolean noStatuscode = !params.has("statuscode");
+
 		String client = params.getString("client");
 		String server = params.getString("server");
 		String method = params.getString("method");
 		String reqcontenttype = params.getString("reqcontenttype");
 		String respcontenttype = params.getString("respcontenttype");
 		String search = params.getString("search");
+		int statuscode = noStatuscode ? -1 : params.getInt("statuscode");
 
-		List<AbstractExchange> list = new ArrayList<>();
-		for (AbstractExchange e : exchanges) {
-			if ((!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
-				(noStatuscode || e.getResponse().getStatusCode() == statuscode) &&
-				(noClient || getClientAddr(useXForwardedForAsClientAddr, e).equals(client)) &&
-				(noServer || server.equals(e.getServer() == null?"":e.getServer())) &&
-				(noMethod || e.getRequest().getMethod().equals(method)) &&
-				(noReqcontenttypn || e.getRequestContentType().equals(reqcontenttype)) &&
-				(noRespcontenttype || e.getResponseContentType().equals(respcontenttype)) &&
-				(noSearch || containsString(search,e))
-			) {
-				list.add(e);
+		return exchanges.stream().filter(e -> filterExchanges(params,
+				useXForwardedForAsClientAddr,
+				noStatuscode,
+				noClient,
+				noServer,
+				noMethod,
+				noReqcontenttypn, noRespcontenttype,
+				noSearch,
+				statuscode,
+				client,
+				server,
+				method,
+				reqcontenttype,
+				respcontenttype,
+				search, e)
+		).collect(toList()); // Do not simplify cause a mutable list is needed.
+	}
+
+	private static boolean filterExchanges(QueryParameter params, boolean useXForwardedForAsClientAddr, boolean noStatuscode, boolean noClient, boolean noServer, boolean noMethod, boolean noReqcontenttypn, boolean noRespcontenttype, boolean noSearch, int statuscode, String client, String server, String method, String reqcontenttype, String respcontenttype, String search, AbstractExchange e) {
+		return (!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
+			   (noStatuscode || compareStatusCode(statuscode, e)) &&
+			   (noClient || getClientAddr(useXForwardedForAsClientAddr, e).equals(client)) &&
+			   (noServer || server.equals(e.getServer() == null ? "" : e.getServer())) &&
+			   (noMethod || e.getRequest().getMethod().equals(method)) &&
+			   (noReqcontenttypn || e.getRequestContentType().equals(reqcontenttype)) &&
+			   (noRespcontenttype || e.getResponseContentType().equals(respcontenttype)) &&
+			   (noSearch || bodyContains(search, e) || requestHeaderContains(search, e) || responseHeaderContains(search, e));
+	}
+
+	private static boolean compareStatusCode(int statuscode, AbstractExchange e) {
+		if (e.getResponse() == null)
+			return false;
+		return e.getResponse().getStatusCode() == statuscode;
+	}
+
+	protected static boolean pathContains(String search, AbstractExchange e) {
+		return containsIgnoreCase(e.getRequest().getUri(), search);
+	}
+
+	protected static boolean requestHeaderContains(String search, AbstractExchange e) {
+		return headerFieldsContains(search, e.getRequest().getHeader().getAllHeaderFields());
+	}
+
+	protected static boolean responseHeaderContains(String search, AbstractExchange e) {
+		if (e.getResponse() == null)
+			return false;
+		return headerFieldsContains(search, e.getResponse().getHeader().getAllHeaderFields());
+	}
+
+	private static boolean headerFieldsContains(String search, HeaderField[] fields) {
+		for (HeaderField field: fields) {
+			if (containsIgnoreCase(field.getHeaderName().toString(), search)) {
+				return true;
+			}
+			if (containsIgnoreCase(field.getValue(), search)) {
+				return true;
 			}
 		}
-		return list;
+		return false;
 	}
 
-	private static boolean containsString(String search, AbstractExchange e) {
-		return bodyContainsString(search, e.getRequest()) || bodyContainsString(search, e.getResponse());
+	private static boolean bodyContains(String search, AbstractExchange e) {
+		return bodyContains(search, e.getRequest()) || (e.getResponse() != null &&  bodyContains(search, e.getResponse()));
 	}
 
-	private static boolean bodyContainsString(String search, Message msg) {
+	private static boolean bodyContains(String search, Message msg) {
 		try {
 			if (msg.isBodyEmpty())
 				return false;
-			return StringUtils.containsIgnoreCase(msg.getBodyAsStringDecoded(),search);
+			return containsIgnoreCase(msg.getBodyAsStringDecoded(),search);
 		} catch (Exception e) {
 			return false;
 		}

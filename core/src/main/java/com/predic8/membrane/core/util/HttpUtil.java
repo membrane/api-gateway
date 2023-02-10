@@ -189,15 +189,15 @@ public class HttpUtil {
 		return buf.toString();
 	}
 
-	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
-		Response res = new Response();
-		res.setStatusCode(code);
-		res.setStatusMessage(msg);
-		res.setHeader(createHeaders(contentType, headers));
-
-		if (body != null) res.setBodyContent(body);
-		return res;
-	}
+//	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
+//		Response res = new Response();
+//		res.setStatusCode(code);
+//		res.setStatusMessage(msg);
+//		res.setHeader(createHeaders(contentType, headers));
+//
+//		if (body != null) res.setBodyContent(body);
+//		return res;
+//	}
 
 	public static Header createHeaders(String contentType, String... headers) {
 		Header header = new Header();
@@ -211,10 +211,6 @@ public class HttpUtil {
 			header.add(headers[i],headers[i+1]);
 		}
 		return header;
-	}
-
-	public static String getHostName(String destination) throws MalformedURLException {
-		return new URL(destination).getHost();
 	}
 
 	public static String getPathAndQueryString(String dest) throws MalformedURLException {

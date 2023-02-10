@@ -16,8 +16,11 @@ package com.predic8.membrane.core.interceptor.administration;
 
 import java.lang.annotation.*;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
+import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.RetentionPolicy.*;
+
+@Retention(RUNTIME)
+@Target(METHOD)
 public @interface Mapping {
 	String value();
 }

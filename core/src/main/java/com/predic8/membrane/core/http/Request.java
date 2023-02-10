@@ -40,6 +40,7 @@ public class Request extends Message {
 	public static final String METHOD_HEAD = "HEAD";
 	public static final String METHOD_DELETE = "DELETE";
 	public static final String METHOD_PUT = "PUT";
+	@SuppressWarnings("unused")
 	public static final String METHOD_TRACE = "TRACE";
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
@@ -134,6 +135,7 @@ public class Request extends Message {
 		super.createBody(in);
 	}
 
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public boolean isHEADRequest() {
 		return METHOD_HEAD.equals(method);
 	}
@@ -183,7 +185,6 @@ public class Request extends Message {
 
 	/**
 	 * NTLM and SPNEGO authentication schemes authorize HTTP connections, not single requests.
-	 *
 	 * We therefore have to "bind" the targetConnection to the incoming connection to ensure
 	 * the same targetConnection is used again for further requests.
 	 */
@@ -219,6 +220,21 @@ public class Request extends Message {
 		body.write(new PlainBodyTransferrer(out), retainBody);
 	}
 
+	public static Builder get(String url) throws URISyntaxException {
+		return new Builder().get(url);
+	}
+
+	public static Builder put(String url) throws URISyntaxException {
+		return new Builder().put(url);
+	}
+
+	public static Builder post(String url) throws URISyntaxException {
+		return new Builder().post(url);
+	}
+
+	public static Builder delete(String url) throws URISyntaxException {
+		return new Builder().delete(url);
+	}
 
 	public static class Builder {
 		private final Request req;

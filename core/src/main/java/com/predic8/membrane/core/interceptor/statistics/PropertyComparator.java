@@ -19,7 +19,7 @@ import java.util.Comparator;
 public class PropertyComparator<E, T extends Comparable<T>> implements Comparator<E> {
 
 	public interface ValueResolver<E, T> {
-		public T get(E exc);
+		T get(E exc);
 	}
 
 	private final ValueResolver<E, T> vResolver;
@@ -34,7 +34,7 @@ public class PropertyComparator<E, T extends Comparable<T>> implements Comparato
 	public int compare(E o1, E o2) {
 		if (vResolver.get(o1) == null && vResolver.get(o2) == null) return 0;
 		if (vResolver.get(o1) == null) return -1*order;
-		if (vResolver.get(o2) == null) return 1*order;
+		if (vResolver.get(o2) == null) return order;
 
 		return vResolver.get(o1).compareTo(vResolver.get(o2))*order;
 	}
