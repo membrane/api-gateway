@@ -20,21 +20,21 @@ import javax.xml.stream.XMLStreamReader;
 
 import com.google.common.collect.ImmutableSet;
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
+
+import static com.predic8.membrane.core.http.MimeType.*;
 
 /**
  * This class tries to detect the "content type" of a given message.
- *
  * "Content Type" here is more complex than the HTTP header "Content-Type": For
  * example a message of the effective type "SOAP" might be XOP-encoded and have
  * HTTP "Content-Type" "multipart/related".
- *
  * Note that this class does not give a guarantee that the content is actually
  * valid.
  */
 public class ContentTypeDetector {
-	public static enum ContentType {
+	public enum ContentType {
 		SOAP,
 		XML,
 		JSON,
@@ -66,11 +66,11 @@ public class ContentTypeDetector {
 			"multipart/related");
 
 	private static final Set<String> contentTypesJSON = ImmutableSet.of(
-			"application/json",
-			"application/x-javascript",
-			"text/javascript",
-			"text/x-javascript",
-			"text/x-json");
+			APPLICATION_JSON,
+			APPLICATION_X_JAVASCRIPT,
+			TEXT_JAVASCRIPT,
+			TEXT_X_JAVASCRIPT,
+			TEXT_X_JSON);
 
 	private static final XOPReconstitutor xopr = new XOPReconstitutor();
 	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();

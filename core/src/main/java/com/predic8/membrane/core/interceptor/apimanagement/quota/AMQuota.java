@@ -17,10 +17,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
@@ -38,33 +35,32 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+
 /**
  * Unfinished
  */
-@MCElement(name="amQuota")
+@MCElement(name = "amQuota")
 public class AMQuota {
 
-    private static Logger log = LoggerFactory.getLogger(AMQuota.class);
+    private static final Logger log = LoggerFactory.getLogger(AMQuota.class);
     private ApiManagementConfiguration amc;
 
-    public ConcurrentHashMap<String, ApiKeyByteCounter> keyByteCounter = new ConcurrentHashMap<String, ApiKeyByteCounter>();
-    public ConcurrentHashMap<String, PolicyQuota> policyQuotas = new ConcurrentHashMap<String, PolicyQuota>();
+    public ConcurrentHashMap<String, ApiKeyByteCounter> keyByteCounter = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, PolicyQuota> policyQuotas = new ConcurrentHashMap<>();
 
     public ApiManagementConfiguration getAmc() {
         return amc;
     }
 
-    private Runnable observer = new Runnable() {
-        @Override
-        public void run() {
-            log.info("Getting new config");
-            fillPolicyQuotas();
-            keyByteCounter = new ConcurrentHashMap<>();
-        }
+    private final Runnable observer = () -> {
+        log.info("Getting new config");
+        fillPolicyQuotas();
+        keyByteCounter = new ConcurrentHashMap<>();
     };
 
     public void setAmc(ApiManagementConfiguration amc) {
-        if(this.amc != null) {
+        if (this.amc != null) {
             this.amc.configChangeObservers.remove(observer);
         }
         this.amc = amc;
@@ -74,7 +70,7 @@ public class AMQuota {
 
     private void fillPolicyQuotas() {
         policyQuotas.clear();
-        for(Policy policy : amc.getPolicies().values()){
+        for (Policy policy : amc.getPolicies().values()) {
             String name = policy.getName();
             long quotaSize = policy.getQuota().getSize();
             int interval = policy.getQuota().getInterval();
@@ -85,30 +81,29 @@ public class AMQuota {
             pq.setInterval(Duration.standardSeconds(interval));
             pq.incrementNextCleanup();
             pq.setServices(services);
-            policyQuotas.put(name,pq);
+            policyQuotas.put(name, pq);
         }
     }
 
 
-
-    public Outcome handleRequest(Exchange exc){
+    public Outcome handleRequest(Exchange exc) {
         return handle(exc, exc.getRequest());
     }
 
-    public Outcome handleResponse(Exchange exc){
+    public Outcome handleResponse(Exchange exc) {
         return handle(exc, exc.getResponse());
     }
 
-    private Outcome handle(Exchange exc, Message msg){
+    private Outcome handle(Exchange exc, Message msg) {
         Object apiKeyObj = exc.getProperty(Exchange.API_KEY);
-        if(apiKeyObj == null){
+        if (apiKeyObj == null) {
             log.warn("No api key set in exchange");
             return Outcome.RETURN;
         }
         String apiKey = (String) apiKeyObj;
         String requestedService = exc.getRule().getName();
-        QuotaReachedAnswer answer = isQuotaReached(msg,requestedService,apiKey);
-        if(msg instanceof Request) { // lets responses over the limit always through
+        QuotaReachedAnswer answer = isQuotaReached(msg, requestedService, apiKey);
+        if (msg instanceof Request) { // lets responses over the limit always through
             if (answer.isQuotaReached()) {
                 setResponseToServiceUnavailable(exc, answer.getPq());
                 return Outcome.RETURN;
@@ -119,26 +114,18 @@ public class AMQuota {
 
     private void setResponseToServiceUnavailable(Exchange exc, PolicyQuota pq) {
         //TODO do a better response here
-
-        Header hd = new Header();
-
-
-        DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        JsonGenerator jgen = null;
-        try {
-            jgen = new JsonFactory().createGenerator(os);
-            jgen.writeStartObject();
-            jgen.writeObjectField("Statuscode", 429);
-            jgen.writeObjectField("Message", "Quota Exceeded");
-            jgen.writeEndObject();
-            jgen.close();
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
+            try (JsonGenerator jgen = new JsonFactory().createGenerator(os)) {
+                jgen.writeStartObject();
+                jgen.writeObjectField("Statuscode", 429);
+                jgen.writeObjectField("Message", "Quota Exceeded");
+                jgen.writeEndObject();
+            }
+            Header hd = new Header();
+            Response resp = Response.ResponseBuilder.newInstance().status(429, "Too Many Requests.").header(hd).contentType(APPLICATION_JSON).body(os.toByteArray()).build();
+            exc.setResponse(resp);
         } catch (IOException ignored) {
         }
-
-        Response resp = Response.ResponseBuilder.newInstance().status(429, "Too Many Requests.")
-                .header(hd).contentType("application/json").body(os.toByteArray()).build();
-        exc.setResponse(resp);
     }
 
     private QuotaReachedAnswer isQuotaReached(Message msg, String requestedService, String apiKey) {
@@ -148,7 +135,7 @@ public class AMQuota {
         ApiKeyByteCounter info = keyByteCounter.get(apiKey);
         boolean resultTemp = false;
         PolicyQuota pqTemp = null;
-        synchronized (info){
+        synchronized (info) {
             for (String policy : info.getPolicyByteCounters().keySet()) {
                 PolicyQuota pq = policyQuotas.get(policy);
                 if (!pq.getServices().contains(requestedService)) {
@@ -168,9 +155,9 @@ public class AMQuota {
                 break;
             }
         }
-        if(resultTemp){
+        if (resultTemp) {
             return QuotaReachedAnswer.createQuotaReached(pqTemp);
-        }else{
+        } else {
             return QuotaReachedAnswer.createQuotaNotReached();
         }
     }
@@ -180,7 +167,7 @@ public class AMQuota {
             if (!keyByteCounter.containsKey(apiKey)) {
                 ApiKeyByteCounter value = new ApiKeyByteCounter();
                 Key key = amc.getKeys().get(apiKey);
-                for(Policy p : key.getPolicies()){
+                for (Policy p : key.getPolicies()) {
                     value.getPolicyByteCounters().put(p.getName(), new AtomicLong());
                 }
                 keyByteCounter.put(apiKey, value);
@@ -188,7 +175,7 @@ public class AMQuota {
         }
 
         ApiKeyByteCounter keyInfo = keyByteCounter.get(apiKey);
-        for(AtomicLong counter : keyInfo.getPolicyByteCounters().values()) {
+        for (AtomicLong counter : keyInfo.getPolicyByteCounters().values()) {
             counter.addAndGet(sizeOfBytes);
         }
     }
@@ -197,8 +184,8 @@ public class AMQuota {
         synchronized (policyQuotas) {
             for (PolicyQuota pq : policyQuotas.values()) {
                 if (DateTime.now().isAfter(pq.getNextCleanup())) {
-                    for(ApiKeyByteCounter keyInfo : keyByteCounter.values()){
-                        if(keyInfo.getPolicyByteCounters().keySet().contains(pq.getName())){
+                    for (ApiKeyByteCounter keyInfo : keyByteCounter.values()) {
+                        if (keyInfo.getPolicyByteCounters().containsKey(pq.getName())) {
                             keyInfo.getPolicyByteCounters().get(pq.getName()).set(0);
                         }
                     }

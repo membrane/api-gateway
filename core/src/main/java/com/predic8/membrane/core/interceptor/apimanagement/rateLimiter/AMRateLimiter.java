@@ -18,8 +18,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
@@ -39,6 +38,8 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.predic8.membrane.core.http.MimeType.*;
 
 @MCElement(name="amRateLimiter")
 public class AMRateLimiter {
@@ -138,7 +139,7 @@ public class AMRateLimiter {
         }
 
         Response resp = Response.ResponseBuilder.newInstance().status(429, "Too Many Requests.")
-                .header(hd).contentType("application/json").body(os.toByteArray()).build();
+                .header(hd).contentType(APPLICATION_JSON).body(os.toByteArray()).build();
         exc.setResponse(resp);
     }
 

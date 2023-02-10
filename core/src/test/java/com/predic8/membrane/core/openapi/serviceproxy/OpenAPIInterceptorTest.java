@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.NO;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.YES;
@@ -91,7 +92,7 @@ public class OpenAPIInterceptorTest {
         assertEquals(RETURN, interceptor3Server.handleRequest(exc));
 
         assertEquals(404, exc.getResponse().getStatusCode());
-        assertTrue(exc.getResponse().getHeader().getContentType().contains("application/json"));
+        assertTrue(exc.getResponse().getHeader().getContentType().contains(APPLICATION_JSON));
         exc.getResponse().getBody().getContent();
 
         assertEquals("No matching API found!", getMapFromResponse(exc).get("error"));
@@ -133,7 +134,7 @@ public class OpenAPIInterceptorTest {
 
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
-        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType("application/json").body(convert2JSON(customer)).build());
+        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
         interceptor.init(router);
@@ -163,7 +164,7 @@ public class OpenAPIInterceptorTest {
     private Exchange callPut(APIProxy.Spec spec) throws Exception {
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
-        exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType("application/json").build());
+        exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, spec));
         interceptor.init(router);
@@ -175,7 +176,7 @@ public class OpenAPIInterceptorTest {
         customer.put("age",110);
         customer.put("foo",110);
 
-        exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType("application/json").body(convert2JSON(customer)).build());
+        exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
 
         assertEquals(RETURN, interceptor.handleResponse(exc));
         assertEquals(500,exc.getResponse().getStatusCode());

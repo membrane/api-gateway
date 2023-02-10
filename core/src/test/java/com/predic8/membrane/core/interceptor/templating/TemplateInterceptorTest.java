@@ -215,7 +215,7 @@ B: <%= params.b %>
 
     @Test
     public void contentTypeTestOther() throws Exception {
-        ti.setContentType("application/json");
+        ti.setContentType(APPLICATION_JSON);
         setAndHandleRequest("./template_test.json");
         assertTrue(exc.getRequest().isJSON());
     }

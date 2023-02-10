@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 
 import static com.google.common.base.Strings.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -182,7 +183,7 @@ public class JsonProtectionInterceptorTest {
 
 
     private void send(String body, Outcome expectedOutcome) throws Exception {
-        var e = new Request.Builder().post("/").header("Content-Type", "application/json").body(body).buildExchange();
+        var e = new Request.Builder().post("/").contentType(APPLICATION_JSON).body(body).buildExchange();
         assertEquals(expectedOutcome, jpi.handleRequest(e));
     }
 }

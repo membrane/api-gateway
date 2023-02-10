@@ -54,9 +54,13 @@ public class MimeType {
     public static final String APPLICATION_GRAPHQL = "application/graphql";
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
 
+    public static final String APPLICATION_X_JAVASCRIPT = "application/x-javascript";
+
+    public static final String TEXT_JAVASCRIPT = "text/javascript";
+    public static final String TEXT_X_JAVASCRIPT = "text/x-javascript";
+    public static final String TEXT_X_JSON = "text/x-json";
+
     public static final ContentType APPLICATION_JSON_CONTENT_TYPE = new ContentType(APPLICATION,"json",null);
-
-
 
     public static final ContentType APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE = new ContentType(APPLICATION,APPLICATION_X_WWW_FORM_URLENCODED,null);
 
@@ -107,10 +111,10 @@ public class MimeType {
     }
 
     public static boolean isWWWFormUrlEncoded(String mediaType) {
-        return isMediaType(APPLICATION_X_WWW_FORM_URLENCODED, mediaType);
+        return isOfMediaType(APPLICATION_X_WWW_FORM_URLENCODED, mediaType);
     }
 
-    public static boolean isMediaType(String expectedType, String actualType) {
+    public static boolean isOfMediaType(String expectedType, String actualType) {
         try {
             return new ContentType(actualType).match(expectedType);
         } catch (ParseException e) {

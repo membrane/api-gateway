@@ -14,26 +14,21 @@
 
 package com.predic8.membrane.core.util;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.Socket;
-import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.fasterxml.jackson.core.*;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import javax.mail.internet.ParseException;
-import javax.net.ssl.SSLSocket;
+import javax.mail.internet.*;
+import javax.net.ssl.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-
-import com.predic8.membrane.core.http.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 
 public class Util {
 
@@ -56,14 +51,12 @@ public class Util {
 		}
 	}
 
-	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, JsonParseException, ParseException {
-		HashMap<String, String> values = new HashMap<String, String>();
+	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, ParseException {
+		HashMap<String, String> values = new HashMap<>();
 
-
-		String contentType = g.getHeader().getFirstValue("Content-Type");
-		if (contentType != null && g.getHeader().getContentTypeObject().match("application/json")) {
-			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
+		String contentType = g.getHeader().getContentType();
+		if (contentType != null && g.getHeader().getContentTypeObject().match(APPLICATION_JSON)) {
+			final JsonParser jp = new JsonFactory().createParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
 			String name = null;
 			while (jp.nextToken() != null) {
 				switch (jp.getCurrentToken()) {
@@ -84,7 +77,7 @@ public class Util {
 	}
 
 	private static Method newVirtualThreadPerTaskExecutor;
-	private static AtomicBoolean loggedVirtualThreads = new AtomicBoolean();
+	private static final AtomicBoolean loggedVirtualThreads = new AtomicBoolean();
 
 	static {
 		try {
@@ -115,5 +108,4 @@ public class Util {
 		}
 		return Executors.newCachedThreadPool();
 	}
-
 }
