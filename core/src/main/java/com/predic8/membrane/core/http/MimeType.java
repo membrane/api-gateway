@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.http;
 
 import jakarta.mail.internet.*;
+import org.springframework.http.*;
 
 /**
  * Use javax.mail.internet.ContentType to parse a mime type or the methods using
@@ -55,8 +56,6 @@ public class MimeType {
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
 
     public static final ContentType APPLICATION_JSON_CONTENT_TYPE = new ContentType(APPLICATION,"json",null);
-
-
 
     public static final ContentType APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE = new ContentType(APPLICATION,APPLICATION_X_WWW_FORM_URLENCODED,null);
 
@@ -117,5 +116,12 @@ public class MimeType {
             // ignore
         }
         return false;
+    }
+
+    public static MediaType[] convertStringsToMediaType(String[] mediaTypes) {
+        MediaType[] m = new MediaType[mediaTypes.length];
+        for (int i = 0; i < mediaTypes.length; i++)
+            m[i] = MediaType.parseMediaType(mediaTypes[i]);
+        return m;
     }
 }

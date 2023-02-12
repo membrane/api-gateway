@@ -14,18 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-
 public class LazyRateLimit extends RateLimitStrategy {
 
-	private DateTime nextCleanup = new DateTime();
+	private java.time.LocalDateTime nextCleanup = LocalDateTime.now();
 	public ConcurrentHashMap<String, AtomicInteger> requestCounterFromKey = new ConcurrentHashMap<>();
 
-	public LazyRateLimit(Duration requestLimitDuration, int requestLimit) {
+	public LazyRateLimit(java.time.Duration requestLimitDuration, int requestLimit) {
 		this.requestLimitDuration = requestLimitDuration;
 		this.requestLimit = requestLimit;
 		incrementNextCleanupTime();
@@ -34,7 +32,7 @@ public class LazyRateLimit extends RateLimitStrategy {
 	@Override
 	public boolean isRequestLimitReached(String key) {
 		synchronized (nextCleanup) {
-			if (DateTime.now().isAfter(nextCleanup)) {
+			if (java.time.LocalDateTime.now().isAfter(nextCleanup)) {
 				for (AtomicInteger info : requestCounterFromKey.values()) {
 					info.set(0);
 				}
@@ -55,11 +53,11 @@ public class LazyRateLimit extends RateLimitStrategy {
 	}
 
 	private void incrementNextCleanupTime() {
-		nextCleanup = DateTime.now().plus(requestLimitDuration);
+		nextCleanup = java.time.LocalDateTime.now().plus(requestLimitDuration);
 	}
 
 	@Override
-	public DateTime getServiceAvailableAgainTime(String ip) {
+	public LocalDateTime getServiceAvailableAgainTime(String key) {
 		return nextCleanup;
 	}
 
@@ -70,5 +68,4 @@ public class LazyRateLimit extends RateLimitStrategy {
 		}
 		incrementNextCleanupTime();
 	}
-
 }

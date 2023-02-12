@@ -14,26 +14,21 @@
 
 package com.predic8.membrane.core.http;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.*;
-import java.nio.charset.*;
-import java.util.Arrays;
-
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.util.EndOfStreamException;
+import java.io.*;
+import java.net.*;
+
+import static com.predic8.membrane.core.util.StringTestUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-	private static Request reqPost = new Request();
+	private static final Request reqPost = new Request();
 
-	private static Request reqChunked = new Request();
+	private static final Request reqChunked = new Request();
 
 	private InputStream inPost;
 
@@ -69,8 +64,7 @@ public class RequestTest {
 		}
 
 	}
-
-
+	
 	@Test
 	public void testParseStartLineChunked() throws IOException, EndOfStreamException {
 		reqChunked.parseStartLine(inChunked);
@@ -144,5 +138,20 @@ public class RequestTest {
 	@Test
 	public void isNotEmpty() throws IOException {
 		assertFalse(new Request.Builder().body("ABC").build().isBodyEmpty());
+	}
+	
+	@Test
+	public void addHeaderToExisting() throws IOException, EndOfStreamException {
+
+		Request req = new Request();
+		req.read(inputStreamFrom("""
+                GET / HTTP/1.1
+                Foo: 1
+                Foo: 2
+    			
+                """),true);
+		req.getHeader().add("Foo","3"); // Now add a third and see if the sequence is kept.
+
+		assertEquals("1,2,3",req.getHeader().getNormalizedValue("Foo"));
 	}
 }

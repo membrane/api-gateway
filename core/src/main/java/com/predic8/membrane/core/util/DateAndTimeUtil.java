@@ -13,14 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-public class DateUtil {
+import java.time.*;
+
+public class DateAndTimeUtil {
 	public static String prettyPrintTimeSpan(long timespan) {
 		timespan = timespan / 1000;
 
 		long sec = (timespan >= 60 ? timespan % 60 : timespan);
 		long min = (timespan = (timespan / 60)) >= 60 ? timespan % 60 : timespan;
 		long hrs = (timespan = (timespan / 60)) >= 24 ? timespan % 24 : timespan;
-		long day = (timespan = (timespan / 24));
+		long day = timespan / 24;
 
 		StringBuilder sb = new StringBuilder(50);
 		if (day != 0)
@@ -31,5 +33,9 @@ public class DateUtil {
 			sb.append(String.format("%d m, ", min));
 		sb.append(String.format("%d s", sec));
 		return sb.toString();
+	}
+
+	public static Long getMillisSinceEpoc(LocalDateTime time) {
+		return time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() * 1000;
 	}
 }

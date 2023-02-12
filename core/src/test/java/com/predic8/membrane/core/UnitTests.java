@@ -121,7 +121,8 @@ import org.junit.platform.suite.api.*;
 		MessageBytesTest.class,
 		RegExReplaceInterceptorTest.class,
 		URLParamUtilTest.class,
-		XMLProtectorTest.class
+		XMLProtectorTest.class,
+		DateAndTimeUtilTest.class
 })
 @SelectPackages("com.predic8.membrane.core.openapi")
 public class UnitTests {

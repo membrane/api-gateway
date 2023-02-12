@@ -48,19 +48,16 @@ public class ShutdownInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (getRouter().isRunning()) {
             exc.setResponse(Response.ok("Router shutdown procedure was started.").build());
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(100); // Wait a moment to finish this request.
-                    } catch (InterruptedException e) {
-                        // DONOTHING
-                    }
-                    getRouter().stop(); // stop the router
+            new Thread(() -> {
+                try {
+                    Thread.sleep(100); // Wait a moment to finish this request.
+                } catch (InterruptedException e) {
+                    // DONOTHING
                 }
+                getRouter().stop(); // stop the router
             }).start();
         } else {
-            exc.setResponse(Response.serverUnavailable("Router is not started.").build());
+            exc.setResponse(Response.serviceUnavailable("Router is not started.").build());
         }
         return Outcome.RETURN;
     }

@@ -213,10 +213,6 @@ public class HttpUtil {
 		return header;
 	}
 
-	public static String getHostName(String destination) throws MalformedURLException {
-		return new URL(destination).getHost();
-	}
-
 	public static String getPathAndQueryString(String dest) throws MalformedURLException {
 		URL url = new URL(dest);
 
@@ -270,6 +266,8 @@ public class HttpUtil {
 			case 500 -> "Internal Server Error";
 			case 501 -> "Not Implemented";
 			case 502 -> "Bad Gateway";
+			case 503 -> "Service Unavailable";
+			case 504 -> "Gateway Timeout";
 			default -> "";
 		};
 	}

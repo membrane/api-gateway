@@ -700,7 +700,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					String usageStr =
 							oldestTimeResSent == null ? "" :
 								String.format("; usage %.0f%%; the last %s", usage,
-										DateUtil.prettyPrintTimeSpan(System.currentTimeMillis() - oldestTimeResSent));
+										DateAndTimeUtil.prettyPrintTimeSpan(System.currentTimeMillis() - oldestTimeResSent));
 					return "Messages" + String.format(
 							" (limited to last %.2f MB%s)",
 							lmes.getMaxSize()/1000000.,

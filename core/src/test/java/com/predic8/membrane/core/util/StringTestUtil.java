@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2023 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,21 +14,11 @@
 
 package com.predic8.membrane.core.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.*;
 
-public class Timer {
-	private static final Logger log = LoggerFactory.getLogger(Timer.class.getName());
+public class StringTestUtil {
 
-	static private long time;
-
-	static public void reset() {
-		time = System.currentTimeMillis();
-	}
-
-	static public void log(String txt) {
-		long now = System.currentTimeMillis();
-		log.debug(txt+ ":" + (now-time));
-		time = System.currentTimeMillis();
-	}
+    public static InputStream inputStreamFrom(String string) {
+        return new ByteArrayInputStream(string.getBytes());
+    }
 }

@@ -246,7 +246,7 @@ public class HttpClient implements AutoCloseable {
 				}
 				if (proxy != null && sslProvider == null)
 					// if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-					exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
+					exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
 				Response response;
 
 				if (usingHttp2) {
