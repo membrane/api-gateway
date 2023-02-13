@@ -13,27 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.gatekeeper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.cache.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
 
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
 
 @MCElement(name = "gatekeeper")
 public class GateKeeperClientInterceptor extends AbstractInterceptor {
@@ -90,7 +84,7 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
     }
 
     private Map getResult(String body) throws Exception {
-        Exchange exc2 = httpClient.call(new Request.Builder().post(this.url).header("Content-Type", "application/json").body(
+        Exchange exc2 = httpClient.call(new Request.Builder().post(this.url).contentType(APPLICATION_JSON).body(
                 body
         ).buildExchange());
 

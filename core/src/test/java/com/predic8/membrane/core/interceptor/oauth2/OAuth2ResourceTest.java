@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Disabled
@@ -512,13 +513,13 @@ public class OAuth2ResourceTest {
                     res.put("token_type","bearer");
                     res.put("expires_in","1");
                     res.put("refresh_token",new BigInteger(130, rand).toString(32));
-                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType("application/json").build());
+                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
 
                 }else if(exc.getRequestURI().startsWith("/userinfo")){
                     ObjectMapper om = new ObjectMapper();
                     Map<String,String> res = new HashMap<>();
                     res.put("username","dummy");
-                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType("application/json").build());
+                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
                 }
 
                 if(exc.getResponse() == null)

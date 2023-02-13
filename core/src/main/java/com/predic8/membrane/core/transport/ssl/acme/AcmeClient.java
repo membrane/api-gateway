@@ -142,8 +142,8 @@ public class AcmeClient {
     private void handleError(Exchange e) throws IOException, AcmeException {
         if (e.getResponse().getStatusCode() >= 300) {
             String contentType = e.getResponse().getHeader().getFirstValue("Content-Type");
-            if (APPLICATION_PROBLEM_JSON.equals(contentType)) {
 
+            if (isOfMediaType(APPLICATION_PROBLEM_JSON, contentType)) {
                 @SuppressWarnings("rawtypes")
                 Map m = om.readValue(e.getResponse().getBodyAsStreamDecoded(), Map.class);
 
@@ -205,8 +205,7 @@ public class AcmeClient {
             PrivateKey pk;
             try (PemReader pemReader = new PemReader(new StringReader(privateKey))) {
                 PemObject pemObject = pemReader.readPemObject();
-                byte[] content = pemObject.getContent();
-                PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(content);
+                PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(pemObject.getContent());
                 pk = factory.generatePrivate(privKeySpec);
             }
             PublicKey pubkey = computePublicKeyFromPrivate(pk);

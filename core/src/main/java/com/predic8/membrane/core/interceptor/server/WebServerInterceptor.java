@@ -13,31 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.membrane.core.util.TextUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.lang3.*;
+import org.slf4j.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 
 /**
  * @description Serves static files based on the request's path.
@@ -54,10 +45,10 @@ import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 @MCElement(name = "webServer")
 public class WebServerInterceptor extends AbstractInterceptor {
 
-    private static Logger log = LoggerFactory.getLogger(WebServerInterceptor.class
+    private static final Logger log = LoggerFactory.getLogger(WebServerInterceptor.class
             .getName());
 
-    private static String[] EMPTY = new String[0];
+    private static final String[] EMPTY = new String[0];
 
     String docBase = "docBase";
     boolean docBaseIsNormalized = false;
@@ -181,6 +172,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
                 .build();
     }
 
+    // @TODO Move to Util
     private static String getContentType(String uri) {
         if (uri.endsWith(".css"))
             return "text/css";
@@ -199,7 +191,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         if (uri.endsWith(".png"))
             return "image/png";
         if (uri.endsWith(".json"))
-            return "application/json";
+            return APPLICATION_JSON;
         if (uri.endsWith(".svg"))
             return "image/svg+xml";
         return null;

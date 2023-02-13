@@ -31,7 +31,8 @@ import java.util.Map;
 
 import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.interceptor.apimanagement.ApiManagementInterceptor.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,27 +51,27 @@ public class KubernetesClientTest {
                 if ("/openapi/v2".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                             Resources.toString(getResource("kubernetes/api/openapi-v2.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/apis".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                                     Resources.toString(getResource("kubernetes/api/apis.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/apis/coordination.k8s.io/v1".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                                     Resources.toString(getResource("kubernetes/api/apis-coordination-v1.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/api/v1/namespaces/default/secrets/non-existent".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.notFound()
                             .body("{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\",\"message\":\"secrets \\\"demo\\\" not found\",\"reason\":\"NotFound\",\"details\":{\"name\":\"demo\",\"kind\":\"secrets\"},\"code\":404}")
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/api/v1/namespaces/default/secrets/existent".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                                     Resources.toString(getResource("kubernetes/api/secret.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/version".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok()
@@ -85,9 +86,9 @@ public class KubernetesClientTest {
                                     "  \"compiler\": \"gc\",\n" +
                                     "  \"platform\": \"linux/amd64\"\n" +
                                     "}")
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
         router.getRules().add(sp);
@@ -123,5 +124,4 @@ public class KubernetesClientTest {
 
         assertEquals("v1.23.7", kc.version().get("gitVersion"));
     }
-
 }
