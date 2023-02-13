@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.io.*;
 import java.net.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -96,8 +97,8 @@ public class UtilsTest {
     
     @Test
     public void getMediaTypeFromContentTypeHeader() {
-        assertEquals("application/json",    Utils.getMediaTypeFromContentTypeHeader("application/json; charset=utf-8"));
-        assertEquals("application/json",    Utils.getMediaTypeFromContentTypeHeader("application/json"));
+        assertEquals(APPLICATION_JSON,    Utils.getMediaTypeFromContentTypeHeader("application/json; charset=utf-8"));
+        assertEquals(APPLICATION_JSON,    Utils.getMediaTypeFromContentTypeHeader(APPLICATION_JSON));
     }
 
     @Test

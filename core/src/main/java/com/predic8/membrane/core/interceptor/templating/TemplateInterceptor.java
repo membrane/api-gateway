@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.ErrorUtil.*;
 import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.lang3.StringEscapeUtils.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
  * @description Renders the body content of a message from a template. The template can
@@ -119,7 +119,7 @@ public class TemplateInterceptor extends AbstractInterceptor{
         binding.putAll(exc.getProperties()); // To be compatible with old Version
 
         String payload = template.make(binding).toString();
-        if (contentType.equals(APPLICATION_JSON) && pretty) {
+        if (isOfMediaType(APPLICATION_JSON,contentType) && pretty) {
             return prettifyJson(payload);
         }
         return payload;

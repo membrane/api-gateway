@@ -28,6 +28,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -134,8 +136,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 						 + "/smsmessaging/v1/outbound/" + URLEncoder.encode(senderAddress, UTF_8) + "/requests").
 							header("Host", "gateway.developer.telekom.com").
 							header("Authorization", "OAuth realm=\"developergarden.com\",oauth_token=\"" + getAccessToken() + "\"").
-							header("Accept", "application/json").
-							header("Content-Type", "application/json").
+							header("Accept", APPLICATION_JSON).
+							contentType(APPLICATION_JSON).
 							body(baos.toByteArray()).
 							buildExchange();
 
@@ -155,11 +157,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		if (token == null || tokenExpiration < now) {
 			Exchange exc = new Request.Builder().
 					post("https://global.telekom.com/gcp-web-api/oauth").
-					header(Header.HOST, "global.telekom.com").
-					header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((clientId + ":" + clientSecret).getBytes(UTF_8)), UTF_8)).
-					header(Header.ACCEPT, "application/json").
-					header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).
-					header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded").
+					header(HOST, "global.telekom.com").
+					header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((clientId + ":" + clientSecret).getBytes(UTF_8)), UTF_8)).
+					header(ACCEPT, APPLICATION_JSON).
+					header(USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).
+					header(CONTENT_TYPE, "application/x-www-form-urlencoded").
 					body(new URLParamUtil.ParamBuilder().add("grant_type", "client_credentials").add("scope", scope).build()).
 					buildExchange();
 

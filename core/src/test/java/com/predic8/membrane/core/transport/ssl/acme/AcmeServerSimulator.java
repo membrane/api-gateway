@@ -19,13 +19,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import org.jetbrains.annotations.*;
 import org.jose4j.base64url.Base64;
 import org.jose4j.jwk.PublicJsonWebKey;
 import org.jose4j.jws.JsonWebSignature;
@@ -80,7 +80,7 @@ public class AcmeServerSimulator {
                 LOG.debug("acme server: got " + exc.getRequest().getUri() + " request");
                 if ("/directory".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok()
-                            .header("Content-Type", "application/json")
+                            .contentType(APPLICATION_JSON)
                             .body(Resources.toString(getResource("acme/directory.json"), UTF_8))
                             .build());
                     return RETURN;
@@ -92,14 +92,10 @@ public class AcmeServerSimulator {
                             .build());
                     return RETURN;
                 }
-                assertEquals(APPLICATION_JOSE_JSON, exc.getRequest().getHeader().getFirstValue(CONTENT_TYPE));
+                assertTrue(isOfMediaType(APPLICATION_JOSE_JSON, exc.getRequest().getHeader().getFirstValue(CONTENT_TYPE)));
                 assertNotNull(exc.getRequest().getHeader().getFirstValue(USER_AGENT));
 
-                Map body = om.readValue(exc.getRequest().getBodyAsStreamDecoded(), Map.class);
-                MyJsonWebSignature jws = new MyJsonWebSignature();
-                jws.setEncodedHeader((String)body.get("protected"));
-                jws.setEncodedPayload((String)body.get("payload"));
-                jws.setEncodedSignature((String)body.get("signature"));
+                MyJsonWebSignature jws = getMyJsonWebSignature(exc);
 
                 assertTrue(jws.getJwkHeader() == null || jws.getKeyIdHeaderValue() == null, "RFC 8555 Section 6.2");
 
@@ -131,7 +127,7 @@ public class AcmeServerSimulator {
                     String accountUrl = "http://localhost:3050/acme/acct/123456";
 
                     exc.setResponse(Response.ok().status(201, "Created")
-                            .header("Content-Type", "application/json")
+                            .contentType(APPLICATION_JSON)
                             .header("Location", accountUrl)
                             .header("Replay-Nonce", createNonce())
                             .body(Resources.toString(getResource("acme/new-account-created.json"), UTF_8))
@@ -230,6 +226,17 @@ public class AcmeServerSimulator {
 
                 exc.setResponse(Response.notFound().build());
                 return RETURN;
+            }
+
+            @NotNull
+            private MyJsonWebSignature getMyJsonWebSignature(Exchange exc) throws IOException, JoseException {
+                @SuppressWarnings("unchecked")
+                Map<String,String> body = om.readValue(exc.getRequest().getBodyAsStreamDecoded(), Map.class);
+                MyJsonWebSignature jws = new MyJsonWebSignature();
+                jws.setEncodedHeader(body.get("protected"));
+                jws.setEncodedPayload(body.get("payload"));
+                jws.setEncodedSignature(body.get("signature"));
+                return jws;
             }
         });
         router.add(sp);

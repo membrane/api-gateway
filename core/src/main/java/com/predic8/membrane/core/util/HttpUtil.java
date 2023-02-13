@@ -189,15 +189,15 @@ public class HttpUtil {
 		return buf.toString();
 	}
 
-	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
-		Response res = new Response();
-		res.setStatusCode(code);
-		res.setStatusMessage(msg);
-		res.setHeader(createHeaders(contentType, headers));
-
-		if (body != null) res.setBodyContent(body);
-		return res;
-	}
+//	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
+//		Response res = new Response();
+//		res.setStatusCode(code);
+//		res.setStatusMessage(msg);
+//		res.setHeader(createHeaders(contentType, headers));
+//
+//		if (body != null) res.setBodyContent(body);
+//		return res;
+//	}
 
 	public static Header createHeaders(String contentType, String... headers) {
 		Header header = new Header();

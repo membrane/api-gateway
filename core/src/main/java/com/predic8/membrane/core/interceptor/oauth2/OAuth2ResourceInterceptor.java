@@ -44,6 +44,9 @@ import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 import static java.util.concurrent.TimeUnit.*;
@@ -219,7 +222,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         Session session = sessionManager.getSession(exc);
 
         if (session == null) {
-            String auth = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
+            String auth = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
             if (auth != null && auth.substring(0, 7).equalsIgnoreCase("Bearer ")) {
                 session = sessionManager.createSession(exc);
                 session.getUserAttributes().put(ParamNames.ACCESS_TOKEN, auth.substring(7));
@@ -298,9 +301,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
         Exchange refreshTokenExchange = new Request.Builder()
                 .post(auth.getTokenEndpoint())
-                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(Header.ACCEPT, "application/json")
-                .header(Header.USER_AGENT, Constants.USERAGENT)
+                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(USER_AGENT, USERAGENT)
                 .body("&grant_type=refresh_token"
                         + "&refresh_token=" + oauth2Params.getRefreshToken())
                 .buildExchange();
@@ -347,8 +350,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         Exchange e2 = new Request.Builder()
                 .get(auth.getUserInfoEndpoint())
                 .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
-                .header("User-Agent", Constants.USERAGENT)
-                .header(Header.ACCEPT, "application/json")
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
                 .buildExchange();
 
         Response response2 = auth.doRequest(e2);
@@ -377,7 +380,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private void setPublicURL(Exchange exc) {
-        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
+        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
         boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
         publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
         RuleKey key = exc.getRule().getKey();
@@ -482,8 +485,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     token = s.getUserAttributes().get("access_token");
                 }
                 Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
+                        .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .header(USER_AGENT, USERAGENT)
                         .body("token=" + token) // TODO maybe send client credentials ( as it was before ) but Google doesn't accept that
                         .buildExchange();
                 Response response = auth.doRequest(e);
@@ -554,10 +557,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 Exchange e = new Request.Builder()
                         .post(auth.getTokenEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.ACCEPT, "application/json")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
+                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(USER_AGENT, USERAGENT)
+                        .header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
                         .body("code=" + code
                                 + "&client_id=" + auth.getClientId() // it is actually illegal to also include credentials in the body when using basic auth, but we keep it for compatibility
                                 + "&client_secret=" + auth.getClientSecret()
@@ -612,8 +615,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
                         .header("Authorization", json.get("token_type") + " " + token)
-                        .header("User-Agent", Constants.USERAGENT)
-                        .header(Header.ACCEPT, "application/json")
+                        .header("User-Agent", USERAGENT)
+                        .header(ACCEPT, APPLICATION_JSON)
                         .buildExchange();
 
                 if (log.isDebugEnabled()) {
@@ -667,8 +670,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private void doOriginalRequest(Exchange exc, Exchange originalRequest) {
         originalRequest.getRequest().getHeader().add("Cookie",exc.getRequest().getHeader().getFirstValue("Cookie"));
         originalRequest.getDestinations().clear();
-        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
-        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_HOST);
+        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
+        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_HOST);
         String originalRequestUri = originalRequest.getOriginalRequestUri();
         originalRequest.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
     }

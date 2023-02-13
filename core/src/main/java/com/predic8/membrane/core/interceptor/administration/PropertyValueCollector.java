@@ -34,10 +34,6 @@ public class PropertyValueCollector implements ExchangeCollector{
 
     boolean useXForwardedForAsClientAddr;
 
-    public boolean isUseXForwardedForAsClientAddr() {
-        return useXForwardedForAsClientAddr;
-    }
-
     public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
         this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
     }

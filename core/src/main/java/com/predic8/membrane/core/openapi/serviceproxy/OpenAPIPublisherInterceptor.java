@@ -144,7 +144,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Outcome handleSwaggerUi(Exchange exc) {
         Matcher m = patternUI.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
-            exc.setResponse(Response.ok().contentType("application/json").body("Please specify an Id").build());
+            exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body("Please specify an Id").build());
             return RETURN;
         }
         exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(m.group(1))).build());

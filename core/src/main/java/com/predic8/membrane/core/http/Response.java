@@ -169,6 +169,13 @@ public class Response extends Message {
 		return newInstance().status(204);
 	}
 
+	public static ResponseBuilder found(String location) {
+		return ResponseBuilder.newInstance().
+				status(302, "Found").
+				header(LOCATION, location).
+				bodyEmpty();
+	}
+
 	public static ResponseBuilder notModified(String date) {
 		return newInstance().
 				status(304).
@@ -237,6 +244,7 @@ public class Response extends Message {
 		return fromStatusCode(500,"");
 	}
 
+	@SuppressWarnings("unused")
 	public static ResponseBuilder notImplemented() {
 		return fromStatusCode(501,"");
 	}
@@ -249,6 +257,7 @@ public class Response extends Message {
 		return fromStatusCode(502,message);
 	}
 
+	@SuppressWarnings("unused")
 	public static ResponseBuilder gatewayTimeout(String message) {
 		return fromStatusCode(504,message);
 	}
@@ -397,6 +406,7 @@ public class Response extends Message {
 		return statusCode >= 400 && statusCode < 500;
 	}
 
+	@SuppressWarnings("unused")
 	public boolean isServerError() {
 		return statusCode >= 500;
 	}
