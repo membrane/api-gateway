@@ -17,16 +17,17 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.InitializingBean;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.params.GetExParams;
+
+import java.util.HashSet;
 
 @MCElement(name = "redis", topLevel = true)
 public class RedisConnector  implements InitializingBean {
-    private JedisPool pool;
+    private JedisCluster pool;
     private String host = "localhost";
     private int port = 6379;
-    private int dbNumber = 0;
     //https://partners-intl.aliyun.com/help/en/doc-detail/98726.htm
     //connection size
     private int connectionNumber = 20;
@@ -46,14 +47,19 @@ public class RedisConnector  implements InitializingBean {
         jedisPoolConfig.setMaxIdle(connectionNumber);
         jedisPoolConfig.setMinIdle(minIdleConnection);
 
+        HashSet<HostAndPort> hosts = new HashSet();
+        for (String h : host.split(" +")) {
+            hosts.add(new HostAndPort(h, port));
+        }
+
         if(user == null && password != null){
-            pool = new JedisPool(jedisPoolConfig, host, port, timeout, password, ssl);
+            pool = new JedisCluster(hosts, 2000, 2000, 5, password, null, jedisPoolConfig, ssl);
         }
         else if(user != null && password != null){
-            pool = new JedisPool(jedisPoolConfig, host, port, timeout, user, password, ssl);
+            pool = new JedisCluster(hosts, 2000, 2000, 5, user, password, null, jedisPoolConfig, ssl);
         }
         else{
-            pool = new JedisPool(jedisPoolConfig, host, port, ssl);
+            pool = new JedisCluster(hosts, 2000, 2000, 5, null, null, jedisPoolConfig, ssl);
         }
 
 
@@ -62,20 +68,8 @@ public class RedisConnector  implements InitializingBean {
     }
 
 
-    public Jedis getJedisWithDb(){
-        Jedis jedis = pool.getResource();
-        jedis.select(dbNumber);
-        return jedis;
-    }
-
-
-    public JedisPool getPool() {
+    public JedisCluster getJedisCluster(){
         return pool;
-    }
-
-
-    public void setPool(JedisPool pool) {
-        this.pool = pool;
     }
 
     public int getConnectionNumber() {
@@ -102,18 +96,6 @@ public class RedisConnector  implements InitializingBean {
 
     public void setParams(GetExParams params) {
         this.params = params;
-    }
-
-    public int getDbNumber() {
-        return dbNumber;
-    }
-
-    /**
-     * @description Index number to connect to in Redis. Default is 0
-     */
-    @MCAttribute
-    public void setDbNumber(int dbNumber) {
-        this.dbNumber = dbNumber;
     }
 
     public int getTimeout() {
@@ -170,7 +152,7 @@ public class RedisConnector  implements InitializingBean {
     }
 
     /**
-     * @description Host name to connect to
+     * @description Host name to connect to, or multiple host names separated by spaces ' '.
      * */
     @MCAttribute
     public void setHost(String host) {
