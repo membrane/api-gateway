@@ -17,8 +17,7 @@ import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
-import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -121,7 +120,8 @@ import org.junit.platform.suite.api.*;
 		MessageBytesTest.class,
 		RegExReplaceInterceptorTest.class,
 		URLParamUtilTest.class,
-		XMLProtectorTest.class
+		XMLProtectorTest.class,
+		AbstractExchangeStoreTest.class
 })
 @SelectPackages("com.predic8.membrane.core.openapi")
 public class UnitTests {

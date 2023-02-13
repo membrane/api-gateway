@@ -20,13 +20,22 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class URLParamUtilTest {
+
+    Exchange e1;
+
+    @BeforeEach
+    void setUp() throws URISyntaxException {
+        e1 = Request.get("foo?a=1&b=2&c=abc").buildExchange();
+    }
 
     @Test
     void hasNoFormParamsNoEncoding() throws URISyntaxException, IOException {
@@ -38,5 +47,14 @@ public class URLParamUtilTest {
     void hasNoFormParamsWithEncoding() throws URISyntaxException, IOException {
         Exchange exc = new Request.Builder().post("/dummy").body("foo=7&bar&baz").header(CONTENT_TYPE,APPLICATION_X_WWW_FORM_URLENCODED + "; charset=ISO-8859-1").buildExchange();
         assertFalse(hasNoFormParams(exc));
+    }
+
+    @Test
+    void getParams() throws Exception {
+        Map<String, String> params = URLParamUtil.getParams(new URIFactory(), e1, ERROR);
+        assertEquals(3,params.size());
+        assertEquals("1",params.get("a"));
+        assertEquals("2",params.get("b"));
+        assertEquals("abc",params.get("c"));
     }
 }

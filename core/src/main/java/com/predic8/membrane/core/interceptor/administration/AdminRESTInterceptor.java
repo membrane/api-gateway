@@ -35,6 +35,7 @@ import static com.predic8.membrane.core.util.ComparatorFactory.*;
 import static com.predic8.membrane.core.util.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
+@SuppressWarnings("unused")
 public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@SuppressWarnings("unused")
@@ -73,6 +74,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	private static int getMax(QueryParameter params, List<? extends ClientStatistics> clients) {
 		return params.getInt("max", clients.size());
 	}
+
 
 	@Mapping("/admin/rest/proxies(/?\\?.*)?")
 	public Response getProxies(final QueryParameter params, String relativeRootPath) throws Exception {

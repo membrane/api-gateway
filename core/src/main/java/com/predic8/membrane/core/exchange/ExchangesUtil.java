@@ -14,23 +14,13 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.text.SimpleDateFormat;
+import java.text.*;
 
-import com.predic8.membrane.core.Constants;
+import static com.predic8.membrane.core.Constants.*;
 
 public class ExchangesUtil {
 
 	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-
-	public static String extractContentTypeValue(String contentType) {
-		if (contentType == null)
-			return "";
-		int index = contentType.indexOf(";");
-		if (index > 0) {
-			return contentType.substring(0, index);
-		}
-		return contentType;
-	}
 
 	public static String getStatusCode(AbstractExchange exc) {
 		if (exc.getResponse() == null)
@@ -40,7 +30,7 @@ public class ExchangesUtil {
 
 	public static String getTime(AbstractExchange exc) {
 		if (exc.getTime() == null)
-			return Constants.UNKNOWN;
+			return UNKNOWN;
 		synchronized(DATE_FORMATTER) {
 			return DATE_FORMATTER.format(exc.getTime().getTime());
 		}
@@ -48,19 +38,19 @@ public class ExchangesUtil {
 
 	public static String getRequestContentLength(AbstractExchange exc) {
 		if (exc.getRequestContentLength() == -1)
-			return Constants.UNKNOWN;
+			return UNKNOWN;
 		return "" + exc.getRequestContentLength();
 	}
 
 	public static String getResponseContentLength(AbstractExchange exc) {
 		if (exc.getResponseContentLength() == -1)
-			return Constants.UNKNOWN;
+			return UNKNOWN;
 		return "" + exc.getResponseContentLength();
 	}
 
 	public static String getResponseContentType(AbstractExchange exc) {
 		if (exc.getResponse() == null)
-			return Constants.N_A;
+			return N_A;
 		return exc.getResponseContentType();
 	}
 

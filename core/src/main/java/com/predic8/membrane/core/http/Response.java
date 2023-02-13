@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -72,7 +73,6 @@ public class Response extends Message {
 		 * Used for returning JSON from JavascriptInterceptor
 		 * JSON MAP
 		 *
-		 * @throws JsonProcessingException
 		 */
 		public ResponseBuilder body(Map<String,Object> map) throws JsonProcessingException {
 			res.setBodyContent(om.writeValueAsBytes(map));
@@ -105,8 +105,8 @@ public class Response extends Message {
 
 		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) throws IOException {
 			// use chunking, since Content-Length is not known
-			res.getHeader().removeFields(Header.CONTENT_LENGTH);
-			res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
+			res.getHeader().removeFields(CONTENT_LENGTH);
+			res.getHeader().setValue(TRANSFER_ENCODING, CHUNKED);
 			Body b = new Body(stream);
 			if (closeStreamWhenDone) {
 				b.addObserver(new BodyCompleteMessageObserver(stream));
@@ -161,6 +161,13 @@ public class Response extends Message {
 	public static ResponseBuilder noContent() {
 		return ResponseBuilder.newInstance().
 				status(204, "No Content").
+				bodyEmpty();
+	}
+
+	public static ResponseBuilder found(String location) {
+		return ResponseBuilder.newInstance().
+				status(302, "Found").
+				header(LOCATION, location).
 				bodyEmpty();
 	}
 
@@ -249,6 +256,7 @@ public class Response extends Message {
 				body(HttpUtil.htmlMessage("Internal Server Error", ""));
 	}
 
+	@SuppressWarnings("unused")
 	public static ResponseBuilder notImplemented() {
 		return ResponseBuilder.newInstance().
 				status(501, "	Not Implemented").
@@ -270,6 +278,7 @@ public class Response extends Message {
 				body(HttpUtil.htmlMessage("Bad Gateway", message));
 	}
 
+	@SuppressWarnings("unused")
 	public static ResponseBuilder gatewayTimeout(String message) {
 		return ResponseBuilder.newInstance().
 				status(504, "Gateway timeout").
@@ -430,6 +439,7 @@ public class Response extends Message {
 		return statusCode >= 400 && statusCode < 500;
 	}
 
+	@SuppressWarnings("unused")
 	public boolean isServerError() {
 		return statusCode >= 500;
 	}
