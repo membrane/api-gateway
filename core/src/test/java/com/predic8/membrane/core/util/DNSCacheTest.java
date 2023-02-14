@@ -15,19 +15,16 @@
 package com.predic8.membrane.core.util;
 
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DNSCacheTest {
     private static final Logger LOG = LoggerFactory.getLogger(DNSCacheTest.class);
-	private DNSCache cache = new DNSCache();
+	private final DNSCache cache = new DNSCache();
 
 	private static InetAddress address;
 
@@ -40,14 +37,14 @@ public class DNSCacheTest {
 	}
 
 	@Test
-	public void testGetHostName() throws Exception {
+	public void testGetHostName() {
 		String host = cache.getHostName(address);
 		assertEquals("localhost", host);
 		assertTrue(cache.getCachedHostNames().contains(host));
 	}
 
 	@Test
-	public void testGetHostAddress() throws Exception {
+	public void testGetHostAddress() {
 		String host = cache.getHostAddress(address);
 		assertEquals("127.0.0.1", host);
 		assertTrue(cache.getCachedHostAddresses().contains(host));

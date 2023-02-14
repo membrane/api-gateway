@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2023 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,21 +14,17 @@
 
 package com.predic8.membrane.core.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.jupiter.api.*;
 
-public class Timer {
-	private static final Logger log = LoggerFactory.getLogger(Timer.class.getName());
+import java.time.*;
 
-	static private long time;
+import static com.predic8.membrane.core.util.DateAndTimeUtil.getMillisSinceEpoc;
+import static org.junit.jupiter.api.Assertions.*;
 
-	static public void reset() {
-		time = System.currentTimeMillis();
-	}
+public class DateAndTimeUtilTest {
 
-	static public void log(String txt) {
-		long now = System.currentTimeMillis();
-		log.debug(txt+ ":" + (now-time));
-		time = System.currentTimeMillis();
-	}
+    @Test
+    void getMillisSinceEpocTest() {
+        assertEquals(1676125800000000L,getMillisSinceEpoc(LocalDateTime.of(2023,2,11,15,30)));
+    }
 }

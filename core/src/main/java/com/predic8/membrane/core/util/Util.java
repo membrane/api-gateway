@@ -54,8 +54,7 @@ public class Util {
 	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, ParseException {
 		HashMap<String, String> values = new HashMap<>();
 
-		String contentType = g.getHeader().getContentType();
-		if (contentType != null && g.getHeader().getContentTypeObject().match(APPLICATION_JSON)) {
+		if (g.getHeader().getContentType() != null && g.getHeader().getContentTypeObject().match(APPLICATION_JSON)) {
 			final JsonParser jp = new JsonFactory().createParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
 			String name = null;
 			while (jp.nextToken() != null) {
@@ -82,9 +81,9 @@ public class Util {
 	static {
 		try {
 			if (!"false".equals(System.getProperty("membrane.virtualthreads"))) {
-				newVirtualThreadPerTaskExecutor = Executors.class.getMethod("newVirtualThreadPerTaskExecutor", new Class[0]);
+				newVirtualThreadPerTaskExecutor = Executors.class.getMethod("newVirtualThreadPerTaskExecutor");
 			}
-		} catch (NoSuchMethodException e) {
+		} catch (NoSuchMethodException ignored) {
 		}
 	}
 
@@ -107,5 +106,14 @@ public class Util {
 			}
 		}
 		return Executors.newCachedThreadPool();
+	}
+
+	/**
+	 *
+	 * @param string String that might be separated by comma e.g. "a,b,c"
+	 * @return mutable list
+	 */
+	public static List<String> splitStringByComma(String string) {
+		return new ArrayList<>(Arrays.asList(string.split(",")));
 	}
 }

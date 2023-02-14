@@ -68,6 +68,8 @@ public class Header {
 
 	public static final String ACCEPT = "Accept";
 
+	public static final String DATE = "Date";
+
 	public static final String LOCATION = "Location";
 
 	public static final String AUTHORIZATION = "Authorization";
@@ -187,7 +189,7 @@ public class Header {
 	}
 
 	public HeaderField[] getAllHeaderFields() {
-		return fields.toArray(new HeaderField[fields.size()]);
+		return fields.toArray(new HeaderField[0]);
 	}
 
 	/**
@@ -232,7 +234,7 @@ public class Header {
 		setValue(CONTENT_LENGTH, "" + length);
 	}
 
-	public void setProxyAutorization(String value) {
+	public void setProxyAuthorization(String value) {
 		setValue(PROXY_AUTHORIZATION, value);
 	}
 
@@ -260,12 +262,12 @@ public class Header {
 		return contentType == null ? null : new ContentType(contentType);
 	}
 
-	public void setContentType(String value) {
-		setValue(CONTENT_TYPE, value);
+	public void setContentType(String type) {
+		setValue(CONTENT_TYPE, type);
 	}
 
-	public String getSOAPAction() {
-		return getFirstValue(SOAP_ACTION);
+	public void setLocation(String location) {
+		setValue(LOCATION, location);
 	}
 
 	public void setSOAPAction(String value) {
@@ -290,10 +292,6 @@ public class Header {
 
 	public String getProxyConnection() {
 		return getFirstValue(PROXY_CONNECTION);
-	}
-
-	public void setProxyConnection(String connection) {
-		add(PROXY_CONNECTION, connection);
 	}
 
 	public boolean isProxyConnectionClose() {
@@ -357,10 +355,6 @@ public class Header {
 		return getFirstValue(CONTENT_ENCODING);
 	}
 
-	public String getUserAgent() {
-		return getFirstValue(USER_AGENT);
-	}
-
 	public String getCharset() {
 		if (getContentType() == null)
 			return UTF_8.name();
@@ -418,13 +412,6 @@ public class Header {
 		return -1;
 	}
 
-	public static MediaType[] convertStringsToMediaType(String[] mediaTypes) {
-		MediaType[] m = new MediaType[mediaTypes.length];
-		for (int i = 0; i < mediaTypes.length; i++)
-			m[i] = MediaType.parseMediaType(mediaTypes[i]);
-		return m;
-	}
-
 	public int getNumberOf(String headerName) {
 		int res = 0;
 		for (HeaderField headerField : fields)
@@ -457,46 +444,6 @@ public class Header {
 		fields.clear();
 	}
 
-	public boolean isUserAgentSupportsSNI() {
-		// a mostly conservative approximation of http://en.wikipedia.org/wiki/Server_Name_Indication#Support
-		String ua = getUserAgent();
-		if (ua == null)
-			return false;
-		if (getBrowserVersion(ua, "Firefox") >= 2)
-			return true;
-		if (getBrowserVersion(ua, "Opera") >= 8)
-			return true;
-		if (getBrowserVersion(ua, "Safari") >= 522)
-			return getBrowserVersion(ua, "Windows NT") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
-			if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
-				return getBrowserVersion(ua, "Windows NT") >= 6;
-				if (getBrowserVersion(ua, "Chrome") > 0) {
-					int windows = getBrowserVersion(ua, "Windows NT");
-					return windows >= 6 || windows == -1;
-				}
-				return false;
-	}
-
-	private int getBrowserVersion(String userAgent, String browserID) {
-		int p = userAgent.indexOf(browserID);
-		p += browserID.length();
-
-		if (userAgent.length() == p)
-			return -1;
-		char c = userAgent.charAt(p++);
-		if (c != ' ' && c != '/' && c != '_')
-			return -1;
-
-		int version = 0;
-		while (userAgent.length() != p) {
-			c = userAgent.charAt(p++);
-			if (c < '0' || c > '9')
-				break;
-			version = version * 10 + (c - '0');
-		}
-		return version;
-	}
-
 	public void setNoCacheResponseHeaders() {
 		setValue(EXPIRES, "Tue, 03 Jul 2001 06:00:00 GMT");
 		setValue(CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
@@ -506,10 +453,6 @@ public class Header {
 
 	public String getAuthorization() {
 		return getFirstValue(AUTHORIZATION);
-	}
-
-	public void setWwwAuthenticate(String params){
-		setValue(WWW_AUTHENTICATE,params);
 	}
 
 	public String getWwwAuthenticate(){

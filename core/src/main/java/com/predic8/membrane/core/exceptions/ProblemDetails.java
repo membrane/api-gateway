@@ -14,20 +14,44 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.http.*;
+
+import java.util.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
 
 public class ProblemDetails {
 
-    private final static ObjectMapper om = new ObjectMapper();
+    private final static ObjectWriter om = new ObjectMapper().writerWithDefaultPrettyPrinter();
 
-    public static byte[] createProblemDetails(String type, String title, String details) throws JsonProcessingException {
-        ObjectNode root = om.createObjectNode();
-        root.put("type", type);
-        root.put("title", title);
-        if (details != null)
+
+    public static Response createProblemDetails(int statusCode, String type, String title) {
+        return createProblemDetails(statusCode,type,title,null);
+    }
+
+    public static Response createProblemDetails(int statusCode, String type, String title, Map<String,Object> details) {
+        Map<String,Object> root = new HashMap<>();
+        root.put("type","http://membrane-api.io" + type);
+        root.put("title",title);
+
+        if (details != null) {
             root.put("details", details);
-        return om.writeValueAsBytes(root);
+        }
+
+        return createMessage(statusCode, type, title, details, root);
+    }
+
+    private static Response createMessage(int statusCode, String type, String title, Map<String, Object> details, Map<String, Object> root) {
+        Response.ResponseBuilder builder = Response.statusCode(statusCode);
+        try {
+            builder.body(om.writeValueAsBytes(root));
+            builder.contentType(APPLICATION_PROBLEM_JSON);
+        }
+        catch (Exception e) {
+            builder.body("Type: %s Title: %s Details: %s".formatted(type, title, details).getBytes());
+            builder.contentType(TEXT_PLAIN);
+        }
+        return builder.build();
     }
 }

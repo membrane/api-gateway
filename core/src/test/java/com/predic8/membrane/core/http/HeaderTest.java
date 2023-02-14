@@ -19,6 +19,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,12 +28,23 @@ public class HeaderTest {
 
 	private static final Header header = new Header();
 
+	private static Header h1;
+
 	@BeforeEach
 	public void setUp() throws Exception {
 		header.setContentType("text/xml; charset=utf-8");
 		header.add("host", "127.0.0.1:2000");
 		header.setAccept("application/soap+xml, application/dime, multipart/related, text/*");
 		header.setAuthorization("alice", "secret");
+
+		h1 = new Header();
+
+		h1.add(X_FORWARDED_FOR, "192.3.14.1");
+		h1.add(X_FORWARDED_FOR, "10.0.0.1");
+		h1.add(X_FORWARDED_FOR, "2001:db8:85a3:8d3:1319:8a2e:370:7348");
+
+		Header h2 = new Header();
+		h2.add(X_FORWARDED_FOR, "  192.3.14.1 , 	10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348	 ");
 	}
 
 	@Test
@@ -88,5 +100,24 @@ public class HeaderTest {
 	@ValueSource(strings = {"audio","image","video"})
 	void isBinaryContentTypePrimaryTypes(String primary) {
 		assertTrue(isBinary(primary + "/foo"),primary);
+	}
+
+    @Test
+    void getNormalizedValueFromMultipleHeaders() {
+		assertEquals("192.3.14.1,10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348", h1.getNormalizedValue(X_FORWARDED_FOR));
+    }
+
+	@Test
+	void getNormalizedValueFromOneHeader() {
+		assertEquals("192.3.14.1,10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348", h1.getNormalizedValue(X_FORWARDED_FOR));
+	}
+	
+	@Test
+	void multipleHeaderWithSameNameNormalized() {
+		Header h = new Header();
+		h.add("Foo", "1");
+		h.add("Foo","2");
+		h.add("Foo","3");
+		assertEquals("1,2,3",h.getNormalizedValue("Foo"));
 	}
 }

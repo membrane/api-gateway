@@ -26,7 +26,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.XMLEvent;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.predic8.beautifier.HtmlBeautifierFormatter;
@@ -36,9 +36,15 @@ import com.predic8.beautifier.XMLBeautifierFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.lang.Character.toUpperCase;
+import static java.lang.Integer.*;
+import static org.apache.commons.lang3.StringUtils.join;
+
 
 public class TextUtil {
-	private static Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
+
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
 	private static final char[] source;
 	private static final String[] replace;
@@ -100,7 +106,7 @@ public class TextUtil {
 	}
 
 	public static String toEnglishList(String conjuction, String... args) {
-		ArrayList<String> l = new ArrayList<String>();
+		ArrayList<String> l = new ArrayList<>();
 		for (String arg : args)
 			if (arg != null && arg.length() > 0)
 				l.add(arg);
@@ -121,10 +127,10 @@ public class TextUtil {
 	public static Object capitalize(String english) {
 		if (english.length() == 0)
 			return "";
-		return Character.toString(Character.toUpperCase(english.charAt(0))) + english.substring(1);
+		return toUpperCase(english.charAt(0)) + english.substring(1);
 	}
 
-	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+
 
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
@@ -133,7 +139,6 @@ public class TextUtil {
 
 	/**
 	 * Checks whether s is a valid (well-formed and balanced) XML snippet.
-	 *
 	 * Note that attributes escaped by single quotes are accepted (which is illegal by spec).
 	 */
 	public static boolean isValidXMLSnippet(String s) {
@@ -170,8 +175,8 @@ public class TextUtil {
 
 	public static String removeCommonLeadingIndentation(String src) {
 		// TODO: only handles tabs at the moment
-		String lines[] = src.split("\n");
-		int indent = Integer.MAX_VALUE;
+		String[] lines = src.split("\n");
+		int indent = MAX_VALUE;
 		for (String line : lines) {
 			if (StringUtils.strip(line).length() == 0)
 				continue;
@@ -180,11 +185,12 @@ public class TextUtil {
 				i++;
 			indent = Math.min(indent, i);
 		}
-		if (indent == 0 || indent == Integer.MAX_VALUE)
+		if (indent == 0 || indent == MAX_VALUE)
 			return src;
 		for (int i = 0; i < lines.length; i++)
 			lines[i] = lines[i].length() > indent ? lines[i].substring(indent) : "";
-			return StringUtils.join(lines, '\n');
+
+		return join(lines, '\n');
 	}
 
 }

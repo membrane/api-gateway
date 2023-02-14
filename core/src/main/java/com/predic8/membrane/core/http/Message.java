@@ -46,14 +46,12 @@ public abstract class Message {
 	public Message() {
 		header = new Header();
 		body = new EmptyBody();
-
 	}
 
 	/**
 	 * If the message is HTTP 1.1 but the header has no information about the
 	 * content length, then an assumption is made that after the body the server
 	 * will send an EOF. So the body is read till end of the stream.
-	 *
 	 * See <a href="http://www.ietf.org/rfc/rfc2145.txt">http://www.ietf.org/rfc/rfc2145.txt</a>
 	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
@@ -139,7 +137,6 @@ public abstract class Message {
 
 	/**
 	 * Sets the body.
-	 *
 	 * Does <b>NOT</b> adjust the header fields (<tt>Content-Length</tt> etc.): Use {@link #setBodyContent(byte[])} instead.
 	 */
 	public void setBody(AbstractBody b) {
@@ -296,7 +293,6 @@ public abstract class Message {
 		
 		return false;
 	}
-
 
 	public boolean isImage() {
 		if (header.getContentType() == null)
