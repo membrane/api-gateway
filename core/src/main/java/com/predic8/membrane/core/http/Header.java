@@ -18,7 +18,6 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
-import org.springframework.http.*;
 
 import javax.mail.internet.*;
 import java.io.*;
@@ -389,27 +388,6 @@ public class Header {
 		for (HeaderField hf : fields)
 			size += 4 + hf.estimateHeapSize();
 		return size;
-	}
-
-	/**
-	 * Tries to determines the index of the best content type.
-	 */
-	public int getBestAcceptedType(MediaType[] supported) {
-		String accept = getFirstValue(ACCEPT);
-		if (accept == null)
-			return -1;
-		List<MediaType> m;
-		try {
-			m = MediaType.parseMediaTypes(accept);
-		} catch (IllegalArgumentException e) {
-			return -1;
-		}
-		MediaType.sortByQualityValue(m); // @Todo Replace
-		for (MediaType t : m)
-			for (int i = 0; i < supported.length; i++)
-				if (t.includes(supported[i]))
-					return i;
-		return -1;
 	}
 
 	public int getNumberOf(String headerName) {

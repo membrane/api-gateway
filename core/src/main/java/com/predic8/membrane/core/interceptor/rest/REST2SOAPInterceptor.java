@@ -32,6 +32,7 @@ import java.util.regex.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
 
@@ -98,6 +99,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 			this.soapAction = soapAction;
 		}
 
+		@SuppressWarnings("unused")
 		public String getSoapURI() {
 			return soapURI;
 		}
@@ -157,13 +159,13 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
 		Mapping mapping = findFirstMatchingRegEx(uri);
 		if (mapping == null)
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
 				getRequestXMLSource(exc), exc.getStringProperties());
 		modifyRequest(exc, mapping);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	@Override
@@ -171,7 +173,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		Mapping mapping = getRESTURL(exc);
 		log.debug("restURL: " + mapping);
 		if (getRESTURL(exc) == null)
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		if (log.isDebugEnabled())
 			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8));
@@ -183,21 +185,25 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		header.setContentType(TEXT_XML_UTF8);
 
 		XML2HTTP.unwrapMessageIfNecessary(exc.getResponse());
-		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), mapping, exc.getResponse(), exc.getStringProperties());
+		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), exc.getResponse(), exc.getStringProperties());
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
+	private void convertResponseToJSONIfNecessary(Header header, Response response, Map<String, String> properties) throws Exception {
+		if (!response.isXML())
+			return;
 
-	private static final MediaType[] supportedTypes = convertStringsToMediaType(new String[] { TEXT_XML, APPLICATION_JSON_UTF8 });
+		// Not JSON
+		if (!getMediaTypeWithHighestQualityFromAcceptHeader(header).getSubtype().contains("json"))
+			return;
 
-	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response, Map<String, String> properties) throws Exception {
-		boolean inputIsXml = response.isXML();
-		int wantedType = requestHeader.getBestAcceptedType(supportedTypes);
-		if (inputIsXml && wantedType >= 1) {
-			response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
-			setJSONContentType(response.getHeader());
-		}
+		response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
+		setJSONContentType(response.getHeader());
+	}
+
+	private static MediaType getMediaTypeWithHighestQualityFromAcceptHeader(Header requestHeader) {
+		return sortMimeTypeByQualityFactorAscending(requestHeader.getFirstValue(ACCEPT)).get(0);
 	}
 
 	private byte[] xml2json(InputStream xmlResp, Map<String, String> properties) throws Exception {

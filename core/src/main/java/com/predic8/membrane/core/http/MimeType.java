@@ -17,6 +17,12 @@ package com.predic8.membrane.core.http;
 import jakarta.mail.internet.*;
 import org.springframework.http.*;
 
+import java.util.*;
+
+import static java.util.Collections.*;
+import static java.util.Comparator.comparingDouble;
+import static org.springframework.http.MediaType.*;
+
 /**
  * Use javax.mail.internet.ContentType to parse a mime type or the methods using
  * ContenType below.
@@ -124,10 +130,15 @@ public class MimeType {
         return false;
     }
 
-    public static MediaType[] convertStringsToMediaType(String[] mediaTypes) {
-        MediaType[] m = new MediaType[mediaTypes.length];
-        for (int i = 0; i < mediaTypes.length; i++)
-            m[i] = MediaType.parseMediaType(mediaTypes[i]);
+    /**
+     * Sorts a string of media types like the one in Accept
+     * @param s with MediaTypes e.g. text/html;q=0.9, application/json, application/xml;q=0.9, image/webp;q=0.8
+     * @return List of sorted MediaTypes by quality
+     */
+    public static List<MediaType> sortMimeTypeByQualityFactorAscending(String s) {
+        List<MediaType> m = parseMediaTypes(s);
+        m.sort(comparingDouble(MediaType::getQualityValue));
+        reverse(m);
         return m;
     }
 }
