@@ -128,6 +128,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         }
 
         List<String> xForwardedFor = getForwardedForList(exc);
+        if (xForwardedFor.isEmpty())
+            return useRemoteIpAddress(exc);
 
         log.debug("X-Forwared-For {}",xForwardedFor);
 
@@ -206,6 +208,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         h.add(X_RATELIMIT_RESET, strategy.getLimitReset(exc.getRemoteAddrIp()));
     }
 
+    @SuppressWarnings("unused")
     public int getRequestLimit() {
         return strategy.requestLimit;
     }
@@ -284,6 +287,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         this.trustedProxyCount = trustedProxyCount;
     }
 
+    @SuppressWarnings("unused")
     public boolean isTrustForwardedFor() {
         return trustForwardedFor;
     }
