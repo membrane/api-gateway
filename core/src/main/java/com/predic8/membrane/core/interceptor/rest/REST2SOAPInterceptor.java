@@ -194,16 +194,19 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		if (!response.isXML())
 			return;
 
-		// Not JSON
-		if (!getMediaTypeWithHighestQualityFromAcceptHeader(header).getSubtype().contains("json"))
+		String accept = header.getFirstValue(ACCEPT);
+		if (accept == null)
+			return;
+
+		List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
+		if (types.isEmpty())
+			return;
+
+		if (!isJson(types.get(0)))
 			return;
 
 		response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
 		setJSONContentType(response.getHeader());
-	}
-
-	private static MediaType getMediaTypeWithHighestQualityFromAcceptHeader(Header requestHeader) {
-		return sortMimeTypeByQualityFactorAscending(requestHeader.getFirstValue(ACCEPT)).get(0);
 	}
 
 	private byte[] xml2json(InputStream xmlResp, Map<String, String> properties) throws Exception {

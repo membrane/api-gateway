@@ -73,4 +73,10 @@ public class MimeTypeTest {
                 ),
                 sortMimeTypeByQualityFactorAscending("text/xml;q=0.9, application/json, */*;q=0.8"));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application/json", "application/json-foo", "application/JSON-foo"})
+    void isJson(String type) {
+        assertTrue(MimeType.isJson(MediaType.valueOf(type)));
+    }
 }

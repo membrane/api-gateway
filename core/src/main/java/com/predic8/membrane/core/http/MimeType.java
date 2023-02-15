@@ -15,12 +15,14 @@
 package com.predic8.membrane.core.http;
 
 import jakarta.mail.internet.*;
+import org.apache.commons.lang3.*;
 import org.springframework.http.*;
 
 import java.util.*;
 
 import static java.util.Collections.*;
 import static java.util.Comparator.comparingDouble;
+import static org.apache.commons.lang3.StringUtils.*;
 import static org.springframework.http.MediaType.*;
 
 /**
@@ -87,6 +89,12 @@ public class MimeType {
            // ignore
         }
         return false;
+    }
+
+    public static boolean isJson(MediaType type) {
+        if (type == null)
+            return false;
+        return containsIgnoreCase(type.getSubtype(),"json");
     }
 
     public static boolean isBinary(String mediaType) {
