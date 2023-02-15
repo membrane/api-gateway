@@ -18,27 +18,31 @@ import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
+import org.springframework.http.*;
 
+import java.util.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MimeTypeTest {
 
     @ParameterizedTest
-    @ValueSource(strings = {"zip","octet-stream"})
+    @ValueSource(strings = {"zip", "octet-stream"})
     void isBinarySubtypes(String subtype) {
-        assertTrue(MimeType.isBinary("foo/" + subtype),subtype);
+        assertTrue(MimeType.isBinary("foo/" + subtype), subtype);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"audio","image","video"})
+    @ValueSource(strings = {"audio", "image", "video"})
     void isBinaryPrimaryTypes(String primary) {
-        assertTrue(MimeType.isBinary(primary + "/foo"),primary);
+        assertTrue(MimeType.isBinary(primary + "/foo"), primary);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"xml","xhtml","svg"})
+    @ValueSource(strings = {"xml", "xhtml", "svg"})
     void isXML(String subtype) {
-        assertTrue(MimeType.isXML(  "foo/" + subtype),subtype);
+        assertTrue(MimeType.isXML("foo/" + subtype), subtype);
     }
 
     @Test
@@ -46,5 +50,33 @@ public class MimeTypeTest {
         ContentType ct = new ContentType("text/xml; charset=utf-8");
         ParameterList pl = ct.getParameterList();
         System.out.println("pl = " + pl.get("charset").toUpperCase());
+    }
+
+    @Test
+    void sortMimeTypeByQualityFactorTest() {
+        assertEquals(List.of(
+                        new MediaType("image", "webp"),
+                        new MediaType("application", "json",0.9),
+                        new MediaType("application", "xml", 0.8),
+                        new MediaType("text", "html", 0.7),
+                        new MediaType("*","*",0.6)
+                ),
+                sortMimeTypeByQualityFactorAscending("text/html;q=0.7, application/json;q=0.9, application/xml;q=0.8, image/webp, */*;q=0.6"));
+    }
+
+    @Test
+    void sortMimeTypeByQualityFactorDefault() {
+        assertEquals(List.of(
+                        new MediaType("application", "json"),
+                        new MediaType("text", "xml", 0.9),
+                        new MediaType("*","*",0.8)
+                ),
+                sortMimeTypeByQualityFactorAscending("text/xml;q=0.9, application/json, */*;q=0.8"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"application/json", "application/json-foo", "application/JSON-foo"})
+    void isJson(String type) {
+        assertTrue(MimeType.isJson(MediaType.valueOf(type)));
     }
 }
