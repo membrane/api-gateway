@@ -20,23 +20,25 @@ import org.junit.jupiter.api.Test;
 public class HostColonPortTest {
 
 	@Test
-	public void testDefaultPort() throws Exception {
+	public void testDefaultPort() {
 		HostColonPort hcp = new HostColonPort(false, "predic8.com");
 		assertEquals("predic8.com", hcp.host);
 		assertEquals(80, hcp.port);
 	}
 
 	@Test
-	public void testGetHost() throws Exception {
-		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
-		assertEquals("predic8.com", hcp.host);
+	public void testGetHost() {
+		assertEquals("predic8.com", new HostColonPort(false, "predic8.com:80").host);
 	}
 
 	@Test
-	public void testGetPort() throws Exception {
-		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
-		assertEquals(80, hcp.port);
+	public void testGetPort() {
+		assertEquals(80, new HostColonPort(false, "predic8.com:80").port);
 	}
 
+	@Test
+	public void noNumber() {
+		new HostColonPort(false,"foo:no-number");
+	}
 
 }

@@ -174,7 +174,7 @@ public class HttpClient implements AutoCloseable {
 	}
 
 	private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-		Object sslPropObj = exc.getProperty(Exchange.SSL_CONTEXT);
+		Object sslPropObj = exc.getProperty(SSL_CONTEXT);
 		if(sslPropObj != null)
 			return (SSLProvider) sslPropObj;
 		if(hcp.useSSL)
@@ -203,7 +203,7 @@ public class HttpClient implements AutoCloseable {
 
 		int counter = 0;
 		Exception exception = null;
-		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
+		Object trackNodeStatusObj = exc.getProperty(TRACK_NODE_STATUS);
 		boolean trackNodeStatus = trackNodeStatusObj instanceof Boolean && (Boolean) trackNodeStatusObj;
 		while (counter < maxRetries) {
 			Connection con = null;
@@ -390,7 +390,7 @@ public class HttpClient implements AutoCloseable {
 	}
 
 	private String getSNIServerName(Exchange exc) {
-		Object sniObject = exc.getProperty(Exchange.SNI_SERVER_NAME);
+		Object sniObject = exc.getProperty(SNI_SERVER_NAME);
 		if (sniObject == null)
 			return null;
 		return (String) sniObject;
