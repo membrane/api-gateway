@@ -42,7 +42,7 @@ public class Http2ServerHandler extends AbstractHttpHandler {
     public static final String HTTP2 = "h2_server";
 
     private final HttpServerHandler httpServerHandler;
-    private final Http2Logic logic;
+    final Http2Logic logic;
 
     public Http2ServerHandler(HttpServerHandler httpServerHandler, Socket sourceSocket, InputStream srcIn, OutputStream srcOut, boolean showSSLExceptions) {
         super(httpServerHandler.getTransport());
