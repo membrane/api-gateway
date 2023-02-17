@@ -164,7 +164,18 @@ public class HttpEndpointListener extends Thread {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
 				e.printStackTrace();
 			} catch (Exception e) {
-				log.error("",e);
+				log.error("", e);
+			} catch (Error e) {
+				try {
+					log.error("", e);
+				} catch (Throwable ignored) {
+				}
+				try {
+					System.err.println(e.getMessage());
+					System.err.println("Terminating because of Error in HttpEndpointListener.");
+				} catch (Throwable ignored) {
+				}
+				System.exit(1);
 			}
 		}
 	}
