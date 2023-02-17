@@ -136,6 +136,10 @@ public class StreamInfo {
     private void setState(StreamState state) {
         this.state = state;
 
+        // detach message, since no trailers can follow, once the CLOSED state has been reached
+        if (state == StreamState.CLOSED)
+            message = null;
+
         log.debug("streamId=" + streamId + " changed state to " + state);
     }
 
