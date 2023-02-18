@@ -15,7 +15,7 @@ package com.predic8.membrane.core.transport.http;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 public class HostColonPortTest {
 
@@ -38,7 +38,7 @@ public class HostColonPortTest {
 
 	@Test
 	public void noNumber() {
-		new HostColonPort(false,"foo:no-number");
+		Assertions.assertThrowsExactly(NumberFormatException.class,() -> new HostColonPort(false,"foo:no-number"));
 	}
 
 }
