@@ -52,6 +52,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private OutputStream srcOut;
 
 	private boolean showSSLExceptions = true;
+	private Http2ServerHandler http2ServerHandler;
 
 
 	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListener) throws IOException {
@@ -102,7 +103,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				}
 
 				if (Http2TlsSupport.isHttp2(sourceSocket)) {
-					new Http2ServerHandler(this, sourceSocket, srcIn, srcOut, showSSLExceptions).handle();
+					http2ServerHandler = new Http2ServerHandler(this, sourceSocket, srcIn, srcOut, showSSLExceptions);
+					http2ServerHandler.handle();
+					http2ServerHandler = null;
 					break;
 				}
 
@@ -306,6 +309,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	public Socket getSourceSocket() {
 		return sourceSocket;
+	}
+
+	public Http2ServerHandler getHttp2ServerHandler() {
+		return http2ServerHandler;
 	}
 
 	private class Expect100ContinueObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {

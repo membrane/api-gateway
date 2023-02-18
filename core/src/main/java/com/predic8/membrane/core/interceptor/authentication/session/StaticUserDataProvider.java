@@ -49,7 +49,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	private List<User> users = new ArrayList<User>();
 	private Map<String, User> usersByName = new HashMap<String, User>();
-	private BouncyCastleProvider provider = new BouncyCastleProvider();
 	private SecureRandom random = new SecureRandom();
 	private int saltByteSize = 128;
 

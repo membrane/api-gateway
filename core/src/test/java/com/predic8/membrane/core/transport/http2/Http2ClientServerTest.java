@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.core.transport.http2;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.config.security.KeyStore;
@@ -24,6 +24,9 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
@@ -38,11 +41,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.predic8.membrane.core.transport.http.HttpClient.HTTP2;
+import static com.predic8.membrane.core.transport.http2.StreamState.CLOSED;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2ClientServerTest {
     private volatile Response response;
     private volatile Consumer<Request> requestAsserter;
+    private volatile AbstractHttpHandler handler;
     private HttpClient hc;
     private HttpRouter router;
 
@@ -63,6 +68,7 @@ public class Http2ClientServerTest {
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
+                handler = exc.getHandler();
                 if (requestAsserter != null)
                     requestAsserter.accept(exc.getRequest());
                 exc.setResponse(response);
@@ -92,7 +98,7 @@ public class Http2ClientServerTest {
 
     @AfterEach
     public void done() throws Throwable {
-        hc.finalize();
+        hc.close();
         router.stop();
     }
 
@@ -120,6 +126,15 @@ public class Http2ClientServerTest {
         Response r = test("GET", "/abc?def=ghi&jkl=mno", null, Response.ok().build());
         assertEquals(200, r.getStatusCode());
         assertEquals("", r.getBodyAsStringDecoded());
+    }
+
+
+    @Test
+    public void testStreamInfoProperlyClosed() throws Exception {
+        test200("");
+
+        StreamInfo si = ((HttpServerHandler) handler).getHttp2ServerHandler().logic.streams.entrySet().stream().findFirst().get().getValue();
+        assertEquals(CLOSED, si.getState());
     }
 
     @Test
