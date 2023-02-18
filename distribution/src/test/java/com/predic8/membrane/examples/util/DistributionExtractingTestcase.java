@@ -63,7 +63,7 @@ public abstract class DistributionExtractingTestcase {
 
         unzip(getZipFile(targetDir), unzipDir);
 
-        membraneHome = requireNonNull(unzipDir.listFiles((dir, name) -> name.startsWith("membrane-service-proxy")))[0];
+        membraneHome = requireNonNull(unzipDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway")))[0];
         baseDir = getExampleDir(getExampleDirName());
 
         replaceLog4JConfig();
@@ -81,12 +81,12 @@ public abstract class DistributionExtractingTestcase {
     private File getZipFile(File targetDir) {
         File zip = null;
         {
-            File[] files = targetDir.listFiles((dir, name) -> name.startsWith("membrane-service-proxy") && name.endsWith(".zip"));
+            File[] files = targetDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway") && name.endsWith(".zip"));
             if (files == null) {
                 throw new RuntimeException("Could not find zip file!");
             }
             if (files.length > 1)
-                throw new RuntimeException("found more than one service-proxy*.zip");
+                throw new RuntimeException("found more than one membrane-api-gateway*.zip");
             if (files.length == 1)
                 zip = files[0];
         }

@@ -1,12 +1,10 @@
 <!--
-
-	Secure Configuration Sample
-	=========================== 
+	*** Secure Configuration Sample ***
 
 	Start Membrane with:
-	./service-proxy.sh -c conf/proxies-security.xml 
-
-	In the examples/* folders are more working samples for proxies.xml
+	./service-proxy.sh -c conf/proxies-security.xml
+	or
+    service-proxy.bat -c conf/proxies-security.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
