@@ -5,7 +5,8 @@ from locust import HttpUser, between, task
 # Install: pip3 install locust
 # Run: locust -f connections.py
 #
-# See: https://docs.locust.io/en/stable/index.html
+# See: https://docs.locust.io/
+#
 class WebsiteUser(HttpUser):
     # wait_time = between(5, 15)
 

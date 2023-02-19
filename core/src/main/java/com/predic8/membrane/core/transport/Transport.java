@@ -37,10 +37,6 @@ public abstract class Transport {
 	private boolean printStackTrace = false;
 	private boolean reverseDNS = true;
 
-	/**
-	 * Number of allowed concurrent connections from one client ip
-	 * @default -1 No Limit
-	 */
 	private int concurrentConnectionLimitPerIp = -1;
 
 	public String getOpenBackendConnections(int port){
@@ -118,8 +114,8 @@ public abstract class Transport {
 	}
 
 	/**
-	 * @description limits the number of concurrent connections from one ip
-	 * @default 60
+	 * @description Limits the number of concurrent connections from one ip
+	 * @default -1 No Limit
 	 */
 	@MCAttribute
 	public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {
