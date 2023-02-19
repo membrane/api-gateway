@@ -1,14 +1,10 @@
 <!--
-
-	Web Services with SOAP and WSDL Configuration
-	=============================================
-
-	For more details see:
-	- https://membrane-api.io/tutorials/soap/
-	- The examples/soap folders with working samples
+	*** Web Services with SOAP and WSDL Configuration ***
 
 	Start Membrane with:
 	./service-proxy.sh -c conf/proxies-soap.xml
+	or
+    service-proxy.bat -c conf/proxies-soap.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
@@ -32,7 +28,7 @@
 			 http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000
 
 			 Documentation:
-			 https://membrane-soa.org/service-proxy-doc/5.0/configuration/reference/soapProxy.htm
+			 https://membrane-soa.org/api-gateway/5.1/configuration/reference/soapProxy.htm
 
 		-->
 		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
