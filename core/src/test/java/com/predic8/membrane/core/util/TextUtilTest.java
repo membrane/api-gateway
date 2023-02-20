@@ -70,4 +70,21 @@ public class TextUtilTest {
 		assertTrue(pattern.matcher("192.68.24.15").matches());
 		assertFalse(pattern.matcher("192.68.24.12").matches());
 	}
+
+    @Test
+    void getLineFromMultilineStringTest() {
+		assertEquals("ccc ccc",TextUtil.getLineFromMultilineString("""
+                aaa aaa
+                bb bb
+                ccc ccc
+                ddd dd ddd
+                """, 3));
+    }
+
+	@Test
+	void getLineFromMultilineStringOneLine() {
+		assertEquals("aaa aaa",TextUtil.getLineFromMultilineString("""
+                aaa aaa
+                """, 1));
+	}
 }
