@@ -39,7 +39,6 @@ import static java.nio.charset.StandardCharsets.*;
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
  * switch destinations on failures.
- *
  * Instances are thread-safe.
  */
 public class HttpClient implements AutoCloseable {
@@ -58,7 +57,6 @@ public class HttpClient implements AutoCloseable {
 	 * How long to wait between calls to the same destination, in milliseconds.
 	 * To prevent hammering one target.
 	 * Between calls to different targets (think servers) this waiting time is not applied.
-	 *
 	 * Note: for reasons of code simplicity, this sleeping time is only applied between direct successive calls
 	 * to the same target. If there are multiple targets like one, two, one and it all goes very fast, then
 	 * it's possible that the same server gets hit with less time in between.
@@ -174,7 +172,7 @@ public class HttpClient implements AutoCloseable {
 	}
 
 	private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-		Object sslPropObj = exc.getProperty(Exchange.SSL_CONTEXT);
+		Object sslPropObj = exc.getProperty(SSL_CONTEXT);
 		if(sslPropObj != null)
 			return (SSLProvider) sslPropObj;
 		if(hcp.useSSL)
@@ -203,8 +201,7 @@ public class HttpClient implements AutoCloseable {
 
 		int counter = 0;
 		Exception exception = null;
-		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
-		boolean trackNodeStatus = trackNodeStatusObj instanceof Boolean && (Boolean) trackNodeStatusObj;
+		boolean trackNodeStatus = trackNodeStatus(exc);
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
@@ -250,14 +247,7 @@ public class HttpClient implements AutoCloseable {
 				Response response;
 
 				if (usingHttp2) {
-					if (h2c == null) {
-						h2c = new Http2Client(con, sslProvider.showSSLExceptions());
-						http2ClientPool.share(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext, h2c);
-					}
-					response = h2c.doCall(exc, con);
-					exc.setProperty(HTTP2, true);
-					// TODO: handle CONNECT / AllowWebSocket / etc
-					// TODO: connection should only be closed by the Http2Client
+					response = doHttp2Call(exc, con, target, h2c, sslProvider, sniServerName);
 				} else {
 
 					String newProtocol = null;
@@ -365,6 +355,26 @@ public class HttpClient implements AutoCloseable {
 		throw exception;
 	}
 
+	private Response doHttp2Call(Exchange exc, Connection con, HostColonPort target, Http2Client h2c, SSLProvider sslProvider, String sniServerName) throws IOException, InterruptedException {
+		Response response;
+		if (h2c == null) {
+			h2c = new Http2Client(con, sslProvider.showSSLExceptions());
+			http2ClientPool.share(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext, h2c);
+		}
+		response = h2c.doCall(exc, con);
+		exc.setProperty(HTTP2, true);
+		// TODO: handle CONNECT / AllowWebSocket / etc
+		// TODO: connection should only be closed by the Http2Client
+		return response;
+	}
+
+	private static boolean trackNodeStatus(Exchange exc) {
+		if (exc.getProperty(TRACK_NODE_STATUS) instanceof Boolean status)
+			return status;
+
+		return false;
+	}
+
 	private String[] getApplicationProtocols() {
 		if (useHttp2) {
 			return HTTP2_PROTOCOLS;
@@ -390,7 +400,7 @@ public class HttpClient implements AutoCloseable {
 	}
 
 	private String getSNIServerName(Exchange exc) {
-		Object sniObject = exc.getProperty(Exchange.SNI_SERVER_NAME);
+		Object sniObject = exc.getProperty(SNI_SERVER_NAME);
 		if (sniObject == null)
 			return null;
 		return (String) sniObject;
