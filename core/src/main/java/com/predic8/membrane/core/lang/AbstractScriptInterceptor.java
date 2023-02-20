@@ -28,6 +28,7 @@ import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -69,7 +70,15 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
         Message msg = getMessage(exc, flow);
 
-        Object res = script.apply(getParameterBindings(exc, flow, msg));
+        Object res;
+        try {
+            res = script.apply(getParameterBindings(exc, flow, msg));
+        } catch (Exception e) {
+            Map<String,Object> details = new HashMap<>();
+            details.put("message","See logs for details.");
+            exc.setResponse(createProblemDetails(500, "/internal-error", "Internal Server Error", details));
+            return RETURN;
+        }
 
         if (res instanceof Outcome outcome) {
             return outcome;

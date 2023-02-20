@@ -6,7 +6,7 @@ Membrane API Gateway
 Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services. Featuring:
 
 **API Security:**
-* Authentification with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/api-gateway/current/configuration/reference/basicAuthentication.htm) 
+* Authentication with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/api-gateway/current/configuration/reference/basicAuthentication.htm) 
 * [OAuth2 Authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.htm) 
 * Rate Limiting
 * XML Protection
@@ -14,11 +14,11 @@ Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and leg
 
 **OpenAPI:**
 * Deployment of [OpenAPI](https://membrane-api.io/openapi/) documents as APIs
-*  [Message validation](distribution/examples/openapi/openapi-validation-simple) against OpenAPI
+*  [Message validation](distribution/examples/openapi/validation-simple) against OpenAPI
 
 **Legacy Web Services:**
 * SOAP Message Routing
-* WSDL configuration, [message Validation](#legacy-soap-and-xml-web-services) and WSDL rewritting
+* WSDL configuration, [message validation](#legacy-soap-and-xml-web-services) and WSDL rewritting
 
 **Other:**
 * Admin Web console
@@ -45,7 +45,7 @@ Try the following snippets by copying them into the `conf/proxies.xml` file.
 
 ## REST
 
-Routing requests from port `8080` to `api.predic8.de` when the path starts with `/shop`. 
+Routing requests from port `2000` to `api.predic8.de` when the path starts with `/shop`. 
 
 ```xml
 <api port="2000">
@@ -238,8 +238,7 @@ Route and intercept WebSocket traffic:
   <target port="8080" host="localhost"/>
 </api>
 ```
-See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.htm)_)
-
+See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.htm)
 
 
 # SOAP Web Services
