@@ -81,5 +81,9 @@
             <outputDirectory>/</outputDirectory>
             <destName>starter.jar</destName>
         </file>
+        <file>
+            <source>target/bom.json</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
     </files>
 </assembly>
