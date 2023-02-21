@@ -15,14 +15,14 @@
 
 package com.predic8.membrane.core.util;
 
+import org.junit.jupiter.api.*;
+
+import java.net.*;
+
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static com.predic8.membrane.core.util.URLUtil.getHost;
+import static com.predic8.membrane.core.util.URLUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;
 
 public class URLUtilTest {
 
@@ -37,7 +37,7 @@ public class URLUtilTest {
 	}
 
 	@Test
-	public void testCreateQueryString() throws IOException {
+	public void testCreateQueryString() {
 		assertEquals("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1",
 				createQueryString("endpoint", "http://node1.clustera",
 						"cluster","c1"));
@@ -45,13 +45,13 @@ public class URLUtilTest {
 	}
 
 	@Test
-	public void testParseQueryString() throws IOException {
+	public void testParseQueryString() {
 		assertEquals("http://node1.clustera", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1", ERROR).get("endpoint"));
 		assertEquals("c1", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1", ERROR).get("cluster"));
 	}
 
 	@Test
-	public void testParamsWithoutValueString() throws IOException {
+	public void testParamsWithoutValueString() {
 		assertEquals("jim", parseQueryString("name=jim&male", ERROR).get("name"));
 		assertEquals("", parseQueryString("name=jim&male", ERROR).get("male"));
 		assertEquals("", parseQueryString("name=anna&age=", ERROR).get("age"));
@@ -63,4 +63,11 @@ public class URLUtilTest {
 		assertEquals("/path/to my/resource", u.getPath());
 		assertEquals("/path/to%20my/resource",u.getRawPath());
 	}
+
+    @Test
+    void getPortFromURLTest() throws MalformedURLException {
+		assertEquals(2000, getPortFromURL(new URL("http://localhost:2000")));
+		assertEquals(80, getPortFromURL(new URL("http://localhost")));
+		assertEquals(443, getPortFromURL(new URL("https://api.predic8.de")));
+    }
 }

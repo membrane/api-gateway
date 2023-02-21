@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.NO;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.YES;
@@ -92,10 +93,12 @@ public class OpenAPIInterceptorTest {
         assertEquals(RETURN, interceptor3Server.handleRequest(exc));
 
         assertEquals(404, exc.getResponse().getStatusCode());
-        assertTrue(exc.getResponse().getHeader().getContentType().contains(APPLICATION_JSON));
+        assertTrue(exc.getResponse().getHeader().getContentType().contains(APPLICATION_PROBLEM_JSON));
         exc.getResponse().getBody().getContent();
 
-        assertEquals("No matching API found!", getMapFromResponse(exc).get("error"));
+        System.out.println("getMapFromResponse(exc) = " + getMapFromResponse(exc));
+        assertEquals("No matching API found!", getMapFromResponse(exc).get("title"));
+        assertEquals("http://membrane-api.io/not-found", getMapFromResponse(exc).get("type"));
     }
 
     @Test

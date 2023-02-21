@@ -19,13 +19,36 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.fasterxml.jackson.databind.*;
 import io.swagger.v3.oas.models.*;
 
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+
 public class OpenAPIRecord {
 
+    /**
+     * Specification parsed with the OpenAPI parser
+     */
     OpenAPI api;
+
+    /**
+     * Specification parsed with JSON/YAML parser
+     */
     JsonNode node;
+
+    /**
+     * Version of the OpenAPI standard e.g. 2.0, 3.0.1
+     */
+    String version;
 
     public OpenAPIRecord(OpenAPI api, JsonNode node) {
         this.api = api;
         this.node = node;
+        this.version = getOpenAPIVersion(node);
+    }
+
+    public boolean isVersion2() {
+        return version.startsWith("2");
+    }
+
+    public boolean isVersion3() {
+        return version.startsWith("3");
     }
 }

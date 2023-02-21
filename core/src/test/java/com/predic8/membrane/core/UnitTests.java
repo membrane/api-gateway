@@ -124,7 +124,7 @@ import org.junit.platform.suite.api.*;
 		DateAndTimeUtilTest.class,
 		AbstractExchangeStoreTest.class
 })
-@SelectPackages("com.predic8.membrane.core.openapi")
+@SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {
     /*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

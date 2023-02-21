@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
-import java.net.URISyntaxException;
+import java.net.*;
 
 public class URLUtil {
 
@@ -38,5 +38,9 @@ public class URLUtil {
 		String p = u.getPath();
 		int i = p.lastIndexOf('/');
 		return i == -1 ? p : p.substring(i+1);
+	}
+
+	public static int getPortFromURL(URL loc2) {
+		return loc2.getPort() == -1 ? loc2.getDefaultPort() : loc2.getPort();
 	}
 }

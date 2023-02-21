@@ -25,7 +25,6 @@ public class ProblemDetails {
 
     private final static ObjectWriter om = new ObjectMapper().writerWithDefaultPrettyPrinter();
 
-
     public static Response createProblemDetails(int statusCode, String type, String title) {
         return createProblemDetails(statusCode,type,title,null);
     }

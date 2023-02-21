@@ -19,12 +19,13 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
-import io.swagger.v3.oas.models.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
+
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
 
 /**
  * @description The APIProxy extends the serviceProxy with API related functions like OpenAPI support.
@@ -44,7 +45,7 @@ public class APIProxy extends ServiceProxy {
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
-    protected Map<String, OpenAPI> basePaths;
+    protected Map<String, OpenAPIRecord> basePaths;
 
     protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
@@ -63,9 +64,9 @@ public class APIProxy extends ServiceProxy {
 
         String location;
         String dir;
-        YesNoOpenAPIOption validateRequests = YesNoOpenAPIOption.ASINOPENAPI;
-        YesNoOpenAPIOption validateResponses = YesNoOpenAPIOption.ASINOPENAPI;
-        YesNoOpenAPIOption validationDetails = YesNoOpenAPIOption.ASINOPENAPI;
+        YesNoOpenAPIOption validateRequests = ASINOPENAPI;
+        YesNoOpenAPIOption validateResponses = ASINOPENAPI;
+        YesNoOpenAPIOption validationDetails = ASINOPENAPI;
 
         public Spec() {
         }
@@ -76,7 +77,7 @@ public class APIProxy extends ServiceProxy {
 
         /**
          * @description Filename or URL pointing to an OpenAPI document. Relative filenames use the %MEMBRANE_HOME%/conf folder as base directory.
-         * @example openapi/fruitstore-v1.yaml, https://api.predic8.de/shop/swagger
+         * @example openapi/fruitstore-v1.yaml, <a href="https://api.predic8.de/shop/swagger">https://api.predic8.de/shop/swagger</a>
          */
         @MCAttribute()
         public void setLocation(String location) {
@@ -110,6 +111,7 @@ public class APIProxy extends ServiceProxy {
             this.validateRequests = validateRequests;
         }
 
+        @SuppressWarnings("unused")
         public YesNoOpenAPIOption getValidateResponses() {
             return validateResponses;
         }
@@ -185,11 +187,11 @@ public class APIProxy extends ServiceProxy {
         ((OpenAPIProxyServiceKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
     }
 
-    private Map<String, OpenAPI> getOpenAPIMap() {
-        Map<String, OpenAPI> basePaths = new HashMap<>();
+    private Map<String, OpenAPIRecord> getOpenAPIMap() {
+        Map<String, OpenAPIRecord> basePaths = new HashMap<>();
         apiRecords.forEach((id,record) -> record.api.getServers().forEach(server -> {
             try {
-                basePaths.put(UriUtil.getPathFromURL(router.getUriFactory(),server.getUrl()), record.api);
+                basePaths.put(UriUtil.getPathFromURL(router.getUriFactory(),server.getUrl()), record);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
                 // @TODO
@@ -203,7 +205,7 @@ public class APIProxy extends ServiceProxy {
         return statisticCollector;
     }
 
-    public Map<String, OpenAPI> getBasePaths() {
+    public Map<String, OpenAPIRecord> getBasePaths() {
         return basePaths;
     }
 }

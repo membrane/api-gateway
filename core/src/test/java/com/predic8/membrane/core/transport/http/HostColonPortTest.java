@@ -20,23 +20,34 @@ import org.junit.jupiter.api.Test;
 public class HostColonPortTest {
 
 	@Test
-	public void testDefaultPort() throws Exception {
+	public void testDefaultPort() {
 		HostColonPort hcp = new HostColonPort(false, "predic8.com");
 		assertEquals("predic8.com", hcp.host);
 		assertEquals(80, hcp.port);
 	}
 
 	@Test
-	public void testGetHost() throws Exception {
+	public void testGetHost() {
 		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
 		assertEquals("predic8.com", hcp.host);
 	}
 
 	@Test
-	public void testGetPort() throws Exception {
+	public void testGetPort() {
 		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
 		assertEquals(80, hcp.port);
 	}
 
 
+    @Test
+    void getProtocol() {
+		assertEquals("http", new HostColonPort("foo",80).getProtocol());
+		assertEquals("https", new HostColonPort("foo",443).getProtocol());
+    }
+
+    @Test
+    void getUrl() {
+		assertEquals("http://foo:80", new HostColonPort("foo",80).getUrl());
+		assertEquals("https://foo:443", new HostColonPort("foo",443).getUrl());
+    }
 }

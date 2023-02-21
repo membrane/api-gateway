@@ -30,7 +30,7 @@ public class OpenAPIConfigErrorTest extends DistributionExtractingTestcase {
     @Test
     void wrongFileLocation() throws Exception {
         BufferLogger logger = new BufferLogger();
-        writeInputStreamToFile(baseDir + "/conf/proxies.xml", getFileAsStream("com/predic8/membrane/errorhandling/wrong-file-location-proxies.xml"));
+        writeInputStreamToFile(baseDir + "/conf/proxies.xml", getResourceAsStream("com/predic8/membrane/errorhandling/wrong-file-location-proxies.xml"));
         try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitAfterStartFor("giving up").start()) {
             assertTrue(logger.contains("Cannot read"));
             assertTrue(logger.contains(": abc"));
@@ -40,7 +40,7 @@ public class OpenAPIConfigErrorTest extends DistributionExtractingTestcase {
     @Test
     void wrongURLLocation() throws Exception {
         BufferLogger logger = new BufferLogger();
-        writeInputStreamToFile(baseDir + "/conf/proxies.xml", getFileAsStream("com/predic8/membrane/errorhandling/wrong-url-location-proxies.xml"));
+        writeInputStreamToFile(baseDir + "/conf/proxies.xml", getResourceAsStream("com/predic8/membrane/errorhandling/wrong-url-location-proxies.xml"));
         try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitAfterStartFor("giving up").start()) {
             System.out.println("logger = " + logger);
             assertTrue(logger.contains("Error accessing OpenAPI"));
@@ -51,7 +51,7 @@ public class OpenAPIConfigErrorTest extends DistributionExtractingTestcase {
     @Test
     void wrongContent() throws Exception {
         BufferLogger logger = new BufferLogger();
-        writeInputStreamToFile(baseDir + "/conf/proxies.xml", getFileAsStream("com/predic8/membrane/errorhandling/wrong-content-proxies.xml"));
+        writeInputStreamToFile(baseDir + "/conf/proxies.xml", getResourceAsStream("com/predic8/membrane/errorhandling/wrong-content-proxies.xml"));
         try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitAfterStartFor("giving up").start()) {
             assertTrue(logger.contains("Cannot read"));
             assertTrue(logger.contains("client.cer"));
