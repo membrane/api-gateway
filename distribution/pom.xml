@@ -169,4 +169,29 @@
 		</plugins>
 	</build>
 
+	<profiles>
+
+		<profile>
+			<id>no-internet</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-failsafe-plugin</artifactId>
+						<executions>
+							<execution>
+								<goals>
+									<goal>integration-test</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<test>**/ExampleTestsWithoutInternet.java</test>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+	</profiles>
+
 </project>
