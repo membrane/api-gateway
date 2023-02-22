@@ -269,6 +269,10 @@ public class Header {
 		setValue(LOCATION, location);
 	}
 
+	public String getLocation() {
+		return getFirstValue(LOCATION);
+	}
+
 	public void setSOAPAction(String value) {
 		setValue(SOAP_ACTION, value);
 	}

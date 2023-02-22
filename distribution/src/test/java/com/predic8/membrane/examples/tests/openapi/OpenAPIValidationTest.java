@@ -20,7 +20,9 @@ import org.skyscreamer.jsonassert.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.*;
 
 public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -79,8 +81,10 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
     }
 
     @Test
-    void nestedObject() throws Exception {
-            putAndAssert(201, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+    void nestedObject() {
+        given()
+            .contentType(APPLICATION_JSON)
+            .body("""
                     {
                     	"name": "Jan Vermeer",
                     	"countryCode": "DE",
@@ -90,7 +94,10 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                     		"zip": "D-53173"
                     	}
                     }
-                    """);
+                    """)
+        .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1")
+        .then().assertThat()
+            .statusCode(201);
     }
 
     @Test

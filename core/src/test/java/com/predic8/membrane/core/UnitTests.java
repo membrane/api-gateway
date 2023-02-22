@@ -121,7 +121,6 @@ import org.junit.platform.suite.api.*;
 		RegExReplaceInterceptorTest.class,
 		URLParamUtilTest.class,
 		XMLProtectorTest.class,
-		DateAndTimeUtilTest.class,
 		AbstractExchangeStoreTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})

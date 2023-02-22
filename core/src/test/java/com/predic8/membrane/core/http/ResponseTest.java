@@ -267,4 +267,16 @@ public class ResponseTest {
                 <html><head><title>200 Ok.</title></head><body><h1>200 Ok.</h1><p>The Message <b>is</b> this!</p></body></html>""",
                 response.getBodyAsStringDecoded());
     }
+    
+    @Test
+    void redirectWithout300Test() {
+        Response res = Response.redirectWithout300("http://localhost:2000/login","New <b>address</b>!").build();
+        assertEquals(200,res.getStatusCode());
+        assertTrue(isOfMediaType( TEXT_HTML,res.getHeader().getContentType()));
+        assertEquals("http://localhost:2000/login",res.getHeader().getLocation());
+        assertTrue( res.getBodyAsStringDecoded().contains("""
+            <meta http-equiv="refresh" content="0;URL='http://localhost:2000/login'"/>"""));
+        System.out.println("res = " + res);
+
+    }
 }

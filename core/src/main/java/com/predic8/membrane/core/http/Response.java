@@ -212,16 +212,7 @@ public class Response extends Message {
 		String escaped = StringEscapeUtils.escapeXml11(uri);
 		return ResponseBuilder.newInstance().
 				status(permanent ? 301 : 307, permanent ? "Moved Permanently" : "Temporary Redirect").
-				header("Location", uri).
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
-	}
-
-	public static ResponseBuilder redirectGet(String uri){
-		String escaped = StringEscapeUtils.escapeXml11(uri);
-		return ResponseBuilder.newInstance().
-				status(303, "Temporary Redirect").
-				header("Location", uri).
+				header(LOCATION, uri).
 				contentType(TEXT_HTML_UTF8).
 				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
@@ -234,12 +225,16 @@ public class Response extends Message {
 	}
 
 	public static ResponseBuilder redirectWithout300(String uri, String body) {
-		return fromStatusCode(200, """
-				<html>
-				  <head><meta http-equiv="refresh" content="0;URL='%s'"/></head>
-				  <body>%s</body>
-				</html>
-				""".formatted(escapeXml11(uri),body)).location(uri);
+		return newInstance()
+				.status(200)
+				.contentType(TEXT_HTML_UTF8)
+				.location(uri)
+				.body("""
+					<html>
+					  <head><meta http-equiv="refresh" content="0;URL='%s'"/></head>
+					  <body>%s</body>
+					</html>
+				""".formatted(escapeXml11(uri),body));
 	}
 
 	public static ResponseBuilder serviceUnavailable(String message) {
