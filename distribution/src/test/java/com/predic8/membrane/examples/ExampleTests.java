@@ -42,79 +42,8 @@ import org.junit.platform.suite.api.Suite;
  */
 @Suite
 @SelectClasses({
-
-        GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
-
-        AntInPath.class,
-        ConsistentVersionNumbers.class,
-        DefaultConfigAdminConsoleTest.class,
-        HelpLinkExistenceTest.class,
-        JavaLicenseInfoTest.class,
-
-        ACLTest.class,
-        BasicAuthTest.class,
-        CBRTest.class,
-        FileExchangeStoreTest.class,
-        GroovyTest.class,
-        JavascriptTest.class,
-        Loadbalancing1StaticTest.class,
-        Loadbalancing3ClientTest.class,
-        Loadbalancing5MultipleTest.class,
-        Loadbalancing4XmlSessionTest.class,
-        LoggingCSVTest.class,
-        LoggingJDBCTest.class,
-        LoggingTest.class,
-        LoginTest.class,
-//        QuickstartRESTTest.class,
-//        QuickstartSOAPTest.class,
-        REST2SOAPTest.class,
-        REST2SOAPJSONTest.class,
-        RewriterTest.class,
-        SSLServerApiWithTlsTest.class,
-        ToBackendTest.class,
-        ThrottleTest.class,
-        XSLTTest.class,
-
-        FormValidationTest.class,
-        JSONSchemaValidationTest.class,
-        XMLValidationTest.class,
-
-        CustomInterceptorTest.class,
-        StaxExampleInterceptorTest.class,
-        AddSoapHeaderTest.class,
-        BasicXmlInterceptorTest.class,
-        Xml2JsonTest.class,
-        Json2XmlTest.class,
-        RoutingTest.class,
-        XsltExampleTest.class,
-        RoutingTest.class,
-
-        // OAuth2
-        OAuth2APITest.class,
-        OAuth2MembraneTest.class,
-        OAuth2CredentialsTest.class,
-
-        // OpenAPI
-        APIProxyTest.class,
-        OpenAPIValidationSimpleTest.class,
-        OpenAPIValidationTest.class,
-
-        // Tutorials
-        TutorialRestStepsTest.class,
-        TutorialRestInitialTest.class,
-
-        // Configuration
-        ProxiesXMLTest.class,
-        ProxiesXMLOfflineTest.class,
-        ProxiesXMLSecurityTest.class,
-        ProxiesXMLSoapTest.class,
-
-        // Not an example test. Maybe we can find a better location?
-        OpenAPIConfigErrorTest.class,
-
-        TextTemplateTest.class,
-        JsonTemplateTest.class,
-        XMLTemplateTest.class
+    ExampleTestsWithInternet.class,
+    ExampleTestsWithoutInternet.class
 })
 public class ExampleTests {
 }
