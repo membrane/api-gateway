@@ -98,7 +98,7 @@ public class OpenAPIInterceptorTest {
 
         System.out.println("getMapFromResponse(exc) = " + getMapFromResponse(exc));
         assertEquals("No matching API found!", getMapFromResponse(exc).get("title"));
-        assertEquals("http://membrane-api.io/not-found", getMapFromResponse(exc).get("type"));
+        assertEquals("http://membrane-api.io/error/not-found", getMapFromResponse(exc).get("type"));
     }
 
     @Test
