@@ -37,28 +37,11 @@ import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
+
 @Suite
-@SelectClasses({ MethodTest.class, RegExReplaceInterceptorTest.class,
-	Http10Test.class, Http11Test.class,
-	AccessControlInterceptorIntegrationTest.class,
-	LoadBalancingInterceptorTest.class,
-	REST2SOAPInterceptorIntegrationTest.class,
-	InterceptorInvocationTest.class,
-	BasicAuthenticationInterceptorIntegrationTest.class,
-	ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
-	AdjustContentLengthIntegrationTest.class,
-	BoundConnectionTest.class, ExceptionHandlingTest.class,
-	WSDLPublisherTest.class, LimitInterceptorTest.class,
-	LimitedMemoryExchangeStoreIntegrationTest.class,
-	SOAPProxyIntegrationTest.class,
-	SpringReferencesTest.class,
-	ResolverTest.class,
-	UnavailableSoapProxyTest.class,
-	IllegalCharactersInURLTest.class,
-	ProxySSLTest.class,
-	LargeBodyTest.class,
-	SessionManager.class,
-	SoapAndInternalProxyTest.class
+@SelectClasses( {
+		IntegrationTestsWithoutInternet.class,
+		IntegrationTestsWithInternet.class
 })
 public class IntegrationTests {
 	/*
