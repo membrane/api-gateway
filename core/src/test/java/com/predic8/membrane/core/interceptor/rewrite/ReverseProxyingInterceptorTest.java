@@ -14,18 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import java.net.URL;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.junit.jupiter.api.*;
 
-import org.junit.jupiter.api.Test;
+import java.net.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.FakeHttpHandler;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReverseProxyingInterceptorTest {
 	ReverseProxyingInterceptor rp = new ReverseProxyingInterceptor();
@@ -67,8 +65,8 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private String getRewrittenRedirectionLocation(String requestHostHeader, int port, String requestURI, String redirectionURI) throws Exception {
 		Exchange exc = createExchange(requestHostHeader, null, port, requestURI, redirectionURI);
-		assertEquals(Outcome.CONTINUE, rp.handleResponse(exc));
-		return exc.getResponse().getHeader().getFirstValue(Header.LOCATION);
+		assertEquals(CONTINUE, rp.handleResponse(exc));
+		return exc.getResponse().getHeader().getFirstValue(LOCATION);
 	}
 
 	@Test
@@ -110,8 +108,8 @@ public class ReverseProxyingInterceptorTest {
 		Exchange exc = createExchange(requestHostHeader, requestDestinationHeader, port, requestURI, null);
 		String url = new URL(targetScheme, "target", targetPort, exc.getRequest().getUri()).toString();
 		exc.getDestinations().add(url);
-		assertEquals(Outcome.CONTINUE, rp.handleRequest(exc));
-		return exc.getRequest().getHeader().getFirstValue(Header.DESTINATION);
+		assertEquals(CONTINUE, rp.handleRequest(exc));
+		return exc.getRequest().getHeader().getFirstValue(DESTINATION);
 	}
 
 	/**
@@ -125,7 +123,7 @@ public class ReverseProxyingInterceptorTest {
 		if (requestHostHeader != null)
 			header.setHost(requestHostHeader);
 		if (requestDestinationHeader != null)
-			header.add(Header.DESTINATION, requestDestinationHeader);
+			header.add(DESTINATION, requestDestinationHeader);
 		req.setHeader(header);
 		exc.setRequest(req);
 		if (redirectionURI != null) {
@@ -135,5 +133,4 @@ public class ReverseProxyingInterceptorTest {
 		}
 		return exc;
 	}
-
 }

@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.util.*;
 
 import java.net.*;
@@ -82,7 +81,7 @@ public class UriUtil {
         return ":"+url.getPort();
     }
 
-    public static String rewrite(URIFactory uriFactory, String url, String scheme, String host, int port) throws MalformedURLException, URISyntaxException {
+    public static String rewriteURL(URIFactory uriFactory, String url, String scheme, String host, int port) throws URISyntaxException {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme);
         sb.append("://");

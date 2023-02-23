@@ -41,4 +41,15 @@ public class HostColonPortTest {
 		Assertions.assertThrowsExactly(NumberFormatException.class,() -> new HostColonPort(false,"foo:no-number"));
 	}
 
+    @Test
+    void getProtocol() {
+		assertEquals("http", new HostColonPort("foo",80).getProtocol());
+		assertEquals("https", new HostColonPort("foo",443).getProtocol());
+    }
+
+    @Test
+    void getUrl() {
+		assertEquals("http://foo:80", new HostColonPort("foo",80).getUrl());
+		assertEquals("https://foo:443", new HostColonPort("foo",443).getUrl());
+    }
 }

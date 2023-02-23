@@ -16,29 +16,53 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.predic8.membrane.core.transport.http.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.FileUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIUtilTest {
 
     @Test
-    public void getIdFromAPITest() {
+    void getIdFromAPITest() {
         assertEquals("customers-api-v1-0", getIdFromAPI(getApi("/openapi/specs/customers.yml")) );
         assertEquals("servers-3-api-v1-0", getIdFromAPI(getApi("/openapi/specs/info-3-servers.yml")) );
     }
 
     @Test
-    public void idFromXMembraneId() {
+    void idFromXMembraneId() {
         assertEquals("extension-sample-v1-4", getIdFromAPI(getApi("/openapi/specs/x-membrane.yaml")) );
     }
 
     private OpenAPI getApi(String pfad) {
         return new OpenAPIParser().readContents(readInputStream(getResourceAsStream(this,pfad)), null, null).getOpenAPI();
+    }
+
+    @Test
+    void isOpenAPI3Test() throws IOException {
+        assertTrue(isOpenAPI3(getYAMLResource(this,"/openapi/specs/array.yml")));
+    }
+
+    @Test
+    void isSwagger2Test() throws IOException {
+        assertTrue(isSwagger2(getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json")));
+    }
+
+    @Test
+    void getOpenAPIVersionTest() throws IOException {
+        assertEquals("3.0.2", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/array.yml")));
+        assertEquals("2.0", getOpenAPIVersion(getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json")));
+    }
+
+    @Test
+    void parseSwaggersInfoServerTest() throws Exception {
+        assertEquals(new HostColonPort("10.20.9.4",44564), OpenAPIUtil.parseSwaggersInfoServer("//10.20.9.4:44564/"));
     }
 }

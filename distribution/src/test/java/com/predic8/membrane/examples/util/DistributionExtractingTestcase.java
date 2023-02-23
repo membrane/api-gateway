@@ -39,7 +39,6 @@ public abstract class DistributionExtractingTestcase {
     public static final String BLZ_SERVICE_WSDL = BLZ_SERVICE + "?wsdl";
 
     public static final String LOCALHOST_2000 = "http://localhost:2000";
-    public static final String LOCALHOST_3000 = "http://localhost:3000";
 
     public static  final String[] CONTENT_TYPE_APP_XML_HEADER = {"Content-Type", APPLICATION_XML};
     public static  final String[] CONTENT_TYPE_TEXT_XML_HEADER = {"Content-Type", TEXT_XML};
@@ -225,7 +224,7 @@ public abstract class DistributionExtractingTestcase {
         replaceInFile(new File(baseDir, filename), a, b);
     }
 
-    public InputStream getFileAsStream(String filename) {
+    public InputStream getResourceAsStream(String filename) {
         return getClass().getClassLoader().getResourceAsStream(filename);
     }
 }
