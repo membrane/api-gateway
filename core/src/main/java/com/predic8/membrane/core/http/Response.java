@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
+import org.apache.commons.text.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -208,16 +209,12 @@ public class Response extends Message {
 	}
 
 	public static ResponseBuilder redirect(String uri, boolean permanent) {
-		String escaped = escapeXml11(uri);
-		return fromStatusCode(permanent ? 301 : 307, unescapedHtmlMessage("Moved.", """
-				This page has moved to <a href="%s">%s</a>.""".formatted(escaped,escaped))).location(uri);
-	}
-
-	public static ResponseBuilder redirectGet(String uri){
-		String escaped = escapeXml11(uri);
-		return fromStatusCode(303, unescapedHtmlMessage("Moved.", """
-			This page has moved to <a href="%s">%s</a>.
-			""".formatted(escaped,escaped))).location(uri);
+		String escaped = StringEscapeUtils.escapeXml11(uri);
+		return ResponseBuilder.newInstance().
+				status(permanent ? 301 : 307, permanent ? "Moved Permanently" : "Temporary Redirect").
+				header(LOCATION, uri).
+				contentType(TEXT_HTML_UTF8).
+				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
 
 	public static ResponseBuilder redirectWithout300(String uri) {
@@ -228,12 +225,16 @@ public class Response extends Message {
 	}
 
 	public static ResponseBuilder redirectWithout300(String uri, String body) {
-		return fromStatusCode(200, """
-				<html>
-				  <head><meta http-equiv="refresh" content="0;URL='%s'"/></head>
-				  <body>%s</body>
-				</html>
-				""".formatted(escapeXml11(uri),body)).location(uri);
+		return newInstance()
+				.status(200)
+				.contentType(TEXT_HTML_UTF8)
+				.location(uri)
+				.body("""
+					<html>
+					  <head><meta http-equiv="refresh" content="0;URL='%s'"/></head>
+					  <body>%s</body>
+					</html>
+				""".formatted(escapeXml11(uri),body));
 	}
 
 	public static ResponseBuilder serviceUnavailable(String message) {
@@ -278,11 +279,11 @@ public class Response extends Message {
 		return fromStatusCode(401, message);
 	}
 
-	private static ResponseBuilder fromStatusCode(int statusCode, String msg) {
+	public static ResponseBuilder fromStatusCode(int statusCode, String msg) {
 		return newInstance().
 				status(statusCode).
 				contentType(TEXT_HTML_UTF8).
-				body(htmlMessage("%d %s.".formatted(statusCode, getMessageForStatusCode(statusCode)), msg));
+				body(unescapedHtmlMessage("%d %s.".formatted(statusCode, getMessageForStatusCode(statusCode)), msg));
 	}
 
 	public static ResponseBuilder unauthorized() {
@@ -384,6 +385,7 @@ public class Response extends Message {
 		return statusCode >= 300 && statusCode < 400;
 	}
 
+	@SuppressWarnings("unused")
 	public boolean hasNoContent() {
 		return statusCode == 204;
 	}

@@ -45,4 +45,8 @@ public class HttpUtilTest {
 		assertEquals("POST /operation/call HTTP/1.1", readLine(getClass().getClassLoader().getResourceAsStream("request-post.msg")));
 	}
 
+    @Test
+    void unescapedHtmlMessageTest() {
+		assertEquals("<html><head><title>caption</title></head><body><h1>caption</h1><p>body</p></body></html>", unescapedHtmlMessage("caption","body"));
+    }
 }

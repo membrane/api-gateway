@@ -13,18 +13,4 @@
    limitations under the License. */
 
 package com.predic8.membrane.core.util;
-
-import org.junit.jupiter.api.*;
-
-import java.time.*;
-
-import static com.predic8.membrane.core.util.DateAndTimeUtil.getMillisSinceEpoc;
-import static org.junit.jupiter.api.Assertions.*;
-
-public class DateAndTimeUtilTest {
-
-    @Test
-    void getMillisSinceEpocTest() {
-        assertEquals(1676125800000000L,getMillisSinceEpoc(LocalDateTime.of(2023,2,11,15,30)));
-    }
-}
+public record Pair<A, B>(A first, B second) {}

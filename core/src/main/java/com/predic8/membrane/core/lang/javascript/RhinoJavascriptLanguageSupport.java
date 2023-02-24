@@ -15,6 +15,7 @@ package com.predic8.membrane.core.lang.javascript;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import javax.script.*;
@@ -52,8 +53,9 @@ public class RhinoJavascriptLanguageSupport extends LanguageSupport {
                 return script.eval(javascriptCode);
             } catch (ScriptException e) {
                 log.error("Error compiling script:" + e.getMessage());
-                log.error("Script:");
-                log.error(javascriptCode);
+                log.error("Error in Line:");
+                log.error(TextUtil.getLineFromMultilineString(javascriptCode,e.getLineNumber()));
+                log.error("Script:\n" + javascriptCode);
                 throw new RuntimeException("Error compiling script:", e);
             }
         }

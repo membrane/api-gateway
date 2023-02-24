@@ -14,35 +14,24 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import com.google.common.base.Objects;
-import com.predic8.membrane.core.util.TimerManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.annotation.*;
+import java.io.*;
+import java.lang.ref.*;
+import java.util.*;
+import java.util.concurrent.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.model.IPortChangeListener;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-
-import javax.annotation.Nullable;
-
-import static com.google.common.base.Objects.equal;
-import static java.lang.Integer.MAX_VALUE;
-import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.google.common.base.Objects.*;
+import static java.lang.Integer.*;
+import static java.lang.String.*;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @description <p>
@@ -54,7 +43,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @MCElement(name="transport")
 public class HttpTransport extends Transport {
 
-	private static Logger log = LoggerFactory.getLogger(HttpTransport.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(HttpTransport.class.getName());
 
 	public static final String SOURCE_HOSTNAME = "com.predic8.membrane.transport.http.source.Hostname";
 	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";

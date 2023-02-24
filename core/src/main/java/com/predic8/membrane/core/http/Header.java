@@ -251,6 +251,10 @@ public class Header {
 		return getFirstValue(CONTENT_TYPE);
 	}
 
+	public String getUserAgent() {
+		return getFirstValue(USER_AGENT);
+	}
+
 	/**
 	 * @return An object describing the value of the "Content-Type" HTTP header.
 	 * 	Null, if the header is not present.
@@ -267,6 +271,10 @@ public class Header {
 
 	public void setLocation(String location) {
 		setValue(LOCATION, location);
+	}
+
+	public String getLocation() {
+		return getFirstValue(LOCATION);
 	}
 
 	public void setSOAPAction(String value) {
@@ -459,5 +467,49 @@ public class Header {
 
 	public void setXForwardedHost(String xForwardedHostHeaderValue) {
 		setValue(X_FORWARDED_HOST,xForwardedHostHeaderValue);
+	}
+
+	/**
+	 * Method can be used from Groovy or Javascripts
+	 */
+	@SuppressWarnings("unused")
+	public boolean isUserAgentSupportsSNI() {
+		// a mostly conservative approximation of http://en.wikipedia.org/wiki/Server_Name_Indication#Support
+		String ua = getUserAgent();
+		if (ua == null)
+			return false;
+		if (getBrowserVersion(ua, "Firefox") >= 2)
+			return true;
+		if (getBrowserVersion(ua, "Opera") >= 8)
+			return true;
+		if (getBrowserVersion(ua, "Safari") >= 522)
+			return getBrowserVersion(ua, "Windows NT") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
+		if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
+			return getBrowserVersion(ua, "Windows NT") >= 6;
+		if (getBrowserVersion(ua, "Chrome") > 0) {
+			int windows = getBrowserVersion(ua, "Windows NT");
+			return windows >= 6 || windows == -1;
+		}
+		return false;
+	}
+
+	private int getBrowserVersion(String userAgent, String browserID) {
+		int p = userAgent.indexOf(browserID);
+		p += browserID.length();
+
+		if (userAgent.length() == p)
+			return -1;
+		char c = userAgent.charAt(p++);
+		if (c != ' ' && c != '/' && c != '_')
+			return -1;
+
+		int version = 0;
+		while (userAgent.length() != p) {
+			c = userAgent.charAt(p++);
+			if (c < '0' || c > '9')
+				break;
+			version = version * 10 + (c - '0');
+		}
+		return version;
 	}
 }

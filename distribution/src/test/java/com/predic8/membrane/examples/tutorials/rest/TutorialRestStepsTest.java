@@ -39,7 +39,7 @@ public class TutorialRestStepsTest extends AbstractSampleMembraneStartStopTestca
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         // In the distribution is only the start of the tutorial but not alle the steps
-        writeInputStreamToFile(baseDir + "/proxies.xml", getFileAsStream("com/predic8/membrane/examples/tutorials/rest/rest-tutorial-steps-proxies.xml"));
+        writeInputStreamToFile(baseDir + "/proxies.xml", getResourceAsStream("com/predic8/membrane/examples/tutorials/rest/rest-tutorial-steps-proxies.xml"));
         process = startServiceProxyScript();
     }
 

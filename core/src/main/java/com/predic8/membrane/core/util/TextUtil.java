@@ -38,13 +38,14 @@ import org.slf4j.LoggerFactory;
 
 import static java.lang.Character.toUpperCase;
 import static java.lang.Integer.*;
+import static javax.xml.stream.XMLInputFactory.*;
 import static org.apache.commons.lang3.StringUtils.join;
 
 
 public class TextUtil {
 	private static final Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
 
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	private static final XMLInputFactory xmlInputFactory = newInstance();
 
 	private static final char[] source;
 	private static final String[] replace;
@@ -78,7 +79,6 @@ public class TextUtil {
 			}
 		}
 		return out.toString();
-
 	}
 
 	public static boolean isNullOrEmpty(String str) {
@@ -133,8 +133,8 @@ public class TextUtil {
 
 
 	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
 	/**
@@ -191,6 +191,17 @@ public class TextUtil {
 			lines[i] = lines[i].length() > indent ? lines[i].substring(indent) : "";
 
 		return join(lines, '\n');
+	}
+
+	/**
+	 * Counts from 1 cause this is needed for getting lines from Javascript source code.
+	 *
+	 * @param s Multiline string
+	 * @param lineNumber number of line to return. Counts from 1
+	 * @return line
+	 */
+	public static String getLineFromMultilineString(String s,int lineNumber) {
+		return s.split("\n")[lineNumber-1];
 	}
 
 }

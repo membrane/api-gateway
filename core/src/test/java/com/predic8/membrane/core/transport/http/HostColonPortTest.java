@@ -15,28 +15,41 @@ package com.predic8.membrane.core.transport.http;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 public class HostColonPortTest {
 
 	@Test
-	public void testDefaultPort() throws Exception {
+	public void testDefaultPort() {
 		HostColonPort hcp = new HostColonPort(false, "predic8.com");
 		assertEquals("predic8.com", hcp.host);
 		assertEquals(80, hcp.port);
 	}
 
 	@Test
-	public void testGetHost() throws Exception {
-		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
-		assertEquals("predic8.com", hcp.host);
+	public void testGetHost() {
+		assertEquals("predic8.com", new HostColonPort(false, "predic8.com:80").host);
 	}
 
 	@Test
-	public void testGetPort() throws Exception {
-		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
-		assertEquals(80, hcp.port);
+	public void testGetPort() {
+		assertEquals(80, new HostColonPort(false, "predic8.com:80").port);
 	}
 
+	@Test
+	public void noNumber() {
+		Assertions.assertThrowsExactly(NumberFormatException.class,() -> new HostColonPort(false,"foo:no-number"));
+	}
 
+    @Test
+    void getProtocol() {
+		assertEquals("http", new HostColonPort("foo",80).getProtocol());
+		assertEquals("https", new HostColonPort("foo",443).getProtocol());
+    }
+
+    @Test
+    void getUrl() {
+		assertEquals("http://foo:80", new HostColonPort("foo",80).getUrl());
+		assertEquals("https://foo:443", new HostColonPort("foo",443).getUrl());
+    }
 }

@@ -30,13 +30,14 @@ import com.predic8.membrane.core.util.TimerManager;
 
 public abstract class Transport {
 
-	protected Set<IPortChangeListener> menuListeners = new HashSet<IPortChangeListener>();
+	protected Set<IPortChangeListener> menuListeners = new HashSet<>();
 
-	private List<Interceptor> interceptors = new Vector<Interceptor>();
+	private List<Interceptor> interceptors = new Vector<>();
 	private Router router;
 	private boolean printStackTrace = false;
 	private boolean reverseDNS = true;
-	int concurrentConnectionLimitPerIp = 60;
+
+	private int concurrentConnectionLimitPerIp = -1;
 
 	public String getOpenBackendConnections(int port){
 		return "N/A";
@@ -113,8 +114,8 @@ public abstract class Transport {
 	}
 
 	/**
-	 * @description limits the number of concurrent connections from one ip
-	 * @default 60
+	 * @description Limits the number of concurrent connections from one ip
+	 * @default -1 No Limit
 	 */
 	@MCAttribute
 	public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {

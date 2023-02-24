@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import java.time.*;
-
 public class DateAndTimeUtil {
 	public static String prettyPrintTimeSpan(long timespan) {
 		timespan = timespan / 1000;
@@ -33,9 +31,5 @@ public class DateAndTimeUtil {
 			sb.append(String.format("%d m, ", min));
 		sb.append(String.format("%d s", sec));
 		return sb.toString();
-	}
-
-	public static Long getMillisSinceEpoc(LocalDateTime time) {
-		return time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() * 1000;
 	}
 }

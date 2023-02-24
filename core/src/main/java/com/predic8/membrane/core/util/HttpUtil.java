@@ -232,7 +232,7 @@ public class HttpUtil {
 		if (port == -1) {
 			port = url.getDefaultPort();
 			if (port == -1)
-				port = 80;
+				return  80;
 		}
 		return port;
 	}

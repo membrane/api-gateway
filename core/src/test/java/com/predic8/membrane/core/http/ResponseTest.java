@@ -15,6 +15,7 @@
 
 package com.predic8.membrane.core.http;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.*;
@@ -248,5 +249,34 @@ public class ResponseTest {
             of(redirect("ABC", true), 301, "Moved Permanently", true),
             of(statusCode(999), 999, "", false)
         );
+    }
+
+    @Test
+    void redirectTest() {
+        assertTrue(Response.redirect("https://predic8.de/foo", false).build().getBodyAsStringDecoded().contains("""
+                <a href="https://predic8.de/foo">https://predic8.de/foo</a>"""));
+
+    }
+
+    @Test
+    void fromStatusCodeTest() {
+        Response response = fromStatusCode(200,"The Message <b>is</b> this!").build();
+        assertEquals(200,response.getStatusCode());
+        assertTrue(isOfMediaType( TEXT_HTML,response.getHeader().getContentType()));
+        assertEquals("""
+                <html><head><title>200 Ok.</title></head><body><h1>200 Ok.</h1><p>The Message <b>is</b> this!</p></body></html>""",
+                response.getBodyAsStringDecoded());
+    }
+    
+    @Test
+    void redirectWithout300Test() {
+        Response res = Response.redirectWithout300("http://localhost:2000/login","New <b>address</b>!").build();
+        assertEquals(200,res.getStatusCode());
+        assertTrue(isOfMediaType( TEXT_HTML,res.getHeader().getContentType()));
+        assertEquals("http://localhost:2000/login",res.getHeader().getLocation());
+        assertTrue( res.getBodyAsStringDecoded().contains("""
+            <meta http-equiv="refresh" content="0;URL='http://localhost:2000/login'"/>"""));
+        System.out.println("res = " + res);
+
     }
 }
