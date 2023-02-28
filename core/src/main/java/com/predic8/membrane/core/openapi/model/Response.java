@@ -23,7 +23,7 @@ import java.io.*;
 
 public class Response extends Message<Response> {
 
-    private int statusCode;
+    private final int statusCode;
 
     public Response(int statusCode) {
         this.statusCode = statusCode;
@@ -60,4 +60,17 @@ public class Response extends Message<Response> {
     public boolean sameStatusCode(String other) {
         return Integer.toString(statusCode).equals(other);
     }
+
+    /**
+     *
+     * @param wildcard String like 2XX, 3XX, 4XX
+     * @return true if statuscode matches wildcard
+     */
+    public boolean matchesWildcard(String wildcard) {
+        if (wildcard.length() != 3 || !wildcard.endsWith("XX"))
+            return false;
+
+        return Integer.toString(statusCode).charAt(0) == wildcard.charAt(0);
+    }
+
 }
