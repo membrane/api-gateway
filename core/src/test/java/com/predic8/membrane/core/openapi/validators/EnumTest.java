@@ -19,7 +19,6 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.openapi.model.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;

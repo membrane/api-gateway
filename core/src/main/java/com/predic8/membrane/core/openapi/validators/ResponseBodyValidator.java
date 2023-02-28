@@ -39,31 +39,63 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         if (operation.getResponses() == null)
             throw new RuntimeException("An operation should always have at least one response declared.");
 
-        AtomicBoolean foundMatchingResponse = new AtomicBoolean();
-        operation.getResponses().forEach((statusCode, responseSpec) -> {
-            if (response.sameStatusCode(statusCode)) {
-                foundMatchingResponse.set(true);
-                if (responseSpec.getContent() != null) {
-                    validateResponseBodyInternal(ctx, response, responseSpec);
-                } else {
-                    String ref = responseSpec.get$ref();
-                    if (ref != null) {
-                        validateResponseBodyInternal(ctx, response, api.getComponents().getResponses().get(getComponentLocalNameFromRef(ref)));
-                    } else {
-                        if (response.hasBody()) {
-                            errors.add(ctx.statusCode(500),"Response should't have a body. There is no content described in the API specification.");
-                        }
-                    }
-                }
-            }
-        });
+        boolean foundMatchingResponse = findExactMatchingResponseByStatusCodeAndValidate(ctx, operation, response);
 
-        if (!foundMatchingResponse.get()) {
+        // Maybe a wildcard like 2XX, 3XX could match
+        if (!foundMatchingResponse) {
+            foundMatchingResponse = matchStatuscodeWildcardsAndValidate(ctx, operation, response);
+        }
+
+        if (!foundMatchingResponse) {
             errors.add(ctx.statusCode(500), format("Server returned a status code of %d but allowed are only %s",
                     response.getStatusCode(), joinByComma(operation.getResponses().keySet())));
         }
 
         return errors;
+    }
+
+    private boolean matchStatuscodeWildcardsAndValidate(ValidationContext ctx, Operation operation, Response response) {
+        AtomicBoolean foundMatchingResponse = new AtomicBoolean();
+        operation.getResponses().forEach((statusCode, responseSpec) -> {
+
+            // No wildcard like 2XX
+            if (!statusCode.endsWith("XX"))
+                return;
+
+            if (!response.matchesWildcard(statusCode))
+                return;
+
+            foundMatchingResponse.set(true);
+            validateBody(ctx, responseSpec, response);
+        });
+        return foundMatchingResponse.get();
+    }
+
+    private boolean findExactMatchingResponseByStatusCodeAndValidate(ValidationContext ctx, Operation operation, Response response) {
+        AtomicBoolean foundMatchingResponse = new AtomicBoolean();
+        operation.getResponses().forEach((statusCode, responseSpec) -> {
+            if (!response.sameStatusCode(statusCode))
+                return;
+
+            foundMatchingResponse.set(true);
+            validateBody(ctx, responseSpec, response);
+        });
+        return foundMatchingResponse.get();
+    }
+
+    private void validateBody(ValidationContext ctx, ApiResponse responseSpec, Response response) {
+        if (responseSpec.getContent() != null) {
+            validateResponseBodyInternal(ctx, response, responseSpec);
+        } else {
+            String ref = responseSpec.get$ref();
+            if (ref != null) {
+                validateResponseBodyInternal(ctx, response, api.getComponents().getResponses().get(getComponentLocalNameFromRef(ref)));
+            } else {
+                if (response.hasBody()) {
+                    errors.add(ctx.statusCode(500), "Response shouldn't have a body. There is no content described in the API specification.");
+                }
+            }
+        }
     }
 
     private void validateResponseBodyInternal(ValidationContext ctx, Response response, ApiResponse apiResponse) {
@@ -75,7 +107,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
             try {
                 validateMediaType(ctx, s, mediaType, response);
             } catch (ParseException e) {
-                errors.add(ctx.statusCode(500),format("Validating error. Something is wrong with the mediaType %s",mediaType));
+                errors.add(ctx.statusCode(500), format("Validating error. Something is wrong with the mediaType %s", mediaType));
             }
         });
     }
@@ -83,7 +115,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
     private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) throws ParseException {
 
         if (response.getMediaType() == null) {
-            errors.add(ctx.statusCode(500),"The response has a body, but no Content-Type header.");
+            errors.add(ctx.statusCode(500), "The response has a body, but no Content-Type header.");
             return;
         }
 
@@ -91,8 +123,8 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         // in the OpenAPI document.
         if (!response.isOfMediaType(mediaType)) {
             errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE)
-                    .validatedEntity(response.getMediaType().toString()),
-                    format("Response with status code %d has mediatype %s instead of the expected type %s.",response.getStatusCode(),response.getMediaType(),mediaType));
+                            .validatedEntity(response.getMediaType().toString()),
+                    format("Response with status code %d has mediatype %s instead of the expected type %s.", response.getStatusCode(), response.getMediaType(), mediaType));
             return;
         }
         validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, response, 500);

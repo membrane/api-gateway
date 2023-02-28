@@ -64,6 +64,10 @@ public class ValidationErrors {
         return errors.size();
     }
 
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
     public ValidationError get(int i) {
         return errors.get(i);
     }

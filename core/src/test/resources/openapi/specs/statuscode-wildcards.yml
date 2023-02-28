@@ -1,0 +1,34 @@
+openapi: '3.0.3'
+info:
+  title: Statuscode Wildcards API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/
+paths:
+  /two:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: integer
+        '307':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+        '2XX':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '3XX':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
