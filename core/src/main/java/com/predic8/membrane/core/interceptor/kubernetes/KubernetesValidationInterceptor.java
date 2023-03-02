@@ -39,20 +39,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description
  * Kubernetes Integration is still experimental.
- *
  * To create the CustomResourceDefinitions, apply kubernetes-config.yaml from
  * core/target/classes/com/predic8/membrane/core/config/kubernetes/ or a part (e.g. the 'serviceproxies' CRD) of the file.
- *
  * Create a key and certificate for TLS for https://membrane-validator.membrane-soa.svc:444/ and setup Membrane to serve
  * this address. The configuration shown below configures Membrane on a fixed IP address outside of the Kubernetes cluster,
  * but this is no requirement.
- *
  * Embed the following serviceProxy and adjust the 'resources' attribute to a comma-separated list of CRDs that you applied.
  * Note that while the CRDs have plural names, here you need to use the corresponding singular. Configure the "ssl" section
  * using your key and certificate.
@@ -157,12 +154,13 @@ import java.util.stream.Stream;
  * </code>
  *
  */
+@SuppressWarnings({"JavadocLinkAsPlainText", "JavadocBlankLines"})
 @MCElement(name="kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private ResolverMap resourceResolver;
     private List<String> resources;
-    private ConcurrentMap<String, IValidator> validators = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, IValidator> validators = new ConcurrentHashMap<>();
     private List<String> namespaces = ImmutableList.of("membrane-soa");
 
     @Override
@@ -174,7 +172,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (exc.getRequest().isBodyEmpty())
-            return Outcome.CONTINUE;
+            return CONTINUE;
 
         ObjectMapper mapper = new ObjectMapper();
         AdmissionReview review = mapper.readValue(new BufferedReader(new InputStreamReader(
@@ -195,7 +193,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         }
         setExchangeResponse(exc, mapper, review);
 
-        return Outcome.RETURN;
+        return RETURN;
     }
 
 

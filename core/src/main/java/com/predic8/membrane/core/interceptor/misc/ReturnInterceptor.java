@@ -31,12 +31,9 @@ import static java.lang.String.*;
 
 /**
  * @description Terminates the exchange flow. The returned response is determined in the following order:
- *
  * 1. If there is already a response in the exchange, that response is returned
  * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
- *
  * The options statusCode and contentType will overwrite the values from the messages.
- *
  * This plugin is useful together with the template plugin. See examples/template.
  * @topic 4. Interceptors/Features
  */
@@ -76,18 +73,29 @@ public class ReturnInterceptor extends AbstractInterceptor {
     private Response getResponse(Exchange exc) throws IOException {
         Response response = exc.getResponse();
         if (response == null) {
-            response = new Response.ResponseBuilder().status(statusCode, getMessageForStatusCode(statusCode)).contentType(exc.getRequest().getHeader().getContentType()).build();
+            Response.ResponseBuilder builder = new Response.ResponseBuilder().status(statusCode);
+            String reqContentType = exc.getRequest().getHeader().getContentType();
+            if (reqContentType != null) {
+                builder.contentType(reqContentType);
+            }
+            response = builder.build();
             if (exc.getRequest().getBody() instanceof Body body) {
                 response.setBody(body);
                 response.getHeader().setContentLength(body.getLength());
             }
         }
+
         if (statusCode != 0) {
             response.setStatusCode(statusCode);
             response.setStatusMessage(getMessageForStatusCode(statusCode));
         }
+
         if (contentType!=null) {
             response.getHeader().setContentType(contentType);
+        }
+
+        if(response.isBodyEmpty() && !response.getHeader().hasContentLength()) {
+            response.getHeader().setContentLength(0);
         }
         return response;
     }

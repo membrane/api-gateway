@@ -372,12 +372,6 @@ public class Response extends Message {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
-		if (isBodyEmpty()) {
-			log.debug("empty body created");
-			body = new EmptyBody();
-			return;
-		}
-
 		super.createBody(in);
 	}
 
@@ -395,9 +389,8 @@ public class Response extends Message {
 		return " " + statusCode;
 	}
 
-	@Override
-	public boolean isBodyEmpty() throws IOException {
-		return statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205 || super.isBodyEmpty();
+	public boolean shouldNotContainBody()  {
+		return statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205 ;
 	}
 
 	public boolean isOk(){

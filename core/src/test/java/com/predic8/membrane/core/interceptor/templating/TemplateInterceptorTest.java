@@ -15,24 +15,19 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.membrane.core.util.*;
-import org.json.JSONObject;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.w3c.dom.NodeList;
+import com.predic8.membrane.core.resolver.*;
+import org.json.*;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathFactory;
-import java.io.IOException;
+import javax.xml.parsers.*;
+import javax.xml.xpath.*;
+import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
@@ -54,9 +49,47 @@ public class TemplateInterceptorTest {
     static ResolverMap map;
     static final String separator = FileSystems.getDefault().getSeparator();
 
+    @BeforeAll
+    public static void setupFiles() throws IOException {
+        //user.dir returns current working directory
+        copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir") +
+                                                                                     separator + "project_template.xml") );
+        copyFiles(Paths.get("src/test/resources/json/template_test.json"), Paths.get(System.getProperty("user.dir") +
+                                                                                     separator + "template_test.json"));
+
+        copiedXml = Paths.get(System.getProperty("user.dir") +
+                              separator + "project_template.xml");
+        copiedJson = Paths.get(System.getProperty("user.dir") +
+                               separator + "template_test.json");
+        router = Mockito.mock(Router.class);
+        map = new ResolverMap();
+        Mockito.when(router.getResolverMap()).thenReturn(map);
+    }
+
+    @AfterAll
+    public static  void deleteFile() throws IOException {
+        Files.delete(copiedXml);
+        Files.delete(copiedJson);
+    }
+
+    @BeforeEach
+    public void setUp(){
+        ti = new TemplateInterceptor();
+        exc = new Exchange(null);
+        req = new Request.Builder().build();
+        exc.setRequest(req);
+
+        exc.setProperty("title", "minister");
+        List<String> lst = new ArrayList<>();
+        lst.add("food1");
+        lst.add("food2");
+        exc.setProperty("items", lst);
+        exc.setProperty("title", "minister");
+    }
+
     @Test
     void accessJson() throws Exception {
-        Exchange exchange = new Request.Builder().contentType(APPLICATION_JSON).body("""
+        Exchange exchange = Request.post("/cities").contentType(APPLICATION_JSON).body("""
                 { "city": "Da Nang" }
                 """).buildExchange();
 
@@ -70,7 +103,7 @@ public class TemplateInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     void createson() throws Exception {
-        Exchange exchange = new Request.Builder().contentType(APPLICATION_JSON).buildExchange();
+        Exchange exchange = Request.put("/foo").contentType(APPLICATION_JSON).buildExchange();
 
         invokeInterceptor(exchange, """
                 {"foo":7,"bar":"baz"}
@@ -85,7 +118,7 @@ public class TemplateInterceptorTest {
 
     @Test
     void accessBindings() throws Exception {
-        Exchange exchange = new Request.Builder().url(new URIFactory(),"/foo?a=1&b=2").contentType(TEXT_PLAIN).body("vlinder").buildExchange();
+        Exchange exchange = Request.post("/foo?a=1&b=2").contentType(TEXT_PLAIN).body("vlinder").buildExchange();
         exchange.setProperty("baz",7);
 
         invokeInterceptor(exchange, """
@@ -112,7 +145,6 @@ B: <%= params.b %>
                 """, APPLICATION_JSON);
         
         String body = exchange.getRequest().getBodyAsStringDecoded();
-        System.out.println("body = " + body);
         assertTrue(body.contains("/foo"));
         assertTrue(body.contains("Flow: REQUEST"));
         assertTrue(body.contains("Body: vlinder"));
@@ -123,50 +155,20 @@ B: <%= params.b %>
     }
 
 
-    @BeforeAll
-    public static void setupFiles() throws IOException {
-        //user.dir returns current working directory
-        copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir") +
-                separator + "project_template.xml") );
-        copyFiles(Paths.get("src/test/resources/json/template_test.json"), Paths.get(System.getProperty("user.dir") +
-                separator + "template_test.json"));
-        
-        copiedXml = Paths.get(System.getProperty("user.dir") +
-                separator + "project_template.xml");
-        copiedJson = Paths.get(System.getProperty("user.dir") +
-                separator + "template_test.json");
-        router = Mockito.mock(Router.class);
-        map = new ResolverMap();
-        Mockito.when(router.getResolverMap()).thenReturn(map);
-    }
-
-    @BeforeEach
-    public void setUp(){
-        ti = new TemplateInterceptor();
-        exc = new Exchange(null);
-        req = new Request.Builder().build();
-        exc.setRequest(req);
-
-        exc.setProperty("title", "minister");
-        List<String> lst = new ArrayList<>();
-        lst.add("food1");
-        lst.add("food2");
-        exc.setProperty("items", lst);
-        exc.setProperty("title", "minister");
-
-    }
-
     @Test
     public void xmlFromFileTest() throws Exception {
         setAndHandleRequest("./project_template.xml");
-
-        XPathExpression xpath = XPathFactory.newInstance().newXPath().compile("/project/part[2]/title");
-        String filled = ((NodeList) xpath.evaluate(DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                .parse(exc.getRequest().getBodyAsStream()), NODESET)).item(0).getFirstChild().getNodeValue();
-
-        assertEquals("minister", filled.trim());
+        assertEquals("minister", evaluateXPathAndReturnFirstNode(createXPathExpression("/project/part[2]/title")).trim());
     }
 
+    private static XPathExpression createXPathExpression(String getTitlePath) throws XPathExpressionException {
+        return XPathFactory.newInstance().newXPath().compile(getTitlePath);
+    }
+
+    private String evaluateXPathAndReturnFirstNode(XPathExpression xpath) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException {
+        return ((NodeList) xpath.evaluate(DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                .parse(exc.getRequest().getBodyAsStream()), NODESET)).item(0).getFirstChild().getNodeValue();
+    }
 
     @Test
     public void nonXmlTemplateListTest() throws Exception {
@@ -178,7 +180,6 @@ B: <%= params.b %>
 
         assertEquals("minister",
                 new JSONObject(exc.getRequest().getBodyAsStringDecoded()).getJSONObject("meta").getString("title"));
-
     }
 
     @Test
@@ -208,20 +209,20 @@ B: <%= params.b %>
     }
 
     @Test
-    public void contentTypeTestXml() throws Exception {
+    void contentTypeTestXml() throws Exception {
         setAndHandleRequest("./project_template.xml");
         assertTrue(exc.getRequest().isXML());
     }
 
     @Test
-    public void contentTypeTestOther() throws Exception {
+    void contentTypeTestOther() throws Exception {
         ti.setContentType(APPLICATION_JSON);
         setAndHandleRequest("./template_test.json");
         assertTrue(exc.getRequest().isJSON());
     }
 
     @Test
-    public void contentTypeTestNoXml() throws Exception {
+    void contentTypeTestNoXml() throws Exception {
         setAndHandleRequest("./template_test.json");
         assertEquals("text/plain",exc.getRequest().getHeader().getContentType());
     }
@@ -231,13 +232,6 @@ B: <%= params.b %>
         ti.init(router);
         ti.handleRequest(exc);
     }
-
-    @AfterAll
-    public static  void deleteFile() throws IOException {
-        Files.delete(copiedXml);
-        Files.delete(copiedJson);
-    }
-
 
 
     private static void invokeInterceptor(Exchange exchange, String template, String mimeType) throws Exception {

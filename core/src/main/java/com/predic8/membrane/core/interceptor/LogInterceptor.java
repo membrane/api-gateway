@@ -14,12 +14,11 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
+import static org.slf4j.LoggerFactory.*;
 
 /**
  * @description The log feature logs request and response messages to the log4j
@@ -117,26 +116,13 @@ public class LogInterceptor extends AbstractInterceptor {
 
 	private void log(String msg) {
 		switch (level) {
-		case TRACE:
-			LoggerFactory.getLogger(category).trace(msg);
-			break;
-		case DEBUG:
-			LoggerFactory.getLogger(category).debug(msg);
-			break;
-		case INFO:
-			LoggerFactory.getLogger(category).info(msg);
-			break;
-		case WARN:
-			LoggerFactory.getLogger(category).warn(msg);
-			break;
-		case ERROR:
-			LoggerFactory.getLogger(category).error(msg);
-			break;
-		case FATAL:
-			LoggerFactory.getLogger(category).error(msg);
-			break;
+			case TRACE -> getLogger(category).trace(msg);
+			case DEBUG -> getLogger(category).debug(msg);
+			case INFO -> getLogger(category).info(msg);
+			case WARN -> getLogger(category).warn(msg);
+			case ERROR -> getLogger(category).error(msg);
+			case FATAL -> getLogger(category).error(msg);
 		}
-
 	}
 
 	public String getCategory() {

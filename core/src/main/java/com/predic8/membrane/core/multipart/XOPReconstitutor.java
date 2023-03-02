@@ -113,6 +113,11 @@ public class XOPReconstitutor {
 			public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 				throw new RuntimeException("not implemented.");
 			}
+
+			@Override
+			public boolean shouldNotContainBody() {
+				return false;
+			}
 		};
 		m.setBodyContent(body);
 

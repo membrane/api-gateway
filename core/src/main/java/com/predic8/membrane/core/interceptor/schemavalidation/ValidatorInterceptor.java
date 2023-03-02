@@ -31,6 +31,8 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.TextUtil;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
  * {@link JSONValidator} and {@link SchematronValidator} depending on the
@@ -39,7 +41,7 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
-	private static Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
 
 	private String wsdl;
 	private String schema;
@@ -104,7 +106,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().isBodyEmpty())
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		return validator.validateMessage(exc, exc.getRequest(), "request");
 	}
@@ -112,14 +114,14 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		if (exc.getResponse().isBodyEmpty())
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		return validator.validateMessage(exc, exc.getResponse(), "response");
 	}
 
 	/**
 	 * @description The WSDL (URL or file) to validate against.
-	 * @example http://predic8.com:8080/material/ArticleService?wsdl
+	 * @example <a href="http://predic8.com:8080/material/ArticleService?wsdl">ArticleService</a>
 	 */
 	@MCAttribute
 	public void setWsdl(String wsdl) {
@@ -136,7 +138,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
 	/**
 	 * @description The XSD Schema (URL or file) to validate against.
-	 * @example http://www.predic8.com/schemas/order.xsd
+	 * @example <a href="http://www.predic8.com/schemas/order.xsd">order.xsd</a>
 	 */
 	@MCAttribute
 	public void setSchema(String schema) {
@@ -237,25 +239,17 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		return sb.toString();
 	}
 
-	public static interface FailureHandler {
-		public static final FailureHandler VOID = new FailureHandler(){
-			@Override
-			public void handleFailure(String message, Exchange exc) {
-			}};
+	public interface FailureHandler {
+		FailureHandler VOID = (message, exc) -> {};
 
-			void handleFailure(String message, Exchange exc);
+		void handleFailure(String message, Exchange exc);
 	}
 
 	private FailureHandler createFailureHandler() {
 		if (failureHandler == null || failureHandler.equals("response"))
 			return null;
 		if (failureHandler.equals("log"))
-			return new FailureHandler() {
-			@Override
-			public void handleFailure(String message, Exchange exc) {
-				log.info("Validation failure: " + message);
-			}
-		};
+			return (message, exc) -> log.info("Validation failure: " + message);
 		throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
 	}
 
