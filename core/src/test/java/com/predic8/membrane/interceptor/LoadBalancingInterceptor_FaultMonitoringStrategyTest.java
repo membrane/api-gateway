@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.interceptor;
 
-import com.google.common.base.Function;
 import com.google.common.base.Stopwatch;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -36,11 +35,9 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +45,10 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the LoadBalancingInterceptor using the SuccessStrategy.
@@ -181,19 +180,15 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .numThreads(6)
                 .numRequests(100)
                 .successChance(1d)
-                .preSubmitCallback(new Function<>() {
-                    @Nullable
-                    @Override
-                    public Void apply(Integer integer) {
-                        if (integer == 20) {
-                            try {
-                                httpRouters.get(0).shutdown();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                .preSubmitCallback(integer -> {
+                    if (integer == 20) {
+                        try {
+                            httpRouters.get(0).shutdown();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                        return null;
                     }
+                    return null;
                 })
                 .build();
 
@@ -219,25 +214,21 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .numThreads(6)
                 .numRequests(100)
                 .successChance(1d)
-                .preSubmitCallback(new Function<>() {
-                    @Nullable
-                    @Override
-                    public Void apply(Integer integer) {
-                        try {
-                            if (integer == 10) {
-                                httpRouters.get(0).shutdown();
-                            } else if (integer == 20) {
-                                httpRouters.get(1).shutdown();
-                            } else if (integer == 30) {
-                                httpRouters.get(2).shutdown();
-                            } else if (integer == 40) {
-                                httpRouters.get(3).shutdown();
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                .preSubmitCallback(integer -> {
+                    try {
+                        if (integer == 10) {
+                            httpRouters.get(0).shutdown();
+                        } else if (integer == 20) {
+                            httpRouters.get(1).shutdown();
+                        } else if (integer == 30) {
+                            httpRouters.get(2).shutdown();
+                        } else if (integer == 40) {
+                            httpRouters.get(3).shutdown();
                         }
-                        return null;
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
+                    return null;
                 })
                 .build();
 
