@@ -45,11 +45,7 @@ public class AbstractNamespaceHandler implements NamespaceHandler {
 	}
 
 	public void registerLocalBeanDefinitionParser(String parentBeanClassName, String elementName, BeanDefinitionParser parser) {
-		Map<String, BeanDefinitionParser> lp = localParsers.get(parentBeanClassName);
-		if (lp == null) {
-			lp = new HashMap<>();
-			localParsers.put(parentBeanClassName, lp);
-		}
+		Map<String, BeanDefinitionParser> lp = localParsers.computeIfAbsent(parentBeanClassName, k -> new HashMap<>());
 		lp.put(elementName, parser);
 	}
 

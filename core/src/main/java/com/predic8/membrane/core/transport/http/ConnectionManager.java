@@ -172,11 +172,7 @@ public class ConnectionManager {
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
 		synchronized(this) {
-			l = availableConnections.get(key);
-			if (l == null) {
-				l = new ArrayList<>();
-				availableConnections.put(key, l);
-			}
+			l = availableConnections.computeIfAbsent(key, k -> new ArrayList<>());
 			l.add(o);
 		}
 	}
