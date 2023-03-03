@@ -47,7 +47,6 @@ public class TemplateInterceptorTest {
     static Path copiedJson;
     static Router router;
     static ResolverMap map;
-    static final String separator = FileSystems.getDefault().getSeparator();
 
     @BeforeAll
     public static void setupFiles() throws IOException {
@@ -153,7 +152,6 @@ B: <%= params.b %>
         assertTrue(body.contains("A: 1"));
         assertTrue(body.contains("B: 2"));
     }
-
 
     @Test
     public void xmlFromFileTest() throws Exception {
