@@ -191,10 +191,10 @@ public abstract class SessionManager {
 
     private void removeRefreshIfNoChangeInExpireTime(Exchange exc, Map<String, List<String>> setCookieHeaders) {
         synchronized (cookieExpireCache) {
-            setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
+            setCookieHeaders.entrySet().stream().toList().stream() // copy so that map is modifiable
                     .filter(e -> cookieExpireCache.getIfPresent(e.getKey() + "=true") != null)
                     .forEach(e -> {
-                        e.getValue().stream().forEach(cookieEntry -> {
+                        e.getValue().forEach(cookieEntry -> {
                             String cookie = cookieExpireCache.getIfPresent(e.getKey() + "=true");
                             if (cookieEntry.equals(cookie)) {
                                 setCookieHeaders.get(e.getKey()).remove(e.getValue());
@@ -208,7 +208,7 @@ public abstract class SessionManager {
     }
 
     private void removeRedundantExpireCookieIfRefreshed(Exchange exc, Map<String, List<String>> setCookieHeaders) {
-        setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
+        setCookieHeaders.entrySet().stream().toList().stream() // copy so that map is modifiable
                 .filter(e -> e.getValue().size() > 1)
                 .filter(e -> e.getValue().stream().filter(s -> s.contains(VALUE_TO_EXPIRE_SESSION_IN_BROWSER)).count() == 1)
                 .forEach(e -> {
@@ -236,7 +236,7 @@ public abstract class SessionManager {
     }
 
     private void setCookieForExpiredSessions(Exchange exc, String currentSessionCookieValue) {
-        cookiesToExpire(exc, currentSessionCookieValue).stream()
+        cookiesToExpire(exc, currentSessionCookieValue)
                 .forEach(cookie -> exc.getResponse().getHeader().add(Header.SET_COOKIE, cookie));
     }
 
@@ -268,7 +268,7 @@ public abstract class SessionManager {
             return new Session(usernameKeyName, new HashMap<>());
 
         Map<String, Map<String, Object>> validCookiesAsListOfMaps = convertValidCookiesToAttributes(exc);
-        Session session = new Session(usernameKeyName, mergeCookies(validCookiesAsListOfMaps.values().stream().collect(Collectors.toList())));
+        Session session = new Session(usernameKeyName, mergeCookies(new ArrayList<>(validCookiesAsListOfMaps.values())));
 
         if(validCookiesAsListOfMaps.size() == 1)
             exc.setProperty(SESSION_COOKIE_ORIGINAL,validCookiesAsListOfMaps.keySet().iterator().next());

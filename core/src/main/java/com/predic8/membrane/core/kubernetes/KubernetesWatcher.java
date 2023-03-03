@@ -87,8 +87,8 @@ public class KubernetesWatcher {
 
     private Optional<KubernetesValidationInterceptor> findK8sValidatingInterceptor() {
         return router.getRules().stream()
-                .filter(rule -> rule.getInterceptors() != null)
                 .map(rule -> rule.getInterceptors())
+                .filter(interceptors -> interceptors != null)
                 .filter( i -> i != null)
                 .flatMap(interceptors -> interceptors.stream())
                 .filter(inter -> inter instanceof KubernetesValidationInterceptor)

@@ -210,7 +210,7 @@ public class AcmeRenewal {
     }
 
     private void verifyAccountContact() {
-        String contacts = client.getContacts().stream().collect(Collectors.joining(","));
+        String contacts = String.join(",", client.getContacts());
         if (asse.getAccountContacts() == null) {
             asse.setAccountContacts(contacts);
         } else {

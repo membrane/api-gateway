@@ -146,7 +146,7 @@ public class SessionInterceptorTest {
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        bodies.stream().forEach(body -> printCookie(body));
+        bodies.forEach(body -> printCookie(body));
 
         IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
             assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
@@ -167,7 +167,7 @@ public class SessionInterceptorTest {
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        bodies.stream().forEach(body -> printCookie(body));
+        bodies.forEach(body -> printCookie(body));
 
         IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
             assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));

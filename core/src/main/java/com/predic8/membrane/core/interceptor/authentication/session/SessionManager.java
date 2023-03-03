@@ -105,7 +105,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 				List<String> remove = sessions.keySet().stream().filter(sId -> {
 					Session other = sessions.get(sId);
 					return s == other;
-				}).collect(Collectors.toList());
+				}).toList();
 				remove.forEach(sId -> sessions.remove(sId));
 			}
 		}

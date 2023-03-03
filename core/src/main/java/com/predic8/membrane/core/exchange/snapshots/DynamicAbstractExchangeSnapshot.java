@@ -71,7 +71,7 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
                     Message msg = t.getSecond();
                     if(msg == null)
                         return;
-                    if (!msg.getBody().getObservers().stream().anyMatch(obs -> obs instanceof UpdateExchangeCopyObserver)) {
+                    if (msg.getBody().getObservers().stream().noneMatch(obs -> obs instanceof UpdateExchangeCopyObserver)) {
                         msg.addObserver(new UpdateExchangeCopyObserver(callback, excCopy, exc, flow2));
                     }
         });

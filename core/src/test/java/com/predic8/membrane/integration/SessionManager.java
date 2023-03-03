@@ -144,7 +144,7 @@ public class SessionManager {
 
             try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(),ctx)){
                 if(nameDummyField.equals("jwt")){
-                    List<Header> collect = Arrays.stream(resp.getHeaders("Set-Cookie")).collect(Collectors.toList());
+                    List<Header> collect = Arrays.stream(resp.getHeaders("Set-Cookie")).toList();
                     assertEquals(2,collect.size());
 
                     assertTrue(collect.stream().filter(v -> v.getValue().toLowerCase().contains(com.predic8.membrane.core.interceptor.session.SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER.toLowerCase())).count() == 1);
@@ -221,7 +221,7 @@ public class SessionManager {
             String secondExpires;
 
             try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
-                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).collect(Collectors.toList());
+                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).toList();
                 assertEquals(1, setCookieHeaders.size());
 
                 Header setCookieHeader = setCookieHeaders.stream().findFirst().get();
@@ -233,7 +233,7 @@ public class SessionManager {
             Thread.sleep(1000);
 
             try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
-                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).collect(Collectors.toList());
+                List<Header> setCookieHeaders = allSetCookieHeadersExceptFor1970Expire(resp).toList();
                 assertEquals(1, setCookieHeaders.size());
 
                 Header setCookieHeader = setCookieHeaders.stream().findFirst().get();
