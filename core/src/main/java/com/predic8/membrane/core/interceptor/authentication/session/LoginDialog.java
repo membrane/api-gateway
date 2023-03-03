@@ -145,108 +145,111 @@ public class LoginDialog {
 			uri = uri.substring(0, uri.indexOf('?'));
 		exc.getDestinations().set(0, uri);
 
-		if (uri.equals("/logout")) {
-			if (s != null)
-				s.clear();
-			exc.setResponse(Response.redirect(path, false).body("").build());
-		} else if(uri.equals("/consent")){
-			if(exc.getRequest().getMethod().equals("POST"))
-				processConsentPageResult(exc, s);
-			else
-				showConsentPage(exc, s);
-		} else if (uri.equals("/")) {
-			if (s == null || !s.isPreAuthorized()) {
-				if (exc.getRequest().getMethod().equals("POST")) {
-					Map<String, String> userAttributes;
-					Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
-					String username = params.get("username");
-					if (username == null) {
-						showPage(exc, 0, "error", "INVALID_PASSWORD");
-						return;
-					}
-					if (accountBlocker != null && accountBlocker.isBlocked(username)) {
-						showPage(exc, 0, "error", "ACCOUNT_BLOCKED");
-						return;
-					}
-					try {
-						userAttributes = userDataProvider.verify(params);
-					} catch (NoSuchElementException e) {
-						List<String> params2 = Lists.newArrayList("error", "INVALID_PASSWORD");
-						if (accountBlocker != null) {
-							if (accountBlocker.fail(username))
-								params2.addAll(Lists.newArrayList("accountBlocked", "true"));
-						}
-						showPage(exc, 0, params2.toArray());
-						return;
-					} catch (Exception e) {
-						log.error("",e);
-						showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
-						return;
-					}
-					if (exposeUserCredentialsToSession) {
-						for (Map.Entry<String, String> param : params.entrySet())
-							if (!userAttributes.containsKey(param.getKey()))
-								userAttributes.put(param.getKey(), param.getValue());
-					}
-					if(tokenProvider != null)
-						showPage(exc, 1);
-					else {
-						String target = params.get("target");
-						if (StringUtils.isEmpty(target))
-						    target = basePath + (basePath.endsWith("/") ? "" : "/");
-						exc.setResponse(Response.redirectWithout300(target).build());
-					}
+        switch (uri) {
+            case "/logout" -> {
+                if (s != null)
+                    s.clear();
+                exc.setResponse(Response.redirect(path, false).body("").build());
+            }
+            case "/consent" -> {
+                if (exc.getRequest().getMethod().equals("POST"))
+                    processConsentPageResult(exc, s);
+                else
+                    showConsentPage(exc, s);
+            }
+            case "/" -> {
+                if (s == null || !s.isPreAuthorized()) {
+                    if (exc.getRequest().getMethod().equals("POST")) {
+                        Map<String, String> userAttributes;
+                        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
+                        String username = params.get("username");
+                        if (username == null) {
+                            showPage(exc, 0, "error", "INVALID_PASSWORD");
+                            return;
+                        }
+                        if (accountBlocker != null && accountBlocker.isBlocked(username)) {
+                            showPage(exc, 0, "error", "ACCOUNT_BLOCKED");
+                            return;
+                        }
+                        try {
+                            userAttributes = userDataProvider.verify(params);
+                        } catch (NoSuchElementException e) {
+                            List<String> params2 = Lists.newArrayList("error", "INVALID_PASSWORD");
+                            if (accountBlocker != null) {
+                                if (accountBlocker.fail(username))
+                                    params2.addAll(Lists.newArrayList("accountBlocked", "true"));
+                            }
+                            showPage(exc, 0, params2.toArray());
+                            return;
+                        } catch (Exception e) {
+                            log.error("", e);
+                            showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
+                            return;
+                        }
+                        if (exposeUserCredentialsToSession) {
+                            for (Map.Entry<String, String> param : params.entrySet())
+                                if (!userAttributes.containsKey(param.getKey()))
+                                    userAttributes.put(param.getKey(), param.getValue());
+                        }
+                        if (tokenProvider != null)
+                            showPage(exc, 1);
+                        else {
+                            String target = params.get("target");
+                            if (StringUtils.isEmpty(target))
+                                target = basePath + (basePath.endsWith("/") ? "" : "/");
+                            exc.setResponse(Response.redirectWithout300(target).build());
+                        }
 
-					Session session = sessionManager.getOrCreateSession(exc);
-					session.preAuthorize(username, userAttributes);
-					if(tokenProvider != null)
-						tokenProvider.requestToken(session.getUserAttributes());
-				} else {
-					showPage(exc, 0);
-				}
-			} else {
-				if (accountBlocker != null && accountBlocker.isBlocked(s.getUserName())) {
-					showPage(exc, 0, "error", "ACCOUNT_BLOCKED");
-					return;
-				}
-				if (exc.getRequest().getMethod().equals("POST")) {
-					String token = URLParamUtil.getParams(uriFactory, exc, ERROR).get("token");
-					try {
-						if(tokenProvider != null)
-							tokenProvider.verifyToken(s.getUserAttributes(), token);
-					} catch (NoSuchElementException e) {
-						List<String> params = Lists.newArrayList("error", "INVALID_TOKEN");
-						if (accountBlocker != null)
-							if (accountBlocker.fail(s.getUserName()))
-								params.addAll(Lists.newArrayList("accountBlocked", "true"));
-						s.clear();
-						showPage(exc, 0, params.toArray());
-						return;
-					} catch (Exception e) {
-						log.error("",e);
-						s.clear();
-						showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
-						return;
-					}
-					if (accountBlocker != null)
-						accountBlocker.unblock(s.getUserName());
-					String target = URLParamUtil.getParams(uriFactory, exc, ERROR).get("target");
-					if (StringUtils.isEmpty(target))
-					    target = basePath + (basePath.endsWith("/") ? "" : "/");
+                        Session session = sessionManager.getOrCreateSession(exc);
+                        session.preAuthorize(username, userAttributes);
+                        if (tokenProvider != null)
+                            tokenProvider.requestToken(session.getUserAttributes());
+                    } else {
+                        showPage(exc, 0);
+                    }
+                } else {
+                    if (accountBlocker != null && accountBlocker.isBlocked(s.getUserName())) {
+                        showPage(exc, 0, "error", "ACCOUNT_BLOCKED");
+                        return;
+                    }
+                    if (exc.getRequest().getMethod().equals("POST")) {
+                        String token = URLParamUtil.getParams(uriFactory, exc, ERROR).get("token");
+                        try {
+                            if (tokenProvider != null)
+                                tokenProvider.verifyToken(s.getUserAttributes(), token);
+                        } catch (NoSuchElementException e) {
+                            List<String> params = Lists.newArrayList("error", "INVALID_TOKEN");
+                            if (accountBlocker != null)
+                                if (accountBlocker.fail(s.getUserName()))
+                                    params.addAll(Lists.newArrayList("accountBlocked", "true"));
+                            s.clear();
+                            showPage(exc, 0, params.toArray());
+                            return;
+                        } catch (Exception e) {
+                            log.error("", e);
+                            s.clear();
+                            showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
+                            return;
+                        }
+                        if (accountBlocker != null)
+                            accountBlocker.unblock(s.getUserName());
+                        String target = URLParamUtil.getParams(uriFactory, exc, ERROR).get("target");
+                        if (StringUtils.isEmpty(target))
+                            target = basePath + (basePath.endsWith("/") ? "" : "/");
 
-					if (this.message != null)
-						exc.setResponse(Response.redirectWithout300(target, message).build());
-					else
-						exc.setResponse(Response.redirectWithout300(target).build());
+                        if (this.message != null)
+                            exc.setResponse(Response.redirectWithout300(target, message).build());
+                        else
+                            exc.setResponse(Response.redirectWithout300(target).build());
 
-					s.authorize();
-				} else {
-					showPage(exc, 1);
-				}
-			}
-		} else {
-			wsi.handleRequest(exc);
-		}
+                        s.authorize();
+                    } else {
+                        showPage(exc, 1);
+                    }
+                }
+            }
+            default -> wsi.handleRequest(exc);
+        }
 	}
 
 	private void processConsentPageResult(Exchange exc, Session s) throws Exception {
