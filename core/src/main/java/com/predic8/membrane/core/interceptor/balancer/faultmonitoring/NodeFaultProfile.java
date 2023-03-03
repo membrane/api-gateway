@@ -82,10 +82,7 @@ class NodeFaultProfile {
             //this should never happen.
             return 1d;
         }
-        if (ret < 0d) {
-            return 0d;
-        }
-        return ret;
+        return Math.max(ret, 0d);
     }
 
     /**

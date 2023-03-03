@@ -437,10 +437,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 			}
 		}
 
-		int n = len;
-		if (len > getLength()) {
-			n = getLength();
-		}
+		int n = Math.min(len, getLength());
 		System.arraycopy(buff, start, src, off, n);
 		start += n;
 		return n;
