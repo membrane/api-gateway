@@ -65,7 +65,7 @@ public interface Interceptor {
 	String getLongDescription();
 
 	/**
-     * @return "accessControl" if <a href="https://membrane-soa.org/service-proxy-doc/current/configuration/reference/accessControl.htm">...</a> is the documentation page
+     * @return "accessControl" if <a href="https://membrane-soa.org/service-proxy-doc/current/configuration/reference/accessControl.htm">https://membrane-soa.org/service-proxy-doc/current/configuration/reference/accessControl.htm</a> is the documentation page
      * for this interceptor, or null if there is no such page.
      */
 	String getHelpId();
