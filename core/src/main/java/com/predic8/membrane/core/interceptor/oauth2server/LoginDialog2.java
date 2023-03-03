@@ -195,7 +195,7 @@ public class LoginDialog2 {
                             tokenProvider.requestToken(conv);
 
                         s.get().keySet().forEach(conv::remove);
-                        conv.entrySet().forEach(e -> s.put(e.getKey(), e.getValue()));
+                        conv.forEach((key, value) -> s.put(key, value));
 
                         s.authorize(username);
                     } else {
