@@ -45,7 +45,7 @@ import com.predic8.membrane.core.util.TextUtil;
 public class XPathCBRInterceptor extends AbstractInterceptor {
 	private static Logger log = LoggerFactory.getLogger(XPathCBRInterceptor.class.getName());
 
-	private List<Case> cases = new ArrayList<Case>();
+	private List<Case> cases = new ArrayList<>();
 	private Map<String, String> namespaces;
 
 	public XPathCBRInterceptor() {

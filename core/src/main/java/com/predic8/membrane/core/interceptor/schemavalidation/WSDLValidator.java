@@ -55,7 +55,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			WSDLParser wsdlParser = new WSDLParser();
 			//System.out.println("Resolver----" + resourceResolver);
 			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver().toExternalResolver());
-			List<Schema> schemaList = new ArrayList<Schema>();
+			List<Schema> schemaList = new ArrayList<>();
 			for (Types t : wsdlParser.parse(ctx).getTypes())
 				schemaList.addAll(t.getSchemas());
 			return schemaList;

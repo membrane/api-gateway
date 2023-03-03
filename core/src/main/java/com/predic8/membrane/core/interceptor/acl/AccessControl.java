@@ -26,7 +26,7 @@ public class AccessControl extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "accessControl";
 
 	private Router router;
-	private List<Resource> resources = new ArrayList<Resource>();
+	private List<Resource> resources = new ArrayList<>();
 
 	public AccessControl(Router router) {
 		this.router = router;

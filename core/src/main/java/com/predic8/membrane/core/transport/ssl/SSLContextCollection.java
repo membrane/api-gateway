@@ -46,8 +46,8 @@ public class SSLContextCollection implements SSLProvider {
 	private static final Logger log = LoggerFactory.getLogger(SSLContextCollection.class.getName());
 
 	public static class Builder {
-		private List<String> dnsNames = new ArrayList<String>();
-		private List<SSLContext> sslContexts = new ArrayList<SSLContext>();
+		private List<String> dnsNames = new ArrayList<>();
+		private List<SSLContext> sslContexts = new ArrayList<>();
 
 		public SSLProvider build() throws ConfigurationException {
 			if (sslContexts.isEmpty())
@@ -78,7 +78,7 @@ public class SSLContextCollection implements SSLProvider {
 	 *            {@link ServiceProxyKey#setHost(String)})
 	 */
 	private SSLContextCollection(List<SSLContext> sslContexts, List<String> dnsNames) {
-		this.dnsNames = new ArrayList<Pattern>();
+		this.dnsNames = new ArrayList<>();
 		for (String dnsName : dnsNames)
 			this.dnsNames.add(Pattern.compile(ServiceProxyKey.createHostPattern(dnsName), Pattern.CASE_INSENSITIVE));
 		this.sslContexts = sslContexts;

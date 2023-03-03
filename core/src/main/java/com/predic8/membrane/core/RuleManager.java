@@ -45,9 +45,9 @@ public class RuleManager {
 
 	private Router router;
 
-	private List<Rule> rules = new Vector<Rule>();
-	private List<RuleDefinitionSource> ruleSources = new ArrayList<RuleManager.RuleDefinitionSource>();
-	private Set<IRuleChangeListener> listeners = new HashSet<IRuleChangeListener>();
+	private List<Rule> rules = new Vector<>();
+	private List<RuleDefinitionSource> ruleSources = new ArrayList<>();
+	private Set<IRuleChangeListener> listeners = new HashSet<>();
 
 	private String defaultTargetHost = "localhost";
 	private String defaultHost = "*";
@@ -139,7 +139,7 @@ public class RuleManager {
 	public synchronized void openPorts() throws IOException {
 		HashMap<IpPort, SSLProvider> sslProviders;
 		try {
-			HashMap<IpPort, SSLContextCollection.Builder> sslContexts = new HashMap<IpPort, SSLContextCollection.Builder>();
+			HashMap<IpPort, SSLContextCollection.Builder> sslContexts = new HashMap<>();
 			for (Rule rule : rules) {
 				SSLContext sslContext = rule.getSslInboundContext();
 				if (sslContext != null) {
@@ -153,7 +153,7 @@ public class RuleManager {
 				}
 			}
 
-			sslProviders = new HashMap<IpPort, SSLProvider>();
+			sslProviders = new HashMap<>();
 			for (Map.Entry<IpPort, SSLContextCollection.Builder> entry : sslContexts.entrySet())
 				sslProviders.put(entry.getKey(), entry.getValue().build());
 		} catch (ConfigurationException e) {
@@ -324,28 +324,32 @@ public class RuleManager {
 	}
 
 	public synchronized List<Rule> getRulesBySource(final RuleDefinitionSource source) {
-		ArrayList<Rule> res = new ArrayList<Rule>() {
-			private static final long serialVersionUID = 1L;
-			{
-				for (int i = 0; i < rules.size(); i++)
-					if (ruleSources.get(i) == source)
-						add(rules.get(i));
-			}
-			@Override
-			public Rule set(int index, Rule element) {
-				throw new IllegalStateException("set(int, Rule) is not allowed");
-			}
-			@Override
-			public boolean add(Rule e) {
-				addProxy(e, source);
-				return super.add(e);
-			}
-			@Override
-			public void add(int index, Rule e) {
-				addProxy(e, source);
-				super.add(index, e);
-			}
-		};
+		ArrayList<Rule> res = new ArrayList<>() {
+            private static final long serialVersionUID = 1L;
+
+            {
+                for (int i = 0; i < rules.size(); i++)
+                    if (ruleSources.get(i) == source)
+                        add(rules.get(i));
+            }
+
+            @Override
+            public Rule set(int index, Rule element) {
+                throw new IllegalStateException("set(int, Rule) is not allowed");
+            }
+
+            @Override
+            public boolean add(Rule e) {
+                addProxy(e, source);
+                return super.add(e);
+            }
+
+            @Override
+            public void add(int index, Rule e) {
+                addProxy(e, source);
+                super.add(index, e);
+            }
+        };
 		return res;
 	}
 

@@ -125,11 +125,11 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
     protected String hasGivenInvalidScopes(String givenScopes, String validScopes) {
 
-        HashSet<String> valid = new HashSet<String>(Arrays.asList(validScopes.split(" ")));
+        HashSet<String> valid = new HashSet<>(Arrays.asList(validScopes.split(" ")));
 
         StringBuilder builder = new StringBuilder();
 
-        for (String scope : new HashSet<String>(Arrays.asList(givenScopes.split(" ")))) {
+        for (String scope : new HashSet<>(Arrays.asList(givenScopes.split(" ")))) {
             if (!valid.contains(scope))
                 builder.append(scope).append(" ");
         }

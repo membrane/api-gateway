@@ -354,7 +354,7 @@ public class OAuth2ResourceTest {
 
     // this implementation does NOT implement a correct cookie manager, but fulfills this test's requirements
     private Function<Exchange, Exchange> cookieManager(Function<Exchange, Exchange> consumer) {
-        return new Function<Exchange, Exchange>() {
+        return new Function<>() {
 
             @Override
             public Exchange call(Exchange exc) {
@@ -372,17 +372,17 @@ public class OAuth2ResourceTest {
                     synchronized (cookies) {
                         Exchange finalExc = exc;
                         cookies.forEach((k, v) -> finalExc.getRequest().getHeader().add("Cookie", k + "=" + v));
-                }
+                    }
                 exc = consumer.call(exc);
 
                 for (HeaderField headerField : exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
-                    LOG.debug("from "+domain+" got Set-Cookie: " + headerField.getValue());
+                    LOG.debug("from " + domain + " got Set-Cookie: " + headerField.getValue());
 
                     String value = headerField.getValue().substring(0, headerField.getValue().indexOf(";"));
                     boolean expired = headerField.getValue().contains("1970");
 
                     String key = value.substring(0, value.indexOf("=")).trim();
-                    value = value.substring(value.indexOf("=")+1).trim();
+                    value = value.substring(value.indexOf("=") + 1).trim();
 
                     if (cookies == null) {
                         cookies = new HashMap<>();
@@ -428,7 +428,7 @@ public class OAuth2ResourceTest {
     }
 
     private Function<Exchange, Exchange> handleRedirect(Function<Exchange, Exchange> consumer) {
-        return new Function<Exchange, Exchange>() {
+        return new Function<>() {
             @Override
             public Exchange call(Exchange exc) {
                 ArrayList<Object> urls = new ArrayList<>();
@@ -458,7 +458,7 @@ public class OAuth2ResourceTest {
     }
 
     private Function<Exchange, Exchange> httpClient() {
-        return new Function<Exchange, Exchange>() {
+        return new Function<>() {
             HttpClient httpClient = new HttpClient();
 
             @Override

@@ -73,7 +73,7 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
     }
 
     public static Callable<Exchange> getMockBadRequestExchange() throws Exception {
-        return new Callable<Exchange>() {
+        return new Callable<>() {
             @Override
             public Exchange call() throws Exception {
                 return new Request.Builder().get("/thisdoesntexist").buildExchange();
@@ -82,30 +82,30 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
     }
 
     private static Consumer<Exchange> userinfoRequestPostprocessing() throws IOException, ParseException {
-        return new Consumer<Exchange>() {
+        return new Consumer<>() {
             @Override
             public void call(Exchange exchange) throws Exception {
                 HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
-                assertEquals("john",json.get("username"));
+                assertEquals("john", json.get("username"));
             }
         };
     }
 
     public static Callable<Exchange> getMockRevocationRequest() throws Exception {
-        return new Callable<Exchange>() {
+        return new Callable<>() {
             @Override
             public Exchange call() throws Exception {
                 return new Request.Builder().post(mas.getRevocationEndpoint())
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + afterTokenGenerationToken +"&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
+                        .body("token=" + afterTokenGenerationToken + "&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
                         .buildExchange();
             }
         };
     }
 
     public static Callable<Exchange> getMockPasswordRequestExchange() throws Exception {
-        return new Callable<Exchange>() {
+        return new Callable<>() {
             @Override
             public Exchange call() throws Exception {
                 return new Request.Builder().post(mas.getTokenEndpoint())
@@ -117,7 +117,7 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
     }
 
     public static Callable<Exchange> getMockClientCredentialsRequestExchange() throws Exception {
-        return new Callable<Exchange>() {
+        return new Callable<>() {
             @Override
             public Exchange call() throws Exception {
                 return new Request.Builder().post(mas.getTokenEndpoint())

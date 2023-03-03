@@ -40,8 +40,8 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     private static final Logger log = LoggerFactory.getLogger(EtcdPublisher.class.getName());
 
     private ApplicationContext context;
-    private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
-    private HashSet<EtcdNodeInformation> nodesFromConfig = new HashSet<EtcdNodeInformation>();
+    private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<>();
+    private HashSet<EtcdNodeInformation> nodesFromConfig = new HashSet<>();
     private int ttl;
     private String baseUrl;
     private String baseKey;
@@ -171,7 +171,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
                 }
 
                 if (!modulesToUUIDs.containsKey(node.getModule())) {
-                    modulesToUUIDs.put(node.getModule(), new ArrayList<String>());
+                    modulesToUUIDs.put(node.getModule(), new ArrayList<>());
                 }
                 modulesToUUIDs.get(node.getModule()).add(node.getUuid());
             }

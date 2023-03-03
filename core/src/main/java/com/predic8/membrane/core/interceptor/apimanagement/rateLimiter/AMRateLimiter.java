@@ -47,8 +47,8 @@ public class AMRateLimiter {
     private static Logger log = LoggerFactory.getLogger(AMRateLimiter.class);
     private ApiManagementConfiguration amc;
 
-    public ConcurrentHashMap<String, ApiKeyRequestCounter> keyInformation = new ConcurrentHashMap<String, ApiKeyRequestCounter>();
-    public ConcurrentHashMap<String, PolicyRateLimit> policyRateLimits = new ConcurrentHashMap<String, PolicyRateLimit>();
+    public ConcurrentHashMap<String, ApiKeyRequestCounter> keyInformation = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, PolicyRateLimit> policyRateLimits = new ConcurrentHashMap<>();
 
     public ApiManagementConfiguration getAmc() {
         return amc;
@@ -78,7 +78,7 @@ public class AMRateLimiter {
             String name = policy.getName();
             int requests = policy.getRateLimit().getRequests();
             Duration interval = Duration.standardSeconds(policy.getRateLimit().getInterval());
-            HashSet<String> services = new HashSet<String>(policy.getServiceProxies());
+            HashSet<String> services = new HashSet<>(policy.getServiceProxies());
             PolicyRateLimit prl = new PolicyRateLimit();
             prl.setName(name);
             prl.setRequests(requests);

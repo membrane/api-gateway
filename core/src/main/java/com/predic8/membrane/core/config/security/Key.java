@@ -52,7 +52,7 @@ public class Key {
 
     String password;
     Private private_;
-    List<Certificate> certificates = new ArrayList<Certificate>();
+    List<Certificate> certificates = new ArrayList<>();
 
     @Override
     public boolean equals(Object obj) {

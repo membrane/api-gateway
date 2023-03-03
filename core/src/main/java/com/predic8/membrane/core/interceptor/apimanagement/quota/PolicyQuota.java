@@ -24,7 +24,7 @@ public class PolicyQuota {
     private long size;
     private Duration interval;
     private DateTime nextCleanup;
-    private HashSet<String> services = new HashSet<String>();
+    private HashSet<String> services = new HashSet<>();
 
     public String getName() {
         return name;

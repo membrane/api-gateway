@@ -107,7 +107,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	String timeout = "1000"; // timeout in milliseconds
 	String connectTimeout = "1000";
 	boolean readAttributesAsSelf = true; // whether reading the user's attributes requires authentication
-	HashMap<String, String> attributeMap = new HashMap<String, String>(); // maps LDAP attributes to TokenGenerator attributes
+	HashMap<String, String> attributeMap = new HashMap<>(); // maps LDAP attributes to TokenGenerator attributes
 	AttributeMap map;
 	SSLParser sslParser;
 
@@ -140,7 +140,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			}
 		}
 
-		private List<Attribute> attributes = new ArrayList<Attribute>();
+		private List<Attribute> attributes = new ArrayList<>();
 
 		public List<Attribute> getAttributes() {
 			return attributes;
@@ -160,7 +160,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	 * @throws NamingException on any other LDAP error
 	 */
 	private HashMap<String, String> auth(String login, String password) throws NamingException {
-		Hashtable<String, String> env = new Hashtable<String, String>();
+		Hashtable<String, String> env = new Hashtable<>();
 		env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 		env.put(Context.PROVIDER_URL, url);
 		env.put("com.sun.jndi.ldap.read.timeout", timeout);
@@ -173,7 +173,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		if (sslParser != null)
 			env.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
 
-		HashMap<String, String> userAttrs = new HashMap<String, String>();
+		HashMap<String, String> userAttrs = new HashMap<>();
 		String uid;
 
 		DirContext ctx;

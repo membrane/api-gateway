@@ -63,8 +63,8 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
     protected LoadBalancingInterceptor balancingInterceptor;
     protected HttpRouter balancer;
-    private List<HttpRouter> httpRouters = new ArrayList<HttpRouter>();
-    private List<RandomlyFailingDummyWebServiceInterceptor> dummyInterceptors = new ArrayList<RandomlyFailingDummyWebServiceInterceptor>();
+    private List<HttpRouter> httpRouters = new ArrayList<>();
+    private List<RandomlyFailingDummyWebServiceInterceptor> dummyInterceptors = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
         for (int i = 1; i <= ctx.numNodes; i++) {
@@ -181,7 +181,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .numThreads(6)
                 .numRequests(100)
                 .successChance(1d)
-                .preSubmitCallback(new Function<Integer, Void>() {
+                .preSubmitCallback(new Function<>() {
                     @Nullable
                     @Override
                     public Void apply(Integer integer) {
@@ -219,7 +219,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .numThreads(6)
                 .numRequests(100)
                 .successChance(1d)
-                .preSubmitCallback(new Function<Integer, Void>() {
+                .preSubmitCallback(new Function<>() {
                     @Nullable
                     @Override
                     public Void apply(Integer integer) {
@@ -436,7 +436,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
         return new ThreadPoolExecutor(
                 numThreads, numThreads,
                 1, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
+                new SynchronousQueue<>(),
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }

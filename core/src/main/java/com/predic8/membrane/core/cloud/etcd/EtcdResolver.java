@@ -31,7 +31,7 @@ import java.util.regex.Matcher;
 public class EtcdResolver implements SchemaResolver{
 
     private String url;
-    HashSet<Thread> etcdWatchThreads = new HashSet<Thread>();
+    HashSet<Thread> etcdWatchThreads = new HashSet<>();
 
     public String getUrl() {
         return url;

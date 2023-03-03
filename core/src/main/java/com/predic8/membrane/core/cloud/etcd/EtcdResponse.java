@@ -67,7 +67,7 @@ public class EtcdResponse {
 
 		String baseKey = originalRequest.baseKey;
 		String module = originalRequest.module;
-		ArrayList<String> directories = new ArrayList<String>();
+		ArrayList<String> directories = new ArrayList<>();
 		Map<String, Object> respData = null;
 		try {
 			respData = new ObjectMapper().readValue(par, Map.class);

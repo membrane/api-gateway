@@ -26,7 +26,7 @@ import com.predic8.membrane.core.http.HeaderField;
 public class Headers extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "headers";
 
-	List<Header> headers = new ArrayList<Header>();
+	List<Header> headers = new ArrayList<>();
 
 	public Headers() {}
 

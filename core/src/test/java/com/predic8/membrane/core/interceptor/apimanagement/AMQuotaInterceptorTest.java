@@ -53,7 +53,7 @@ public class AMQuotaInterceptorTest {
         final AMQuota amq = new AMQuota();
         amq.setAmc(amc);
 
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
         final AtomicInteger continues = new AtomicInteger();
         final AtomicInteger returns = new AtomicInteger();
         for(int i = 0; i < 1000; i++)

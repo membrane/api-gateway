@@ -64,7 +64,7 @@ public class MCUtil {
 		if (object == null)
 			return null;
 		if (object instanceof Collection) {
-			ArrayList<Object> res = new ArrayList<Object>(((Collection<?>)object).size());
+			ArrayList<Object> res = new ArrayList<>(((Collection<?>) object).size());
 			for (Object item : (Collection<?>)object)
 				res.add(deep ? cloneInternal(item, deep) : item);
 			return (T) res;
@@ -180,8 +180,8 @@ public class MCUtil {
 
 	private static class SerializationContext {
 		boolean incomplete;
-		HashMap<String, String> beans = new HashMap<String, String>();
-		HashMap<Object, String> ids = new HashMap<Object, String>();
+		HashMap<String, String> beans = new HashMap<>();
+		HashMap<Object, String> ids = new HashMap<>();
 		int nextBean = 1;
 
 		@Override
@@ -226,7 +226,7 @@ public class MCUtil {
 		if (id != null)
 			xew.writeAttribute("id", id);
 
-		HashSet<String> attributes = new HashSet<String>();
+		HashSet<String> attributes = new HashSet<>();
 		for (Method m : clazz.getMethods()) {
 			if (!m.getName().startsWith("set"))
 				continue;
@@ -293,7 +293,7 @@ public class MCUtil {
 			}
 		}
 
-		List<Method> childElements = new ArrayList<Method>();
+		List<Method> childElements = new ArrayList<>();
 		for (Method m : clazz.getMethods()) {
 			if (!m.getName().startsWith("set"))
 				continue;
@@ -317,15 +317,15 @@ public class MCUtil {
 			}
 		}
 
-		Collections.sort(childElements, new Comparator<Method>() {
+		Collections.sort(childElements, new Comparator<>() {
 
-			@Override
-			public int compare(Method o1, Method o2) {
-				MCChildElement c1 = o1.getAnnotation(MCChildElement.class);
-				MCChildElement c2 = o2.getAnnotation(MCChildElement.class);
-				return c1.order() - c2.order();
-			}
-		});
+            @Override
+            public int compare(Method o1, Method o2) {
+                MCChildElement c1 = o1.getAnnotation(MCChildElement.class);
+                MCChildElement c2 = o2.getAnnotation(MCChildElement.class);
+                return c1.order() - c2.order();
+            }
+        });
 
 		for (Method m : childElements) {
 			String propertyName = AnnotUtils.dejavaify(m.getName().substring(3));

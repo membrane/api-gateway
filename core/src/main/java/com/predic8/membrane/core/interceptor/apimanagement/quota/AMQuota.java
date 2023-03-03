@@ -74,7 +74,7 @@ public class AMQuota {
             String name = policy.getName();
             long quotaSize = policy.getQuota().getSize();
             int interval = policy.getQuota().getInterval();
-            HashSet<String> services = new HashSet<String>(policy.getServiceProxies());
+            HashSet<String> services = new HashSet<>(policy.getServiceProxies());
             PolicyQuota pq = new PolicyQuota();
             pq.setName(name);
             pq.setSize(quotaSize);

@@ -63,9 +63,9 @@ public class XMLContentFilter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(XMLContentFilter.class);
 
-	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<XPathExpression>();
-	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<DocumentBuilder>();
-	private final ThreadLocal<Transformer> t = new ThreadLocal<Transformer>();
+	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<>();
+	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<>();
+	private final ThreadLocal<Transformer> t = new ThreadLocal<>();
 	private final XOPReconstitutor xopReconstitutor = new XOPReconstitutor();
 
 	/**
@@ -111,7 +111,7 @@ public class XMLContentFilter {
 				.getIntersectExceptExprs(xPath);
 		if (intersectExceptExprs == null)
 			return null;
-		List<QName> rootElements = new ArrayList<QName>();
+		List<QName> rootElements = new ArrayList<>();
 		for (ContainerNode node : intersectExceptExprs) {
 			QName n = a.getElement(node);
 			if (n == null)

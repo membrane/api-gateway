@@ -46,7 +46,7 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     }
 
     private static Callable<Object> setConsentToFalse(Callable<Exchange> exchange) {
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
                 SessionManager.Session s = oasit.oasi.getSessionManager().getSession(exc);
@@ -60,10 +60,10 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     }
 
     private static Callable<Object> modifySessionToIdTokenTokenResponseType() {
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
-                modifySessionAttributes("response_type","id_token token");
+                modifySessionAttributes("response_type", "id_token token");
                 return this;
             }
         };

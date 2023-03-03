@@ -46,7 +46,7 @@ public class Schemas {
 	public void writeXSD(Model m) throws IOException {
 		try {
 			for (MainInfo main : m.getMains()) {
-				List<Element> sources = new ArrayList<Element>();
+				List<Element> sources = new ArrayList<>();
 				sources.add(main.getElement());
 				sources.addAll(main.getInterceptorElements());
 

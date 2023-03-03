@@ -21,7 +21,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import java.util.ArrayList;
 
 public class OAuth2Processors {
-    ArrayList<EndpointProcessor> processors = new ArrayList<EndpointProcessor>();
+    ArrayList<EndpointProcessor> processors = new ArrayList<>();
 
     public OAuth2Processors add(EndpointProcessor excProc){
         processors.add(excProc);

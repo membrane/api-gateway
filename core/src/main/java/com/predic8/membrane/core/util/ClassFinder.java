@@ -34,7 +34,7 @@ public class ClassFinder {
         String scannedPath = scannedPackage.replace(PKG_SEPARATOR, DIR_SEPARATOR);
         ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver(loader);
         Resource[] resources = resolver.getResources("classpath:" + scannedPath +"/*") ;
-        List<Class<?>> classes = new ArrayList<Class<?>>();
+        List<Class<?>> classes = new ArrayList<>();
         for (Resource resource: resources){
             String filename = resource.getFilename();
             Class<?> clazz = getClasses(resolver, scannedPackage, filename);

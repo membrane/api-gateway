@@ -43,7 +43,7 @@ public class Parsers {
 	public void writeParserDefinitior(Model m) throws IOException {
 
 		for (MainInfo main : m.getMains()) {
-			List<Element> sources = new ArrayList<Element>();
+			List<Element> sources = new ArrayList<>();
 			sources.addAll(main.getInterceptorElements());
 			sources.add(main.getElement());
 
@@ -103,7 +103,7 @@ public class Parsers {
 	public void writeParsers(Model m) throws IOException {
 		for (MainInfo main : m.getMains()) {
 			for (ElementInfo ii : main.getIis()) {
-				List<Element> sources = new ArrayList<Element>();
+				List<Element> sources = new ArrayList<>();
 				sources.add(main.getElement());
 				sources.add(ii.getElement());
 

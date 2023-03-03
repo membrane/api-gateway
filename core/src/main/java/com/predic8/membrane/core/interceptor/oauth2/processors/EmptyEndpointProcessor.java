@@ -94,12 +94,12 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     }
 
     private String getClaimDescriptions(String[] claims) throws UnsupportedEncodingException {
-        return createDescription(claims, new Function<String, String>() {
+        return createDescription(claims, new Function<>() {
             @Override
             public String call(String param) {
                 return ClaimRenamer.convert(param);
             }
-        },new Function<String, String>() {
+        }, new Function<>() {
             @Override
             public String call(String claimParam) {
                 return authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam));
@@ -108,14 +108,14 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     }
 
     private String getScopeDescriptions(String[] scopes) throws UnsupportedEncodingException {
-        return createDescription(scopes, new Function<String, String>() {
+        return createDescription(scopes, new Function<>() {
             @Override
             public String call(String param) {
-                if(param.equals("openid"))
+                if (param.equals("openid"))
                     return "";
                 return param;
             }
-        },new Function<String, String>() {
+        }, new Function<>() {
             @Override
             public String call(String scopeParam) {
                 return authServer.getConsentPageFile().convertScope(scopeParam);
@@ -125,7 +125,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
 
     private String createDescription(String[] params, Function<String,String> paramNameConverter, Function<String,String> paramValueConverter) throws UnsupportedEncodingException {
         StringBuilder builder = new StringBuilder();
-        HashSet<String> alreadyAddedParams = new HashSet<String>();
+        HashSet<String> alreadyAddedParams = new HashSet<>();
         for(String param : params) {
             String correctedParamName = paramNameConverter.call(param);
             if(!correctedParamName.isEmpty() && !alreadyAddedParams.contains(correctedParamName)){

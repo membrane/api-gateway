@@ -99,13 +99,13 @@ public class InterceptorInvocationTest {
 	}
 
 	private List<String> getReverseList(List<String> list) {
-		List<String> res = new ArrayList<String>(list);
+		List<String> res = new ArrayList<>(list);
 		Collections.reverse(res);
 		return res;
 	}
 
 	private static List<String> createInterceptorSequence() {
-		List<String> sequense = new ArrayList<String>();
+		List<String> sequense = new ArrayList<>();
 		sequense.addAll(regularInterceptorNames);
 		sequense.addAll(ruleInterceptorNames);
 		return sequense;

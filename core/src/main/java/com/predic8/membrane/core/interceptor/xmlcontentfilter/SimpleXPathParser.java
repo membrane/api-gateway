@@ -165,7 +165,7 @@ public class SimpleXPathParser {
      */
 	private ContainerNode parseNormal(final Marker m, int terminator) {
 		StringBuilder sb2 = new StringBuilder();
-		List<Node> result = new ArrayList<Node>();
+		List<Node> result = new ArrayList<>();
 		while (true) {
 			if (m.p == m.s.length()) {
 				if (terminator != -1)

@@ -25,7 +25,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 public class Path extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "path";
 
-	List<Component> components = new ArrayList<Component>();
+	List<Component> components = new ArrayList<>();
 
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {

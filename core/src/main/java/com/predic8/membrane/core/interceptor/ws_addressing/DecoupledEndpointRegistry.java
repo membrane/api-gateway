@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DecoupledEndpointRegistry {
-	private final Map<String, String> registry = new HashMap<String, String>();
+	private final Map<String, String> registry = new HashMap<>();
 
 	public synchronized void register(String id, String url) {
 		registry.put(id, url);

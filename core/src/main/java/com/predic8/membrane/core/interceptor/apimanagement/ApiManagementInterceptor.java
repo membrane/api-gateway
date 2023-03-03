@@ -84,7 +84,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private void addInterceptors() {
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append("Api Management Interceptor");
-        ArrayList<String> interceptors = new ArrayList<String>();
+        ArrayList<String> interceptors = new ArrayList<>();
         nameBuilder.append(" { ");
         if (amRateLimiter != null) {
             amRateLimiter.setAmc(apiManagementConfiguration);

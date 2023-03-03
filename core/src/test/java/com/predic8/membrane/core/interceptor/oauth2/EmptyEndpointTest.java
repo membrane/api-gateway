@@ -49,32 +49,34 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     }
 
     private static Callable<Object> modifySessionToCodeResponseType() {
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
-                modifySessionAttributes("response_type","code");
+                modifySessionAttributes("response_type", "code");
                 return this;
             }
         };
     }
 
     private static Callable<Object> modifySessionToTokenResponseType() {
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
-                modifySessionAttributes("response_type","token");
+                modifySessionAttributes("response_type", "token");
                 return this;
             }
         };
     }
 
     private static Callable<Object> modifySessionToUnsupportedType(){
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
-                modifySessionAttributes("response_type","123456789");
+                modifySessionAttributes("response_type", "123456789");
                 return this;
-            };
+            }
+
+            ;
         };
     }
 

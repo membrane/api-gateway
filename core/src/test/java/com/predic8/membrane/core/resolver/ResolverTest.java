@@ -81,7 +81,7 @@ public class ResolverTest {
 	// different test methods below
 
 	public static List<Object[]> getConfigurations() {
-		List<Object[]> res = new ArrayList<Object[]>();
+		List<Object[]> res = new ArrayList<>();
 		for (BasisUrlType but : BasisUrlType.values())
 			res.add(new Object[] { but });
 		return res;

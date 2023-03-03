@@ -63,14 +63,14 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 		this.failureHandler = failureHandler;
 		this.skipFaults = skipFaults;
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-		validators = new ArrayBlockingQueue<List<Validator>>(concurrency);
+		validators = new ArrayBlockingQueue<>(concurrency);
 		for (int i = 0; i < concurrency; i++)
 			validators.add(createValidators());
 		xopr = new XOPReconstitutor();
 	}
 
 	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
-		List<Exception> exceptions = new ArrayList<Exception>();
+		List<Exception> exceptions = new ArrayList<>();
 		String preliminaryError = getPreliminaryError(xopr, msg);
 		if (preliminaryError == null) {
 			List<Validator> vals = validators.take();
@@ -116,7 +116,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 
 	protected List<Validator> createValidators() throws Exception {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
-		List<Validator> validators = new ArrayList<Validator>();
+		List<Validator> validators = new ArrayList<>();
 		for (Schema schema : getSchemas()) {
 			log.debug("Creating validator for schema: " + schema);
 			StreamSource ss = new StreamSource(new StringReader(schema.getAsString()));

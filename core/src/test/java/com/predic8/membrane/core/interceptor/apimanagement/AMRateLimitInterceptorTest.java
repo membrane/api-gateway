@@ -47,7 +47,7 @@ public class AMRateLimitInterceptorTest {
         ApiManagementConfiguration amc = new ApiManagementConfiguration(System.getProperty("user.dir") , "src/test/resources/apimanagement/api.yaml");
         rli.setAmc(amc);
 
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
         final AtomicInteger continues = new AtomicInteger();
         final AtomicInteger returns = new AtomicInteger();
         for(int i = 0; i < 1000; i++)

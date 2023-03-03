@@ -25,7 +25,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 public class Query extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "query";
 
-	private List<Param> params = new ArrayList<Param>();
+	private List<Param> params = new ArrayList<>();
 
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
