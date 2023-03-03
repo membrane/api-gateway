@@ -88,8 +88,6 @@ public class OtpProvider {
 	 *            the secret key
 	 * @param otp_state
 	 *            current token state (counter or time-interval)
-	 * @param challenge
-	 *            optional challenge bytes to include when computing passcode.
 	 * @return the PIN
 	 */
 	private String computePin(String secret, long otp_state) {
