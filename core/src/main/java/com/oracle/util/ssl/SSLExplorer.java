@@ -529,8 +529,7 @@ public final class SSLExplorer {
 					"Invalid server name indication extension");
 		}
 
-		return Collections.<SNIServerName>unmodifiableList(
-				new ArrayList<>(sniMap.values()));
+		return List.copyOf(sniMap.values());
 	}
 
 	private static int getInt8(ByteBuffer input) {
