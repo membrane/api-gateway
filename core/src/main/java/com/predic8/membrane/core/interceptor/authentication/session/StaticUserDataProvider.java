@@ -72,12 +72,10 @@ public class StaticUserDataProvider implements UserDataProvider {
 			String salt = userHashSplit[2];
 			try {
 				pw = createPasswdCompatibleHash(algo,postDataPassword,salt);
-			} catch (UnsupportedEncodingException e) {
-				throw new RuntimeException(e.getMessage());
-			} catch (NoSuchAlgorithmException e) {
+			} catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
 				throw new RuntimeException(e.getMessage());
 			}
-		}else
+        }else
 			pw = postDataPassword;
 		String pw2;
 		pw2 = userAttributes.getPassword();

@@ -72,9 +72,7 @@ public class OtpProvider {
 					return mac.doFinal(data);
 				}
 			};
-		} catch (NoSuchAlgorithmException error) {
-			log.error("", error);
-		} catch (InvalidKeyException error) {
+		} catch (NoSuchAlgorithmException | InvalidKeyException error) {
 			log.error("", error);
 		}
 

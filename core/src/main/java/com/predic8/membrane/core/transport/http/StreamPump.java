@@ -89,11 +89,7 @@ public class StreamPump implements Runnable {
 				if (stats != null)
 					bytesTransferred.addAndGet(length);
 			}
-		} catch (SocketTimeoutException e) {
-			// do nothing
-		} catch (SocketException e) {
-			// do nothing
-		} catch (SSLException e) {
+		} catch (SocketTimeoutException | SSLException | SocketException e) {
 			// do nothing
 		} catch (IOException e) {
 			log.error("Reading from or writing to stream failed: " + e);

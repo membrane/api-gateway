@@ -133,14 +133,10 @@ public class XML2HTTP {
 					message.getHeader().clear();
 				if (!foundBody)
 					message.setBodyContent(new byte[0]);
-			} catch (XMLStreamException e) {
-				log.error("", e);
-			} catch (XML2HTTPException e) {
-				log.error("", e);
-			} catch (IOException e) {
+			} catch (XMLStreamException | IOException | XML2HTTPException e) {
 				log.error("", e);
 			}
-		}
+        }
 	}
 
 	private static String slurpCharacterData(XMLEventReader parser, StartElement sevent) throws XMLStreamException, XML2HTTPException {
