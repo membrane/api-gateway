@@ -317,7 +317,7 @@ public class MCUtil {
 			}
 		}
 
-		Collections.sort(childElements, (o1, o2) -> {
+		childElements.sort((o1, o2) -> {
 			MCChildElement c1 = o1.getAnnotation(MCChildElement.class);
 			MCChildElement c2 = o2.getAnnotation(MCChildElement.class);
 			return c1.order() - c2.order();
