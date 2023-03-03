@@ -90,12 +90,11 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getLongDescription() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(TextUtil.removeFinalChar(getShortDescription()));
-		sb.append(" using the stylesheet at ");
-		sb.append(TextUtil.linkURL(xslt));
-		sb.append(" .");
-		return sb.toString();
+        String sb = TextUtil.removeFinalChar(getShortDescription()) +
+                " using the stylesheet at " +
+                TextUtil.linkURL(xslt) +
+                " .";
+		return sb;
 	}
 
 }

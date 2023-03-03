@@ -168,13 +168,12 @@ public class Http2ExchangeHandler implements Runnable {
 
     private void updateThreadName(boolean fromConnection) {
         if (fromConnection) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
-            sb.append(" ");
-            sb.append(remoteAddr);
-            sb.append(" stream ");
-            sb.append(streamId);
-            Thread.currentThread().setName(sb.toString());
+            String sb = HttpServerThreadFactory.DEFAULT_THREAD_NAME +
+                    " " +
+                    remoteAddr +
+                    " stream " +
+                    streamId;
+            Thread.currentThread().setName(sb);
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
         }
