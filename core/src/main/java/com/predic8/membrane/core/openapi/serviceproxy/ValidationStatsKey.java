@@ -67,15 +67,15 @@ public class ValidationStatsKey {
 
         ValidationStatsKey that = (ValidationStatsKey) o;
 
-        if (method != null ? !method.equals(that.method) : that.method != null) return false;
-        if (path != null ? !path.equals(that.path) : that.path != null) return false;
-        if (uriTemplate != null ? !uriTemplate.equals(that.uriTemplate) : that.uriTemplate != null) return false;
-        if (schemaType != null ? !schemaType.equals(that.schemaType) : that.schemaType != null) return false;
-        if (complexType != null ? !complexType.equals(that.complexType) : that.complexType != null) return false;
+        if (!Objects.equals(method, that.method)) return false;
+        if (!Objects.equals(path, that.path)) return false;
+        if (!Objects.equals(uriTemplate, that.uriTemplate)) return false;
+        if (!Objects.equals(schemaType, that.schemaType)) return false;
+        if (!Objects.equals(complexType, that.complexType)) return false;
         if (!validatedEntityType.equals(that.validatedEntityType)) return false;
-        if (validatedEntity != null ? !validatedEntity.equals(that.validatedEntity) : that.validatedEntity != null)
+        if (!Objects.equals(validatedEntity, that.validatedEntity))
             return false;
-        return jsonpointer != null ? jsonpointer.equals(that.jsonpointer) : that.jsonpointer == null;
+        return Objects.equals(jsonpointer, that.jsonpointer);
     }
 
     @Override
