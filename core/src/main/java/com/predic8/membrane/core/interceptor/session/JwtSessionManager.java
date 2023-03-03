@@ -146,7 +146,7 @@ public class JwtSessionManager extends SessionManager {
             }
             if (LOG.isDebugEnabled())
                 LOG.debug("encoding cookie: " + filteredSession);
-            token = idTokenProvider.createIdTokenNoNullClaims(issuer, null, null, validTime, null, null, new HashMap(filteredSession));
+            token = idTokenProvider.createIdTokenNoNullClaims(issuer, null, null, validTime, null, null, new HashMap<>(filteredSession));
             jwtCache.put(filteredSession, token);
             return token;
         } catch (JoseException e) {

@@ -47,7 +47,7 @@ public class RedisConnector  implements InitializingBean {
         jedisPoolConfig.setMaxIdle(connectionNumber);
         jedisPoolConfig.setMinIdle(minIdleConnection);
 
-        HashSet<HostAndPort> hosts = new HashSet();
+        HashSet<HostAndPort> hosts = new HashSet<>();
         for (String h : host.split(" +")) {
             hosts.add(new HostAndPort(h, port));
         }

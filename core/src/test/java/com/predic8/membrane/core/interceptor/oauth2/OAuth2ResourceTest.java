@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
@@ -432,7 +431,7 @@ public class OAuth2ResourceTest {
         return new Function<Exchange, Exchange>() {
             @Override
             public Exchange call(Exchange exc) {
-                ArrayList urls = new ArrayList<>();
+                ArrayList<Object> urls = new ArrayList<>();
                 while (true) {
                     if (urls.size() == 19)
                         throw new RuntimeException("Too many redirects: " + urls);
@@ -550,7 +549,7 @@ public class OAuth2ResourceTest {
             public Outcome handleRequest(Exchange exc) throws Exception {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
                 String accessToken = answer.getAccessToken();
-                Map body = ImmutableMap.of(
+                Map<String, String> body = Map.of(
                         "accessToken", accessToken,
                         "path", exc.getRequestURI(),
                         "method", exc.getRequest().getMethod(),

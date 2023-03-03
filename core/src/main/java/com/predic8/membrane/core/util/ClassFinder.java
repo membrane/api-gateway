@@ -37,7 +37,7 @@ public class ClassFinder {
         List<Class<?>> classes = new ArrayList<Class<?>>();
         for (Resource resource: resources){
             String filename = resource.getFilename();
-            Class clazz = getClasses(resolver, scannedPackage, filename);
+            Class<?> clazz = getClasses(resolver, scannedPackage, filename);
             if(clazz != null)
                 classes.add(clazz);
         }
