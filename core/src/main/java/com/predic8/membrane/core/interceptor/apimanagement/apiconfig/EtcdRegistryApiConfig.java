@@ -87,12 +87,7 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
         }
     });
 
-    ExponentialBackoff.Job jobPublisher = new ExponentialBackoff.Job() {
-        @Override
-        public boolean run() throws Exception {
-            return publishToEtcd();
-        }
-    };
+    ExponentialBackoff.Job jobPublisher = () -> publishToEtcd();
 
     private boolean publishToEtcd() {
         String baseKey = baseKeyPrefix+membraneId;

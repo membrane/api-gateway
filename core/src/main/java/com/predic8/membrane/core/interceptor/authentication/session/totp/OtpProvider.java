@@ -66,12 +66,7 @@ public class OtpProvider {
 
 			// Create a signer object out of the standard Java MAC
 			// implementation.
-			return new Signer() {
-				@Override
-				public byte[] sign(byte[] data) {
-					return mac.doFinal(data);
-				}
-			};
+			return data -> mac.doFinal(data);
 		} catch (NoSuchAlgorithmException | InvalidKeyException error) {
 			log.error("", error);
 		}

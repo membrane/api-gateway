@@ -81,12 +81,7 @@ public class PasscodeGenerator {
 	 * @param passCodeLength The length of the decimal passcode
 	 */
 	public PasscodeGenerator(final Mac mac, int passCodeLength) {
-		this(new Signer() {
-			@Override
-			public byte[] sign(byte[] data){
-				return mac.doFinal(data);
-			}
-		}, passCodeLength);
+		this(data -> mac.doFinal(data), passCodeLength);
 	}
 
 	public PasscodeGenerator(Signer signer, int passCodeLength) {

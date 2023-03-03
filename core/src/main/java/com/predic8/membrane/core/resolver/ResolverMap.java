@@ -223,21 +223,17 @@ public class ResolverMap implements Cloneable, Resolver {
 	}
 
 	public LSResourceResolver toLSResourceResolver() {
-		return new LSResourceResolver() {
-			@Override
-			public LSInput resolveResource(String type, String namespaceURI,
-					String publicId, String systemId, String baseURI) {
-				if (systemId == null)
-					return null;
-				try {
-					if (!systemId.contains("://"))
-						systemId = new URI(baseURI).resolve(systemId).toString();
-					return new LSInputImpl(publicId, systemId, resolve(systemId));
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
-		};
+		return (type, namespaceURI, publicId, systemId, baseURI) -> {
+            if (systemId == null)
+                return null;
+            try {
+                if (!systemId.contains("://"))
+                    systemId = new URI(baseURI).resolve(systemId).toString();
+                return new LSInputImpl(publicId, systemId, resolve(systemId));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
 	}
 
 	public ExternalResolverConverter toExternalResolver() {

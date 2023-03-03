@@ -106,16 +106,13 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
         ExpressionParser parser = new SpelExpressionParser();
         Expression exp = parser.parseExpression(expr);
 
-        return new Function<>() {
-            @Override
-            public Boolean call(Object param) {
-                if (!(param instanceof List))
-                    return false;
+        return param -> {
+            if (!(param instanceof List))
+                return false;
 
-                ExpressionContext ec = new ExpressionContext((List) param);
-                StandardEvaluationContext simpleContext = new StandardEvaluationContext(ec);
-                return exp.getValue(simpleContext, Boolean.class);
-            }
+            ExpressionContext ec = new ExpressionContext((List) param);
+            StandardEvaluationContext simpleContext = new StandardEvaluationContext(ec);
+            return exp.getValue(simpleContext, Boolean.class);
         };
     }
 

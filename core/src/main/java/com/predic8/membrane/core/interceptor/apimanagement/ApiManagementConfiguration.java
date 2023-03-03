@@ -436,21 +436,18 @@ public class ApiManagementConfiguration {
 
         if(etcdConfigFingerprintLongPollThread == null) {
 
-            etcdConfigFingerprintLongPollThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (!getContextLost()) {
-                            if (!EtcdRequest.create(etcdLocation, baseKey, "/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()) {
-                                log.warn("Could not get config fingerprint at " + etcdLocation);
-                            }
-                            if (!getContextLost()) {
-                                log.info("Noticed configuration change, updating...");
-                                updateAfterLocationChange();
-                            }
+            etcdConfigFingerprintLongPollThread = new Thread(() -> {
+                try {
+                    while (!getContextLost()) {
+                        if (!EtcdRequest.create(etcdLocation, baseKey, "/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()) {
+                            log.warn("Could not get config fingerprint at " + etcdLocation);
                         }
-                    } catch (Exception ignored) {
+                        if (!getContextLost()) {
+                            log.info("Noticed configuration change, updating...");
+                            updateAfterLocationChange();
+                        }
                     }
+                } catch (Exception ignored) {
                 }
             });
             etcdConfigFingerprintLongPollThread.start();

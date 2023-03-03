@@ -238,10 +238,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	}
 
 	public static interface FailureHandler {
-		public static final FailureHandler VOID = new FailureHandler(){
-			@Override
-			public void handleFailure(String message, Exchange exc) {
-			}};
+		public static final FailureHandler VOID = (message, exc) -> {
+        };
 
 			void handleFailure(String message, Exchange exc);
 	}
@@ -250,12 +248,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		if (failureHandler == null || failureHandler.equals("response"))
 			return null;
 		if (failureHandler.equals("log"))
-			return new FailureHandler() {
-			@Override
-			public void handleFailure(String message, Exchange exc) {
-				log.info("Validation failure: " + message);
-			}
-		};
+			return (message, exc) -> log.info("Validation failure: " + message);
 		throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
 	}
 

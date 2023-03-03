@@ -44,20 +44,17 @@ public class BeanCache implements BeanRegistry {
     }
 
     public void start() {
-        thread = new Thread() {
-            @Override
-            public void run() {
-                while (!Thread.interrupted()) {
-                    try {
-                        BeanDefinition beanDefinition = changeEvents.take();
-                        handle(beanDefinition);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
+        thread = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                try {
+                    BeanDefinition beanDefinition = changeEvents.take();
+                    handle(beanDefinition);
+                } catch (InterruptedException e) {
+                    break;
                 }
-
             }
-        };
+
+        });
         thread.start();
     }
 

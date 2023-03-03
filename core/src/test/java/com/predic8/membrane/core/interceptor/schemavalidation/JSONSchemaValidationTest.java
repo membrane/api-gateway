@@ -29,13 +29,10 @@ public class JSONSchemaValidationTest {
 
 	private void validate(String schema, String json, boolean success) throws IOException, Exception {
 		final StringBuffer sb = new StringBuffer();
-		FailureHandler fh = new FailureHandler() {
-			@Override
-			public void handleFailure(String message, Exchange exc) {
-				sb.append(message);
-				sb.append("\n");
-			}
-		};
+		FailureHandler fh = (message, exc) -> {
+            sb.append(message);
+            sb.append("\n");
+        };
 		JSONValidator jsonValidator = new JSONValidator(new ResolverMap(), schema, fh);
 		Request request = new Request.Builder().body(IOUtils.toByteArray(getClass().getResourceAsStream(json))).build();
 		Exchange exchange = new Exchange(null);

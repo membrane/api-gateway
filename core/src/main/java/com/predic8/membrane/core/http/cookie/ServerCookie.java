@@ -63,15 +63,12 @@ public class ServerCookie implements Serializable {
 	private static final String OLD_COOKIE_PATTERN =
 			"EEE, dd-MMM-yyyy HH:mm:ss z";
 	private static final ThreadLocal<DateFormat> OLD_COOKIE_FORMAT =
-            new ThreadLocal<>() {
-                @Override
-                protected DateFormat initialValue() {
-                    DateFormat df =
-                            new SimpleDateFormat(OLD_COOKIE_PATTERN, Locale.US);
-                    df.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    return df;
-                }
-            };
+            ThreadLocal.withInitial(() -> {
+                DateFormat df =
+                        new SimpleDateFormat(OLD_COOKIE_PATTERN, Locale.US);
+                df.setTimeZone(TimeZone.getTimeZone("GMT"));
+                return df;
+            });
 	private static final String ancientDate;
 
 	static {

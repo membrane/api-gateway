@@ -394,24 +394,21 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 ctx.preSubmitCallback.apply(i);
             }
             final int runNumber = i;
-            ctx.tpe.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Stopwatch taskTime = Stopwatch.createStarted();
-                    try {
-                        ctx.runCounter.incrementAndGet();
-                        final HttpClient client = new HttpClient();
-                        client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-                        int responseCode = client.executeMethod(getPostMethod());
-                        if (responseCode == 200) {
-                            ctx.successCounter.incrementAndGet();
-                        }
-                    } catch (Exception e) {
-                        ctx.exceptionCounter.incrementAndGet();
-                        e.printStackTrace();
+            ctx.tpe.submit(() -> {
+                Stopwatch taskTime = Stopwatch.createStarted();
+                try {
+                    ctx.runCounter.incrementAndGet();
+                    final HttpClient client = new HttpClient();
+                    client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+                    int responseCode = client.executeMethod(getPostMethod());
+                    if (responseCode == 200) {
+                        ctx.successCounter.incrementAndGet();
                     }
-                    ctx.runtimes[runNumber] = taskTime.elapsed(TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    ctx.exceptionCounter.incrementAndGet();
+                    e.printStackTrace();
                 }
+                ctx.runtimes[runNumber] = taskTime.elapsed(TimeUnit.MILLISECONDS);
             });
         }
     }
