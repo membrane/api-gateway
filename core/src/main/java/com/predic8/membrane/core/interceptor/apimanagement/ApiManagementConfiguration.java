@@ -397,7 +397,6 @@ public class ApiManagementConfiguration {
                             try {
                                 parseAndConstructConfiguration(inputStream);
                                 getResolver().observeChange(newLocation, this);
-                            } catch (ResourceRetrievalException ignored) {
                             } catch (IOException ignored) {
                             }
                         }

@@ -203,9 +203,7 @@ public class JwtSessionManager extends SessionManager {
         try {
             JwtClaims claims = processToClaims(originalCookie);
             return Instant.ofEpochSecond(claims.getIssuedAt().getValue()).plus(renewalTime).isBefore(Instant.now());
-        } catch (InvalidJwtException e) {
-            e.printStackTrace();
-        } catch (MalformedClaimException e) {
+        } catch (InvalidJwtException | MalformedClaimException e) {
             e.printStackTrace();
         }
         return false;

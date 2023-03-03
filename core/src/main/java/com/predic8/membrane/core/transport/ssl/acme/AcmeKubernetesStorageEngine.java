@@ -405,9 +405,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
             Thread.sleep(10 * 1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (KubernetesApiException e) {
+        } catch (IOException | KubernetesApiException e) {
             throw new RuntimeException(e);
         }
     }

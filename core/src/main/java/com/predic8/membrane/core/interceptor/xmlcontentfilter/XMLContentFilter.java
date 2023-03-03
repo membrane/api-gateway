@@ -163,12 +163,10 @@ public class XMLContentFilter {
 			Message xop = null;
 			try {
 				xop = xopReconstitutor.getReconstitutedMessage(message);
-			} catch (ParseException e) {
-			} catch (EndOfStreamException e) {
-			} catch (FactoryConfigurationError e) {
+			} catch (ParseException | FactoryConfigurationError | EndOfStreamException e) {
 			}
 
-			if (elementFinder != null &&
+            if (elementFinder != null &&
 					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream())) {
 				return;
 			}
@@ -180,24 +178,14 @@ public class XMLContentFilter {
 				db.reset();
 			}
 			removeElementsIfNecessary(message, xop, d);
-		} catch (SAXException e) {
+		} catch (SAXException | XMLStreamException e) {
 			return;
-		} catch (IOException e) {
+		} catch (ParserConfigurationException | TransformerConfigurationException | XPathExpressionException e) {
 			throw new RuntimeException(e);
-		} catch (XMLStreamException e) {
-			return;
-		} catch (ParserConfigurationException e) {
-			throw new RuntimeException(e);
-		} catch (XPathExpressionException e) {
-			throw new RuntimeException(e);
-		} catch (TransformerConfigurationException e) {
-			throw new RuntimeException(e);
-		} catch (TransformerException e) {
-			throw new RuntimeException(e);
-		} catch (TransformerFactoryConfigurationError e) {
+		} catch (IOException | TransformerFactoryConfigurationError | TransformerException e) {
 			throw new RuntimeException(e);
 		}
-	}
+    }
 
 	/**
 	 * @param originalMessage
