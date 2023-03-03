@@ -145,7 +145,7 @@ public abstract class SessionManager {
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
         Optional<Object> originalCookieValueAtBeginning = Optional.ofNullable(exc.getProperty(SESSION_COOKIE_ORIGINAL));
 
-        if(ttlExpiryRefreshOnAccess || session.isDirty() || !originalCookieValueAtBeginning.isPresent() || cookieRenewalNeeded(originalCookieValueAtBeginning.get().toString())){
+        if(ttlExpiryRefreshOnAccess || session.isDirty() || originalCookieValueAtBeginning.isEmpty() || cookieRenewalNeeded(originalCookieValueAtBeginning.get().toString())){
             String currentCookieValueOfSession = getCookieValue(session);
             if (!ttlExpiryRefreshOnAccess && originalCookieValueAtBeginning.isPresent() &&
                     originalCookieValueAtBeginning.get().toString().trim().equals(currentCookieValueOfSession))

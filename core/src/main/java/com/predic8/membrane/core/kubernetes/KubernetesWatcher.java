@@ -52,7 +52,7 @@ public class KubernetesWatcher {
 
     public void start() {
         Optional<KubernetesValidationInterceptor> kvi = findK8sValidatingInterceptor();
-        if (!kvi.isPresent()) {
+        if (kvi.isEmpty()) {
             return;
         }
 
