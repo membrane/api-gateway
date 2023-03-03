@@ -84,7 +84,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                         throw new RuntimeException(e);
                     }
                 })
-                .collect(HashMap::new, (m,e) -> m.put(e.getKeyId(),e), (m1,m2) -> m1.putAll(m2));
+                .collect(HashMap::new, (m,e) -> m.put(e.getKeyId(),e), HashMap::putAll);
 
         if(kidToKey.size() == 0)
             throw new RuntimeException("No JWKs given or none resolvable - please specify at least one resolvable JWK");
