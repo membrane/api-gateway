@@ -256,8 +256,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         return keyExpression;
     }
 
-    protected String getTrustedProxyList() {
-        return join(",", trustedProxyList);
+    public String getTrustedProxyList() {
+        return trustedProxyList == null ? null : join(",", trustedProxyList);
     }
 
     /**
