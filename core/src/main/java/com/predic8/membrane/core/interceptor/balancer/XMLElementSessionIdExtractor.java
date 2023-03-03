@@ -86,7 +86,7 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
 	/**
      * @description Specifies namespace of session element.
-     * @example <a href="http://chat.predic8.com/">...</a>
+     * @example <a href="http://chat.predic8.com/">http://chat.predic8.com/</a>
      */
 	@Required
 	@MCAttribute
