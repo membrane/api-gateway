@@ -317,15 +317,11 @@ public class MCUtil {
 			}
 		}
 
-		Collections.sort(childElements, new Comparator<>() {
-
-            @Override
-            public int compare(Method o1, Method o2) {
-                MCChildElement c1 = o1.getAnnotation(MCChildElement.class);
-                MCChildElement c2 = o2.getAnnotation(MCChildElement.class);
-                return c1.order() - c2.order();
-            }
-        });
+		Collections.sort(childElements, (o1, o2) -> {
+			MCChildElement c1 = o1.getAnnotation(MCChildElement.class);
+			MCChildElement c2 = o2.getAnnotation(MCChildElement.class);
+			return c1.order() - c2.order();
+		});
 
 		for (Method m : childElements) {
 			String propertyName = AnnotUtils.dejavaify(m.getName().substring(3));

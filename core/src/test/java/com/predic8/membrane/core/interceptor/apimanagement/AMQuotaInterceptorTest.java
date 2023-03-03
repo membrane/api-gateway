@@ -58,24 +58,20 @@ public class AMQuotaInterceptorTest {
         final AtomicInteger returns = new AtomicInteger();
         for(int i = 0; i < 1000; i++)
         {
-            Thread t = new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        Outcome out = amq.handleRequest(exc);
-                        if(out == Outcome.CONTINUE)
-                        {
-                            continues.incrementAndGet();
-                        }
-                        else if(out == Outcome.RETURN)
-                        {
-                            returns.incrementAndGet();
-                        }
-                        amq.handleResponse(exc);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            Thread t = new Thread(() -> {
+                try {
+                    Outcome out = amq.handleRequest(exc);
+                    if(out == Outcome.CONTINUE)
+                    {
+                        continues.incrementAndGet();
                     }
+                    else if(out == Outcome.RETURN)
+                    {
+                        returns.incrementAndGet();
+                    }
+                    amq.handleResponse(exc);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             });
             threads.add(t);

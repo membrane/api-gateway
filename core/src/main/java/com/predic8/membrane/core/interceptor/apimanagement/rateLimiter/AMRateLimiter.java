@@ -54,13 +54,10 @@ public class AMRateLimiter {
         return amc;
     }
 
-    private Runnable observer = new Runnable() {
-        @Override
-        public void run() {
-            log.info("Getting new config");
-            keyInformation = new ConcurrentHashMap<>();
-            fillPolicyCleanupTimes();
-        }
+    private Runnable observer = () -> {
+        log.info("Getting new config");
+        keyInformation = new ConcurrentHashMap<>();
+        fillPolicyCleanupTimes();
     };
 
     public void setAmc(ApiManagementConfiguration amc) {

@@ -291,18 +291,15 @@ public class AcmeRenewal {
         if (!client.getAsse().acquireLease(LEASE_DURATION_MILLISECONDS))
             return false;
         AtomicReference<Throwable> error = new AtomicReference<>();
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    runnable.run();
-                } catch (InterruptedException e) {
-                    // do nothing
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        Thread t = new Thread(() -> {
+            try {
+                runnable.run();
+            } catch (InterruptedException e) {
+                // do nothing
+            } catch (Throwable e) {
+                error.set(e);
             }
-        };
+        });
         t.start();
         while (true) {
             try {

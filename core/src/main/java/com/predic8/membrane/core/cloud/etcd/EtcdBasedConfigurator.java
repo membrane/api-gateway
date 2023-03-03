@@ -58,19 +58,16 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private SSLContext sslCtx = null;
 	private AtomicBoolean updateThreadRunning = new AtomicBoolean(false);
 
-	private Thread nodeRefreshThread = new Thread(new Runnable() {
-		@Override
-		public void run() {
-			updateThreadRunning.compareAndSet(false,true);
-			while (updateThreadRunning.get()) {
-				try {
-					setUpServiceProxies(getConfigFromEtcd());
-					Thread.sleep(waitTimeUntilPollAgain);
-				}catch (Exception ignored) {
-				}
-				if(Thread.interrupted()){
-					return;
-				}
+	private Thread nodeRefreshThread = new Thread(() -> {
+		updateThreadRunning.compareAndSet(false,true);
+		while (updateThreadRunning.get()) {
+			try {
+				setUpServiceProxies(getConfigFromEtcd());
+				Thread.sleep(waitTimeUntilPollAgain);
+			}catch (Exception ignored) {
+			}
+			if(Thread.interrupted()){
+				return;
 			}
 		}
 	});

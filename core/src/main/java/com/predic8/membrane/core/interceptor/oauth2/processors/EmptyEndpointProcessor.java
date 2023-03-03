@@ -94,33 +94,15 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     }
 
     private String getClaimDescriptions(String[] claims) throws UnsupportedEncodingException {
-        return createDescription(claims, new Function<>() {
-            @Override
-            public String call(String param) {
-                return ClaimRenamer.convert(param);
-            }
-        }, new Function<>() {
-            @Override
-            public String call(String claimParam) {
-                return authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam));
-            }
-        });
+        return createDescription(claims, param -> ClaimRenamer.convert(param), claimParam -> authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam)));
     }
 
     private String getScopeDescriptions(String[] scopes) throws UnsupportedEncodingException {
-        return createDescription(scopes, new Function<>() {
-            @Override
-            public String call(String param) {
-                if (param.equals("openid"))
-                    return "";
-                return param;
-            }
-        }, new Function<>() {
-            @Override
-            public String call(String scopeParam) {
-                return authServer.getConsentPageFile().convertScope(scopeParam);
-            }
-        });
+        return createDescription(scopes, param -> {
+            if (param.equals("openid"))
+                return "";
+            return param;
+        }, scopeParam -> authServer.getConsentPageFile().convertScope(scopeParam));
     }
 
     private String createDescription(String[] params, Function<String,String> paramNameConverter, Function<String,String> paramValueConverter) throws UnsupportedEncodingException {

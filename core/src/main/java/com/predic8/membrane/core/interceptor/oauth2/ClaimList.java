@@ -122,21 +122,11 @@ public class ClaimList {
     }
 
     private <T> String toString(Iterable<T> iterable){
-        return toString(iterable, new Function<>() {
-            @Override
-            public String call(T param) {
-                return param.toString();
-            }
-        });
+        return toString(iterable, param -> param.toString());
     }
 
     private String toString(List<Scope> scopes){
-        return toString(scopes, new Function<>() {
-            @Override
-            public String call(Scope param) {
-                return param.getId();
-            }
-        });
+        return toString(scopes, param -> param.getId());
     }
 
     public boolean scopeExists(String s) {

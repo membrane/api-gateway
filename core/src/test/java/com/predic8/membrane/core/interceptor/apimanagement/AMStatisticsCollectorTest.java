@@ -34,23 +34,19 @@ public class AMStatisticsCollectorTest {
 
         for (int i = 0; i < 1000; i++) {
             final int j = i;
-            Thread t = new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        Exchange exc = new Exchange(null);
-                        exc.setRequest(new Request.Builder().header("Test","Test").body("Hello").build());
-                        exc.setResponse(new Response.ResponseBuilder().header("Test","Test").body("Hello back").build());
-                        exc.setProperty(Exchange.API_KEY, "junit-" + j);
-                        exc.setRule(new ServiceProxy());
-                        exc.getRule().setName("junit API");
-                        for(int k = 0; k < 10; k++){
-                            amSc.addExchangeToQueue(exc);
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            Thread t = new Thread(() -> {
+                try {
+                    Exchange exc = new Exchange(null);
+                    exc.setRequest(new Request.Builder().header("Test","Test").body("Hello").build());
+                    exc.setResponse(new Response.ResponseBuilder().header("Test","Test").body("Hello back").build());
+                    exc.setProperty(Exchange.API_KEY, "junit-" + j);
+                    exc.setRule(new ServiceProxy());
+                    exc.getRule().setName("junit API");
+                    for(int k = 0; k < 10; k++){
+                        amSc.addExchangeToQueue(exc);
                     }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             });
             threads.add(t);

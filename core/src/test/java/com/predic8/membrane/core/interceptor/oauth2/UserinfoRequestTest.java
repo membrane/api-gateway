@@ -59,12 +59,7 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     }
 
     public static Callable<Object> changeTokenInAuthorizationHeaderInRequestHeader(final Callable<Exchange> exc, final String newTokenValue) {
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return changeValueOfAuthorizationHeaderInRequestHeader(exc, new TokenAuthorizationHeader(exc.call().getRequest()).getTokenType() + " " + newTokenValue).call();
-            }
-        };
+        return () -> changeValueOfAuthorizationHeaderInRequestHeader(exc, new TokenAuthorizationHeader(exc.call().getRequest()).getTokenType() + " " + newTokenValue).call();
     }
 
     public static Callable<Object> changeValueOfAuthorizationHeaderInRequestHeader(final Callable<Exchange> exc, final String newValue){
@@ -79,12 +74,7 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     }
 
     public static Callable<Boolean> responseWwwAuthenticateHeaderContainsValue(final Callable<Exchange> exc, final String value){
-        return new Callable<>() {
-            @Override
-            public Boolean call() throws Exception {
-                return exc.call().getResponse().getHeader().getWwwAuthenticate().contains(value);
-            }
-        };
+        return () -> exc.call().getResponse().getHeader().getWwwAuthenticate().contains(value);
     }
 
 }

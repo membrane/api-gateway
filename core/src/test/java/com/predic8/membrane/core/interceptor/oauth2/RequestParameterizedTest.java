@@ -56,21 +56,11 @@ public abstract class RequestParameterizedTest {
     }
 
     static Callable<Exchange> getExchange(){
-        return new Callable<>() {
-            @Override
-            public Exchange call() throws Exception {
-                return exc;
-            }
-        };
+        return () -> exc;
     }
 
     public static Callable<Object> removeValueFromRequestUri(final String value){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return replaceValueFromRequestUri(value, "").call();
-            }
-        };
+        return () -> replaceValueFromRequestUri(value, "").call();
     }
 
     public static Callable<Object> replaceValueFromRequestUri(final String value, final String replacement){
@@ -104,58 +94,28 @@ public abstract class RequestParameterizedTest {
     }
 
     public static Callable<Object> removeValueFromRequestBody(final String value){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return replaceValueFromRequestBody(value, "").call();
-            }
-        };
+        return () -> replaceValueFromRequestBody(value, "").call();
     }
 
     public static Callable<Object> removeValueFromRequestBodyLazy(final Callable<String> value){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return replaceValueFromRequestBody(value.call(), "").call();
-            }
-        };
+        return () -> replaceValueFromRequestBody(value.call(), "").call();
     }
 
     public static Callable<Object> responseContainsValueInLocationHeader(final String value){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return exc.getResponse().getHeader().getFirstValue("Location").contains(value);
-            }
-        };
+        return () -> exc.getResponse().getHeader().getFirstValue("Location").contains(value);
 
     }
 
     public static Callable<Object> getInvalidRequestJson(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return "{\"error\":\"invalid_request\"}";
-            }
-        };
+        return () -> "{\"error\":\"invalid_request\"}";
     }
 
     public static Callable<Object> getUnauthorizedClientJson(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return "{\"error\":\"unauthorized_client\"}";
-            }
-        };
+        return () -> "{\"error\":\"unauthorized_client\"}";
     }
 
     public static Callable<Object> getInvalidClientJson(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return "{\"error\":\"invalid_client\"}";
-            }
-        };
+        return () -> "{\"error\":\"invalid_client\"}";
     }
 
     public static Callable<Object> addValueToRequestUri(final String value) {
@@ -169,57 +129,27 @@ public abstract class RequestParameterizedTest {
     }
 
     public static Callable<Object> getResponseBody(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return exc.getResponse().getBodyAsStringDecoded();
-            }
-        };
+        return () -> exc.getResponse().getBodyAsStringDecoded();
     }
 
     public static Callable<Boolean> getBool(final boolean bool){
-        return new Callable<>() {
-            @Override
-            public Boolean call() throws Exception {
-                return bool;
-            }
-        };
+        return () -> bool;
     }
 
     public static Callable<Object> getLoginRequiredJson(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return "{\"error\":\"login_required\"}";
-            }
-        };
+        return () -> "{\"error\":\"login_required\"}";
     }
 
     public static Callable<Object> getInvalidGrantJson(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return "{\"error\":\"invalid_grant\"}";
-            }
-        };
+        return () -> "{\"error\":\"invalid_grant\"}";
     }
 
     public static Callable<Object> getUnsupportedResponseTypeJson(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return "{\"error\":\"unsupported_response_type\"}";
-            }
-        };
+        return () -> "{\"error\":\"unsupported_response_type\"}";
     }
 
     public static Callable<Object> getConsentRequiredJson(){
-        return new Callable<>() {
-            @Override
-            public Object call() throws Exception {
-                return "{\"error\":\"consent_required\"}";
-            }
-        };
+        return () -> "{\"error\":\"consent_required\"}";
     }
 
     public static void modifySessionAttributes(String name, String value){

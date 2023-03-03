@@ -49,13 +49,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     private int retryDelayMin = 10 * 1000;
     private int retryDelayMax = 10 * 60 * 1000;
     private double expDelayFactor = 2.0d;
-    private Job jobPublishToEtcd = new Job() {
-
-        @Override
-        public boolean run() throws Exception {
-            return publishToEtcd();
-        }
-    };
+    private Job jobPublishToEtcd = () -> publishToEtcd();
 
     public String getBaseUrl() {
         return baseUrl;

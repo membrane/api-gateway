@@ -181,12 +181,7 @@ public abstract class SSLContext implements SSLProvider {
         for (String cipher : ciphers)
             cipherInfos.add(new SSLContext.CipherInfo(cipher));
 
-        Collections.sort(cipherInfos, new Comparator<>() {
-            @Override
-            public int compare(SSLContext.CipherInfo cipher1, SSLContext.CipherInfo cipher2) {
-                return cipher2.points - cipher1.points;
-            }
-        });
+        Collections.sort(cipherInfos, (cipher1, cipher2) -> cipher2.points - cipher1.points);
 
         for (int i = 0; i < ciphers.size(); i++)
             ciphers.set(i, cipherInfos.get(i).cipher);
