@@ -103,11 +103,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 
 		//injection protection
 		String sort;
-		if (!sortNameColmnMapping.containsKey(iSort)) {
-			sort = "id";
-		} else {
-			sort = sortNameColmnMapping.get(iSort);
-		}
+        sort = sortNameColmnMapping.getOrDefault(iSort, "id");
 
 		return	"select * from " +JDBCUtil.TABLE_NAME + " ORDER BY "+sort+" "+order;
 	}

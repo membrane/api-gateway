@@ -238,13 +238,9 @@ public class StringCache {
 											int[] countA = item.getValue();
 											Integer count = countA[0];
 											// Add to the list for that count
-											ArrayList<ByteEntry> list = tempMap.get(count);
-											if (list == null) {
-												// Create list
-												list = new ArrayList<>();
-												tempMap.put(count, list);
-											}
-											list.add(entry);
+                                            ArrayList<ByteEntry> list = tempMap.computeIfAbsent(count, k -> new ArrayList<>());
+                                            // Create list
+                                            list.add(entry);
 										}
 										// Allocate array of the right size
 										int size = bcStats.size();
