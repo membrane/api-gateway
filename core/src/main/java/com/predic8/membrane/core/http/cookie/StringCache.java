@@ -236,7 +236,7 @@ public class StringCache {
 										for (Entry<ByteEntry,int[]> item : bcStats.entrySet()) {
 											ByteEntry entry = item.getKey();
 											int[] countA = item.getValue();
-											Integer count = Integer.valueOf(countA[0]);
+											Integer count = countA[0];
 											// Add to the list for that count
 											ArrayList<ByteEntry> list = tempMap.get(count);
 											if (list == null) {
