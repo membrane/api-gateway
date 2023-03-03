@@ -292,7 +292,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 	/**
      * @description The WSDL of the SOAP service.
-     * @example <a href="http://predic8.de/my.wsdl">...</a> <i>or</i> file:my.wsdl
+     * @example <a href="http://predic8.de/my.wsdl">http://predic8.de/my.wsdl</a> <i>or</i> file:my.wsdl
      */
 	@Required
 	@MCAttribute
