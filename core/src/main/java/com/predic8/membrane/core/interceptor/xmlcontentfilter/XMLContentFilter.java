@@ -181,11 +181,9 @@ public class XMLContentFilter {
 			}
 			removeElementsIfNecessary(message, xop, d);
 		} catch (SAXException e) {
-			return;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (XMLStreamException e) {
-			return;
 		} catch (ParserConfigurationException e) {
 			throw new RuntimeException(e);
 		} catch (XPathExpressionException e) {

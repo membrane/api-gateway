@@ -374,7 +374,6 @@ public class ApiManagementConfiguration {
                     return;
                 }
             }
-            return;
         }else {
             if(location.isEmpty())
                 location = "api.yaml";
