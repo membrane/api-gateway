@@ -55,8 +55,8 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
         // TODO: this changes, as soon as we introduce the STOMPInterceptor
         //if (frameTravelsToRight) {
         if (true) {
-            for (int i = 0; i < interceptors.size(); i++)
-                if (interceptors.get(i).handleRequest(exc) != Outcome.CONTINUE)
+            for (Interceptor interceptor : interceptors)
+                if (interceptor.handleRequest(exc) != Outcome.CONTINUE)
                     return;
 
         } else {

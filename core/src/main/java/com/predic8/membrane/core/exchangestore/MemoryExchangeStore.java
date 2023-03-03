@@ -104,8 +104,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		if (exchangesList == null || exchangesList.isEmpty())
 			return statistics;
 
-		for (int i = 0; i < exchangesList.size(); i++)
-			statistics.collectFrom(exchangesList.get(i));
+        for (AbstractExchange abstractExchange : exchangesList) statistics.collectFrom(abstractExchange);
 
 		return statistics;
 	}

@@ -854,11 +854,11 @@ public final class ByteChunk implements Cloneable, Serializable {
 		int blen = b.length;
 		int offset = start;
 		while (offset < end) {
-			for (int i = 0;  i < blen; i++) {
-				if (bytes[offset] == b[i]) {
-					return offset;
-				}
-			}
+            for (byte value : b) {
+                if (bytes[offset] == value) {
+                    return offset;
+                }
+            }
 			offset++;
 		}
 		return -1;
@@ -885,12 +885,12 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 		while (offset < end) {
 			found = true;
-			for (int i = 0; i < blen; i++) {
-				if (bytes[offset] == b[i]) {
-					found=false;
-					break;
-				}
-			}
+            for (byte value : b) {
+                if (bytes[offset] == value) {
+                    found = false;
+                    break;
+                }
+            }
 			if (found) {
 				return offset;
 			}
