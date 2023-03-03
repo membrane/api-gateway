@@ -182,7 +182,7 @@ public class AMRateLimiter {
             for (PolicyRateLimit prl : policyRateLimits.values()) {
                 if (DateTime.now().isAfter(prl.getNextCleanup())) {
                     for(ApiKeyRequestCounter keyInfo : keyInformation.values()){
-                        if(keyInfo.getPolicyCounters().keySet().contains(prl.getName())){
+                        if(keyInfo.getPolicyCounters().containsKey(prl.getName())){
                             keyInfo.getPolicyCounters().get(prl.getName()).set(0);
                         }
                     }
