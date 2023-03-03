@@ -29,11 +29,9 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testCodeResponse(),
+        return Arrays.asList(testCodeResponse(),
                 testTokenResponse(),
-                testUnsupportedResponseType()
-        });
+                testUnsupportedResponseType());
     }
 
     private static Object[] testUnsupportedResponseType() {

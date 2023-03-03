@@ -47,10 +47,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SessionManager {
 
     public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(new Object[][] {
-                inMemory(),
-                jwt()
-        });
+        return Arrays.asList(inMemory(),
+                jwt());
     }
 
     private static Object[] jwt() {

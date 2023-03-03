@@ -38,8 +38,8 @@ public class UserFeatureTest {
 		router = Router.init("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
 
-		labels = new ArrayList<String>(Arrays.asList(new String[] { "Mock1", "Mock3", "Mock4", "Mock7" }));
-		inverseLabels = new ArrayList<String>(Arrays.asList(new String[] { "Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1" }));
+		labels = new ArrayList<String>(Arrays.asList("Mock1", "Mock3", "Mock4", "Mock7"));
+		inverseLabels = new ArrayList<String>(Arrays.asList("Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1"));
 	}
 
 	@AfterAll

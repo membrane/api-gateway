@@ -31,10 +31,8 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testConsentNotGiven(),
-                testIdTokenTokenResponse()
-        });
+        return Arrays.asList(testConsentNotGiven(),
+                testIdTokenTokenResponse());
     }
 
     private static Object[] testIdTokenTokenResponse() {

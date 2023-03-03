@@ -29,10 +29,8 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testOpenidScopeButIsTokenResponseType(),
-                testHasClaimsButIsNotOpenid(),
-        });
+        return Arrays.asList(testOpenidScopeButIsTokenResponseType(),
+                testHasClaimsButIsNotOpenid());
     }
 
     private static Object[] testHasClaimsButIsNotOpenid() {

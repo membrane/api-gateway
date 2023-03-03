@@ -29,17 +29,15 @@ public class TokenRequestTest extends RequestParameterizedTest {
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-            testCodeMissing(),
-            testClientIdMissing(),
-            testClientSecretMissing(),
-            testRedirectUriMissing(),
-            testNoSessionForCode(),
-            testInvalidClient(),
-            testUnauthorizedClient(),
-            testRedirectUriNotAbsolute(),
-            testRedirectUriNotEquals()
-        });
+        return Arrays.asList(testCodeMissing(),
+                testClientIdMissing(),
+                testClientSecretMissing(),
+                testRedirectUriMissing(),
+                testNoSessionForCode(),
+                testInvalidClient(),
+                testUnauthorizedClient(),
+                testRedirectUriNotAbsolute(),
+                testRedirectUriNotEquals());
     }
 
     private static Object[] testRedirectUriNotEquals() {
