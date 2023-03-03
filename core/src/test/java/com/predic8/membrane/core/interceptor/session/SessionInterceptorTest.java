@@ -148,9 +148,7 @@ public class SessionInterceptorTest {
 
         bodies.stream().forEach(this::printCookie);
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
-            assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
-        });
+        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1))));
 
         String cookieOne = getCookieKey(bodies.get(upperBound-1));
 
@@ -169,9 +167,7 @@ public class SessionInterceptorTest {
 
         bodies.stream().forEach(this::printCookie);
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
-            assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
-        });
+        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1))));
 
         String cookieTwo = getCookieKey(bodies.get(upperBound-1));
 

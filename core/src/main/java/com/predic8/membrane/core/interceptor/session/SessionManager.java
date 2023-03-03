@@ -193,17 +193,15 @@ public abstract class SessionManager {
         synchronized (cookieExpireCache) {
             setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
                     .filter(e -> cookieExpireCache.getIfPresent(e.getKey() + "=true") != null)
-                    .forEach(e -> {
-                        e.getValue().stream().forEach(cookieEntry -> {
-                            String cookie = cookieExpireCache.getIfPresent(e.getKey() + "=true");
-                            if (cookieEntry.equals(cookie)) {
-                                setCookieHeaders.get(e.getKey()).remove(e.getValue());
-                                exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
-                                        .filter(hf -> hf.getValue().contains(cookieEntry))
-                                        .findFirst().get());
-                            }
-                        });
-                    });
+                    .forEach(e -> e.getValue().stream().forEach(cookieEntry -> {
+                        String cookie = cookieExpireCache.getIfPresent(e.getKey() + "=true");
+                        if (cookieEntry.equals(cookie)) {
+                            setCookieHeaders.get(e.getKey()).remove(e.getValue());
+                            exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
+                                    .filter(hf -> hf.getValue().contains(cookieEntry))
+                                    .findFirst().get());
+                        }
+                    }));
         }
     }
 

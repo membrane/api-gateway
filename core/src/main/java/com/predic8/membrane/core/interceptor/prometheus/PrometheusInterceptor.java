@@ -221,22 +221,20 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private void buildBuckets(Context ctx, Rule rule) {
-        rule.getStatisticCollector().getTimeStatisticsByStatusCodeRange().forEach((code, tc) -> {
-            tc.getTrackedTimes().forEach((name, tt) -> {
-                if (tt.isEmpty())
+        rule.getStatisticCollector().getTimeStatisticsByStatusCodeRange().forEach((code, tc) -> tc.getTrackedTimes().forEach((name, tt) -> {
+            if (tt.isEmpty())
+                return;
+
+            StringBuilder sb = ctx.getNew();
+            tt.forEach((le, count) -> {
+                if (le.equals("SUM") || le.equals("COUNT"))
                     return;
 
-                StringBuilder sb = ctx.getNew();
-                tt.forEach((le, count) -> {
-                    if (le.equals("SUM") || le.equals("COUNT"))
-                        return;
-
-                    buildBucketLine(sb, rule.getName(), le, count, name);
-                });
-                buildBucketLine(sb, rule.getName(), name + "_sum", tt.get("SUM"));
-                buildBucketLine(sb, rule.getName(), name + "_count", tt.get("COUNT"));
+                buildBucketLine(sb, rule.getName(), le, count, name);
             });
-        });
+            buildBucketLine(sb, rule.getName(), name + "_sum", tt.get("SUM"));
+            buildBucketLine(sb, rule.getName(), name + "_count", tt.get("COUNT"));
+        }));
     }
 
     private void buildStatuscodeLines(Context ctx, Rule rule) {

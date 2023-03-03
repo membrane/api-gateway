@@ -266,9 +266,7 @@ public class NodeOnlineChecker {
             }
             try {
                 Exchange exc = new Request.Builder().get(url.toString()).buildExchange();
-                Optional.ofNullable(node.getSslContext()).ifPresent(c -> {
-                    exc.setProperty(Exchange.SSL_CONTEXT, c);
-                });
+                Optional.ofNullable(node.getSslContext()).ifPresent(c -> exc.setProperty(Exchange.SSL_CONTEXT, c));
                 Exchange e = client.call(exc);
                 if(e.getResponse().getStatusCode() < 400){
                     onlineNodes.add(node);

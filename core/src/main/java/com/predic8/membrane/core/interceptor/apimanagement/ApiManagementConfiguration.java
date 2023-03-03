@@ -212,7 +212,7 @@ public class ApiManagementConfiguration {
     }
 
     private String parseString(Object obj, String defObj){
-        return StringToTypeConverter(obj,defObj, (value) -> {return value;});
+        return StringToTypeConverter(obj,defObj, (value) -> value);
     }
 
     private boolean parseBoolean(Object obj, Boolean defObj){
