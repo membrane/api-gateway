@@ -73,58 +73,35 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
     }
 
     public static Callable<Exchange> getMockBadRequestExchange() throws Exception {
-        return new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws Exception {
-                return new Request.Builder().get("/thisdoesntexist").buildExchange();
-            }
-        };
+        return () -> new Request.Builder().get("/thisdoesntexist").buildExchange();
     }
 
     private static Consumer<Exchange> userinfoRequestPostprocessing() throws IOException, ParseException {
-        return new Consumer<Exchange>() {
-            @Override
-            public void call(Exchange exchange) throws Exception {
-                HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
-                assertEquals("john",json.get("username"));
-            }
+        return exchange -> {
+            HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
+            assertEquals("john", json.get("username"));
         };
     }
 
     public static Callable<Exchange> getMockRevocationRequest() throws Exception {
-        return new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws Exception {
-                return new Request.Builder().post(mas.getRevocationEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + afterTokenGenerationToken +"&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
-                        .buildExchange();
-            }
-        };
+        return () -> new Request.Builder().post(mas.getRevocationEndpoint())
+                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(Header.USER_AGENT, Constants.USERAGENT)
+                .body("token=" + afterTokenGenerationToken + "&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
+                .buildExchange();
     }
 
     public static Callable<Exchange> getMockPasswordRequestExchange() throws Exception {
-        return new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws Exception {
-                return new Request.Builder().post(mas.getTokenEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .body("grant_type=password&username=john&password=password&client_id=abc&client_secret=def")
-                        .buildExchange();
-            }
-        };
+        return () -> new Request.Builder().post(mas.getTokenEndpoint())
+                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .body("grant_type=password&username=john&password=password&client_id=abc&client_secret=def")
+                .buildExchange();
     }
 
     public static Callable<Exchange> getMockClientCredentialsRequestExchange() throws Exception {
-        return new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws Exception {
-                return new Request.Builder().post(mas.getTokenEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .body("grant_type=password&client_id=abc&client_secret=def")
-                        .buildExchange();
-            }
-        };
+        return () -> new Request.Builder().post(mas.getTokenEndpoint())
+                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .body("grant_type=password&client_id=abc&client_secret=def")
+                .buildExchange();
     }
 }

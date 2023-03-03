@@ -67,7 +67,7 @@ public class XPathCBRInterceptorTest {
 	}
 
 	private List<Case> getRouteList(String... args) {
-		List<Case> l = new ArrayList<Case>();
+		List<Case> l = new ArrayList<>();
 		for (int i = 0; i < args.length; i+=2) {
 			l.add(new Case(args[i],args[i+1]));
 		}
@@ -75,7 +75,7 @@ public class XPathCBRInterceptorTest {
 	}
 
 	private Map<String, String> getNamespaceMap(String... args) {
-		Map<String, String> map = new HashMap<String, String>();
+		Map<String, String> map = new HashMap<>();
 		for (int i = 0; i < args.length; i+=2) {
 			map.put(args[i], args[i+1]);
 		}

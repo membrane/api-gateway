@@ -35,7 +35,7 @@ import org.xml.sax.SAXParseException;
 
 /**
  * Delegates everything to {@link FileSystemXmlApplicationContext}.
- *
+ * <p>
  * Additionally, adds aspects of {@link TrackingApplicationContext}, {@link BaseLocationApplicationContext} and
  * {@link CheckableBeanFactory}.
  */

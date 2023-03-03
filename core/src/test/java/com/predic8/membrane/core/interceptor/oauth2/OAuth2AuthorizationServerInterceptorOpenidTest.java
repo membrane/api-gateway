@@ -65,41 +65,32 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
     }
 
     private static Consumer<Exchange> loginAsJohnOpenid() {
-        return new Consumer<Exchange>() {
-            @Override
-            public void call(Exchange exc) throws Exception {
-                loginAsJohn().call(exc);
-                SessionManager.Session s = oasi.getSessionManager().getOrCreateSession(exc);
-                Map<String, String> userAttributes = s.getUserAttributes();
-                synchronized (userAttributes) {
-                    userAttributes.put(ParamNames.SCOPE, "openid");
-                    userAttributes.put(ParamNames.CLAIMS, OAuth2TestUtil.getMockClaims());
-                    userAttributes.put("consent", "true");
-                }
+        return exc -> {
+            loginAsJohn().call(exc);
+            SessionManager.Session s = oasi.getSessionManager().getOrCreateSession(exc);
+            Map<String, String> userAttributes = s.getUserAttributes();
+            synchronized (userAttributes) {
+                userAttributes.put(ParamNames.SCOPE, "openid");
+                userAttributes.put(ParamNames.CLAIMS, OAuth2TestUtil.getMockClaims());
+                userAttributes.put("consent", "true");
             }
         };
     }
 
     public static Callable<Exchange> getMockAuthOpenidRequestExchange() {
-        return new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws Exception {
-                Exchange exc = getMockAuthRequestExchange().call();
-                exc.getRequest().setUri(exc.getRequest().getUri()+ "&claims=" + OAuth2Util.urlencode(OAuth2TestUtil.getMockClaims()));
-                exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote("scope=profile"),"scope=" + OAuth2Util.urlencode("openid")));
-                exc.getRequest().getHeader().add("Cookie",oasi.getSessionManager().getCookieName() + "=" + OAuth2TestUtil.sessionId);
-                return exc;
-            }
+        return () -> {
+            Exchange exc = getMockAuthRequestExchange().call();
+            exc.getRequest().setUri(exc.getRequest().getUri() + "&claims=" + OAuth2Util.urlencode(OAuth2TestUtil.getMockClaims()));
+            exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote("scope=profile"), "scope=" + OAuth2Util.urlencode("openid")));
+            exc.getRequest().getHeader().add("Cookie", oasi.getSessionManager().getCookieName() + "=" + OAuth2TestUtil.sessionId);
+            return exc;
         };
     }
 
     private static Consumer<Exchange> validateIdTokenAndGetTokenAndTokenTypeFromResponse() {
-        return new Consumer<Exchange>() {
-            @Override
-            public void call(Exchange exc) throws Exception {
-                assertEquals(true,idTokenIsValid(exc.getResponse()));
-                getTokenAndTokenTypeFromResponse().call(exc);
-            }
+        return exc -> {
+            assertEquals(true, idTokenIsValid(exc.getResponse()));
+            getTokenAndTokenTypeFromResponse().call(exc);
         };
     }
 
@@ -115,12 +106,9 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
     }
 
     private static Consumer<Exchange> userinfoOpenidRequestPostprocessing() throws IOException, ParseException {
-        return new Consumer<Exchange>() {
-            @Override
-            public void call(Exchange exchange) throws Exception {
-                HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
-                assertEquals("e@mail.com",json.get("email"));
-            }
+        return exchange -> {
+            HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
+            assertEquals("e@mail.com", json.get("email"));
         };
     }
 }

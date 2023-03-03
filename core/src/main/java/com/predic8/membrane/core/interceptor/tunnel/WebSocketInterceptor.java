@@ -73,11 +73,11 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description The URL the WebSocket connection will be forwarded to. The (host,port) pair specifies the target server.
-	 * The (path,query) part are sent to the target server on the initial request. (For example, ActiveMQ listens on port
-	 * 61614 and expects the incoming WebSocket connection to have a path '/' and empty query.)
-	 * @example http://localhost:61614/
-	 */
+     * @description The URL the WebSocket connection will be forwarded to. The (host,port) pair specifies the target server.
+     * The (path,query) part are sent to the target server on the initial request. (For example, ActiveMQ listens on port
+     * 61614 and expects the incoming WebSocket connection to have a path '/' and empty query.)
+     * @example <a href="http://localhost:61614/">http://localhost:61614/</a>
+     */
 	@MCAttribute
 	public void setUrl(String url) {
 		this.url = url;

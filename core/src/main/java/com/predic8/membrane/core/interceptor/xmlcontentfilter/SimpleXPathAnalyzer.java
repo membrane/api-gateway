@@ -192,11 +192,11 @@ public class SimpleXPathAnalyzer {
 	}
 
 	private List<ContainerNode> splitUnionExprIntoIntersectExceptExprs(ContainerNode node) {
-		List<ContainerNode> res = new ArrayList<ContainerNode>();
-		List<Node> intersectExceptExprParts = new ArrayList<Node>();
+		List<ContainerNode> res = new ArrayList<>();
+		List<Node> intersectExceptExprParts = new ArrayList<>();
 		for (Node n : node.nodes)
 			if (n instanceof UnparsedStringNode) {
-				List<String> parts = new ArrayList<String>();
+				List<String> parts = new ArrayList<>();
 				for (String part : splitOnOperand(((UnparsedStringNode)n).s, "|"))
 					for (String part2 : splitOnOperand(part, "union"))
 						parts.add(part2);
@@ -204,7 +204,7 @@ public class SimpleXPathAnalyzer {
 					if (i >= 1) {
 						// next IntersectExceptExpr
 						res.add(new ContainerNode(intersectExceptExprParts.toArray(new Node[0])));
-						intersectExceptExprParts = new ArrayList<Node>();
+						intersectExceptExprParts = new ArrayList<>();
 					}
 					intersectExceptExprParts.add(new UnparsedStringNode(parts.get(i)));
 				}
@@ -219,7 +219,7 @@ public class SimpleXPathAnalyzer {
 	private List<String> splitOnOperand(String xpath, String op) {
 		int p = indexOfOperand(xpath, op);
 		if (p == -1) {
-			List<String> res = new ArrayList<String>();
+			List<String> res = new ArrayList<>();
 			res.add(xpath);
 			return res;
 		}
@@ -274,7 +274,7 @@ public class SimpleXPathAnalyzer {
 	}
 
 
-	/** See http://www.w3.org/TR/REC-xml/#NT-NameChar . */
+	/** See <a href="http://www.w3.org/TR/REC-xml/#NT-NameChar">...</a> . */
 	private boolean isNameChar(int c) {
 		return c == ':' ||
 				(c >= 'A' && c <= 'Z') ||

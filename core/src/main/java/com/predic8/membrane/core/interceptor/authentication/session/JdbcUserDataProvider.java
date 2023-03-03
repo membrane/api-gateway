@@ -60,18 +60,9 @@ public class JdbcUserDataProvider implements UserDataProvider {
     }
 
     private void createTableIfNeeded() throws SQLException {
-        Connection con = null;
-        Statement statement = null;
 
-        try {
-            con = datasource.getConnection();
-            statement = con.createStatement();
+        try (Connection con = datasource.getConnection(); Statement statement = con.createStatement()) {
             statement.executeUpdate(getCreateTableSql());
-        } finally {
-            if (statement != null)
-                statement.close();
-            if (con != null)
-                con.close();
         }
     }
 

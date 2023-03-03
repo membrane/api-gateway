@@ -118,7 +118,7 @@ public class JwtGenerator {
     }
 
     public List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud) throws InvalidJwtException {
-        ArrayList<Claim> result = new ArrayList<Claim>();
+        ArrayList<Claim> result = new ArrayList<>();
         JwtClaims claims = processIdTokenToClaims(idToken,iss,aud);
 
         for(String claim : claims.getClaimsMap().keySet()){
@@ -156,7 +156,7 @@ public class JwtGenerator {
     }
 
     private static List<Claim> getClaimsFromClaimsMap(JwtClaims claims) {
-        ArrayList<Claim> result = new ArrayList<Claim>();
+        ArrayList<Claim> result = new ArrayList<>();
         for(String claim : claims.getClaimsMap().keySet()){
             result.add(new Claim(claim,String.valueOf(claims.getClaimValue(claim))));
         }

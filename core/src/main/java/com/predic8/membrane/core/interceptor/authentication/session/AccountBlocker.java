@@ -71,7 +71,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 	private long afterFailedLoginsWithin = Long.MAX_VALUE;
 	private long blockFor = 3600000;
 
-	private HashMap<String, Info> users = new HashMap<String, Info>();
+	private HashMap<String, Info> users = new HashMap<>();
 
 	private class Info {
 		private final long tries[];
@@ -146,7 +146,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 	}
 
 	public void cleanup() {
-		List<String> removeUs = new ArrayList<String>();
+		List<String> removeUs = new ArrayList<>();
 		long death = System.currentTimeMillis() - afterFailedLoginsWithin;
 		synchronized (users) {
 			for (Map.Entry<String, Info> e : users.entrySet())

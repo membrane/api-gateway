@@ -64,8 +64,8 @@ public abstract class PEMSupport {
         private String cleanupPEM(String pemBlock) {
             String lines[] = pemBlock.split("\r?\n");
             StringBuilder block = new StringBuilder();
-            for (int i = 0; i < lines.length; i++) {
-                String l = lines[i].replaceAll("^\\s+", "");
+            for (String line : lines) {
+                String l = line.replaceAll("^\\s+", "");
                 if (l.length() > 0) {
                     block.append(l);
                     block.append("\n");

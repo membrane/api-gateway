@@ -60,7 +60,7 @@ public class BearerTokenGenerator implements TokenGenerator {
     }
 
     private SecureRandom random = new SecureRandom();
-    private ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<String, User>();
+    private ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<>();
 
     @Override
     public String getTokenType() {

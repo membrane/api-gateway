@@ -37,7 +37,7 @@ import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
 /**
  * Tests {@link MCUtil#fromXML(Class, String)} and {@link MCUtil#toXML(Object)} on every
  * proxies.xml file found in the "examples" directory.
- *
+ * <p>
  * The test is:
  * 1. call fromXml() on the file.
  * 2. call toXml() on the result. (ensure that no serialization warning as been issued)

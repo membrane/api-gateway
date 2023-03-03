@@ -82,7 +82,7 @@ public abstract class SSLContext implements SSLProvider {
         } else {
             // use all default ciphers except those using RC4
             String supportedCiphers[] = sslc.getSocketFactory().getDefaultCipherSuites();
-            ArrayList<String> ciphers = new ArrayList<String>(supportedCiphers.length);
+            ArrayList<String> ciphers = new ArrayList<>(supportedCiphers.length);
             for (String cipher : supportedCiphers)
                 if (!cipher.contains("_RC4_") && !cipher.contains("_3DES_"))
                     ciphers.add(cipher);
@@ -128,7 +128,7 @@ public abstract class SSLContext implements SSLProvider {
             serviceSocket.setEnabledProtocols(getProtocols());
         } else {
             String[] protocols = serviceSocket.getEnabledProtocols();
-            Set<String> set = new HashSet<String>();
+            Set<String> set = new HashSet<>();
             for (String protocol : protocols) {
                 if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
                     continue;
@@ -176,17 +176,12 @@ public abstract class SSLContext implements SSLProvider {
     }
 
     private void sortCiphers(ArrayList<String> ciphers) {
-        ArrayList<SSLContext.CipherInfo> cipherInfos = new ArrayList<SSLContext.CipherInfo>(ciphers.size());
+        ArrayList<SSLContext.CipherInfo> cipherInfos = new ArrayList<>(ciphers.size());
 
         for (String cipher : ciphers)
             cipherInfos.add(new SSLContext.CipherInfo(cipher));
 
-        Collections.sort(cipherInfos, new Comparator<SSLContext.CipherInfo>() {
-            @Override
-            public int compare(SSLContext.CipherInfo cipher1, SSLContext.CipherInfo cipher2) {
-                return cipher2.points - cipher1.points;
-            }
-        });
+        cipherInfos.sort((cipher1, cipher2) -> cipher2.points - cipher1.points);
 
         for (int i = 0; i < ciphers.size(); i++)
             ciphers.set(i, cipherInfos.get(i).cipher);

@@ -38,8 +38,8 @@ public class UserFeatureTest {
 		router = Router.init("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
 
-		labels = new ArrayList<String>(Arrays.asList(new String[] { "Mock1", "Mock3", "Mock4", "Mock7" }));
-		inverseLabels = new ArrayList<String>(Arrays.asList(new String[] { "Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1" }));
+		labels = new ArrayList<>(Arrays.asList(new String[]{"Mock1", "Mock3", "Mock4", "Mock7"}));
+		inverseLabels = new ArrayList<>(Arrays.asList(new String[]{"Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1"}));
 	}
 
 	@AfterAll
@@ -57,13 +57,13 @@ public class UserFeatureTest {
 	@Test
 	public void testInvocation() throws Exception {
 		callService("ok");
-		MockInterceptor.assertContent(labels, inverseLabels, new ArrayList<String>());
+		MockInterceptor.assertContent(labels, inverseLabels, new ArrayList<>());
 	}
 
 	@Test
 	public void testAbort() throws Exception {
 		callService("abort");
-		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
+		MockInterceptor.assertContent(labels, new ArrayList<>(), inverseLabels);
 	}
 
 	@Test
@@ -71,7 +71,7 @@ public class UserFeatureTest {
 		labels.add("Mock8");
 
 		callService("failinrequest");
-		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
+		MockInterceptor.assertContent(labels, new ArrayList<>(), inverseLabels);
 	}
 
 	@Test
@@ -88,7 +88,7 @@ public class UserFeatureTest {
 		inverseLabels.add(0, "Mock10");
 
 		callService("failinabort");
-		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
+		MockInterceptor.assertContent(labels, new ArrayList<>(), inverseLabels);
 	}
 
 

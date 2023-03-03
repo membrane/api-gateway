@@ -312,11 +312,11 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     public List getHitsElementFromElasticSearchResponse(Map response){
-        return ((List)((Map)response.get("hits")).get("hits"));
+        return ((List)((Map<?, ?>)response.get("hits")).get("hits"));
     }
 
     public List<Map> getSourceElementFromHitsElement(List hits){
-        return (List)hits.stream().map(hit -> ((Map)hit).get("_source")).collect(Collectors.toList());
+        return (List)hits.stream().map(hit -> ((Map<?, ?>)hit).get("_source")).collect(Collectors.toList());
     }
 
     @Override
@@ -440,7 +440,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .buildExchange();
             exc = client.call(exc);
 
-            List source = getSourceElementFromElasticSearchResponse(responseToMap(exc));
+            List<Map> source = getSourceElementFromElasticSearchResponse(responseToMap(exc));
             AbstractExchangeSnapshot[] snapshots = mapper.readValue(mapper.writeValueAsString(source), AbstractExchangeSnapshot[].class);
             return Stream.of(snapshots).map(AbstractExchangeSnapshot::toAbstractExchange).toArray(AbstractExchange[]::new);
         }catch (Exception e){
@@ -665,7 +665,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     /**
      * @description base URL of Elasticsearch
-     * @default http://localhost:9200
+     * @default <a href="http://localhost:9200">http://localhost:9200</a>
      */
     @MCAttribute
     public void setLocation(String location) {

@@ -114,9 +114,7 @@ public class WebSocketStreamPump extends StreamPump {
                 frame.write(target);
             }
         } else {
-            chain.get(i).handleFrame(frame, frameTravelsToRight, frame1 -> {
-                passFrameToChainElement(i + (frameTravelsToRight ? 1 : -1), frameTravelsToRight, frame1);
-            });
+            chain.get(i).handleFrame(frame, frameTravelsToRight, frame1 -> passFrameToChainElement(i + (frameTravelsToRight ? 1 : -1), frameTravelsToRight, frame1));
         }
     }
 

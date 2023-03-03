@@ -139,7 +139,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		String uri = exc.getOriginalRequestUri();
 		int qStart = uri.indexOf('?');
 		if (qStart == -1 || qStart + 1 == uri.length())
-			return new HashMap<String, String>();
+			return new HashMap<>();
 		return parseQueryString(exc.getOriginalRequestUri().substring(
 				qStart + 1), ERROR);
 	}

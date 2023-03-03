@@ -87,12 +87,7 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
         }
     });
 
-    ExponentialBackoff.Job jobPublisher = new ExponentialBackoff.Job() {
-        @Override
-        public boolean run() throws Exception {
-            return publishToEtcd();
-        }
-    };
+    ExponentialBackoff.Job jobPublisher = () -> publishToEtcd();
 
     private boolean publishToEtcd() {
         String baseKey = baseKeyPrefix+membraneId;
@@ -214,7 +209,7 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     /**
      * @description the url to where details are published
-     * @default http://localhost:4001
+     * @default <a href="http://localhost:4001">...</a>
      */
     @MCAttribute
     public void setUrl(String url) {

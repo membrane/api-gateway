@@ -22,7 +22,7 @@ import com.predic8.membrane.core.exchange.accessors.ExchangeAccessor;
 
 public class ExchangeComparator implements Comparator<AbstractExchange> {
 
-	private List<ExchangeAccessor> accessors = new ArrayList<ExchangeAccessor>();
+	private List<ExchangeAccessor> accessors = new ArrayList<>();
 
 	private boolean ascending = true;
 

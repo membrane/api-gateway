@@ -23,8 +23,8 @@ import com.predic8.membrane.core.exchange.Exchange;
  *              <p>
  *              Necessary, as old SOA model versions do not normalize URIs before requesting them. Our WSDLPublisher
  *              links to XSD Schemas using relative paths (as we want the links to work under any servlet's context
- *              root). The SOA model then combines "http://foo/material/ArticleService?wsdl" and
- *              "./ArticleService?xsd=1" to "http://foo/material/./ArticleService?xsd=1". This URI is sent to Membrane's
+ *              root). The SOA model then combines "<a href="http://foo/material/ArticleService?wsdl">http://foo/material/ArticleService?wsdl</a>" and
+ *              "./ArticleService?xsd=1" to "<a href="http://foo/material/./ArticleService?xsd=1">http://foo/material/./ArticleService?xsd=1</a>". This URI is sent to Membrane's
  *              new soapProxy which has configured a serviceProxy-path of "\Q/material/ArticleService\E.*" which does
  *              not match.
  *              </p>

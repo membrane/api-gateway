@@ -73,11 +73,11 @@ public class ClaimList {
         }
     }
 
-    private List<Scope> scopes = new ArrayList<Scope>();
-    HashMap<String,HashSet<String>> scopesToClaims = new HashMap<String, HashSet<String>>();
+    private List<Scope> scopes = new ArrayList<>();
+    HashMap<String,HashSet<String>> scopesToClaims = new HashMap<>();
 
     private String value;
-    private HashSet<String> supportedClaims = new HashSet<String>();
+    private HashSet<String> supportedClaims = new HashSet<>();
 
     public void init(Router router){
         setScopes(scopes);
@@ -92,7 +92,7 @@ public class ClaimList {
     }
 
     public HashSet<String> getValidClaims(String claimsToCheck){
-        HashSet<String> result = new HashSet<String>();
+        HashSet<String> result = new HashSet<>();
         String[] split = claimsToCheck.split(" ");
         for(String providedClaim : split)
             if(getSupportedClaims().contains(providedClaim))
@@ -101,7 +101,7 @@ public class ClaimList {
     }
 
     public Map<String,String> getClaimsFromSession(Map<String, String> sessionProperties, HashSet<String> claims) {
-        HashMap<String,String> result = new HashMap<String, String>();
+        HashMap<String,String> result = new HashMap<>();
         for(String claim : claims)
             result.put(claim,sessionProperties.get(claim));
         return result;
@@ -122,21 +122,11 @@ public class ClaimList {
     }
 
     private <T> String toString(Iterable<T> iterable){
-        return toString(iterable, new Function<T, String>() {
-            @Override
-            public String call(T param) {
-                return param.toString();
-            }
-        });
+        return toString(iterable, param -> param.toString());
     }
 
     private String toString(List<Scope> scopes){
-        return toString(scopes, new Function<Scope, String>() {
-            @Override
-            public String call(Scope param) {
-                return param.getId();
-            }
-        });
+        return toString(scopes, param -> param.getId());
     }
 
     public boolean scopeExists(String s) {
@@ -178,6 +168,6 @@ public class ClaimList {
     }
 
     private void createSupportedClaims() {
-        setSupportedClaims(new HashSet<String>(Arrays.asList(value.split(" "))));
+        setSupportedClaims(new HashSet<>(Arrays.asList(value.split(" "))));
     }
 }

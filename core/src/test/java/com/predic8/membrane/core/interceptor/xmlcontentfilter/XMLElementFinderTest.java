@@ -28,7 +28,7 @@ public class XMLElementFinderTest {
 	private final static String DOC = "<a xmlns:s=\"space-s\" xmlns=\"space-default\"><b /><s:c></a>";
 
 	private void testIt(String doc, boolean isExpectedToContainOneOf, QName... names) {
-		List<QName> names2 = new ArrayList<QName>();
+		List<QName> names2 = new ArrayList<>();
 		for (QName name : names)
 			names2.add(name);
 		assertEquals(isExpectedToContainOneOf,

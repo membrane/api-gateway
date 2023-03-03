@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * An {@link InputStream} offering a <code>List&lt;Chunk&gt;</code> as one
  * single stream.
- *
+ * <p>
  * Used by {@link AbstractBody} to offer an efficient way of reading a message's
  * body.
  */

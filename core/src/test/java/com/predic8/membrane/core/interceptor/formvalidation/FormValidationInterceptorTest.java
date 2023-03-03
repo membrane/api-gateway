@@ -39,7 +39,7 @@ public class FormValidationInterceptorTest {
 		amount.setName("amount");
 		amount.setRegex("\\d+");
 
-		List<Field> fields = new ArrayList<Field>();
+		List<Field> fields = new ArrayList<>();
 		fields.add(amount);
 		fields.add(article);
 		interceptor.setFields(fields);

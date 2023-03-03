@@ -98,7 +98,7 @@ public class ClaimsParameter {
     }
 
     private void cleanFromInvalidClaims(Map<String, Object> json) {
-        ArrayList<String> toRemove = new ArrayList<String>();
+        ArrayList<String> toRemove = new ArrayList<>();
         for(String claim : json.keySet())
             if(!supportedClaims.contains(claim))
                 toRemove.add(claim);
@@ -121,7 +121,7 @@ public class ClaimsParameter {
     }
 
     private HashSet<String> getClaimsFromJsonObject(String objectName){
-        HashSet<String> claims = new HashSet<String>();
+        HashSet<String> claims = new HashSet<>();
         for(String claimName : getObject(objectName).keySet())
             claims.add(claimName);
 

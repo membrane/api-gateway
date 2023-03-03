@@ -44,9 +44,9 @@ public class Tokenizer {
 
     /**
      * Undo the last {@link #advance()}.
-     *
+     * <p>
      * Note that this can only be used to go *one* token back.
-     *
+     * <p>
      * Also note that when this method has been called, the second-to-last token cannot actually be inspected. This
      * method only serves the purpose to let the next parsing routine call {@link #advance()} again itself. This can
      * therefore be used to check - again - whether EOF has been reached.

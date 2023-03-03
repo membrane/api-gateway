@@ -51,7 +51,7 @@ public class RewriteInterceptorTest {
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
 
 		rewriter = new RewriteInterceptor();
-		List<Mapping> mappings = new ArrayList<Mapping>();
+		List<Mapping> mappings = new ArrayList<>();
 		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2", null));
 		rewriter.setMappings(mappings);
 		rewriter.init(router);

@@ -93,8 +93,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
             }
             else if(urls.length > 2)
                 throw new RuntimeException("src property is not set correctly: " + src);
-        } catch (ResourceRetrievalException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

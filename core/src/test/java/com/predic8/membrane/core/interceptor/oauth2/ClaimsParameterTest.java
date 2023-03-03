@@ -26,7 +26,7 @@ public class ClaimsParameterTest {
     ClaimsParameter cp;
 
     private HashSet<String> createSupportedClaims(String... claims){
-        HashSet<String> supportedClaims = new HashSet<String>();
+        HashSet<String> supportedClaims = new HashSet<>();
         for(String claim : claims)
             supportedClaims.add(claim);
         return supportedClaims;

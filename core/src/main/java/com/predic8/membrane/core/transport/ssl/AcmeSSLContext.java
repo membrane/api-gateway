@@ -169,10 +169,8 @@ public class AcmeSSLContext extends SSLContext {
             byte[] certificate_unknown = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
                     2 /* fatal */, 46 /* certificate_unknown */ };
 
-            try {
+            try (socket) {
                 socket.getOutputStream().write(certificate_unknown);
-            } finally {
-                socket.close();
             }
 
             throw new RuntimeException("no ACME certificate available for " + constructHostsString());

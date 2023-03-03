@@ -93,7 +93,7 @@ public class InMemorySessionManager extends SessionManager {
         List<HeaderField> values = exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE));
         return values.stream()
                 .filter(hf -> hf.getValue().startsWith(cookieNamePrefix))
-                .filter(hf -> !hf.getValue().contains(validCookie)).map(hf -> hf.getValue())
+                .filter(hf -> !hf.getValue().contains(validCookie)).map(HeaderField::getValue)
                 .collect(Collectors.toList());
     }
 

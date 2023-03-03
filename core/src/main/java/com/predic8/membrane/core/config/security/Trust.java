@@ -32,7 +32,7 @@ import java.util.Objects;
 public class Trust {
     protected String algorithm;
     protected String checkRevocation;
-    List<Certificate> certificateList = new ArrayList<Certificate>();
+    List<Certificate> certificateList = new ArrayList<>();
 
     @Override
     public boolean equals(Object o) {

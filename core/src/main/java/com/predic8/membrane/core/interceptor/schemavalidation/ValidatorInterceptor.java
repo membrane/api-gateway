@@ -120,9 +120,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	}
 
 	/**
-	 * @description The WSDL (URL or file) to validate against.
-	 * @example <a href="http://predic8.com:8080/material/ArticleService?wsdl">ArticleService</a>
-	 */
+     * @description The WSDL (URL or file) to validate against.
+     * @example <a href="http://predic8.com:8080/material/ArticleService?wsdl">"http://predic8.com:8080/material/ArticleService?wsdl</a>
+     */
 	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
@@ -137,9 +137,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	}
 
 	/**
-	 * @description The XSD Schema (URL or file) to validate against.
-	 * @example <a href="http://www.predic8.com/schemas/order.xsd">order.xsd</a>
-	 */
+     * @description The XSD Schema (URL or file) to validate against.
+     * @example <a href="http://www.predic8.com/schemas/order.xsd">http://www.predic8.com/schemas/order.xsd</a>
+     */
 	@MCAttribute
 	public void setSchema(String schema) {
 		this.schema = schema;

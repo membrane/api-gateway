@@ -64,7 +64,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     private JwtGenerator jwtGenerator;
     private OAuth2Processors processors = new OAuth2Processors();
-    private HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
+    private HashSet<String> supportedAuthorizationGrants = new HashSet<>();
     private SessionFinder sessionFinder = new SessionFinder();
     private WellknownFile wellknownFile = new WellknownFile();
     private ConsentPageFile consentPageFile = new ConsentPageFile();

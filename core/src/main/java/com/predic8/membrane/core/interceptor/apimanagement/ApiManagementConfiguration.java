@@ -50,7 +50,7 @@ public class ApiManagementConfiguration {
     private String hashLocation = null;
     private String currentHash = "";
     private ApplicationContext context;
-    public HashSet<Runnable> configChangeObservers = new HashSet<Runnable>();
+    public HashSet<Runnable> configChangeObservers = new HashSet<>();
     String etcdPathPrefix = "/membrane/";
     private String membraneName;
     private boolean contextLost = false;
@@ -86,8 +86,8 @@ public class ApiManagementConfiguration {
         this.keys = keys;
     }
 
-    private Map<String,Policy> policies = new ConcurrentHashMap<String, Policy>();
-    private Map<String,Key> keys = new ConcurrentHashMap<String, Key>();
+    private Map<String,Policy> policies = new ConcurrentHashMap<>();
+    private Map<String,Key> keys = new ConcurrentHashMap<>();
 
     public ApiManagementConfiguration(){
         this(System.getProperty("user.dir"),"api.yaml","membrane");
@@ -113,7 +113,7 @@ public class ApiManagementConfiguration {
     }
 
     private Map<String,Policy> parsePolicies(Map<String,Object> yaml) {
-        Map<String,Policy> result = new HashMap<String, Policy>();
+        Map<String,Policy> result = new HashMap<>();
         Object policies = yaml.get("policies");
         if(policies == null)
         {
@@ -212,11 +212,11 @@ public class ApiManagementConfiguration {
     }
 
     private String parseString(Object obj, String defObj){
-        return StringToTypeConverter(obj,defObj, (value) -> {return value;});
+        return StringToTypeConverter(obj,defObj, (value) -> value);
     }
 
     private boolean parseBoolean(Object obj, Boolean defObj){
-        return StringToTypeConverter(obj,defObj,(value) -> {return Boolean.parseBoolean(value);});
+        return StringToTypeConverter(obj,defObj, Boolean::parseBoolean);
     }
 
     private long getQuotaNumber(Object quotaSizeObj) {
@@ -250,7 +250,7 @@ public class ApiManagementConfiguration {
     }
 
     private int parseInteger(Object obj, int defaultValue){
-        return StringToTypeConverter(obj,defaultValue,(value) ->{return Integer.parseInt(value);});
+        return StringToTypeConverter(obj,defaultValue, Integer::parseInt);
     }
 
     private void parseAndConstructConfiguration(InputStream is) throws IOException {
@@ -296,7 +296,7 @@ public class ApiManagementConfiguration {
     }
 
     private Map<String,Key> parsePoliciesForKeys(Map<String, Object> yaml) {
-        Map<String,Key> result = new HashMap<String, Key>();
+        Map<String,Key> result = new HashMap<>();
 
         // assumption: the yaml is valid
 
@@ -314,7 +314,7 @@ public class ApiManagementConfiguration {
             parseExpiration(key,keyRes);
 
             List<Object> policiesForKey = (List<Object>) key.get("policies");
-            HashSet<Policy> policies = new HashSet<Policy>();
+            HashSet<Policy> policies = new HashSet<>();
             for(Object polObj : policiesForKey){
                 String policyName = (String) polObj;
                 Policy p = this.policies.get(policyName);
@@ -389,7 +389,7 @@ public class ApiManagementConfiguration {
             }
             parseAndConstructConfiguration(is);
             try {
-                getResolver().observeChange(newLocation, new Consumer<InputStream>() {
+                getResolver().observeChange(newLocation, new Consumer<>() {
                     @Override
                     public void call(InputStream inputStream) {
                         log.info("Loading configuration from [" + newLocation + "]");
@@ -397,7 +397,6 @@ public class ApiManagementConfiguration {
                             try {
                                 parseAndConstructConfiguration(inputStream);
                                 getResolver().observeChange(newLocation, this);
-                            } catch (ResourceRetrievalException ignored) {
                             } catch (IOException ignored) {
                             }
                         }
@@ -437,21 +436,18 @@ public class ApiManagementConfiguration {
 
         if(etcdConfigFingerprintLongPollThread == null) {
 
-            etcdConfigFingerprintLongPollThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (!getContextLost()) {
-                            if (!EtcdRequest.create(etcdLocation, baseKey, "/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()) {
-                                log.warn("Could not get config fingerprint at " + etcdLocation);
-                            }
-                            if (!getContextLost()) {
-                                log.info("Noticed configuration change, updating...");
-                                updateAfterLocationChange();
-                            }
+            etcdConfigFingerprintLongPollThread = new Thread(() -> {
+                try {
+                    while (!getContextLost()) {
+                        if (!EtcdRequest.create(etcdLocation, baseKey, "/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()) {
+                            log.warn("Could not get config fingerprint at " + etcdLocation);
                         }
-                    } catch (Exception ignored) {
+                        if (!getContextLost()) {
+                            log.info("Noticed configuration change, updating...");
+                            updateAfterLocationChange();
+                        }
                     }
+                } catch (Exception ignored) {
                 }
             });
             etcdConfigFingerprintLongPollThread.start();

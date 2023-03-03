@@ -24,9 +24,9 @@ import java.util.TreeMap;
 
 /**
  * This class implements a String cache for ByteChunk and CharChunk.
- *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author Remy Maucherat
  */
@@ -64,7 +64,7 @@ public class StringCache {
 	 * Statistics hash map for byte chunk.
 	 */
 	protected static HashMap<ByteEntry,int[]> bcStats =
-			new HashMap<ByteEntry,int[]>(cacheSize);
+            new HashMap<>(cacheSize);
 
 
 			/**
@@ -83,7 +83,7 @@ public class StringCache {
 			 * Statistics hash map for char chunk.
 			 */
 			protected static HashMap<CharEntry,int[]> ccStats =
-					new HashMap<CharEntry,int[]>(cacheSize);
+                    new HashMap<>(cacheSize);
 
 
 					/**
@@ -232,19 +232,15 @@ public class StringCache {
 
 										// Sort the entries according to occurrence
 										TreeMap<Integer,ArrayList<ByteEntry>> tempMap =
-												new TreeMap<Integer,ArrayList<ByteEntry>>();
+                                                new TreeMap<>();
 										for (Entry<ByteEntry,int[]> item : bcStats.entrySet()) {
 											ByteEntry entry = item.getKey();
 											int[] countA = item.getValue();
-											Integer count = Integer.valueOf(countA[0]);
+											Integer count = countA[0];
 											// Add to the list for that count
-											ArrayList<ByteEntry> list = tempMap.get(count);
-											if (list == null) {
-												// Create list
-												list = new ArrayList<ByteEntry>();
-												tempMap.put(count, list);
-											}
-											list.add(entry);
+                                            ArrayList<ByteEntry> list = tempMap.computeIfAbsent(count, k -> new ArrayList<>());
+                                            // Create list
+                                            list.add(entry);
 										}
 										// Allocate array of the right size
 										int size = bcStats.size();

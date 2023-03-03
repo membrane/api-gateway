@@ -36,9 +36,8 @@ public class Xml2JsonInterceptorTest {
 
     @Test
     public void invalidXml() throws Exception {
-        assertThrows(SAXParseException.class, () ->{getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
-                new ByteArrayInputStream("5".getBytes(StandardCharsets.UTF_8)))));
-        });
+        assertThrows(SAXParseException.class, () -> getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
+                new ByteArrayInputStream("5".getBytes(StandardCharsets.UTF_8))))));
     }
 
     @Test
@@ -66,7 +65,7 @@ public class Xml2JsonInterceptorTest {
 
     @Test
     public void validTestxml2jsonResponse() throws Exception {
-        //\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6 = üöüöüö
+        //\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6 = ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         assertEquals("\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6",
                 getJsonRootFromStream(processThroughInterceptorResponse(loadResource("/xml/convert.xml"))).get("bar").get("futf").asText());
     }

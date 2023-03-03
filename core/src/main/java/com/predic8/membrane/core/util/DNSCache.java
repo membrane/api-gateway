@@ -21,14 +21,14 @@ import java.util.Map;
 
 /**
  * See InetAddress Caching of InetAddress class
- *
+ * <p>
  * Java 1.5 implementation of InetAddress Caching differs from Java 1.6 one.
  */
 public class DNSCache {
 
-	private Map<InetAddress, String> hostNames = new Hashtable<InetAddress, String>();
-	private Map<InetAddress, String> canonicalHostNames = new Hashtable<InetAddress, String>();
-	private Map<InetAddress, String> hostAddresses = new Hashtable<InetAddress, String>();
+	private Map<InetAddress, String> hostNames = new Hashtable<>();
+	private Map<InetAddress, String> canonicalHostNames = new Hashtable<>();
+	private Map<InetAddress, String> hostAddresses = new Hashtable<>();
 
 	public String getHostName(InetAddress address) {
 		if (hostNames.containsKey(address))

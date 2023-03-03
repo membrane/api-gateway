@@ -26,10 +26,10 @@ import com.predic8.membrane.core.util.ByteUtil;
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
  * "Transfer-Encoding: chunked" is set on the input.
- *
+ * <p>
  * The "Transfer-Encoding" of the output is not determined by this class hierarchy, but by
  * {@link AbstractBodyTransferrer} and its subclasses.
- *
+ * <p>
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
  */

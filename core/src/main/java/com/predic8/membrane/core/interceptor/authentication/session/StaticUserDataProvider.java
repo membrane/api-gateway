@@ -47,8 +47,8 @@ import java.util.regex.Pattern;
 @MCElement(name="staticUserDataProvider")
 public class StaticUserDataProvider implements UserDataProvider {
 
-	private List<User> users = new ArrayList<User>();
-	private Map<String, User> usersByName = new HashMap<String, User>();
+	private List<User> users = new ArrayList<>();
+	private Map<String, User> usersByName = new HashMap<>();
 	private SecureRandom random = new SecureRandom();
 	private int saltByteSize = 128;
 
@@ -72,12 +72,10 @@ public class StaticUserDataProvider implements UserDataProvider {
 			String salt = userHashSplit[2];
 			try {
 				pw = createPasswdCompatibleHash(algo,postDataPassword,salt);
-			} catch (UnsupportedEncodingException e) {
-				throw new RuntimeException(e.getMessage());
-			} catch (NoSuchAlgorithmException e) {
+			} catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
 				throw new RuntimeException(e.getMessage());
 			}
-		}else
+        }else
 			pw = postDataPassword;
 		String pw2;
 		pw2 = userAttributes.getPassword();
@@ -114,7 +112,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
-		Map<String, String> attributes = new HashMap<String, String>();
+		Map<String, String> attributes = new HashMap<>();
 
 		public User() {}
 

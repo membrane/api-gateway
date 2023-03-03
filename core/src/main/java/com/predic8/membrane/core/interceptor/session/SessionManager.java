@@ -172,7 +172,7 @@ public abstract class SessionManager {
 
     private void dropRedundantCookieHeaders(Exchange exc) {
         Map<String, List<String>> setCookieHeaders = getAllRelevantSetCookieHeaders(exc)
-                .map(hf -> hf.getValue())
+                .map(HeaderField::getValue)
                 .map(v -> new AbstractMap.SimpleEntry(v.split("=true")[0], Arrays.asList(v)))
                 .collect(Collectors.toMap(e -> (String)e.getKey(), e -> (List)e.getValue(), (a,b) -> Stream.concat(a.stream(),b.stream()).collect(Collectors.toList())));
 
@@ -193,17 +193,15 @@ public abstract class SessionManager {
         synchronized (cookieExpireCache) {
             setCookieHeaders.entrySet().stream().collect(Collectors.toList()).stream() // copy so that map is modifiable
                     .filter(e -> cookieExpireCache.getIfPresent(e.getKey() + "=true") != null)
-                    .forEach(e -> {
-                        e.getValue().stream().forEach(cookieEntry -> {
-                            String cookie = cookieExpireCache.getIfPresent(e.getKey() + "=true");
-                            if (cookieEntry.equals(cookie)) {
-                                setCookieHeaders.get(e.getKey()).remove(e.getValue());
-                                exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
-                                        .filter(hf -> hf.getValue().contains(cookieEntry))
-                                        .findFirst().get());
-                            }
-                        });
-                    });
+                    .forEach(e -> e.getValue().stream().forEach(cookieEntry -> {
+                        String cookie = cookieExpireCache.getIfPresent(e.getKey() + "=true");
+                        if (cookieEntry.equals(cookie)) {
+                            setCookieHeaders.get(e.getKey()).remove(e.getValue());
+                            exc.getResponse().getHeader().remove(getAllRelevantSetCookieHeaders(exc)
+                                    .filter(hf -> hf.getValue().contains(cookieEntry))
+                                    .findFirst().get());
+                        }
+                    }));
         }
     }
 
@@ -280,13 +278,13 @@ public abstract class SessionManager {
         return validCookiesAsListOfMaps
                 .stream()
                 .flatMap(map -> map.entrySet().stream())
-                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(), (e1, e2) -> e1 != null && e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1 != null && e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
     }
 
     private Map<String,Map<String, Object>> convertValidCookiesToAttributes(Exchange exc) {
         return getCookies(exc)
-                .filter(cookie -> isValidCookieForThisSessionManager(cookie))
-                .collect(Collectors.toMap(cookie -> cookie, cookie -> cookieValueToAttributes(cookie), (c1,c2) -> c1));
+                .filter(this::isValidCookieForThisSessionManager)
+                .collect(Collectors.toMap(cookie -> cookie, this::cookieValueToAttributes, (c1, c2) -> c1));
     }
 
     public Session getSession(Exchange exc) {
@@ -318,7 +316,7 @@ public abstract class SessionManager {
                 httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
-                .filter(attr -> attr != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -335,13 +333,13 @@ public abstract class SessionManager {
                 httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
-                .filter(attr -> attr != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
 
     protected Stream<String> getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(c -> c.trim());
+        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim);
     }
 
 

@@ -37,7 +37,7 @@ public class Resource extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "resource";
 
 	private Router router;
-	private List<AbstractClientAddress> clientAddresses = new ArrayList<AbstractClientAddress>();
+	private List<AbstractClientAddress> clientAddresses = new ArrayList<>();
 
 	protected Pattern pattern;
 

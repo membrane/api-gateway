@@ -92,22 +92,22 @@ public class KubernetesClientBuilder {
 
             String currentContext = (String) kubeConfig.get("current-context");
             Map context = ((List<Map>) kubeConfig.get("contexts")).stream().filter(m -> m.get("name").equals(currentContext)).findFirst().orElse(null);
-            String currentCluster = (String) ((Map)context.get("context")).get("cluster");
-            String currentUser = (String) ((Map)context.get("context")).get("user");
-            String namespace = (String) ((Map)context.get("context")).get("namespace");
+            String currentCluster = (String) ((Map<?, ?>)context.get("context")).get("cluster");
+            String currentUser = (String) ((Map<?, ?>)context.get("context")).get("user");
+            String namespace = (String) ((Map<?, ?>)context.get("context")).get("namespace");
             Map cluster = ((List<Map>) kubeConfig.get("clusters")).stream().filter(m -> m.get("name").equals(currentCluster)).findFirst().orElse(null);
 
-            String baseURL = (String) ((Map)cluster.get("cluster")).get("server");
+            String baseURL = (String) ((Map<?, ?>)cluster.get("cluster")).get("server");
 
             Map user = ((List<Map>) kubeConfig.get("users")).stream().filter(m -> m.get("name").equals(currentUser)).findFirst().orElse(null);
 
-            String ca = getReferencedFile(baseDir, (String) ((Map)cluster.get("cluster")).get("certificate-authority"));
+            String ca = getReferencedFile(baseDir, (String) ((Map<?, ?>)cluster.get("cluster")).get("certificate-authority"));
 
             String cert = null, key = null, token = null;
             if (user != null) {
-                token = (String) ((Map)user.get("user")).get("token");
+                token = (String) ((Map<?, ?>)user.get("user")).get("token");
                 if (token == null) {
-                    Map authP = (Map) ((Map) user.get("user")).get("auth-provider");
+                    Map authP = (Map) ((Map<?, ?>) user.get("user")).get("auth-provider");
                     if (authP != null) {
                         Map config = (Map)authP.get("config");
                         if (config != null) {
@@ -116,8 +116,8 @@ public class KubernetesClientBuilder {
                     }
                 }
 
-                cert = getReferencedFile(baseDir, (String) ((Map)user.get("user")).get("client-certificate"));
-                key = getReferencedFile(baseDir, (String) ((Map)user.get("user")).get("client-key"));
+                cert = getReferencedFile(baseDir, (String) ((Map<?, ?>)user.get("user")).get("client-certificate"));
+                key = getReferencedFile(baseDir, (String) ((Map<?, ?>)user.get("user")).get("client-key"));
             }
 
             return new KubernetesClientBuilder(baseURL, ca, cert, key, token, namespace);

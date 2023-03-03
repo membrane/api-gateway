@@ -47,8 +47,8 @@ import static java.lang.Thread.sleep;
 public class HTTPSchemaResolver implements SchemaResolver {
 
     private HttpClientFactory httpClientFactory;
-    private ConcurrentHashMap<String,String> watchedUrlMd5s = new ConcurrentHashMap<String,String>();
-    private ConcurrentHashMap<String,Consumer<InputStream>> consumerForUrls = new ConcurrentHashMap<String, Consumer<InputStream>>();
+    private ConcurrentHashMap<String,String> watchedUrlMd5s = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String,Consumer<InputStream>> consumerForUrls = new ConcurrentHashMap<>();
     int httpWatchIntervalInSeconds = 1;
     Thread httpWatcher = null;
     Runnable httpWatchJob = new Runnable() {

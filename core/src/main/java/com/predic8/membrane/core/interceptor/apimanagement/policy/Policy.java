@@ -20,7 +20,7 @@ public class Policy
     private String name = "";
     private RateLimit rateLimit = new RateLimit();
     private Quota quota = new Quota();
-    private HashSet<String> serviceProxies = new HashSet<String>();
+    private HashSet<String> serviceProxies = new HashSet<>();
     private boolean unauthenticated = false;
 
     public RateLimit getRateLimit() {

@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ClaimRenamer {
-    static ConcurrentHashMap<String,String> oldNameToNewName = new ConcurrentHashMap<String, String>();
+    static ConcurrentHashMap<String,String> oldNameToNewName = new ConcurrentHashMap<>();
 
     static{
         addConversion("sub","username");

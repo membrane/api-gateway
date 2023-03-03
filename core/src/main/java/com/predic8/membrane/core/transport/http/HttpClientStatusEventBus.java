@@ -43,7 +43,7 @@ public class HttpClientStatusEventBus {
      * Using the CopyOnWriteArrayList list is appropriate. Modifications are only expected initially, from then on
      * it's just iterations. This way we don't have to take shallow copies before iterating.
      */
-    private final List<HttpClientStatusEventListener> listeners = new CopyOnWriteArrayList<HttpClientStatusEventListener>();
+    private final List<HttpClientStatusEventListener> listeners = new CopyOnWriteArrayList<>();
 
     public HttpClientStatusEventBus() {
     }
