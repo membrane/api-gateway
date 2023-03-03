@@ -47,7 +47,7 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 
 	public String getSpringName() {
 		String s = getE().getSimpleName().toString();
-		if (!s.substring(0, 3).equals("set"))
+		if (!s.startsWith("set"))
 			throw new ProcessingException("Setter method name is supposed to start with 'set'.", getE());
 		s = s.substring(3);
 		return AnnotUtils.dejavaify(s);

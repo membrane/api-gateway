@@ -172,7 +172,7 @@ public class AMStatisticsCollector {
     private String getBody(Message msg) {
         String origBody = msg.getBodyAsStringDecoded();
         if (bodyBytes == -1)
-            return origBody.substring(0, origBody.length());
+            return origBody;
 
         return origBody.substring(0, bodyBytes);
     }

@@ -108,7 +108,7 @@ public class JSONValidator implements IValidator {
 		jg.close();
 
 		if (failureHandler != null) {
-			failureHandler.handleFailure(new String(baos.toByteArray(), UTF8), exc);
+			failureHandler.handleFailure(baos.toString(UTF8), exc);
 			exc.setResponse(Response.badRequest().
 					contentType("application/json;charset=utf-8").
 					body("{\"error\":\"error\"}".getBytes(UTF8)).
