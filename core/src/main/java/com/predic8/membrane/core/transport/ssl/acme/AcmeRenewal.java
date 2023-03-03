@@ -124,9 +124,7 @@ public class AcmeRenewal {
             waitFor(
                     "order to become non-'PENDING'",
                     () -> !ORDER_STATUS_PENDING.equals(oal.get().getOrder().getStatus()),
-                    () -> {
-                        oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()));
-                    });
+                    () -> oal.set(client.getOrder(getAccountURL(), oal.get().getLocation())));
             if (!ORDER_STATUS_READY.equals(oal.get().getOrder().getStatus()))
                 throw new FatalAcmeException("order status " + om.writeValueAsString(oal));
         }
@@ -144,9 +142,7 @@ public class AcmeRenewal {
         waitFor(
                 "order to become 'VALID'",
                 () -> !ORDER_STATUS_READY.equals(oal.get().getOrder().getStatus()) && !ORDER_STATUS_PROCESSING.equals(oal.get().getOrder().getStatus()),
-                () -> {
-                    oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()));
-                }
+                () -> oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()))
         );
         if (!ORDER_STATUS_VALID.equals(oal.get().getOrder().getStatus()))
             throw new FatalAcmeException("order status " + om.writeValueAsString(oal));

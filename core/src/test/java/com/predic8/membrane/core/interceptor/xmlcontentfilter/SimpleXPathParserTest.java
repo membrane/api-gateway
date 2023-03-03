@@ -37,9 +37,7 @@ public class SimpleXPathParserTest {
 
 	@Test
 	public void invalid1() {
-		assertThrows(RuntimeException.class, () -> {
-				p.parse("//a[");
-		});
+		assertThrows(RuntimeException.class, () -> p.parse("//a["));
 	}
 
 }
