@@ -116,9 +116,9 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
     protected String verifyScopes(String scopes) {
         String[] scopeList = scopes.split(" ");
         StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < scopeList.length; i++) {
-            if (authServer.getClaimList().scopeExists(scopeList[i]))
-                builder.append(scopeList[i]).append(" ");
+        for (String s : scopeList) {
+            if (authServer.getClaimList().scopeExists(s))
+                builder.append(s).append(" ");
         }
         return builder.toString().trim();
     }

@@ -52,8 +52,7 @@ public class Http2ClientPool {
             ArrayList<Http2Client> http2Clients = availableConnections.get(key);
             if (http2Clients == null)
                 return null;
-            for (int i = 0; i < http2Clients.size(); i++) {
-                Http2Client h2c = http2Clients.get(i);
+            for (Http2Client h2c : http2Clients) {
                 if (h2c.reserveStream())
                     return h2c;
             }
