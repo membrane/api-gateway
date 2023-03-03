@@ -28,7 +28,7 @@ import java.util.Locale;
  * byte array, for example, string of sixteen 7s ("7...7") and seventeen 7s both
  * decode to the same byte array.
  * TOD O(sarvar): Revisit this encoding and whether this ambiguity needs fixing.
- *
+ * <p>
  * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *

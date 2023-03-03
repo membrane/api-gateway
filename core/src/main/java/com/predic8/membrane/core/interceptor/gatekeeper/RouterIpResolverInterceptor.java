@@ -42,7 +42,7 @@ import java.util.Map;
  * Checks, whether the exchange's remoteIp is one of the routers.
  * If yes, sends a POST to <a href="https://$router:$port/">...</a> with a body of {"port":$remotePort, "ip":$remoteIp}, expecting an HTTP 200 application/json {"ip":$realIp} in return.
  * If successful, replaces the exchange's remoteIp with the retrieved IP address.
- *
+ * <p>
  * This interceptor is helpful in scenarios with multiple redundant routers for inbound HTTP requests.
  */
 @MCElement(name = "routerIpResolver")

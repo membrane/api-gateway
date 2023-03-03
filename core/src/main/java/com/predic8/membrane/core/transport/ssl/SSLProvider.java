@@ -44,7 +44,7 @@ public interface SSLProvider {
 
 	/**
 	 * Advises the SSL Provider to stop providing its services. (For most providers this will be a no-op.)
-	 *
+	 * <p>
 	 * No guarantee that this is only called once.
 	 */
     void stop();

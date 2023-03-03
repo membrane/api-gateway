@@ -32,10 +32,10 @@ import static com.predic8.membrane.core.http.cookie.CookieSupport.*;
  * Allows recycling and uses MessageBytes as low-level
  * representation ( and thus the byte-> char conversion can be delayed
  * until we know the charset ).
- *
+ * <p>
  * Tomcat.core uses this recyclable object to represent cookies,
  * and the facade will convert it to the external representation.
- *
+ * <p>
  * Source: <a href="http://tomcat.apache.org/">...</a>
  * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *

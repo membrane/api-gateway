@@ -247,7 +247,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	/**
 	 * Read the body from the client, if not already read.
-	 *
+	 * <p>
 	 * If the body has not already been read, the header includes
 	 * "Expect: 100-continue" and the body has not already been sent by the
 	 * client, nothing will be done. (Allowing the HTTP connection state to skip

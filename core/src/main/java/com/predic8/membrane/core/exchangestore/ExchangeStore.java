@@ -41,10 +41,10 @@ public interface ExchangeStore {
 
 	/**
 	 * Adds the current state of the exchange to the store.
-	 *
+	 * <p>
 	 * Implementations should take a snapshot of the current state of the request (or response) headers and register a
 	 * body observer in which they will be called back as soon as the body has fully been received.
-	 *
+	 * <p>
 	 * If flow==REQUEST, the request is added. Elsewise, the response is added (if present).
 	 */
 	public void snap(AbstractExchange exchange, Flow flow);

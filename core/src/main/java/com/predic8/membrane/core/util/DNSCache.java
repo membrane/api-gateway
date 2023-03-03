@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * See InetAddress Caching of InetAddress class
- *
+ * <p>
  * Java 1.5 implementation of InetAddress Caching differs from Java 1.6 one.
  */
 public class DNSCache {

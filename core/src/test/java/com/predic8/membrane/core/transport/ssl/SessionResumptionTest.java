@@ -45,7 +45,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 /**
  * This test provokes a failing TLS 1.3 Session Resumption by transmitting a "pre_shared_key (41)" extension in the
  * second TLS handshake, but actually forwarding the second TCP connection to another SSLContext instance.
- *
+ * <p>
  * Use "-Djavax.net.debug=all" on the test execution to see the details.
  */
 public class SessionResumptionTest {

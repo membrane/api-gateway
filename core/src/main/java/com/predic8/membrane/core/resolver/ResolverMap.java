@@ -39,11 +39,11 @@ import com.predic8.xml.util.ExternalResolver;
 
 /**
  * A ResolverMap consists of a list of {@link SchemaResolver}s.
- *
+ * <p>
  * It is itself a {@link Resolver}: Requests to resolve a URL are delegated
  * to the corresponding {@link SchemaResolver} child depending on the URL's
  * schema.
- *
+ * <p>
  * Note that this class is not thread-safe! The ResolverMap is setup during
  * Membrane's single-threaded startup and is only used read-only thereafter.
  */

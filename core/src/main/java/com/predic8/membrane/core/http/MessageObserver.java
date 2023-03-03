@@ -20,7 +20,7 @@ import java.io.IOException;
 /**
  * A {@link MessageObserver} may be registered on a HTTP {@link Message} and
  * will be called, when the message's body becomes fully known to Membrane.
- *
+ * <p>
  * A typical example of an interceptor using {@link MessageObserver} is the
  * {@link ExchangeStoreInterceptor}, whose primary purpose is to write the
  * message's body into permanent storage. As this requires reading the body,
@@ -47,11 +47,11 @@ public interface MessageObserver {
 
 	/**
 	 * Notification that the body has fully been received.
-	 *
+	 * <p>
 	 * Note that this event may run instantaneously (during the call to
 	 * {@link Message#addObserver(MessageObserver)}), as the body may have
 	 * already been fully received when registering the observer.
-	 *
+	 * <p>
 	 * This is the last event that will be fired on any MessageObserver.
 	 */
 	public void bodyComplete(AbstractBody body);

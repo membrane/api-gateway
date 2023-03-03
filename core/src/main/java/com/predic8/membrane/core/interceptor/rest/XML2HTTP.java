@@ -42,7 +42,7 @@ public class XML2HTTP {
 	 * Checks, if the response contains an XML doc with NS {@link Constants#HTTP_NS}.
 	 * If it does, the HTTP data (uri, method, status, headers, body) is extracted from the doc
 	 * and set as the response.
-	 *
+	 * <p>
 	 * Reverse of {@link com.predic8.membrane.core.http.xml.Request#write(XMLStreamWriter)} and
 	 * {@link com.predic8.membrane.core.http.xml.Response#write(XMLStreamWriter)}.
 	 */

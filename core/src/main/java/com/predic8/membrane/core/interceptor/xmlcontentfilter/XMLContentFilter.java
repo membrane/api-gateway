@@ -55,7 +55,7 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 /**
  * Takes action on XML documents based on an XPath expression. The only action
  * as of writing is {@link #removeMatchingElements(Message)}.
- *
+ * <p>
  * As even Java 7 only supports XPath 1.0, this is what this class supports.
  */
 @ThreadSafe
@@ -77,7 +77,7 @@ public class XMLContentFilter {
 	 * The elementFinder is only used for improved performance: It can make
 	 * a first decision whether the XPath expression has any chance of succeeding
 	 * (if the XPath expression is simple enough, see {@link #createElementFinder(String)}).
-	 *
+	 * <p>
 	 * That decision is made (here is the performance gain) using a StAX parser and without
 	 * a DOM.
 	 */
@@ -97,7 +97,7 @@ public class XMLContentFilter {
 	/**
 	 * Constructs an XMLElementFinder which can make a first decision whether a
 	 * given XPath expression has any chance of succeeding.
-	 *
+	 * <p>
 	 * This only works if the XPath expression is simple enough. (The XPath
 	 * expression must be a UnionExpr consisting of PathExprs, which start with
 	 * "//foo", optionally followed by "[namespace-uri()='<a href="http://bar/">...</a>']").
@@ -155,7 +155,7 @@ public class XMLContentFilter {
 
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
-	 *
+	 * <p>
 	 * If the message is not valid XML, it is left unchanged.
 	 */
 	public void removeMatchingElements(Message message) {

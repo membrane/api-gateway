@@ -38,7 +38,7 @@ import javax.annotation.Nullable;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
- *
+ * <p>
  * With keep-alive use as follows:
  * <code>
  * Connection connection = connectionManager.getConnection(...);
@@ -48,9 +48,9 @@ import javax.annotation.Nullable;
  *   connection.release();
  * }
  * </code>
- *
+ * <p>
  * Without keep-alive replace {@link Connection#release()} by {@link Connection#close()}.
- *
+ * <p>
  * Note that you should call {@link Connection#release()} exactly once, or alternatively
  * {@link Connection#close()} at least once.
  */

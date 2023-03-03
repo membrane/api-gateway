@@ -38,12 +38,12 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 /**
  * A {@link Connection} is an outbound TCP/IP connection, possibly managed
  * by a {@link ConnectionManager}.
- *
+ * <p>
  * It is symbiotic to an {@link Exchange} during the exchange's HTTP client
  * call, which starts in {@link HttpClient#call(Exchange)} and ends when the
  * HTTP response body has fully been read (or never, if
  * {@link Request#isBindTargetConnectionToIncoming()} is true).
- *
+ * <p>
  * The connection will be registered by the {@link HttpClient} as a
  * {@link MessageObserver} on the {@link Response} to get notified when the HTTP
  * response body has fully been read and it should deassociate itself from the

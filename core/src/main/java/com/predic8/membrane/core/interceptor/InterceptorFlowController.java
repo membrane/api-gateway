@@ -29,26 +29,26 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 /**
  * Controls the flow of an exchange through a chain of interceptors.
- *
+ * <p>
  * In the trivial setup, an exchange passes through two chains until it hits
  * Outcome.RETURN: The main chain owned by the Transport (containing the
  * RuleMatching, Dispatching, UserFeature and HttpClient-Interceptors) and the
  * inner chain owned by the UserFeatureInterceptor (containing any interceptor
  * configured in proxies.xml).
- *
+ * <p>
  * The {@link HTTPClientInterceptor}, the last interceptor in the main chain,
  * always returns {@link Outcome#RETURN} or {@link Outcome#ABORT}, never
  * {@link Outcome#CONTINUE}.
- *
+ * <p>
  * Any chain is followed using {@link Interceptor#handleRequest(Exchange)} until
  * it hits {@link Outcome#RETURN} or {@link Outcome#ABORT}. As the chain is
  * followed, every interceptor (except those with {@link Flow#REQUEST}) are
  * added to the exchange's stack.
- *
+ * <p>
  * When {@link Outcome#RETURN} is hit, the exchange's interceptor stack is
  * unwound and {@link Interceptor#handleResponse(Exchange)} is called for every
  * interceptor on it.
- *
+ * <p>
  * When {@link Outcome#ABORT} is hit, handling is aborted: An
  * {@link AbortException} is thrown. The stack is unwound calling
  * {@link Interceptor#handleAbort(Exchange)} on each interceptor on it.
@@ -60,9 +60,9 @@ public class InterceptorFlowController {
 	/**
 	 * Key into {@link Exchange#getProperty(String)} to find out the reason why some
 	 * interceptor returned ABORT.
-	 *
+	 * <p>
 	 * This refers to the last interceptor that returned ABORT.
-	 *
+	 * <p>
 	 * Note that this does not have to be set if ABORT was returned by the interceptor.
 	 */
 	public static final String ABORTION_REASON = "abortionReason";

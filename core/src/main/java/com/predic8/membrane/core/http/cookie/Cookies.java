@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
 /**
  * A collection of cookies - reusable and tuned for server side performance.
  * Based on RFC2965 ( and 2109 )
- *
+ * <p>
  * This class is not synchronized.
- *
+ * <p>
  *
  * Source: <a href="http://tomcat.apache.org/">...</a>
  * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>

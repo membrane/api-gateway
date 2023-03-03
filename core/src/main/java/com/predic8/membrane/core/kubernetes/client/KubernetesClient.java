@@ -79,7 +79,7 @@ public class KubernetesClient {
 
     /**
      * Lists the specified resources.
-     *
+     * <p>
      * Use this method only, if you do need not any information from the list structure. (e.g. no subsequent
      * call to {@link #watch(String, String, String, Long, ExecutorService, Watcher)}).
      *
@@ -98,12 +98,12 @@ public class KubernetesClient {
 
     /**
      * Lists the specified resources.
-     *
+     * <p>
      * Use this method only, if you need some information from the list structure (e.g. the resourceVersion
      * to initialize a subsequent call to {@link #watch(String, String, String, Long, ExecutorService, Watcher)}).
-     *
+     * <p>
      * To only list the items, use {@link #listItems(String, String, String, int)} instead.
-     *
+     * <p>
      * To get the items of the list batches returned by this method, call
      * <code>list(...).flatMap(map -> ((List)map.get("items")).stream());</code>
      * @param apiVersion the resource apiVersion to list
@@ -394,24 +394,24 @@ public class KubernetesClient {
      * Ensures that
      * a) the resource exists (by reading and possibly creating it) and
      * b) the resource is edited.
-     *
+     * <p>
      * This method helps with compare-and-swap "CAS" semantics in the Kubernetes API.
-     *
+     * <p>
      * The create-and-edit sequence might seem unnecessary, but it looks this way (tested on 1.23.6): If you 'create'
      * a resource with values (e.g. entries in a Secret (below .data) or Lease (below .spec)), you own these values with
      * the operation 'Update' tracked in the managedFields structure. These values cannot (out of the box, that is
      * without re-owning the fields or manipulating the managedFields) be modified by a subsequent 'apply'.
-     *
+     * <p>
      * If you were to only use 'apply' (for creating and updating the resource), the fieldmanager is OK (operation
      * 'Apply' is tracked in managedFields). But this breaks the CAS semantics, as two concurrent creators have
      * different views of how they want the resource to look like. The first creator (=applier) succeeds (returning
      * HTTP 201), but the second creator (=applier) also succeeds (returning HTTP 200), effectively overriding the
      * first.
-     *
+     * <p>
      * Therefore, to archive correct CAS semantics, using this method,
      * a) create an empty resource
      * b) edit it to the state you want.
-     *
+     * <p>
      * Throws an error, if resource creation fails for any reason other than "AlreadyExists".
      * Throws an error, if editing the resource fails.
      *

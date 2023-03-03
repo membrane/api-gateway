@@ -60,9 +60,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
 	/**
 	 * Note that this class fulfills two purposes:
-	 *
+	 * <p>
 	 * * During the initial processDocuments() run, the XSDs are enumerated.
-	 *
+	 * <p>
 	 * * During later runs (as well as the initial run, but that's result is discarded),
 	 * the documents are rewritten.
 	 */
