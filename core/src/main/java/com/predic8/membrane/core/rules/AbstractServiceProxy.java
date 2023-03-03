@@ -129,7 +129,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	}
 
 	public String getHost() {
-		return ((AbstractRuleKey)key).getHost();
+		return key.getHost();
 	}
 
 	/**

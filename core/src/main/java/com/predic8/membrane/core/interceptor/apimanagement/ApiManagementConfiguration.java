@@ -228,7 +228,7 @@ public class ApiManagementConfiguration {
         }else{
             try {
                 String quotaString = (String) quotaSizeObj;
-                quotaNumber = ((Number) NumberFormat.getInstance().parse(quotaString)).intValue();
+                quotaNumber = NumberFormat.getInstance().parse(quotaString).intValue();
                 quotaSymbolString = quotaString.replaceFirst(Long.toString(quotaNumber),"").toLowerCase();
             } catch (ParseException ignored) {
                 quotaNumber = Quota.SIZE_DEFAULT;
