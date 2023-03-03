@@ -49,7 +49,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
 
     /**
      * ObjectMapper is Thread safe!
-     * <a href="https://fasterxml.github.io/jackson-databind/javadoc/2.6/com/fasterxml/jackson/databind/ObjectMapper.html">...</a>
+     * <a href="https://fasterxml.github.io/jackson-databind/javadoc/2.6/com/fasterxml/jackson/databind/ObjectMapper.html">ObjectMapper.html</a>
      */
     final private ObjectMapper om = new ObjectMapper();
 
