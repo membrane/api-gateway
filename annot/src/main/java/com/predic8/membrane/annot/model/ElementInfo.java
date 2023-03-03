@@ -26,7 +26,7 @@ import com.predic8.membrane.annot.MCElement;
  */
 public class ElementInfo extends AbstractJavadocedInfo {
 	private MCElement annotation;
-	private List<ChildElementDeclarationInfo> usedBy = new ArrayList<ChildElementDeclarationInfo>();
+	private List<ChildElementDeclarationInfo> usedBy = new ArrayList<>();
 
 
 	private TypeElement element;
@@ -34,8 +34,8 @@ public class ElementInfo extends AbstractJavadocedInfo {
 
 	private TextContentInfo tci;
 
-	private List<AttributeInfo> ais = new ArrayList<AttributeInfo>();
-	private List<ChildElementInfo> ceis = new ArrayList<ChildElementInfo>();
+	private List<AttributeInfo> ais = new ArrayList<>();
+	private List<ChildElementInfo> ceis = new ArrayList<>();
 
 	private OtherAttributesInfo oai;
 

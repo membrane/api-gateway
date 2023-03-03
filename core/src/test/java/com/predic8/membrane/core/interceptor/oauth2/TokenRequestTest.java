@@ -79,7 +79,7 @@ public class TokenRequestTest extends RequestParameterizedTest {
     }
 
     private static Callable<String> getCodeQuery(){
-        return new Callable<String>() {
+        return new Callable<>() {
             @Override
             public String call() throws Exception {
                 return "code=" + oasit.afterCodeGenerationCode;
@@ -88,7 +88,7 @@ public class TokenRequestTest extends RequestParameterizedTest {
     }
 
     private static Callable<String> getWrongCodeQuery(){
-        return new Callable<String>() {
+        return new Callable<>() {
             @Override
             public String call() throws Exception {
                 return "code=" + 123456789;

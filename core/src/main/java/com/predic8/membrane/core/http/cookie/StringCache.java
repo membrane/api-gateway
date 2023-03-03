@@ -64,7 +64,7 @@ public class StringCache {
 	 * Statistics hash map for byte chunk.
 	 */
 	protected static HashMap<ByteEntry,int[]> bcStats =
-			new HashMap<ByteEntry,int[]>(cacheSize);
+            new HashMap<>(cacheSize);
 
 
 			/**
@@ -83,7 +83,7 @@ public class StringCache {
 			 * Statistics hash map for char chunk.
 			 */
 			protected static HashMap<CharEntry,int[]> ccStats =
-					new HashMap<CharEntry,int[]>(cacheSize);
+                    new HashMap<>(cacheSize);
 
 
 					/**
@@ -232,7 +232,7 @@ public class StringCache {
 
 										// Sort the entries according to occurrence
 										TreeMap<Integer,ArrayList<ByteEntry>> tempMap =
-												new TreeMap<Integer,ArrayList<ByteEntry>>();
+                                                new TreeMap<>();
 										for (Entry<ByteEntry,int[]> item : bcStats.entrySet()) {
 											ByteEntry entry = item.getKey();
 											int[] countA = item.getValue();
@@ -241,7 +241,7 @@ public class StringCache {
 											ArrayList<ByteEntry> list = tempMap.get(count);
 											if (list == null) {
 												// Create list
-												list = new ArrayList<ByteEntry>();
+												list = new ArrayList<>();
 												tempMap.put(count, list);
 											}
 											list.add(entry);

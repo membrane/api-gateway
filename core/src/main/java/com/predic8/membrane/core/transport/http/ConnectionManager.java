@@ -62,7 +62,7 @@ public class ConnectionManager {
 	private final long autoCloseInterval;
 	private final AtomicInteger numberInPool = new AtomicInteger();
 	private final HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
-			new HashMap<ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
+            new HashMap<>(); // guarded by this
 	private volatile boolean shutdownWhenDone = false;
 	private TimerManager selfCreatedTimerManager;
 
@@ -174,7 +174,7 @@ public class ConnectionManager {
 		synchronized(this) {
 			l = availableConnections.get(key);
 			if (l == null) {
-				l = new ArrayList<OldConnection>();
+				l = new ArrayList<>();
 				availableConnections.put(key, l);
 			}
 			l.add(o);
@@ -182,8 +182,8 @@ public class ConnectionManager {
 	}
 
 	private int closeOldConnections() {
-		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
-		ArrayList<Connection> toClose = new ArrayList<Connection>();
+		ArrayList<ConnectionKey> toRemove = new ArrayList<>();
+		ArrayList<Connection> toClose = new ArrayList<>();
 		long now = System.currentTimeMillis();
 		log.trace("closing old connections");
 		int closed = 0, remaining;

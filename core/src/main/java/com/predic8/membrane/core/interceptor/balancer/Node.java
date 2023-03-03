@@ -46,7 +46,7 @@ public class Node extends AbstractXmlElement {
 	private AtomicInteger counter = new AtomicInteger();
 	private AtomicInteger threads = new AtomicInteger();
 
-	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
+	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<>();
 
 	public Node(String host, int port) {
 		this.host = host;

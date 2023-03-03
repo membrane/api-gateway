@@ -31,7 +31,7 @@ public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
 	private static Logger log = LoggerFactory.getLogger(Balancer.class.getName());
 
-	private final Map<String, Cluster> clusters = new Hashtable<String, Cluster>();
+	private final Map<String, Cluster> clusters = new Hashtable<>();
 	private String name = DEFAULT_NAME;
 	private long timeout = 0;
 	private SessionCleanupThread sct;
@@ -79,15 +79,15 @@ public class Balancer extends AbstractXmlElement {
 	}
 
 	public List<Cluster> getClusters() {
-		return new ArrayList<Cluster>(clusters.values()) {
-			private static final long serialVersionUID = 1L;
+		return new ArrayList<>(clusters.values()) {
+            private static final long serialVersionUID = 1L;
 
-			@Override
-			public boolean add(Cluster e) {
-				Balancer.this.clusters.put(e.getName(), e);
-				return super.add(e);
-			}
-		};
+            @Override
+            public boolean add(Cluster e) {
+                Balancer.this.clusters.put(e.getName(), e);
+                return super.add(e);
+            }
+        };
 	}
 
 	private Cluster getCluster(String name) {

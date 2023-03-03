@@ -28,9 +28,9 @@ import com.predic8.membrane.annot.MCElement;
  */
 public class ChildElementDeclarationInfo {
 	private TypeElement target;
-	private List<ElementInfo> elementInfo = new ArrayList<ElementInfo>();
+	private List<ElementInfo> elementInfo = new ArrayList<>();
 	private boolean raiseErrorWhenNoSpecimen;
-	private List<ChildElementInfo> usedBy = new ArrayList<ChildElementInfo>();
+	private List<ChildElementInfo> usedBy = new ArrayList<>();
 
 	public TypeElement getTarget() {
 		return target;

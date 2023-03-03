@@ -102,7 +102,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 
 	protected void setProperties(String prop, Element e, BeanDefinitionBuilder builder) {
 		NamedNodeMap attributes = e.getAttributes();
-		HashMap<String, String> attrs = new HashMap<String, String>();
+		HashMap<String, String> attrs = new HashMap<>();
 		for (int i = 0; i < attributes.getLength(); i++) {
 			Attr item = (Attr) attributes.item(i);
 			if (item.getLocalName() != null)

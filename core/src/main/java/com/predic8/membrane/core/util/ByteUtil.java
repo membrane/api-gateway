@@ -78,7 +78,7 @@ public class ByteUtil {
 		Inflater decompressor = new Inflater(true);
 		decompressor.setInput(compressedData);
 
-		List<Chunk> chunks = new ArrayList<Chunk>();
+		List<Chunk> chunks = new ArrayList<>();
 
 		while (!decompressor.finished()) {
 			byte[] buf = new byte[1024];

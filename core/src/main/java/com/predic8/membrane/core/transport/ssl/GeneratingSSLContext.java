@@ -74,7 +74,7 @@ public class GeneratingSSLContext extends SSLContext {
             KeyStore ks = KeyStore.getInstance("JKS");
             ks.load(null, "".toCharArray());
 
-            List<Certificate> certs = new ArrayList<Certificate>();
+            List<Certificate> certs = new ArrayList<>();
 
             for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKeyGenerator().getKey().getCertificates())
                 certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
@@ -100,7 +100,7 @@ public class GeneratingSSLContext extends SSLContext {
                 keyPassword = sslParser.getKeyGenerator().getKey().getPassword();
             kmf.init(ks, keyPassword.toCharArray());
 
-            cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<String, SSLContext>() {
+            cache = CacheBuilder.newBuilder().maximumSize(100).build(new CacheLoader<>() {
                 @Override
                 public SSLContext load(String s) throws Exception {
                     log.info("Generating certificate for " + s);

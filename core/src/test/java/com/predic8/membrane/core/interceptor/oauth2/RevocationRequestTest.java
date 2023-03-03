@@ -63,7 +63,7 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     }
 
     private static Callable<String> getTokenQuery(){
-        return new Callable<String>() {
+        return new Callable<>() {
             @Override
             public String call() throws Exception {
                 return "token=" + oasit.afterTokenGenerationToken + "&";
@@ -72,7 +72,7 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     }
 
     private static Callable<String> getWrongTokenQuery(){
-        return new Callable<String>() {
+        return new Callable<>() {
             @Override
             public String call() throws Exception {
                 return "token=" + 123456789 + "&";
@@ -81,7 +81,7 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     }
 
     private static Callable<Object> getEmptyBody() {
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
                 return "";

@@ -47,8 +47,8 @@ import java.util.regex.Pattern;
 @MCElement(name="staticUserDataProvider")
 public class StaticUserDataProvider implements UserDataProvider {
 
-	private List<User> users = new ArrayList<User>();
-	private Map<String, User> usersByName = new HashMap<String, User>();
+	private List<User> users = new ArrayList<>();
+	private Map<String, User> usersByName = new HashMap<>();
 	private SecureRandom random = new SecureRandom();
 	private int saltByteSize = 128;
 
@@ -112,7 +112,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
-		Map<String, String> attributes = new HashMap<String, String>();
+		Map<String, String> attributes = new HashMap<>();
 
 		public User() {}
 

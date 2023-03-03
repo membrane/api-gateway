@@ -51,7 +51,7 @@ public class UserinfoRequest extends ParameterizedRequest {
         if(!authHeader.isValid() || !authServer.getSessionFinder().hasSessionForToken(authHeader.getToken())) {
             return buildWwwAuthenticateErrorResponse( Response.unauthorized(), "invalid_token");
         }
-        sessionProperties = new HashMap<String,String>(authServer.getSessionFinder().getSessionForToken(authHeader.getToken()).getUserAttributes());
+        sessionProperties = new HashMap<>(authServer.getSessionFinder().getSessionForToken(authHeader.getToken()).getUserAttributes());
 
         String token = authHeader.getToken();
         String username = authServer.getTokenGenerator().getUsername(token);
@@ -71,7 +71,7 @@ public class UserinfoRequest extends ParameterizedRequest {
 
     protected String getUserDataAsJson(Map<String,String> sessionProperties) throws IOException {
 
-        Map<String, String> claims = new HashMap<String, String>();
+        Map<String, String> claims = new HashMap<>();
         if(sessionProperties.get(ParamNames.SCOPE) != null) {
             if (OAuth2Util.isOpenIdScope(sessionProperties.get(ParamNames.SCOPE)))
                 claims.putAll(getClaimsFromClaimsParameter(sessionProperties));
@@ -97,7 +97,7 @@ public class UserinfoRequest extends ParameterizedRequest {
 
     private Map<String, String> getClaimsFromScopes(Map<String,String> sessionProperties) {
         String[] scopes = sessionProperties.get(ParamNames.SCOPE).split(" ");
-        HashSet<String> claims = new HashSet<String>();
+        HashSet<String> claims = new HashSet<>();
         for(String scope : scopes){
             claims.addAll(authServer.getClaimList().getClaimsForScope(scope));
         }

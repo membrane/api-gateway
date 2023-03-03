@@ -51,8 +51,8 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private String baseUrl;
 	private String baseKey;
 	private Router router;
-	private HashMap<String, ServiceProxy> runningServiceProxyForModule = new HashMap<String, ServiceProxy>();
-	private HashMap<String, HashSet<EtcdNodeInformation>> runningNodesForModule = new HashMap<String, HashSet<EtcdNodeInformation>>();
+	private HashMap<String, ServiceProxy> runningServiceProxyForModule = new HashMap<>();
+	private HashMap<String, HashSet<EtcdNodeInformation>> runningNodesForModule = new HashMap<>();
 	private int waitTimeUntilPollAgain = 1000;
 	private SSLParser ssl = null;
 	private SSLContext sslCtx = null;
@@ -139,13 +139,13 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	}
 
 	private void setUpServiceProxies(ArrayList<EtcdNodeInformation> nodes) throws Exception {
-		HashSet<EtcdNodeInformation> newRunningNodes = new HashSet<EtcdNodeInformation>();
+		HashSet<EtcdNodeInformation> newRunningNodes = new HashSet<>();
 		if (nodes.size() > 0) {
 			for (EtcdNodeInformation node : nodes) {
 				String currentModule = node.getModule();
 				if (!runningServiceProxyForModule.containsKey(currentModule)) {
 					setUpModuleServiceProxy(currentModule + " cluster", port, currentModule);
-					runningNodesForModule.put(currentModule, new HashSet<EtcdNodeInformation>());
+					runningNodesForModule.put(currentModule, new HashSet<>());
 				}
 				if (!runningNodesForModule.get(currentModule).contains(node)) {
 					setUpClusterNode(node);
@@ -184,7 +184,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	}
 
 	private void cleanUpNotRunningNodes(HashSet<EtcdNodeInformation> newRunningNodes) {
-		HashSet<EtcdNodeInformation> currentlyRunningNodes = new HashSet<EtcdNodeInformation>();
+		HashSet<EtcdNodeInformation> currentlyRunningNodes = new HashSet<>();
 		for (String module : runningNodesForModule.keySet()) {
 			currentlyRunningNodes.addAll(runningNodesForModule.get(module));
 		}
@@ -195,7 +195,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 			shutdownRunningClusterNode(node);
 		}
 
-		HashSet<String> modules = new HashSet<String>();
+		HashSet<String> modules = new HashSet<>();
 		for (String module : runningNodesForModule.keySet()) {
 			modules.add(module);
 		}
@@ -230,7 +230,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	}
 
 	private ArrayList<EtcdNodeInformation> getConfigFromEtcd() {
-		ArrayList<EtcdNodeInformation> nodes = new ArrayList<EtcdNodeInformation>();
+		ArrayList<EtcdNodeInformation> nodes = new ArrayList<>();
 		try {
 			EtcdResponse respAvailableModules = createRequest("").sendRequest();
 			if (!respAvailableModules.is2XX()) {

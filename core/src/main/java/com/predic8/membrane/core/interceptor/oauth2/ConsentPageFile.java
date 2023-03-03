@@ -35,8 +35,8 @@ public class ConsentPageFile {
 
     private String productName;
     private String logoUrl;
-    ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<String, String>();
-    ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<String, String>();
+    ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<>();
+    ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<>();
     private Map<String, Object> json;
 
 

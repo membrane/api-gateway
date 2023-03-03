@@ -116,7 +116,7 @@ public class KubernetesClient {
             throws IOException, KubernetesApiException {
         String path = getPath("list", apiVersion, kind, namespace, null);
 
-        Spliterator<Map> spliterator = new Spliterator<Map>() {
+        Spliterator<Map> spliterator = new Spliterator<>() {
             boolean first = true;
             String _continue = null;
 

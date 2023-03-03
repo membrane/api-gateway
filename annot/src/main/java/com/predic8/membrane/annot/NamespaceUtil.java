@@ -57,7 +57,7 @@ public class NamespaceUtil {
 		}
 	}
 
-	private List<NamespaceInfo> infos = new ArrayList<NamespaceInfo>();
+	private List<NamespaceInfo> infos = new ArrayList<>();
 
 	public NamespaceUtil() {
 		try {
@@ -87,7 +87,7 @@ public class NamespaceUtil {
 	}
 
 	public List<String> getTargetNamespaces() {
-		ArrayList<String> res = new ArrayList<String>();
+		ArrayList<String> res = new ArrayList<>();
 		for (NamespaceInfo ni : infos)
 			res.add(ni.getTargetNamespace());
 		return res;

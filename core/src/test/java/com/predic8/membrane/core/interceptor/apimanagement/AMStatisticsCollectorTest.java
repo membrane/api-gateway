@@ -30,7 +30,7 @@ public class AMStatisticsCollectorTest {
 
         final AMStatisticsCollector amSc = new AMStatisticsCollector();
         amSc.setCollectTimeInSeconds(2);
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
 
         for (int i = 0; i < 1000; i++) {
             final int j = i;

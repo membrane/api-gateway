@@ -30,7 +30,7 @@ import java.util.HashMap;
 public class JmxExporter extends MBeanExporter implements Lifecycle, ApplicationContextAware, DisposableBean {
 
     public static final String JMX_EXPORTER_NAME = "jmxExporter";
-    HashMap<String, Object> jmxBeans = new HashMap<String, Object>();
+    HashMap<String, Object> jmxBeans = new HashMap<>();
 
     ApplicationContext context;
 

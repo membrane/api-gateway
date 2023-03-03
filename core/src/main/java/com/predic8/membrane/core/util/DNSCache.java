@@ -26,9 +26,9 @@ import java.util.Map;
  */
 public class DNSCache {
 
-	private Map<InetAddress, String> hostNames = new Hashtable<InetAddress, String>();
-	private Map<InetAddress, String> canonicalHostNames = new Hashtable<InetAddress, String>();
-	private Map<InetAddress, String> hostAddresses = new Hashtable<InetAddress, String>();
+	private Map<InetAddress, String> hostNames = new Hashtable<>();
+	private Map<InetAddress, String> canonicalHostNames = new Hashtable<>();
+	private Map<InetAddress, String> hostAddresses = new Hashtable<>();
 
 	public String getHostName(InetAddress address) {
 		if (hostNames.containsKey(address))

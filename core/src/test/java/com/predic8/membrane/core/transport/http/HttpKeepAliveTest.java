@@ -46,7 +46,7 @@ public class HttpKeepAliveTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		set = new HashSet<Integer>();
+		set = new HashSet<>();
 
 		service1 = new HttpRouter();
 		sp1 = new ServiceProxy(new ServiceProxyKey("localhost",

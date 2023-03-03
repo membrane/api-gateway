@@ -45,7 +45,7 @@ public class DynamicRegistration {
 
     ReusableJsonGenerator jsonGenerator = new ReusableJsonGenerator();
 
-    private List<Interceptor> interceptors = new ArrayList<Interceptor>();
+    private List<Interceptor> interceptors = new ArrayList<>();
     private SSLParser sslParser;
     private SSLContext sslContext;
     private InterceptorFlowController flowController = new InterceptorFlowController();

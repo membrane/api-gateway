@@ -42,7 +42,7 @@ public class HttpRouter extends Router {
 	 */
 	private Transport createTransport(ProxyConfiguration proxyConfiguration) {
 		Transport transport = new HttpTransport();
-		List<Interceptor> interceptors = new ArrayList<Interceptor>();
+		List<Interceptor> interceptors = new ArrayList<>();
 		interceptors.add(new RuleMatchingInterceptor());
 		interceptors.add(new DispatchingInterceptor());
 		interceptors.add(new UserFeatureInterceptor());

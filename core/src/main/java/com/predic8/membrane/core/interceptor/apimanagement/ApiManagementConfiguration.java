@@ -50,7 +50,7 @@ public class ApiManagementConfiguration {
     private String hashLocation = null;
     private String currentHash = "";
     private ApplicationContext context;
-    public HashSet<Runnable> configChangeObservers = new HashSet<Runnable>();
+    public HashSet<Runnable> configChangeObservers = new HashSet<>();
     String etcdPathPrefix = "/membrane/";
     private String membraneName;
     private boolean contextLost = false;
@@ -86,8 +86,8 @@ public class ApiManagementConfiguration {
         this.keys = keys;
     }
 
-    private Map<String,Policy> policies = new ConcurrentHashMap<String, Policy>();
-    private Map<String,Key> keys = new ConcurrentHashMap<String, Key>();
+    private Map<String,Policy> policies = new ConcurrentHashMap<>();
+    private Map<String,Key> keys = new ConcurrentHashMap<>();
 
     public ApiManagementConfiguration(){
         this(System.getProperty("user.dir"),"api.yaml","membrane");
@@ -113,7 +113,7 @@ public class ApiManagementConfiguration {
     }
 
     private Map<String,Policy> parsePolicies(Map<String,Object> yaml) {
-        Map<String,Policy> result = new HashMap<String, Policy>();
+        Map<String,Policy> result = new HashMap<>();
         Object policies = yaml.get("policies");
         if(policies == null)
         {
@@ -296,7 +296,7 @@ public class ApiManagementConfiguration {
     }
 
     private Map<String,Key> parsePoliciesForKeys(Map<String, Object> yaml) {
-        Map<String,Key> result = new HashMap<String, Key>();
+        Map<String,Key> result = new HashMap<>();
 
         // assumption: the yaml is valid
 
@@ -314,7 +314,7 @@ public class ApiManagementConfiguration {
             parseExpiration(key,keyRes);
 
             List<Object> policiesForKey = (List<Object>) key.get("policies");
-            HashSet<Policy> policies = new HashSet<Policy>();
+            HashSet<Policy> policies = new HashSet<>();
             for(Object polObj : policiesForKey){
                 String policyName = (String) polObj;
                 Policy p = this.policies.get(policyName);
@@ -389,7 +389,7 @@ public class ApiManagementConfiguration {
             }
             parseAndConstructConfiguration(is);
             try {
-                getResolver().observeChange(newLocation, new Consumer<InputStream>() {
+                getResolver().observeChange(newLocation, new Consumer<>() {
                     @Override
                     public void call(InputStream inputStream) {
                         log.info("Loading configuration from [" + newLocation + "]");

@@ -28,7 +28,7 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 
 	private int maxNumberOfThreadsPerEndpoint = 5;
 
-	private Map<String, Integer> endpointCount = new Hashtable<String, Integer>();
+	private Map<String, Integer> endpointCount = new Hashtable<>();
 
 	private int retryTimeOnBusy = 1000;
 

@@ -30,7 +30,7 @@ class DepthWalker extends DirectoryWalker<File> {
 	}
 
 	public ArrayList<File> getDirectories(File startDirectory) throws IOException {
-		ArrayList<File> dirs = new ArrayList<File>();
+		ArrayList<File> dirs = new ArrayList<>();
 		walk(startDirectory, dirs);
 		return dirs;
 	}

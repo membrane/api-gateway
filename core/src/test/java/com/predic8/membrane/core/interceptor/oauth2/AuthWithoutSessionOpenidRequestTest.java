@@ -44,7 +44,7 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
     }
 
     private static Callable<Object> sessionHasNoClaimsParam() {
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
                 SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);

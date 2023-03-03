@@ -41,7 +41,7 @@ public class XMLElementFinder {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
-	private final HashSet<QName> elements = new HashSet<QName>();
+	private final HashSet<QName> elements = new HashSet<>();
 	private final boolean usesWildcardNamespace;
 
 	public XMLElementFinder(List<QName> elements) {

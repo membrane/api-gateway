@@ -59,7 +59,7 @@ public class Base32String {
 		DIGITS = ALPHABET.toCharArray();
 		MASK = DIGITS.length - 1;
 		SHIFT = Integer.numberOfTrailingZeros(DIGITS.length);
-		CHAR_MAP = new HashMap<Character, Integer>();
+		CHAR_MAP = new HashMap<>();
 		for (int i = 0; i < DIGITS.length; i++) {
 			CHAR_MAP.put(DIGITS[i], i);
 		}
