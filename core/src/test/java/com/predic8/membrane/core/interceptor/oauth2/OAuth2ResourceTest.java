@@ -157,7 +157,7 @@ public class OAuth2ResourceTest {
             }));
 
         }
-        threadList.forEach(thread -> thread.start());
+        threadList.forEach(Thread::start);
         threadList.forEach(thread -> {
             try {
                 thread.join();

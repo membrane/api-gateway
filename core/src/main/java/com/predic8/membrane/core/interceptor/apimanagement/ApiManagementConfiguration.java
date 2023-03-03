@@ -216,7 +216,7 @@ public class ApiManagementConfiguration {
     }
 
     private boolean parseBoolean(Object obj, Boolean defObj){
-        return StringToTypeConverter(obj,defObj,(value) -> {return Boolean.parseBoolean(value);});
+        return StringToTypeConverter(obj,defObj, Boolean::parseBoolean);
     }
 
     private long getQuotaNumber(Object quotaSizeObj) {
@@ -250,7 +250,7 @@ public class ApiManagementConfiguration {
     }
 
     private int parseInteger(Object obj, int defaultValue){
-        return StringToTypeConverter(obj,defaultValue,(value) ->{return Integer.parseInt(value);});
+        return StringToTypeConverter(obj,defaultValue, Integer::parseInt);
     }
 
     private void parseAndConstructConfiguration(InputStream is) throws IOException {

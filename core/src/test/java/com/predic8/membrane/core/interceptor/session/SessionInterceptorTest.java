@@ -146,7 +146,7 @@ public class SessionInterceptorTest {
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        bodies.stream().forEach(body -> printCookie(body));
+        bodies.stream().forEach(this::printCookie);
 
         IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
             assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
@@ -167,7 +167,7 @@ public class SessionInterceptorTest {
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        bodies.stream().forEach(body -> printCookie(body));
+        bodies.stream().forEach(this::printCookie);
 
         IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
             assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
@@ -244,7 +244,7 @@ public class SessionInterceptorTest {
 
     private void addJoinedHeaderTo(Map cache, String name, Message msg){
         cache.put(name, getHeader(name,msg)
-                .map(hf -> hf.getValue())
+                .map(HeaderField::getValue)
                 .collect(Collectors.joining(";")));
     }
 
