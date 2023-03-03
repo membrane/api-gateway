@@ -20,7 +20,7 @@ import javax.xml.stream.*;
 
 public class GenericComplexElement extends AbstractXmlElement {
 
-	private Map<String, String> attributes = new HashMap<String, String>();
+	private Map<String, String> attributes = new HashMap<>();
 	private String name;
 	private AbstractXmlElement childParser;
 

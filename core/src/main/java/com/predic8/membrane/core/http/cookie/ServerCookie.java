@@ -32,12 +32,12 @@ import static com.predic8.membrane.core.http.cookie.CookieSupport.*;
  * Allows recycling and uses MessageBytes as low-level
  * representation ( and thus the byte-> char conversion can be delayed
  * until we know the charset ).
- *
+ * <p>
  * Tomcat.core uses this recyclable object to represent cookies,
  * and the facade will convert it to the external representation.
- *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author unknown (Tomcat)
  */
@@ -63,15 +63,12 @@ public class ServerCookie implements Serializable {
 	private static final String OLD_COOKIE_PATTERN =
 			"EEE, dd-MMM-yyyy HH:mm:ss z";
 	private static final ThreadLocal<DateFormat> OLD_COOKIE_FORMAT =
-			new ThreadLocal<DateFormat>() {
-		@Override
-		protected DateFormat initialValue() {
-			DateFormat df =
-					new SimpleDateFormat(OLD_COOKIE_PATTERN, Locale.US);
-			df.setTimeZone(TimeZone.getTimeZone("GMT"));
-			return df;
-		}
-	};
+            ThreadLocal.withInitial(() -> {
+                DateFormat df =
+                        new SimpleDateFormat(OLD_COOKIE_PATTERN, Locale.US);
+                df.setTimeZone(TimeZone.getTimeZone("GMT"));
+                return df;
+            });
 	private static final String ancientDate;
 
 	static {

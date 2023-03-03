@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * {@link StatisticCollector} counts {@link Exchange} objects, tracks the time they took
  * to complete, the number of bytes they sent, and some more numbers.
- *
+ * <p>
  * Instances are not thread-safe.
  */
 public class StatisticCollector {

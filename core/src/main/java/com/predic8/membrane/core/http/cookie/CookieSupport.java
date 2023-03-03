@@ -19,9 +19,9 @@ package com.predic8.membrane.core.http.cookie;
 
 /**
  * Static constants for this package.
- *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author unknown (Tomcat)
  */
@@ -86,15 +86,15 @@ public final class CookieSupport {
 	static {
 		STRICT_SERVLET_COMPLIANCE = Boolean.valueOf(System.getProperty(
 				"org.apache.catalina.STRICT_SERVLET_COMPLIANCE",
-				"false")).booleanValue();
+				"false"));
 
 		ALLOW_EQUALS_IN_VALUE = Boolean.valueOf(System.getProperty(
 				"org.apache.tomcat.util.http.ServerCookie.ALLOW_EQUALS_IN_VALUE",
-				"false")).booleanValue();
+				"false"));
 
 		ALLOW_HTTP_SEPARATORS_IN_V0 = Boolean.valueOf(System.getProperty(
 				"org.apache.tomcat.util.http.ServerCookie.ALLOW_HTTP_SEPARATORS_IN_V0",
-				"false")).booleanValue();
+				"false"));
 
 		String alwaysAddExpires = System.getProperty(
 				"org.apache.tomcat.util.http.ServerCookie.ALWAYS_ADD_EXPIRES");
@@ -102,7 +102,7 @@ public final class CookieSupport {
 			ALWAYS_ADD_EXPIRES = !STRICT_SERVLET_COMPLIANCE;
 		} else {
 			ALWAYS_ADD_EXPIRES =
-					Boolean.valueOf(alwaysAddExpires).booleanValue();
+					Boolean.valueOf(alwaysAddExpires);
 		}
 
 		String  fwdSlashIsSeparator = System.getProperty(
@@ -111,12 +111,12 @@ public final class CookieSupport {
 			FWD_SLASH_IS_SEPARATOR = STRICT_SERVLET_COMPLIANCE;
 		} else {
 			FWD_SLASH_IS_SEPARATOR =
-					Boolean.valueOf(fwdSlashIsSeparator).booleanValue();
+					Boolean.valueOf(fwdSlashIsSeparator);
 		}
 
 		ALLOW_NAME_ONLY = Boolean.valueOf(System.getProperty(
 				"org.apache.tomcat.util.http.ServerCookie.ALLOW_NAME_ONLY",
-				"false")).booleanValue();
+				"false"));
 
 
 		/*
@@ -137,11 +137,11 @@ public final class CookieSupport {
 			V0_SEPARATOR_FLAGS[i] = false;
 			HTTP_SEPARATOR_FLAGS[i] = false;
 		}
-		for (int i = 0; i < V0_SEPARATORS.length; i++) {
-			V0_SEPARATOR_FLAGS[V0_SEPARATORS[i]] = true;
+		for (char v0Separator : V0_SEPARATORS) {
+			V0_SEPARATOR_FLAGS[v0Separator] = true;
 		}
-		for (int i = 0; i < HTTP_SEPARATORS.length; i++) {
-			HTTP_SEPARATOR_FLAGS[HTTP_SEPARATORS[i]] = true;
+		for (char httpSeparator : HTTP_SEPARATORS) {
+			HTTP_SEPARATOR_FLAGS[httpSeparator] = true;
 		}
 
 	}

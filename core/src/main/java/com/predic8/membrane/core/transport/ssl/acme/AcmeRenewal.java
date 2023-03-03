@@ -124,9 +124,7 @@ public class AcmeRenewal {
             waitFor(
                     "order to become non-'PENDING'",
                     () -> !ORDER_STATUS_PENDING.equals(oal.get().getOrder().getStatus()),
-                    () -> {
-                        oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()));
-                    });
+                    () -> oal.set(client.getOrder(getAccountURL(), oal.get().getLocation())));
             if (!ORDER_STATUS_READY.equals(oal.get().getOrder().getStatus()))
                 throw new FatalAcmeException("order status " + om.writeValueAsString(oal));
         }
@@ -144,9 +142,7 @@ public class AcmeRenewal {
         waitFor(
                 "order to become 'VALID'",
                 () -> !ORDER_STATUS_READY.equals(oal.get().getOrder().getStatus()) && !ORDER_STATUS_PROCESSING.equals(oal.get().getOrder().getStatus()),
-                () -> {
-                    oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()));
-                }
+                () -> oal.set(client.getOrder(getAccountURL(), oal.get().getLocation()))
         );
         if (!ORDER_STATUS_VALID.equals(oal.get().getOrder().getStatus()))
             throw new FatalAcmeException("order status " + om.writeValueAsString(oal));
@@ -291,18 +287,15 @@ public class AcmeRenewal {
         if (!client.getAsse().acquireLease(LEASE_DURATION_MILLISECONDS))
             return false;
         AtomicReference<Throwable> error = new AtomicReference<>();
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    runnable.run();
-                } catch (InterruptedException e) {
-                    // do nothing
-                } catch (Throwable e) {
-                    error.set(e);
-                }
+        Thread t = new Thread(() -> {
+            try {
+                runnable.run();
+            } catch (InterruptedException e) {
+                // do nothing
+            } catch (Throwable e) {
+                error.set(e);
             }
-        };
+        });
         t.start();
         while (true) {
             try {

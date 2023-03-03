@@ -116,7 +116,7 @@ public class JwtSessionManager extends SessionManager {
                     .entrySet()
                     .stream()
                     //.filter(entry -> !entry.getKey().equals("exp") && !entry.getKey().equals("iss")) // filter default jwt claims - those are not part of a session
-                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         } catch (InvalidJwtException e) {
             log.warn("Could not verify cookie: " + cookie + "\nPossible Reason: Cookie is not signed by and thus not a session of this instance");
             e.printStackTrace();
@@ -132,7 +132,7 @@ public class JwtSessionManager extends SessionManager {
     protected Map<Session, String> getCookieValues(Session... sessions) {
         return Stream
                 .of(sessions)
-                .collect(Collectors.toMap(s -> s, s -> createJwtRepresentation(s)));
+                .collect(Collectors.toMap(s -> s, this::createJwtRepresentation));
     }
 
     private String createJwtRepresentation(Session s) {
@@ -146,7 +146,7 @@ public class JwtSessionManager extends SessionManager {
             }
             if (LOG.isDebugEnabled())
                 LOG.debug("encoding cookie: " + filteredSession);
-            token = idTokenProvider.createIdTokenNoNullClaims(issuer, null, null, validTime, null, null, new HashMap(filteredSession));
+            token = idTokenProvider.createIdTokenNoNullClaims(issuer, null, null, validTime, null, null, new HashMap<>(filteredSession));
             jwtCache.put(filteredSession, token);
             return token;
         } catch (JoseException e) {
@@ -156,7 +156,7 @@ public class JwtSessionManager extends SessionManager {
 
     private Map filterSession(Map<String, Object> stringObjectMap) {
         Map result = new HashMap(stringObjectMap);
-        Stream.of("iss","exp","nbf","iat").forEach(claim -> result.remove(claim));
+        Stream.of("iss","exp","nbf","iat").forEach(result::remove);
         return result;
     }
 
@@ -164,7 +164,7 @@ public class JwtSessionManager extends SessionManager {
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
         return Stream
                 .of(getAllCookieKeys(exc))
-                .map(cookie -> getCookieKey(cookie))
+                .map(this::getCookieKey)
                 .filter(cookie -> {
                     try {
                         checkJwtWithoutVerifyingSignature(cookie);
@@ -178,7 +178,7 @@ public class JwtSessionManager extends SessionManager {
                     return false;
                 })
                 .filter(cookie -> !cookie.equals(getKeyOfCookie(validCookie)))
-                .map(cookie -> addValueToCookie(cookie))
+                .map(this::addValueToCookie)
                 .collect(Collectors.toList());
     }
 
@@ -203,9 +203,7 @@ public class JwtSessionManager extends SessionManager {
         try {
             JwtClaims claims = processToClaims(originalCookie);
             return Instant.ofEpochSecond(claims.getIssuedAt().getValue()).plus(renewalTime).isBefore(Instant.now());
-        } catch (InvalidJwtException e) {
-            e.printStackTrace();
-        } catch (MalformedClaimException e) {
+        } catch (InvalidJwtException | MalformedClaimException e) {
             e.printStackTrace();
         }
         return false;

@@ -52,16 +52,13 @@ public class ThrottleInterceptorTest {
 		assertEquals(Outcome.ABORT, i.handleRequest(exc));
 		assertTrue(System.currentTimeMillis()-t > 2000);
 
-		Thread thread1 = new Thread() {
-			@Override
-			public void run() {
-				try {
-					success = (Outcome.CONTINUE == i.handleRequest(exc));
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			};
-		};
+		Thread thread1 = new Thread(() -> {
+            try {
+                success = (Outcome.CONTINUE == i.handleRequest(exc));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
 
 		thread1.start();
 

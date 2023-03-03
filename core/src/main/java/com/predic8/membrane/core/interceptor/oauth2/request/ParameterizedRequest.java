@@ -79,7 +79,7 @@ public abstract class ParameterizedRequest {
     }
 
     protected void removeEmptyParams(Map<String, String> params) {
-        ArrayList<String> toRemove = new ArrayList<String>();
+        ArrayList<String> toRemove = new ArrayList<>();
         for (String paramName : params.keySet()) {
             if (params.get(paramName).isEmpty())
                 toRemove.add(paramName);

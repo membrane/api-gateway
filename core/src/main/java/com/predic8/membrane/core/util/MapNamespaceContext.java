@@ -60,7 +60,7 @@ public class MapNamespaceContext implements NamespaceContext {
 			throw new IllegalArgumentException();
 		}
 
-		List<String> l = new ArrayList<String>();
+		List<String> l = new ArrayList<>();
 		for (Map.Entry<String, String> e : namespaces.entrySet()) {
 			if (e.getValue().equals(namespaceURI))
 				l.add(e.getKey());

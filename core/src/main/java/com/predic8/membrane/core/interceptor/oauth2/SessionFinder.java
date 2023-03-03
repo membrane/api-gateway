@@ -19,8 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionFinder {
 
-    private ConcurrentHashMap<String, SessionManager.Session> authCodesToSession = new ConcurrentHashMap<String, SessionManager.Session>();
-    private ConcurrentHashMap<String, SessionManager.Session> tokensToSession = new ConcurrentHashMap<String, SessionManager.Session>();
+    private ConcurrentHashMap<String, SessionManager.Session> authCodesToSession = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, SessionManager.Session> tokensToSession = new ConcurrentHashMap<>();
 
     public void addSessionForCode(String code, SessionManager.Session session){
         synchronized (authCodesToSession) {

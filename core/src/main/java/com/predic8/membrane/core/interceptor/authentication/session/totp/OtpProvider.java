@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Class containing implementation of HOTP/TOTP. Generates OTP codes for one or
  * more accounts.
- *
- * Source: http://code.google.com/p/google-authenticator
+ * <p>
+ * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *
  * @author Steve Weis (sweis@google.com)
@@ -66,15 +66,8 @@ public class OtpProvider {
 
 			// Create a signer object out of the standard Java MAC
 			// implementation.
-			return new Signer() {
-				@Override
-				public byte[] sign(byte[] data) {
-					return mac.doFinal(data);
-				}
-			};
-		} catch (NoSuchAlgorithmException error) {
-			log.error("", error);
-		} catch (InvalidKeyException error) {
+			return data -> mac.doFinal(data);
+		} catch (NoSuchAlgorithmException | InvalidKeyException error) {
 			log.error("", error);
 		}
 
@@ -88,8 +81,6 @@ public class OtpProvider {
 	 *            the secret key
 	 * @param otp_state
 	 *            current token state (counter or time-interval)
-	 * @param challenge
-	 *            optional challenge bytes to include when computing passcode.
 	 * @return the PIN
 	 */
 	private String computePin(String secret, long otp_state) {

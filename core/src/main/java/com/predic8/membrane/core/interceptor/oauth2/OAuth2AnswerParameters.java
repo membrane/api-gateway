@@ -28,7 +28,7 @@ public class OAuth2AnswerParameters {
     private String accessToken;
     private String tokenType;
     private String idToken;
-    private Map<String, ?> userinfo = new HashMap<String, Object>();
+    private Map<String, ?> userinfo = new HashMap<>();
     private String expiration;
     private LocalDateTime receivedAt;
     private String refreshToken;

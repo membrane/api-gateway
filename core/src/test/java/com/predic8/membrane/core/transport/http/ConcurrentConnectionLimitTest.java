@@ -67,38 +67,36 @@ public class ConcurrentConnectionLimitTest {
     public void testConcurrentConnectionsLimit() throws Exception{
         List<Integer> good = new ArrayList<>();
         List<Integer> bad = new ArrayList<>();
-        IntStream.range(0,concurrency).forEach(i -> {
-            executor.execute(() -> {
+        IntStream.range(0,concurrency).forEach(i -> executor.execute(() -> {
+            try {
+                Thread.currentThread().setName("Test Thread " + i);
+                countDownLatchStart.countDown();
+                System.out.println("start = " + countDownLatchStart.getCount());
+                countDownLatchStart.await();
+                HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port).openConnection();
+                int code = 429;
                 try {
-                    Thread.currentThread().setName("Test Thread " + i);
-                    countDownLatchStart.countDown();
-                    System.out.println("start = " + countDownLatchStart.getCount());
-                    countDownLatchStart.await();
-                    HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port).openConnection();
-                    int code = 429;
-                    try {
-                        code = con.getResponseCode();
-                    }catch (Exception e){
-                        //ignored)
-                    }finally {
-                        if (code == 200)
-                            synchronized (good) {
-                                good.add(code);
-                            }
-                        else
-                            synchronized (bad) {
-                                bad.add(code);
-                            }
-                    }
-                    countDownLatchEnd.countDown();
-                    System.out.println("end = " + countDownLatchEnd.getCount());
-                    countDownLatchEnd.await();
-                    con.disconnect();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    code = con.getResponseCode();
+                }catch (Exception e){
+                    //ignored)
+                }finally {
+                    if (code == 200)
+                        synchronized (good) {
+                            good.add(code);
+                        }
+                    else
+                        synchronized (bad) {
+                            bad.add(code);
+                        }
                 }
-            });
-        });
+                countDownLatchEnd.countDown();
+                System.out.println("end = " + countDownLatchEnd.getCount());
+                countDownLatchEnd.await();
+                con.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }));
         executor.shutdown();
         executor.awaitTermination(60, TimeUnit.SECONDS);
 

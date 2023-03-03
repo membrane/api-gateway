@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.util.URLUtil.getHost;
 
 /**
  * Handles features that are user-configured in proxies.xml .
- *
+ * <p>
  * Not that we do not implement handleResponse() as this will be
  * automatically done by the stack-unwinding in {@link InterceptorFlowController}.
  */

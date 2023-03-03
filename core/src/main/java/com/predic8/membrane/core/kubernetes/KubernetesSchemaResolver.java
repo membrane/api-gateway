@@ -82,7 +82,7 @@ public class KubernetesSchemaResolver implements SchemaResolver {
                 String key = url.substring(p+1);
 
                 Map secret = getClient().read("v1", "Secret", namespace, name);
-                String res = (String) ((Map)secret.get("data")).get(key);
+                String res = (String) ((Map<?, ?>)secret.get("data")).get(key);
                 return new ByteArrayInputStream(Base64.getDecoder().decode(res));
             }
             throw new ResourceRetrievalException(url);

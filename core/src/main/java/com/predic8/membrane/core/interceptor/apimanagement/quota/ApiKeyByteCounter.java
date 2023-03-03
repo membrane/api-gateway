@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ApiKeyByteCounter {
-    private HashMap<String,AtomicLong> policyByteCounters = new HashMap<String, AtomicLong>();
+    private HashMap<String,AtomicLong> policyByteCounters = new HashMap<>();
 
     public HashMap<String, AtomicLong> getPolicyByteCounters() {
         return policyByteCounters;

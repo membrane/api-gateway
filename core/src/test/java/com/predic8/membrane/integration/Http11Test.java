@@ -64,12 +64,7 @@ public class Http11Test {
 	public static void initExpect100ContinueWithFastFail(HttpClient client) {
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 		client.getParams().setParameter(HttpProtocolParams.USE_EXPECT_CONTINUE, true);
-		client.getParams().setParameter("http.method.retry-handler", new HttpMethodRetryHandler() {
-			@Override
-			public boolean retryMethod(HttpMethod arg0, IOException arg1, int arg2) {
-				return false;
-			}
-		});
+		client.getParams().setParameter("http.method.retry-handler", (HttpMethodRetryHandler) (arg0, arg1, arg2) -> false);
 		client.getParams().setParameter("http.socket.timeout", 7000);
 	}
 

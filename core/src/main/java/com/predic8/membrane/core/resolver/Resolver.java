@@ -35,7 +35,7 @@ public interface Resolver {
 
 	/**
 	 * Returns the list of child resources of the resource identified by the URL.
-	 *
+	 * <p>
 	 * For example, a list of filenames in the directory identified by the URL.
 	 *
 	 * @throws FileNotFoundException if the resource identified by the URL does not exist.

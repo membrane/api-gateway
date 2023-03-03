@@ -26,7 +26,7 @@ public enum Outcome {
 	/**
 	 * Do not continue the interceptor chain, but start normal response
 	 * handling:
-	 *
+	 * <p>
 	 * All interceptors passed up to this point will be given a chance to handle
 	 * the response (in reverse order).
 	 */

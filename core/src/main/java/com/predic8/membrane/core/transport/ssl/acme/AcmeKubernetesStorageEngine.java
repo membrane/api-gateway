@@ -309,7 +309,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
 
     private String getSecretEntry(String secretName, String secretKey) {
         try {
-            String b64 = (String) ((Map) client.read("v1", "Secret", namespace, secretName).get("data")).get(secretKey);
+            String b64 = (String) ((Map<?, ?>) client.read("v1", "Secret", namespace, secretName).get("data")).get(secretKey);
             if (b64 == null)
                 return null;
             return new String(Base64.getDecoder().decode(b64), UTF_8);
@@ -396,7 +396,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
                 dnsRecord = client.read(dnsRecord);
                 Object status = dnsRecord.get("status");
                 if (status != null) {
-                    Object success = ((Map) status).get("success");
+                    Object success = ((Map<?, ?>) status).get("success");
                     if (success != null && success.equals(true)) break;
                 }
                 if (i == 59)
@@ -405,9 +405,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
             Thread.sleep(10 * 1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (KubernetesApiException e) {
+        } catch (IOException | KubernetesApiException e) {
             throw new RuntimeException(e);
         }
     }

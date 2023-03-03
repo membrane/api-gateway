@@ -15,7 +15,7 @@ package com.predic8.membrane.annot;
 
 /**
  * Marks properties as 'required'.
- *
+ * <p>
  * Used to enhance the Membrane configuration grammar. Also used for validation.
  */
 public @interface Required {

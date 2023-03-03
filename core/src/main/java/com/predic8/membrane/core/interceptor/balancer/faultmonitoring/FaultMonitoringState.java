@@ -41,7 +41,7 @@ class FaultMonitoringState {
 	/**
 	 * Key = destination "host:port"
 	 */
-	private final ConcurrentMap<String, NodeFaultProfile> map = new ConcurrentHashMap<String, NodeFaultProfile>();
+	private final ConcurrentMap<String, NodeFaultProfile> map = new ConcurrentHashMap<>();
 
 	private Timer timer;
 

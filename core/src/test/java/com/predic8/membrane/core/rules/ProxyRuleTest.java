@@ -67,7 +67,7 @@ public class ProxyRuleTest {
 	}
 
 	private static List<Interceptor> getInterceptors() {
-		List<Interceptor> interceptors = new ArrayList<Interceptor>();
+		List<Interceptor> interceptors = new ArrayList<>();
 		Interceptor balancer = new LoadBalancingInterceptor();
 		balancer.setId("roundRobinBalancer");
 		interceptors.add(balancer);

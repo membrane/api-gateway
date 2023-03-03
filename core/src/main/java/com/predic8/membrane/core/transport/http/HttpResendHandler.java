@@ -43,12 +43,11 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 				return;
 			}
 			exchange.setCompleted();
-		} catch (IOException e) {
-			log.warn("", e);
-		} catch (EndOfStreamException e) {
+			return;
+		} catch (IOException | EndOfStreamException e) {
 			log.warn("", e);
 		}
-	}
+    }
 
 	@Override
 	public void shutdownInput() {

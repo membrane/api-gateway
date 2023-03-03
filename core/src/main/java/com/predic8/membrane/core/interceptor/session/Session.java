@@ -62,7 +62,7 @@ public class Session {
                 .entrySet()
                 .stream()
                 .filter(entry -> keysUnique.contains(entry.getKey()))
-                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public void remove(String... keys) {
@@ -71,7 +71,7 @@ public class Session {
                 .entrySet()
                 .stream()
                 .filter(entry -> !keysUnique.contains(entry.getKey()))
-                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         dirty();
     }
 

@@ -23,7 +23,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import java.util.List;
 
 /**
- * Strategy that iterates the endpoints according to https://en.wikipedia.org/wiki/Round-robin
+ * Strategy that iterates the endpoints according to <a href="https://en.wikipedia.org/wiki/Round-robin">...</a>
  * This strategy is agnostic to every other factor, such as sessions and endpoint performance.
  * All endpoints that are considered to be UP are in.
  */

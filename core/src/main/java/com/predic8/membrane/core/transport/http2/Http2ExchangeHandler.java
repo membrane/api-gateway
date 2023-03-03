@@ -86,8 +86,6 @@ public class Http2ExchangeHandler implements Runnable {
                 else
                     log.error("", s);
             }
-        } catch (IOException e) {
-            log.error("", e);
         } catch (EndOfStreamException e) {
             log.debug("stream closed");
         } catch (AbortException e) {
@@ -101,9 +99,7 @@ public class Http2ExchangeHandler implements Runnable {
                     + e.getLineSoFar() + ")");
         } catch (Exception e) {
             log.error("", e);
-        }
-
-        finally {
+        } finally {
 
             closeConnections();
 

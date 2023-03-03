@@ -35,7 +35,7 @@ public class StreamPump implements Runnable {
 	protected static Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
 
 	public static class StreamPumpStats {
-		private static ArrayList<StreamPump> pumps = new ArrayList<StreamPump>();
+		private static ArrayList<StreamPump> pumps = new ArrayList<>();
 
 		public synchronized int getRunning() {
 			return pumps.size();
@@ -47,7 +47,7 @@ public class StreamPump implements Runnable {
 			pumps.remove(pump);
 		}
 		public synchronized List<StreamPump> getStreamPumps() {
-			return new ArrayList<StreamPump>(pumps);
+			return new ArrayList<>(pumps);
 		}
 		public synchronized void closeAllStreamPumps() {
 			for (StreamPump p : new ArrayList<>(pumps)) {
@@ -89,11 +89,7 @@ public class StreamPump implements Runnable {
 				if (stats != null)
 					bytesTransferred.addAndGet(length);
 			}
-		} catch (SocketTimeoutException e) {
-			// do nothing
-		} catch (SocketException e) {
-			// do nothing
-		} catch (SSLException e) {
+		} catch (SocketTimeoutException | SSLException | SocketException e) {
 			// do nothing
 		} catch (IOException e) {
 			log.error("Reading from or writing to stream failed: " + e);

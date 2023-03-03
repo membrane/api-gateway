@@ -37,10 +37,10 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 @MCElement(name="memoryExchangeStore")
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
-	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<RuleKey, List<AbstractExchange>>();
+	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<>();
 
 	//for synchronization purposes choose Vector class
-	private List<AbstractExchange> totals = new Vector<AbstractExchange>();
+	private List<AbstractExchange> totals = new Vector<>();
 
 	public void snap(AbstractExchange exc, Flow flow) {
 		// TODO: [fix me] this is for Membrane Monitor's legacy logic
@@ -51,7 +51,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		if (isKeyInStore(exc)) {
 			getKeyList(exc).add(exc);
 		} else {
-			List<AbstractExchange> list = new Vector<AbstractExchange>();
+			List<AbstractExchange> list = new Vector<>();
 			list.add(exc);
 			exchangesMap.put(exc.getRule().getKey(), list);
 		}
@@ -104,8 +104,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		if (exchangesList == null || exchangesList.isEmpty())
 			return statistics;
 
-		for (int i = 0; i < exchangesList.size(); i++)
-			statistics.collectFrom(exchangesList.get(i));
+        for (AbstractExchange abstractExchange : exchangesList) statistics.collectFrom(abstractExchange);
 
 		return statistics;
 	}

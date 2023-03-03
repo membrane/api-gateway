@@ -25,19 +25,19 @@ import javax.xml.stream.events.XMLEvent;
 
 class Technology {
 	public String name;
-	public List<Technology> children = new LinkedList<Technology>();
+	public List<Technology> children = new LinkedList<>();
 }
 
 public class Magic {
 
-	List<QName> technologies = new LinkedList<QName>();
+	List<QName> technologies = new LinkedList<>();
 
 	public List<Technology> scan( InputStream istream ) throws Exception {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 		XMLEventReader parser = factory.createXMLEventReader(istream);
 
 		technologies.add(new QName("http://schemas.xmlsoap.org/wsdl/","definitions"));
-		List<Technology> foundTechnologies = new LinkedList<Technology>();
+		List<Technology> foundTechnologies = new LinkedList<>();
 
 		parseTechnology(parser, foundTechnologies);
 		return foundTechnologies;

@@ -39,7 +39,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(HeaderFilterInterceptor.class);
 
-	private List<Rule> rules = new ArrayList<Rule>();
+	private List<Rule> rules = new ArrayList<>();
 
 	public HeaderFilterInterceptor() {
 		name = "Header Filter";

@@ -53,7 +53,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String domain;
 
 	// TODO: bind session also to remote IP (for public Membrane release)
-	HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
+	HashMap<String, Session> sessions = new HashMap<>();
 	protected final static String SESSION_ID = "SESSION_ID";
 	protected final static String SESSION = "SESSION";
 
@@ -112,7 +112,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	}
 
     public static class Session {
-		private Map<String, String> userAttributes = new HashMap<String, String>();
+		private Map<String, String> userAttributes = new HashMap<>();
 		private int level = 0;
 		private long lastUse;
 		private String userName;
@@ -134,7 +134,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 		public synchronized void clear() {
 			level = 0;
-			userAttributes = new HashMap<String, String>();
+			userAttributes = new HashMap<>();
 		}
 
 		public synchronized void preAuthorize(String userName, Map<String, String> userAttributes) {
@@ -227,7 +227,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 	public void cleanup() {
 		long death = System.currentTimeMillis() - timeout;
-		List<String> removeUs = new ArrayList<String>();
+		List<String> removeUs = new ArrayList<>();
 		synchronized (sessions) {
 			for (Map.Entry<String, Session> e : sessions.entrySet())
 				if (e.getValue().getLastUse() < death)

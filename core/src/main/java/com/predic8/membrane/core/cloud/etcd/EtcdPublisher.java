@@ -40,8 +40,8 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     private static final Logger log = LoggerFactory.getLogger(EtcdPublisher.class.getName());
 
     private ApplicationContext context;
-    private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
-    private HashSet<EtcdNodeInformation> nodesFromConfig = new HashSet<EtcdNodeInformation>();
+    private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<>();
+    private HashSet<EtcdNodeInformation> nodesFromConfig = new HashSet<>();
     private int ttl;
     private String baseUrl;
     private String baseKey;
@@ -49,13 +49,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     private int retryDelayMin = 10 * 1000;
     private int retryDelayMax = 10 * 60 * 1000;
     private double expDelayFactor = 2.0d;
-    private Job jobPublishToEtcd = new Job() {
-
-        @Override
-        public boolean run() throws Exception {
-            return publishToEtcd();
-        }
-    };
+    private Job jobPublishToEtcd = () -> publishToEtcd();
 
     public String getBaseUrl() {
         return baseUrl;
@@ -63,7 +57,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
     /**
      * @description URL for etcd
-     * @default "http://localhost:4001"
+     * @default "<a href="http://localhost:4001">...</a>"
      */
     @MCAttribute
     public void setBaseUrl(String baseURL) {
@@ -171,7 +165,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
                 }
 
                 if (!modulesToUUIDs.containsKey(node.getModule())) {
-                    modulesToUUIDs.put(node.getModule(), new ArrayList<String>());
+                    modulesToUUIDs.put(node.getModule(), new ArrayList<>());
                 }
                 modulesToUUIDs.get(node.getModule()).add(node.getUuid());
             }

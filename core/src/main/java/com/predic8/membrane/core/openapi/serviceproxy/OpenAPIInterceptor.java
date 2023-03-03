@@ -55,7 +55,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         // No matching API found
         if (basePath == null) {
             // @TODO ProblemDetails
-            Map<String,String> m = new HashMap();
+            Map<String,String> m = new HashMap<>();
             m.put("description","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
             exc.setResponse(ProblemDetails.createProblemDetails(404, "/not-found", "No matching API found!"));
             return RETURN;

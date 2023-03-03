@@ -48,7 +48,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 	}
 
 	public List<ServiceInfo> getServices(Exchange exc) {
-		List<ServiceInfo> result = new ArrayList<ServiceInfo>();
+		List<ServiceInfo> result = new ArrayList<>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (r instanceof AbstractServiceProxy) {
 				ServiceInfo si = getServiceInfo(exc, (AbstractServiceProxy)r);

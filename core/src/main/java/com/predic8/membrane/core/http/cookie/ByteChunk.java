@@ -42,25 +42,25 @@ import java.nio.charset.Charset;
 /**
  * This class is used to represent a chunk of bytes, and
  * utilities to manipulate byte[].
- *
+ * <p>
  * The buffer can be modified and used for both input and output.
- *
+ * <p>
  * There are 2 modes: The chunk can be associated with a sink - ByteInputChannel
  * or ByteOutputChannel, which will be used when the buffer is empty (on input)
  * or filled (on output).
  * For output, it can also grow. This operating mode is selected by calling
  * setLimit() or allocate(initial, limit) with limit != -1.
- *
+ * <p>
  * Various search and append method are defined - similar with String and
  * StringBuffer, but operating on bytes.
- *
+ * <p>
  * This is important because it allows processing the http headers directly on
  * the received bytes, without converting to chars and Strings until the strings
  * are needed. In addition, the charset is determined later, from headers or
  * user code.
- *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author dac@sun.com
  * @author James Todd [gonzo@sun.com]
@@ -72,7 +72,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** Input interface, used when the buffer is empty
-	 *
+	 * <p>
 	 * Same as java.nio.channel.ReadableByteChannel
 	 */
 	public static interface ByteInputChannel {
@@ -251,7 +251,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 	}
 
 	/** Maximum amount of data in this buffer.
-	 *
+	 * <p>
 	 *  If -1 or not set, the buffer will grow indefinitely.
 	 *  Can be smaller than the current buffer size ( which will not shrink ).
 	 *  When the limit is reached, the buffer will be flushed ( if out is set )
@@ -274,7 +274,7 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 	/** When the buffer is full, write the data to the output channel.
 	 *         Also used when large amount of data is appended.
-	 *
+	 * <p>
 	 *  If not set, the buffer will grow to the limit.
 	 */
 	public void setByteOutputChannel(ByteOutputChannel out) {
@@ -851,11 +851,11 @@ public final class ByteChunk implements Cloneable, Serializable {
 		int blen = b.length;
 		int offset = start;
 		while (offset < end) {
-			for (int i = 0;  i < blen; i++) {
-				if (bytes[offset] == b[i]) {
-					return offset;
-				}
-			}
+            for (byte value : b) {
+                if (bytes[offset] == value) {
+                    return offset;
+                }
+            }
 			offset++;
 		}
 		return -1;
@@ -882,12 +882,12 @@ public final class ByteChunk implements Cloneable, Serializable {
 
 		while (offset < end) {
 			found = true;
-			for (int i = 0; i < blen; i++) {
-				if (bytes[offset] == b[i]) {
-					found=false;
-					break;
-				}
-			}
+            for (byte value : b) {
+                if (bytes[offset] == value) {
+                    found = false;
+                    break;
+                }
+            }
 			if (found) {
 				return offset;
 			}

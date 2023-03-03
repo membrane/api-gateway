@@ -36,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,7 +65,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
                 httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
-                .filter(attr -> attr != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -74,7 +75,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
                 "Path=/",
                 domain != null ? "Domain=" + domain + "; " : null
         )
-                .filter(attr -> attr != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

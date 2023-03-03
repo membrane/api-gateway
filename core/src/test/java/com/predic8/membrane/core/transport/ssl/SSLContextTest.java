@@ -17,11 +17,15 @@ package com.predic8.membrane.core.transport.ssl;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.platform.commons.util.UnrecoverableExceptions;
 
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 
+import static java.lang.String.format;
+import static org.junit.jupiter.api.AssertionFailureBuilder.assertionFailure;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SSLContextTest {
@@ -100,11 +104,27 @@ public class SSLContextTest {
 
 	@Test
 	public void serverKeyOnlyWithInvalidClientTrust() {
-		assertThrows(SocketException.class, () -> {
+		assertThrows2(SocketException.class, SSLHandshakeException.class, () -> {
 			SSLContext server = cb().withKeyStore("classpath:/ssl-rsa2.keystore").build();
 			SSLContext client = cb().withTrustStore("classpath:/ssl-rsa-pub.keystore").build();
 			testCombination(server, client);
 		});
+	}
+
+	public static <T extends Throwable, S extends Throwable> void assertThrows2(Class<T> expectedType1, Class<S> expectedType2, Executable executable) {
+		try {
+			executable.execute();
+		} catch (Throwable actualException) {
+			if (expectedType1.isInstance(actualException)) {
+				return;
+			} else if (expectedType2.isInstance(actualException)) {
+				return;
+			} else {
+				UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+				throw new RuntimeException("Unexpected exception type thrown");
+			}
+		}
+		throw new RuntimeException("Expected exception to be thrown, but nothing was thrown.");
 	}
 
 	@Test

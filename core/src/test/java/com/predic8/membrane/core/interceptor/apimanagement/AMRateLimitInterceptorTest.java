@@ -47,28 +47,24 @@ public class AMRateLimitInterceptorTest {
         ApiManagementConfiguration amc = new ApiManagementConfiguration(System.getProperty("user.dir") , "src/test/resources/apimanagement/api.yaml");
         rli.setAmc(amc);
 
-        ArrayList<Thread> threads = new ArrayList<Thread>();
+        ArrayList<Thread> threads = new ArrayList<>();
         final AtomicInteger continues = new AtomicInteger();
         final AtomicInteger returns = new AtomicInteger();
         for(int i = 0; i < 1000; i++)
         {
-            Thread t = new Thread(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        Outcome out = rli.handleRequest(exc);
-                        if(out == Outcome.CONTINUE)
-                        {
-                            continues.incrementAndGet();
-                        }
-                        else if(out == Outcome.RETURN)
-                        {
-                            returns.incrementAndGet();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            Thread t = new Thread(() -> {
+                try {
+                    Outcome out = rli.handleRequest(exc);
+                    if(out == Outcome.CONTINUE)
+                    {
+                        continues.incrementAndGet();
                     }
+                    else if(out == Outcome.RETURN)
+                    {
+                        returns.incrementAndGet();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             });
             threads.add(t);

@@ -55,7 +55,7 @@ public class NodeOnlineChecker {
     private class BadNode {
         private Node node;
         private AtomicInteger failsOn5XX = new AtomicInteger(0);
-        private HashSet<Cluster> nodeClusters = new HashSet<Cluster>();
+        private HashSet<Cluster> nodeClusters = new HashSet<>();
 
         private String protocol;
 
@@ -127,8 +127,8 @@ public class NodeOnlineChecker {
 
     private static Logger log = LoggerFactory.getLogger(NodeOnlineChecker.class.getName());
     LoadBalancingInterceptor lbi;
-    ConcurrentHashMap<String, BadNode> badNodesForDestinations = new ConcurrentHashMap<String, BadNode>();
-    HashSet<BadNode> offlineNodes = new HashSet<BadNode>();
+    ConcurrentHashMap<String, BadNode> badNodesForDestinations = new ConcurrentHashMap<>();
+    HashSet<BadNode> offlineNodes = new HashSet<>();
     private int retryTimeInSeconds = -1;
     private int nodeCounterLimit5XX = 10;
     private int pingTimeoutInSeconds = 1;
@@ -255,7 +255,7 @@ public class NodeOnlineChecker {
     }
 
     private List<BadNode> pingOfflineNodes() {
-        ArrayList<BadNode> onlineNodes = new ArrayList<BadNode>();
+        ArrayList<BadNode> onlineNodes = new ArrayList<>();
 
         for(BadNode node : offlineNodes){
             URL url = null;
@@ -266,9 +266,7 @@ public class NodeOnlineChecker {
             }
             try {
                 Exchange exc = new Request.Builder().get(url.toString()).buildExchange();
-                Optional.ofNullable(node.getSslContext()).ifPresent(c -> {
-                    exc.setProperty(Exchange.SSL_CONTEXT, c);
-                });
+                Optional.ofNullable(node.getSslContext()).ifPresent(c -> exc.setProperty(Exchange.SSL_CONTEXT, c));
                 Exchange e = client.call(exc);
                 if(e.getResponse().getStatusCode() < 400){
                     onlineNodes.add(node);

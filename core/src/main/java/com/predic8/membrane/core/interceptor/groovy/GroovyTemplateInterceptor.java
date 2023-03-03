@@ -43,7 +43,7 @@ import static org.springframework.web.util.HtmlUtils.htmlEscape;
  *   }
  * ]]&gt;&lt;/groovyTemplate&gt;
  * </code>
- *
+ * <p>
  * The word "spring" refers to the Spring ApplicationContext.
  * The word "exc" refers to the Membrane Exchange being handled.
  * The word "flow" refers to the current Membrane Flow (=REQUEST).

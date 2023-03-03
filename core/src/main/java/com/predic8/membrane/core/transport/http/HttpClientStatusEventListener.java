@@ -18,7 +18,7 @@ package com.predic8.membrane.core.transport.http;
  *
  * Implementations are supposed to not block! If they have time-consuming work to do then they shall put that
  * work into a background task/queue to be processed separately, otherwise the end user has to wait for his response.
- *
+ * <p>
  * Implementations are not supposed to throw. If they do, the caller ({@link HttpClientStatusEventBus} catches
  * and logs the Exception, and goes on as if nothing happened.
  *

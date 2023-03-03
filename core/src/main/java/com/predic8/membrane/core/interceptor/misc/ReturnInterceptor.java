@@ -31,12 +31,12 @@ import static java.lang.String.*;
 
 /**
  * @description Terminates the exchange flow. The returned response is determined in the following order:
- *
+ * <p>
  * 1. If there is already a response in the exchange, that response is returned
  * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
- *
+ * <p>
  * The options statusCode and contentType will overwrite the values from the messages.
- *
+ * <p>
  * This plugin is useful together with the template plugin. See examples/template.
  * @topic 4. Interceptors/Features
  */

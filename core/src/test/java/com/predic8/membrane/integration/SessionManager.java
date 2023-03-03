@@ -54,14 +54,14 @@ public class SessionManager {
     private static Object[] jwt() {
         return new Object[]{
                 JwtSessionManager.class.getSimpleName(),
-                (Supplier)() -> new JwtSessionManager()
+                (Supplier) JwtSessionManager::new
         };
     }
 
     private static Object[] inMemory() {
         return new Object[]{
                 InMemorySessionManager.class.getSimpleName(),
-                (Supplier)() -> new InMemorySessionManager()
+                (Supplier) InMemorySessionManager::new
         };
     }
 
@@ -277,7 +277,7 @@ public class SessionManager {
 
                     try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(), ctx)) {
                         long wrongCookies = Arrays.stream(resp.getAllHeaders())
-                                .map(h -> h.toString())
+                                .map(Object::toString)
                                 .filter(h -> h.toLowerCase().contains("cookie"))
                                 .flatMap(h -> Arrays.stream(h.split(";")))
                                 .filter(e -> e.contains("=true"))

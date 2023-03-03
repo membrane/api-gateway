@@ -48,7 +48,7 @@ public class RESTBLZServiceIntegrationTest {
 		router.getTransport().getInterceptors().add(http2xml);
 
 		RewriteInterceptor urlRewriter = new RewriteInterceptor();
-		List<Mapping> mappings = new ArrayList<Mapping>();
+		List<Mapping> mappings = new ArrayList<>();
 		mappings.add( new Mapping("/bank/.*", "/axis2/services/BLZService", null));
 		urlRewriter.setMappings(mappings);
 		router.getTransport().getInterceptors().add(urlRewriter);

@@ -66,7 +66,7 @@ public class IdTokenTokenFlow extends OAuth2Flow {
 
     private JwtGenerator.Claim[] getValidIdTokenClaims(){
         ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),session.getUserAttributes().get(ParamNames.CLAIMS));
-        ArrayList<JwtGenerator.Claim> claims = new ArrayList<JwtGenerator.Claim>();
+        ArrayList<JwtGenerator.Claim> claims = new ArrayList<>();
         if(cp.hasClaims()) {
             for (String claim : cp.getIdTokenClaims())
                 claims.add(new JwtGenerator.Claim(claim,session.getUserAttributes().get(ClaimRenamer.convert(claim))));

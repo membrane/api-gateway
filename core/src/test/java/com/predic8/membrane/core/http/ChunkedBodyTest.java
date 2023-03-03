@@ -74,21 +74,17 @@ public class ChunkedBodyTest {
 
     @Test
     public void testReadTrailer() throws Exception {
-        ServerSocket ss = new ServerSocket(3058);
-        try {
+        try (ServerSocket ss = new ServerSocket(3058)) {
             Thread t = new Thread() {
                 @Override
                 public void run() {
                     try {
-                        Socket s = ss.accept();
-                        try {
+                        try (Socket s = ss.accept()) {
                             URL resource = getResource("chunked-response-with-trailer.txt");
                             String cont = Resources.toString(resource, StandardCharsets.US_ASCII);
                             cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
                             s.getOutputStream().write(cont.getBytes(StandardCharsets.US_ASCII));
                             s.getOutputStream().flush();
-                        } finally {
-                            s.close();
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -104,8 +100,6 @@ public class ChunkedBodyTest {
 
             Header trailer = e.getResponse().getBody().getTrailer();
             assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", trailer.getFirstValue("Expires"));
-        } finally {
-            ss.close();
         }
     }
 
