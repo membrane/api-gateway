@@ -25,8 +25,8 @@ import java.util.TreeMap;
 /**
  * This class implements a String cache for ByteChunk and CharChunk.
  *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author Remy Maucherat
  */

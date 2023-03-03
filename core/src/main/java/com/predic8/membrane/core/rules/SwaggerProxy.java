@@ -90,9 +90,9 @@ public class SwaggerProxy extends ServiceProxy {
 		return swaggerUrl;
 	}
 	/**
-	 * @description The Swagger URL. Preferably ends with 'swagger.json'.
-	 * @example http://petstore.swagger.io/v2/swagger.json
-	 */
+     * @description The Swagger URL. Preferably ends with 'swagger.json'.
+     * @example <a href="http://petstore.swagger.io/v2/swagger.json">...</a>
+     */
 	@Required
 	@MCAttribute
 	public void setUrl(String swaggerUrl) {

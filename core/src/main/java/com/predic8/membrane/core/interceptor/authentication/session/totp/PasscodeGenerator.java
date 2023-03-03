@@ -32,7 +32,7 @@ import javax.crypto.Mac;
  *
  * The default passcode is a 6-digit decimal code. The maximum passcode length is 9 digits.
  *
- * Source: http://code.google.com/p/google-authenticator
+ * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *
  * @author sweis@google.com (Steve Weis)

@@ -665,7 +665,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     /**
      * @description base URL of Elasticsearch
-     * @default http://localhost:9200
+     * @default <a href="http://localhost:9200">...</a>
      */
     @MCAttribute
     public void setLocation(String location) {

@@ -214,7 +214,7 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     /**
      * @description the url to where details are published
-     * @default http://localhost:4001
+     * @default <a href="http://localhost:4001">...</a>
      */
     @MCAttribute
     public void setUrl(String url) {

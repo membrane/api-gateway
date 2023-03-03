@@ -20,8 +20,8 @@ package com.predic8.membrane.core.http.cookie;
 /**
  * Static constants for this package.
  *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author unknown (Tomcat)
  */

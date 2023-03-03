@@ -40,9 +40,9 @@ public class Case extends AbstractXmlElement {
 	}
 
 	/**
-	 * @description Target URL
-	 * @example http://predic8.com/fastorder
-	 */
+     * @description Target URL
+     * @example <a href="http://predic8.com/fastorder">...</a>
+     */
 	@MCAttribute
 	public void setUrl(String url) {
 		this.url = url;

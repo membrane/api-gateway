@@ -224,10 +224,10 @@ public class SSLParser {
 	}
 
 	/**
-	* @description Setting the serverName tells Java to use the SNI (http://www.rfc-base.org/txt/rfc-3546.txt) on outbound
-	*		 TLS connections to indicate to the TLS server, which hostname the client wants to connect to.
-	* @default same as target hostname.
-	 */
+     * @description Setting the serverName tells Java to use the SNI (<a href="http://www.rfc-base.org/txt/rfc-3546.txt">...</a>) on outbound
+     *		 TLS connections to indicate to the TLS server, which hostname the client wants to connect to.
+     * @default same as target hostname.
+     */
 	@MCAttribute
 	public void setServerName(String serverName) {
 		this.serverName = serverName;
