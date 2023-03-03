@@ -22,14 +22,14 @@ import java.util.List;
  * interested in the full XPath grammar: Uninteresting parts are left as
  * "unparsed string nodes" as long as we are able to parse the interesting
  * parts.)
- *
+ * <p>
  * An XPath expression, given as a string, is transformed into a tree of nodes
  * (instances of subclasses of {@link Node}).
- *
+ * <p>
  * We are only interested in strings, comments, round- and
  * square-bracket-expressions. Any other substring of the expression is
  * concatenated into a node of type {@link UnparsedStringNode}.
- *
+ * <p>
  * See the XPath 2.0 spec at <a href="http://www.w3.org/TR/xpath20/">...</a> .
  */
 public class SimpleXPathParser {

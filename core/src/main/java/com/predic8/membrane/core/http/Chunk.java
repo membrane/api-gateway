@@ -23,9 +23,9 @@ import static java.nio.charset.StandardCharsets.*;
 
 /**
  * A chunk of a HTTP message body.
- *
+ * <p>
  * Also see <a href="http://en.wikipedia.org/wiki/Chunked_transfer_encoding">Chunked Transfer Encoding</a> .
- *
+ * <p>
  * Used (independently of whether "Transfer-Encoding: chunked" is actually
  * present) to store the message body's data.
  */

@@ -18,7 +18,7 @@ package com.predic8.membrane.core.http.cookie;
 
 /**
  * This class implements some basic ASCII character handling functions.
- *
+ * <p>
  * Source: <a href="http://tomcat.apache.org/">...</a>
  * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *

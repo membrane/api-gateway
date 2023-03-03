@@ -48,11 +48,11 @@ import com.predic8.membrane.annot.MCTextContent;
 /**
  * A utility class to deeply-clone/serizalize/deserialize {@link MCElement}-annotatated objects
  * (from/to a Spring-based XML configuration file).
- *
+ * <p>
  * The serialization process may fail: This occurs when non-{@link MCElement}-annotated objects are contained
  * in the object tree. This is, for example, the case in the JDBC logging example, where the DataSource is a
  * spring bean *not* created using {@link MCElement} annotations.
- *
+ * <p>
  * In case of a serialization failure, the resuling XML cannot be used to reconstruct the object tree.
  */
 public class MCUtil {

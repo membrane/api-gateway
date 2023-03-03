@@ -32,7 +32,7 @@ import static java.nio.charset.StandardCharsets.*;
  * You might have to run "powershell Set-ExecutionPolicy RemoteSigned" as
  * administrator before using this class.
  * **********************************************************************
- *
+ * <p>
  * Note that ProcessStuff is not synchronized, only ProcessStuff.watchers.
  */
 public class Process2 implements AutoCloseable {

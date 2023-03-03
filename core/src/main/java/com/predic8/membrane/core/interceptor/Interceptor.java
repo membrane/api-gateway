@@ -21,7 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 /**
  * TODO describe in short what an interceptor is.
- *
+ * <p>
  * Interceptor implementations need to be thread safe.
  *
  */
@@ -44,7 +44,7 @@ public interface Interceptor {
 	 * Called when any {@link #handleRequest(Exchange)} or
 	 * {@link #handleResponse(Exchange)} later in the chain returned
 	 * {@link Outcome#ABORT} or threw an exception.
-	 *
+	 * <p>
 	 * handleAbort is called in the reverse order of the chain (as
 	 * handleResponse is).
 	 */

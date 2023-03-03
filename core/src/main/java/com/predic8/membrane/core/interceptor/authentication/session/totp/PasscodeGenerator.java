@@ -29,9 +29,9 @@ import javax.crypto.Mac;
  * An implementation of the HOTP generator specified by RFC 4226. Generates
  * short passcodes that may be used in challenge-response protocols or as
  * timeout passcodes that are only valid for a short period.
- *
+ * <p>
  * The default passcode is a 6-digit decimal code. The maximum passcode length is 9 digits.
- *
+ * <p>
  * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *

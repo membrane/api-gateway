@@ -27,7 +27,7 @@ import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Reads the body with "Transfer-Encoding: chunked".
- *
+ * <p>
  * See {@link ChunkedBodyTransferrer} for writing a body using chunks.
  */
 public class ChunkedBody extends AbstractBody {

@@ -218,7 +218,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     /**
      * @description Maximum string length. For example, <code>{"abcd": "efgh", "ijkl": [ "mnop" ], "qrst": { "uvwx":
      * 1}}</code> has a maximum string length of 4. (In this example, all 6 strings effectively have length 4.)
-     *
+     * <p>
      * The maximum string length also affects keys ("abcd", "ijkl", "qrst" and "uvwx" in the example). The keys can be
      * also limited by the separate property maxKeyLength. The stricter limit applies.
      * @default 262144
@@ -236,7 +236,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @description Maximum key length. For example, <code>{"abcd": "efgh123", "ijkl": [ "mnop123" ], "qrst": { "uvwx":
      * 1}}</code> has a maximum key length of 4. (In this example, all 4 strings used as keys effectively have length
      * 4.)
-     *
+     * <p>
      * The maximum key length also affects strings ("abcd", "ijkl", "qrst" and "uvwx" in the example). The strings can be
      * also limited by the separate property maxStringLength. The stricter limit applies.
      * @default 256

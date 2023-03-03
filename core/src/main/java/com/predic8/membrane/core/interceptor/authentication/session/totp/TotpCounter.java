@@ -36,7 +36,7 @@ package com.predic8.membrane.core.interceptor.authentication.session.totp;
  * <p><em>Note: All time instants must be non-negative.</em>
  *
  * <p>Thread-safety: Instances of this class are immutable and are thus thread-safe.
- *
+ * <p>
  * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *

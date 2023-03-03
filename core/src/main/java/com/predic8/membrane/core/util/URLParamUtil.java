@@ -75,13 +75,13 @@ public class URLParamUtil {
 
 	/**
 	 * Parse a URL query into parameter pairs. The query is expected to be application/x-www-form-urlencoded .
-	 *
+	 * <p>
 	 * Note that this method does not really support multiple parameters with the same key. <b>This method should
 	 * therefore only be used in contexts where this is not an issue.</b>
-	 *
+	 * <p>
 	 * Background:
 	 * Note that according to the original RFC 3986 Section 3.4, there is no defined format of the query string.
-	 *
+	 * <p>
 	 * HTML5 defines in <a href="https://html.spec.whatwg.org/#form-submission">form-submission</a> how HTML forms should be serialized.
 	 * The URLSearchParams class behaviour is defined in <a href="https://url.spec.whatwg.org/#concept-urlsearchparams-list">URLSearchParams</a>
 	 * where handling of parameters with the same key is supported.

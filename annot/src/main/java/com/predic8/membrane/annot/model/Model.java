@@ -20,7 +20,7 @@ import com.predic8.membrane.annot.MCMain;
 
 /**
  * Keeps track of all information during one (or several incremental) compiler runs.
- *
+ * <p>
  * Collects all {@link MCMain}s found.
  */
 public class Model {

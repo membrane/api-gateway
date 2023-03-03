@@ -46,13 +46,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @description
  * Check GraphQL-over-HTTP requests, enforcing several limits and/or restrictions. This effectively helps to reduce
  * the attack surface.
- *
+ * <p>
  * GraphQL Specification "October2021" is used. (But GraphQL only covers formulation of Documents/Queries.)
- *
+ * <p>
  * GraphQL-over-HTTP, which specifies how to submit GraphQL queries via HTTP, has not been released/finalized yet. We
  * therefore use Version
  * <a href="https://github.com/graphql/graphql-over-http/blob/a1e6d8ca248c9a19eb59a2eedd988c204909ee3f/spec/GraphQLOverHTTP.md">a1e6d8ca</a>.
- *
+ * <p>
  * Only GraphQL documents conforming to the 'ExecutableDocument' of the grammar are allowed: This includes the usual
  * 'query', 'mutation', 'subscription' and 'fragment's.
  */

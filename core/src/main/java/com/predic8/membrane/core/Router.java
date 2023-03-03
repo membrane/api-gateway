@@ -201,7 +201,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	/**
 	 * Closes all ports (if any were opened) and waits for running exchanges to complete.
-	 *
+	 * <p>
 	 * When running as an embedded servlet, this has no effect.
 	 */
 	public void shutdown() throws IOException {
