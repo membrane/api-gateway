@@ -52,7 +52,6 @@ public class TemplateInterceptorTest {
     static Path copiedJson;
     static Router router;
     static ResolverMap map;
-    static final String separator = FileSystems.getDefault().getSeparator();
 
     @Test
     void accessJson() throws Exception {
@@ -126,15 +125,11 @@ B: <%= params.b %>
     @BeforeAll
     public static void setupFiles() throws IOException {
         //user.dir returns current working directory
-        copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir") +
-                separator + "project_template.xml") );
-        copyFiles(Paths.get("src/test/resources/json/template_test.json"), Paths.get(System.getProperty("user.dir") +
-                separator + "template_test.json"));
+        copyFiles(Paths.get("src/test/resources/xml/project_template.xml"),Paths.get(System.getProperty("user.dir"), "project_template.xml") );
+        copyFiles(Paths.get("src/test/resources/json/template_test.json"), Paths.get(System.getProperty("user.dir"), "template_test.json"));
         
-        copiedXml = Paths.get(System.getProperty("user.dir") +
-                separator + "project_template.xml");
-        copiedJson = Paths.get(System.getProperty("user.dir") +
-                separator + "template_test.json");
+        copiedXml = Paths.get(System.getProperty("user.dir"), "project_template.xml");
+        copiedJson = Paths.get(System.getProperty("user.dir"), "template_test.json");
         router = Mockito.mock(Router.class);
         map = new ResolverMap();
         Mockito.when(router.getResolverMap()).thenReturn(map);
