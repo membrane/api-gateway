@@ -49,7 +49,7 @@ import java.util.stream.Stream;
  * To create the CustomResourceDefinitions, apply kubernetes-config.yaml from
  * core/target/classes/com/predic8/membrane/core/config/kubernetes/ or a part (e.g. the 'serviceproxies' CRD) of the file.
  *
- * Create a key and certificate for TLS for https://membrane-validator.membrane-soa.svc:444/ and setup Membrane to serve
+ * Create a key and certificate for TLS for <a href="https://membrane-validator.membrane-soa.svc:444/">...</a> and setup Membrane to serve
  * this address. The configuration shown below configures Membrane on a fixed IP address outside of the Kubernetes cluster,
  * but this is no requirement.
  *

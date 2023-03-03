@@ -63,7 +63,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
     /**
      * @description URL for etcd
-     * @default "http://localhost:4001"
+     * @default "<a href="http://localhost:4001">...</a>"
      */
     @MCAttribute
     public void setBaseUrl(String baseURL) {

@@ -29,7 +29,7 @@ import java.util.Locale;
  * decode to the same byte array.
  * TOD O(sarvar): Revisit this encoding and whether this ambiguity needs fixing.
  *
- * Source: http://code.google.com/p/google-authenticator
+ * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *
  * @author sweis@google.com (Steve Weis)

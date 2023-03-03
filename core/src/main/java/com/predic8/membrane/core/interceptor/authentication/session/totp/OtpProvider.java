@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  * Class containing implementation of HOTP/TOTP. Generates OTP codes for one or
  * more accounts.
  *
- * Source: http://code.google.com/p/google-authenticator
+ * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *
  * @author Steve Weis (sweis@google.com)

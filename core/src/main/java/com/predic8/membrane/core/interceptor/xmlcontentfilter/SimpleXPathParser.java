@@ -30,7 +30,7 @@ import java.util.List;
  * square-bracket-expressions. Any other substring of the expression is
  * concatenated into a node of type {@link UnparsedStringNode}.
  *
- * See the XPath 2.0 spec at http://www.w3.org/TR/xpath20/ .
+ * See the XPath 2.0 spec at <a href="http://www.w3.org/TR/xpath20/">...</a> .
  */
 public class SimpleXPathParser {
 	/**
@@ -153,16 +153,16 @@ public class SimpleXPathParser {
 	}
 
 	/**
-	 * Parses an XPath Expression (production "XPath" of the EBNF grammar of
-	 * http://www.w3.org/TR/xpath20/#nt-bnf ).
-	 *
-	 * @param m
-	 *            the XPath expression and the position of the first character
-	 * @param terminator
-	 *            if -1, the end of the string terminates the XPath expression
-	 *            to parse. If != -1, a Unicode code point of "terminator"
-	 *            terminates the XPath expression to parse.
-	 */
+     * Parses an XPath Expression (production "XPath" of the EBNF grammar of
+     * <a href="http://www.w3.org/TR/xpath20/#nt-bnf">...</a> ).
+     *
+     * @param m
+     *            the XPath expression and the position of the first character
+     * @param terminator
+     *            if -1, the end of the string terminates the XPath expression
+     *            to parse. If != -1, a Unicode code point of "terminator"
+     *            terminates the XPath expression to parse.
+     */
 	private ContainerNode parseNormal(final Marker m, int terminator) {
 		StringBuilder sb2 = new StringBuilder();
 		List<Node> result = new ArrayList<Node>();
@@ -211,12 +211,12 @@ public class SimpleXPathParser {
 	}
 
 	/**
-	 * Parses a comment (production "Comment" of the EBNF grammar of
-	 * http://www.w3.org/TR/xpath20/#terminal-symbols ).
-	 *
-	 * @param m
-	 *            the XPath expression and the position of the first character
-	 */
+     * Parses a comment (production "Comment" of the EBNF grammar of
+     * <a href="http://www.w3.org/TR/xpath20/#terminal-symbols">...</a> ).
+     *
+     * @param m
+     *            the XPath expression and the position of the first character
+     */
 	private Node parseComment(final Marker m) {
 		int comment_start = m.p += 2;
 		int depth = 1;
@@ -244,14 +244,14 @@ public class SimpleXPathParser {
 	}
 
 	/**
-	 * Parses a String (production "StringLiteral" of the EBNF grammar of
-	 * http://www.w3.org/TR/xpath20/#terminal-symbols ).
-	 *
-	 * @param m
-	 *            the XPath expression and the position of the first character
-	 * @param terminator
-	 *            the character terminating the string ('"' or '\'')
-	 */
+     * Parses a String (production "StringLiteral" of the EBNF grammar of
+     * <a href="http://www.w3.org/TR/xpath20/#terminal-symbols">...</a> ).
+     *
+     * @param m
+     *            the XPath expression and the position of the first character
+     * @param terminator
+     *            the character terminating the string ('"' or '\'')
+     */
 	private StringNode parseString(final Marker m, int terminator) {
 		StringBuilder sb = new StringBuilder();
 		while (true) {

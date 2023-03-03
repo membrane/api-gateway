@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
  * This class is not synchronized.
  *
  *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author Costin Manolache
  * @author kevin seguin

@@ -93,9 +93,9 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	}
 
 	/**
-	 * @description URL for etcd
-	 * @default "http://localhost:4001"
-	 */
+     * @description URL for etcd
+     * @default "<a href="http://localhost:4001">...</a>"
+     */
 	@MCAttribute
 	public void setBaseUrl(String baseURL) {
 		this.baseUrl = baseURL;

@@ -274,7 +274,7 @@ public class SimpleXPathAnalyzer {
 	}
 
 
-	/** See http://www.w3.org/TR/REC-xml/#NT-NameChar . */
+	/** See <a href="http://www.w3.org/TR/REC-xml/#NT-NameChar">...</a> . */
 	private boolean isNameChar(int c) {
 		return c == ':' ||
 				(c >= 'A' && c <= 'Z') ||

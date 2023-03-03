@@ -100,7 +100,7 @@ public class XMLContentFilter {
 	 *
 	 * This only works if the XPath expression is simple enough. (The XPath
 	 * expression must be a UnionExpr consisting of PathExprs, which start with
-	 * "//foo", optionally followed by "[namespace-uri()='http://bar/']").
+	 * "//foo", optionally followed by "[namespace-uri()='<a href="http://bar/">...</a>']").
 	 *
 	 * @return the xmlElementFinder as described above, or null if the XPath
 	 *         expression is too complex.

@@ -37,7 +37,7 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 /**
  * Manages multiple {@link SSLContext}s using the same port. This is only possible when using SSL with
- * "Server Name Indication", see http://en.wikipedia.org/wiki/Server_Name_Indication .
+ * "Server Name Indication", see <a href="http://en.wikipedia.org/wiki/Server_Name_Indication">...</a> .
  *
  * This requires Java 8.
  */

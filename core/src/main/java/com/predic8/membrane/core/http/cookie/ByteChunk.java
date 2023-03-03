@@ -59,8 +59,8 @@ import java.nio.charset.Charset;
  * are needed. In addition, the charset is determined later, from headers or
  * user code.
  *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author dac@sun.com
  * @author James Todd [gonzo@sun.com]

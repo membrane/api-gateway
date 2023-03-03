@@ -36,8 +36,8 @@ import static com.predic8.membrane.core.http.cookie.CookieSupport.*;
  * Tomcat.core uses this recyclable object to represent cookies,
  * and the facade will convert it to the external representation.
  *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author unknown (Tomcat)
  */
