@@ -146,10 +146,8 @@ public class SSLContextCollection implements SSLProvider {
 				byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
 						2 /* fatal */, 112 /* unrecognized_name */ };
 
-				try {
+				try (socket) {
 					socket.getOutputStream().write(alert_unrecognized_name);
-				} finally {
-					socket.close();
 				}
 
 				StringBuilder hostname = null;

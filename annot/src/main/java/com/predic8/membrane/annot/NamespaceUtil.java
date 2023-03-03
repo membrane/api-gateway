@@ -65,12 +65,9 @@ public class NamespaceUtil {
 			while (resources.hasMoreElements()) {
 				URL url = resources.nextElement();
 				Properties p = new Properties();
-				InputStream s = url.openStream();
-				try {
-					p.load(s);
-				} finally {
-					s.close();
-				}
+                try (InputStream s = url.openStream()) {
+                    p.load(s);
+                }
 
 				int i = 1;
 				while (true) {

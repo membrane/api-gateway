@@ -383,10 +383,8 @@ public class SSLProxy implements Rule {
                 byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
                         2 /* fatal */, error };
 
-                try {
+                try (socket) {
                     socket.getOutputStream().write(alert_unrecognized_name);
-                } finally {
-                    socket.close();
                 }
 
                 throw new SocketException("not continuing");

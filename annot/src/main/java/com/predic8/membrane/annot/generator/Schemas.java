@@ -52,12 +52,9 @@ public class Schemas {
 
 				FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
 						main.getAnnotation().outputPackage(), main.getAnnotation().outputName(), sources.toArray(new Element[0]));
-				BufferedWriter bw = new BufferedWriter(o.openWriter());
-				try {
-					assembleXSD(bw, m, main);
-				} finally {
-					bw.close();
-				}
+                try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
+                    assembleXSD(bw, m, main);
+                }
 			}
 		} catch (FilerException e) {
 			if (e.getMessage().contains("Source file already created"))
