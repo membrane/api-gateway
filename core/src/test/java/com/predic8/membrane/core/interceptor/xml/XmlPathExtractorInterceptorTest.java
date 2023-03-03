@@ -111,8 +111,8 @@ public class XmlPathExtractorInterceptorTest {
         xpe.getMappings().add(new XmlPathExtractorInterceptor.Property("/project/part[2]/item", "items"));
         xpe.handleRequest(exc);
 
-        assertEquals("25", ((List)exc.getProperty("items")).get(1));
-        assertEquals("value value", ((List)exc.getProperty("items")).get(3));
+        assertEquals("25", ((List<?>)exc.getProperty("items")).get(1));
+        assertEquals("value value", ((List<?>)exc.getProperty("items")).get(3));
 
     }
 

@@ -186,7 +186,7 @@ public class SessionInterceptorTest {
     }
 
     public String getCookieKey(Map cookie){
-        String raw = ((Map)cookie.get("request")).get("Cookie").toString();
+        String raw = ((Map<?, ?>)cookie.get("request")).get("Cookie").toString();
         return raw.split("=")[0];
     }
 

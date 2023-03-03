@@ -115,7 +115,7 @@ public class KubernetesClientTest {
 
         Map secret = kc.read("v1", "Secret", "default", "existent");
 
-        assertEquals(((Map)secret.get("data")).get("key"), Base64.getEncoder().encodeToString("value".getBytes(UTF_8)));
+        assertEquals(((Map<?, ?>)secret.get("data")).get("key"), Base64.getEncoder().encodeToString("value".getBytes(UTF_8)));
     }
 
     @Test
