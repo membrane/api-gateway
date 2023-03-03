@@ -256,13 +256,10 @@ public class SessionInterceptorTest {
         Map result;
         HttpGet httpGet = new HttpGet("http://localhost:3001");
         try {
-            CloseableHttpResponse response = httpClient.execute(httpGet);
-            try {
+            try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
                 String body = IOUtils.toString(response.getEntity().getContent());
-                result = new ObjectMapper().readValue(body,Map.class);
+                result = new ObjectMapper().readValue(body, Map.class);
                 EntityUtils.consume(response.getEntity());
-            } finally {
-                response.close();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
