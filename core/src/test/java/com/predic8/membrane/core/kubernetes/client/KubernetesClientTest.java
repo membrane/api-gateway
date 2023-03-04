@@ -75,17 +75,18 @@ public class KubernetesClientTest {
                 }
                 if ("/version".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok()
-                            .body("{\n" +
-                                    "  \"major\": \"1\",\n" +
-                                    "  \"minor\": \"23\",\n" +
-                                    "  \"gitVersion\": \"v1.23.7\",\n" +
-                                    "  \"gitCommit\": \"42c05a547468804b2053ecf60a3bd15560362fc2\",\n" +
-                                    "  \"gitTreeState\": \"clean\",\n" +
-                                    "  \"buildDate\": \"2022-05-24T12:24:41Z\",\n" +
-                                    "  \"goVersion\": \"go1.17.10\",\n" +
-                                    "  \"compiler\": \"gc\",\n" +
-                                    "  \"platform\": \"linux/amd64\"\n" +
-                                    "}")
+                            .body("""
+                                    {
+                                      "major": "1",
+                                      "minor": "23",
+                                      "gitVersion": "v1.23.7",
+                                      "gitCommit": "42c05a547468804b2053ecf60a3bd15560362fc2",
+                                      "gitTreeState": "clean",
+                                      "buildDate": "2022-05-24T12:24:41Z",
+                                      "goVersion": "go1.17.10",
+                                      "compiler": "gc",
+                                      "platform": "linux/amd64"
+                                    }""")
                                     .contentType(APPLICATION_JSON).build());
                 }
                 return RETURN;

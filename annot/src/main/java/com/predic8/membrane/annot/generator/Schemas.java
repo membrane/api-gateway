@@ -101,8 +101,10 @@ public class Schemas {
 			w.append("<xsd:element name=\""+ i.getAnnotation().name() +"\">\r\n");
 			assembleDocumentation(w, i);
 			w.append("<xsd:complexType>\r\n");
-			footer = "</xsd:complexType>\r\n" +
-					"</xsd:element>\r\n";
+			footer = """
+					</xsd:complexType>\r
+					</xsd:element>\r
+					""";
 		} else {
 			w.append("<xsd:complexType name=\""+ i.getXSDTypeName(m) +"\">\r\n");
 			footer = "</xsd:complexType>\r\n";
@@ -118,8 +120,10 @@ public class Schemas {
 		}
 		assembleElementInfo(w, m, main, i);
 
-		w.append("</xsd:extension>\r\n" +
-				"</xsd:complexContent>\r\n");
+		w.append("""
+				</xsd:extension>\r
+				</xsd:complexContent>\r
+				""");
 		w.append(footer);
 	}
 
