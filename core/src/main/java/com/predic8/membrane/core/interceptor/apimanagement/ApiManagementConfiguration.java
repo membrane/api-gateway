@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.apimanagement;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.predic8.membrane.core.cloud.etcd.EtcdRequest;
 import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
@@ -264,8 +265,7 @@ public class ApiManagementConfiguration {
         YAMLMapper mapper = new YAMLMapper();
         Map<String,Object> yaml = null;
         try {
-
-            yaml = mapper.readValue(yamlSource, Map.class);
+            yaml = mapper.readValue(yamlSource, new TypeReference<>() {});
         } catch (IOException e) {
             log.warn("Could not parse yaml");
             return;

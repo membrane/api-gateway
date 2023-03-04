@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -144,7 +145,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private void parseSrc(InputStream resolve) throws IOException {
         String file = IOUtils.toString(resolve);
         ObjectMapper mapper = new ObjectMapper();
-        Map<String,Object> json = mapper.readValue(file,Map.class);
+        Map<String,Object> json = mapper.readValue(file, new TypeReference<>() {});
 
         // without checks
         tokenEndpoint = (String) json.get("token_endpoint");

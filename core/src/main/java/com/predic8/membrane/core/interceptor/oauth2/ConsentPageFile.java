@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -57,7 +58,7 @@ public class ConsentPageFile {
     }
 
     private void parseJson(String consentPageFile) throws IOException {
-        json = new ObjectMapper().readValue(consentPageFile, Map.class);
+        json = new ObjectMapper().readValue(consentPageFile, new TypeReference<>() {});
     }
 
     private void parseProductAndLogo() {

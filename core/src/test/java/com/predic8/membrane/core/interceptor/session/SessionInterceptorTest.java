@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.session;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.HttpRouter;
@@ -249,12 +250,12 @@ public class SessionInterceptorTest {
     }
 
     private Map<String,Object> sendRequest() {
-        Map result;
+        Map<String, Object> result;
         HttpGet httpGet = new HttpGet("http://localhost:3001");
         try {
             try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
                 String body = IOUtils.toString(response.getEntity().getContent());
-                result = new ObjectMapper().readValue(body, Map.class);
+                result = new ObjectMapper().readValue(body, new TypeReference<>() {});
                 EntityUtils.consume(response.getEntity());
             }
         } catch (Exception e) {
