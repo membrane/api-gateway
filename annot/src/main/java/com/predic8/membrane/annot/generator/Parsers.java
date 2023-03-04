@@ -88,9 +88,10 @@ public class Parsers {
                         }
                     }
                     bw.write(
-                            "	}\r\n" +
-                                    "}\r\n" +
-                                    "");
+                            """
+                                    	}\r
+                                    }\r
+                                    """);
                 }
 			} catch (FilerException e) {
 				if (e.getMessage().contains("Source file already created"))
@@ -144,8 +145,10 @@ public class Parsers {
                                         "	protected Class<?> getBeanClass(org.w3c.dom.Element element) {\r\n" +
                                         "		return " + interceptorClassName + ".class;\r\n" +
                                         "	}\r\n");
-                        bw.write("	@Override\r\n" +
-                                "	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
+                        bw.write("""
+                                	@Override\r
+                                	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r
+                                """);
                         if (ii.isHasIdField())
                             bw.write("		setPropertyIfSet(\"id\", element, builder);\r\n");
                         bw.write(
@@ -184,8 +187,10 @@ public class Parsers {
                                         "");
 
                         bw.write(
-                                "@Override\r\n" +
-                                        "protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {\r\n");
+                                """
+                                        @Override\r
+                                        protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {\r
+                                        """);
                         for (ChildElementInfo cei : ii.getCeis()) {
                             bw.write(
                                     "	if (" + cei.getTypeDeclaration().getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n" +
@@ -193,9 +198,11 @@ public class Parsers {
                                             "	} else \r\n");
                         }
                         bw.write(
-                                "	{\r\n" +
-                                        "		throw new RuntimeException(\"Unknown child class \\\"\" + clazz + \"\\\".\");\r\n" +
-                                        "	}\r\n");
+                                """
+                                        	{\r
+                                        		throw new RuntimeException("Unknown child class \\"" + clazz + "\\".");\r
+                                        	}\r
+                                        """);
                         bw.write(
                                 "}\r\n");
 
