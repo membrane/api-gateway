@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -92,7 +93,7 @@ public class Jwks {
         public String getJwk(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper) throws IOException {
             String maybeJwk = get(resolverMap, baseLocation);
 
-            Map<String,Object> mapped = mapper.readValue(maybeJwk,Map.class);
+            Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
 
             if(mapped.containsKey("keys"))
                 return handleJwks(mapper, mapped);
