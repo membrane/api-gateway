@@ -19,6 +19,7 @@ package com.predic8.membrane.core.util;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.nio.file.Path;
 
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,6 +45,7 @@ public class FileUtilTest {
     }
 
     private String getTmpFilename() {
-        return System.getProperty("java.io.tmpdir") + "test.tmp";
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        return Path.of(tmpDir, "test.tmp").toString();
     }
 }
