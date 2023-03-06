@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.cbr;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.SynchronizedXPathFactory.newXPath;
 
 import java.io.StringWriter;
@@ -43,7 +44,7 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="switch")
 public class XPathCBRInterceptor extends AbstractInterceptor {
-	private static Logger log = LoggerFactory.getLogger(XPathCBRInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(XPathCBRInterceptor.class.getName());
 
 	private List<Case> cases = new ArrayList<>();
 	private Map<String, String> namespaces;
@@ -55,17 +56,17 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().isBodyEmpty()) {
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		Case r = findRoute(exc.getRequest());
 		if (r == null) {
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 		log.debug("match found for {"+r.getXPath()+"} routing to {"+ r.getUrl() + "}");
 
 		updateDestination(exc, r);
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void updateDestination(Exchange exc, Case r) {
@@ -137,7 +138,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 			end();
 			end();
 		}};
-		sb.append(sw.toString());
+		sb.append(sw);
 		return sb.toString();
 	}
 

@@ -39,8 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description
@@ -157,12 +157,13 @@ import java.util.stream.Stream;
  * </code>
  *
  */
+@SuppressWarnings({"JavadocLinkAsPlainText", "JavadocBlankLines"})
 @MCElement(name="kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private ResolverMap resourceResolver;
     private List<String> resources;
-    private ConcurrentMap<String, IValidator> validators = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, IValidator> validators = new ConcurrentHashMap<>();
     private List<String> namespaces = ImmutableList.of("membrane-soa");
 
     @Override
@@ -174,7 +175,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (exc.getRequest().isBodyEmpty())
-            return Outcome.CONTINUE;
+            return CONTINUE;
 
         ObjectMapper mapper = new ObjectMapper();
         AdmissionReview review = mapper.readValue(new BufferedReader(new InputStreamReader(
@@ -195,7 +196,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         }
         setExchangeResponse(exc, mapper, review);
 
-        return Outcome.RETURN;
+        return RETURN;
     }
 
 

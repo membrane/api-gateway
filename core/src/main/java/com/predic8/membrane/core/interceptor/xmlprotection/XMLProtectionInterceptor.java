@@ -22,6 +22,7 @@ import org.slf4j.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -49,23 +50,23 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 		if (exc.getRequest().isBodyEmpty()) {
 			log.info("body is empty -> request is not scanned by xmlProtection");
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		if (!exc.getRequest().isXML()) {
 			log.warn("request discarded by xmlProtection, because it's Content-Type header did not indicate that it is actually XML.");
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		if (!protectXML(exc)) {
 			log.warn("request discarded by xmlProtection, because it is not wellformed or exceeds limits");
 			setFailResponse(exc);
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		log.debug("protected against XML attacks");
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void setFailResponse(Exchange exc) {

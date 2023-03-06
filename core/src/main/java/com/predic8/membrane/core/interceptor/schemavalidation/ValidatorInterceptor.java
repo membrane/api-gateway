@@ -31,6 +31,8 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.TextUtil;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
  * {@link JSONValidator} and {@link SchematronValidator} depending on the
@@ -39,7 +41,7 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
-	private static Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
 
 	private String wsdl;
 	private String schema;
@@ -104,7 +106,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().isBodyEmpty())
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		return validator.validateMessage(exc, exc.getRequest(), "request");
 	}
@@ -112,7 +114,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		if (exc.getResponse().isBodyEmpty())
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		return validator.validateMessage(exc, exc.getResponse(), "response");
 	}
@@ -237,11 +239,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		return sb.toString();
 	}
 
-	public static interface FailureHandler {
-		public static final FailureHandler VOID = (message, exc) -> {
-        };
+	public interface FailureHandler {
+		FailureHandler VOID = (message, exc) -> {};
 
-			void handleFailure(String message, Exchange exc);
+		void handleFailure(String message, Exchange exc);
 	}
 
 	private FailureHandler createFailureHandler() {

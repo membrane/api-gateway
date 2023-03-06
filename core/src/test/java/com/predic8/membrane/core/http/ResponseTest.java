@@ -15,22 +15,19 @@
 
 package com.predic8.membrane.core.http;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.params.provider.Arguments.*;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.stream.*;
-
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
-
-import com.predic8.membrane.core.util.EndOfStreamException;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
+
+import java.io.*;
+import java.util.stream.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.util.TestUTtil2.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.*;
 
 public class ResponseTest {
 
@@ -52,9 +49,9 @@ public class ResponseTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        in1 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-unchunked-html.msg");
-        in2 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-unchunked-image.msg");
-        in3 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-chunked-html.msg");
+        in1 = getResourceAsStream(this,"response-unchunked-html.msg");
+        in2 = getResourceAsStream(this,"response-unchunked-image.msg");
+        in3 = getResourceAsStream(this,"response-chunked-html.msg");
 
         res1 = new Response();
         res2 = new Response();
@@ -198,14 +195,13 @@ public class ResponseTest {
     }
 
     @Test
-    public void testWithNoContentLength() throws Exception {
-        InputStream in = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-no-content-length.txt");
-        res3.read(in, true);
+    void testWithNoContentLength() throws Exception {
+        res3.read(getResourceAsStream(this,"response-no-content-length.txt"), true);
         assertEquals(185, res3.getBody().getLength());
     }
 
     @Test
-    public void isEmpty() throws IOException {
+    void isEmpty() throws IOException {
         assertTrue(ok().build().isBodyEmpty());
     }
 
@@ -255,7 +251,6 @@ public class ResponseTest {
     void redirectTest() {
         assertTrue(Response.redirect("https://predic8.de/foo", false).build().getBodyAsStringDecoded().contains("""
                 <a href="https://predic8.de/foo">https://predic8.de/foo</a>"""));
-
     }
 
     @Test
@@ -279,4 +274,38 @@ public class ResponseTest {
         System.out.println("res = " + res);
 
     }
+
+    @Test
+    void readResponseWithBodyContent() throws IOException, EndOfStreamException {
+        Response res = Response.noContent().build();
+        res.read(getResourceAsStream(this,"response-no-content-length.txt"),true);
+        assertFalse(res.isBodyEmpty());
+        assertTrue(res.getBody() instanceof Body);
+    }
+
+    @Test
+    void readResponseWithBodyContentChunked() throws IOException, EndOfStreamException {
+        Response res = Response.noContent().build();
+        res.read(getResourceAsStream(this,"response-chunked.txt"),true);
+        assertFalse(res.isBodyEmpty());
+        assertTrue(res.getBody() instanceof ChunkedBody);
+    }
+
+    @Test
+    void readResponseNoBodyContent204() throws IOException, EndOfStreamException {
+        Response res = new Response();
+        res.read(getResourceAsStream(this,"response-no-content.http"),true);
+        assertTrue(res.isBodyEmpty());
+        assertTrue(res.getBody() instanceof EmptyBody);
+    }
+
+    @Test
+    void readResponseNoBodyContent205() throws IOException, EndOfStreamException {
+        Response res = new Response();
+        res.read(getResourceAsStream(this,"response-205-reset.http"),true);
+        assertTrue(res.isBodyEmpty());
+        assertTrue(res.getBody() instanceof EmptyBody);
+    }
+
+
 }

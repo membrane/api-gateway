@@ -110,7 +110,6 @@ public class Request extends Message {
 		if (!protocol.startsWith("HTTP/"))
 			throw new RuntimeException("Unknown protocol '" + protocol + "'");
 		this.version = protocol.substring(5);
-
 		this.header = header;
 
 		createBody(in);
@@ -120,19 +119,6 @@ public class Request extends Message {
 	@Override
 	public String getStartLine() {
 		return method + " " + uri + " HTTP/" + version + CRLF;
-	}
-
-	@Override
-	protected void createBody(InputStream in) throws IOException {
-		log.debug("createBody");
-
-		if (isBodyEmpty()) {
-			log.debug("empty body created");
-			body = new EmptyBody();
-			return;
-		}
-
-		super.createBody(in);
 	}
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -166,7 +152,7 @@ public class Request extends Message {
 	}
 
 	@Override
-	public boolean isBodyEmpty() throws IOException {
+	public boolean shouldNotContainBody() {
 		if (methodsWithoutBody.contains(method))
 			return true;
 
@@ -174,13 +160,10 @@ public class Request extends Message {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
 
-			if (getBody() instanceof ChunkedBody) {
-				return false;
-			}
-			return true;
+			return !(getBody() instanceof ChunkedBody);
 		}
 
-		return super.isBodyEmpty();
+		return false;
 	}
 
 	/**

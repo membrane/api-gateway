@@ -155,6 +155,13 @@ public abstract class Message {
 
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
+
+		if (shouldNotContainBody()) {
+			log.debug("empty body created");
+			body = new EmptyBody();
+			return;
+		}
+
 		if (isHTTP10()) {
 			body = new Body(in, header.getContentLength());
 			return;
@@ -169,7 +176,6 @@ public abstract class Message {
 			body = new Body(in, header.getContentLength());
 			return;
 		}
-
 
 		if (log.isDebugEnabled()) {
 			log.error("Message has no content length: " + toString());
@@ -291,8 +297,10 @@ public abstract class Message {
 		if (getBody().read)
 			return getBody().getLength() == 0;
 		
-		return false;
+		return getBody() instanceof EmptyBody;
 	}
+
+	public abstract boolean shouldNotContainBody();
 
 	public boolean isImage() {
 		if (header.getContentType() == null)

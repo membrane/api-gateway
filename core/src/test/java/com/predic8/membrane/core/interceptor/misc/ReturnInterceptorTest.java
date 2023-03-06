@@ -27,42 +27,49 @@ public class ReturnInterceptorTest {
 
     ReturnInterceptor interceptor;
 
-    Exchange exc;
+    Exchange post;
+    Exchange get;
 
     Response response;
 
     @BeforeEach
     void setUp() throws URISyntaxException {
         interceptor = new ReturnInterceptor();
-        exc = new Request.Builder().get("/shop").contentType(APPLICATION_JSON).buildExchange();
+        post = Request.post("/shop").contentType(APPLICATION_JSON).buildExchange();
+        get = Request.get("/foo").buildExchange();
         response = Response.ok().contentType(TEXT_PLAIN).body("Message").build();
     }
 
     @Test
     void getRequestNoResponse() throws Exception {
-        interceptor.handleRequest(exc);
-        assertEquals(200,exc.getResponse().getStatusCode());
-        assertEquals(APPLICATION_JSON,exc.getResponse().getHeader().getContentType());
-        System.out.println("exc = " + exc);
-        System.out.println("excgetResponse = " + exc.getResponse());
+        interceptor.handleRequest(post);
+        assertEquals(200, post.getResponse().getStatusCode());
+        assertEquals(APPLICATION_JSON, post.getResponse().getHeader().getContentType());
     }
 
     @Test
     void getRequestResponse() throws Exception {
-        exc.setResponse(response);
-        interceptor.handleRequest(exc);
-        assertEquals(200,exc.getResponse().getStatusCode());
-        assertEquals(TEXT_PLAIN,exc.getResponse().getHeader().getContentType());
-        assertEquals("Message",exc.getResponse().getBodyAsStringDecoded());
+        post.setResponse(response);
+        interceptor.handleRequest(post);
+        assertEquals(200, post.getResponse().getStatusCode());
+        assertEquals(TEXT_PLAIN, post.getResponse().getHeader().getContentType());
+        assertEquals("Message", post.getResponse().getBodyAsStringDecoded());
     }
 
     @Test
     void overwrite() throws Exception {
-        exc.setResponse(response);
+        post.setResponse(response);
         interceptor.setContentType(TEXT_XML);
         interceptor.setStatusCode(415);
-        interceptor.handleRequest(exc);
-        assertEquals(415,exc.getResponse().getStatusCode());
-        assertEquals(TEXT_XML,exc.getResponse().getHeader().getContentType());
+        interceptor.handleRequest(post);
+        assertEquals(415, post.getResponse().getStatusCode());
+        assertEquals(TEXT_XML, post.getResponse().getHeader().getContentType());
+    }
+
+    @Test
+    void getRequestNoContentToReturn() throws Exception {
+        interceptor.handleRequest(get);
+        assertNull(get.getResponse().getHeader().getContentType());
+        assertEquals(0,get.getResponse().getHeader().getContentLength());
     }
 }

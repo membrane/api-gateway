@@ -76,18 +76,29 @@ public class ReturnInterceptor extends AbstractInterceptor {
     private Response getResponse(Exchange exc) throws IOException {
         Response response = exc.getResponse();
         if (response == null) {
-            response = new Response.ResponseBuilder().status(statusCode, getMessageForStatusCode(statusCode)).contentType(exc.getRequest().getHeader().getContentType()).build();
+            Response.ResponseBuilder builder = new Response.ResponseBuilder().status(statusCode);
+            String reqContentType = exc.getRequest().getHeader().getContentType();
+            if (reqContentType != null) {
+                builder.contentType(reqContentType);
+            }
+            response = builder.build();
             if (exc.getRequest().getBody() instanceof Body body) {
                 response.setBody(body);
                 response.getHeader().setContentLength(body.getLength());
             }
         }
+
         if (statusCode != 0) {
             response.setStatusCode(statusCode);
             response.setStatusMessage(getMessageForStatusCode(statusCode));
         }
+
         if (contentType!=null) {
             response.getHeader().setContentType(contentType);
+        }
+
+        if(response.isBodyEmpty() && !response.getHeader().hasContentLength()) {
+            response.getHeader().setContentLength(0);
         }
         return response;
     }
