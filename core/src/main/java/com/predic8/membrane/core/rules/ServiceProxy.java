@@ -76,7 +76,7 @@ public class ServiceProxy extends AbstractServiceProxy {
 	}
 
 	public String getMethod() {
-		return ((ServiceProxyKey)key).getMethod();
+		return key.getMethod();
 	}
 
 	/**

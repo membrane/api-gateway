@@ -30,14 +30,13 @@ public class WindowUpdateFrame {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("WindowUpdate {\n");
-        sb.append("  streamId = " + frame.streamId);
-        sb.append("\n  windowUpdate = ");
-        sb.append(getWindowSizeIncrement());
-        sb.append("\n");
-        sb.append("}");
-        return sb.toString();
+        String sb = "WindowUpdate {\n" +
+                "  streamId = " + frame.streamId +
+                "\n  windowUpdate = " +
+                getWindowSizeIncrement() +
+                "\n" +
+                "}";
+        return sb;
     }
 
     public Frame getFrame() {

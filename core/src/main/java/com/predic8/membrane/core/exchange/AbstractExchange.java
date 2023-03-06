@@ -444,10 +444,10 @@ public abstract class AbstractExchange {
 		copy.setTimeReqReceived(source.getTimeReqReceived());
 		copy.setTimeResSent(source.getTimeResSent());
 		copy.setTimeResReceived(source.getTimeResReceived());
-		copy.setDestinations(source.getDestinations().stream().collect(Collectors.toList()));
+		copy.setDestinations(new ArrayList<>(source.getDestinations()));
 		copy.setRemoteAddr(source.getRemoteAddr());
 		copy.setRemoteAddrIp(source.getRemoteAddrIp());
-		copy.setInterceptorStack(source.getInterceptorStack().stream().collect(Collectors.toCollection(ArrayList::new)));
+		copy.setInterceptorStack(new ArrayList<>(source.getInterceptorStack()));
 
 		return copy;
 	}

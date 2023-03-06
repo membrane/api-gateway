@@ -99,7 +99,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 		String iSort = URLParamUtil.getStringParam(uriFactory, exc, "sort");
 
 		//injection protection. Can't use prepared statements (in jdbc) when variables are within order by.
-		String order = "desc".equals(iOrder.toLowerCase())?"desc":"asc";
+		String order = "desc".equalsIgnoreCase(iOrder)?"desc":"asc";
 
 		//injection protection
 		String sort;

@@ -71,7 +71,7 @@ public class FileSchemaResolver implements SchemaResolver {
 
 	public InputStream resolve(String url) throws ResourceRetrievalException {
 		try {
-			return new FileInputStream(new File(normalize(url)));
+			return new FileInputStream(normalize(url));
 		} catch (FileNotFoundException e) {
 			throw new ResourceRetrievalException(url, e);
 		}

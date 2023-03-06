@@ -40,12 +40,10 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
     }
 
     public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(new Object[][] {
-                testGoodAuthRequest(),
+        return Arrays.asList(testGoodAuthRequest(),
                 testGoodGrantedAuthCode(),
                 testGoodTokenRequest(),
-                testGoodUserinfoRequest()
-        });
+                testGoodUserinfoRequest());
     }
 
     private static Object[] testGoodUserinfoRequest() throws Exception {

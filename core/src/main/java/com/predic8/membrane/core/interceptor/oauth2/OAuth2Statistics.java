@@ -43,7 +43,7 @@ public class OAuth2Statistics {
         writeLine(passwordFlow,"Password flow requests");
         writeLine(clientCredentialsFlow,"Client credentials flow requests");
         writeLine(refreshTokenFlow,"Refresh token requests");
-        return builder.toString().substring(0,builder.length() - newLine.length());
+        return builder.substring(0,builder.length() - newLine.length());
     }
 
     private StringBuilder writeLine(int value, String text){

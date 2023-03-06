@@ -77,7 +77,6 @@ public class ClaimsParameter {
         try {
             cleanedJson = getCleanedJson(new ObjectMapper().readValue(claimsParameter, new TypeReference<>() {}));
         } catch (IOException e) {
-            return;
         }
     }
 

@@ -29,11 +29,9 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-            testAuthorizationHeaderMissing(),
-            testEmptyAuthorizationHeader(),
-            testWrongTokenInAuthorizationHeader()
-        });
+        return Arrays.asList(testAuthorizationHeaderMissing(),
+                testEmptyAuthorizationHeader(),
+                testWrongTokenInAuthorizationHeader());
     }
 
     private static Object[] testWrongTokenInAuthorizationHeader() {

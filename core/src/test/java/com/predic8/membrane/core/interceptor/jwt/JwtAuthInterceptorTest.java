@@ -45,8 +45,7 @@ public class JwtAuthInterceptorTest{
     private static final String AUDIENCE = "AusgestelltFuer";
 
     public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(new Object[][] {
-                happyPath(),
+        return Arrays.asList(happyPath(),
                 wrongAudience(),
                 manipulatedSignature(),
                 unknownKey(),
@@ -54,8 +53,7 @@ public class JwtAuthInterceptorTest{
                 unknownKeyWithCorrectKid(),
                 noJwtInHeader(),
                 malformedJwt(),
-                threeDotsNonJwt(),
-        });
+                threeDotsNonJwt());
     }
 
     private static Object[] threeDotsNonJwt() {

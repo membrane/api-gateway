@@ -50,9 +50,8 @@ public class IpPort {
 
 
 	public String toShortString() {
-	    return new StringBuilder("'").append((ip == null) ? "*" : ip.toString())
-	            .append(':').append(port).append('\'')
-	            .toString();
+	    return "'" + ((ip == null) ? "*" : ip.toString()) +
+                ':' + port + '\'';
 	}
 
 	/**

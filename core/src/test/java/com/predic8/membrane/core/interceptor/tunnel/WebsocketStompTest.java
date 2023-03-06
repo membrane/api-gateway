@@ -42,7 +42,7 @@ public class WebsocketStompTest {
         Scanner inputScanner = new Scanner(System.in);
         while(isRunning) {
             String input = inputScanner.nextLine();
-            if(input.toLowerCase().equals("exit"))
+            if(input.equalsIgnoreCase("exit"))
                 isRunning = false;
             Thread.sleep(100);
         }

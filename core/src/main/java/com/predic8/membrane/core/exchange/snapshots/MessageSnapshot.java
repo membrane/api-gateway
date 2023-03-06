@@ -85,7 +85,7 @@ public class MessageSnapshot {
 
     public Header convertHeader(){
         Header result = new Header();
-        header.keySet().stream().forEach(key -> result.add(key,header.get(key)));
+        header.keySet().forEach(key -> result.add(key,header.get(key)));
         return result;
     }
 

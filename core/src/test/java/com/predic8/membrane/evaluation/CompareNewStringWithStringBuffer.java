@@ -31,9 +31,7 @@ public class CompareNewStringWithStringBuffer {
 
 		time = System.currentTimeMillis();
 		for (int i = 0; i < 1000000; i++) {
-			StringBuffer sBuf = new StringBuffer();
-			sBuf.append(buff, 8, 11);
-			sBuf.toString();
+			String.valueOf(buff, 8, 11);
 		}
 		System.out.println("time string buffer append char[]: "
 				+ (System.currentTimeMillis() - time) / 1000.0);

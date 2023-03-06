@@ -70,7 +70,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         List<HeaderField> wwwAuthenticate = exc.getResponse().getHeader().getValues(new HeaderName(Header.WWW_AUTHENTICATE));
-        if(wwwAuthenticate.stream().filter(h -> h.getValue().toLowerCase().equals("ntlm")).count() == 0)
+        if(wwwAuthenticate.stream().filter(h -> h.getValue().equalsIgnoreCase("ntlm")).count() == 0)
             return CONTINUE;
 
         prepareStreamByEmptyingIt(exc);

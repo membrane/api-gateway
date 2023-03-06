@@ -32,11 +32,9 @@ public class HeaderFilterInterceptorTest {
 		exc.setResponse(Response.ok().header("a", "b").header("c", "d").header("c", "d2").header("e", "f").build());
 
 		HeaderFilterInterceptor fhi = new HeaderFilterInterceptor();
-		fhi.setRules(Lists.newArrayList(new Rule[] {
-				new Rule("Server", Action.REMOVE), // implicitly set by Response.ok()
-				new Rule("a", Action.KEEP),
-				new Rule("c.*", Action.REMOVE),
-		}));
+		fhi.setRules(Lists.newArrayList(new Rule("Server", Action.REMOVE), // implicitly set by Response.ok()
+                new Rule("a", Action.KEEP),
+                new Rule("c.*", Action.REMOVE)));
 		fhi.handleResponse(exc);
 
 		HeaderField[] h = exc.getResponse().getHeader().getAllHeaderFields();

@@ -127,66 +127,56 @@ public class HttpUtil {
 	}
 
 	public static String getFaultSOAPBody(String title, String text) {
-		StringBuilder buf = new StringBuilder(256);
 
-		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + SOAP11_NS + "\">");
-		buf.append(CRLF);
-		buf.append("<soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("<soapenv:Fault>");
-
-		buf.append(CRLF);
-
-		buf.append("<faultcode>soapenv:Server</faultcode>");
-		buf.append(CRLF);
-		buf.append("<faultstring>");
-		buf.append(escapeXml11(title));
-		buf.append("</faultstring>");
-		buf.append(CRLF);
-
-		buf.append("<detail>" + escapeXml11(text) + "</detail>");
-
-		buf.append(CRLF);
-		buf.append("</soapenv:Fault>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Envelope>");
-		return buf.toString();
+        String buf = "<soapenv:Envelope xmlns:soapenv=\"" + SOAP11_NS + "\">" +
+                CRLF +
+                "<soapenv:Body>" +
+                CRLF +
+                "<soapenv:Fault>" +
+                CRLF +
+                "<faultcode>soapenv:Server</faultcode>" +
+                CRLF +
+                "<faultstring>" +
+                escapeXml11(title) +
+                "</faultstring>" +
+                CRLF +
+                "<detail>" + escapeXml11(text) + "</detail>" +
+                CRLF +
+                "</soapenv:Fault>" +
+                CRLF +
+                "</soapenv:Body>" +
+                CRLF +
+                "</soapenv:Envelope>";
+		return buf;
 	}
 
 	public static String getFaultSOAP12Body(String title, String text) {
-		StringBuilder buf = new StringBuilder(256);
-
-		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + SOAP12_NS + "\">");
-		buf.append(CRLF);
-		buf.append("<soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("<soapenv:Fault>");
-		buf.append(CRLF);
-
-		buf.append("<soapenv:Code>");
-		buf.append(CRLF);
-		buf.append("<soapenv:Value>soapenv:Receiver</soapenv:Value>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Code>");
-		buf.append(CRLF);
 
 
-		buf.append("<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">");
-		buf.append(escapeXml11(title));
-		buf.append("</soapenv:Text></soapenv:Reason>");
-		buf.append(CRLF);
-
-		buf.append("<soapenv:Detail><Text>" + escapeXml11(text) + "</Text></soapenv:Detail>");
-
-		buf.append(CRLF);
-		buf.append("</soapenv:Fault>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Envelope>");
-		return buf.toString();
+        String buf = "<soapenv:Envelope xmlns:soapenv=\"" + SOAP12_NS + "\">" +
+                CRLF +
+                "<soapenv:Body>" +
+                CRLF +
+                "<soapenv:Fault>" +
+                CRLF +
+                "<soapenv:Code>" +
+                CRLF +
+                "<soapenv:Value>soapenv:Receiver</soapenv:Value>" +
+                CRLF +
+                "</soapenv:Code>" +
+                CRLF +
+                "<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">" +
+                escapeXml11(title) +
+                "</soapenv:Text></soapenv:Reason>" +
+                CRLF +
+                "<soapenv:Detail><Text>" + escapeXml11(text) + "</Text></soapenv:Detail>" +
+                CRLF +
+                "</soapenv:Fault>" +
+                CRLF +
+                "</soapenv:Body>" +
+                CRLF +
+                "</soapenv:Envelope>";
+		return buf;
 	}
 
 //	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {

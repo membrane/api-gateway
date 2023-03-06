@@ -56,7 +56,7 @@ public class EtcdResolver implements SchemaResolver{
         }
         int lastSlash = normalizedUrl.lastIndexOf("/");
         String baseKey = normalizedUrl.substring(0,lastSlash);
-        String valueName = normalizedUrl.substring(lastSlash+1,normalizedUrl.length());
+        String valueName = normalizedUrl.substring(lastSlash+1);
         EtcdResponse respGetValue = EtcdRequest.create(this.url,baseKey,"").getValue(valueName).sendRequest();
         if(!respGetValue.is2XX()) {
             throw new ResourceRetrievalException(url);
@@ -71,6 +71,7 @@ public class EtcdResolver implements SchemaResolver{
 
     @Override
     public void observeChange(final String url, final Consumer<InputStream> consumer) throws ResourceRetrievalException {
+
         final Thread etcdWatcher = new Thread(() -> {
             String normalizedUrl = normalize(url);
             if(normalizedUrl.startsWith("etcd://")){

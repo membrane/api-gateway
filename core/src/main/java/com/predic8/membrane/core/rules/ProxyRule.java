@@ -48,7 +48,7 @@ public class ProxyRule extends AbstractProxy {
 	}
 
 	public int getPort() {
-		return ((ProxyRuleKey)key).getPort();
+		return key.getPort();
 	}
 
 	@MCAttribute
@@ -57,11 +57,11 @@ public class ProxyRule extends AbstractProxy {
 	}
 
 	public String getIp() {
-		return ((ProxyRuleKey)key).getIp();
+		return key.getIp();
 	}
 
 	@MCAttribute
 	public void setIp(String ip) {
-		((ProxyRuleKey)key).setIp(ip);
+		key.setIp(ip);
 	}
 }

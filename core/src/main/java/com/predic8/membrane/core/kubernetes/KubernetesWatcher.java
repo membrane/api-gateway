@@ -50,7 +50,7 @@ public class KubernetesWatcher {
 
     public void start() {
         Optional<KubernetesValidationInterceptor> kvi = findK8sValidatingInterceptor();
-        if (!kvi.isPresent()) {
+        if (kvi.isEmpty()) {
             return;
         }
 
@@ -85,7 +85,6 @@ public class KubernetesWatcher {
 
     private Optional<KubernetesValidationInterceptor> findK8sValidatingInterceptor() {
         return router.getRules().stream()
-                .filter(rule -> rule.getInterceptors() != null)
                 .map(Rule::getInterceptors)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
