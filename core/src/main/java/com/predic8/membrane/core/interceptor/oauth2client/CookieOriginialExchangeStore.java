@@ -162,7 +162,6 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
         getStatesToRemove(exchange).forEach(state -> {
             String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=";
             expireCookies(ImmutableList.of(currentSessionCookieValue))
-                .stream()
                 .forEach(cookie -> exchange.getResponse().getHeader().add(Header.SET_COOKIE, cookie));;
         });
 

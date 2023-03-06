@@ -56,7 +56,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
             for (Rule rule : router.getRules()) {
                 if (!(rule instanceof AbstractProxy))
                     continue;
-                SSLContext sslInboundContext = ((AbstractProxy) rule).getSslInboundContext();
+                SSLContext sslInboundContext = rule.getSslInboundContext();
                 if (!(sslInboundContext instanceof AcmeSSLContext))
                     continue;
                 AcmeSSLContext acmeSSLContext = (AcmeSSLContext) sslInboundContext;

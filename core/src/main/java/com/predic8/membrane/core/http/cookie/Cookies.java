@@ -484,10 +484,7 @@ public final class Cookies {
 			pos++;
 		}
 
-		if (pos > end) {
-			return end;
-		}
-		return pos;
+		return Math.min(pos, end);
 	}
 
 	/**

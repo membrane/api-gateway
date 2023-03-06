@@ -20,7 +20,7 @@ public class GraphQLUtil {
             return "^" + schemaDoc;
         if (position >= schemaDoc.length())
             return schemaDoc + "^";
-        return schemaDoc.substring(0, position) + "^" + schemaDoc.substring(position, schemaDoc.length());
+        return schemaDoc.substring(0, position) + "^" + schemaDoc.substring(position);
     }
 
 }

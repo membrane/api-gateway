@@ -258,7 +258,7 @@ public final class SSLExplorer {
 			// SNIServerName is an extension, SSLv20 doesn't support extension.
 			return new SSLCapabilitiesImpl((byte)0x00, (byte)0x02,
 					helloVersionMajor, helloVersionMinor,
-					Collections.<SNIServerName>emptyList());
+					Collections.emptyList());
 		} catch (BufferUnderflowException bufe) {
 			throw new SSLProtocolException(
 					"Invalid handshake record");
@@ -395,7 +395,7 @@ public final class SSLExplorer {
 			byte recordMajorVersion,
 			byte recordMinorVersion) throws IOException {
 
-		List<SNIServerName> snList = Collections.<SNIServerName>emptyList();
+		List<SNIServerName> snList = Collections.emptyList();
 
 		// client version
 		byte helloMajorVersion = input.get();
@@ -452,7 +452,7 @@ public final class SSLExplorer {
 			length -= extLen + 4;
 		}
 
-		return Collections.<SNIServerName>emptyList();
+		return Collections.emptyList();
 	}
 
 	/*
@@ -618,7 +618,7 @@ public final class SSLExplorer {
 		@Override
 		public List<SNIServerName> getServerNames() {
 			if (!sniNames.isEmpty()) {
-				return Collections.<SNIServerName>unmodifiableList(sniNames);
+				return Collections.unmodifiableList(sniNames);
 			}
 
 			return sniNames;

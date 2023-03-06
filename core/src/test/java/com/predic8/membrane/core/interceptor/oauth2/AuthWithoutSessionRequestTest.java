@@ -27,8 +27,7 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testClientIdMissing(),
+        return Arrays.asList(testClientIdMissing(),
                 testRedirectUriMissing(),
                 testResponseTypeMissing(),
                 testScopeMissing(),
@@ -37,8 +36,7 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
                 testRedirectUriNotEqauls(),
                 testPromptIsNone(),
                 testUnsupportedResponseType(),
-                testEmptyScopeList()
-        });
+                testEmptyScopeList());
     }
 
     private static Object[] testPromptIsNone() {

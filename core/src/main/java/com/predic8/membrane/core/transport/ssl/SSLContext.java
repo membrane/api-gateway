@@ -50,8 +50,8 @@ public abstract class SSLContext implements SSLProvider {
 
     static {
         try {
-            getApplicationProtocols = SSLParameters.class.getDeclaredMethod("getApplicationProtocols", new Class[]{});
-            setApplicationProtocols = SSLParameters.class.getDeclaredMethod("setApplicationProtocols", new Class[]{String[].class});
+            getApplicationProtocols = SSLParameters.class.getDeclaredMethod("getApplicationProtocols");
+            setApplicationProtocols = SSLParameters.class.getDeclaredMethod("setApplicationProtocols", String[].class);
         } catch (NoSuchMethodException e) {
         }
     }

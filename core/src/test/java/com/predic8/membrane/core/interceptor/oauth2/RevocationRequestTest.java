@@ -28,14 +28,12 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testTokenMissing(),
+        return Arrays.asList(testTokenMissing(),
                 testClientIdMissing(),
                 testClientSecretMissing(),
                 testWrongToken(),
                 testWrongCredentialsClientId(),
-                testWrongCredentialsClientSecret()
-        });
+                testWrongCredentialsClientSecret());
     }
 
     private static Object[] testWrongCredentialsClientSecret() {

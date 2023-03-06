@@ -340,7 +340,6 @@ public class AcmeFileStorageEngine implements AcmeSynchronizedStorageEngine {
                 return;
             Files.delete(f.toPath());
         } catch (IOException e) {
-            return;
         }
     }
 }

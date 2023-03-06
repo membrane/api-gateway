@@ -74,7 +74,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 
 		String host = k.isHostWildcard() ? new HostColonPort(ri.ssl, exc.getRequest().getHeader().getHost()).host : fullfillRegexp(ServiceProxyKey.createHostPattern(k.getHost()));
 		if (host == null || host.length() == 0)
-			host = exc.getHandler().getLocalAddress().getHostAddress().toString();
+			host = exc.getHandler().getLocalAddress().getHostAddress();
 
 		int port = k.getPort();
 		if (port == -1 || !exc.getHandler().isMatchLocalPort())

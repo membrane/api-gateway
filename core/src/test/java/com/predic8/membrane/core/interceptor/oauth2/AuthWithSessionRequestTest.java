@@ -28,11 +28,9 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testPromptEqualsLogin(),
+        return Arrays.asList(testPromptEqualsLogin(),
                 testPromptEqualsNone(),
-                testPromptValueUnknown()
-        });
+                testPromptValueUnknown());
     }
 
     private static Object[] testPromptValueUnknown() {

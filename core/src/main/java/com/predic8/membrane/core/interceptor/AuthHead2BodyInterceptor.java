@@ -55,14 +55,14 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 
 	private Node getPassword(Document doc, Element header) {
 		Element e = doc.createElement("password");
-		e.appendChild(doc.createTextNode(((Element)doc.getElementsByTagNameNS(COM_NS, "password").item(0)).getTextContent()));
+		e.appendChild(doc.createTextNode(doc.getElementsByTagNameNS(COM_NS, "password").item(0).getTextContent()));
 		e.setAttributeNS(XSI_NS, "xsi:type", "xsd:string");
 		return e;
 	}
 
 	private Node getUsername(Document doc, Element header) {
 		Element e = doc.createElement("username");
-		e.appendChild(doc.createTextNode(((Element)doc.getElementsByTagNameNS(COM_NS, "userName").item(0)).getTextContent()));
+		e.appendChild(doc.createTextNode(doc.getElementsByTagNameNS(COM_NS, "userName").item(0).getTextContent()));
 		e.setAttributeNS(XSI_NS, "xsi:type", "xsd:string");
 		return e;
 	}

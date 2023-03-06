@@ -38,14 +38,12 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
     }
 
     public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(new Object[][] {
-                testBadRequest(),
+        return Arrays.asList(testBadRequest(),
                 testGoodAuthRequest(),
                 testGoodGrantedAuthCode(),
                 testGoodTokenRequest(),
                 testGoodUserinfoRequest(),
-                testGoodRevocationRequest()
-        });
+                testGoodRevocationRequest());
     }
 
     private static Object[] testGoodRevocationRequest() throws Exception{
