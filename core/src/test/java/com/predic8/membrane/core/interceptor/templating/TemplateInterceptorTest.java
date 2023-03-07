@@ -32,6 +32,7 @@ import java.nio.file.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.io.File.separator;
 import static java.nio.file.StandardCopyOption.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
