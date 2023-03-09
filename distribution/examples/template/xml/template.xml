@@ -5,7 +5,7 @@
 
     <gsp:scriptlet>
         import groovy.xml.XmlSlurper
-        def xml = new XmlSlurper().parseText(body)
+        def xml = new XmlSlurper().parseText(message.bodyAsStringDecoded)
     </gsp:scriptlet>
 
     <gsp:scriptlet>xml.children().each { </gsp:scriptlet>

@@ -52,7 +52,6 @@ public class ScriptingUtils {
         if (msg != null) {
             parameters.put("message", msg);
             parameters.put("header", msg.getHeader());
-            parameters.put("body", msg.getBodyAsStringDecoded());
             if (includeJsonObject) {
                 try {
                     log.info("Parsing body as JSON for scripting plugins");

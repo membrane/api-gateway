@@ -128,7 +128,7 @@ public class TemplateInterceptorTest {
 Exchange: <%= exc %>
 Flow: <%= flow %>
 Message.version: <%= message.version %>
-Body: <%= body %>
+Body: <%= message.body %>
 Properties: <%= properties.baz %>
 <% for(p in props) { %>
    Key: <%= p.key %> : <%= p.value %>
