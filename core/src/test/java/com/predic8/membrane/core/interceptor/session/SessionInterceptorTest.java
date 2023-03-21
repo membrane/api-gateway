@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.session;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.HttpRouter;
@@ -146,11 +147,9 @@ public class SessionInterceptorTest {
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        bodies.stream().forEach(body -> printCookie(body));
+        bodies.forEach(this::printCookie);
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
-            assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
-        });
+        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1))));
 
         String cookieOne = getCookieKey(bodies.get(upperBound-1));
 
@@ -167,11 +166,9 @@ public class SessionInterceptorTest {
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        bodies.stream().forEach(body -> printCookie(body));
+        bodies.forEach(this::printCookie);
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
-            assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
-        });
+        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1))));
 
         String cookieTwo = getCookieKey(bodies.get(upperBound-1));
 
@@ -186,7 +183,7 @@ public class SessionInterceptorTest {
     }
 
     public String getCookieKey(Map cookie){
-        String raw = ((Map)cookie.get("request")).get("Cookie").toString();
+        String raw = ((Map<?, ?>)cookie.get("request")).get("Cookie").toString();
         return raw.split("=")[0];
     }
 
@@ -244,7 +241,7 @@ public class SessionInterceptorTest {
 
     private void addJoinedHeaderTo(Map cache, String name, Message msg){
         cache.put(name, getHeader(name,msg)
-                .map(hf -> hf.getValue())
+                .map(HeaderField::getValue)
                 .collect(Collectors.joining(";")));
     }
 
@@ -253,16 +250,13 @@ public class SessionInterceptorTest {
     }
 
     private Map<String,Object> sendRequest() {
-        Map result;
+        Map<String, Object> result;
         HttpGet httpGet = new HttpGet("http://localhost:3001");
         try {
-            CloseableHttpResponse response = httpClient.execute(httpGet);
-            try {
+            try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
                 String body = IOUtils.toString(response.getEntity().getContent());
-                result = new ObjectMapper().readValue(body,Map.class);
+                result = new ObjectMapper().readValue(body, new TypeReference<>() {});
                 EntityUtils.consume(response.getEntity());
-            } finally {
-                response.close();
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -13,45 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.testservice;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.*;
+import java.net.*;
+import java.util.regex.*;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
-import org.xml.sax.SAXParseException;
-
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.WSDLInterceptor;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.URLUtil;
-import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 @MCElement(name="testService")
 public class TestServiceInterceptor extends AbstractInterceptor {
 
-	private static String SOAP_VERSION = "soap_version";
-	private static Pattern WSDL = Pattern.compile("\\?WSDL", Pattern.CASE_INSENSITIVE);
+	private static final String SOAP_VERSION = "soap_version";
+	private static final Pattern WSDL = Pattern.compile("\\?WSDL", Pattern.CASE_INSENSITIVE);
 	private static final Pattern RELATIVE_PATH_PATTERN = Pattern.compile("^./[^/?]*\\?");
 
-	private WSDLInterceptor wi = new WSDLInterceptor();
+	private final WSDLInterceptor wi = new WSDLInterceptor();
 
 	@Override
 	public void init(final Router router) throws Exception {
@@ -66,20 +56,18 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 					throw new Exception("<testService> may not be used together with <path isRegExp=\"true\">.");
 				final String keyPath = path.getValue();
 				final String name = URLUtil.getName(router.getUriFactory(), keyPath);
-				wi.setPathRewriter(new PathRewriter() {
-					@Override
-					public String rewrite(String path2) {
-						try {
-							if (path2.contains("://")) {
-								path2 = new URL(new URL(path2), keyPath).toString();
-							} else {
-								Matcher m = RELATIVE_PATH_PATTERN.matcher(path2);
-								path2 = m.replaceAll("./" + name + "?");
-							}
-						} catch (MalformedURLException e) {
+				wi.setPathRewriter(path2 -> {
+					try {
+						if (path2.contains("://")) {
+							path2 = new URL(new URL(path2), keyPath).toString();
+						} else {
+							Matcher m = RELATIVE_PATH_PATTERN.matcher(path2);
+							path2 = m.replaceAll("./" + name + "?");
 						}
-						return path2;
+					} catch (MalformedURLException e) {
+						// Ignore
 					}
+					return path2;
 				});
 			}
 		}
@@ -90,12 +78,12 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (WSDL.matcher(exc.getRequest().getUri()).find()) {
 			exc.setResponse(Response.ok().
-					header(Header.SERVER, Constants.PRODUCT_NAME + " " + Constants.VERSION).
-					header(Header.CONTENT_TYPE, MimeType.TEXT_XML).
+					header(SERVER, PRODUCT_NAME + " " + VERSION).
+					header(CONTENT_TYPE, TEXT_XML).
 					body(getClass().getResourceAsStream("the.wsdl"), true).
 					build());
 			wi.handleResponse(exc);
-			return Outcome.RETURN;
+			return RETURN;
 		}
 
 
@@ -107,12 +95,10 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			DocumentBuilder db = dbf.newDocumentBuilder();
 			Document d = db.parse(exc.getRequest().getBodyAsStreamDecoded());
 			exc.setResponse(createResponse(exc, d));
-		} catch (SAXParseException e) {
-			exc.setResponse(createResponse(e, exc.getProperty(SOAP_VERSION) == null));
-		} catch (AssertionError e) {
+		} catch (SAXParseException | AssertionError e) {
 			exc.setResponse(createResponse(e, exc.getProperty(SOAP_VERSION) == null));
 		}
-		return Outcome.RETURN;
+		return RETURN;
 	}
 
 	private Response createResponse(Throwable e, boolean useSoap11) {
@@ -121,9 +107,9 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		String body = useSoap11 ? HttpUtil.getFaultSOAPBody(title, message) : HttpUtil.getFaultSOAP12Body(title,
 				message);
 		return Response.internalServerError().
-				header(Header.SERVER, Constants.PRODUCT_NAME + " " + Constants.VERSION).
-				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-				body(body.getBytes(Constants.UTF_8_CHARSET)).
+				header(SERVER, PRODUCT_NAME + " " + VERSION).
+				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
+				body(body.getBytes(UTF_8)).
 				build();
 	}
 
@@ -134,9 +120,9 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			throw new AssertionError("No SOAP <Envelope> found.");
 		if (!envelope.getLocalName().equals("Envelope"))
 			throw new AssertionError("No SOAP Envelope found.");
-		if (envelope.getNamespaceURI().equals(Constants.SOAP11_NS))
+		if (envelope.getNamespaceURI().equals(SOAP11_NS))
 			return handleSOAP11(envelope);
-		if (envelope.getNamespaceURI().equals(Constants.SOAP12_NS)) {
+		if (envelope.getNamespaceURI().equals(SOAP12_NS)) {
 			exc.setProperty(SOAP_VERSION, "1.2");
 			return handleSOAP12(envelope);
 		}
@@ -149,16 +135,15 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		NodeList children = envelope.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			if (children.item(i) instanceof Text) {
-				String text = ((Text) children.item(i)).getNodeValue();
+				String text = children.item(i).getNodeValue();
 				for (int j = 0; j < text.length(); j++)
 					if (!Character.isWhitespace(text.charAt(j)))
 						throw new AssertionError("Found non-whitespace text.");
 				continue;
 			}
-			if (!(children.item(i) instanceof Element))
+			if (!(children.item(i) instanceof Element item))
 				throw new AssertionError("Non-element child of <Envelope> found: " + children.item(i).getNodeName() + ".");
-			Element item = (Element) children.item(i);
-			if (!item.getNamespaceURI().equals(Constants.SOAP11_NS))
+			if (!item.getNamespaceURI().equals(SOAP11_NS))
 				throw new AssertionError("Non-SOAP child element of <Envelope> found.");
 			if (item.getLocalName().equals("Body"))
 				body = item;
@@ -171,7 +156,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 
 		for (int i = 0; i < children.getLength(); i++) {
 			if (children.item(i) instanceof Text) {
-				String text = ((Text) children.item(i)).getNodeValue();
+				String text = children.item(i).getNodeValue();
 				for (int j = 0; j < text.length(); j++)
 					if (!Character.isWhitespace(text.charAt(j)))
 						throw new AssertionError("Found non-whitespace text.");
@@ -192,16 +177,15 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		NodeList children = envelope.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			if (children.item(i) instanceof Text) {
-				String text = ((Text) children.item(i)).getNodeValue();
+				String text = children.item(i).getNodeValue();
 				for (int j = 0; j < text.length(); j++)
 					if (!Character.isWhitespace(text.charAt(j)))
 						throw new AssertionError("Found non-whitespace text.");
 				continue;
 			}
-			if (!(children.item(i) instanceof Element))
+			if (!(children.item(i) instanceof Element item))
 				throw new AssertionError("Non-element child of <Envelope> found: " + children.item(i).getNodeName() + ".");
-			Element item = (Element) children.item(i);
-			if (!item.getNamespaceURI().equals(Constants.SOAP12_NS))
+			if (!item.getNamespaceURI().equals(SOAP12_NS))
 				throw new AssertionError("Non-SOAP child element of <Envelope> found.");
 			if (item.getLocalName().equals("Body"))
 				body = item;
@@ -214,7 +198,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 
 		for (int i = 0; i < children.getLength(); i++) {
 			if (children.item(i) instanceof Text) {
-				String text = ((Text) children.item(i)).getNodeValue();
+				String text = children.item(i).getNodeValue();
 				for (int j = 0; j < text.length(); j++)
 					if (!Character.isWhitespace(text.charAt(j)))
 						throw new AssertionError("Found non-whitespace text.");
@@ -239,7 +223,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			Element param = null;
 			for (int i = 0; i < children.getLength(); i++) {
 				if (children.item(i) instanceof Text) {
-					String text = ((Text) children.item(i)).getNodeValue();
+					String text = children.item(i).getNodeValue();
 					for (int j = 0; j < text.length(); j++)
 						if (!Character.isWhitespace(text.charAt(j)))
 							throw new AssertionError("Found non-whitespace text.");
@@ -258,14 +242,10 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			children = param.getChildNodes();
 			if (children.getLength() != 1)
 				throw new AssertionError("Parameter element has children.length != 1");
-			if (!(children.item(0) instanceof Text))
+			if (!(children.item(0) instanceof Text text))
 				throw new AssertionError("Parameter element has non-text child.");
 
-			Text text = (Text)children.item(0);
-
-			String blz = text.getNodeValue();
-
-			return getBank(blz, soap11);
+			return getBank(text.getNodeValue(), soap11);
 		} else {
 			throw new AssertionError("Unknown operation.");
 		}
@@ -292,9 +272,9 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 				"</ns1:ort><ns1:plz>" + escape(plz) +
 				"</ns1:plz></ns1:details></ns1:getBankResponse></soapenv:Body></soapenv:Envelope>";
 		return Response.ok().
-				header(Header.SERVER, Constants.PRODUCT_NAME + " " + Constants.VERSION).
-				header(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8).
-				body(body.getBytes(Constants.UTF_8_CHARSET)).
+				header(SERVER, PRODUCT_NAME + " " + VERSION).
+				header(CONTENT_TYPE, TEXT_XML_UTF8).
+				body(body.getBytes(UTF_8)).
 				build();
 	}
 

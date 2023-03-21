@@ -48,7 +48,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 	}
 
 	public List<ServiceInfo> getServices(Exchange exc) {
-		List<ServiceInfo> result = new ArrayList<ServiceInfo>();
+		List<ServiceInfo> result = new ArrayList<>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (r instanceof AbstractServiceProxy) {
 				ServiceInfo si = getServiceInfo(exc, (AbstractServiceProxy)r);
@@ -74,7 +74,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 
 		String host = k.isHostWildcard() ? new HostColonPort(ri.ssl, exc.getRequest().getHeader().getHost()).host : fullfillRegexp(ServiceProxyKey.createHostPattern(k.getHost()));
 		if (host == null || host.length() == 0)
-			host = exc.getHandler().getLocalAddress().getHostAddress().toString();
+			host = exc.getHandler().getLocalAddress().getHostAddress();
 
 		int port = k.getPort();
 		if (port == -1 || !exc.getHandler().isMatchLocalPort())
@@ -222,16 +222,17 @@ public class IndexInterceptor extends AbstractInterceptor {
 				head();
 				title().text(Constants.PRODUCT_NAME + ": Service Proxies").end();
 				style();
-				raw("<!--\r\n" +
-						"body { font-family: sans-serif; }\r\n" +
-						"h1 { font-size: 24pt; }\r\n" +
-						"td, th { border: 1px solid black; padding: 0pt 10pt; }\r\n" +
-						"table { border-collapse: collapse; }\r\n" +
-						".help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r\n" +
-						".footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r\n" +
-						".footer a { color:#AAAAAA; }\r\n" +
-						".footer a:hover { color:#000000; }\r\n" +
-						"-->");
+				raw("""
+						<!--\r
+						body { font-family: sans-serif; }\r
+						h1 { font-size: 24pt; }\r
+						td, th { border: 1px solid black; padding: 0pt 10pt; }\r
+						table { border-collapse: collapse; }\r
+						.help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r
+						.footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r
+						.footer a { color:#AAAAAA; }\r
+						.footer a:hover { color:#000000; }\r
+						-->""");
 				end();
 				end();
 				body();

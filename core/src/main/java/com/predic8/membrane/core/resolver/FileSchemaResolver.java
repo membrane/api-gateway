@@ -27,8 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FileSchemaResolver implements SchemaResolver {
 
 	WatchService watchService;
-	ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<String, WatchKey>();
-	ConcurrentHashMap<String,Consumer<InputStream>> watchedFiles = new ConcurrentHashMap<String, Consumer<InputStream>>();
+	ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<>();
+	ConcurrentHashMap<String,Consumer<InputStream>> watchedFiles = new ConcurrentHashMap<>();
 	int fileWatchIntervalInSeconds = 1;
 	Runnable fileWatchJob = new Runnable() {
 		@Override
@@ -71,7 +71,7 @@ public class FileSchemaResolver implements SchemaResolver {
 
 	public InputStream resolve(String url) throws ResourceRetrievalException {
 		try {
-			return new FileInputStream(new File(normalize(url)));
+			return new FileInputStream(normalize(url));
 		} catch (FileNotFoundException e) {
 			throw new ResourceRetrievalException(url, e);
 		}
@@ -127,7 +127,7 @@ public class FileSchemaResolver implements SchemaResolver {
 		String[] children = new File(normalize(url)).list();
 		if (children == null)
 			return null;
-		ArrayList<String> res = new ArrayList<String>(children.length);
+		ArrayList<String> res = new ArrayList<>(children.length);
 		for (String child : children)
 			res.add(child);
 		return res;

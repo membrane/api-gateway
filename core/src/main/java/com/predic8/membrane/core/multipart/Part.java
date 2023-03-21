@@ -14,27 +14,20 @@
 
 package com.predic8.membrane.core.multipart;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.Writer;
+import com.predic8.membrane.core.http.*;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.Location;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Characters;
-import javax.xml.stream.events.EndElement;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
 
-import org.apache.commons.codec.binary.Base64;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Header;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.codec.binary.Base64.*;
 
 public class Part {
 
-	private Header header;
-	private byte[] data;
+	private final Header header;
+	private final byte[] data;
 
 	public Part(Header header, byte[] data) {
 		this.header = header;
@@ -57,7 +50,7 @@ public class Part {
 		return new Characters() {
 
 			@Override
-			public void writeAsEncodedUnicode(Writer writer) throws XMLStreamException {
+			public void writeAsEncodedUnicode(Writer writer) {
 				throw new RuntimeException("not implemented");
 			}
 
@@ -138,7 +131,7 @@ public class Part {
 
 			@Override
 			public String getData() {
-				return new String(Base64.encodeBase64(data), Constants.UTF_8_CHARSET);
+				return new String(encodeBase64(data), UTF_8);
 			}
 
 			@Override

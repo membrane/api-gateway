@@ -55,11 +55,7 @@ public class XenMessageContext {
         synchronized (dbf) {
             try {
                 document = dbf.newDocumentBuilder().parse(getMessage(exchange, flow).getBodyAsStream());
-            } catch (SAXException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (ParserConfigurationException e) {
+            } catch (SAXException | ParserConfigurationException | IOException e) {
                 throw new RuntimeException(e);
             }
         }

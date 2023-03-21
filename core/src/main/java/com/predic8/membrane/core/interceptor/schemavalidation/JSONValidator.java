@@ -70,12 +70,12 @@ public class JSONValidator implements IValidator {
 			JsonNode node = JsonLoader.fromReader(new InputStreamReader(body, charset));
 			ProcessingReport report = schema.validateUnchecked(node);
 			success = report.isSuccess();
-			errors = new ArrayList<String>();
+			errors = new ArrayList<>();
 			for (ProcessingMessage message : report)
 				errors.add(message.getMessage());
 		} catch (JsonParseException e) {
 			success = false;
-			errors = new ArrayList<String>();
+			errors = new ArrayList<>();
 			errors.add(e.getMessage());
 		}
 
@@ -108,7 +108,7 @@ public class JSONValidator implements IValidator {
 		jg.close();
 
 		if (failureHandler != null) {
-			failureHandler.handleFailure(new String(baos.toByteArray(), UTF8), exc);
+			failureHandler.handleFailure(baos.toString(UTF8), exc);
 			exc.setResponse(Response.badRequest().
 					contentType("application/json;charset=utf-8").
 					body("{\"error\":\"error\"}".getBytes(UTF8)).

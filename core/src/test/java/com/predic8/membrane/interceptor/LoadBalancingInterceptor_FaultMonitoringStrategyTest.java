@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.interceptor;
 
-import com.google.common.base.Function;
 import com.google.common.base.Stopwatch;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -36,11 +35,9 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,8 +45,10 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the LoadBalancingInterceptor using the SuccessStrategy.
@@ -63,8 +62,8 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
     protected LoadBalancingInterceptor balancingInterceptor;
     protected HttpRouter balancer;
-    private List<HttpRouter> httpRouters = new ArrayList<HttpRouter>();
-    private List<RandomlyFailingDummyWebServiceInterceptor> dummyInterceptors = new ArrayList<RandomlyFailingDummyWebServiceInterceptor>();
+    private List<HttpRouter> httpRouters = new ArrayList<>();
+    private List<RandomlyFailingDummyWebServiceInterceptor> dummyInterceptors = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
         for (int i = 1; i <= ctx.numNodes; i++) {
@@ -181,19 +180,15 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .numThreads(6)
                 .numRequests(100)
                 .successChance(1d)
-                .preSubmitCallback(new Function<Integer, Void>() {
-                    @Nullable
-                    @Override
-                    public Void apply(Integer integer) {
-                        if (integer == 20) {
-                            try {
-                                httpRouters.get(0).shutdown();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                .preSubmitCallback(integer -> {
+                    if (integer == 20) {
+                        try {
+                            httpRouters.get(0).shutdown();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                        return null;
                     }
+                    return null;
                 })
                 .build();
 
@@ -219,25 +214,21 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .numThreads(6)
                 .numRequests(100)
                 .successChance(1d)
-                .preSubmitCallback(new Function<Integer, Void>() {
-                    @Nullable
-                    @Override
-                    public Void apply(Integer integer) {
-                        try {
-                            if (integer == 10) {
-                                httpRouters.get(0).shutdown();
-                            } else if (integer == 20) {
-                                httpRouters.get(1).shutdown();
-                            } else if (integer == 30) {
-                                httpRouters.get(2).shutdown();
-                            } else if (integer == 40) {
-                                httpRouters.get(3).shutdown();
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                .preSubmitCallback(integer -> {
+                    try {
+                        if (integer == 10) {
+                            httpRouters.get(0).shutdown();
+                        } else if (integer == 20) {
+                            httpRouters.get(1).shutdown();
+                        } else if (integer == 30) {
+                            httpRouters.get(2).shutdown();
+                        } else if (integer == 40) {
+                            httpRouters.get(3).shutdown();
                         }
-                        return null;
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
+                    return null;
                 })
                 .build();
 
@@ -394,24 +385,21 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 ctx.preSubmitCallback.apply(i);
             }
             final int runNumber = i;
-            ctx.tpe.submit(new Runnable() {
-                @Override
-                public void run() {
-                    Stopwatch taskTime = Stopwatch.createStarted();
-                    try {
-                        ctx.runCounter.incrementAndGet();
-                        final HttpClient client = new HttpClient();
-                        client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-                        int responseCode = client.executeMethod(getPostMethod());
-                        if (responseCode == 200) {
-                            ctx.successCounter.incrementAndGet();
-                        }
-                    } catch (Exception e) {
-                        ctx.exceptionCounter.incrementAndGet();
-                        e.printStackTrace();
+            ctx.tpe.submit(() -> {
+                Stopwatch taskTime = Stopwatch.createStarted();
+                try {
+                    ctx.runCounter.incrementAndGet();
+                    final HttpClient client = new HttpClient();
+                    client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+                    int responseCode = client.executeMethod(getPostMethod());
+                    if (responseCode == 200) {
+                        ctx.successCounter.incrementAndGet();
                     }
-                    ctx.runtimes[runNumber] = taskTime.elapsed(TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    ctx.exceptionCounter.incrementAndGet();
+                    e.printStackTrace();
                 }
+                ctx.runtimes[runNumber] = taskTime.elapsed(TimeUnit.MILLISECONDS);
             });
         }
     }
@@ -436,7 +424,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
         return new ThreadPoolExecutor(
                 numThreads, numThreads,
                 1, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
+                new SynchronousQueue<>(),
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }

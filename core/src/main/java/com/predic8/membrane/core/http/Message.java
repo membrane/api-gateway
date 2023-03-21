@@ -14,29 +14,24 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.MessageUtil;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.concurrent.Callable;
+import java.io.*;
+import java.nio.charset.*;
+
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
 
 /**
  * A HTTP message (request or response).
  */
 public abstract class Message {
 
-	private static Logger log = LoggerFactory.getLogger(Message.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Message.class.getName());
+
+	private static final XOPReconstitutor xopr = new com.predic8.membrane.core.multipart.XOPReconstitutor();
 
 	protected Header header;
 
@@ -48,20 +43,16 @@ public abstract class Message {
 
 	private String errorMessage = "";
 
-
-
 	public Message() {
 		header = new Header();
 		body = new EmptyBody();
-
 	}
 
 	/**
 	 * If the message is HTTP 1.1 but the header has no information about the
 	 * content length, then an assumption is made that after the body the server
 	 * will send an EOF. So the body is read till end of the stream.
-	 *
-	 * See http://www.ietf.org/rfc/rfc2145.txt
+	 * See <a href="http://www.ietf.org/rfc/rfc2145.txt">http://www.ietf.org/rfc/rfc2145.txt</a>
 	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
@@ -102,8 +93,6 @@ public abstract class Message {
 			throw new RuntimeException("Could not get body as stream", e);
 		}
 	}
-
-	private static XOPReconstitutor xopr = new com.predic8.membrane.core.multipart.XOPReconstitutor();
 
 	/**
 	 * <p>Returns the logical body content.</p>
@@ -148,7 +137,6 @@ public abstract class Message {
 
 	/**
 	 * Sets the body.
-	 *
 	 * Does <b>NOT</b> adjust the header fields (<tt>Content-Length</tt> etc.): Use {@link #setBodyContent(byte[])} instead.
 	 */
 	public void setBody(AbstractBody b) {
@@ -160,13 +148,20 @@ public abstract class Message {
 	 */
 	public void setBodyContent(byte[] content) {
 		body = new Body(content);
-		header.removeFields(Header.CONTENT_ENCODING);
-		header.removeFields(Header.TRANSFER_ENCODING);
+		header.removeFields(CONTENT_ENCODING);
+		header.removeFields(TRANSFER_ENCODING);
 		header.setContentLength(content.length);
 	}
 
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
+
+		if (shouldNotContainBody()) {
+			log.debug("empty body created");
+			body = new EmptyBody();
+			return;
+		}
+
 		if (isHTTP10()) {
 			body = new Body(in, header.getContentLength());
 			return;
@@ -181,7 +176,6 @@ public abstract class Message {
 			body = new Body(in, header.getContentLength());
 			return;
 		}
-
 
 		if (log.isDebugEnabled()) {
 			log.error("Message has no content length: " + toString());
@@ -225,7 +219,7 @@ public abstract class Message {
 	public final void write(OutputStream out, boolean retainBody) throws IOException {
 		writeStartLine(out);
 		header.write(out);
-		out.write(Constants.CRLF_BYTES);
+		out.write(CRLF_BYTES);
 
 		if (header.is100ContinueExpected()) {
 			out.flush();
@@ -243,7 +237,7 @@ public abstract class Message {
 	 * to char-by-char, we use ISO-8859-1 for output.
 	 */
 	public void writeStartLine(OutputStream out) throws IOException {
-		out.write(getStartLine().getBytes(Constants.ISO_8859_1_CHARSET));
+		out.write(getStartLine().getBytes(StandardCharsets.ISO_8859_1));
 	}
 
 	public abstract String getStartLine();
@@ -267,7 +261,7 @@ public abstract class Message {
 
 	@Override
 	public String toString() {
-		return getStartLine() + header.toString() + Constants.CRLF + body.toString();
+		return getStartLine() + header.toString() + CRLF + body.toString();
 	}
 
 	public boolean isKeepAlive() {
@@ -299,19 +293,19 @@ public abstract class Message {
 	public boolean isBodyEmpty() throws IOException {
 		if (header.hasContentLength())
 			return header.getContentLength() == 0;
-
-
+		
 		if (getBody().read)
 			return getBody().getLength() == 0;
-
-		return false;
+		
+		return getBody() instanceof EmptyBody;
 	}
 
+	public abstract boolean shouldNotContainBody();
 
 	public boolean isImage() {
 		if (header.getContentType() == null)
 			return false;
-		return header.getContentType().indexOf("image") >= 0;
+		return header.getContentType().contains("image");
 	}
 
 	public boolean isXML() {
@@ -373,12 +367,12 @@ public abstract class Message {
 
     public abstract <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception;
 
-	public <T extends Message> T createMessageSnapshot(T result, Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
+	public <T extends Message> T createMessageSnapshot(T result, Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		result.setHeader(new Header(this.getHeader()));
 		result.setErrorMessage(this.getErrorMessage());
 		result.setReleased(this.isReleased());
 
-		addObserver(new SnapshottingObserver(strategy, limit, result, bodyUpdatedCallback));
+		addObserver(new SnapshottingObserver<>(strategy, limit, result, bodyUpdatedCallback));
 
 		return result;
 	}

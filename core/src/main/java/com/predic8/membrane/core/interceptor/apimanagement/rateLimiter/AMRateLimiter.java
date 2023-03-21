@@ -18,8 +18,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
@@ -40,26 +39,25 @@ import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+
 @MCElement(name="amRateLimiter")
 public class AMRateLimiter {
 
     private static Logger log = LoggerFactory.getLogger(AMRateLimiter.class);
     private ApiManagementConfiguration amc;
 
-    public ConcurrentHashMap<String, ApiKeyRequestCounter> keyInformation = new ConcurrentHashMap<String, ApiKeyRequestCounter>();
-    public ConcurrentHashMap<String, PolicyRateLimit> policyRateLimits = new ConcurrentHashMap<String, PolicyRateLimit>();
+    public ConcurrentHashMap<String, ApiKeyRequestCounter> keyInformation = new ConcurrentHashMap<>();
+    public ConcurrentHashMap<String, PolicyRateLimit> policyRateLimits = new ConcurrentHashMap<>();
 
     public ApiManagementConfiguration getAmc() {
         return amc;
     }
 
-    private Runnable observer = new Runnable() {
-        @Override
-        public void run() {
-            log.info("Getting new config");
-            keyInformation = new ConcurrentHashMap<>();
-            fillPolicyCleanupTimes();
-        }
+    private Runnable observer = () -> {
+        log.info("Getting new config");
+        keyInformation = new ConcurrentHashMap<>();
+        fillPolicyCleanupTimes();
     };
 
     public void setAmc(ApiManagementConfiguration amc) {
@@ -77,7 +75,7 @@ public class AMRateLimiter {
             String name = policy.getName();
             int requests = policy.getRateLimit().getRequests();
             Duration interval = Duration.standardSeconds(policy.getRateLimit().getInterval());
-            HashSet<String> services = new HashSet<String>(policy.getServiceProxies());
+            HashSet<String> services = new HashSet<>(policy.getServiceProxies());
             PolicyRateLimit prl = new PolicyRateLimit();
             prl.setName(name);
             prl.setRequests(requests);
@@ -138,7 +136,7 @@ public class AMRateLimiter {
         }
 
         Response resp = Response.ResponseBuilder.newInstance().status(429, "Too Many Requests.")
-                .header(hd).contentType("application/json").body(os.toByteArray()).build();
+                .header(hd).contentType(APPLICATION_JSON).body(os.toByteArray()).build();
         exc.setResponse(resp);
     }
 
@@ -181,7 +179,7 @@ public class AMRateLimiter {
             for (PolicyRateLimit prl : policyRateLimits.values()) {
                 if (DateTime.now().isAfter(prl.getNextCleanup())) {
                     for(ApiKeyRequestCounter keyInfo : keyInformation.values()){
-                        if(keyInfo.getPolicyCounters().keySet().contains(prl.getName())){
+                        if(keyInfo.getPolicyCounters().containsKey(prl.getName())){
                             keyInfo.getPolicyCounters().get(prl.getName()).set(0);
                         }
                     }

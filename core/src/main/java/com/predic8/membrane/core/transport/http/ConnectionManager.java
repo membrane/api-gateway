@@ -38,7 +38,7 @@ import javax.annotation.Nullable;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
- *
+ * <p>
  * With keep-alive use as follows:
  * <code>
  * Connection connection = connectionManager.getConnection(...);
@@ -48,9 +48,9 @@ import javax.annotation.Nullable;
  *   connection.release();
  * }
  * </code>
- *
+ * <p>
  * Without keep-alive replace {@link Connection#release()} by {@link Connection#close()}.
- *
+ * <p>
  * Note that you should call {@link Connection#release()} exactly once, or alternatively
  * {@link Connection#close()} at least once.
  */
@@ -62,7 +62,7 @@ public class ConnectionManager {
 	private final long autoCloseInterval;
 	private final AtomicInteger numberInPool = new AtomicInteger();
 	private final HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
-			new HashMap<ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
+            new HashMap<>(); // guarded by this
 	private volatile boolean shutdownWhenDone = false;
 	private TimerManager selfCreatedTimerManager;
 
@@ -172,18 +172,14 @@ public class ConnectionManager {
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
 		synchronized(this) {
-			l = availableConnections.get(key);
-			if (l == null) {
-				l = new ArrayList<OldConnection>();
-				availableConnections.put(key, l);
-			}
+			l = availableConnections.computeIfAbsent(key, k -> new ArrayList<>());
 			l.add(o);
 		}
 	}
 
 	private int closeOldConnections() {
-		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
-		ArrayList<Connection> toClose = new ArrayList<Connection>();
+		ArrayList<ConnectionKey> toRemove = new ArrayList<>();
+		ArrayList<Connection> toClose = new ArrayList<>();
 		long now = System.currentTimeMillis();
 		log.trace("closing old connections");
 		int closed = 0, remaining;

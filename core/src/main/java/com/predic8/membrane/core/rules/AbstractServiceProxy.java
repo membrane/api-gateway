@@ -82,9 +82,9 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		}
 
 		/**
-		 * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
-		 * @example http://membrane-soa.org
-		 */
+         * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
+         * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
+         */
 		@MCAttribute
 		public void setUrl(String url) {
 			this.url = url;
@@ -129,7 +129,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	}
 
 	public String getHost() {
-		return ((AbstractRuleKey)key).getHost();
+		return key.getHost();
 	}
 
 	/**

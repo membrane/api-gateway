@@ -49,12 +49,11 @@ public class RstStreamFrame {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("RstStream {\n");
-        sb.append("\n  errorCode = ");
-        sb.append(errorCode);
-        sb.append("}");
-        return sb.toString();
+        String sb = "RstStream {\n" +
+                "\n  errorCode = " +
+                errorCode +
+                "}";
+        return sb;
     }
 
     public Frame getFrame() {

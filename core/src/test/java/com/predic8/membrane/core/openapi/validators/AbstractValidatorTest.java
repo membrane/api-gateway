@@ -19,11 +19,10 @@ package com.predic8.membrane.core.openapi.validators;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
-
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 
 public abstract class AbstractValidatorTest {
 

@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Timer {
-	private static Logger log = LoggerFactory.getLogger(Timer.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Timer.class.getName());
 
 	static private long time;
 

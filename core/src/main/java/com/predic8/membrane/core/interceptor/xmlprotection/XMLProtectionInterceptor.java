@@ -14,20 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
@@ -37,7 +33,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="xmlProtection")
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(XMLProtectionInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(XMLProtectionInterceptor.class.getName());
 
 	private int maxAttibuteCount = 1000;
 	private int maxElementNameLength = 1000;
@@ -54,23 +50,23 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 		if (exc.getRequest().isBodyEmpty()) {
 			log.info("body is empty -> request is not scanned by xmlProtection");
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		if (!exc.getRequest().isXML()) {
 			log.warn("request discarded by xmlProtection, because it's Content-Type header did not indicate that it is actually XML.");
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		if (!protectXML(exc)) {
 			log.warn("request discarded by xmlProtection, because it is not wellformed or exceeds limits");
 			setFailResponse(exc);
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		log.debug("protected against XML attacks");
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void setFailResponse(Exchange exc) {
@@ -95,7 +91,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	private String getCharset(Exchange exc) {
 		String charset = exc.getRequest().getCharset();
 		if (charset == null)
-			return Constants.UTF_8;
+			return UTF_8.name();
 
 		return charset;
 	}

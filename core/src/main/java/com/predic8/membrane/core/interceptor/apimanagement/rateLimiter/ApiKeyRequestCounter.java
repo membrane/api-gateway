@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ApiKeyRequestCounter {
 
-    private HashMap<String,AtomicInteger> policyCounters = new HashMap<String, AtomicInteger>();
+    private HashMap<String,AtomicInteger> policyCounters = new HashMap<>();
 
     public HashMap<String, AtomicInteger> getPolicyCounters() {
         return policyCounters;

@@ -15,6 +15,7 @@ package com.predic8.membrane.core.transport.http;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.*;
 
 import com.predic8.membrane.core.util.HttpUtil;
 
@@ -38,14 +39,51 @@ public class HostColonPort {
 		this.port = port;
 	}
 
+	public HostColonPort(String host, int port) {
+		this.host = host;
+		this.port = port;
+		this.useSSL = false;
+	}
+
 	public HostColonPort(URL url) throws MalformedURLException {
 		useSSL = url.getProtocol().endsWith("s");
 		host = url.getHost();
 		port = HttpUtil.getPort(url);
 	}
 
+	public String getProtocol() {
+		if (port == 443 || port == 8443)
+			return "https";
+
+		return "http";
+	}
+
+	public String getUrl() {
+		return getProtocol() + "://" + host + ":" + port;
+	}
+
 	@Override
 	public String toString() {
 		return host + ":" + port;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		HostColonPort that = (HostColonPort) o;
+
+		if (useSSL != that.useSSL) return false;
+		if (port != that.port) return false;
+		return Objects.equals(host, that.host);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = (useSSL ? 1 : 0);
+		result = 31 * result + (host != null ? host.hashCode() : 0);
+		result = 31 * result + port;
+		return result;
 	}
 }

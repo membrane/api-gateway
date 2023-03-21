@@ -14,8 +14,11 @@
 
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.util.Assert;
+import org.junit.jupiter.api.*;
+import org.springframework.util.*;
+
+import static java.lang.Thread.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by Tobias on 12/16/2016.
@@ -32,17 +35,14 @@ public class AccountBlockerTest {
             Assert.isTrue(!ab.isBlocked("foo"), "login should not be blocked in loop " + i);
             ab.fail("foo");
         }
-        Assert.isTrue(ab.isBlocked("foo"));
+        assertTrue(ab.isBlocked("foo"));
 
-        Thread.sleep(2000);
+        sleep(2000);
 
         for (int i = 1; i <= 10 ; i++) {
             Assert.isTrue(!ab.isBlocked("foo"), "login should not be blocked in loop " + i);
             ab.fail("foo");
         }
-        Assert.isTrue(ab.isBlocked("foo"));
-
+        assertTrue(ab.isBlocked("foo"));
     }
-
-
 }

@@ -40,6 +40,8 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+
 /**
  * @description <p>
  *              The <i>wsdlPublisher</i> can be used to serve WSDL files (and attached XML Schema Documents), if your
@@ -50,7 +52,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 @MCElement(name="wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(WSDLPublisherInterceptor.class);
+	private static final Logger log = LoggerFactory.getLogger(WSDLPublisherInterceptor.class);
 
 	public WSDLPublisherInterceptor() {
 		name = "WSDL Publisher";
@@ -58,9 +60,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
 	/**
 	 * Note that this class fulfills two purposes:
-	 *
+	 * <p>
 	 * * During the initial processDocuments() run, the XSDs are enumerated.
-	 *
+	 * <p>
 	 * * During later runs (as well as the initial run, but that's result is discarded),
 	 * the documents are rewritten.
 	 */
@@ -99,11 +101,11 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 	}
 
 	@GuardedBy("paths")
-	private final HashMap<Integer, String> paths = new HashMap<Integer, String>();
+	private final HashMap<Integer, String> paths = new HashMap<>();
 	@GuardedBy("paths")
-	private final HashMap<String, Integer> paths_reverse = new HashMap<String, Integer>();
+	private final HashMap<String, Integer> paths_reverse = new HashMap<>();
 	@GuardedBy("paths")
-	private final Queue<String> documents_to_process = new LinkedList<String>();
+	private final Queue<String> documents_to_process = new LinkedList<>();
 
 	private void processDocuments(Exchange exc) throws Exception {
 		// exc.response is only temporarily used so we can call the WSDLInterceptor
@@ -164,7 +166,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(final Exchange exc) throws Exception {
 		if (!"GET".equals(exc.getRequest().getMethod()))
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		try {
 			String resource = null;
@@ -182,7 +184,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 					synchronized(paths) {
 						if (!paths.containsKey(n)) {
 							exc.setResponse(Response.forbidden("Unknown parameter. You may only retrieve documents referenced by the WSDL.").build());
-							return Outcome.ABORT;
+							return ABORT;
 						}
 						path = paths.get(n);
 					}
@@ -195,17 +197,17 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 				wi.setRewriteEndpoint(false);
 				wi.setPathRewriter(new RelativePathRewriter(exc, resource));
 				wi.handleResponse(exc);
-				return Outcome.RETURN;
+				return RETURN;
 			}
 		} catch (NumberFormatException e) {
 			exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.internalServerError(), "Bad parameter format.", ""));
-			return Outcome.ABORT;
+			return ABORT;
 		} catch (ResourceRetrievalException e) {
 			exc.setResponse(Response.notFound().build());
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	@Override

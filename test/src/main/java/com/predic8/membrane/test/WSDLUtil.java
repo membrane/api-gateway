@@ -29,14 +29,14 @@ import javax.xml.stream.events.XMLEvent;
 import org.apache.http.ParseException;
 
 public class WSDLUtil {
-	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
 	public static List<String> getXSDs(String wsdl) throws XMLStreamException {
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 
 		XMLEventReader parser;
 		synchronized(xmlInputFactory) {
@@ -65,6 +65,5 @@ public class WSDLUtil {
 			sum += countWSDLandXSDs(new URL(new URL(url), xsd).toString());
 		return sum;
 	}
-
 
 }

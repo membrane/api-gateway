@@ -1,0 +1,29 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+					    
+	<router>
+
+		<api port="2000">
+			<request>
+				<xpathExtractor>
+					<property name="fn" xpath="person/@firstname"/>
+				</xpathExtractor>
+				<template>Buenas Noches, ${fn}sito!</template>
+			</request>
+			<return statusCode="200" contentType="text/plain"/> <!-- To forward to backend use target below instead of return -->
+			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->
+		</api>
+
+		<api port="2001">
+			<request>
+				<template location="template.xml"/>
+			</request>
+			<return statusCode="200"/>
+		</api>
+	
+	</router>
+	
+</spring:beans>

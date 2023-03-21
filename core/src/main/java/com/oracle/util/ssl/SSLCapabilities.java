@@ -30,6 +30,7 @@ package com.oracle.util.ssl;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import javax.net.ssl.SNIServerName;
 

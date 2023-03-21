@@ -35,7 +35,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
 public class XSLTTransformer {
-	private static Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
 
 	private final TransformerFactory fac;
 	private final ArrayBlockingQueue<Transformer> transformers;
@@ -46,17 +46,14 @@ public class XSLTTransformer {
 
 		this.styleSheet = styleSheet;
 		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
-		transformers = new ArrayBlockingQueue<Transformer>(concurrency);
+		transformers = new ArrayBlockingQueue<>(concurrency);
 		createOneTransformer(router.getResolverMap(), router.getBaseLocation());
-		router.getBackgroundInitializator().execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					for (int i = 1; i < concurrency; i++)
-						createOneTransformer(router.getResolverMap(), router.getBaseLocation());
-				} catch (Exception e) {
-					log.error("Error creating XSLT transformer:", e);
-				}
+		router.getBackgroundInitializator().execute(() -> {
+			try {
+				for (int i = 1; i < concurrency; i++)
+					createOneTransformer(router.getResolverMap(), router.getBaseLocation());
+			} catch (Exception e) {
+				log.error("Error creating XSLT transformer:", e);
 			}
 		});
 	}
@@ -74,7 +71,7 @@ public class XSLTTransformer {
 	}
 
 	public byte[] transform(Source xml) throws Exception {
-		return transform(xml, new HashMap<String, String>());
+		return transform(xml, new HashMap<>());
 	}
 
 	public byte[] transform(Source xml, Map<String, String> parameters)

@@ -14,30 +14,26 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.transport.http2.frame.Error;
-import com.predic8.membrane.core.transport.http2.frame.FatalConnectionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.transport.http2.frame.*;
+import org.slf4j.*;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Null;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.validation.constraints.*;
+import java.io.*;
+import java.util.*;
 
-import static org.apache.commons.lang3.StringUtils.repeat;
+import static com.predic8.membrane.core.transport.http2.frame.Error.*;
+import static org.apache.commons.lang3.StringUtils.*;
 
 public class PriorityTree {
 
     private static final Logger log = LoggerFactory.getLogger(PriorityTree.class);
 
-    private StreamInfo root = new StreamInfo(0, null, null, null);
+    private final StreamInfo root = new StreamInfo(0, null, null, null);
 
     public void reprioritize(@NotNull StreamInfo stream, int weight, @Null StreamInfo parent, boolean exclusive) throws IOException {
         if (parent == stream)
-            throw new FatalConnectionException(Error.ERROR_PROTOCOL_ERROR);
+            throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
 
         if (parent == null)
             parent = root;

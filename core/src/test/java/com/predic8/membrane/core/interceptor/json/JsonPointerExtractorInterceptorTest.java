@@ -63,8 +63,8 @@ public class JsonPointerExtractorInterceptorTest {
         jpe.getMappings().add(new JsonPointerExtractorInterceptor.
                 Property("/orders/0/items", "items"));
         jpe.handleRequest(exc);
-        assertEquals("3", ((List)exc.getProperty("items")).get(2));
-        assertEquals("food2", ((List)exc.getProperty("items")).get(1));
+        assertEquals("3", ((List<?>)exc.getProperty("items")).get(2));
+        assertEquals("food2", ((List<?>)exc.getProperty("items")).get(1));
     }
 
     @Test

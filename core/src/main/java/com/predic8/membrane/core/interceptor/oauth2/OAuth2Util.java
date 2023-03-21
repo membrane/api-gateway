@@ -46,7 +46,7 @@ public class OAuth2Util {
     }
 
     private static void removeDuplicateSessionValues(HeaderField header) {
-        HashMap<String,String> uniqueValues = new HashMap<String, String>();
+        HashMap<String,String> uniqueValues = new HashMap<>();
         String[] values = header.getValue().split(Pattern.quote(";"));
 
         for(String value : values){

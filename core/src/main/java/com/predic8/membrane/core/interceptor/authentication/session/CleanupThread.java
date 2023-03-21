@@ -21,11 +21,11 @@ public class CleanupThread extends Thread {
 		public void cleanup();
 	}
 
-	private final ArrayList<WeakReference<Cleaner>> cleaners = new ArrayList<WeakReference<Cleaner>>();
+	private final ArrayList<WeakReference<Cleaner>> cleaners = new ArrayList<>();
 
 	public CleanupThread(Cleaner... cleaner) {
 		for (Cleaner c : cleaner)
-			cleaners.add(new WeakReference<Cleaner>(c));
+			cleaners.add(new WeakReference<>(c));
 	}
 
 	@Override
@@ -36,7 +36,7 @@ public class CleanupThread extends Thread {
 			} catch (InterruptedException e) {
 				return;
 			}
-			ArrayList<WeakReference<Cleaner>> removeUs = new ArrayList<WeakReference<Cleaner>>();
+			ArrayList<WeakReference<Cleaner>> removeUs = new ArrayList<>();
 			for (WeakReference<Cleaner> wr : cleaners) {
 				Cleaner c = wr.get();
 				if (c == null) {

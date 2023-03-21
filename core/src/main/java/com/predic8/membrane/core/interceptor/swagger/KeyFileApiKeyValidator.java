@@ -45,7 +45,7 @@ public class KeyFileApiKeyValidator implements ApiKeyValidator {
         this.location = location;
     }
 
-    Map<String, Boolean> validKeys = new ConcurrentHashMap<String, Boolean>();
+    Map<String, Boolean> validKeys = new ConcurrentHashMap<>();
 
     public void init(Router router) throws Exception {
         InputStream is = router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));

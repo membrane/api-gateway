@@ -14,13 +14,11 @@
 
 package com.predic8.membrane.core;
 
-import java.io.FileInputStream;
-import java.nio.charset.Charset;
-import java.util.Properties;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.rest.*;
 
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
+import java.io.*;
+import java.util.*;
 
 public class Constants {
 
@@ -35,7 +33,7 @@ public class Constants {
 	public static final String VERSION;
 
 	static {
-		String version = "4"; // fallback
+		String version = "5"; // fallback
 		try {
 			Properties p = new Properties(); // Production
 			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));
@@ -53,11 +51,7 @@ public class Constants {
 
 	public static final String XML_VERSION = "1.0";
 
-	public static final String UTF_8 = "UTF-8";
-	public static final Charset UTF_8_CHARSET = Charset.forName(UTF_8);
-
 	public static final String ISO_8859_1 = "ISO-8859-1";
-	public static final Charset ISO_8859_1_CHARSET = Charset.forName(ISO_8859_1);
 
 	public static final String UNKNOWN = "unknown";
 
@@ -90,7 +84,7 @@ public class Constants {
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
 
 	public static final String HTML_FOOTER =
-			"Copyright ©2009-2023 " +
+			"Copyright Â©2009-2023 " +
 					"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
 					". All Rights Reserved. See " +
 					"<a href=\"http://www.membrane-soa.org/service-proxy/\">http://www.membrane-soa.org/service-proxy/</a>" +

@@ -14,48 +14,37 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.http2.Http2Client;
-import com.predic8.membrane.core.transport.http2.Http2ClientPool;
-import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.TimerManager;
-import com.predic8.membrane.core.util.Util;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.http2.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import javax.annotation.*;
+import javax.annotation.concurrent.*;
+import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
+import java.nio.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static java.lang.Boolean.TRUE;
+import static java.lang.Boolean.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
  * switch destinations on failures.
- *
  * Instances are thread-safe.
  */
-public class HttpClient {
+public class HttpClient implements AutoCloseable {
 	public static final String HTTP2 = "h2";
 
-	private static Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 
 	@GuardedBy("HttpClient.class")
 	private static SSLProvider defaultSSLProvider;
@@ -68,7 +57,6 @@ public class HttpClient {
 	 * How long to wait between calls to the same destination, in milliseconds.
 	 * To prevent hammering one target.
 	 * Between calls to different targets (think servers) this waiting time is not applied.
-	 *
 	 * Note: for reasons of code simplicity, this sleeping time is only applied between direct successive calls
 	 * to the same target. If there are multiple targets like one, two, one and it all goes very fast, then
 	 * it's possible that the same server gets hit with less time in between.
@@ -137,9 +125,7 @@ public class HttpClient {
 
 	@Override
 	protected void finalize() throws Throwable {
-		conMgr.shutdownWhenDone();
-		if (http2ClientPool != null)
-			http2ClientPool.shutdownWhenDone();
+		close();
 	}
 
     private void setRequestURI(Request req, String dest) throws MalformedURLException {
@@ -186,7 +172,7 @@ public class HttpClient {
 	}
 
 	private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-		Object sslPropObj = exc.getProperty(Exchange.SSL_CONTEXT);
+		Object sslPropObj = exc.getProperty(SSL_CONTEXT);
 		if(sslPropObj != null)
 			return (SSLProvider) sslPropObj;
 		if(hcp.useSSL)
@@ -215,8 +201,7 @@ public class HttpClient {
 
 		int counter = 0;
 		Exception exception = null;
-		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
-		boolean trackNodeStatus = trackNodeStatusObj instanceof Boolean && (Boolean) trackNodeStatusObj;
+		boolean trackNodeStatus = trackNodeStatus(exc);
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
@@ -248,12 +233,8 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					String[] applicationProtocols = null;
-					if (useHttp2) {
-						applicationProtocols = HTTP2_PROTOCOLS;
-					}
 					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout,
-							sniServerName, proxy, proxySSLContext, applicationProtocols);
+							sniServerName, proxy, proxySSLContext, getApplicationProtocols());
 					if (useHttp2 && Http2TlsSupport.isHttp2(con.socket))
 						usingHttp2 = true;
 					else
@@ -262,18 +243,11 @@ public class HttpClient {
 				}
 				if (proxy != null && sslProvider == null)
 					// if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
-					exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
+					exc.getRequest().getHeader().setProxyAuthorization(proxy.getCredentials());
 				Response response;
 
 				if (usingHttp2) {
-					if (h2c == null) {
-						h2c = new Http2Client(con, sslProvider.showSSLExceptions());
-						http2ClientPool.share(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext, h2c);
-					}
-					response = h2c.doCall(exc, con);
-					exc.setProperty(HTTP2, true);
-					// TODO: handle CONNECT / AllowWebSocket / etc
-					// TODO: connection should only be closed by the Http2Client
+					response = doHttp2Call(exc, con, target, h2c, sslProvider, sniServerName);
 				} else {
 
 					String newProtocol = null;
@@ -381,6 +355,33 @@ public class HttpClient {
 		throw exception;
 	}
 
+	private Response doHttp2Call(Exchange exc, Connection con, HostColonPort target, Http2Client h2c, SSLProvider sslProvider, String sniServerName) throws IOException, InterruptedException {
+		Response response;
+		if (h2c == null) {
+			h2c = new Http2Client(con, sslProvider.showSSLExceptions());
+			http2ClientPool.share(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext, h2c);
+		}
+		response = h2c.doCall(exc, con);
+		exc.setProperty(HTTP2, true);
+		// TODO: handle CONNECT / AllowWebSocket / etc
+		// TODO: connection should only be closed by the Http2Client
+		return response;
+	}
+
+	private static boolean trackNodeStatus(Exchange exc) {
+		if (exc.getProperty(TRACK_NODE_STATUS) instanceof Boolean status)
+			return status;
+
+		return false;
+	}
+
+	private String[] getApplicationProtocols() {
+		if (useHttp2) {
+			return HTTP2_PROTOCOLS;
+		}
+		return null;
+	}
+
 	private String upgradeProtocol(Exchange exc, Response response, String newProtocol) {
 		if (exc.getProperty(ALLOW_WEBSOCKET) == TRUE && isUpgradeToResponse(response, "websocket")) {
 			log.debug("Upgrading to WebSocket protocol.");
@@ -399,7 +400,7 @@ public class HttpClient {
 	}
 
 	private String getSNIServerName(Exchange exc) {
-		Object sniObject = exc.getProperty(Exchange.SNI_SERVER_NAME);
+		Object sniObject = exc.getProperty(SNI_SERVER_NAME);
 		if (sniObject == null)
 			return null;
 		return (String) sniObject;
@@ -441,7 +442,7 @@ public class HttpClient {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			exc.getRequest().writeStartLine(baos);
 			exc.getRequest().getHeader().write(baos);
-			msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
+			msg.append(ISO_8859_1.decode(ByteBuffer.wrap(baos.toByteArray())));
 
 			if (e != null)
 				log.debug("{}",msg, e);
@@ -540,5 +541,12 @@ public class HttpClient {
 
 	ConnectionManager getConnectionManager() {
 		return conMgr;
+	}
+
+	@Override
+	public void close() throws Exception {
+		conMgr.shutdownWhenDone();
+		if (http2ClientPool != null)
+			http2ClientPool.shutdownWhenDone();
 	}
 }

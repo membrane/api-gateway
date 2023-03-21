@@ -14,53 +14,36 @@
 
 package com.predic8.membrane.core;
 
-import java.io.File;
-
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.lang3.exception.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
+import org.slf4j.*;
+import org.springframework.beans.factory.xml.*;
 
-import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfigurationException;
-import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import java.io.*;
 
-import static com.predic8.membrane.core.Constants.MEMBRANE_HOME;
-import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException;
-import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
-import static com.predic8.membrane.core.util.OSUtil.getOS;
-import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
+import static com.predic8.membrane.core.util.OSUtil.*;
 
 public class RouterCLI {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RouterCLI.class);
+    private static final Logger log = LoggerFactory.getLogger(RouterCLI.class);
 
     public static void main(String[] args) {
-
-        MembraneCommandLine cl = getMembraneCommandLine(args);
 
         Router router = null;
         try {
             try {
-                router = Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
+                router = Router.init(getRulesFile(getMembraneCommandLine(args)), RouterCLI.class.getClassLoader());
             } catch (XmlBeanDefinitionStoreException e) {
                 handleXmlBeanDefinitionStoreException(e);
             }
         } catch (InvalidConfigurationException e) {
-            System.err.println("Fatal error: " + e.getMessage());
+            log.error("Fatal error: " + e.getMessage());
             System.exit(1);
         } catch (Exception ex) {
-            Throwable rootCause = getRootCause(ex);
-            if (rootCause instanceof ExitException ee)
-                handleExitException(ee);
-            else if (rootCause instanceof PortOccupiedException poe)
-                handlePortOccupiedException(poe);
-            else
-                ex.printStackTrace();
+            SpringConfigurationErrorHandler.handleRootCause(ex,log);
             System.exit(1);
         }
 
@@ -90,67 +73,20 @@ public class RouterCLI {
         return cl;
     }
 
-    private static void handlePortOccupiedException(PortOccupiedException poe) {
-        printStars();
-        System.err.println();
-        System.err.printf("Membrane is configured to open port %d. But this port is alreay in\n", poe.getPort());
-        System.err.println("""
-                use by a different program. To start Membrane do one of the following:
-                                
-                1. Find and stop the program that is occupying the port. Then restart Membrane.""");
-        System.err.println();
-        switch (getOS()) {
-            case WINDOWS -> printHowToFindPortWindows();
-            case LINUX, MAC -> printHowToFindPortLinux();
-        }
-        System.err.println("""       
-                2. Configure Membrane to use a different port. Propably in the conf/proxies.xml
-                file. Then restart Membrane.
-                """);
-    }
-
-    private static void printHowToFindPortWindows() {
-        System.err.println("""
-                netstat -aon | find /i "listening"
-                """);
-    }
-
-    private static void printHowToFindPortLinux() {
-        System.err.println("""
-                e.g.:
-                > lsof -i :2000
-                COMMAND    PID    USER  TYPE
-                java     80910 predic8  IPv6  TCP  (LISTEN)
-                > kill -9 80910
-                """);
-    }
-
-    private static void handleExitException(ExitException exitException) {
-        printStars();
-        System.err.println();
-        System.err.println(exitException.getMessage());
-        System.err.println();
-    }
-
-    private static void printStars() {
-        System.err.println("**********************************************************************************");
-    }
-
-    private static String getRulesFile(MembraneCommandLine line) {
+    private static String getRulesFile(MembraneCommandLine line) throws IOException {
         ResolverMap rm = new ResolverMap();
         if (line.hasConfiguration()) {
-            String s = fixBackslashes(line.getConfiguration());
-            if (shouldResolveFile(s)) {
+            String filename = fixBackslashes(line.getConfiguration());
+            if (shouldResolveFile(filename)) {
                 // absolute
-                try {
-                    rm.resolve(s);
-                    return s;
+                try(InputStream ignored = rm.resolve(filename)) {
+                    return filename;
                 } catch (ResourceRetrievalException e) {
-                    System.err.println("Could not open Membrane's configuration file: " + s + " not found.");
+                    System.err.println("Could not open Membrane's configuration file: " + filename + " not found.");
                     System.exit(1);
                 }
             }
-            return getRulesFileFromRelativeSpec(rm, s, "");
+            return getRulesFileFromRelativeSpec(rm, filename, "");
         }
         return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", getErrorNotice());
     }
@@ -170,24 +106,22 @@ public class RouterCLI {
         return s.startsWith("file:") || s.startsWith("/") || s.length() > 3 && s.startsWith(":/", 1);
     }
 
-
-
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-        String membraneHome = System.getenv(MEMBRANE_HOME);
+
         String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
-        try {
-            rm.resolve(try1);
+        try(InputStream ignored = rm.resolve(try1)) {
             return try1;
-        } catch (ResourceRetrievalException e) {
+        } catch (Exception e) {
             // ignored
         }
+
+        String membraneHome = System.getenv(MEMBRANE_HOME);
         String try2 = null;
         if (membraneHome != null) {
             try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);
-            try {
-                rm.resolve(try2);
+            try(InputStream ignored =  rm.resolve(try2)) {
                 return try2;
-            } catch (ResourceRetrievalException e) {
+            } catch (Exception e) {
                 // ignored
             }
         }

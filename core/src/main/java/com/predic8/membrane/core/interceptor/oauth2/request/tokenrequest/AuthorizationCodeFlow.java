@@ -85,7 +85,7 @@ public class AuthorizationCodeFlow extends TokenRequest {
 
     private JwtGenerator.Claim[] getValidIdTokenClaims(SessionManager.Session session){
         ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),session.getUserAttributes().get(ParamNames.CLAIMS));
-        ArrayList<JwtGenerator.Claim> claims = new ArrayList<JwtGenerator.Claim>();
+        ArrayList<JwtGenerator.Claim> claims = new ArrayList<>();
         if(cp.hasClaims()) {
             for (String claim : cp.getIdTokenClaims())
                 claims.add(new JwtGenerator.Claim(claim,session.getUserAttributes().get(ClaimRenamer.convert(claim))));

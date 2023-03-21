@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -35,8 +36,8 @@ public class ConsentPageFile {
 
     private String productName;
     private String logoUrl;
-    ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<String, String>();
-    ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<String, String>();
+    ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<>();
+    ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<>();
     private Map<String, Object> json;
 
 
@@ -57,7 +58,7 @@ public class ConsentPageFile {
     }
 
     private void parseJson(String consentPageFile) throws IOException {
-        json = new ObjectMapper().readValue(consentPageFile, Map.class);
+        json = new ObjectMapper().readValue(consentPageFile, new TypeReference<>() {});
     }
 
     private void parseProductAndLogo() {

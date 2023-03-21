@@ -14,29 +14,26 @@
 
 package com.predic8.membrane.core.http;
 
-import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.ZERO;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
-import com.predic8.membrane.core.util.EndOfStreamException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.util.ByteUtil;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.*;
+import static java.lang.Long.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Reads the body with "Transfer-Encoding: chunked".
- *
+ * <p>
  * See {@link ChunkedBodyTransferrer} for writing a body using chunks.
  */
 public class ChunkedBody extends AbstractBody {
 
 	private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
-	private InputStream inputStream;
+	private final InputStream inputStream;
 	private long lengthStreamed;
 	private Header trailer;
 
@@ -46,7 +43,7 @@ public class ChunkedBody extends AbstractBody {
 	}
 
 	private static List<Chunk> readChunks(InputStream in) throws IOException {
-		List<Chunk> chunks = new ArrayList<Chunk>();
+		List<Chunk> chunks = new ArrayList<>();
 		int chunkSize;
 		while ((chunkSize = readChunkSize(in)) > 0) {
 			chunks.add(new Chunk(ByteUtil.readByteArray(in, chunkSize)));
@@ -86,7 +83,7 @@ public class ChunkedBody extends AbstractBody {
 	public static int readChunkSize(InputStream in) throws IOException {
 		StringBuilder buffer = new StringBuilder();
 
-		int c = 0;
+		int c;
 		while ((c = in.read()) != -1) {
 			if (c == 13) {
 				c = in.read();
@@ -95,6 +92,7 @@ public class ChunkedBody extends AbstractBody {
 
 			// ignore chunk extensions
 			if (c == ';') {
+				//noinspection StatementWithEmptyBody
 				while ((c = in.read()) != 10)
 					;
 			}
@@ -154,7 +152,7 @@ public class ChunkedBody extends AbstractBody {
 	boolean bodyObserved = false;
 	boolean bodyComplete = false;
 
-	public InputStream getContentAsStream() throws IOException {
+	public InputStream getContentAsStream() {
 		read = true;
 
 		if (!bodyObserved) {
@@ -233,11 +231,11 @@ public class ChunkedBody extends AbstractBody {
 			return 0;
 		int length = getLength();
 		for (Chunk chunk : chunks) {
-			length += Long.toHexString(chunk.getLength()).getBytes(Constants.UTF_8_CHARSET).length;
-			length += 2 * Constants.CRLF_BYTES.length;
+			length += toHexString(chunk.getLength()).getBytes(UTF_8).length;
+			length += 2 * CRLF_BYTES.length;
 		}
-		length += "0".getBytes(Constants.UTF_8_CHARSET).length;
-		length += 2 * Constants.CRLF_BYTES.length;
+		length += "0".getBytes(UTF_8).length;
+		length += 2 * CRLF_BYTES.length;
 		return length;
 	}
 
@@ -252,7 +250,7 @@ public class ChunkedBody extends AbstractBody {
 			destPos = copyCRLF(raw, destPos);
 		}
 		destPos = copyLastChunk(raw, destPos);
-		destPos = copyCRLF(raw, destPos);
+		copyCRLF(raw, destPos);
 		return raw;
 	}
 
@@ -264,7 +262,7 @@ public class ChunkedBody extends AbstractBody {
 	}
 
 	private int copyCRLF(byte[] raw, int destPos) {
-		System.arraycopy(Constants.CRLF_BYTES, 0, raw, destPos, 2);
+		System.arraycopy(CRLF_BYTES, 0, raw, destPos, 2);
 		return destPos += 2;
 	}
 

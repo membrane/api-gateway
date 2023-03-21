@@ -14,56 +14,36 @@
 
 package com.predic8.membrane.core;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.RuleManager.*;
+import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.administration.*;
+import com.predic8.membrane.core.jmx.*;
+import com.predic8.membrane.core.kubernetes.*;
+import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.beans.factory.*;
+import org.springframework.context.*;
+import org.springframework.context.support.*;
+
+import javax.annotation.concurrent.*;
+import java.io.*;
+import java.net.*;
+import java.util.Timer;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
+import java.util.concurrent.*;
 
-import com.predic8.membrane.core.jmx.JmxExporter;
-import com.predic8.membrane.core.jmx.JmxRouter;
-import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
-import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
-import com.predic8.membrane.core.rules.InternalProxy;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import com.predic8.membrane.core.util.TimerManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanNameAware;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.Lifecycle;
-import org.springframework.context.support.AbstractRefreshableApplicationContext;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCMain;
-import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
-import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
-import com.predic8.membrane.core.config.spring.TrackingApplicationContext;
-import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
-import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.DNSCache;
-import com.predic8.membrane.core.util.URIFactory;
-
-import javax.annotation.concurrent.GuardedBy;
-
-import static com.predic8.membrane.core.jmx.JmxExporter.JMX_EXPORTER_NAME;
-import static java.util.stream.Collectors.toList;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.jmx.JmxExporter.*;
 
 /**
  * @description <p>
@@ -221,7 +201,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	/**
 	 * Closes all ports (if any were opened) and waits for running exchanges to complete.
-	 *
+	 * <p>
 	 * When running as an embedded servlet, this has no effect.
 	 */
 	public void shutdown() throws IOException {
@@ -274,12 +254,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	private void initRemainingRules() throws Exception {
-		for (Rule rule : getRuleManager().getRules().stream().filter(r -> !(r instanceof InternalProxy)).collect(toList()))
+		for (Rule rule : getRuleManager().getRules().stream().filter(r -> !(r instanceof InternalProxy)).toList())
 			rule.init(this);
 	}
 
 	private void initInternalProxies() throws Exception {
-		for (Rule rule : getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).collect(toList()))
+		for (Rule rule : getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).toList())
 			rule.init(this);
 	}
 
@@ -317,7 +297,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		synchronized (lock) {
 			running = true;
 		}
-		log.info(Constants.PRODUCT_NAME + " " + Constants.VERSION + " up and running!");
+		log.info(PRODUCT_NAME + " " + VERSION + " up and running!");
 	}
 
 	private void startJmx() {

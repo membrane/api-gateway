@@ -14,28 +14,25 @@
 
 package com.predic8.membrane.examples.util;
 
-import com.predic8.membrane.core.util.*;
-
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static java.lang.String.format;
-import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_16;
+import static com.predic8.membrane.core.util.OSUtil.*;
+import static java.lang.String.*;
+import static java.lang.Thread.*;
+import static java.nio.charset.Charset.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
  * executable and later kills it.
- *
  * **********************************************************************
  * You might have to run "powershell Set-ExecutionPolicy RemoteSigned" as
  * administrator before using this class.
  * **********************************************************************
- *
- *
+ * <p>
  * Note that ProcessStuff is not synchronized, only ProcessStuff.watchers.
  */
 public class Process2 implements AutoCloseable {
@@ -105,6 +102,7 @@ public class Process2 implements AutoCloseable {
 				throw new IllegalStateException("line not set");
 
 			line += " " + parameters;
+			System.out.println("Starting: " + line);
 			return new Process2(baseDir, id, line, watchers, waitAfterStartFor);
 		}
 	}
@@ -177,50 +175,11 @@ public class Process2 implements AutoCloseable {
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 
-		String pidFile;
-		synchronized(random) {
-			pidFile = id + "-" + random.nextInt() + ".pid";
-		}
+		String pidFile = getPidFilename(id);
 
-		ArrayList<String> command = new ArrayList<>();
-		Charset charset;
 		Map<String, String> envVarAdditions = new HashMap<>();
 
-		if (isWindows()) {
-			File ps1 = new File(exampleDir, id + ".ps1");
-			FileWriter fw = new FileWriter(ps1);
-			fw.write(createStartCommand(startCommand, pidFile));
-			fw.close();
-			charset = UTF_16; // powershell writes UTF-16 files by default
-
-			command.add("powershell");
-			command.add(ps1.getAbsolutePath());
-		} else {
-			// Linux and Mac OS
-			// On Mac OS the setsid command must be installed: brew install util-linux
-			File ps1 = new File(exampleDir, id + "_launcher.sh");
-			FileWriter fw = new FileWriter(ps1);
-			fw.write("#!/bin/bash\n");
-			fw.write("echo $$ > \""+pidFile+"\"\n" + startCommand);
-			fw.close();
-
-			//noinspection ResultOfMethodCallIgnored
-			ps1.setExecutable(true);
-
-			charset = Charset.defaultCharset(); // on Linux, the file is probably using some 8-bit charset
-			command.add("setsid"); // start new process group so we can kill it at once
-			command.add(ps1.getAbsolutePath());
-
-			envVarAdditions.put("PATH", System.getProperty("java.home") +"/bin:" + System.getenv("PATH"));
-			envVarAdditions.put("JAVA_HOME", System.getProperty("java.home"));
-		}
-
-		ProcessBuilder pb = new ProcessBuilder(command).directory(exampleDir);
-		pb.environment().remove("MEMBRANE_HOME");
-		pb.environment().putAll(envVarAdditions);
-		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
-
-		final Process p = pb.start();
+		final Process p = getProcessBuilder(exampleDir, id, startCommand, pidFile, envVarAdditions).start();
 
 		p.getOutputStream().close();
 
@@ -236,7 +195,28 @@ public class Process2 implements AutoCloseable {
 
 		ps.startOutputWatchers();
 
-		// now wait for the PID to be written
+		waitForPIDtoBeWritten(exampleDir, pidFile, p);
+
+		if (afterStartWaiter != null)
+			afterStartWaiter.waitFor(10000);
+		sleep(100);
+	}
+
+	private ProcessBuilder getProcessBuilder(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
+		ProcessBuilder pb = new ProcessBuilder(getStartCommand(exampleDir, id, startCommand, pidFile, envVarAdditions)).directory(exampleDir);
+		pb.environment().remove("MEMBRANE_HOME");
+		pb.environment().putAll(envVarAdditions);
+		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
+		return pb;
+	}
+
+	private static String getPidFilename(String id) {
+		synchronized(random) {
+			return id + "-" + random.nextInt() + ".pid";
+		}
+	}
+
+	private void waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
 		for (int i = 0; i < 1001; i++) {
 			if (i % 20 == 0) {
 				try {
@@ -252,7 +232,7 @@ public class Process2 implements AutoCloseable {
 			if (!f.exists())
 				continue;
 			try (FileInputStream fr = new FileInputStream(f)) {
-				String line = new BufferedReader(new InputStreamReader(fr, charset)).readLine();
+				String line = new BufferedReader(new InputStreamReader(fr, getCharset())).readLine();
 				if (line == null)
 					continue;
 				stuff.pid = Integer.parseInt(line);
@@ -261,10 +241,43 @@ public class Process2 implements AutoCloseable {
 				// ignore
 			}
 		}
+	}
 
-		if (afterStartWaiter != null)
-			afterStartWaiter.waitFor(10000);
-		sleep(100);
+	private static Charset getCharset() {
+		if (isWindows()) {
+			return UTF_16; // powershell writes UTF-16 files by default
+		} else {
+			return defaultCharset(); // on Linux, the file is probably using some 8-bit charset
+		}
+	}
+
+	private ArrayList<String> getStartCommand(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
+		ArrayList<String> command = new ArrayList<>();
+		if (isWindows()) {
+			File ps1 = new File(exampleDir, id + ".ps1");
+			FileWriter fw = new FileWriter(ps1);
+			fw.write(createStartCommand(startCommand, pidFile));
+			fw.close();
+			command.add("powershell");
+			command.add(ps1.getAbsolutePath());
+		} else {
+			// Linux and Mac OS
+			// On Mac OS the setsid command must be installed: brew install util-linux
+			File ps1 = new File(exampleDir, id + "_launcher.sh");
+			FileWriter fw = new FileWriter(ps1);
+			fw.write("#!/bin/bash\n");
+			fw.write("echo $$ > \"" + pidFile + "\"\n" + startCommand);
+			fw.close();
+
+			//noinspection ResultOfMethodCallIgnored
+			ps1.setExecutable(true);
+			command.add("setsid"); // start new process group so we can kill it at once
+			command.add(ps1.getAbsolutePath());
+
+			envVarAdditions.put("PATH", System.getProperty("java.home") + "/bin:" + System.getenv("PATH"));
+			envVarAdditions.put("JAVA_HOME", System.getProperty("java.home"));
+		}
+		return command;
 	}
 
 	private String createStartCommand(String startCommand, String pidFile) {
@@ -287,20 +300,10 @@ public class Process2 implements AutoCloseable {
 		ProcessStuff ps = stuff;
 
 		// start the killer
-		ArrayList<String> command = new ArrayList<>();
-		if (isWindows()) {
-			command.add("taskkill");
-			command.add("/T"); // kill whole subtree
-			command.add("/F");
-			command.add("/PID");
-			command.add(""+ps.pid);
-		} else {
-			command.add("kill");
-			command.add("-TERM");
-			command.add("-"+ps.pid);
-		}
-		ProcessBuilder pb = new ProcessBuilder(command);
+		ProcessBuilder pb = new ProcessBuilder(getKillCommand(ps));
 		//pb.redirectInput(Redirect.PIPE).redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE);
+
+		sleep(50); // Quickfix, sometimes Membrane gets terminated before the test is over
 
 		//System.out.println("Killing process " + ps.pid);
 		// wait for killer to complete
@@ -308,10 +311,26 @@ public class Process2 implements AutoCloseable {
 		ProcessStuff killerStuff = new ProcessStuff(killer);
 		//killerStuff.watchers.add(new ConsoleLogger());
 		killerStuff.startOutputWatchers();
-		killerStuff.waitFor(10000);
+		killerStuff.waitFor(60000);
 
 		// wait for membrane to terminate
-		ps.waitFor(10000);
+		ps.waitFor(60000);
+	}
+
+	private static ArrayList<String> getKillCommand(ProcessStuff ps) {
+		ArrayList<String> command = new ArrayList<>();
+		if (isWindows()) {
+			command.add("taskkill");
+			command.add("/T"); // kill whole subtree
+			command.add("/F");
+			command.add("/PID");
+			command.add("" + ps.pid);
+		} else {
+			command.add("kill");
+			command.add("-TERM");
+			command.add("-" + ps.pid);
+		}
+		return command;
 	}
 
 	private static int waitFor(Process p, long timeout) {
@@ -328,7 +347,7 @@ public class Process2 implements AutoCloseable {
 				//noinspection BusyWait
 				sleep(200);
 			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				currentThread().interrupt();
 			}
 		}
 	}

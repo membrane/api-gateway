@@ -43,18 +43,19 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+
 @MCElement(name = "apiManagement")
 public class ApiManagementInterceptor extends AbstractInterceptor {
 
-    public static final String APPLICATION_JSON = "application/json"; // @TODO use constant somewhere else
-    private static Logger log = LoggerFactory.getLogger(ApiManagementInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(ApiManagementInterceptor.class);
     private ApiConfig apiConfig;
     private AMRateLimiter amRateLimiter = null;
     private AMQuota amQuota = null;
     private AMStatisticsCollector amStatisticsCollector;
     private ApiManagementConfiguration apiManagementConfiguration = null;
     private String config = "api.yaml";
-    private ApiKeyRetriever apiKeyRetriever = new HeaderKeyRetriever();
+    private final ApiKeyRetriever apiKeyRetriever = new HeaderKeyRetriever();
 
     @Override
     public void init(Router router) throws Exception {
@@ -83,7 +84,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private void addInterceptors() {
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append("Api Management Interceptor");
-        ArrayList<String> interceptors = new ArrayList<String>();
+        ArrayList<String> interceptors = new ArrayList<>();
         nameBuilder.append(" { ");
         if (amRateLimiter != null) {
             amRateLimiter.setAmc(apiManagementConfiguration);

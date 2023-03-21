@@ -129,7 +129,7 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 
 	private List<Node> filterBySuccessProfile(List<Node> endpoints) {
 		if (state.getMap().isEmpty()) return endpoints;
-		List<Node> filtered = new ArrayList<Node>(endpoints.size());
+		List<Node> filtered = new ArrayList<>(endpoints.size());
 		for (Node endpoint : endpoints) {
 			NodeFaultProfile nodeFaultProfile = state.getMap().get(makeHostAndPort(endpoint));
 			if (nodeFaultProfile != null) {

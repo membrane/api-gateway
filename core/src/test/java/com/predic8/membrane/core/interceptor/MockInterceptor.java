@@ -25,9 +25,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 public class MockInterceptor extends AbstractInterceptor {
 
-	private static final List<String> reqLabels = new ArrayList<String>();
-	private static final List<String> respLabels = new ArrayList<String>();
-	private static final List<String> abortLabels = new ArrayList<String>();
+	private static final List<String> reqLabels = new ArrayList<>();
+	private static final List<String> respLabels = new ArrayList<>();
+	private static final List<String> abortLabels = new ArrayList<>();
 
 	private final String label;
 	private final Set<String> failurePoints;
@@ -40,7 +40,7 @@ public class MockInterceptor extends AbstractInterceptor {
 	public MockInterceptor(String label, String[] failurePoints) {
 		this.label = label;
 		name = "MockInterceptor: "+label;
-		this.failurePoints = new HashSet<String>(Arrays.asList(failurePoints));
+		this.failurePoints = new HashSet<>(Arrays.asList(failurePoints));
 	}
 
 	@Override

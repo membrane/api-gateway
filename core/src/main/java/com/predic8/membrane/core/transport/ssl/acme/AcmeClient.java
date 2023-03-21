@@ -13,77 +13,55 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.joda.JodaModule;
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.datatype.joda.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.acme.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.TimerManager;
-import com.predic8.membrane.core.util.URIFactory;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.ExtensionsGenerator;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.pkcs.*;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.*;
+import org.bouncycastle.jce.provider.*;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemReader;
-import org.joda.time.Duration;
+import org.bouncycastle.openssl.jcajce.*;
+import org.bouncycastle.operator.*;
+import org.bouncycastle.operator.jcajce.*;
+import org.bouncycastle.pkcs.*;
+import org.bouncycastle.pkcs.jcajce.*;
+import org.bouncycastle.util.io.pem.*;
+import org.joda.time.*;
 import org.jose4j.base64url.Base64;
-import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.EcJwkGenerator;
-import org.jose4j.jwk.EllipticCurveJsonWebKey;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.PublicJsonWebKey;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.keys.EllipticCurves;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jose4j.json.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.keys.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.math.BigInteger;
+import javax.annotation.*;
+import javax.security.auth.x500.*;
+import java.io.*;
+import java.math.*;
 import java.security.*;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.text.SimpleDateFormat;
+import java.security.spec.*;
+import java.text.*;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.http.Header.LOCATION;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JOSE_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_DNS_01;
-import static com.predic8.membrane.core.transport.ssl.acme.Challenge.TYPE_HTTP_01;
-import static com.predic8.membrane.core.transport.ssl.acme.Identifier.TYPE_DNS;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.jose4j.lang.HashUtil.SHA_256;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.transport.ssl.acme.Challenge.*;
+import static com.predic8.membrane.core.transport.ssl.acme.Identifier.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.jose4j.lang.HashUtil.*;
 
 public class AcmeClient {
 
@@ -106,12 +84,12 @@ public class AcmeClient {
     private String newNonceUrl;
     private String newOrderUrl;
     private String revokeCertUrl;
-    private List<String> contacts;
-    private boolean termsOfServiceAgreed;
+    private final List<String> contacts;
+    private final boolean termsOfServiceAgreed;
     private PrivateKey privateKey;
     private PublicJsonWebKey publicJsonWebKey;
-    private String algorithm = AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256;
-    private Duration validity;
+    private final String algorithm = AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256;
+    private final Duration validity;
     private AcmeSynchronizedStorageEngine asse;
 
     public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory) {
@@ -150,6 +128,7 @@ public class AcmeClient {
         Exchange e = hc.call(new Request.Builder().get(directoryUrl).header("User-Agent", Constants.VERSION).buildExchange());
         handleError(e);
 
+        @SuppressWarnings("rawtypes")
         Map dir = om.readValue(e.getResponse().getBodyAsStreamDecoded(), Map.class);
 
         keyChangeUrl = (String) dir.get("keyChange");
@@ -163,8 +142,11 @@ public class AcmeClient {
     private void handleError(Exchange e) throws IOException, AcmeException {
         if (e.getResponse().getStatusCode() >= 300) {
             String contentType = e.getResponse().getHeader().getFirstValue("Content-Type");
-            if (APPLICATION_PROBLEM_JSON.equals(contentType)) {
+
+            if (isOfMediaType(APPLICATION_PROBLEM_JSON, contentType)) {
+                @SuppressWarnings("rawtypes")
                 Map m = om.readValue(e.getResponse().getBodyAsStreamDecoded(), Map.class);
+
                 String type = (String) m.get("type");
                 String detail = (String) m.get("detail");
                 List<Map> sub = (List<Map>) m.get("subproblems");
@@ -223,8 +205,7 @@ public class AcmeClient {
             PrivateKey pk;
             try (PemReader pemReader = new PemReader(new StringReader(privateKey))) {
                 PemObject pemObject = pemReader.readPemObject();
-                byte[] content = pemObject.getContent();
-                PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(content);
+                PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(pemObject.getContent());
                 pk = factory.generatePrivate(privKeySpec);
             }
             PublicKey pubkey = computePublicKeyFromPrivate(pk);
@@ -281,7 +262,7 @@ public class AcmeClient {
 
     public String provision(Authorization auth) throws Exception {
         Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> challengeType.equals(c.getType())).findAny();
-        if (!challenge.isPresent())
+        if (challenge.isEmpty())
             throw new RuntimeException("Could not find challenge of type "+challengeType+": " + om.writeValueAsString(auth));
 
         if (!TYPE_DNS.equals(auth.getIdentifier().getType()))

@@ -14,18 +14,17 @@ limitations under the License. */
 
 package com.predic8.membrane.core.beautifier;
 
-import java.io.IOException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import java.io.*;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.*;
+import static com.fasterxml.jackson.databind.SerializationFeature.*;
 
 public class JSONBeautifier {
 
-	private ObjectMapper objectMapper = new ObjectMapper();
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	private boolean indentOutput = true;
 
@@ -36,15 +35,14 @@ public class JSONBeautifier {
 	private boolean failOnUnknownProperties = true;
 
 	public String beautify(String content) throws IOException {
-		JsonNode tree = objectMapper.readTree(content);
-		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree);
+		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(content));
 	}
 
 	public void configure() {
-		objectMapper.configure(SerializationFeature.INDENT_OUTPUT, indentOutput);
+		objectMapper.configure(INDENT_OUTPUT, indentOutput);
 		objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, allowedUnquotedFieldNames);
 		objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, quoteFieldNames);
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
+		objectMapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
 	}
 
 	public void setIndentOutput(boolean indentOutput) {

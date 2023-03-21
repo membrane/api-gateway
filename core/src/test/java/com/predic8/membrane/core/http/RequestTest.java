@@ -14,26 +14,23 @@
 
 package com.predic8.membrane.core.http;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.*;
-import java.nio.charset.*;
-import java.util.Arrays;
-
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.util.EndOfStreamException;
+import java.io.*;
+import java.net.*;
+
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.util.StringTestUtil.*;
+import static com.predic8.membrane.util.TestUTtil2.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-	private static Request reqPost = new Request();
+	private static final Request reqPost = new Request();
 
-	private static Request reqChunked = new Request();
+	private static final Request reqChunked = new Request();
 
 	private InputStream inPost;
 
@@ -45,8 +42,8 @@ public class RequestTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		inPost = RequestTest.class.getClassLoader().getResourceAsStream("request-post.msg");
-		inChunked = RequestTest.class.getClassLoader().getResourceAsStream("request-chunked-soap.msg");
+		inPost = getResourceAsStream(this,"request-post.msg");
+		inChunked = getResourceAsStream(this,"request-chunked-soap.msg");
 	}
 
 	@AfterEach
@@ -69,8 +66,7 @@ public class RequestTest {
 		}
 
 	}
-
-
+	
 	@Test
 	public void testParseStartLineChunked() throws IOException, EndOfStreamException {
 		reqChunked.parseStartLine(inChunked);
@@ -88,7 +84,7 @@ public class RequestTest {
 	@Test
 	public void testReadPost() throws Exception {
 		reqPost.read(inPost, true);
-		assertEquals(Request.METHOD_POST, reqPost.getMethod());
+		assertEquals(METHOD_POST, reqPost.getMethod());
 		assertEquals("/operation/call", reqPost.getUri());
 		assertNotNull(reqPost.getBody());
 
@@ -136,13 +132,48 @@ public class RequestTest {
 
 	@Test
 	public void isEmpty() throws IOException, URISyntaxException {
-		assertTrue(new Request.Builder().body("").build().isBodyEmpty());
-		assertTrue(new Request.Builder().body("".getBytes(UTF_8)).build().isBodyEmpty());
-		assertTrue(new Request.Builder().get("http://predic8.de").build().isBodyEmpty());
+		assertTrue(new Builder().body("").build().isBodyEmpty());
+		assertTrue(new Builder().body("".getBytes(UTF_8)).build().isBodyEmpty());
+		assertTrue(get("/foo").build().isBodyEmpty());
 	}
 
 	@Test
-	public void isNotEmpty() throws IOException {
-		assertFalse(new Request.Builder().body("ABC").build().isBodyEmpty());
+	void isNotEmpty() throws IOException, URISyntaxException {
+		assertFalse(post("/foo").body("ABC").build().isBodyEmpty());
+	}
+
+	@Test
+	void createFromStream() throws IOException {
+		Request req = new Request();
+		req.create("POST", "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		assertFalse(req.isBodyEmpty());
+	}
+
+	@Test
+	void createFromStreamMethodGETDoNotSupportBody() throws IOException {
+		Request req = new Request();
+		req.create(METHOD_GET , "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		assertTrue(req.isBodyEmpty());
+	}
+
+	@Test
+	void createFromStreamMethodHEADDoNotSupportBody() throws IOException {
+		Request req = new Request();
+		req.create(METHOD_HEAD, "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+		assertTrue(req.isBodyEmpty());
+	}
+	
+	@Test
+	void addHeaderToExisting() throws IOException, EndOfStreamException {
+		Request req = new Request();
+		req.read(inputStreamFrom("""
+                GET / HTTP/1.1
+                Foo: 1
+                Foo: 2
+    			
+                """),true);
+		req.getHeader().add("Foo","3"); // Now add a third and see if the sequence is kept.
+
+		assertEquals("1,2,3",req.getHeader().getNormalizedValue("Foo"));
 	}
 }

@@ -29,17 +29,15 @@ public class TokenRequestTest extends RequestParameterizedTest {
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-            testCodeMissing(),
-            testClientIdMissing(),
-            testClientSecretMissing(),
-            testRedirectUriMissing(),
-            testNoSessionForCode(),
-            testInvalidClient(),
-            testUnauthorizedClient(),
-            testRedirectUriNotAbsolute(),
-            testRedirectUriNotEquals()
-        });
+        return Arrays.asList(testCodeMissing(),
+                testClientIdMissing(),
+                testClientSecretMissing(),
+                testRedirectUriMissing(),
+                testNoSessionForCode(),
+                testInvalidClient(),
+                testUnauthorizedClient(),
+                testRedirectUriNotAbsolute(),
+                testRedirectUriNotEquals());
     }
 
     private static Object[] testRedirectUriNotEquals() {
@@ -79,21 +77,11 @@ public class TokenRequestTest extends RequestParameterizedTest {
     }
 
     private static Callable<String> getCodeQuery(){
-        return new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return "code=" + oasit.afterCodeGenerationCode;
-            }
-        };
+        return () -> "code=" + oasit.afterCodeGenerationCode;
     }
 
     private static Callable<String> getWrongCodeQuery(){
-        return new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return "code=" + 123456789;
-            }
-        };
+        return () -> "code=" + 123456789;
     }
 
 }

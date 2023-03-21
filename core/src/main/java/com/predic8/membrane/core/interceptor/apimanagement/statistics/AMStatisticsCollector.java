@@ -62,7 +62,7 @@ public class AMStatisticsCollector {
     boolean traceIncludesHeader = true;
     int bodyBytes = -1;
 
-    ConcurrentHashMap<String, ConcurrentLinkedQueue<Exchange>> exchangesForApiKey = new ConcurrentHashMap<String, ConcurrentLinkedQueue<Exchange>>();
+    ConcurrentHashMap<String, ConcurrentLinkedQueue<Exchange>> exchangesForApiKey = new ConcurrentHashMap<>();
 
     ExecutorService collectorThread = Executors.newFixedThreadPool(1);
 
@@ -84,8 +84,8 @@ public class AMStatisticsCollector {
                 while (true) {
                     try {
                         Exchange exc = null;
-                        ArrayList<String> jsonStatisticsForApiKey = new ArrayList<String>();
-                        ArrayList<String> jsonExchangesForApiKey = new ArrayList<String>();
+                        ArrayList<String> jsonStatisticsForApiKey = new ArrayList<>();
+                        ArrayList<String> jsonExchangesForApiKey = new ArrayList<>();
                         for (String apiKey : exchangesForApiKey.keySet()) {
                             while ((exc = exchangesForApiKey.get(apiKey).poll()) != null) {
                                 String exchangeStatistics = null;
@@ -172,7 +172,7 @@ public class AMStatisticsCollector {
     private String getBody(Message msg) {
         String origBody = msg.getBodyAsStringDecoded();
         if (bodyBytes == -1)
-            return origBody.substring(0, origBody.length());
+            return origBody;
 
         return origBody.substring(0, bodyBytes);
     }
@@ -298,7 +298,7 @@ public class AMStatisticsCollector {
 
             // See SO 3752194 for explanation for this
             if (exchangeQueue == null) {
-                ConcurrentLinkedQueue<Exchange> newValue = new ConcurrentLinkedQueue<Exchange>();
+                ConcurrentLinkedQueue<Exchange> newValue = new ConcurrentLinkedQueue<>();
                 exchangeQueue = exchangesForApiKey.putIfAbsent(apiKey, newValue);
                 if (exchangeQueue == null)
                     exchangeQueue = newValue;

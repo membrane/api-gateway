@@ -14,27 +14,24 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.*;
+import java.util.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * A HTTP message body (request or response), as it is received or constructed
  * internally by Membrane.
- *
+ * <p>
  * (Sending a body is handled by one of the {@link AbstractBodyTransferrer}s.)
- *
+ * <p>
  * To read a body, use the concrete implementation {@link ChunkedBody} (iff
  * "Transfer-Encoding: chunked" is used) or {@link Body} (iff not). To construct
  * a body within Membrane, {@link Body} is used by some helper method like
  * {@link Response.ResponseBuilder#body(String)}.
- *
+ * <p>
  * This class supports "streaming" the body: If a HTTP message is directly
  * forwarded by Membrane (without any component reading or changing the
  * message's body), the incoming network stream's buffer is directly written to
@@ -46,8 +43,8 @@ public abstract class AbstractBody {
 
 	boolean read;
 
-	protected List<Chunk> chunks = new ArrayList<Chunk>();
-	protected List<MessageObserver> observers = new ArrayList<MessageObserver>(1);
+	protected List<Chunk> chunks = new ArrayList<>();
+	protected List<MessageObserver> observers = new ArrayList<>(1);
 	private boolean wasStreamed = false;
 
 	public void read() throws IOException {
@@ -81,7 +78,7 @@ public abstract class AbstractBody {
 
 	/**
 	 * Returns the body's content as a byte[] represenatation.
-	 *
+	 * <p>
 	 * For example, {@link #getContent()} might return a byte representation of
 	 *
 	 * <pre>
@@ -91,9 +88,9 @@ public abstract class AbstractBody {
 	 * </pre>
 	 *
 	 * The return value does not differ whether "Transfer-Encoding: chunked" is
-	 * used or not (see http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+	 * used or not (see <a href="http://en.wikipedia.org/wiki/Chunked_transfer_encoding">Chunked Transfer Encoding</a>
 	 * ), the example above is taken from there.
-	 *
+	 * <p>
 	 * Please note that a new array is allocated when calling
 	 * {@link #getContent()}. If you do not need the body as one single byte[],
 	 * you should therefore use {@link #getContentAsStream()} instead.
@@ -154,9 +151,9 @@ public abstract class AbstractBody {
 
 	/**
 	 * Returns a reconstruction of the over-the-wire byte sequence received.
-	 *
+	 * <p>
 	 * When "Transfer-Encoding: chunked" is used (see
-	 * http://en.wikipedia.org/wiki/Chunked_transfer_encoding ), the return
+	 * <a href="http://en.wikipedia.org/wiki/Chunked_transfer_encoding">Chunked Transfer Encoding</a> ), the return
 	 * value might be (to follow the example from Wikipedia) a byte representation of
 	 *
 	 * <pre>
@@ -179,7 +176,7 @@ public abstract class AbstractBody {
 	protected abstract byte[] getRawLocal() throws IOException;
 
 	protected boolean hasRelevantObservers() {
-		return observers.stream().filter(messageObserver -> !(messageObserver instanceof NonRelevantBodyObserver)).collect(Collectors.toList()).size() > 0;
+		return observers.stream().filter(messageObserver -> !(messageObserver instanceof NonRelevantBodyObserver)).toList().size() > 0;
 	}
 
 	/**
@@ -192,7 +189,7 @@ public abstract class AbstractBody {
 			return "";
 		}
 		try {
-			return new String(getRaw(), Constants.UTF_8_CHARSET);
+			return new String(getRaw(), UTF_8);
 		} catch (IOException e) {
 			log.error("", e);
 			return "Error in body: " + e;

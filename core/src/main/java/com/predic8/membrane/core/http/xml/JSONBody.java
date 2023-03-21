@@ -45,7 +45,7 @@ class JSONBody extends AbstractXmlElement {
 
 			final JsonFactory jsonFactory = new JsonFactory();
 			final JsonParser jp = jsonFactory.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
-			final List<String> stack = new ArrayList<String>();
+			final List<String> stack = new ArrayList<>();
 			String name = "root";
 			OUTER:
 				while (jp.nextToken() != null) {
@@ -111,11 +111,9 @@ class JSONBody extends AbstractXmlElement {
 					}
 				}
 
-		} catch (JsonParseException e) {
-			throw new RuntimeException(e);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
+    }
 
 }

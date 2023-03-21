@@ -13,24 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-
+import com.floreysoft.jmte.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
 import jakarta.mail.*;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.Message.*;
+import jakarta.mail.internet.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import java.util.*;
 
-import com.floreysoft.jmte.Engine;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @explanation A <i>token provider</i> sending a randomly generated numeric token
@@ -61,7 +54,7 @@ import com.predic8.membrane.core.Router;
 @MCElement(name="emailTokenProvider", topLevel=false)
 public class EmailTokenProvider extends NumericTokenProvider {
 
-	private static Logger log = LoggerFactory.getLogger(EmailTokenProvider.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(EmailTokenProvider.class.getName());
 
 	private boolean simulate = false;
 
@@ -84,13 +77,9 @@ public class EmailTokenProvider extends NumericTokenProvider {
 
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
-		String token = generateToken(userAttributes);
 
-		HashMap<String, Object> model = new HashMap<String, Object>();
-		for (Map.Entry<String, String> e : userAttributes.entrySet()) {
-			model.put(e.getKey(), e.getValue());
-		}
-		model.put("token", token);
+		HashMap<String, Object> model = new HashMap<>(userAttributes);
+		model.put("token", generateToken(userAttributes));
 
 		Engine engine = new Engine();
 		String recipient = engine.transform(this.recipient, model);
@@ -126,18 +115,22 @@ public class EmailTokenProvider extends NumericTokenProvider {
 				}
 			});
 
-			final MimeMessage msg = new MimeMessage(session);
-
-			msg.setFrom(new InternetAddress(sender));
-			msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(recipient, false));
-			msg.setSubject(subject);
-			msg.setText(text, Constants.UTF_8);
-			msg.setSentDate(new Date());
+			final MimeMessage msg = getMimeMessage(sender, recipient, subject, text, session);
 
 			Transport.send(msg, msg.getAllRecipients());
 		} catch (MessagingException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private static MimeMessage getMimeMessage(String sender, String recipient, String subject, String text, Session session) throws MessagingException {
+		final MimeMessage msg = new MimeMessage(session);
+		msg.setFrom(new InternetAddress(sender));
+		msg.setRecipients(RecipientType.TO, InternetAddress.parse(recipient, false));
+		msg.setSubject(subject);
+		msg.setText(text, UTF_8.name());
+		msg.setSentDate(new Date());
+		return msg;
 	}
 
 	public boolean isSimulate() {

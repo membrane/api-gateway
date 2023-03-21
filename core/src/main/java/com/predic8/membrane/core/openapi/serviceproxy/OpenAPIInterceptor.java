@@ -16,12 +16,14 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.servers.*;
 import jakarta.mail.internet.*;
 import redis.clients.jedis.*;
 
@@ -32,18 +34,18 @@ import java.util.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.RESPONSE;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
 
 
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
-    protected final OpenAPIProxy proxy;
+    protected final APIProxy proxy;
 
-    public OpenAPIInterceptor(OpenAPIProxy proxy) {
+    public OpenAPIInterceptor(APIProxy proxy) {
         this.proxy = proxy;
     }
 
@@ -51,46 +53,49 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         String basePath = getMatchingBasePath(exc);
         // No matching API found
-        if  (basePath == null) {
-            exc.setResponse(Response.notFound().contentType(APPLICATION_JSON_UTF8).body(errorJson("No matching API found!")).build());
+        if (basePath == null) {
+            // @TODO ProblemDetails
+            Map<String,String> m = new HashMap<>();
+            m.put("description","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
+            exc.setResponse(ProblemDetails.createProblemDetails(404, "/not-found", "No matching API found!"));
             return RETURN;
         }
 
-        OpenAPI api = proxy.getBasePaths().get(basePath);
+        OpenAPIRecord rec = proxy.getBasePaths().get(basePath);
 
         // If OpenAPIProxy has a <target> Element use this for routing otherwise
         // take the urls from the info.servers field in the OpenAPI document.
-        if (proxy.getTarget() == null || (proxy.getTarget().getHost() == null && proxy.getTarget().getUrl() == null))
-            setDestinationsFromOpenAPI(api, exc);
+        if (!hasProxyATargetElement())
+            setDestinationsFromOpenAPI(rec, exc);
 
-        ValidationErrors errors = validateRequest(api, exc);
+        ValidationErrors errors = validateRequest(rec.api, exc);
 
         if (errors != null && errors.size() > 0) {
             proxy.statisticCollector.collect(errors);
-            return returnErrors(exc, errors, REQUEST, validationDetails(api));
+            return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
         }
 
-        exc.setProperty("openApi",api);
+        exc.setProperty("openApi", rec);
 
         return CONTINUE;
+    }
+
+    private boolean hasProxyATargetElement() {
+        return proxy.getTarget() != null && (proxy.getTarget().getHost() != null || proxy.getTarget().getUrl() != null);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
 
-        OpenAPI api = (OpenAPI) exc.getProperty("openApi");
-        ValidationErrors errors = validateResponse(api, exc);
+        OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty("openApi");
+        ValidationErrors errors = validateResponse(rec.api, exc);
 
-        if (errors != null && errors.size() > 0) {
+        if (errors != null && errors.hasErrors()) {
             exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
             proxy.statisticCollector.collect(errors);
-            return returnErrors(exc, errors, RESPONSE, validationDetails(api));
+            return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
         }
         return CONTINUE;
-    }
-
-    private byte[] errorJson(String msg) {
-        return String.format("{ \"error\": \"%s\"}", msg).getBytes();
     }
 
     protected String getMatchingBasePath(Exchange exc) {
@@ -122,7 +127,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return true;
 
         @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
+        Map<String, Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         if (xValidation == null)
             return true;
@@ -149,21 +154,29 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return (Map<String, Boolean>) extenstions.get(X_MEMBRANE_VALIDATION);
     }
 
-    protected void setDestinationsFromOpenAPI(OpenAPI api, Exchange exc) {
+    protected void setDestinationsFromOpenAPI(OpenAPIRecord rec, Exchange exc) {
         exc.getDestinations().clear();
-        api.getServers().forEach(server -> {
-            URL url;
-            try {
-                url = new URL(server.getUrl());
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                throw new RuntimeException("Cannot parse server address from OpenAPI " + server.getUrl());
-            }
+        rec.api.getServers().forEach(server -> {
+            URL url = getServerUrlFromOpenAPI(rec, server);
 
-            setHostHeader(exc, url);
+            setHostHeader(exc, url); // @TODO Check
+
             exc.setProperty(SNI_SERVER_NAME, url.getHost());
             exc.getDestinations().add(getUrlWithoutPath(url) + exc.getRequest().getUri());
         });
+    }
+
+    private static URL getServerUrlFromOpenAPI(OpenAPIRecord rec, Server server) {
+        try {
+            if (rec.isVersion2()) {
+                return new URL(parseSwaggersInfoServer(server.getUrl()).getUrl());
+            }
+
+            // OpenAPI 3 or newer
+            return new URL(server.getUrl());
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot parse server address from OpenAPI " + server.getUrl());
+        }
     }
 
     @Override
@@ -183,17 +196,17 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         sb.append("<table>");
         sb.append("<thead><th>API</th><th>Base Path</th><th>Validation</th></thead>");
 
-        for (Map.Entry<String, OpenAPI> entry : proxy.getBasePaths().entrySet()) {
+        for (Map.Entry<String, OpenAPIRecord> entry : proxy.getBasePaths().entrySet()) {
             sb.append("<tr>");
             sb.append("<td>");
-            sb.append(entry.getValue().getInfo().getTitle());
+            sb.append(entry.getValue().api.getInfo().getTitle());
             sb.append("</td>");
             sb.append("<td>");
             sb.append(entry.getKey());
             sb.append("</td>");
             sb.append("<td>");
-            if (entry.getValue().getExtensions() != null && entry.getValue().getExtensions().get(X_MEMBRANE_VALIDATION) != null) {
-                sb.append(entry.getValue().getExtensions().get(X_MEMBRANE_VALIDATION));
+            if (entry.getValue().api.getExtensions() != null && entry.getValue().api.getExtensions().get(X_MEMBRANE_VALIDATION) != null) {
+                sb.append(entry.getValue().api.getExtensions().get(X_MEMBRANE_VALIDATION));
             }
             sb.append("</td>");
             sb.append("</tr>");
@@ -214,7 +227,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private byte[] getErrorMessage(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
         if (validationDetails)
-           return errors.getErrorMessage(direction);
+            return errors.getErrorMessage(direction);
         return createErrorMessage("Message validation failed!");
     }
 }

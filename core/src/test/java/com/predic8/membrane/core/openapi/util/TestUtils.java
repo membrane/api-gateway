@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import io.swagger.v3.parser.*;
 
 import java.io.*;
 import java.util.*;
@@ -29,17 +30,29 @@ import static java.util.Collections.singletonList;
 public class TestUtils {
 
     public static final ObjectMapper om = new ObjectMapper();
+    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
     public static InputStream toInputStrom(String s) {
         return new ByteArrayInputStream(s.getBytes());
+    }
+
+    /**
+     *
+     * @param thisObj this of the caller
+     * @param path path into src/resources
+     * @return YAML as JsonNode
+     * @throws IOException Can not read resource
+     */
+    public static JsonNode getYAMLResource(Object thisObj,String path) throws IOException {
+        return omYaml.readTree(getResourceAsStream(thisObj,path));
     }
 
     public static InputStream getResourceAsStream(Object obj, String fileName) {
         return obj.getClass().getResourceAsStream(fileName);
     }
 
-    public static OpenAPIProxy createProxy(Router router, OpenAPIProxy.Spec spec) throws Exception {
-        OpenAPIProxy proxy = new OpenAPIProxy();
+    public static APIProxy createProxy(Router router, APIProxy.Spec spec) throws Exception {
+        APIProxy proxy = new APIProxy();
         proxy.init(router);
         proxy.setSpecs(singletonList(spec));
         proxy.init();
@@ -49,10 +62,6 @@ public class TestUtils {
     @SuppressWarnings("rawtypes")
     public static Map getMapFromResponse(Exchange exc) throws IOException {
         return om.readValue(exc.getResponse().getBody().getContent(), Map.class);
-    }
-
-    public static JsonNode getJsonFromResponse(Exchange exc) throws IOException {
-        return om.readValue(exc.getResponse().getBody().getContent(), JsonNode.class);
     }
 
     public static OpenAPIRecord getSingleOpenAPIRecord(Map<String,OpenAPIRecord> m) {

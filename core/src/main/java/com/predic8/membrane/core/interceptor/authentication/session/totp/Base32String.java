@@ -28,8 +28,8 @@ import java.util.Locale;
  * byte array, for example, string of sixteen 7s ("7...7") and seventeen 7s both
  * decode to the same byte array.
  * TOD O(sarvar): Revisit this encoding and whether this ambiguity needs fixing.
- *
- * Source: http://code.google.com/p/google-authenticator
+ * <p>
+ * Source: <a href="http://code.google.com/p/google-authenticator">...</a>
  * License: ASL 2.0
  *
  * @author sweis@google.com (Steve Weis)
@@ -59,7 +59,7 @@ public class Base32String {
 		DIGITS = ALPHABET.toCharArray();
 		MASK = DIGITS.length - 1;
 		SHIFT = Integer.numberOfTrailingZeros(DIGITS.length);
-		CHAR_MAP = new HashMap<Character, Integer>();
+		CHAR_MAP = new HashMap<>();
 		for (int i = 0; i < DIGITS.length; i++) {
 			CHAR_MAP.put(DIGITS[i], i);
 		}

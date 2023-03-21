@@ -14,15 +14,13 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.config.security.SSLParser;
-import org.apache.commons.codec.binary.Base64;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
+import java.util.*;
 
-import java.util.Objects;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.codec.binary.Base64.*;
 
 @MCElement(name="proxy", topLevel=false, id="proxy-configuration")
 public class ProxyConfiguration {
@@ -119,12 +117,7 @@ public class ProxyConfiguration {
 	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
 	 */
 	public String getCredentials() {
-		StringBuilder buffer = new StringBuilder();
-		buffer.append("Basic ");
-		byte[] base64UserPass = Base64
-				.encodeBase64((username + ":" + password).getBytes(Constants.UTF_8_CHARSET));
-		buffer.append(new String(base64UserPass, Constants.UTF_8_CHARSET));
-		return buffer.toString();
+		return  "Basic " + new String(encodeBase64((username + ":" + password).getBytes(UTF_8)), UTF_8);
 	}
 
 }

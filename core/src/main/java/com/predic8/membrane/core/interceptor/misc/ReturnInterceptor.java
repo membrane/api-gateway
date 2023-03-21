@@ -20,20 +20,30 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
-import static java.lang.String.format;
+import java.io.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
+import static java.lang.String.*;
 
 
 /**
- * @description Terminates the request and returns the current request body as content. Useful together with the
- * template interceptor e.g. in examples.
- *
+ * @description Terminates the exchange flow. The returned response is determined in the following order:
+ * <p>
+ * 1. If there is already a response in the exchange, that response is returned
+ * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
+ * <p>
+ * The options statusCode and contentType will overwrite the values from the messages.
+ * <p>
+ * This plugin is useful together with the template plugin. See examples/template.
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="return")
+@MCElement(name = "return")
 public class ReturnInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(ReturnInterceptor.class.getName());
 
     private int statusCode = 200;
     private String contentType = null;
@@ -56,20 +66,41 @@ public class ReturnInterceptor extends AbstractInterceptor {
         return contentType;
     }
 
+    // @TODO Specify correct behaviour!
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(new Response.ResponseBuilder().status(statusCode,getMessageForStatusCode(statusCode)).contentType(getContentType(exc)).bodyEmpty().build());
+        exc.setResponse(getResponse(exc));
         return RETURN;
     }
 
-    private String getContentType(Exchange exc) {
-        if (contentType != null)
-            return contentType;
+    private Response getResponse(Exchange exc) throws IOException {
+        Response response = exc.getResponse();
+        if (response == null) {
+            Response.ResponseBuilder builder = new Response.ResponseBuilder().status(statusCode);
+            String reqContentType = exc.getRequest().getHeader().getContentType();
+            if (reqContentType != null) {
+                builder.contentType(reqContentType);
+            }
+            response = builder.build();
+            if (exc.getRequest().getBody() instanceof Body body) {
+                response.setBody(body);
+                response.getHeader().setContentLength(body.getLength());
+            }
+        }
 
-        if (exc.getRequest().getHeader().getContentType() != null)
-            return exc.getRequest().getHeader().getContentType();
+        if (statusCode != 0) {
+            response.setStatusCode(statusCode);
+            response.setStatusMessage(getMessageForStatusCode(statusCode));
+        }
 
-        return "text/plain";
+        if (contentType!=null) {
+            response.getHeader().setContentType(contentType);
+        }
+
+        if(response.isBodyEmpty() && !response.getHeader().hasContentLength()) {
+            response.getHeader().setContentLength(0);
+        }
+        return response;
     }
 
     @Override
@@ -79,6 +110,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return format("Sends an response with a status code of %d and an content type of %s.",statusCode,contentType);
+        return format("Sends an response with a status code of %d and an content type of %s.", statusCode, contentType);
     }
 }

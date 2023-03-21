@@ -83,30 +83,30 @@ public class UriUtilTest {
     }
 
     @Test
-    public void rewriteStartsWithHttp() throws MalformedURLException, URISyntaxException {
+    public void rewriteStartsWithHttp() throws URISyntaxException {
         assertEquals("http://localhost:8080", doRewrite("http://predic8.de", "http", "localhost", 8080));
     }
 
     @Test
-    public void rewriteStartsWithHttps() throws MalformedURLException, URISyntaxException {
+    public void rewriteStartsWithHttps() throws URISyntaxException {
         assertEquals("https://localhost", doRewrite("http://predic8.de", "https", "localhost", 443));
         assertEquals("https://localhost:8443", doRewrite("http://predic8.de", "https", "localhost", 8443));
     }
 
     @Test
-    public void rewriteWithoutHttp() throws MalformedURLException, URISyntaxException {
+    public void rewriteWithoutHttp() throws URISyntaxException {
         assertEquals("http://predic8.de:2000", doRewrite("localhost:3000", "http", "predic8.de", 2000));
         assertEquals("http://predic8.de", doRewrite("localhost:3000", "http", "predic8.de", 80));
     }
 
     @Test
-    public void rewriteWithoutHttps() throws MalformedURLException, URISyntaxException {
+    public void rewriteWithoutHttps() throws URISyntaxException {
         assertEquals("https://predic8.de:2000", doRewrite("localhost:3000", "https", "predic8.de", 2000));
         assertEquals("https://predic8.de", doRewrite("localhost:3000", "https", "predic8.de", 443));
     }
 
     @Test
-    public void rewritePath() throws MalformedURLException, URISyntaxException {
+    public void rewritePath() throws URISyntaxException {
         assertEquals("https://predic8.de:2000/foo", doRewrite("http://localhost:3000/foo", "https", "predic8.de", 2000));
         assertEquals("https://predic8.de/foo", doRewrite("http://localhost:3000/foo", "https", "predic8.de", 443));
     }

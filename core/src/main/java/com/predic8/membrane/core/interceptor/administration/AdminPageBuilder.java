@@ -15,44 +15,29 @@ limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
-import static org.apache.commons.lang3.time.DurationFormatUtils.formatDurationHMS;
-//import static org.apache.log4j.Level.ALL;
-//import static org.apache.log4j.Level.DEBUG;
-//import static org.apache.log4j.Level.ERROR;
-//import static org.apache.log4j.Level.FATAL;
-//import static org.apache.log4j.Level.INFO;
-//import static org.apache.log4j.Level.OFF;
-//import static org.apache.log4j.Level.TRACE;
-//import static org.apache.log4j.Level.WARN;
+import com.googlecode.jatl.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.text.*;
 
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
+import java.io.*;
+import java.net.*;
+import java.text.*;
 import java.util.*;
 
-import com.predic8.membrane.core.rules.*;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.interceptor.balancer.Balancer;
-import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
-import com.predic8.membrane.core.interceptor.balancer.Cluster;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.interceptor.balancer.Session;
-import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
-import com.predic8.membrane.core.transport.http.StreamPump;
-import com.predic8.membrane.core.util.TextUtil;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.time.DurationFormatUtils.*;
 
 public class AdminPageBuilder extends Html {
 
@@ -243,7 +228,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createFwdRulesTable() throws UnsupportedEncodingException {
+	protected void createFwdRulesTable() {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "fwdrules-table");
 		thead();
 		tr();
@@ -255,7 +240,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createProxyRulesTable() throws UnsupportedEncodingException {
+	protected void createProxyRulesTable() {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "proxy-rules-table");
 		thead();
 		tr();
@@ -271,14 +256,14 @@ public class AdminPageBuilder extends Html {
 			createTds(rule.getKey().getPort() == -1 ? "" : ""+rule.getKey().getPort(),
 					""+rule.getStatisticCollector().getCount());
 			if (!readOnly)
-				td().a().href("/admin/proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
+				td().a().href("/admin/proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule), UTF_8)).span().classAttr("ui-icon ui-icon-trash").end(3);
 			end();
 		}
 		end();
 		end();
 	}
 
-	protected void createTabs(int selected) throws Exception {
+	protected void createTabs(int selected) {
 		ul().classAttr("ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all");
 		li().classAttr(getSelectedTabStyle(TAB_ID_SERVICE_PROXIES, selected));
 		a().href("/admin").text("ServiceProxies").end();
@@ -292,7 +277,7 @@ public class AdminPageBuilder extends Html {
 		li().classAttr(getSelectedTabStyle(TAB_ID_SYSTEM, selected));
 		createLink("System", "system", null, null);
 		end();
-		if (BalancerUtil.hasLoadBalancing(router)) {
+		if (hasLoadBalancing(router)) {
 			li().classAttr(getSelectedTabStyle(TAB_ID_LOAD_BALANCING, selected));
 			createLink("Load Balancing", "balancers", null, null);
 			end();
@@ -329,8 +314,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createBalancersTable()
-			throws UnsupportedEncodingException {
+	protected void createBalancersTable() {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display balancersTable");
 		thead();
 		tr();
@@ -338,7 +322,7 @@ public class AdminPageBuilder extends Html {
 		end();
 		end();
 		tbody();
-		for (LoadBalancingInterceptor loadBalancingInterceptor : BalancerUtil.collectBalancers(router)) {
+		for (LoadBalancingInterceptor loadBalancingInterceptor : collectBalancers(router)) {
 			tr();
 			td();
 			createLink(loadBalancingInterceptor.getName(), "clusters", null, createQueryString("balancer", loadBalancingInterceptor.getName()));
@@ -353,8 +337,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createClustersTable(String balancerName)
-			throws UnsupportedEncodingException {
+	protected void createClustersTable(String balancerName) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display clustersTable");
 		thead();
 		tr();
@@ -362,13 +345,13 @@ public class AdminPageBuilder extends Html {
 		end();
 		end();
 		tbody();
-		for (Cluster c : BalancerUtil.lookupBalancer(router, balancerName).getClusters()) {
+		for (Cluster c : lookupBalancer(router, balancerName).getClusters()) {
 			tr();
 			td();
 			createLink(!c.getName().isEmpty() ? c.getName() : "<unnamed>", "clusters", "show", createQueryString("balancer", balancerName, "cluster", c.getName()));
 			end();
 
-			createTds(String.valueOf(BalancerUtil.lookupBalancer(router, balancerName).
+			createTds(String.valueOf(lookupBalancer(router, balancerName).
 					getAllNodesByCluster(c.getName()).size()),
 					getFormatedHealth(balancerName, c.getName()));
 			end();
@@ -411,7 +394,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createStatusCodesTable(Map<Integer, StatisticCollector> statusCodes) throws Exception {
+	protected void createStatusCodesTable(Map<Integer, StatisticCollector> statusCodes) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "statuscode-table");
 		thead();
 		tr();
@@ -439,7 +422,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createStatisticsTable() throws UnsupportedEncodingException {
+	protected void createStatisticsTable() {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "statistics-table");
 		thead();
 		tr();
@@ -470,7 +453,7 @@ public class AdminPageBuilder extends Html {
 		return numberOfBackendConnections.get(statisticCollector);
 	}
 
-	protected void createStreamPumpsTable() throws UnsupportedEncodingException {
+	protected void createStreamPumpsTable() {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "stream-pumps-table");
 		thead();
 		tr();
@@ -494,7 +477,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 
-	protected void createNodesTable(String balancerName) throws Exception {
+	protected void createNodesTable(String balancerName) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display nodesTable");
 		thead();
 		tr();
@@ -502,7 +485,7 @@ public class AdminPageBuilder extends Html {
 		end();
 		end();
 		tbody();
-		for (Node n : BalancerUtil.lookupBalancer(router, balancerName).getAllNodesByCluster(params.get("cluster"))) {
+		for (Node n : lookupBalancer(router, balancerName).getAllNodesByCluster(params.get("cluster"))) {
 			tr();
 			td();
 			createLink(""+n.getHost()+":"+n.getPort(), "node", "show",
@@ -511,14 +494,14 @@ public class AdminPageBuilder extends Html {
 			createTds( getStatusString(n), ""+n.getCounter(),
 					String.format("%1$.2f%%", n.getErrors()*100),
 					formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),
-					""+BalancerUtil.lookupBalancer(router, balancerName).getSessionsByNode(params.get("cluster"),n).size(),
+					"" + lookupBalancer(router, balancerName).getSessionsByNode(params.get("cluster"),n).size(),
 					""+n.getThreads());
 			td();
-			createIcon("ui-icon-eject", "node", "takeout", "takeout", createQuery4Node(n));
-			createIcon("ui-icon-circle-arrow-n", "node", "up", "up", createQuery4Node(n));
-			createIcon("ui-icon-circle-arrow-s", "node", "down", "down", createQuery4Node(n));
+			createIcon("ui-icon-eject", "takeout", "takeout", createQuery4Node(n));
+			createIcon("ui-icon-circle-arrow-n", "up", "up", createQuery4Node(n));
+			createIcon("ui-icon-circle-arrow-s", "down", "down", createQuery4Node(n));
 			if (!readOnly)
-				createIcon("ui-icon-trash", "node", "delete", "delete", createQuery4Node(n));
+				createIcon("ui-icon-trash", "delete", "delete", createQuery4Node(n));
 			end();
 			end();
 		}
@@ -528,32 +511,30 @@ public class AdminPageBuilder extends Html {
 	}
 
 	private String getStatusString(Node n) {
-		switch (n.getStatus()) {
-		case TAKEOUT:
+		if (requireNonNull(n.getStatus()) == TAKEOUT) {
 			return "In take out";
-		default:
-			return ""+n.getStatus();
 		}
+		return "" + n.getStatus();
 	}
 
-	private String createQuery4Node(Node n) throws UnsupportedEncodingException {
+	private String createQuery4Node(Node n) {
 		return createQueryString("balancer", DynamicAdminPageInterceptor.getBalancerParam(params),
 				"cluster", params.get("cluster"),"host", n.getHost(), "port", ""+n.getPort());
 	}
 
-	private void createIcon(String icon, String ctrl, String action, String tooltip, String query) {
-		a().href(createHRef(ctrl, action, query)).span().classAttr("ui-icon "+icon).style("float:left;").title(tooltip).end(2);
+	private void createIcon(String icon, String action, String tooltip, String query) {
+		a().href(createHRef("node", action, query)).span().classAttr("ui-icon " + icon).style("float:left;").title(tooltip).end(2);
 	}
 
 	private String getFormatedHealth(String balancerName, String cluster) {
 		return String.format("%d up/ %d down",
-				BalancerUtil.lookupBalancer(router, balancerName).getAvailableNodesByCluster(cluster).size(),
-				BalancerUtil.lookupBalancer(router, balancerName).getAllNodesByCluster(cluster).size() -
-				BalancerUtil.lookupBalancer(router, balancerName).getAvailableNodesByCluster(cluster).size());
+				lookupBalancer(router, balancerName).getAvailableNodesByCluster(cluster).size(),
+				lookupBalancer(router, balancerName).getAllNodesByCluster(cluster).size() -
+				lookupBalancer(router, balancerName).getAvailableNodesByCluster(cluster).size());
 	}
 
 	private String getFormatedHealth(String balancerName) {
-		Balancer balancer = BalancerUtil.lookupBalancer(router, balancerName);
+		Balancer balancer = lookupBalancer(router, balancerName);
 		int available = 0, all = 0;
 		for (Cluster c : balancer.getClusters()) {
 			all += balancer.getAllNodesByCluster(c.getName()).size();
@@ -569,7 +550,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	private List<ProxyRule> getProxyRules() {
-		List<ProxyRule> rules = new LinkedList<ProxyRule>();
+		List<ProxyRule> rules = new LinkedList<>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (!(r instanceof ProxyRule)) continue;
 			rules.add((ProxyRule) r);
@@ -578,12 +559,12 @@ public class AdminPageBuilder extends Html {
 	}
 
 	private Map<String, StatisticCollector> getStatistics() {
-		Map<String, StatisticCollector> res = new TreeMap<String, StatisticCollector>();
+		Map<String, StatisticCollector> res = new TreeMap<>();
 		HashMap<StatisticCollector,String> backendConnections = new HashMap<>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractProxy)) continue;
 			StatisticCollector sc = new StatisticCollector(true);
-			for (StatisticCollector s : ((AbstractProxy) r).getStatisticCollector().getStatisticsByStatusCodes().values())
+			for (StatisticCollector s : r.getStatisticCollector().getStatisticsByStatusCodes().values())
 				sc.collectFrom(s);
 			res.put(r.getName(), sc);
 			backendConnections.put(sc,router.getTransport().getOpenBackendConnections(r.getKey().getPort()));
@@ -592,11 +573,11 @@ public class AdminPageBuilder extends Html {
 		return res;
 	}
 
-	protected void createButton(String label, String ctrl, String action, String query) throws UnsupportedEncodingException {
-		a().classAttr("mb-button").href(createHRef(ctrl, action, query)).text(label).end();
+	protected void createButton(String label, String query) {
+		a().classAttr("mb-button").href(createHRef("calls", null, query)).text(label).end();
 	}
 
-	protected void createLink(String label, String ctrl, String action, String query) throws UnsupportedEncodingException {
+	protected void createLink(String label, String ctrl, String action, String query) {
 		a().href(createHRef(ctrl, action, query)).text(label).end();
 	}
 
@@ -796,8 +777,8 @@ public class AdminPageBuilder extends Html {
 	}
 
 	public void createServiceProxyVisualization(AbstractServiceProxy proxy, String relativeRootPath) {
-		List<Interceptor> leftStack = new ArrayList<Interceptor>(), rightStack = new ArrayList<Interceptor>();
-		List<Interceptor> list = new ArrayList<Interceptor>(proxy.getInterceptors());
+		List<Interceptor> leftStack = new ArrayList<>(), rightStack = new ArrayList<>();
+		List<Interceptor> list = new ArrayList<>(proxy.getInterceptors());
 		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
 			@Override
 			public EnumSet<Flow> getFlow() {
@@ -807,13 +788,11 @@ public class AdminPageBuilder extends Html {
 		for (Interceptor i : list) {
 			EnumSet<Flow> f = i.getFlow();
 			if (i instanceof ResponseInterceptor) {
-				for (Interceptor i2 : ((ResponseInterceptor)i).getInterceptors())
-					rightStack.add(i2);
+				rightStack.addAll(((ResponseInterceptor) i).getInterceptors());
 			} else if (i instanceof RequestInterceptor){
-				for (Interceptor i3 : ((RequestInterceptor)i).getInterceptors())
-					leftStack.add(i3);
-			} else if (f.contains(Flow.REQUEST)) {
-				if (f.contains(Flow.RESPONSE)) {
+				leftStack.addAll(((RequestInterceptor) i).getInterceptors());
+			} else if (f.contains(REQUEST)) {
+				if (f.contains(RESPONSE)) {
 					// fill left and right to same height
 					while (leftStack.size() < rightStack.size())
 						leftStack.add(null);
@@ -826,7 +805,7 @@ public class AdminPageBuilder extends Html {
 					leftStack.add(i);
 				}
 			} else {
-				if (f.contains(Flow.RESPONSE)) {
+				if (f.contains(RESPONSE)) {
 					rightStack.add(i);
 				}
 			}
@@ -907,8 +886,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void creatExchangeMetaTable(String id)
-			throws UnsupportedEncodingException {
+	protected void creatExchangeMetaTable(String id) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
 				"class", "display", "id", id);
 		thead();
@@ -921,8 +899,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void creatHeaderTable(String id)
-			throws UnsupportedEncodingException {
+	protected void creatHeaderTable(String id) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
 				"class", "display", "id", id);
 		thead();
@@ -935,8 +912,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createClientsStatisticsTable()
-			throws UnsupportedEncodingException {
+	protected void createClientsStatisticsTable() {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
 				"class", "display", "id", "clients-table");
 		thead();
@@ -949,8 +925,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createMessageStatisticsTable()
-			throws UnsupportedEncodingException {
+	protected void createMessageStatisticsTable() {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
 				"class", "display", "id", "message-stat-table");
 		thead();
@@ -964,36 +939,5 @@ public class AdminPageBuilder extends Html {
 		end();
 		end();
 	}
-
-	//slf4j change
-	/*protected void createLogConfigurationEditor() {
-		Logger root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-		Level rootLevel = root.getLevel();
-
-		if (readOnly) {
-			p().text("The current root log level is " + rootLevel.toString() + ".").end();
-			return;
-		}
-
-		form().id("changeRootLogLevelForm").action("/admin/log/level").method("POST");
-		text("Change the root log level to: ");
-		select().name("loglevel").onchange("this.form.submit()");
-		for (Level l : new Level[] { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL }) {
-			option().value("" + l.toInt());
-			if (rootLevel.equals(l))
-				selected("true");
-			text(l.toString());
-			end();
-		}
-		end();
-		end();
-
-		form().id("replaceLogConfigurationForm").action("/admin/log/config").method("POST");
-		text("");
-		textarea().style("font-family:monospace;").name("logconfig").cols("120").rows("20").text("Paste new Log4j config here.").end();
-		br();
-		input().type("submit").value("Change log4j config");
-		end();
-	}*/
 }
 

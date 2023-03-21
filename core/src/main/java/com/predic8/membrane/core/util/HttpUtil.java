@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -25,7 +24,9 @@ import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static org.apache.commons.lang3.StringEscapeUtils.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class HttpUtil {
 
@@ -37,10 +38,13 @@ public class HttpUtil {
 		MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
 	}
 
+	/*
+	 * @TODO Rewrite with DateTime
+	 */
 	public static DateFormat createGMTDateFormat() {
-		SimpleDateFormat GMT_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-		GMT_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
-		return GMT_DATE_FORMAT;
+		SimpleDateFormat gmtDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+		gmtDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+		return gmtDateFormat;
 	}
 
 	public static String readLine(InputStream in) throws IOException, EndOfStreamException {
@@ -72,8 +76,8 @@ public class HttpUtil {
 
     public static Response setHTMLErrorResponse(ResponseBuilder responseBuilder, String message, String comment) {
 		Response response = responseBuilder.build();
-		response.setHeader(createHeaders(MimeType.TEXT_HTML_UTF8));
-		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(Constants.UTF_8_CHARSET));
+		response.setHeader(createHeaders(TEXT_HTML_UTF8));
+		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(UTF_8));
 		return response;
 	}
 
@@ -103,7 +107,7 @@ public class HttpUtil {
 		buf.append(escapeHtml4(text));
 		buf.append("</pre>");
 		buf.append("<p class=\"footer\">");
-		buf.append(Constants.HTML_FOOTER);
+		buf.append(HTML_FOOTER);
 		buf.append("</p>");
 		buf.append("</body>");
 		return buf.toString();
@@ -113,10 +117,8 @@ public class HttpUtil {
 		Response response = new Response();
 		response.setStatusCode(400);
 		response.setStatusMessage("Bad request");
-
-		response.setHeader(createHeaders(MimeType.TEXT_XML_UTF8));
-
-		response.setBodyContent(getFaultSOAPBody(message).getBytes(Constants.UTF_8_CHARSET));
+		response.setHeader(createHeaders(TEXT_XML_UTF8));
+		response.setBodyContent(getFaultSOAPBody(message).getBytes(UTF_8));
 		return response;
 	}
 
@@ -125,77 +127,67 @@ public class HttpUtil {
 	}
 
 	public static String getFaultSOAPBody(String title, String text) {
-		StringBuilder buf = new StringBuilder(256);
 
-		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP11_NS + "\">");
-		buf.append(CRLF);
-		buf.append("<soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("<soapenv:Fault>");
-
-		buf.append(CRLF);
-
-		buf.append("<faultcode>soapenv:Server</faultcode>");
-		buf.append(CRLF);
-		buf.append("<faultstring>");
-		buf.append(escapeXml11(title));
-		buf.append("</faultstring>");
-		buf.append(CRLF);
-
-		buf.append("<detail>" + escapeXml11(text) + "</detail>");
-
-		buf.append(CRLF);
-		buf.append("</soapenv:Fault>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Envelope>");
-		return buf.toString();
+        String buf = "<soapenv:Envelope xmlns:soapenv=\"" + SOAP11_NS + "\">" +
+                CRLF +
+                "<soapenv:Body>" +
+                CRLF +
+                "<soapenv:Fault>" +
+                CRLF +
+                "<faultcode>soapenv:Server</faultcode>" +
+                CRLF +
+                "<faultstring>" +
+                escapeXml11(title) +
+                "</faultstring>" +
+                CRLF +
+                "<detail>" + escapeXml11(text) + "</detail>" +
+                CRLF +
+                "</soapenv:Fault>" +
+                CRLF +
+                "</soapenv:Body>" +
+                CRLF +
+                "</soapenv:Envelope>";
+		return buf;
 	}
 
 	public static String getFaultSOAP12Body(String title, String text) {
-		StringBuilder buf = new StringBuilder(256);
-
-		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP12_NS + "\">");
-		buf.append(CRLF);
-		buf.append("<soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("<soapenv:Fault>");
-		buf.append(CRLF);
-
-		buf.append("<soapenv:Code>");
-		buf.append(CRLF);
-		buf.append("<soapenv:Value>soapenv:Receiver</soapenv:Value>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Code>");
-		buf.append(CRLF);
 
 
-		buf.append("<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">");
-		buf.append(escapeXml11(title));
-		buf.append("</soapenv:Text></soapenv:Reason>");
-		buf.append(CRLF);
-
-		buf.append("<soapenv:Detail><Text>" + escapeXml11(text) + "</Text></soapenv:Detail>");
-
-		buf.append(CRLF);
-		buf.append("</soapenv:Fault>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Body>");
-		buf.append(CRLF);
-		buf.append("</soapenv:Envelope>");
-		return buf.toString();
+        String buf = "<soapenv:Envelope xmlns:soapenv=\"" + SOAP12_NS + "\">" +
+                CRLF +
+                "<soapenv:Body>" +
+                CRLF +
+                "<soapenv:Fault>" +
+                CRLF +
+                "<soapenv:Code>" +
+                CRLF +
+                "<soapenv:Value>soapenv:Receiver</soapenv:Value>" +
+                CRLF +
+                "</soapenv:Code>" +
+                CRLF +
+                "<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">" +
+                escapeXml11(title) +
+                "</soapenv:Text></soapenv:Reason>" +
+                CRLF +
+                "<soapenv:Detail><Text>" + escapeXml11(text) + "</Text></soapenv:Detail>" +
+                CRLF +
+                "</soapenv:Fault>" +
+                CRLF +
+                "</soapenv:Body>" +
+                CRLF +
+                "</soapenv:Envelope>";
+		return buf;
 	}
 
-	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
-		Response res = new Response();
-		res.setStatusCode(code);
-		res.setStatusMessage(msg);
-		res.setHeader(createHeaders(contentType, headers));
-
-		if (body != null) res.setBodyContent(body);
-		return res;
-	}
+//	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
+//		Response res = new Response();
+//		res.setStatusCode(code);
+//		res.setStatusMessage(msg);
+//		res.setHeader(createHeaders(contentType, headers));
+//
+//		if (body != null) res.setBodyContent(body);
+//		return res;
+//	}
 
 	public static Header createHeaders(String contentType, String... headers) {
 		Header header = new Header();
@@ -203,16 +195,12 @@ public class HttpUtil {
 		synchronized (GMT_DATE_FORMAT) {
 			header.add("Date", GMT_DATE_FORMAT.format(new Date()));
 		}
-		header.add("Server", Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org");
+		header.add("Server", PRODUCT_NAME + " " + VERSION + ". See http://membrane-soa.org");
 		header.add("Connection", Header.CLOSE);
 		for (int i = 0; i<headers.length; i+=2) {
 			header.add(headers[i],headers[i+1]);
 		}
 		return header;
-	}
-
-	public static String getHostName(String destination) throws MalformedURLException {
-		return new URL(destination).getHost();
 	}
 
 	public static String getPathAndQueryString(String dest) throws MalformedURLException {
@@ -234,7 +222,7 @@ public class HttpUtil {
 		if (port == -1) {
 			port = url.getDefaultPort();
 			if (port == -1)
-				port = 80;
+				return  80;
 		}
 		return port;
 	}
@@ -244,10 +232,6 @@ public class HttpUtil {
 		return uri.startsWith("http://") || uri.startsWith("https://");
 	}
 
-	/**
-	 * @param code
-	 * @return
-	 */
 	public static String getMessageForStatusCode(int code) {
 		return switch (code) {
 			case 100 -> "Continue";
@@ -272,6 +256,8 @@ public class HttpUtil {
 			case 500 -> "Internal Server Error";
 			case 501 -> "Not Implemented";
 			case 502 -> "Bad Gateway";
+			case 503 -> "Service Unavailable";
+			case 504 -> "Gateway Timeout";
 			default -> "";
 		};
 	}

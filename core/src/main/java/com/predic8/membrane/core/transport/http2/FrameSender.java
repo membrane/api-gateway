@@ -165,10 +165,9 @@ public class FrameSender implements Runnable {
 
     private void updateThreadName(boolean fromConnection) {
         if (fromConnection) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("HTTP2 Frame Sender ");
-            sb.append(remoteAddr);
-            Thread.currentThread().setName(sb.toString());
+            String sb = "HTTP2 Frame Sender " +
+                    remoteAddr;
+            Thread.currentThread().setName(sb);
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
         }

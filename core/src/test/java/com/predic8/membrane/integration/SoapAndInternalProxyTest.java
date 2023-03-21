@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Checks the combination of a soapProxy and internalProxy, using "service:internalProxyName/path/to/the?wsdl".
- *
+ * <p>
  * Also activates TLS when retrieving the WSDL.
  */
 public class SoapAndInternalProxyTest {

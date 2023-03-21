@@ -13,20 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.cache;
 
-import java.io.IOException;
+import java.io.*;
 import java.text.ParseException;
 
+import com.predic8.membrane.core.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.util.ByteUtil;
 
+import static com.predic8.membrane.core.http.Header.*;
+
 class PositiveNode extends Node {
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	static final Logger log = LoggerFactory.getLogger(PositiveNode.class.getName());
@@ -40,29 +41,18 @@ class PositiveNode extends Node {
 	int status;
 
 	public PositiveNode(Exchange exchange) throws IOException, ParseException {
-		Request request = exchange.getRequest();
 		Response response = exchange.getResponse();
 		content = ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded());
-		contentType = response.getHeader().getFirstValue(Header.CONTENT_TYPE);
-		lastModified = CacheInterceptor.fromRFC(response.getHeader().getFirstValue(Header.LAST_MODIFIED));
-		inResponseToAccept = request.getHeader().getNormalizedValue(Header.ACCEPT);
-		location = response.getHeader().getFirstValue(Header.LOCATION);
+		contentType = response.getHeader().getFirstValue(CONTENT_TYPE);
+		lastModified = CacheInterceptor.fromRFC(response.getHeader().getFirstValue(LAST_MODIFIED));
+		inResponseToAccept = exchange.getRequest().getHeader().getNormalizedValue(ACCEPT);
+		location = response.getHeader().getFirstValue(LOCATION);
 		status = response.getStatusCode();
-
-		/*
-		if (contentType == null) {
-			System.err.println("strange case with contentType == null");
-			System.err.println(request.getStartLine());
-			System.err.println(request.getHeader());
-			System.err.println(response.getStartLine());
-			System.err.println(response.getHeader());
-		}
-		 */
 	}
 
 	@Override
 	public Response toResponse(Request request) {
-		String ifModifiedSince = request.getHeader().getFirstValue(Header.IF_MODIFIED_SINCE);
+		String ifModifiedSince = request.getHeader().getFirstValue(IF_MODIFIED_SINCE);
 		if (ifModifiedSince != null) {
 			try {
 				if (lastModified <= CacheInterceptor.fromRFC(ifModifiedSince))
@@ -77,9 +67,9 @@ class PositiveNode extends Node {
 		if (contentType != null)
 			builder.contentType(contentType);
 		if (location != null)
-			builder.header(Header.LOCATION, location);
+			builder.header(LOCATION, location);
 		if (lastModified != 0)
-			return builder.header(Header.LAST_MODIFIED, CacheInterceptor.toRFC(lastModified)).body(content).build();
+			return builder.header(LAST_MODIFIED, CacheInterceptor.toRFC(lastModified)).body(content).build();
 		else
 			return builder.body(content).build();
 	}

@@ -132,7 +132,7 @@ public class MessageAnalyser extends AbstractInterceptor {
 
 		ExtractedData res = new ExtractedData();
 
-		if ( msg.isBodyEmpty() && !msg.isXML()) {
+		if (msg.isBodyEmpty() && !msg.isXML()) {
 			return res;
 		}
 

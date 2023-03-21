@@ -6,35 +6,35 @@ Membrane API Gateway
 Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services. Featuring:
 
 **API Security:**
-* Authentification with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/basicAuthentication.htm) 
+* Authentication with [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/api-gateway/current/configuration/reference/basicAuthentication.htm) 
 * [OAuth2 Authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.htm) 
 * Rate Limiting
 * XML Protection
 
 
 **OpenAPI:**
-* Deployment of [OpenAPI](distribution/examples/openapi) documents as APIs
-*  [Message validation](distribution/examples/openapi/openapi-validation-simple) against OpenAPI
+* Deployment of [OpenAPI](https://membrane-api.io/openapi/) documents as APIs
+*  [Message validation](distribution/examples/openapi/validation-simple) against OpenAPI
 
 **Legacy Web Services:**
 * SOAP Message Routing
-* WSDL configuration, [message Validation](#legacy-soap-and-xml-web-services) and WSDL rewritting
+* WSDL configuration, [message validation](#legacy-soap-and-xml-web-services) and WSDL rewritting
 
 **Other:**
 * Admin Web console
 * Load balancing
-* Embeddable reverse proxy HTTP framework for own API Gateways and products
+* Embeddable reverse proxy HTTP framework for own API gateways
 
 
 
 Get Started
 -----------
 
-1. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it.
+1. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it
 
-3. Run `service-proxy.sh` or `service-proxy.bat` in a terminal.
+3. Run `service-proxy.sh` or `service-proxy.bat` in a terminal
 
-4. Look at the configuration `conf/proxies.xml` and change to your needs.
+4. Change the configuration `conf/proxies.xml`
 
 Run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/) or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
 
@@ -45,18 +45,18 @@ Try the following snippets by copying them into the `conf/proxies.xml` file.
 
 ## REST
 
-Routing requests from port `8080` to `api.predic8.de` when the path starts with `/foo`. 
+Routing requests from port `2000` to `api.predic8.de` when the path starts with `/shop`. 
 
 ```xml
-<api port="8080">
-  <path>/shop</path>
-  <target host="api.predic8.de" port="80" />
+<api port="2000">
+    <path>/shop</path>
+    <target url="https://api.predic8.de"/>
 </api>
 ```
 
 ### OpenAPI Configuration & Validation
 
-Configures APIs from OpenAPI documents and validates messages against it. [more...](distribution/examples/openapi)
+Configures APIs from OpenAPI document and validates messages against it. [more...](distribution/examples/openapi)
 
 ```xml
 <api port="2000">
@@ -92,7 +92,7 @@ or Javascript:
 
 Try also the [Groovy example](distribution/examples/groovy) and [Javascript Example](distribution/examples/javascript).
 
-### Rewrite URLs for Hypermedia
+### Rewrite URLs 
 
 ```xml
 <api port="2000">
@@ -111,25 +111,9 @@ Log data about requests and responses to a file or [database](distribution/examp
 <api port="2000">
   <log/> <!-- Logs to the console -->
   <statisticsCSV file="./log.csv" /> <!-- Logs finegrained CSV --> 
-  <target host="api.predic8.de">
-    <ssl/>
-  </target>
+  <target url="https://api.predic8.de"/>
 </api>
 ```
-
-# Websockets
-
-Route and intercept WebSocket traffic:
-
-```xml
-<api port="2000">
-  <webSocket url="http://my.websocket.server:1234">
-    <wsLog/>
-  </webSocket>
-  <target port="8080" host="localhost"/>
-</api>
-```
-(_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.htm)_)
 
 # Security
 
@@ -141,19 +125,23 @@ Use the widely adopted OAuth2/OpenID Framework to secure endpoints against Googl
 
 ```xml
 <api name="Resource Service" port="2001">
-  <oauth2Resource>
-    <membrane src="https://accounts.google.com" clientId="INSERT_CLIENT_ID" clientSecret="INSERT_CLIENT_SECRET" scope="email profile" subject="sub"/>
-  </oauth2Resource>    
-  <groovy>
-    // Get email from OAuth2 and forward it to the backend
-    def oauth2 = exc.properties.oauth2
-    exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
-    CONTINUE
-  </groovy>
-  <target host="thomas-bayer.com" port="80"/>
+    <oauth2Resource>
+    <membrane src="https://accounts.google.com"
+              clientId="INSERT_CLIENT_ID"
+              clientSecret="INSERT_CLIENT_SECRET"
+              scope="email profile"
+              subject="sub"/>
+    </oauth2Resource>
+    <groovy>
+        // Get email from OAuth2 and forward it to the backend 
+        def oauth2 = exc.properties.oauth2 
+        exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email) 
+        CONTINUE
+    </groovy>
+    <target host="backend" port="80"/>
 </api>
 ```
-(_Find an example on [membrane-soa.org](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-openid.htm)_)
+Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.org/api-gateway-doc/current/oauth2-openid.htm)
 
 ### Membrane as AuthorizationServer/Identity Provider
 
@@ -179,7 +167,6 @@ Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
 
 ## Basic Authentication
 
-Secure an endpoint with basic authentication:
 ```xml
 <api port="2000">
     <basicAuthentication>
@@ -239,7 +226,24 @@ Distribute workload to multiple backend nodes. [more ...](distribution/examples/
 </api>
 ```
 
-# Legacy SOAP and XML Web Services
+# Websockets
+
+Route and intercept WebSocket traffic:
+
+```xml
+<api port="2000">
+  <webSocket url="http://my.websocket.server:1234">
+    <wsLog/>
+  </webSocket>
+  <target port="8080" host="localhost"/>
+</api>
+```
+See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.htm)
+
+
+# SOAP Web Services
+
+Integrate legacy services.  
 
 ## API configuration from WSDL
 
@@ -259,4 +263,4 @@ The _validator_ checks SOAP messages against a WSDL document including reference
 </soapProxy>
 ```
 
-See [configuration reference](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/) for much more.
+See [configuration reference](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/) for much more.

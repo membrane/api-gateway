@@ -18,7 +18,7 @@ import java.io.IOException;
 
 /**
  * Used to send a message body.
- *
+ * <p>
  * An implementation might realize "chunking", for example.
  */
 public abstract class AbstractBodyTransferrer {

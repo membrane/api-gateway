@@ -15,6 +15,15 @@
 package com.predic8.membrane.core.http;
 
 import jakarta.mail.internet.*;
+import org.apache.commons.lang3.*;
+import org.springframework.http.*;
+
+import java.util.*;
+
+import static java.util.Collections.*;
+import static java.util.Comparator.comparingDouble;
+import static org.apache.commons.lang3.StringUtils.*;
+import static org.springframework.http.MediaType.*;
 
 /**
  * Use javax.mail.internet.ContentType to parse a mime type or the methods using
@@ -36,13 +45,16 @@ public class MimeType {
 
 
 	public static final String APPLICATION_JSON = "application/json";
+
 	public static final String APPLICATION_JSON_UTF8 = "application/json;charset=utf-8";
 
 	public static final String APPLICATION_JOSE_JSON = "application/jose+json";
 
     public static final String APPLICATION_X_YAML = "application/x-yaml";
 
-
+    /**
+     * See <a href="https://www.rfc-editor.org/rfc/rfc7807">Problem Details for HTTP APIs</a>
+     */
 	public static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
 
 	public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
@@ -51,9 +63,13 @@ public class MimeType {
     public static final String APPLICATION_GRAPHQL = "application/graphql";
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
 
+    public static final String APPLICATION_X_JAVASCRIPT = "application/x-javascript";
+
+    public static final String TEXT_JAVASCRIPT = "text/javascript";
+    public static final String TEXT_X_JAVASCRIPT = "text/x-javascript";
+    public static final String TEXT_X_JSON = "text/x-json";
+
     public static final ContentType APPLICATION_JSON_CONTENT_TYPE = new ContentType(APPLICATION,"json",null);
-
-
 
     public static final ContentType APPLICATION_X_WWW_FORM_URLENCODED_CONTENT_TYPE = new ContentType(APPLICATION,APPLICATION_X_WWW_FORM_URLENCODED,null);
 
@@ -66,18 +82,71 @@ public class MimeType {
             if (contentType.getSubType().equals("xhtml")) {
                 return true;
             }
+            if (contentType.getSubType().equals("svg")) {
+                return true;
+            }
         } catch (ParseException e) {
            // ignore
         }
         return false;
     }
 
-    public static boolean isWWWFormUrlEncoded(String mediaType) {
+    public static boolean isJson(MediaType type) {
+        if (type == null)
+            return false;
+        return containsIgnoreCase(type.getSubtype(),"json");
+    }
+
+    public static boolean isBinary(String mediaType) {
         try {
-            return new ContentType(mediaType).match(APPLICATION_X_WWW_FORM_URLENCODED);
+            ContentType contentType = new ContentType(mediaType);
+
+            // Primarytypes
+            if (contentType.getPrimaryType().equals("image")) {
+                return true;
+            }
+            if (contentType.getPrimaryType().equals("audio")) {
+                return true;
+            }
+            if (contentType.getPrimaryType().equals("video")) {
+                return true;
+            }
+
+            // Subtypes
+            if (contentType.getSubType().equals("octet-stream")) {
+                return true;
+            }
+            if (contentType.getSubType().equals("zip")) {
+                return true;
+            }
         } catch (ParseException e) {
             // ignore
         }
         return false;
+    }
+
+    public static boolean isWWWFormUrlEncoded(String mediaType) {
+        return isOfMediaType(APPLICATION_X_WWW_FORM_URLENCODED, mediaType);
+    }
+
+    public static boolean isOfMediaType(String expectedType, String actualType) {
+        try {
+            return new ContentType(actualType).match(expectedType);
+        } catch (ParseException e) {
+            // ignore
+        }
+        return false;
+    }
+
+    /**
+     * Sorts a string of media types like the one in Accept
+     * @param s with MediaTypes e.g. text/html;q=0.9, application/json, application/xml;q=0.9, image/webp;q=0.8
+     * @return List of sorted MediaTypes by quality
+     */
+    public static List<MediaType> sortMimeTypeByQualityFactorAscending(String s) {
+        List<MediaType> m = parseMediaTypes(s);
+        m.sort(comparingDouble(MediaType::getQualityValue));
+        reverse(m);
+        return m;
     }
 }

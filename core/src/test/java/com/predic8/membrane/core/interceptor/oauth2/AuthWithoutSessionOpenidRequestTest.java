@@ -29,10 +29,8 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testOpenidScopeButIsTokenResponseType(),
-                testHasClaimsButIsNotOpenid(),
-        });
+        return Arrays.asList(testOpenidScopeButIsTokenResponseType(),
+                testHasClaimsButIsNotOpenid());
     }
 
     private static Object[] testHasClaimsButIsNotOpenid() {
@@ -44,14 +42,11 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
     }
 
     private static Callable<Object> sessionHasNoClaimsParam() {
-        return new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
-                Map<String, String> userAttributes = s.getUserAttributes();
-                synchronized (userAttributes) {
-                    return !userAttributes.containsKey(ParamNames.CLAIMS);
-                }
+        return () -> {
+            SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
+            Map<String, String> userAttributes = s.getUserAttributes();
+            synchronized (userAttributes) {
+                return !userAttributes.containsKey(ParamNames.CLAIMS);
             }
         };
     }

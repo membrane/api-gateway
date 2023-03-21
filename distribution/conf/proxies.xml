@@ -31,7 +31,6 @@
             <target url="http://www.thomas-bayer.com"/>
         </api>
 
-        http://localhost:2001/blz-service
         <serviceProxy port="2001">
             <rewriter>
                 <map from="^/blz-service/(.*)" to="/axis2/services/BLZService?$1" />

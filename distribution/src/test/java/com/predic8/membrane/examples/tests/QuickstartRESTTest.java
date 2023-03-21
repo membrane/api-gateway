@@ -19,10 +19,9 @@ import static com.predic8.membrane.test.AssertUtils.*;
 import java.io.File;
 import java.io.IOException;
 
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.examples.util.ProxiesXmlUtil;
 import com.predic8.membrane.test.AssertUtils;
 
 public class QuickstartRESTTest extends DistributionExtractingTestcase {

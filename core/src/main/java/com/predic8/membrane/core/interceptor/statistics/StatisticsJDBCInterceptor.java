@@ -13,30 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-import javax.sql.DataSource;
+import javax.mail.internet.*;
+import javax.sql.*;
+import java.sql.*;
+import java.util.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import com.predic8.membrane.annot.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil.*;
 
 /**
  * @description Writes statistics (time, status code, hostname, URI, etc.) about exchanges passing through into a
@@ -47,7 +38,7 @@ import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 public class StatisticsJDBCInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 	private static final String DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "datasource bean id attribute cannot be used";
 
-	private static Logger log = LoggerFactory.getLogger(StatisticsJDBCInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(StatisticsJDBCInterceptor.class.getName());
 
 	private ApplicationContext applicationContext;
 	private DataSource dataSource;
@@ -70,13 +61,13 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 
 	@Override
 	public void init() {
-		if (dataSourceBeanId != DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
+		if (!Objects.equals(dataSourceBeanId, DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))
 			dataSource = applicationContext.getBean(dataSourceBeanId, DataSource.class);
 		Connection con = null;
 		try {
 			con = dataSource.getConnection();
-			idGenerated = JDBCUtil.isIdGenerated(con.getMetaData());
-			statString = JDBCUtil.getPreparedInsertStatement(idGenerated);
+			idGenerated = isIdGenerated(con.getMetaData());
+			statString = getPreparedInsertStatement(idGenerated);
 			logDatabaseMetaData(con.getMetaData());
 			if(createTable)
 				createTableIfNecessary(con);
@@ -105,7 +96,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		if ( ignoreGetMethod(exc) ) return;
 		if ( ignoreNotSoap(exc) ) return;
 		PreparedStatement stat = con.prepareStatement(statString);
-		JDBCUtil.setData(exc, stat, idGenerated);
+		setData(exc, stat, idGenerated);
 		stat.executeUpdate();
 	}
 
@@ -118,30 +109,30 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		}
 		return soapOnly &&
 				ct != null &&
-				!ct.getBaseType().equalsIgnoreCase(MimeType.APPLICATION_SOAP) &&
-				!ct.getBaseType().equalsIgnoreCase(MimeType.TEXT_XML);
+			   !ct.getBaseType().equalsIgnoreCase(APPLICATION_SOAP) &&
+			   !ct.getBaseType().equalsIgnoreCase(TEXT_XML);
 	}
 
 	private boolean ignoreGetMethod(Exchange exc) {
-		return postMethodOnly && !Request.METHOD_POST.equals(exc.getRequest().getMethod());
+		return postMethodOnly && !METHOD_POST.equals(exc.getRequest().getMethod());
 	}
 
 	private void createTableIfNecessary(Connection con) throws Exception {
-		if (JDBCUtil.tableExists(con, JDBCUtil.TABLE_NAME))
+		if (tableExists(con, TABLE_NAME))
 			return;
 
 		Statement st = con.createStatement();
 		try {
-			if (JDBCUtil.isOracleDatabase(con.getMetaData())) {
-				st.execute(JDBCUtil.getCreateTableStatementForOracle());
-				st.execute(JDBCUtil.CREATE_SEQUENCE);
-				st.execute(JDBCUtil.CREATE_TRIGGER);
-			} else if (JDBCUtil.isMySQLDatabase(con.getMetaData())) {
-				st.execute(JDBCUtil.getCreateTableStatementForMySQL());
-			} else if (JDBCUtil.isDerbyDatabase(con.getMetaData())) {
-				st.execute(JDBCUtil.getCreateTableStatementForDerby());
+			if (isOracleDatabase(con.getMetaData())) {
+				st.execute(getCreateTableStatementForOracle());
+				st.execute(CREATE_SEQUENCE);
+				st.execute(CREATE_TRIGGER);
+			} else if (isMySQLDatabase(con.getMetaData())) {
+				st.execute(getCreateTableStatementForMySQL());
+			} else if (isDerbyDatabase(con.getMetaData())) {
+				st.execute(getCreateTableStatementForDerby());
 			} else {
-				st.execute(JDBCUtil.getCreateTableStatementForOther());
+				st.execute(getCreateTableStatementForOther());
 			}
 		} finally {
 			closeConnection(st);
@@ -154,7 +145,6 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 
 	/**
 	 * @description The spring bean ID of a data source bean.
-	 * @param dataSource
 	 */
 	@Required
 	@MCAttribute

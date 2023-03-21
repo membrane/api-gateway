@@ -34,7 +34,7 @@ public class Port extends AbstractXmlElement {
 
 	@Override
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		value = Integer.valueOf(token.getText());
+		value = Integer.parseInt(token.getText());
 	}
 
 	@Override

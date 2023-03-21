@@ -16,12 +16,21 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.transport.http.*;
 import io.swagger.v3.oas.models.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.X_MEMBRANE_ID;
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_ID;
 import static com.predic8.membrane.core.openapi.util.Utils.normalizeForId;
 
 public class OpenAPIUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIUtil.class.getName());
+
+    private static final Pattern hostPortPattern = Pattern.compile("//(.*):(.*)/");
 
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {
@@ -34,5 +43,40 @@ public class OpenAPIUtil {
 
     private static String getVersionSuffix(OpenAPI api) {
         return "-v" + api.getInfo().getVersion();
+    }
+
+    public static String getOpenAPIVersion(JsonNode node) {
+        if (isSwagger2(node)) {
+            return node.get("swagger").asText();
+        } else if (isOpenAPI3(node)) {
+            return node.get("openapi").asText();
+        }
+        log.info("Cannot detect OpenAPI version.");
+        return "?";
+    }
+
+    public static boolean isOpenAPI3(JsonNode node) {
+        return node.get("openapi") != null && node.get("openapi").asText().startsWith("3");
+    }
+
+    public static boolean isSwagger2(JsonNode node) {
+        return node.get("swagger") != null && node.get("swagger").asText().startsWith("2");
+    }
+
+    /**
+     * The OpenAPI parser transforms Swagger 2 specs into OpenAPI 3 documents. Swagger has the field host containing
+     * only host and port. This field is put into OpenAPI 3 info.server field with the pattern "//HOST:PORT/". This
+     * method parses this string and returns a HostColonPort object.
+     * @param server String with the pattern //HOST:PORT/
+     * @return HostColonPort
+     */
+    public static HostColonPort parseSwaggersInfoServer(String server) throws Exception {
+        Matcher m = hostPortPattern.matcher(server);
+        if (m.find()) {
+            String host = m.group(1);
+            String port = m.group(2);
+            return new HostColonPort(false,host,Integer.parseInt(port));
+        }
+        throw new Exception("Can't parse server string");
     }
 }

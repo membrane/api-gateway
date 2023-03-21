@@ -35,15 +35,15 @@ import org.xml.sax.SAXParseException;
 
 /**
  * Delegates everything to {@link FileSystemXmlApplicationContext}.
- *
- * Additionally adds aspects of {@link TrackingApplicationContext}, {@link BaseLocationApplicationContext} and
+ * <p>
+ * Additionally, adds aspects of {@link TrackingApplicationContext}, {@link BaseLocationApplicationContext} and
  * {@link CheckableBeanFactory}.
  */
 public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements
 TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory {
 	private static final Logger log = LoggerFactory.getLogger(TrackingFileSystemXmlApplicationContext.class.getName());
 
-	private List<File> files = new ArrayList<File>();
+	private final List<File> files = new ArrayList<>();
 
 	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh) throws BeansException {
 		super(configLocations, refresh);
@@ -62,7 +62,7 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 			log.debug("",e);
 		}
 		return new Resource() {
-			Resource r2 = r;
+			final Resource r2 = r;
 
 			public boolean exists() {
 				return r2.exists();

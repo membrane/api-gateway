@@ -40,7 +40,7 @@ import com.predic8.membrane.core.Router;
 @MCElement(name="unifyingUserDataProvider", topLevel=false)
 public class UnifyingUserDataProvider implements UserDataProvider {
 
-	private List<UserDataProvider> userDataProviders = new ArrayList<UserDataProvider>();
+	private List<UserDataProvider> userDataProviders = new ArrayList<>();
 
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {

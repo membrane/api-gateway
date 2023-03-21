@@ -32,7 +32,7 @@ public class Xml2JsonTest extends DistributionExtractingTestcase {
         BufferLogger logger = new BufferLogger();
         try(Process2 ignored = startServiceProxyScript(logger)) {
             sleep(2000);
-            postAndAssert(200,URL_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("jobs.xml"));
+            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("jobs.xml"));
             sleep(100);
             assertTrue(logger.contains("{\"jobs\":{\"job\":"));
         }

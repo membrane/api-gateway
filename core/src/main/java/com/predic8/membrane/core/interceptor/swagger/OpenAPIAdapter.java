@@ -36,7 +36,7 @@ public class OpenAPIAdapter implements SwaggerCompatibleOpenAPI {
 
         Optional<Server> server = null;
         server = api.getServers().stream().findFirst();
-        if (!server.isPresent()) throw new RuntimeException("server not set");
+        if (server.isEmpty()) throw new RuntimeException("server not set");
         Matcher hostMatcher = Pattern.compile("://(.*?)/").matcher(server.get().getUrl());
         if (hostMatcher.find()) {
             return hostMatcher.group(1);
@@ -48,7 +48,7 @@ public class OpenAPIAdapter implements SwaggerCompatibleOpenAPI {
     @Override
     public String getBasePath() {
         Optional<Server> server = api.getServers().stream().findFirst();
-        if (!server.isPresent()) throw new RuntimeException("server not set");
+        if (server.isEmpty()) throw new RuntimeException("server not set");
         // match whole URL after stripping schema & hostname
         Matcher hostMatcher = Pattern.compile("(.*?://(.*?))?(/.*)").matcher(server.get().getUrl());
         if (hostMatcher.find()) {

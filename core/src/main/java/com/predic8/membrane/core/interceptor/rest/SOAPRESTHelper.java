@@ -13,29 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import java.io.StringReader;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.xml.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.xslt.*;
+import org.slf4j.*;
+
+import javax.xml.transform.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 abstract class SOAPRESTHelper extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
 
-	private final ConcurrentHashMap<String, XSLTTransformer> xsltTransformers =
-			new ConcurrentHashMap<String, XSLTTransformer>();
+	private final ConcurrentHashMap<String, XSLTTransformer> xsltTransformers = new ConcurrentHashMap<>();
 
 	protected XSLTTransformer getTransformer(String ss) throws Exception {
 		String key = ss == null ? "null" : ss;
@@ -72,7 +69,7 @@ abstract class SOAPRESTHelper extends AbstractInterceptor {
 			throws Exception {
 		byte[] soapEnv = getTransformer(ss).transform(src, properties);
 		if (log.isDebugEnabled())
-			log.debug("soap-env: " + new String(soapEnv, Constants.UTF_8_CHARSET));
+			log.debug("soap-env: " + new String(soapEnv, UTF_8));
 		msg.setBodyContent(soapEnv);
 	}
 

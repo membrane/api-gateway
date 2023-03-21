@@ -39,7 +39,7 @@ public class ByteStreamLogging {
         StringBuilder sb = new StringBuilder();
         sb.append("[").append(name).append("] ").append("[ ");
         for(int i = off; i < off+len; i++) {
-            sb.append((int) b[i]).append(" ");
+            sb.append(b[i]).append(" ");
         }
         sb.append("]");
         System.out.println(new String(b,off,len));

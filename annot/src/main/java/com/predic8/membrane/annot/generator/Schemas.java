@@ -46,18 +46,15 @@ public class Schemas {
 	public void writeXSD(Model m) throws IOException {
 		try {
 			for (MainInfo main : m.getMains()) {
-				List<Element> sources = new ArrayList<Element>();
+				List<Element> sources = new ArrayList<>();
 				sources.add(main.getElement());
 				sources.addAll(main.getInterceptorElements());
 
 				FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
 						main.getAnnotation().outputPackage(), main.getAnnotation().outputName(), sources.toArray(new Element[0]));
-				BufferedWriter bw = new BufferedWriter(o.openWriter());
-				try {
-					assembleXSD(bw, m, main);
-				} finally {
-					bw.close();
-				}
+                try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
+                    assembleXSD(bw, m, main);
+                }
 			}
 		} catch (FilerException e) {
 			if (e.getMessage().contains("Source file already created"))
@@ -104,8 +101,10 @@ public class Schemas {
 			w.append("<xsd:element name=\""+ i.getAnnotation().name() +"\">\r\n");
 			assembleDocumentation(w, i);
 			w.append("<xsd:complexType>\r\n");
-			footer = "</xsd:complexType>\r\n" +
-					"</xsd:element>\r\n";
+			footer = """
+					</xsd:complexType>\r
+					</xsd:element>\r
+					""";
 		} else {
 			w.append("<xsd:complexType name=\""+ i.getXSDTypeName(m) +"\">\r\n");
 			footer = "</xsd:complexType>\r\n";
@@ -121,8 +120,10 @@ public class Schemas {
 		}
 		assembleElementInfo(w, m, main, i);
 
-		w.append("</xsd:extension>\r\n" +
-				"</xsd:complexContent>\r\n");
+		w.append("""
+				</xsd:extension>\r
+				</xsd:complexContent>\r
+				""");
 		w.append(footer);
 	}
 

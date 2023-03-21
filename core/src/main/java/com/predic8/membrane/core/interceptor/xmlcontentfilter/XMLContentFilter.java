@@ -55,7 +55,7 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 /**
  * Takes action on XML documents based on an XPath expression. The only action
  * as of writing is {@link #removeMatchingElements(Message)}.
- *
+ * <p>
  * As even Java 7 only supports XPath 1.0, this is what this class supports.
  */
 @ThreadSafe
@@ -63,9 +63,9 @@ public class XMLContentFilter {
 
 	private static final Logger LOG = LoggerFactory.getLogger(XMLContentFilter.class);
 
-	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<XPathExpression>();
-	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<DocumentBuilder>();
-	private final ThreadLocal<Transformer> t = new ThreadLocal<Transformer>();
+	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<>();
+	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<>();
+	private final ThreadLocal<Transformer> t = new ThreadLocal<>();
 	private final XOPReconstitutor xopReconstitutor = new XOPReconstitutor();
 
 	/**
@@ -77,7 +77,7 @@ public class XMLContentFilter {
 	 * The elementFinder is only used for improved performance: It can make
 	 * a first decision whether the XPath expression has any chance of succeeding
 	 * (if the XPath expression is simple enough, see {@link #createElementFinder(String)}).
-	 *
+	 * <p>
 	 * That decision is made (here is the performance gain) using a StAX parser and without
 	 * a DOM.
 	 */
@@ -97,10 +97,10 @@ public class XMLContentFilter {
 	/**
 	 * Constructs an XMLElementFinder which can make a first decision whether a
 	 * given XPath expression has any chance of succeeding.
-	 *
+	 * <p>
 	 * This only works if the XPath expression is simple enough. (The XPath
 	 * expression must be a UnionExpr consisting of PathExprs, which start with
-	 * "//foo", optionally followed by "[namespace-uri()='http://bar/']").
+	 * "//foo", optionally followed by "[namespace-uri()='<a href="http://bar/">...</a>']").
 	 *
 	 * @return the xmlElementFinder as described above, or null if the XPath
 	 *         expression is too complex.
@@ -111,7 +111,7 @@ public class XMLContentFilter {
 				.getIntersectExceptExprs(xPath);
 		if (intersectExceptExprs == null)
 			return null;
-		List<QName> rootElements = new ArrayList<QName>();
+		List<QName> rootElements = new ArrayList<>();
 		for (ContainerNode node : intersectExceptExprs) {
 			QName n = a.getElement(node);
 			if (n == null)
@@ -155,7 +155,7 @@ public class XMLContentFilter {
 
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
-	 *
+	 * <p>
 	 * If the message is not valid XML, it is left unchanged.
 	 */
 	public void removeMatchingElements(Message message) {
@@ -163,12 +163,10 @@ public class XMLContentFilter {
 			Message xop = null;
 			try {
 				xop = xopReconstitutor.getReconstitutedMessage(message);
-			} catch (ParseException e) {
-			} catch (EndOfStreamException e) {
-			} catch (FactoryConfigurationError e) {
+			} catch (ParseException | FactoryConfigurationError | EndOfStreamException e) {
 			}
 
-			if (elementFinder != null &&
+            if (elementFinder != null &&
 					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream())) {
 				return;
 			}
@@ -180,24 +178,14 @@ public class XMLContentFilter {
 				db.reset();
 			}
 			removeElementsIfNecessary(message, xop, d);
-		} catch (SAXException e) {
+		} catch (SAXException | XMLStreamException e) {
 			return;
-		} catch (IOException e) {
+		} catch (ParserConfigurationException | TransformerConfigurationException | XPathExpressionException e) {
 			throw new RuntimeException(e);
-		} catch (XMLStreamException e) {
-			return;
-		} catch (ParserConfigurationException e) {
-			throw new RuntimeException(e);
-		} catch (XPathExpressionException e) {
-			throw new RuntimeException(e);
-		} catch (TransformerConfigurationException e) {
-			throw new RuntimeException(e);
-		} catch (TransformerException e) {
-			throw new RuntimeException(e);
-		} catch (TransformerFactoryConfigurationError e) {
+		} catch (IOException | TransformerFactoryConfigurationError | TransformerException e) {
 			throw new RuntimeException(e);
 		}
-	}
+    }
 
 	/**
 	 * @param originalMessage

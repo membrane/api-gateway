@@ -27,12 +27,12 @@ public class RateLimiterTest extends DistributionExtractingTestcase {
 	}
 
 	@Test
-	public void test() throws Exception {
+	void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert200(URL_2000);
-			getAndAssert200(URL_2000);
-			getAndAssert200(URL_2000);
-			getAndAssert(429, URL_2000);
+			getAndAssert200(LOCALHOST_2000);
+			getAndAssert200(LOCALHOST_2000);
+			getAndAssert200(LOCALHOST_2000);
+			getAndAssert(429, LOCALHOST_2000);
 		}
 	}
 }

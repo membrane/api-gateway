@@ -14,20 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
-import org.joda.time.format.*;
+import java.time.*;
 
 public abstract class RateLimitStrategy {
 
-	protected Duration requestLimitDuration;
+	protected java.time.Duration requestLimitDuration;
 	protected int requestLimit;
 
-	public Duration getRequestLimitDuration() {
+	public java.time.Duration getRequestLimitDuration() {
 		return requestLimitDuration;
 	}
 
-	public void setRequestLimitDuration(Duration requestLimitDuration) {
+	public void setRequestLimitDuration(java.time.Duration requestLimitDuration) {
 		this.requestLimitDuration = requestLimitDuration;
 		updateAfterConfigChange();
 	}
@@ -42,16 +40,16 @@ public abstract class RateLimitStrategy {
 	}
 
 	public String getLimitDurationPeriod() {
-		return PeriodFormat.getDefault().print(requestLimitDuration.toPeriod());
+		return requestLimitDuration.toString();
 	}
 
-	public String getLimitReset(String ip) {
-		return Long.toString(getServiceAvailableAgainTime(ip).getMillis());
+	public String getLimitReset(String key) {
+		return Long.toString(getServiceAvailableAgainTime(key).toEpochSecond(ZoneOffset.UTC) - LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
 	}
 
 	public abstract boolean isRequestLimitReached(String ip);
 
-	public abstract DateTime getServiceAvailableAgainTime(String ip);
+	public abstract LocalDateTime getServiceAvailableAgainTime(String key);
 
 	public abstract void updateAfterConfigChange();
 }

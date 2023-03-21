@@ -21,7 +21,7 @@ import java.util.HashSet;
 public class Key {
     private String name = "";
     private Instant expiration;
-    private HashSet<Policy> policies = new HashSet<Policy>();
+    private HashSet<Policy> policies = new HashSet<>();
 
     public String getName() {
         return name;

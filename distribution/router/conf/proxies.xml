@@ -1,15 +1,20 @@
 <!--
+	 *** Membrane Configuration ***
 
-	 Main Configuration
-	 ==================
-
-	 For more details see:
-	 - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
-	 - proxies-full-sample.xml.
+	 For more see:
+	 - proxies-*.xml files in this folder
 	 - The examples/* folders with working samples for proxies.xml
+	 - Configuration Reference: https://membrane-soa.org/api-gateway-doc/current/configuration/reference/
+	 - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
 
 	 Start Membrane with:
-	 ./service-proxy.sh
+	 ./service-proxy.sh or service-proxy.bat
+
+	 A direct Internet access is needed to run this configuration!
+     Otherwise, see proxies-offline.xml
+
+     Use an XML editor with XML Schema syntax completion for easy editing like
+	 Visual Studio Code or Intellij.
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
@@ -22,22 +27,14 @@
 	<router>
 
 		<!-- 
-			 You need direct Internet access to run this configuration!
-			 Otherwise see proxies-offline.xml 
-		-->
-
-
-		<!-- 
-			 Reads the configuration from OpenAPI document
+			 Reads the configuration from an OpenAPI document
 			 Open http://localhost:2000/api-doc and use the Swagger UI there
 		-->
 		<api port="2000">
 			<openapi location="fruitshop-api.yml" validateRequests="yes"/>
 		</api>
 
-
-		<!-- 
-			
+		<!--
 			Open http://localhost:2000/names/Paula
 			See: https://membrane-api.io/tutorials/rest/
 		 -->
@@ -56,17 +53,16 @@
 			<target url="http://www.thomas-bayer.com"/>
 		</api>
 
-		
 		<!-- 
 			 Dump HTTP headers and respond with an error
-			 Open: localhost:2000/header an lool at the console
+			 Open: localhost:2000/header and look at the console
 		-->
 		<api name="Groovy" port="2000">
 			<path>/header</path>
 			<request>
 				<groovy>
 					println "Request headers:"
-					exc.request.header.allHeaderFields.each {
+					header.allHeaderFields.each {
 						print it 
 					}
 					CONTINUE

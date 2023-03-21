@@ -22,26 +22,26 @@ import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.util.*;
 import groovy.text.*;
-import io.swagger.models.auth.*;
 import io.swagger.v3.parser.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_YAML;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.rewrite;
-import static com.predic8.membrane.core.openapi.util.Utils.createErrorMessage;
-import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
-import static java.lang.Integer.parseInt;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static java.lang.Integer.*;
+import static java.lang.String.*;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
     public static final String HTML_UTF_8 = "text/html; charset=utf-8";
     private final ObjectMapper om = new ObjectMapper();
@@ -56,8 +56,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     protected Map<String, OpenAPIRecord> apis;
 
-    private Template swaggerUiHtmlTemplate;
-    private Template apiOverviewHtmlTemplate;
+    private final Template swaggerUiHtmlTemplate;
+    private final Template apiOverviewHtmlTemplate;
 
     public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
         name = "OpenAPI Publisher";
@@ -83,7 +83,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return handleOverviewOpenAPIDoc(exc);
     }
 
-    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws JsonProcessingException, MalformedURLException, URISyntaxException {
+    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws JsonProcessingException, URISyntaxException {
         Matcher m = patternMeta.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
@@ -116,26 +116,67 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws JsonProcessingException, MalformedURLException, URISyntaxException {
+    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws JsonProcessingException, URISyntaxException {
         rewriteOpenAPIaccordingToRequest(exc, rec);
         exc.setResponse(Response.ok().contentType(APPLICATION_X_YAML).body(omYaml.writeValueAsBytes(rec.node)).build());
         return RETURN;
     }
 
-    protected void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws MalformedURLException, URISyntaxException {
-        // The /info/servers field is not in every document present.
-        if (rec.node.get("servers") == null)
+    protected void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws URISyntaxException {
+        rewriteOpenAPIVersion3(exc, rec);
+        rewriteSwaggerVersion2(exc, rec);
+    }
+
+    private void rewriteSwaggerVersion2(Exchange exc, OpenAPIRecord rec) {
+        // Rewrite OpenAPI 2.X
+        JsonNode host = rec.node.get("host");
+        if (host == null)
             return;
-        for (JsonNode server: rec.node.get("servers")) {
-            ((ObjectNode)server).put("url", rewriteServerNode(exc, server));
+
+        String rewrittenHost = rewriteHost(exc);
+        ((ObjectNode) rec.node).put("host", rewrittenHost);
+
+        // Add protocol http or https
+        ArrayNode schemes =  ((ObjectNode) rec.node).putArray("schemes");
+        schemes.add(getProtocol(exc));
+
+        log.debug("Rewriting {} to {}",host,rewrittenHost);
+    }
+
+    private void rewriteOpenAPIVersion3(Exchange exc, OpenAPIRecord rec) throws URISyntaxException {
+        JsonNode servers = rec.node.get("servers");
+        if (servers == null)
+            return;
+
+        for (JsonNode server : servers) {
+            String serverUrl = server.get("url").asText();
+            String rewrittenUrl = rewriteUrl(exc, serverUrl);
+            ((ObjectNode) server).put("url", rewrittenUrl);
+            log.debug("Rewriting {} to {}",serverUrl,rewrittenUrl);
         }
     }
 
-    private String rewriteServerNode(Exchange exc, JsonNode server) throws MalformedURLException, URISyntaxException {
-        return rewrite(router.getUriFactory(), server.get("url").asText(),
+    /**
+     * Rewrites URL from <b>OpenAPI 3.X</b>
+     * @param exc Exchange
+     * @param url URL to rewrite
+     * @return Rewritten URL
+     * @throws URISyntaxException syntax error ín URL
+     */
+    protected String rewriteUrl(Exchange exc, String url) throws URISyntaxException {
+        return rewriteURL(router.getUriFactory(), url,
                 getProtocol(exc),
                 exc.getOriginalHostHeaderHost(),
                 exc.getOriginalHostHeaderPort());
+    }
+
+    /**
+     * Rewrites Host from <b>Swagger 2.X</b>
+     * @param exc Exchange
+     * @return Rewritten host with port
+     */
+    protected String rewriteHost(Exchange exc) {
+        return exc.getOriginalHostHeaderHost() + ":" + exc.getOriginalHostHeaderPort();
     }
 
     private String getProtocol(Exchange exc) {
@@ -148,7 +189,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private Outcome handleSwaggerUi(Exchange exc) {
         Matcher m = patternUI.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
-            exc.setResponse(Response.ok().contentType("application/json").body("Please specify an Id").build());
+            exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body("Please specify an Id").build());
             return RETURN;
         }
         exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(m.group(1))).build());
@@ -173,15 +214,26 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private ObjectNode createDictionaryOfAPIs() {
         ObjectNode top = om.createObjectNode();
-        for (Map.Entry<String, OpenAPIRecord> e : apis.entrySet()) {
-            ObjectNode apiDetails = top.putObject(e.getKey());
-            apiDetails.put("openapi", e.getValue().node.get("openapi").asText());
-            apiDetails.put("title", e.getValue().node.get("info").get("title").asText());
-            apiDetails.put("version", e.getValue().node.get("info").get("version").asText());
-            apiDetails.put("openapi_link", PATH + "/" + e.getKey());
-            apiDetails.put("ui_link", PATH + "/ui/" + e.getKey());
+        for (Map.Entry<String, OpenAPIRecord> api : apis.entrySet()) {
+            ObjectNode apiDetails = top.putObject(api.getKey());
+            JsonNode node = api.getValue().node;
+            apiDetails.put("openapi", getSpecVersion(node));
+            apiDetails.put("title", node.get("info").get("title").asText());
+            apiDetails.put("version", node.get("info").get("version").asText());
+            apiDetails.put("openapi_link", PATH + "/" + api.getKey());
+            apiDetails.put("ui_link", PATH + "/ui/" + api.getKey());
         }
         return top;
+    }
+
+    private String getSpecVersion(JsonNode node) {
+        if (isSwagger2(node)) {
+            return node.get("swagger").asText();
+        } else if (isOpenAPI3(node)) {
+            return node.get("openapi").asText();
+        }
+        log.info("Unknown OpenAPI version ignoring {}",node);
+        return "?";
     }
 
     /**

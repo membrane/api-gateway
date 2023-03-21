@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 public class QueryParameter {
-	private Map<String, String> params;
-	private Matcher matcher;
+	private final Map<String, String> params;
+	private final Matcher matcher;
 
 	public QueryParameter(Map<String, String> params, Matcher matcher) {
 		this.params = params;

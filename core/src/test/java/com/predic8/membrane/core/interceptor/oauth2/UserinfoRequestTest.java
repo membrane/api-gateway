@@ -29,11 +29,9 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     }
 
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-            testAuthorizationHeaderMissing(),
-            testEmptyAuthorizationHeader(),
-            testWrongTokenInAuthorizationHeader()
-        });
+        return Arrays.asList(testAuthorizationHeaderMissing(),
+                testEmptyAuthorizationHeader(),
+                testWrongTokenInAuthorizationHeader());
     }
 
     private static Object[] testWrongTokenInAuthorizationHeader() {
@@ -49,7 +47,7 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     }
 
     public static Callable<Object> removeAuthorizationHeaderInRequestHeader(final Callable<Exchange> exc){
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
                 exc.call().getRequest().getHeader().removeFields("Authorization");
@@ -59,16 +57,11 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     }
 
     public static Callable<Object> changeTokenInAuthorizationHeaderInRequestHeader(final Callable<Exchange> exc, final String newTokenValue) {
-        return new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return changeValueOfAuthorizationHeaderInRequestHeader(exc, new TokenAuthorizationHeader(exc.call().getRequest()).getTokenType() + " " + newTokenValue).call();
-            }
-        };
+        return () -> changeValueOfAuthorizationHeaderInRequestHeader(exc, new TokenAuthorizationHeader(exc.call().getRequest()).getTokenType() + " " + newTokenValue).call();
     }
 
     public static Callable<Object> changeValueOfAuthorizationHeaderInRequestHeader(final Callable<Exchange> exc, final String newValue){
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
                 exc.call().getRequest().getHeader().removeFields("Authorization");
@@ -79,12 +72,7 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     }
 
     public static Callable<Boolean> responseWwwAuthenticateHeaderContainsValue(final Callable<Exchange> exc, final String value){
-        return new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return exc.call().getResponse().getHeader().getWwwAuthenticate().contains(value);
-            }
-        };
+        return () -> exc.call().getResponse().getHeader().getWwwAuthenticate().contains(value);
     }
 
 }

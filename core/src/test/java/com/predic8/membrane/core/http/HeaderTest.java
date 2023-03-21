@@ -14,68 +14,110 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.Constants;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
 import jakarta.activation.MimeType;
-import java.io.UnsupportedEncodingException;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HeaderTest {
 
-	private static Header header = new Header();
+    private static final Header header = new Header();
 
-	@BeforeEach
-	public void setUp() throws Exception {
-		header.setContentType("text/xml; charset=utf-8");
-		header.add("host", "127.0.0.1:2000");
-		header.setAccept("application/soap+xml, application/dime, multipart/related, text/*");
-		header.setAuthorization("alice", "secret");
-	}
+    private static Header h1;
 
-	@Test
-	public void testGetHeader() {
-		assertNotNull(header.getFirstValue("ACCEPT"));
-		assertNotNull(header.getFirstValue("accept"));
-		assertEquals("127.0.0.1:2000", header.getFirstValue("host"));
-	}
+    @BeforeEach
+    public void setUp() throws Exception {
+        header.setContentType("text/xml; charset=utf-8");
+        header.add(HOST, "127.0.0.1:2000");
+        header.setAccept("application/soap+xml, application/dime, multipart/related, text/*");
+        header.setAuthorization("alice", "secret");
 
-	@Test
-	public void testAuthorization() throws UnsupportedEncodingException {
-		assertEquals("Basic YWxpY2U6c2VjcmV0",
-				header.getFirstValue("Authorization"));
-	}
+        h1 = new Header();
 
-	@Test
-	public void testGetMimeType() throws Exception {
-		assertTrue(new MimeType(header.getContentType()).match("text/xml"));
-	}
+        h1.add(X_FORWARDED_FOR, "192.3.14.1");
+        h1.add(X_FORWARDED_FOR, "10.0.0.1");
+        h1.add(X_FORWARDED_FOR, "2001:db8:85a3:8d3:1319:8a2e:370:7348");
 
-	@Test
-	public void testGetCharsetNull() throws Exception {
-		Header header = new Header();
-		header.setContentType("text/xml");
-		assertEquals(Constants.UTF_8, header.getCharset());
-	}
+        Header h2 = new Header();
+        h2.add(X_FORWARDED_FOR, "  192.3.14.1 , 	10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348	 ");
+    }
 
-	@Test
-	public void testStringCharset() throws Exception {
-		Header header = new Header();
-		header.setContentType("text/xml ;charset=\"UTF-8\"");
-		assertEquals("UTF-8", header.getCharset());
-	}
+    @Test
+    public void testGetHeader() {
+        assertNotNull(header.getFirstValue("ACCEPT"));
+        assertNotNull(header.getFirstValue("accept"));
+        assertEquals("127.0.0.1:2000", header.getFirstValue("host"));
+    }
 
-	@Test
-	public void testGetCharsetCTNull() throws Exception {
-		assertEquals(Constants.UTF_8, new Header().getCharset());
-	}
+    @Test
+    public void testAuthorization() {
+        assertEquals("Basic YWxpY2U6c2VjcmV0",
+                header.getFirstValue(AUTHORIZATION));
+    }
 
-	@Test
-	public void testGetCharset() throws Exception {
-		header.setContentType("text/xml; charset=utf-8");
-		assertEquals("utf-8", header.getCharset());
-	}
+    @Test
+    public void testGetMimeType() throws Exception {
+        assertTrue(new MimeType(header.getContentType()).match(TEXT_XML));
+    }
 
+    @Test
+    public void testGetCharsetNull() {
+        Header header = new Header();
+        header.setContentType(TEXT_XML);
+        assertEquals(UTF_8.name(), header.getCharset());
+    }
+
+    @Test
+    public void testStringCharset() {
+        Header header = new Header();
+        header.setContentType("text/xml ;charset=\"UTF-8\"");
+        assertEquals(UTF_8.name(), header.getCharset());
+    }
+
+    @Test
+    public void testGetCharsetCTNull() {
+        assertEquals(UTF_8.name(), new Header().getCharset());
+    }
+
+    @Test
+    public void testGetCharset() {
+        header.setContentType("text/xml; charset=utf-8");
+        assertEquals(UTF_8.name(), header.getCharset());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"zip", "octet-stream"})
+    void isBinaryContentTypeSubtypes(String subtype) {
+        assertTrue(isBinary("foo/" + subtype), subtype);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"audio", "image", "video"})
+    void isBinaryContentTypePrimaryTypes(String primary) {
+        assertTrue(isBinary(primary + "/foo"), primary);
+    }
+
+    @Test
+    void getNormalizedValueFromMultipleHeaders() {
+        assertEquals("192.3.14.1,10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348", h1.getNormalizedValue(X_FORWARDED_FOR));
+    }
+
+    @Test
+    void getNormalizedValueFromOneHeader() {
+        assertEquals("192.3.14.1,10.0.0.1,2001:db8:85a3:8d3:1319:8a2e:370:7348", h1.getNormalizedValue(X_FORWARDED_FOR));
+    }
+
+    @Test
+    void multipleHeaderWithSameNameNormalized() {
+        Header h = new Header();
+        h.add("Foo", "1");
+        h.add("Foo", "2");
+        h.add("Foo", "3");
+        assertEquals("1,2,3", h.getNormalizedValue("Foo"));
+    }
 }

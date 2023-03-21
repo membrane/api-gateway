@@ -13,62 +13,44 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.jwt.Jwks;
-import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.interceptor.session.SessionManager;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.transport.ssl.PEMSupport;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.cache.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.jwt.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
 import org.apache.commons.codec.binary.Base64;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.NumericDate;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import org.jose4j.jws.*;
+import org.jose4j.jwt.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import javax.annotation.concurrent.GuardedBy;
-import javax.mail.internet.ParseException;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.time.LocalDateTime;
+import javax.annotation.concurrent.*;
+import javax.mail.internet.*;
+import java.io.*;
+import java.math.*;
+import java.security.*;
+import java.security.cert.*;
+import java.time.*;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.concurrent.*;
+import java.util.stream.*;
+
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -80,19 +62,18 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public static final String OAUTH2_ANSWER = "oauth2Answer";
     public static final String OA2REDIRECT = "oa2redirect";
     public static final String OA2REDIRECT_PREFIX = "_redirect_for_oa2redirect_";
-    private static Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
 
     private final Cache<String, Object> synchronizers = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build();
 
     @GuardedBy("publicURLs")
-    private List<String> publicURLs = new ArrayList<>();
+    private final List<String> publicURLs = new ArrayList<>();
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
-    private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    private final Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
 
     private int revalidateTokenAfter = -1;
 
-    private WebServerInterceptor wsi;
     private URIFactory uriFactory;
     private boolean firstInitWhenDynamicAuthorizationService;
     private boolean initPublicURLsOnTheFly = false;
@@ -122,8 +103,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public void setPublicURL(String publicURL) {
         synchronized (publicURLs) {
             publicURLs.clear();
-            for (String url : publicURL.split("[ \t]+"))
-                publicURLs.add(url);
+            Collections.addAll(publicURLs, publicURL.split("[ \t]+"));
         }
     }
 
@@ -178,8 +158,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         synchronized (publicURLs) {
             if (publicURLs.size() == 0)
                 initPublicURLsOnTheFly = true;
-            else for (int i = 0; i < publicURLs.size(); i++)
-                publicURLs.set(i, normalizePublicURL(publicURLs.get(i)));
+            else publicURLs.replaceAll(this::normalizePublicURL);
         }
 
         firstInitWhenDynamicAuthorizationService = getAuthService().supportsDynamicRegistration();
@@ -221,7 +200,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             handleOriginalRequest(exc);
 
         if (!skipUserInfo && (session == null || !session.isVerified())) {
-            String auth = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
+            String auth = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
             if (auth != null && auth.substring(0, 7).equalsIgnoreCase("Bearer ")) {
                 session = getSessionManager().getSession(exc);
                 session.put(ParamNames.ACCESS_TOKEN, auth.substring(7));
@@ -286,7 +265,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     /**
      * Tries to avoid very long cookies by dropping all OAUTH2_ANSWERS except the first one.
-     *
      * (The SessionManager.mergeCookies produces a value with "{...answer1...},{...answer2...}".
      * We locate the ',' in between the JSON objects and split the string.)
      */
@@ -315,28 +293,18 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             char c = answer.charAt(i);
             if (inString) {
                 switch (c) {
-                    case '\"':
-                        inString = false;
-                        break;
-                    case '\\':
-                        escapeNext = true;
-                        break;
+                    case '\"' -> inString = false;
+                    case '\\' -> escapeNext = true;
                 }
             } else {
                 switch (c) {
-                    case '{':
-                        curlyBraceLevel++;
-                        break;
-                    case '}':
-                        curlyBraceLevel--;
-                        break;
-                    case ',':
+                    case '{' -> curlyBraceLevel++;
+                    case '}' -> curlyBraceLevel--;
+                    case ',' -> {
                         if (curlyBraceLevel == 0)
                             return i;
-                        break;
-                    case '"':
-                        inString = true;
-                        break;
+                    }
+                    case '"' -> inString = true;
                 }
             }
         }
@@ -344,7 +312,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private Object getTokenSynchronizer(Session session) {
-        OAuth2AnswerParameters oauth2Params = null;
+        OAuth2AnswerParameters oauth2Params;
         try {
             oauth2Params = OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER));
         } catch (IOException e) {
@@ -355,7 +323,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return new Object();
 
         try {
-            return synchronizers.get(rt, () -> new Object());
+            return synchronizers.get(rt, Object::new);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -385,9 +353,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER));
         Exchange refreshTokenExchange = applyAuth(auth, new Request.Builder()
                 .post(auth.getTokenEndpoint())
-                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(Header.ACCEPT, "application/json")
-                .header(Header.USER_AGENT, Constants.USERAGENT),
+                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(USER_AGENT, USERAGENT),
                 "grant_type=refresh_token"
                         + "&refresh_token=" + oauth2Params.getRefreshToken())
                 .buildExchange();
@@ -400,7 +368,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if (!isJson(refreshTokenResponse))
             throw new RuntimeException("Refresh Token response is no JSON.");
 
+        @SuppressWarnings("unchecked")
         Map<String, Object> json = om.readValue(refreshTokenResponse.getBodyAsStreamDecoded(), Map.class);
+
         if (json.get("access_token") == null || json.get("refresh_token") == null) {
             refreshTokenResponse.getBody().read();
             throw new RuntimeException("Statuscode was ok but no access_token and refresh_token was received: " + refreshTokenResponse.getStatusCode());
@@ -431,7 +401,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         String clientSecret = auth.getClientSecret();
         if (clientSecret != null)
             requestBuilder
-                    .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + clientSecret).getBytes())))
+                    .header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + clientSecret).getBytes())))
                     .body(body);
         else
             requestBuilder.body(body + "&client_id" + auth.getClientId());
@@ -463,9 +433,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             jws.setHeader("typ", "JWT");
 
             return jws.getCompactSerialization();
-        } catch (JoseException e) {
-            throw new RuntimeException(e);
-        } catch (MalformedClaimException e) {
+        } catch (JoseException | MalformedClaimException e) {
             throw new RuntimeException(e);
         }
     }
@@ -473,14 +441,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private String numberToString(Object number) {
         if (number == null)
             return null;
-        if (number instanceof Integer)
-            return ((Integer)number).toString();
-        if (number instanceof Long)
-            return ((Long)number).toString();
+        if (number instanceof Integer in)
+            return in.toString();
+        if (number instanceof Long ln)
+            return ln.toString();
         if (number instanceof Double)
-            return ((Double)number).toString();
-        if (number instanceof String)
-            return (String)number;
+            return number.toString();
+        if (number instanceof String s)
+            return s;
         log.warn("Unhandled number type " + number.getClass().getName());
         return null;
     }
@@ -489,7 +457,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         String contentType = g.getHeader().getFirstValue("Content-Type");
         if (contentType == null)
             return false;
-        return g.getHeader().getContentTypeObject().match("application/json");
+        return g.getHeader().getContentTypeObject().match(APPLICATION_JSON);
     }
 
     private boolean refreshingOfAccessTokenIsNeeded(Session session) throws IOException {
@@ -508,8 +476,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Exchange e2 = new Request.Builder()
                 .get(auth.getUserInfoEndpoint())
                 .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
-                .header("User-Agent", Constants.USERAGENT)
-                .header(Header.ACCEPT, "application/json")
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
                 .buildExchange();
 
         Response response2 = auth.doRequest(e2);
@@ -522,6 +490,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             statistics.accessTokenValid();
             if (!isJson(response2))
                 throw new RuntimeException("Response is no JSON.");
+
+            //noinspection unchecked
             return om.readValue(response2.getBodyAsStreamDecoded(), Map.class);
         }
     }
@@ -534,12 +504,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     @Override
-    protected Outcome handleResponseInternal(Exchange exc) throws Exception {
+    protected Outcome handleResponseInternal(Exchange exc) {
         return Outcome.CONTINUE;
     }
 
     private String getPublicURL(Exchange exc) throws Exception {
-        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
+        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
         boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
         String publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
         RuleKey key = exc.getRule().getKey();
@@ -615,7 +585,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         originalExchangeStore.store(exc, session, state, exc);
 
         if(session.get().containsKey(ParamNames.STATE))
-            state = session.get(ParamNames.STATE) + SessionManager.SESSION_VALUE_SEPARATOR + state;
+            state = session.get(ParamNames.STATE) + SESSION_VALUE_SEPARATOR + state;
         session.put(ParamNames.STATE,state);
 
         return Outcome.RETURN;
@@ -666,9 +636,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
                 Exchange e = applyAuth(auth, new Request.Builder()
                         .post(auth.getTokenEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.ACCEPT, "application/json")
-                        .header(Header.USER_AGENT, Constants.USERAGENT),
+                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(USER_AGENT, USERAGENT),
                         "code=" + code
                                 + "&redirect_uri=" + publicURL + callbackPath
                                 + "&grant_type=authorization_code")
@@ -694,6 +664,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 if (!isJson(response))
                     throw new RuntimeException("Token response is no JSON.");
 
+                @SuppressWarnings("unchecked")
                 Map<String, Object> json = om.readValue(response.getBodyAsStreamDecoded(), Map.class);
 
                 if (!json.containsKey("access_token"))
@@ -724,8 +695,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                     Exchange e2 = new Request.Builder()
                             .get(auth.getUserInfoEndpoint())
                             .header("Authorization", json.get("token_type") + " " + token)
-                            .header("User-Agent", Constants.USERAGENT)
-                            .header(Header.ACCEPT, "application/json")
+                            .header("User-Agent", USERAGENT)
+                            .header(ACCEPT, APPLICATION_JSON)
                             .buildExchange();
 
                     if (log.isDebugEnabled()) {
@@ -747,6 +718,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
                     if (!isJson(response2))
                         throw new RuntimeException("Userinfo response is no JSON.");
+
+                    @SuppressWarnings("unchecked")
                     Map<String, Object> json2 = om.readValue(response2.getBodyAsStreamDecoded(), Map.class);
 
                     oauth2Answer.setUserinfo(json2);
@@ -792,11 +765,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private boolean csrfTokenMatches(Session session, String state2) {
         Optional<Object> sessionRaw = Optional.ofNullable(session.get(ParamNames.STATE));
-        if(!sessionRaw.isPresent())
+        if(sessionRaw.isEmpty())
             return false;
-        return Arrays
-                .asList(sessionRaw.get().toString().split(SessionManager.SESSION_VALUE_SEPARATOR))
-                .stream()
+        return Arrays.stream(sessionRaw.get().toString().split(SESSION_VALUE_SEPARATOR))
                 .filter(s -> s.equals(state2))
                 .count() == 1;
     }
@@ -816,13 +787,13 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
     }
 
-    private void doOriginalRequest(Exchange exc, AbstractExchange originalRequest) throws Exception {
+    private void doOriginalRequest(Exchange exc, AbstractExchange originalRequest) {
         originalRequest.getRequest().getHeader().add("Cookie",exc.getRequest().getHeader().getFirstValue("Cookie"));
         exc.setRequest(originalRequest.getRequest());
 
         exc.getDestinations().clear();
-        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
-        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_HOST);
+        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
+        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_HOST);
         String originalRequestUri = originalRequest.getOriginalRequestUri();
         exc.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
 
@@ -842,7 +813,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         session.authorize(username);
     }
 
-    private boolean idTokenIsValid(String idToken) throws Exception {
+    private boolean idTokenIsValid(String idToken) {
         //TODO maybe change this to return claims and also save them in the oauth2AnswerParameters
         try {
             JwtGenerator.getClaimsFromSignedIdToken(idToken, getAuthService().getIssuer(), getAuthService().getClientId(), getAuthService().getJwksEndpoint(), auth);

@@ -50,6 +50,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.predic8.membrane.core.http.MimeType.*;
+
 /**
  * @description Used for storing exchanges in the Elasticsearch.
  * @explanation Elasticsearch 7 is required. Exchanges can be viewed in admin console and using standard Elasticsearch
@@ -111,8 +113,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                 try {
                     List<AbstractExchangeSnapshot> exchanges;
                     synchronized (shortTermMemoryForBatching){
-                        exchanges = shortTermMemoryForBatching.values().stream().collect(Collectors.toList());
-                        shortTermMemoryForBatching.values().stream().forEach(exc -> cacheToWaitForElasticSearchIndex.put(exc.getId(),exc));
+                        exchanges = new ArrayList<>(shortTermMemoryForBatching.values());
+                        shortTermMemoryForBatching.values().forEach(exc -> cacheToWaitForElasticSearchIndex.put(exc.getId(),exc));
                         shortTermMemoryForBatching.clear();
                     }
                     if(exchanges.size() > 0){
@@ -136,7 +138,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         StringBuilder data = exchanges
                 .stream()
                 .map(exchange -> wrapForBulkOperationElasticSearch(index,getLocalMachineNameWithSuffix()+"-"+exchange.getId(),collectExchangeDataFrom(exchange)))
-                .collect(StringBuilder::new, (sb, str) -> sb.append(str), (sb1,sb2) -> sb1.append(sb2));
+                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append);
 
         Exchange elasticSearchExc = new Request.Builder()
                 .post(location + "/_bulk")
@@ -170,7 +172,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     @Override
     public void snap(AbstractExchange exc, Interceptor.Flow flow) {
-        AbstractExchangeSnapshot excCopy = null;
+        AbstractExchangeSnapshot excCopy;
         try {
             if (flow == Interceptor.Flow.REQUEST) {
                 excCopy = new DynamicAbstractExchangeSnapshot(exc, flow, this::addForElasticSearch, bodyExceedingMaxSizeStrategy, maxBodySize);
@@ -193,9 +195,10 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         }
     }
 
+    @SuppressWarnings({"unchecked"})
     private String collectExchangeDataFrom(AbstractExchangeSnapshot exc) {
         try {
-            Map value = mapper.readValue(mapper.writeValueAsString(exc),Map.class);
+            Map<String,String> value = mapper.readValue(mapper.writeValueAsString(exc),Map.class);
             value.put("issuer",documentPrefix);
             return mapper.writeValueAsString(value);
         } catch (IOException e) {
@@ -241,7 +244,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     private List<String> getPropertyValueArray(String propertyName) throws Exception {
         Request.Builder builder = new Request.Builder().post(location  + "/" + "_search")
-                .header("Content-Type","application/json");
+                .contentType(APPLICATION_JSON);
         Exchange clientExc = builder.body(getFilterDistinctQueryJson(propertyName).toString()).buildExchange();
         clientExc = client.call(clientExc);
         return getDistinctValues(clientExc.getResponse().getBodyAsStringDecoded());
@@ -254,7 +257,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     public AbstractExchangeSnapshot getExchangeDtoById(int id){
-        Long idBox = Long.valueOf(id);
+        Long idBox = (long) id;
         if(shortTermMemoryForBatching.get(idBox) != null)
             return shortTermMemoryForBatching.get(idBox);
         if(cacheToWaitForElasticSearchIndex.getIfPresent(idBox) != null)
@@ -285,7 +288,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                             "    }\n" +
                             "  }\n" +
                             "}")
-                    .header("Content-Type","application/json")
+                    .contentType(APPLICATION_JSON)
                     .buildExchange();
             exc = client.call(exc);
             Map res = responseToMap(exc);
@@ -309,11 +312,11 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     public List getHitsElementFromElasticSearchResponse(Map response){
-        return ((List)((Map)response.get("hits")).get("hits"));
+        return ((List)((Map<?, ?>)response.get("hits")).get("hits"));
     }
 
     public List<Map> getSourceElementFromHitsElement(List hits){
-        return (List)hits.stream().map(hit -> ((Map)hit).get("_source")).collect(Collectors.toList());
+        return (List)hits.stream().map(hit -> ((Map<?, ?>)hit).get("_source")).collect(Collectors.toList());
     }
 
     @Override
@@ -361,7 +364,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                             "    }\n" +
                             "  }\n" +
                             "}")
-                    .header("Content-Type","application/json")
+                    .contentType(APPLICATION_JSON)
                     .buildExchange();
             client.call(exc);
         }catch (Exception e){
@@ -371,7 +374,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     @Override
     public void removeAllExchanges(AbstractExchange[] exchanges) {
-        StringBuilder sb = Stream.of(exchanges).map(exc -> exc.getId()).collect(() -> {
+        StringBuilder sb = Stream.of(exchanges).map(AbstractExchange::getId).collect(() -> {
             StringBuilder acc = new StringBuilder();
             acc.append("[");
             return acc;
@@ -401,7 +404,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                             "    }\n" +
                             "  }\n" +
                             "}")
-                    .header("Content-Type", "application/json")
+                    .contentType(APPLICATION_JSON)
                     .buildExchange();
             client.call(exc);
         }catch (Exception e){
@@ -433,13 +436,13 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                             "    }\n" +
                             "  }\n" +
                             "}")
-                    .header("Content-Type","application/json")
+                    .contentType(APPLICATION_JSON)
                     .buildExchange();
             exc = client.call(exc);
 
-            List source = getSourceElementFromElasticSearchResponse(responseToMap(exc));
+            List<Map> source = getSourceElementFromElasticSearchResponse(responseToMap(exc));
             AbstractExchangeSnapshot[] snapshots = mapper.readValue(mapper.writeValueAsString(source), AbstractExchangeSnapshot[].class);
-            return Stream.of(snapshots).map(snapshot -> snapshot.toAbstractExchange()).collect(Collectors.toList()).toArray(new AbstractExchange[0]);
+            return Stream.of(snapshots).map(AbstractExchangeSnapshot::toAbstractExchange).toArray(AbstractExchange[]::new);
         }catch (Exception e){
             e.printStackTrace();
             return new AbstractExchange[0];
@@ -457,8 +460,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         if (exchangesList == null || exchangesList.isEmpty())
             return statistics;
 
-        for (int i = 0; i < exchangesList.size(); i++)
-            statistics.collectFrom(exchangesList.get(i));
+        for (AbstractExchange abstractExchange : exchangesList) statistics.collectFrom(abstractExchange);
 
         return statistics;
     }
@@ -471,13 +473,13 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
         try{
-            Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search").header("Content-Type","application/json").body("{\n" +
-                    "  \"query\": {\n" +
-                    "    \"match\": {\n" +
-                    "      \"issuer\": \""+ documentPrefix+"\"\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}").buildExchange();
+            Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search").contentType(APPLICATION_JSON).body("{\n" +
+                                                                                                                                                 "  \"query\": {\n" +
+                                                                                                                                                 "    \"match\": {\n" +
+                                                                                                                                                 "      \"issuer\": \"" + documentPrefix + "\"\n" +
+                                                                                                                                                 "    }\n" +
+                                                                                                                                                 "  }\n" +
+                                                                                                                                                 "}").buildExchange();
             exc = client.call(exc);
 
             if(!exc.getResponse().isOk())
@@ -505,10 +507,9 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception {
         JSONObject req = getJsonElasticQuery(params);
 
-        Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search").
-                header("Content-Type","application/json").body(req.toString()).buildExchange();
+        Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search").contentType(APPLICATION_JSON)
+                .body(req.toString()).buildExchange();
         exc = client.call(exc);
-
 
         return new ExchangeQueryResult(getAbstractExchangeListFromExchange(exc), getTotalHitCountFromExchange(exc),
                 this.getLastModified());
@@ -531,10 +532,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         else{
             req.put("sort",getDurationScriptObject(params.getString("order")));
         }
-        List<String> existingFields = queryToElasticMap.keySet().stream().filter(params::has).collect(Collectors.toList());
-        existingFields.forEach( eF -> {
-            must.put(getMatchJSON( queryToElasticMap.get(eF), params.getString(eF)));
-        });
+        List<String> existingFields = queryToElasticMap.keySet().stream().filter(params::has).toList();
+        existingFields.forEach( eF -> must.put(getMatchJSON( queryToElasticMap.get(eF), params.getString(eF))));
         must.put(new JSONObject().put("match", new JSONObject().put("issuer", documentPrefix)));
 
         return req;
@@ -611,7 +610,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             }
 
             Exchange exc = client.call(new Request.Builder().put(getElasticSearchIndexPath() + "_mapping").
-                    header("Content-Type","application/json").body(mapping).buildExchange());
+                            contentType(APPLICATION_JSON).body(mapping).buildExchange());
 
             JSONObject res = new JSONObject(exc.getResponse().getBodyAsStringDecoded());
 
@@ -629,7 +628,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         }
     }
 
-    private boolean isElasticAcked(JSONObject json) throws IOException {
+    private boolean isElasticAcked(JSONObject json) {
         return json.getBoolean("acknowledged");
     }
 
@@ -666,7 +665,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     /**
      * @description base URL of Elasticsearch
-     * @default http://localhost:9200
+     * @default <a href="http://localhost:9200">http://localhost:9200</a>
      */
     @MCAttribute
     public void setLocation(String location) {

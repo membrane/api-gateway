@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.util.HashSet;
+import java.util.*;
 import java.util.Set;
 
 import org.springframework.beans.BeansException;
@@ -28,6 +28,10 @@ import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Adds the current state of HTTP requests and responses to an "exchange store".
@@ -44,7 +48,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	private ExchangeStore store;
 	private String exchangeStoreBeanId;
 
-	private Set<AbstractServiceProxy> serviceProxiesContainingAdminConsole = new HashSet<AbstractServiceProxy>();
+	private final Set<AbstractServiceProxy> serviceProxiesContainingAdminConsole = new HashSet<>();
 
 	public ExchangeStoreInterceptor() {
 		name = "  Store Interceptor";
@@ -62,27 +66,27 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		return handle(exc, Flow.REQUEST);
+		return handle(exc, REQUEST);
 	}
 
 	@Override
 	public Outcome handleResponse(final Exchange exc) throws Exception {
-		return handle(exc, Flow.RESPONSE);
+		return handle(exc, RESPONSE);
 	}
 
 	@Override
 	public void handleAbort(Exchange exc) {
-		handle(exc, Flow.ABORT);
+		handle(exc, ABORT);
 	}
 
 	protected Outcome handle(Exchange exc, Flow flow) {
 		if (serviceProxiesContainingAdminConsole.contains(exc.getRule())) {
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		store.snap(exc, flow);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	public ExchangeStore getExchangeStore() {
@@ -116,7 +120,8 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	@Override
 	public void init() throws Exception {
 
-		if (exchangeStoreBeanId == BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
+		//noinspection StatementWithEmptyBody
+		if (Objects.equals(exchangeStoreBeanId, BEAN_ID_ATTRIBUTE_CANNOT_BE_USED))
 			; // do nothing as "store" was already set via #setExchangeStore(ExchangeStore)
 		else if (exchangeStoreBeanId != null)
 			store = applicationContext.getBean(exchangeStoreBeanId, ExchangeStore.class);
@@ -145,5 +150,4 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 		return "Logs all exchanges (requests and responses) into an exchange store "+
 				"that can be inspected using <a href=\"http://www.membrane-soa.org/soap-monitor/\">Membrane Monitor</a>.";
 	}
-
 }

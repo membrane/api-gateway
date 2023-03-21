@@ -16,7 +16,7 @@
  */
 package com.predic8.membrane.core.http.cookie;
 
-import java.io.Serializable;
+import java.io.*;
 import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
@@ -24,23 +24,26 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import static com.predic8.membrane.core.http.cookie.CookieSupport.*;
+
 
 /**
  * Server-side cookie representation.
  * Allows recycling and uses MessageBytes as low-level
  * representation ( and thus the byte-> char conversion can be delayed
  * until we know the charset ).
- *
+ * <p>
  * Tomcat.core uses this recyclable object to represent cookies,
  * and the facade will convert it to the external representation.
- *
- * Source: http://tomcat.apache.org/
- * License:  http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Source: <a href="http://tomcat.apache.org/">...</a>
+ * License:  <a href="http://www.apache.org/licenses/LICENSE-2.0">...</a>
  *
  * @author unknown (Tomcat)
  */
 public class ServerCookie implements Serializable {
 
+	@Serial
 	private static final long serialVersionUID = 1L;
 
 	// Version 0 (Netscape) attributes
@@ -60,15 +63,12 @@ public class ServerCookie implements Serializable {
 	private static final String OLD_COOKIE_PATTERN =
 			"EEE, dd-MMM-yyyy HH:mm:ss z";
 	private static final ThreadLocal<DateFormat> OLD_COOKIE_FORMAT =
-			new ThreadLocal<DateFormat>() {
-		@Override
-		protected DateFormat initialValue() {
-			DateFormat df =
-					new SimpleDateFormat(OLD_COOKIE_PATTERN, Locale.US);
-			df.setTimeZone(TimeZone.getTimeZone("GMT"));
-			return df;
-		}
-	};
+            ThreadLocal.withInitial(() -> {
+                DateFormat df =
+                        new SimpleDateFormat(OLD_COOKIE_PATTERN, Locale.US);
+                df.setTimeZone(TimeZone.getTimeZone("GMT"));
+                return df;
+            });
 	private static final String ancientDate;
 
 	static {
@@ -187,10 +187,10 @@ public class ServerCookie implements Serializable {
 
 		// If it is v0, check if we need to switch
 		if (newVersion == 0 &&
-				(!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isHttpToken(value) ||
-						CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isV0Token(value))) {
+				(!ALLOW_HTTP_SEPARATORS_IN_V0 &&
+				 isHttpToken(value) ||
+						ALLOW_HTTP_SEPARATORS_IN_V0 &&
+						isV0Token(value))) {
 			// HTTP token in value - need to use v1
 			newVersion = 1;
 		}
@@ -201,19 +201,19 @@ public class ServerCookie implements Serializable {
 		}
 
 		if (newVersion == 0 &&
-				(!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isHttpToken(path) ||
-						CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isV0Token(path))) {
+				(!ALLOW_HTTP_SEPARATORS_IN_V0 &&
+				 isHttpToken(path) ||
+						ALLOW_HTTP_SEPARATORS_IN_V0 &&
+						isV0Token(path))) {
 			// HTTP token in path - need to use v1
 			newVersion = 1;
 		}
 
 		if (newVersion == 0 &&
-				(!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isHttpToken(domain) ||
-						CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 &&
-						CookieSupport.isV0Token(domain))) {
+				(!ALLOW_HTTP_SEPARATORS_IN_V0 &&
+				 isHttpToken(domain) ||
+						ALLOW_HTTP_SEPARATORS_IN_V0 &&
+						isV0Token(domain))) {
 			// HTTP token in domain - need to use v1
 			newVersion = 1;
 		}
@@ -292,10 +292,10 @@ public class ServerCookie implements Serializable {
 			buf.append('"');
 			buf.append(escapeDoubleQuotes(value,1,value.length()-1));
 			buf.append('"');
-		} else if (CookieSupport.isHttpToken(value) &&
-				!CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0 ||
-				CookieSupport.isV0Token(value) &&
-				CookieSupport.ALLOW_HTTP_SEPARATORS_IN_V0) {
+		} else if (isHttpToken(value) &&
+				   !ALLOW_HTTP_SEPARATORS_IN_V0 ||
+				isV0Token(value) &&
+				ALLOW_HTTP_SEPARATORS_IN_V0) {
 			buf.append('"');
 			buf.append(escapeDoubleQuotes(value,0,value.length()));
 			buf.append('"');

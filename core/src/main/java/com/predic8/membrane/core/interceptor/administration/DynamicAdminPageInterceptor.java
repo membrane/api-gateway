@@ -13,51 +13,36 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
-import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
-import static com.predic8.membrane.core.util.HttpUtil.createResponse;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.StringWriter;
-import java.lang.reflect.Method;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.lang.reflect.*;
+import java.text.*;
+import java.util.*;
+import java.util.regex.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.balancer.Balancer;
-import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
-import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.PortOccupiedException;
-import com.predic8.membrane.core.util.DateUtil;
-import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.administration.AdminPageBuilder.*;
+import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Handles the dynamic part of the admin console (= requests starting with "/admin/").
  */
 public class DynamicAdminPageInterceptor extends AbstractInterceptor {
-	private static Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
 	private boolean readOnly;
 	private boolean useXForwardedForAsClientAddr;
 
@@ -75,16 +60,19 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return o;
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/?(\\?.*)?")
 	public Response handleHomeRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/proxy/?(\\?.*)?")
 	public Response handleProxyRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getProxyPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/service-proxy/show/?(\\?.*)?")
 	public Response handleServiceProxyShowRequest(final Map<String, String> params, final String relativeRootPath)
 			throws Exception {
@@ -104,11 +92,12 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h1().text(rule.toString()+" ServiceProxy").end();
-				script().raw("$(function() {\r\n" +
-						"					$( \"#subtab\" ).tabs();\r\n" +
-						"				});").end();
+				script().raw("""
+						$(function() {
+							$( "#subtab" ).tabs();
+						});""").end();
 
 				div().id("subtab");
 				ul();
@@ -122,13 +111,14 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				div().id("tab2");
 				createStatusCodesTable(rule.getStatisticCollector().getStatisticsByStatusCodes());
 				br();
-				createButton("View Messages", "calls", null, createQueryString("proxy", rule.toString()));
+				createButton("View Messages", createQueryString("proxy", rule.toString()));
 				end();
 				end();
 			}
 		}.createPage());
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/proxy/show/?(\\?.*)?")
 	public Response handlePruleShowRequest(final Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -148,7 +138,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h1().text(rule.toString()+" Proxy").end();
 				if (rule.getKey().getPort() != -1) {
 					table();
@@ -164,6 +154,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage());
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/service-proxy/save/?(\\?.*)?")
 	public Response handleServiceProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
@@ -186,6 +177,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/proxy/save/?(\\?.*)?")
 	public Response handleProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
@@ -201,6 +193,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getProxyPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/service-proxy/delete/?(\\?.*)?")
 	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -213,6 +206,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/service-proxy/start/?(\\?.*)?")
 	public Response handleServiceProxyStartRequest(Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -225,6 +219,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/proxy/delete/?(\\?.*)?")
 	public Response handleProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -236,6 +231,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getProxyPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/transport/?(\\?.*)?")
 	public Response handleTransportRequest(Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -247,7 +243,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h2().text("Transport").end();
 
 				h3().text("Transport Interceptors").end();
@@ -257,6 +253,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage());
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/system/?(\\?.*)?")
 	public Response handleSystemRequest(final Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -289,27 +286,29 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				p().text("Free system memory: " + formatMemoryValue(Runtime.getRuntime().freeMemory())).end();
 
 				p().text("Membrane version: " + Constants.VERSION).end();
-
-				//createLogConfigurationEditor();
 			}
 		}.createPage());
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/balancers/?(\\?.*)?")
 	public Response handleBalancersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getBalancersPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/clusters/?(\\?.*)?")
 	public Response handleClustersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getClustersPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/clusters/show/?(\\?.*)?")
 	public Response handleClustersShowRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getClusterPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/clusters/save/?(\\?.*)?")
 	public Response handleClustersSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
@@ -324,6 +323,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getClustersPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/show/?(\\?.*)?")
 	public Response handleNodeShowRequest(final Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -335,7 +335,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				String balancer = getBalancerParam(params);
 				h2().text("Node " + params.get("host")+":"+params.get("port") + " (" +
 						"Cluster " + params.get("cluster") + " of Balancer " + balancer + ")").end();
@@ -358,6 +358,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage());
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/sessions/?(\\?.*)?")
 	public Response handleNodeSessionsRequest(final Map<String, String> params, String relativeRootPath)
 			throws Exception {
@@ -369,7 +370,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h2().text("Node " + params.get("host")+":"+params.get("port")).end();
 				h3().text("Sessions").end();
 				createSessionsTable( BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getSessionsByNode(
@@ -380,8 +381,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage());
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/save/?(\\?.*)?")
-	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
@@ -395,60 +397,67 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				params.get("cluster"),
 				params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster", params.get("cluster")), relativeRootPath);
+		return redirect("clusters", createQueryString("balancer", getBalancerParam(params), "cluster", params.get("cluster")), relativeRootPath);
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/up/?(\\?.*)?")
-	public Response handleNodeUpRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeUpRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
+		return redirect("clusters", createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/takeout/?(\\?.*)?")
-	public Response handleNodeTakeoutRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeTakeoutRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).takeout(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
+		return redirect("clusters", createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/down/?(\\?.*)?")
-	public Response handleNodeDownRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeDownRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).down(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
+		return redirect("clusters", createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/delete/?(\\?.*)?")
-	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).removeNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
+		return redirect("clusters", createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/node/reset/?(\\?.*)?")
-	public Response handleNodeResetRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleNodeResetRequest(Map<String, String> params, String relativeRootPath) {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port"))).clearCounter();
-		return redirect("node","show",createQueryString("balancer", getBalancerParam(params),
+		return redirect("node", createQueryString("balancer", getBalancerParam(params),
 				"cluster",params.get("cluster"),
 				"host",params.get("host"),
 				"port",params.get("port")), relativeRootPath);
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/statistics")
 	public Response handleStatisticsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getStatisticsPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/streams")
 	public Response handleStreamPumpsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getStreamPumpsPage(params, relativeRootPath));
@@ -459,16 +468,19 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getCallsPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/call/?(\\?.*)?")
 	public Response handleCallRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getCallPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/clients")
 	public Response handleClientsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getClientsPage(params, relativeRootPath));
 	}
 
+	@SuppressWarnings("unused")
 	@Mapping("/admin/about")
 	public Response getAbout(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getAboutPage(params, relativeRootPath));
@@ -484,7 +496,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h3().text("ServiceProxies").end();
 				createFwdRulesTable();
 				createAddFwdRuleForm();
@@ -503,7 +515,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h3().text("Proxies").end();
 				createProxyRulesTable();
 				createAddProxyRuleForm();
@@ -522,7 +534,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				String balancer = getBalancerParam(params);
 				h2().text("Cluster " + params.get("cluster") + " of Balancer " + balancer).end();
 				createNodesTable(balancer);
@@ -543,7 +555,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				String balancer = getBalancerParam(params);
 				h1().text("Balancer " + balancer).end();
 				h2().text("Clusters").end();
@@ -569,7 +581,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h1().text("Balancers").end();
 				createBalancersTable();
 			}
@@ -587,7 +599,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h3().text("Statistics").end();
 				createStatisticsTable();
 			}
@@ -604,7 +616,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				return TAB_ID_STREAM_PUMPS;
 			}
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h3().text("Stream Pump Statistics").end();
 				createStreamPumpsTable();
 			}
@@ -621,7 +633,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				PropertyValueCollector propertyValues = new PropertyValueCollector();
 				propertyValues.setUseXForwardedForAsClientAddr(useXForwardedForAsClientAddr);
 
@@ -687,11 +699,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					option(s.isEmpty()?"undefined":s, s, false);
 				}
 				end(2);
+				span().text("Text Search").end()
+				.input().type("text").id("message-filter-search").name("message-filter-search").onkeydown("membrane.onFilterUpdate();").onchange("membrane.onFilterUpdate();").end(2);
+				end();
 				br();
-				createButton("Reset Filter", "calls", null, null);
+				createButton("Reset Filter", null);
 				a().id("reload-data-button").classAttr("mb-button").text("Reload data").end();
 				label().forAttr("reload-data-checkbox").checkbox().checked("true").id("reload-data-checkbox").text("Auto Reload").end();
-				end();
 				addMessageText();
 				createMessageStatisticsTable();
 			}
@@ -712,7 +726,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					String usageStr =
 							oldestTimeResSent == null ? "" :
 								String.format("; usage %.0f%%; the last %s", usage,
-										DateUtil.prettyPrintTimeSpan(System.currentTimeMillis() - oldestTimeResSent));
+										DateAndTimeUtil.prettyPrintTimeSpan(System.currentTimeMillis() - oldestTimeResSent));
 					return "Messages" + String.format(
 							" (limited to last %.2f MB%s)",
 							lmes.getMaxSize()/1000000.,
@@ -724,7 +738,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	private <T extends Comparable<? super T>> List<T> sort(Set<T> data) {
 		int nulls = 0;
-		ArrayList<T> res = new ArrayList<T>(data.size());
+		ArrayList<T> res = new ArrayList<>(data.size());
 		for (T t : data)
 			if (t == null)
 				nulls++;
@@ -746,7 +760,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				script().raw("$(function() {\r\n" +
 						"					$( \"#exchangeTab\" ).tabs();\r\n" +
 						"					$( \"#requestContentTab\" ).tabs();\r\n" +
@@ -817,7 +831,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h3().text("Statistics").end();
 				createClientsStatisticsTable();
 			}
@@ -835,7 +849,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 
 			@Override
-			protected void createTabContent() throws Exception {
+			protected void createTabContent() {
 				h3().text("Impressum").end();
 				p().text("predic8 GmbH").br().text("Koblenzer Str. 65").br().br().text("53173 Bonn").end();
 			}
@@ -849,23 +863,22 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
 				exc.setResponse((Response)m.invoke(this, new Object[] { getParams(exc), getRelativeRootPath(pathQuery) }));
-				return Outcome.RETURN;
+				return RETURN;
 			}
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
 		return URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
 	}
 
-	private Response respond(String page) throws Exception {
-		return createResponse(200, "OK", page.getBytes(Constants.UTF_8_CHARSET), MimeType.TEXT_HTML_UTF8);
+	private Response respond(String page) {
+		return Response.ok().contentType(TEXT_HTML_UTF8).body(page.getBytes(UTF_8)).build();
 	}
 
-	private Response redirect(String ctrl, String action, String query, String relativeRootPath) throws Exception {
-		return createResponse(302, "Found", null, MimeType.TEXT_HTML_UTF8,
-				Header.LOCATION, relativeRootPath + AdminPageBuilder.createHRef(ctrl, action, query));
+	private Response redirect(String ctrl, String query, String relativeRootPath) {
+		return Response.found(relativeRootPath + createHRef(ctrl, "show", query)).build();
 	}
 
 	private int getPortParam(Map<String, String> params) {
@@ -879,7 +892,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public static String getBalancerParam(Map<String, String> params) {
 		String balancerName = params.get("balancer");
 		if (balancerName == null)
-			balancerName = Balancer.DEFAULT_NAME;
+			return Balancer.DEFAULT_NAME;
 		return balancerName;
 	}
 
@@ -902,10 +915,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		this.readOnly = readOnly;
 	}
 
-	public boolean isUseXForwardedForAsClientAddr() {
-		return useXForwardedForAsClientAddr;
-	}
-
 	public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
 		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
 	}
@@ -913,23 +922,4 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response createReadOnlyErrorResponse() {
 		return Response.forbidden("The admin console is configured to be readOnly.").build();
 	}
-
-	//slf4j change
-	/*@Mapping("/admin/log/level")
-	public Response handleChangeLogLevelRequest(Map<String, String> params, String relativeRootPath) throws Exception {
-		if (readOnly)
-			return createReadOnlyErrorResponse();
-		Logger.getRootLogger().setLevel(Level.toLevel(Integer.parseInt(params.get("loglevel"))));
-		return handleSystemRequest(params, relativeRootPath);
-	}
-
-	@Mapping("/admin/log/config")
-	public Response handleReplaceLogConfigurationRequest(Map<String, String> params, String relativeRootPath) throws Exception {
-		if (readOnly)
-			return createReadOnlyErrorResponse();
-		String config = params.get("logconfig");
-		PropertyConfigurator.configure(new ByteArrayInputStream(config.getBytes()));
-		return handleSystemRequest(params, relativeRootPath);
-	}*/
-
 }

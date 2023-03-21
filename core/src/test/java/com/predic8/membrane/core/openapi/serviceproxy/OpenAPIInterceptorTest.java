@@ -26,9 +26,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.NO;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxy.Spec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,9 +39,9 @@ public class OpenAPIInterceptorTest {
 
     Router router;
 
-    OpenAPIProxy.Spec specInfoServers;
-    OpenAPIProxy.Spec specInfo3Servers;
-    OpenAPIProxy.Spec specCustomers;
+    APIProxy.Spec specInfoServers;
+    APIProxy.Spec specInfo3Servers;
+    APIProxy.Spec specCustomers;
 
     Exchange exc = new Exchange(null);
     OpenAPIInterceptor interceptor1Server;
@@ -50,13 +52,13 @@ public class OpenAPIInterceptorTest {
         router = new Router();
         router.setUriFactory(new URIFactory());
 
-        specInfoServers = new OpenAPIProxy.Spec();
+        specInfoServers = new APIProxy.Spec();
         specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
 
-        specInfo3Servers = new OpenAPIProxy.Spec();
+        specInfo3Servers = new APIProxy.Spec();
         specInfo3Servers.location = "src/test/resources/openapi/specs/info-3-servers.yml";
 
-        specCustomers = new OpenAPIProxy.Spec();
+        specCustomers = new APIProxy.Spec();
         specCustomers.location = "src/test/resources/openapi/specs/customers.yml";
 
         exc.setRequest(new Request.Builder().method("GET").build());
@@ -91,10 +93,12 @@ public class OpenAPIInterceptorTest {
         assertEquals(RETURN, interceptor3Server.handleRequest(exc));
 
         assertEquals(404, exc.getResponse().getStatusCode());
-        assertTrue(exc.getResponse().getHeader().getContentType().contains("application/json"));
+        assertTrue(exc.getResponse().getHeader().getContentType().contains(APPLICATION_PROBLEM_JSON));
         exc.getResponse().getBody().getContent();
 
-        assertEquals("No matching API found!", getMapFromResponse(exc).get("error"));
+        System.out.println("getMapFromResponse(exc) = " + getMapFromResponse(exc));
+        assertEquals("No matching API found!", getMapFromResponse(exc).get("title"));
+        assertEquals("http://membrane-api.io/error/not-found", getMapFromResponse(exc).get("type"));
     }
 
     @Test
@@ -114,7 +118,7 @@ public class OpenAPIInterceptorTest {
     @Test
     public void destinationsTargetSet() throws Exception {
         exc.getRequest().setUri("/foo/boo");
-        OpenAPIProxy proxy = createProxy(router, specInfo3Servers);
+        APIProxy proxy = createProxy(router, specInfo3Servers);
         proxy.getTarget().setHost("api.predic8.de");
         assertEquals(CONTINUE, new OpenAPIInterceptor(proxy).handleRequest(exc));
         assertEquals(0, exc.getDestinations().size());
@@ -133,7 +137,7 @@ public class OpenAPIInterceptorTest {
 
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
-        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType("application/json").body(convert2JSON(customer)).build());
+        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
         interceptor.init(router);
@@ -160,10 +164,10 @@ public class OpenAPIInterceptorTest {
     }
 
     @NotNull
-    private Exchange callPut(OpenAPIProxy.Spec spec) throws Exception {
+    private Exchange callPut(APIProxy.Spec spec) throws Exception {
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
-        exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType("application/json").build());
+        exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, spec));
         interceptor.init(router);
@@ -175,7 +179,7 @@ public class OpenAPIInterceptorTest {
         customer.put("age",110);
         customer.put("foo",110);
 
-        exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType("application/json").body(convert2JSON(customer)).build());
+        exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
 
         assertEquals(RETURN, interceptor.handleResponse(exc));
         assertEquals(500,exc.getResponse().getStatusCode());

@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.util.*;
 
 import java.net.*;

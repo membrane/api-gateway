@@ -1,15 +1,10 @@
 <!--
-
-	Offline Configuration
-	==================
-
-	For more details see:
-	- https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
-	- proxies-full-sample.xml.
-	- The examples/* folders with working samples for proxies.xml
+	*** Offline Configuration ***
 
 	Start Membrane with:
 	./service-proxy.sh -c conf/proxies-offline.xml
+	or
+	service-proxy.bat -c conf/proxies-offline.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
@@ -36,6 +31,7 @@
 			<target host="localhost" port="3000"/>
 		</api>
 
+		<!-- Mock backend for MyAPI above -->
 		<api name="JSON Tempate" port="3000">
 			<log headerOnly="false"/><!-- See console for logs -->
 			<template contentType="application/json">

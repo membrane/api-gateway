@@ -23,30 +23,32 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.transport.http.AbortException;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 /**
  * Controls the flow of an exchange through a chain of interceptors.
- *
+ * <p>
  * In the trivial setup, an exchange passes through two chains until it hits
  * Outcome.RETURN: The main chain owned by the Transport (containing the
  * RuleMatching, Dispatching, UserFeature and HttpClient-Interceptors) and the
  * inner chain owned by the UserFeatureInterceptor (containing any interceptor
  * configured in proxies.xml).
- *
+ * <p>
  * The {@link HTTPClientInterceptor}, the last interceptor in the main chain,
  * always returns {@link Outcome#RETURN} or {@link Outcome#ABORT}, never
  * {@link Outcome#CONTINUE}.
- *
+ * <p>
  * Any chain is followed using {@link Interceptor#handleRequest(Exchange)} until
  * it hits {@link Outcome#RETURN} or {@link Outcome#ABORT}. As the chain is
  * followed, every interceptor (except those with {@link Flow#REQUEST}) are
  * added to the exchange's stack.
- *
+ * <p>
  * When {@link Outcome#RETURN} is hit, the exchange's interceptor stack is
  * unwound and {@link Interceptor#handleResponse(Exchange)} is called for every
  * interceptor on it.
- *
+ * <p>
  * When {@link Outcome#ABORT} is hit, handling is aborted: An
  * {@link AbortException} is thrown. The stack is unwound calling
  * {@link Interceptor#handleAbort(Exchange)} on each interceptor on it.
@@ -58,9 +60,9 @@ public class InterceptorFlowController {
 	/**
 	 * Key into {@link Exchange#getProperty(String)} to find out the reason why some
 	 * interceptor returned ABORT.
-	 *
+	 * <p>
 	 * This refers to the last interceptor that returned ABORT.
-	 *
+	 * <p>
 	 * Note that this does not have to be set if ABORT was returned by the interceptor.
 	 */
 	public static final String ABORTION_REASON = "abortionReason";
@@ -71,12 +73,12 @@ public class InterceptorFlowController {
 	public void invokeHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
 		try {
 			switch (invokeRequestHandlers(exchange, interceptors)) {
-			case CONTINUE:
-				throw new Exception("The last interceptor in the main chain may not return CONTINUE. Change it to RETURN.");
-			case RETURN:
-				break;
-			case ABORT:
-				throw new AbortException();
+				case CONTINUE:
+					throw new Exception("The last interceptor in the main chain may not return CONTINUE. Change it to RETURN.");
+				case RETURN:
+					break;
+				case ABORT:
+					throw new AbortException();
 			}
 			invokeResponseHandlers(exchange);
 		} catch (Exception e) {
@@ -97,7 +99,7 @@ public class InterceptorFlowController {
 
 		for (Interceptor i : interceptors) {
 			EnumSet<Flow> f = i.getFlow();
-			if (f.contains(Flow.RESPONSE) && !f.contains(Flow.REQUEST)) {
+			if (f.contains(RESPONSE) && !f.contains(REQUEST)) {
 				exchange.pushInterceptorToStack(i);
 				continue;
 			}
@@ -106,13 +108,13 @@ public class InterceptorFlowController {
 				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exchange);
 
 			Outcome o = i.handleRequest(exchange);
-			if (o != Outcome.CONTINUE)
+			if (o != CONTINUE)
 				return o;
 
-			if (f.contains(Flow.RESPONSE))
+			if (f.contains(RESPONSE))
 				exchange.pushInterceptorToStack(i);
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	/**
@@ -120,11 +122,10 @@ public class InterceptorFlowController {
 	 * the exchange's stack so far.
 	 */
 	public void invokeResponseHandlers(Exchange exchange) throws Exception {
-		boolean logDebug = log.isDebugEnabled();
 
 		Interceptor i;
 		while ((i = exchange.popInterceptorFromStack()) != null) {
-			if (logDebug)
+			if (log.isDebugEnabled())
 				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exchange);
 
 			if (i.handleResponse(exchange) == ABORT) {

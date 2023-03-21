@@ -14,21 +14,17 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.Constants;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
-import static com.predic8.membrane.core.util.HttpUtil.readLine;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpUtilTest {
 
-	private static String s1 = "foo" + Constants.CRLF + "bar" + Constants.CRLF
-			+ Constants.CRLF;
+	private static final String s1 = "foo" + CRLF + "bar" + CRLF + CRLF;
 	private static InputStream is1;
 
 	@BeforeEach
@@ -38,19 +34,19 @@ public class HttpUtilTest {
 
 	@Test
 	public void testReadLine() throws IOException, EndOfStreamException {
-		String line = readLine(is1);
-		assertEquals("foo", line);
-		line = readLine(is1);
-		assertEquals("bar", line);
-		line = readLine(is1);
-		assertEquals("", line);
+		assertEquals("foo", readLine(is1));
+		assertEquals("bar", readLine(is1));
+		assertEquals("", readLine(is1));
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	@Test
 	public void testReadLineMessage() throws Exception {
-		InputStream in = getClass().getClassLoader().getResourceAsStream("request-post.msg");
-		String line = readLine(in);
-		assertEquals("POST /operation/call HTTP/1.1", line);
+		assertEquals("POST /operation/call HTTP/1.1", readLine(getClass().getClassLoader().getResourceAsStream("request-post.msg")));
 	}
 
+    @Test
+    void unescapedHtmlMessageTest() {
+		assertEquals("<html><head><title>caption</title></head><body><h1>caption</h1><p>body</p></body></html>", unescapedHtmlMessage("caption","body"));
+    }
 }

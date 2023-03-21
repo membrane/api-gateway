@@ -16,25 +16,23 @@ package com.predic8.membrane.core.http;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
-import com.predic8.membrane.core.transport.http.NoResponseException;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.text.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.CRLF;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.ResponseBuilder.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
+import static java.lang.Integer.parseInt;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class Response extends Message {
 
@@ -47,9 +45,8 @@ public class Response extends Message {
 	private int statusCode;
 	private String statusMessage;
 
-
 	public static class ResponseBuilder {
-		private Response res = new Response();
+		private final Response res = new Response();
 
 		public Response build() {
 			return res;
@@ -57,7 +54,7 @@ public class Response extends Message {
 
 		public ResponseBuilder status(int code) {
 			res.setStatusCode(code);
-			res.setStatusMessage(HttpUtil.getMessageForStatusCode(code));
+			res.setStatusMessage(getMessageForStatusCode(code));
 			return this;
 		}
 
@@ -71,17 +68,13 @@ public class Response extends Message {
 		 * Supposes UTF8 encoding.
 		 */
 		public ResponseBuilder body(String msg) {
-			res.setBodyContent(msg.getBytes(Constants.UTF_8_CHARSET));
+			res.setBodyContent(msg.getBytes(UTF_8));
 			return this;
 		}
 
 		/**
 		 * Used for returning JSON from JavascriptInterceptor
 		 * JSON MAP
-		 *
-		 * @param map
-		 * @return
-		 * @throws JsonProcessingException
 		 */
 		public ResponseBuilder body(Map<String,Object> map) throws JsonProcessingException {
 			res.setBodyContent(om.writeValueAsBytes(map));
@@ -94,7 +87,7 @@ public class Response extends Message {
 			return this;
 		}
 
-		private class BodyCompleteMessageObserver extends AbstractMessageObserver implements NonRelevantBodyObserver{
+		private static class BodyCompleteMessageObserver extends AbstractMessageObserver implements NonRelevantBodyObserver{
 
 			private final InputStream stream;
 
@@ -114,8 +107,8 @@ public class Response extends Message {
 
 		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) throws IOException {
 			// use chunking, since Content-Length is not known
-			res.getHeader().removeFields(Header.CONTENT_LENGTH);
-			res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
+			res.getHeader().removeFields(CONTENT_LENGTH);
+			res.getHeader().setValue(TRANSFER_ENCODING, CHUNKED);
 			Body b = new Body(stream);
 			if (closeStreamWhenDone) {
 				b.addObserver(new BodyCompleteMessageObserver(stream));
@@ -144,6 +137,11 @@ public class Response extends Message {
 			return this;
 		}
 
+		public ResponseBuilder location(String location) {
+			res.getHeader().setLocation(location);
+			return this;
+		}
+
 		public static ResponseBuilder newInstance() {
 			return new ResponseBuilder();
 		}
@@ -158,175 +156,149 @@ public class Response extends Message {
 		return ok().contentType(TEXT_HTML_UTF8).body(msg);
 	}
 
-	private static String SERVER_HEADER = Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org";
+	private static final String SERVER_HEADER = PRODUCT_NAME + " " + VERSION + " http://membrane-api.io";
+
+	public static ResponseBuilder statusCode(int statusCode) {
+		return newInstance().status(statusCode);
+	}
 
 	public static ResponseBuilder ok() {
-		return ResponseBuilder.newInstance().
-				status(200, "Ok").
-				header("Server", SERVER_HEADER).
-				bodyEmpty();
+		return newInstance().status(200).header("Server", SERVER_HEADER).bodyEmpty();
 	}
 
 	public static ResponseBuilder noContent() {
+		return newInstance().status(204);
+	}
+
+	public static ResponseBuilder found(String location) {
 		return ResponseBuilder.newInstance().
-				status(204, "No Content").
+				status(302, "Found").
+				header(LOCATION, location).
 				bodyEmpty();
 	}
 
 	public static ResponseBuilder notModified(String date) {
-		return ResponseBuilder.newInstance().
-				status(304, "Not Modified").
+		return newInstance().
+				status(304).
 				header("Server", SERVER_HEADER).
 				header("Date", date).
 				bodyEmpty();
 	}
 
 	public static ResponseBuilder badRequest() {
-		return ResponseBuilder.newInstance().
-				status(400, "Bad Request").
+		return newInstance().
+				status(400).
 				header("Server", SERVER_HEADER).
 				bodyEmpty();
 	}
 
 	public static ResponseBuilder badRequest(String message) {
-		return ResponseBuilder.newInstance().
-				status(400, "Bad Request").
-				header("Server", SERVER_HEADER).
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Bad Request", message));
+		return fromStatusCode(400,message).header(SERVER,SERVER_HEADER);
 	}
 
 	public static ResponseBuilder badRequest(String message, boolean escape) {
-		return ResponseBuilder.newInstance().
-				status(400, "Bad Request").
+		return newInstance().
+				status(400).
 				header("Server", SERVER_HEADER).
 				contentType(TEXT_HTML_UTF8).
-				body(escape ? HttpUtil.htmlMessage("Bad Request", message) : HttpUtil.unescapedHtmlMessage("Bad Request", message));
+				body(escape ? htmlMessage("Bad Request", message) : unescapedHtmlMessage("Bad Request", message));
 	}
 
 	public static ResponseBuilder continue100() {
-		return ResponseBuilder.newInstance().
-				status(100, "Continue");
+		return newInstance().status(100);
 	}
 
 	public static ResponseBuilder redirect(String uri, boolean permanent) {
 		String escaped = StringEscapeUtils.escapeXml11(uri);
 		return ResponseBuilder.newInstance().
 				status(permanent ? 301 : 307, permanent ? "Moved Permanently" : "Temporary Redirect").
-				header("Location", uri).
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
-	}
-
-	public static ResponseBuilder redirectGet(String uri){
-		String escaped = StringEscapeUtils.escapeXml11(uri);
-		return ResponseBuilder.newInstance().
-				status(303, "Temporary Redirect").
-				header("Location", uri).
+				header(LOCATION, uri).
 				contentType(TEXT_HTML_UTF8).
 				body(HttpUtil.unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
 
 	public static ResponseBuilder redirectWithout300(String uri) {
-		String escaped = StringEscapeUtils.escapeXml11(uri);
-		return redirectWithout300(uri, " This page has moved to <a href=\"" + escaped + "\">" + escaped + "</a>.");
+		String escaped = escapeXml11(uri);
+		return redirectWithout300(uri, """
+				This page has moved to <a href="%s">%s</a>
+				""".formatted(escaped,escaped));
 	}
 
 	public static ResponseBuilder redirectWithout300(String uri, String body) {
-		String escaped = StringEscapeUtils.escapeXml11(uri);
-		return ResponseBuilder.newInstance().
-				status(200, "OK").
-				header("Location", uri).
-				contentType(TEXT_HTML_UTF8).
-				body("<html><head><meta http-equiv=\"refresh\" content=\"0;URL='" + escaped + "'\" /></head>" +
-						"<body>" +
-						body +
-						"</body>");
+		return newInstance()
+				.status(200)
+				.contentType(TEXT_HTML_UTF8)
+				.location(uri)
+				.body("""
+					<html>
+					  <head><meta http-equiv="refresh" content="0;URL='%s'"/></head>
+					  <body>%s</body>
+					</html>
+				""".formatted(escapeXml11(uri),body));
 	}
 
-	public static ResponseBuilder serverUnavailable(String message) {
-		return ResponseBuilder.newInstance().
-				status(503, "Service Unavailable").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Service Unavailable", message));
+	public static ResponseBuilder serviceUnavailable(String message) {
+		return fromStatusCode(503,message);
 	}
 
 	public static ResponseBuilder internalServerError() {
-		return ResponseBuilder.newInstance().
-				status(500, "Internal Server Error").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Internal Server Error", ""));
+		return fromStatusCode(500,"");
 	}
 
+	@SuppressWarnings("unused")
 	public static ResponseBuilder notImplemented() {
-		return ResponseBuilder.newInstance().
-				status(501, "	Not Implemented").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Not Implemented", ""));
+		return fromStatusCode(501,"");
 	}
 
 	public static ResponseBuilder internalServerError(String message) {
-		return ResponseBuilder.newInstance().
-				status(500, "Internal Server Error").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Internal Server Error", message));
+		return fromStatusCode(500,message);
 	}
 
 	public static ResponseBuilder badGateway(String message) {
-		return ResponseBuilder.newInstance().
-				status(502, "Bad Gateway").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Bad Gateway", message));
+		return fromStatusCode(502,message);
 	}
 
+	@SuppressWarnings("unused")
 	public static ResponseBuilder gatewayTimeout(String message) {
-		return ResponseBuilder.newInstance().
-				status(504, "Gateway timeout").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Gateway timeout", message));
+		return fromStatusCode(504,message);
 	}
 
 	public static ResponseBuilder forbidden() {
-		return ResponseBuilder.newInstance().
-				status(403, "Forbidden").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Forbidden", ""));
+		return fromStatusCode(403,"");
 	}
 
 	public static ResponseBuilder notFound() {
-		return ResponseBuilder.newInstance().
-				status(404, "Not Found").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("404 Page Not Found", ""));
+		return fromStatusCode(404,"");
 	}
 
 	public static ResponseBuilder forbidden(String message) {
-		return ResponseBuilder.newInstance().
-				status(403, "Forbidden").
-				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Forbidden", message));
+		return fromStatusCode(403,message);
 	}
 
 	public static ResponseBuilder unauthorized(String message) {
-		return ResponseBuilder.newInstance().
-				status(401, "Unauthorized.").
+		return fromStatusCode(401, message);
+	}
+
+	public static ResponseBuilder fromStatusCode(int statusCode, String msg) {
+		return newInstance().
+				status(statusCode).
 				contentType(TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("Unauthorized.", message));
+				body(unescapedHtmlMessage("%d %s.".formatted(statusCode, getMessageForStatusCode(statusCode)), msg));
 	}
 
 	public static ResponseBuilder unauthorized() {
-		return ResponseBuilder.newInstance().
-				status(401, "Unauthorized.").
+		return newInstance().
+				status(401).
 				contentType(TEXT_HTML_UTF8).
 				bodyEmpty();
 	}
 
 	public static ResponseBuilder methodNotAllowed() {
-		return ResponseBuilder.newInstance().
+		return newInstance().
 				status(405).
 				contentType(TEXT_HTML_UTF8).
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(HttpUtil.htmlMessage("405 Method Not Allowed", ""));
+				body(htmlMessage("405 Method Not Allowed", ""));
 	}
 
 	@Override
@@ -362,7 +334,7 @@ public class Response extends Message {
 
 		String line;
 		try {
-			line = HttpUtil.readLine(in);
+			line = readLine(in);
 		} catch (EOFWhileReadingLineException e) {
 			if (e.getLineSoFar().length() == 0)
 				throw new NoResponseException(e);
@@ -370,15 +342,13 @@ public class Response extends Message {
 		}
 
 		Matcher matcher = pattern.matcher(line);
-		boolean find = matcher.find();
 
-		if (!find) {
+		if (!matcher.find()) {
 			throw new RuntimeException("Invalid server response: " + line);
 		}
 		version = matcher.group(1);
-		statusCode = Integer.parseInt(matcher.group(2));
+		statusCode = parseInt(matcher.group(2));
 		statusMessage = matcher.group(4);
-
 	}
 
 	@Override
@@ -387,7 +357,7 @@ public class Response extends Message {
 		parseStartLine(in);
 
 		if (getStatusCode() == 100) {
-			HttpUtil.readLine(in);
+			readLine(in);
 			return;
 		}
 
@@ -402,12 +372,6 @@ public class Response extends Message {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 
-		if (isBodyEmpty()) {
-			log.debug("empty body created");
-			body = new EmptyBody();
-			return;
-		}
-
 		super.createBody(in);
 	}
 
@@ -415,6 +379,7 @@ public class Response extends Message {
 		return statusCode >= 300 && statusCode < 400;
 	}
 
+	@SuppressWarnings("unused")
 	public boolean hasNoContent() {
 		return statusCode == 204;
 	}
@@ -424,11 +389,8 @@ public class Response extends Message {
 		return " " + statusCode;
 	}
 
-	@Override
-	public boolean isBodyEmpty() throws IOException {
-		if (statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205)
-			return true;
-		return super.isBodyEmpty();
+	public boolean shouldNotContainBody()  {
+		return statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205 ;
 	}
 
 	public boolean isOk(){
@@ -439,6 +401,7 @@ public class Response extends Message {
 		return statusCode >= 400 && statusCode < 500;
 	}
 
+	@SuppressWarnings("unused")
 	public boolean isServerError() {
 		return statusCode >= 500;
 	}
@@ -472,7 +435,7 @@ public class Response extends Message {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		Response result = this.createMessageSnapshot(new Response(), bodyUpdatedCallback, strategy, limit);
 
 		result.setStatusCode(this.getStatusCode());

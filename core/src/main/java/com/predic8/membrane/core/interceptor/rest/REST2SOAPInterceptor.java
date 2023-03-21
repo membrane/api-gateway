@@ -13,38 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
+import org.springframework.http.*;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.events.XMLEvent;
-import javax.xml.transform.stream.StreamSource;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import javax.xml.transform.stream.*;
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-import org.springframework.http.MediaType;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
 
 /**
  * @description Converts REST requests into SOAP messages.
@@ -109,6 +99,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 			this.soapAction = soapAction;
 		}
 
+		@SuppressWarnings("unused")
 		public String getSoapURI() {
 			return soapURI;
 		}
@@ -152,9 +143,9 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		}
 	}
 
-	private static Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
 
-	private List<Mapping> mappings = new ArrayList<Mapping>();
+	private List<Mapping> mappings = new ArrayList<>();
 	private Boolean isSOAP12;
 
 	public REST2SOAPInterceptor() {
@@ -168,13 +159,13 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
 		Mapping mapping = findFirstMatchingRegEx(uri);
 		if (mapping == null)
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
 				getRequestXMLSource(exc), exc.getStringProperties());
 		modifyRequest(exc, mapping);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	@Override
@@ -182,32 +173,40 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		Mapping mapping = getRESTURL(exc);
 		log.debug("restURL: " + mapping);
 		if (getRESTURL(exc) == null)
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		if (log.isDebugEnabled())
-			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), Constants.UTF_8_CHARSET));
+			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc), exc.getStringProperties()), UTF_8));
 
 		exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
 				transform(getBodySource(exc)));
 		Header header = exc.getResponse().getHeader();
-		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(MimeType.TEXT_XML_UTF8);
+		header.removeFields(CONTENT_TYPE);
+		header.setContentType(TEXT_XML_UTF8);
 
 		XML2HTTP.unwrapMessageIfNecessary(exc.getResponse());
-		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), mapping, exc.getResponse(), exc.getStringProperties());
+		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), exc.getResponse(), exc.getStringProperties());
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
-	private static MediaType[] supportedTypes = Header.convertStringsToMediaType(new String[] { MimeType.TEXT_XML, MimeType.APPLICATION_JSON_UTF8 });
+	private void convertResponseToJSONIfNecessary(Header header, Response response, Map<String, String> properties) throws Exception {
+		if (!response.isXML())
+			return;
 
-	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response, Map<String, String> properties) throws IOException, Exception {
-		boolean inputIsXml = response.isXML();
-		int wantedType = requestHeader.getBestAcceptedType(supportedTypes);
-		if (inputIsXml && wantedType >= 1) {
-			response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
-			setJSONContentType(response.getHeader());
-		}
+		String accept = header.getFirstValue(ACCEPT);
+		if (accept == null)
+			return;
+
+		List<MediaType> types = sortMimeTypeByQualityFactorAscending(accept);
+		if (types.isEmpty())
+			return;
+
+		if (!isJson(types.get(0)))
+			return;
+
+		response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
+		setJSONContentType(response.getHeader());
 	}
 
 	private byte[] xml2json(InputStream xmlResp, Map<String, String> properties) throws Exception {
@@ -236,8 +235,8 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
 		Header header = exc.getRequest().getHeader();
-		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(isSOAP12(exc) ? MimeType.APPLICATION_SOAP : MimeType.TEXT_XML_UTF8);
+		header.removeFields(CONTENT_TYPE);
+		header.setContentType(isSOAP12(exc) ? APPLICATION_SOAP : TEXT_XML_UTF8);
 
 		exc.setProperty("mapping", mapping);
 		setServiceEndpoint(exc, mapping);
@@ -246,7 +245,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	private boolean isSOAP12(AbstractExchange exc) {
 		if (isSOAP12 != null)
 			return isSOAP12;
-		isSOAP12 = Constants.SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
+		isSOAP12 = SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
 		return isSOAP12;
 	}
 
@@ -265,8 +264,8 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	}
 
 	private void setJSONContentType(Header header) {
-		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(MimeType.APPLICATION_JSON_UTF8);
+		header.removeFields(CONTENT_TYPE);
+		header.setContentType(APPLICATION_JSON_UTF8);
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {

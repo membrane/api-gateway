@@ -65,7 +65,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 	}
 
 	private static List<Mapping> getMappings() {
-		List<Mapping> mappings = new ArrayList<Mapping>();
+		List<Mapping> mappings = new ArrayList<>();
 		Mapping m = new Mapping();
 		m.regex = "/bank/.*";
 		m.soapAction = "";

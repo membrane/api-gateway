@@ -38,6 +38,7 @@ public class CustomSpringConfigurationTest {
 
 	private Router router;
 
+	@SuppressWarnings("ResultOfMethodCallIgnored")
 	@BeforeEach
 	public void setUp() throws Exception {
 		new File("target/temp").mkdirs();
@@ -46,7 +47,7 @@ public class CustomSpringConfigurationTest {
 
 	@Disabled
 	@Test
-	public void testInit() throws Exception {
+	public void testInit() {
 		assertNotNull(router);
 		assertTrue(router.getExchangeStore().getClass().getName()
 				.endsWith("MemoryExchangeStore"));
@@ -165,7 +166,7 @@ public class CustomSpringConfigurationTest {
 
 	private void assertClusterNotificationInterceptor(
 			ClusterNotificationInterceptor i) {
-		assertEquals(true, i.isValidateSignature());
+		assertTrue(i.isValidateSignature());
 		assertEquals("2324920293", i.getKeyHex());
 		assertEquals(5000, i.getTimeout());
 	}
@@ -178,6 +179,7 @@ public class CustomSpringConfigurationTest {
 		assertEquals("docBase", i.getDocBase());
 	}
 
+	@SuppressWarnings("OptionalGetWithoutIsPresent")
 	private void assertBasicAuthenticationInterceptor(
 			BasicAuthenticationInterceptor i) {
 		assertTrue(i.getUsers().stream().anyMatch(u -> u.getUsername().equals("jim")));

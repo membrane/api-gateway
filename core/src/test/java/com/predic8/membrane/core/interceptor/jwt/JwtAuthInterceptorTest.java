@@ -41,12 +41,11 @@ import static org.mockito.Mockito.when;
 public class JwtAuthInterceptorTest{
 
     public static final String KID = "membrane";
-    public static final String SUB_CLAIM_CONTENT = "Till, der fleiﬂige Programmierer";
+    public static final String SUB_CLAIM_CONTENT = "Till, der fleissige Programmierer";
     private static final String AUDIENCE = "AusgestelltFuer";
 
     public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(new Object[][] {
-                happyPath(),
+        return Arrays.asList(happyPath(),
                 wrongAudience(),
                 manipulatedSignature(),
                 unknownKey(),
@@ -54,8 +53,7 @@ public class JwtAuthInterceptorTest{
                 unknownKeyWithCorrectKid(),
                 noJwtInHeader(),
                 malformedJwt(),
-                threeDotsNonJwt(),
-        });
+                threeDotsNonJwt());
     }
 
     private static Object[] threeDotsNonJwt() {
@@ -198,7 +196,7 @@ public class JwtAuthInterceptorTest{
                         .buildExchange(),
                 (Consumer<Exchange>)(Exchange exc) -> {
                     assertNotNull(exc.getProperties().get("jwt"));
-                    assertEquals(SUB_CLAIM_CONTENT, ((Map)exc.getProperties().get("jwt")).get("sub"));
+                    assertEquals(SUB_CLAIM_CONTENT, ((Map<?, ?>)exc.getProperties().get("jwt")).get("sub"));
                 }
         };
     }

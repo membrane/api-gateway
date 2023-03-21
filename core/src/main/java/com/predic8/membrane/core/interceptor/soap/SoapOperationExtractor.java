@@ -28,6 +28,8 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+
 @MCElement(name="soapOperationExtractor")
 public class SoapOperationExtractor extends AbstractInterceptor {
 	public static final String SOAP_OPERATION = "XSLT_SOAP_OPERATION";
@@ -57,21 +59,21 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 
-		if ( exc.getRequest().isBodyEmpty() && !exc.getRequest().isXML()) {
-			return Outcome.CONTINUE;
+		if (exc.getRequest().isBodyEmpty() && !exc.getRequest().isXML()) {
+			return CONTINUE;
 		}
 
 		XMLStreamReader reader = getReader(exc);
 
 		if (isNotSoap(reader)) {
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		moveToSoapBody(reader);
 
 		extractAndSaveNameAndNS(exc, reader);
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void moveToTag(XMLStreamReader reader) throws XMLStreamException {

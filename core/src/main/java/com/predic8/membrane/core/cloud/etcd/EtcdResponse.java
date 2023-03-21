@@ -54,9 +54,6 @@ public class EtcdResponse {
 			synchronized (jsonFac) {
 				result = jsonFac.createParser(json);
 			}
-		} catch (JsonParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -70,11 +67,10 @@ public class EtcdResponse {
 
 		String baseKey = originalRequest.baseKey;
 		String module = originalRequest.module;
-		ArrayList<String> directories = new ArrayList<String>();
+		ArrayList<String> directories = new ArrayList<>();
 		Map<String, Object> respData = null;
 		try {
 			respData = new ObjectMapper().readValue(par, Map.class);
-		} catch (JsonParseException e) {
 		} catch (JsonMappingException e) {
 		} catch (IOException e) {
 		}
@@ -108,7 +104,6 @@ public class EtcdResponse {
 		Map<String, Object> respData = null;
 		try {
 			respData = new ObjectMapper().readValue(par, Map.class);
-		} catch (JsonParseException e) {
 		} catch (JsonMappingException e) {
 		} catch (IOException e) {
 		}

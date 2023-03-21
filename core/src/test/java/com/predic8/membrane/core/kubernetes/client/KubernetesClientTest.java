@@ -31,7 +31,8 @@ import java.util.Map;
 
 import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.interceptor.apimanagement.ApiManagementInterceptor.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,44 +51,45 @@ public class KubernetesClientTest {
                 if ("/openapi/v2".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                             Resources.toString(getResource("kubernetes/api/openapi-v2.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/apis".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                                     Resources.toString(getResource("kubernetes/api/apis.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/apis/coordination.k8s.io/v1".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                                     Resources.toString(getResource("kubernetes/api/apis-coordination-v1.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/api/v1/namespaces/default/secrets/non-existent".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.notFound()
                             .body("{\"kind\":\"Status\",\"apiVersion\":\"v1\",\"metadata\":{},\"status\":\"Failure\",\"message\":\"secrets \\\"demo\\\" not found\",\"reason\":\"NotFound\",\"details\":{\"name\":\"demo\",\"kind\":\"secrets\"},\"code\":404}")
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/api/v1/namespaces/default/secrets/existent".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok(
                                     Resources.toString(getResource("kubernetes/api/secret.json"), UTF_8))
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                                    .contentType(APPLICATION_JSON).build());
                 }
                 if ("/version".equals(exc.getRequest().getUri())) {
                     exc.setResponse(Response.ok()
-                            .body("{\n" +
-                                    "  \"major\": \"1\",\n" +
-                                    "  \"minor\": \"23\",\n" +
-                                    "  \"gitVersion\": \"v1.23.7\",\n" +
-                                    "  \"gitCommit\": \"42c05a547468804b2053ecf60a3bd15560362fc2\",\n" +
-                                    "  \"gitTreeState\": \"clean\",\n" +
-                                    "  \"buildDate\": \"2022-05-24T12:24:41Z\",\n" +
-                                    "  \"goVersion\": \"go1.17.10\",\n" +
-                                    "  \"compiler\": \"gc\",\n" +
-                                    "  \"platform\": \"linux/amd64\"\n" +
-                                    "}")
-                            .header(CONTENT_TYPE, APPLICATION_JSON).build());
+                            .body("""
+                                    {
+                                      "major": "1",
+                                      "minor": "23",
+                                      "gitVersion": "v1.23.7",
+                                      "gitCommit": "42c05a547468804b2053ecf60a3bd15560362fc2",
+                                      "gitTreeState": "clean",
+                                      "buildDate": "2022-05-24T12:24:41Z",
+                                      "goVersion": "go1.17.10",
+                                      "compiler": "gc",
+                                      "platform": "linux/amd64"
+                                    }""")
+                                    .contentType(APPLICATION_JSON).build());
                 }
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
         router.getRules().add(sp);
@@ -114,7 +116,7 @@ public class KubernetesClientTest {
 
         Map secret = kc.read("v1", "Secret", "default", "existent");
 
-        assertEquals(((Map)secret.get("data")).get("key"), Base64.getEncoder().encodeToString("value".getBytes(UTF_8)));
+        assertEquals(((Map<?, ?>)secret.get("data")).get("key"), Base64.getEncoder().encodeToString("value".getBytes(UTF_8)));
     }
 
     @Test
@@ -123,5 +125,4 @@ public class KubernetesClientTest {
 
         assertEquals("v1.23.7", kc.version().get("gitVersion"));
     }
-
 }

@@ -53,9 +53,9 @@ public class InterceptorInvocationTest {
 
 		MockInterceptor.clear();
 
-		ruleInterceptorNames = Arrays.asList(new String[] {"Rule 1", "Rule 2", "Rule 3"});
+		ruleInterceptorNames = Arrays.asList("Rule 1", "Rule 2", "Rule 3");
 
-		regularInterceptorNames = Arrays.asList(new String[] {"TR Normal 1", "TR Normal 2", "TR Normal 3", "TR Normal 4" });
+		regularInterceptorNames = Arrays.asList("TR Normal 1", "TR Normal 2", "TR Normal 3", "TR Normal 4");
 
 		router = createRouter();
 
@@ -75,7 +75,7 @@ public class InterceptorInvocationTest {
 		MockInterceptor.assertContent(
 				interceptorSequence,
 				getReverseList(interceptorSequence),
-				Arrays.<String>asList());
+				Arrays.asList());
 	}
 
 	private static ServiceProxy createServiceProxy() {
@@ -99,13 +99,13 @@ public class InterceptorInvocationTest {
 	}
 
 	private List<String> getReverseList(List<String> list) {
-		List<String> res = new ArrayList<String>(list);
+		List<String> res = new ArrayList<>(list);
 		Collections.reverse(res);
 		return res;
 	}
 
 	private static List<String> createInterceptorSequence() {
-		List<String> sequense = new ArrayList<String>();
+		List<String> sequense = new ArrayList<>();
 		sequense.addAll(regularInterceptorNames);
 		sequense.addAll(ruleInterceptorNames);
 		return sequense;

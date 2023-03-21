@@ -15,11 +15,14 @@
 package com.predic8.membrane.core;
 
 
+import java.io.*;
+
 public class TerminateException extends Exception {
 
 	/**
 	 *
 	 */
+	@Serial
 	private static final long serialVersionUID = 6330549161301272316L;
 
 	/**

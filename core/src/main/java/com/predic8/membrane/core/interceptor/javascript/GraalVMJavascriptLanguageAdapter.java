@@ -28,9 +28,9 @@ public class GraalVMJavascriptLanguageAdapter extends LanguageAdapter {
 
     protected String prepareScript(String script) {
         return """
-var FileClass = Java.type("java.io.File");
-var Request = Java.type("com.predic8.membrane.core.http.Request");
-var Response = Java.type("com.predic8.membrane.core.http.Response");
-               """ + script;
+                var FileClass = Java.type("java.io.File");
+                var Request = Java.type("com.predic8.membrane.core.http.Request");
+                var Response = Java.type("com.predic8.membrane.core.http.Response");
+                """ + script;
     }
 }

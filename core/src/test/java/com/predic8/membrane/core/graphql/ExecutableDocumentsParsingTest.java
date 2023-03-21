@@ -328,9 +328,7 @@ public class ExecutableDocumentsParsingTest {
      */
     private void failingTest(String schemaDocWithErrorMarker) throws IOException {
         String schemaDoc = schemaDocWithErrorMarker.replaceAll("\\^", "");
-        ParsingException pe = assertThrows(ParsingException.class, () -> {
-            new GraphQLParser().parseRequest(new ByteArrayInputStream(schemaDoc.getBytes(StandardCharsets.UTF_8)));
-        });
+        ParsingException pe = assertThrows(ParsingException.class, () -> new GraphQLParser().parseRequest(new ByteArrayInputStream(schemaDoc.getBytes(StandardCharsets.UTF_8))));
         assertEquals(schemaDocWithErrorMarker, insertErrorMarker(schemaDoc, (int) pe.getPosition()));
     }
 

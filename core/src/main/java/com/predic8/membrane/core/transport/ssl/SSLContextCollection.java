@@ -37,8 +37,8 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 /**
  * Manages multiple {@link SSLContext}s using the same port. This is only possible when using SSL with
- * "Server Name Indication", see http://en.wikipedia.org/wiki/Server_Name_Indication .
- *
+ * "Server Name Indication", see <a href="http://en.wikipedia.org/wiki/Server_Name_Indication">...</a> .
+ * <p>
  * This requires Java 8.
  */
 public class SSLContextCollection implements SSLProvider {
@@ -46,8 +46,8 @@ public class SSLContextCollection implements SSLProvider {
 	private static final Logger log = LoggerFactory.getLogger(SSLContextCollection.class.getName());
 
 	public static class Builder {
-		private List<String> dnsNames = new ArrayList<String>();
-		private List<SSLContext> sslContexts = new ArrayList<SSLContext>();
+		private List<String> dnsNames = new ArrayList<>();
+		private List<SSLContext> sslContexts = new ArrayList<>();
 
 		public SSLProvider build() throws ConfigurationException {
 			if (sslContexts.isEmpty())
@@ -78,7 +78,7 @@ public class SSLContextCollection implements SSLProvider {
 	 *            {@link ServiceProxyKey#setHost(String)})
 	 */
 	private SSLContextCollection(List<SSLContext> sslContexts, List<String> dnsNames) {
-		this.dnsNames = new ArrayList<Pattern>();
+		this.dnsNames = new ArrayList<>();
 		for (String dnsName : dnsNames)
 			this.dnsNames.add(Pattern.compile(ServiceProxyKey.createHostPattern(dnsName), Pattern.CASE_INSENSITIVE));
 		this.sslContexts = sslContexts;
@@ -146,10 +146,8 @@ public class SSLContextCollection implements SSLProvider {
 				byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
 						2 /* fatal */, 112 /* unrecognized_name */ };
 
-				try {
+				try (socket) {
 					socket.getOutputStream().write(alert_unrecognized_name);
-				} finally {
-					socket.close();
 				}
 
 				StringBuilder hostname = null;

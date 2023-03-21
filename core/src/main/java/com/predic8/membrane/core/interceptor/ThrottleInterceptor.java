@@ -30,7 +30,7 @@ import com.predic8.membrane.core.http.Response;
  */
 @MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
-	private static Logger log = LoggerFactory.getLogger(ThrottleInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ThrottleInterceptor.class.getName());
 
 	private long delay = 0;
 	private int maxThreads = 0;
@@ -52,7 +52,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 			Thread.sleep(busyDelay);
 			if ( threads >= maxThreads ) {
 				log.info("Max thread limit of " +maxThreads+ " reached. Server Busy.");
-				exc.setResponse(Response.serverUnavailable("Server busy.").build());
+				exc.setResponse(Response.serviceUnavailable("Server busy.").build());
 				return Outcome.ABORT;
 			}
 		}

@@ -29,7 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 
 /**
  * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and
@@ -39,10 +40,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
-	private static Logger log = LoggerFactory.getLogger(LimitedMemoryExchangeStore.class);
+	private static final Logger log = LoggerFactory.getLogger(LimitedMemoryExchangeStore.class);
 
-	private int maxSize = 1000000;
-	private int maxBodySize = 100000;
+	private int maxSize = 1_000_000;
+	private int maxBodySize = 100_000;
 	private int currentSize;
 	private BodyCollectingMessageObserver.Strategy bodyExceedingMaxSizeStrategy = BodyCollectingMessageObserver.Strategy.TRUNCATE;
 
@@ -60,17 +61,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private void newSnap(AbstractExchange exc, Flow flow) {
 		try {
-            if (flow == Flow.REQUEST) {
+            if (flow == REQUEST) {
 				AbstractExchange excCopy = snapInternal(exc, flow);
 
 				if (exc.getRequest() != null)
-					excCopy.setRequest(exc.getRequest().createSnapshot(new Runnable() {
-						@Override
-						public void run() {
-							synchronized (LimitedMemoryExchangeStore.this) {
-								currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
-								modify();
-							}
+					excCopy.setRequest(exc.getRequest().createSnapshot(() -> {
+						synchronized (LimitedMemoryExchangeStore.this) {
+							currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+							modify();
 						}
 					}, bodyExceedingMaxSizeStrategy, maxBodySize));
 
@@ -78,7 +76,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 					@Override
 					public void setExchangeFinished() {
 						try {
-							snapInternal(exc, Flow.RESPONSE);
+							snapInternal(exc, RESPONSE);
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -88,12 +86,9 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 				AbstractExchange excCopy = snapInternal(exc, flow);
 
 				if (exc.getResponse() != null)
-					excCopy.setResponse(exc.getResponse().createSnapshot(new Runnable() {
-						@Override
-						public void run() {
-							currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
-							modify();
-						}
+					excCopy.setResponse(exc.getResponse().createSnapshot(() -> {
+						currentSize += - excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation();
+						modify();
 					}, bodyExceedingMaxSizeStrategy, maxBodySize));
 
 				modify();
@@ -127,7 +122,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 		makeSpaceIfNeeded(exc);
 
-		if (flow == Flow.REQUEST) {
+		if (flow == REQUEST) {
 			if (inflight.add(exc))
 				currentSize += exc.getHeapSizeEstimation();
 		} else {
@@ -155,7 +150,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	private synchronized List<AbstractExchange> getExchangeList(RuleKey key) {
-		List<AbstractExchange> c = new ArrayList<AbstractExchange>();
+		List<AbstractExchange> c = new ArrayList<>();
 		for (AbstractExchange exc : inflight) {
 			if (exc.getRule().getKey().equals(key)) {
 				c.add(exc);
@@ -180,11 +175,11 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	public synchronized StatisticCollector getStatistics(RuleKey key) {
 		StatisticCollector statistics = new StatisticCollector(false);
 		List<AbstractExchange> exchangesList = getExchangeList(key);
-		if (exchangesList == null || exchangesList.isEmpty())
+		if (exchangesList.isEmpty())
 			return statistics;
 
-		for (int i = 0; i < exchangesList.size(); i++)
-			statistics.collectFrom(exchangesList.get(i));
+		for (AbstractExchange abstractExchange : exchangesList)
+			statistics.collectFrom(abstractExchange);
 
 		return statistics;
 	}
@@ -194,13 +189,12 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	public synchronized List<AbstractExchange> getAllExchangesAsList() {
-		List<AbstractExchange> ret = new LinkedList<AbstractExchange>();
+		List<AbstractExchange> ret = new LinkedList<>();
 
 		for (AbstractExchange ex : inflight) {
-			Request req = ex.getRequest();
 			Exchange newEx = new Exchange(null);
 			newEx.setId(ex.getId());
-			newEx.setRequest(req);
+			newEx.setRequest(ex.getRequest());
 			newEx.setRule(ex.getRule());
 			newEx.setRemoteAddr(ex.getRemoteAddr());
 			newEx.setTime(ex.getTime());
@@ -227,9 +221,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 								.orElse(null));
 	}
 
+	public List<AbstractExchange> search(String e) {
+		return exchanges.stream().filter(exc -> exc.getRequest().getBodyAsStringDecoded().contains(e) ).toList();
+	}
+
 	@Override
 	public synchronized List<? extends ClientStatistics> getClientStatistics() {
-		Map<String, ClientStatisticsCollector> clients = new HashMap<String, ClientStatisticsCollector>();
+		Map<String, ClientStatisticsCollector> clients = new HashMap<>();
 
 		for (AbstractExchange exc : getAllExchangesAsList()) {
 			if (!clients.containsKey(exc.getRemoteAddr())) {
@@ -241,7 +239,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	public synchronized int getCurrentSize() {
-		return exchanges.stream().map(abstractExchange -> abstractExchange.getHeapSizeEstimation()).reduce(0,(a,b) -> a+b);
+		return exchanges.stream().map(AbstractExchange::getHeapSizeEstimation).reduce(0, Integer::sum);
 	}
 
 	public synchronized Long getOldestTimeResSent() {

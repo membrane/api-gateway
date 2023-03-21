@@ -23,14 +23,14 @@ import com.predic8.membrane.annot.MCElement;
 
 /**
  * Meta-info mirror for the type of one or more {@link MCChildElement}s, for example 'interface Interceptor'.
- *
+ * <p>
  * Used by some {@link MCChildElement}s, implemented by any number of {@link MCElement}s.
  */
 public class ChildElementDeclarationInfo {
 	private TypeElement target;
-	private List<ElementInfo> elementInfo = new ArrayList<ElementInfo>();
+	private List<ElementInfo> elementInfo = new ArrayList<>();
 	private boolean raiseErrorWhenNoSpecimen;
-	private List<ChildElementInfo> usedBy = new ArrayList<ChildElementInfo>();
+	private List<ChildElementInfo> usedBy = new ArrayList<>();
 
 	public TypeElement getTarget() {
 		return target;

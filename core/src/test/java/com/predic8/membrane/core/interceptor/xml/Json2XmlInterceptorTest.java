@@ -48,10 +48,8 @@ public class Json2XmlInterceptorTest {
 
     @Test
     public void invalidJsonTest() throws Exception {
-        assertThrows(JSONException.class, () -> {
-            getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
-                    parse(processThroughInterceptor(new ByteArrayInputStream("invalid json".getBytes(StandardCharsets.UTF_8)))));
-        });
+        assertThrows(JSONException.class, () -> getNameFromDocument(DocumentBuilderFactory.newInstance().newDocumentBuilder().
+                parse(processThroughInterceptor(new ByteArrayInputStream("invalid json".getBytes(StandardCharsets.UTF_8))))));
     }
 
     private Request createRequestFromBytes(byte[] bytes) throws IOException {

@@ -13,55 +13,46 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.floreysoft.jmte.Engine;
-import com.floreysoft.jmte.ErrorHandler;
-import com.floreysoft.jmte.message.ErrorMessage;
-import com.floreysoft.jmte.message.ParseException;
-import com.floreysoft.jmte.token.Token;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.Util;
+import com.floreysoft.jmte.*;
+import com.floreysoft.jmte.message.*;
+import com.floreysoft.jmte.token.*;
+import com.google.common.cache.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
+import com.predic8.membrane.core.interceptor.server.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import org.apache.commons.lang3.*;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import java.io.*;
+import java.math.*;
+import java.security.*;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+
+import static java.util.concurrent.TimeUnit.*;
+
+import static java.nio.charset.StandardCharsets.*;
+
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -72,7 +63,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     public static final String OAUTH2_ANSWER = "oauth2Answer";
     public static final String OA2REDIRECT = "oa2redirect";
-    private static Logger log = LoggerFactory.getLogger(OAuth2ResourceInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OAuth2ResourceInterceptor.class.getName());
 
     private String loginLocation;
     private String loginPath = "/login/";
@@ -80,12 +71,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
-    private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
-    private Cache<String,Exchange> stateToRedirect = CacheBuilder.newBuilder().expireAfterWrite(1,TimeUnit.MINUTES).build();
+
+    private final Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, MINUTES).build();
+    private final Cache<String,Exchange> stateToRedirect = CacheBuilder.newBuilder().expireAfterWrite(1, MINUTES).build();
 
     private int revalidateTokenAfter = -1;
 
-    private ConcurrentHashMap<String,Exchange> stateToOriginalUrl = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String,Exchange> stateToOriginalUrl = new ConcurrentHashMap<>();
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
@@ -230,7 +222,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         Session session = sessionManager.getSession(exc);
 
         if (session == null) {
-            String auth = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
+            String auth = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
             if (auth != null && auth.substring(0, 7).equalsIgnoreCase("Bearer ")) {
                 session = sessionManager.createSession(exc);
                 session.getUserAttributes().put(ParamNames.ACCESS_TOKEN, auth.substring(7));
@@ -288,7 +280,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, ERROR);
         String oa2redirect = params.get(OA2REDIRECT);
 
-        Exchange originalExchange = null;
+        Exchange originalExchange;
         synchronized (stateToRedirect) {
             originalExchange = stateToRedirect.getIfPresent(oa2redirect);
             stateToRedirect.invalidate(oa2redirect);
@@ -309,9 +301,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
         Exchange refreshTokenExchange = new Request.Builder()
                 .post(auth.getTokenEndpoint())
-                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(Header.ACCEPT, "application/json")
-                .header(Header.USER_AGENT, Constants.USERAGENT)
+                .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(USER_AGENT, USERAGENT)
                 .body("&grant_type=refresh_token"
                         + "&refresh_token=" + oauth2Params.getRefreshToken())
                 .buildExchange();
@@ -358,8 +350,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         Exchange e2 = new Request.Builder()
                 .get(auth.getUserInfoEndpoint())
                 .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
-                .header("User-Agent", Constants.USERAGENT)
-                .header(Header.ACCEPT, "application/json")
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
                 .buildExchange();
 
         Response response2 = auth.doRequest(e2);
@@ -388,7 +380,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private void setPublicURL(Exchange exc) {
-        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
+        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
         boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
         publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
         RuleKey key = exc.getRule().getKey();
@@ -465,17 +457,17 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 log.error(arg0.key);
             }
         });
-        Map<String, Object> model = new HashMap<String, Object>();
-        model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
+        Map<String, Object> model = new HashMap<>();
+        model.put("loginPath", StringEscapeUtils.escapeXml11(loginPath));
         String pathQuery = "/"; // TODO: save original request and restore it when authorized
         String url = auth.getLoginURL(state, publicURL + "oauth2callback", pathQuery);
         model.put("loginURL", url);
-        model.put("target", StringEscapeUtils.escapeXml(target));
+        model.put("target", StringEscapeUtils.escapeXml11(target));
         model.put("authid", state);
         for (int i = 0; i < params.length; i += 2)
             model.put((String) params[i], params[i + 1]);
 
-        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
+        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(UTF_8));
     }
 
     public void handleLoginRequest(Exchange exc) throws Exception {
@@ -493,8 +485,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     token = s.getUserAttributes().get("access_token");
                 }
                 Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
+                        .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .header(USER_AGENT, USERAGENT)
                         .body("token=" + token) // TODO maybe send client credentials ( as it was before ) but Google doesn't accept that
                         .buildExchange();
                 Response response = auth.doRequest(e);
@@ -511,7 +503,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 Session session = sessionManager.createSession(exc);
 
-                HashMap<String, String> userAttributes = new HashMap<String, String>();
+                HashMap<String, String> userAttributes = new HashMap<>();
                 userAttributes.put("state", state);
                 session.preAuthorize("", userAttributes);
             } else {
@@ -553,11 +545,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if(!csrfMatch)
                     throw new RuntimeException("CSRF token mismatch.");
 
-
                 Exchange originalRequest = stateToOriginalUrl.get(param.get("security_token"));
-                String url = originalRequest.getRequest().getUri();
-                if (url == null)
-                    url = "/";
                 stateToOriginalUrl.remove(state2);
 
                 if (log.isDebugEnabled())
@@ -569,10 +557,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 Exchange e = new Request.Builder()
                         .post(auth.getTokenEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.ACCEPT, "application/json")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
+                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(USER_AGENT, USERAGENT)
+                        .header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
                         .body("code=" + code
                                 + "&client_id=" + auth.getClientId() // it is actually illegal to also include credentials in the body when using basic auth, but we keep it for compatibility
                                 + "&client_secret=" + auth.getClientSecret()
@@ -602,7 +590,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if (!json.containsKey("access_token"))
                     throw new RuntimeException("No access_token received.");
 
-                String token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
+                String token = json.get("access_token"); // and also "scope": "", "token_type": "bearer"
 
                 OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
 
@@ -627,8 +615,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
                         .header("Authorization", json.get("token_type") + " " + token)
-                        .header("User-Agent", Constants.USERAGENT)
-                        .header(Header.ACCEPT, "application/json")
+                        .header("User-Agent", USERAGENT)
+                        .header(ACCEPT, APPLICATION_JSON)
                         .buildExchange();
 
                 if (log.isDebugEnabled()) {
@@ -679,11 +667,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         }
     }
 
-    private void doOriginalRequest(Exchange exc, Exchange originalRequest) throws Exception {
+    private void doOriginalRequest(Exchange exc, Exchange originalRequest) {
         originalRequest.getRequest().getHeader().add("Cookie",exc.getRequest().getHeader().getFirstValue("Cookie"));
         originalRequest.getDestinations().clear();
-        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
-        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_HOST);
+        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
+        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(X_FORWARDED_HOST);
         String originalRequestUri = originalRequest.getOriginalRequestUri();
         originalRequest.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
     }
@@ -701,7 +689,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         session.authorize();
     }
 
-    private boolean idTokenIsValid(String idToken) throws Exception {
+    private boolean idTokenIsValid(String idToken) {
         //TODO maybe change this to return claims and also save them in the oauth2AnswerParameters
         try {
             JwtGenerator.getClaimsFromSignedIdToken(idToken, getAuthService().getIssuer(), getAuthService().getClientId(), getAuthService().getJwksEndpoint(), auth);
@@ -715,5 +703,4 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     public String getShortDescription() {
         return "Client of the oauth2 authentication process.\n" + statistics.toString();
     }
-
 }

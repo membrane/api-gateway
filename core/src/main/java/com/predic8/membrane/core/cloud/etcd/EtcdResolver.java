@@ -31,7 +31,7 @@ import java.util.regex.Matcher;
 public class EtcdResolver implements SchemaResolver{
 
     private String url;
-    HashSet<Thread> etcdWatchThreads = new HashSet<Thread>();
+    HashSet<Thread> etcdWatchThreads = new HashSet<>();
 
     public String getUrl() {
         return url;
@@ -56,7 +56,7 @@ public class EtcdResolver implements SchemaResolver{
         }
         int lastSlash = normalizedUrl.lastIndexOf("/");
         String baseKey = normalizedUrl.substring(0,lastSlash);
-        String valueName = normalizedUrl.substring(lastSlash+1,normalizedUrl.length());
+        String valueName = normalizedUrl.substring(lastSlash+1);
         EtcdResponse respGetValue = EtcdRequest.create(this.url,baseKey,"").getValue(valueName).sendRequest();
         if(!respGetValue.is2XX()) {
             throw new ResourceRetrievalException(url);
@@ -71,29 +71,26 @@ public class EtcdResolver implements SchemaResolver{
 
     @Override
     public void observeChange(final String url, final Consumer<InputStream> consumer) throws ResourceRetrievalException {
-        final Thread etcdWatcher = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String normalizedUrl = normalize(url);
-                if(normalizedUrl.startsWith("etcd://")){
-                    // we keep the last slash
-                    normalizedUrl = normalizedUrl.substring(6);
-                }
-                int lastSlash = normalizedUrl.lastIndexOf("/");
-                String baseKey = normalizedUrl.substring(0,lastSlash);
-                String valueName = normalizedUrl.substring(lastSlash+1,normalizedUrl.length());
-                EtcdResponse respLongPollForChange = EtcdRequest.create(EtcdResolver.this.url,baseKey,"").getValue(valueName).longPoll().sendRequest();
-                if(!respLongPollForChange.is2XX()){
-                }
-                try {
-                    consumer.call(resolve(normalizedUrl));
-                } catch (Exception ignored) {
-                }
-                synchronized (etcdWatchThreads) {
-                    etcdWatchThreads.remove(Thread.currentThread());
-                }
-            }
 
+        final Thread etcdWatcher = new Thread(() -> {
+            String normalizedUrl = normalize(url);
+            if(normalizedUrl.startsWith("etcd://")){
+                // we keep the last slash
+                normalizedUrl = normalizedUrl.substring(6);
+            }
+            int lastSlash = normalizedUrl.lastIndexOf("/");
+            String baseKey = normalizedUrl.substring(0,lastSlash);
+            String valueName = normalizedUrl.substring(lastSlash+1,normalizedUrl.length());
+            EtcdResponse respLongPollForChange = EtcdRequest.create(EtcdResolver.this.url,baseKey,"").getValue(valueName).longPoll().sendRequest();
+            if(!respLongPollForChange.is2XX()){
+            }
+            try {
+                consumer.call(resolve(normalizedUrl));
+            } catch (Exception ignored) {
+            }
+            synchronized (etcdWatchThreads) {
+                etcdWatchThreads.remove(Thread.currentThread());
+            }
         });
         synchronized (etcdWatchThreads) {
             etcdWatchThreads.add(etcdWatcher);

@@ -43,11 +43,7 @@ public class MessageSnapshot {
         header = new HashMap<>();
         Stream.of(msg.getHeader().getAllHeaderFields()).forEach(headerField -> {
             String key = headerField.getHeaderName().toString();
-            String value = header.get(key);
-            if (value != null)
-                header.put(key, value + ", " + headerField.getValue());
-            else
-                header.put(key, headerField.getValue());
+            header.merge(key, headerField.getValue(), (a, b) -> a + ", " + b);
         });
         if (bodyCopiedCallback == null) {
             body = IOUtils.toByteArray(new CountingInputStream(msg.getBodyAsStreamDecoded()) {
@@ -89,7 +85,7 @@ public class MessageSnapshot {
 
     public Header convertHeader(){
         Header result = new Header();
-        header.keySet().stream().forEach(key -> result.add(key,header.get(key)));
+        header.keySet().forEach(key -> result.add(key,header.get(key)));
         return result;
     }
 

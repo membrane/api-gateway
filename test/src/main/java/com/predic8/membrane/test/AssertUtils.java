@@ -65,6 +65,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AssertUtils {
 
+	private static HttpClient hc = HttpClientBuilder.create().build();
+
 	public static void assertContains(String needle, String haystack) {
 		if (haystack.contains(needle))
 			return;
@@ -76,8 +78,6 @@ public class AssertUtils {
 			return;
 		throw new AssertionError("The string '" + haystack + "' does contain '" + needle + "'.");
 	}
-
-	private static HttpClient hc;
 
 	public static String getAndAssert200(String url) throws ParseException, IOException {
 		return getAndAssert(200, url);
@@ -92,9 +92,6 @@ public class AssertUtils {
 	}
 
 	public static String getAndAssert(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
-		HttpResponse result;
-		if (hc == null)
-			hc = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet(url);
 		try {
 			HttpResponse res = invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
@@ -107,19 +104,15 @@ public class AssertUtils {
 	}
 
 	public static HttpResponse getAndAssertWithResponse(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
-		if (hc == null)
-			hc = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet(url);
 		try {
-			HttpResponse res = invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
-			res.getEntity();
-			return res;
+			return invokeAndAssertInternal(expectedHttpStatusCode, url, header, get);
 		} finally {
 			get.releaseConnection();
 		}
 	}
 
-	private static HttpResponse invokeAndAssertInternal(int expectedHttpStatusCode, String url, String[] header, HttpGet get) throws IOException {
+	public static HttpResponse invokeAndAssertInternal(int expectedHttpStatusCode, String url, String[] header, HttpGet get) throws IOException {
 		if (header != null)
 			for (int i = 0; i < header.length; i += 2)
 				get.addHeader(header[i], header[i + 1]);
@@ -137,8 +130,6 @@ public class AssertUtils {
 	}
 
 	public static String assertStatusCode(int expectedHttpStatusCode, HttpUriRequest request) throws IOException {
-		if (hc == null)
-			hc = HttpClientBuilder.create().build();
 		HttpResponse res = hc.execute(request);
 		assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
 		return EntityUtils.toString(res.getEntity());
@@ -157,8 +148,6 @@ public class AssertUtils {
 	}
 
 	public static String invokeAndAssert(HttpEntityEnclosingRequestBase requestBase, int expectedHttpStatusCode, String url, String[] headers, String body) throws IOException {
-		if (hc == null)
-			hc = HttpClientBuilder.create().build();
 		for (int i = 0; i < headers.length; i+=2)
 			requestBase.setHeader(headers[i], headers[i+1]);
 		requestBase.setEntity(new StringEntity(body));
@@ -182,9 +171,8 @@ public class AssertUtils {
 	}
 
 	private static HttpClient getAuthenticatingHttpClient(String host, int port, String user, String pass) {
-		Credentials defaultcreds = new UsernamePasswordCredentials(user, pass);
 		BasicCredentialsProvider bcp = new BasicCredentialsProvider();
-		bcp.setCredentials(new AuthScope(host, port, AuthScope.ANY_REALM), defaultcreds);
+		bcp.setCredentials(new AuthScope(host, port, AuthScope.ANY_REALM), new UsernamePasswordCredentials(user, pass));
 		HttpRequestInterceptor preemptiveAuth = (request, context) -> {
 			AuthState authState = (AuthState) context.getAttribute(TARGET_AUTH_STATE);
 			if (authState.getAuthScheme() == null) {
@@ -237,7 +225,7 @@ public class AssertUtils {
 	public static void closeConnections() {
 		if (hc != null) {
 			HttpClientUtils.closeQuietly(hc);
-			hc = null;
+			hc = HttpClientBuilder.create().build();
 		}
 	}
 }

@@ -44,7 +44,7 @@ public class PasswordGrantTest extends RequestParameterizedTest {
     }
 
     private static Callable<Object> doNothing(){
-        return new Callable<Object>() {
+        return new Callable<>() {
             @Override
             public Object call() throws Exception {
                 return this;

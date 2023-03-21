@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.examples.tests;
 
+import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
-import com.predic8.membrane.examples.util.Process2;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.predic8.membrane.test.AssertUtils.*;

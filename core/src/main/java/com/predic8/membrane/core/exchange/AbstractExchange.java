@@ -47,11 +47,11 @@ public abstract class AbstractExchange {
 
 	private Calendar time = Calendar.getInstance();
 	private String errMessage = "";
-	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<IExchangeViewerListener>();
-	private Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<IExchangesStoreListener>();
+	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<>();
+	private Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
 	protected Rule rule;
 
-	protected Map<String, Object> properties = new HashMap<String, Object>();
+	protected Map<String, Object> properties = new HashMap<>();
 
 	private ExchangeState status = ExchangeState.STARTED;
 
@@ -66,13 +66,13 @@ public abstract class AbstractExchange {
 
 	private long tResReceived;
 
-	private List<String> destinations = new ArrayList<String>();
+	private List<String> destinations = new ArrayList<>();
 
 
 	private String remoteAddr;
 	private String remoteAddrIp;
 
-	private ArrayList<Interceptor> interceptorStack = new ArrayList<Interceptor>(10);
+	private ArrayList<Interceptor> interceptorStack = new ArrayList<>(10);
 
 	private int estimatedHeapSize = -1;
 
@@ -85,13 +85,9 @@ public abstract class AbstractExchange {
 	 * @param original
 	 */
 	public AbstractExchange(AbstractExchange original) {
-		properties = new HashMap<String, Object>(original.properties);
+		properties = new HashMap<>(original.properties);
 		originalRequestUri = original.originalRequestUri;
-
-		List<String> origDests = original.getDestinations();
-		for (String dest : origDests) {
-			destinations.add(dest);
-		}
+		destinations.addAll(original.getDestinations());
 		rule = original.getRule();
 	}
 
@@ -448,10 +444,10 @@ public abstract class AbstractExchange {
 		copy.setTimeReqReceived(source.getTimeReqReceived());
 		copy.setTimeResSent(source.getTimeResSent());
 		copy.setTimeResReceived(source.getTimeResReceived());
-		copy.setDestinations(source.getDestinations().stream().collect(Collectors.toList()));
+		copy.setDestinations(new ArrayList<>(source.getDestinations()));
 		copy.setRemoteAddr(source.getRemoteAddr());
 		copy.setRemoteAddrIp(source.getRemoteAddrIp());
-		copy.setInterceptorStack(source.getInterceptorStack().stream().collect(Collectors.toCollection(ArrayList::new)));
+		copy.setInterceptorStack(new ArrayList<>(source.getInterceptorStack()));
 
 		return copy;
 	}

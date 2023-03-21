@@ -13,21 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.examples.env;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import org.junit.jupiter.api.*;
 
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.io.*;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.io.FileUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JavaLicenseInfoTest {
 
-	private List<File> files = new ArrayList<File>();
+	private final List<File> files = new ArrayList<>();
 
 	@BeforeEach
 	public void precondition() {
@@ -57,6 +54,7 @@ public class JavaLicenseInfoTest {
 		}
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	private void recurse(File file) throws IOException {
 		if (file.isFile()) {
 			if (file.getName().endsWith(".java"))
@@ -72,11 +70,7 @@ public class JavaLicenseInfoTest {
 	}
 
 	private void handle(File file) throws IOException {
-		String content = FileUtils.readFileToString(file);
-
-
-		//if (content.contains("Copyright"))
-		//return;
+		String content = readFileToString(file, UTF_8);
 
 		if (content.contains("Apache License"))
 			return;

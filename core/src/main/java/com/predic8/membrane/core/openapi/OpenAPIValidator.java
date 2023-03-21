@@ -37,7 +37,7 @@ public class OpenAPIValidator {
     private static final Logger log = LoggerFactory.getLogger(OpenAPIValidator.class.getName());
 
     private final OpenAPI api;
-    private URIFactory uriFactory;
+    private final URIFactory uriFactory;
     private String basePath = "";
 
     public OpenAPIValidator(URIFactory uriFactory, OpenAPI api) {

@@ -25,6 +25,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 
@@ -69,7 +70,7 @@ public abstract class ParameterizedRequest {
         try {
             String authHeader = exc.getRequest().getHeader().getAuthorization();
             String[] creds = new String(Base64.getDecoder().decode(authHeader.split("Basic ")[1])).split(":");
-            return Arrays.asList(new AbstractMap.SimpleEntry(ParamNames.CLIENT_ID, creds[0]), new AbstractMap.SimpleEntry<>(ParamNames.CLIENT_SECRET, creds[1])).stream()
+            return Stream.of(new AbstractMap.SimpleEntry(ParamNames.CLIENT_ID, creds[0]), new AbstractMap.SimpleEntry<>(ParamNames.CLIENT_SECRET, creds[1]))
                     .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
         }catch (Exception e){
             // ignored, as requests without authorization header are expected
@@ -78,7 +79,7 @@ public abstract class ParameterizedRequest {
     }
 
     protected void removeEmptyParams(Map<String, String> params) {
-        ArrayList<String> toRemove = new ArrayList<String>();
+        ArrayList<String> toRemove = new ArrayList<>();
         for (String paramName : params.keySet()) {
             if (params.get(paramName).isEmpty())
                 toRemove.add(paramName);

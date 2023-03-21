@@ -38,7 +38,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	private String xslt;
 	private volatile XSLTTransformer xsltTransformer;
-	private XOPReconstitutor xopr = new XOPReconstitutor();
+	private final XOPReconstitutor xopr = new XOPReconstitutor();
 
 	public XSLTInterceptor() {
 		name = "XSLT Transformer";
@@ -65,8 +65,11 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	@Override
 	public void init() throws Exception {
-		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-		xsltTransformer = new XSLTTransformer(xslt, router, concurrency);
+		xsltTransformer = new XSLTTransformer(xslt, router, getConcurrency());
+	}
+
+	private static int getConcurrency() {
+		return Runtime.getRuntime().availableProcessors() * 2;
 	}
 
 	public String getXslt() {
@@ -90,12 +93,11 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getLongDescription() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(TextUtil.removeFinalChar(getShortDescription()));
-		sb.append(" using the stylesheet at ");
-		sb.append(TextUtil.linkURL(xslt));
-		sb.append(" .");
-		return sb.toString();
+        String sb = TextUtil.removeFinalChar(getShortDescription()) +
+                " using the stylesheet at " +
+                TextUtil.linkURL(xslt) +
+                " .";
+		return sb;
 	}
 
 }

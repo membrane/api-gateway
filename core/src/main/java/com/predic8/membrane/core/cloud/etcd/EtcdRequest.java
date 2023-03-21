@@ -306,12 +306,13 @@ public class EtcdRequest {
 	}
 
 	protected EtcdRequest createDeleteRequest() {
-		StringBuilder builder = new StringBuilder();
-		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid);
-		/*
+        /*
 		 * if (!deleteDir) { builder.append(key); }
 		 */
-		url = builder.toString();
+		url = httpPrefix + ip + port + root + baseKey + module + uuid
+                /*
+                 * if (!deleteDir) { builder.append(key); }
+                 */;
 		body = "";
 		return this;
 

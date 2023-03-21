@@ -40,4 +40,13 @@ class ResponseTest {
     void match() {
         assertTrue( res1.isOfMediaType(APPLICATION_JSON));
     }
+
+    @Test
+    void matchWildcard() {
+        assertTrue( new Response(200).matchesWildcard("2XX"));
+        assertTrue( new Response(200).matchesWildcard("2XX"));
+        assertTrue( new Response(299).matchesWildcard("2XX"));
+        assertTrue( new Response(404).matchesWildcard("4XX"));
+        assertFalse( new Response(300).matchesWildcard("2XX"));
+    }
 }

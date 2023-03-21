@@ -13,41 +13,44 @@
    limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.templating;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.beautifier.JSONBeautifier;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import groovy.text.StreamingTemplateEngine;
-import groovy.text.Template;
-import groovy.text.XmlTemplateEngine;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.beautifier.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.resolver.*;
+import groovy.text.*;
+import org.apache.commons.io.*;
+import org.apache.commons.lang3.*;
+import org.slf4j.*;
+
+import java.io.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ErrorUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
- * @description If enabled fills given template from exchange properties and replaces the body. The template can be put between
- * tags or can be loaded from file using location attribute. If the extension of the given file is XML it will use
- * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">
- * XMLTemplateEngine </a> otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">
- *     StreamingTemplateEngine</a>.
+ * @description Renders the body content of a message from a template. The template can
+ * produce plain text, Json or XML. Variables in the template are substituted with values from the body,
+ * header, query parameters, etc. If the extension of a referenced template file is <i>.xml</i> it will use
+ * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
+ * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
+ * Have a look at the samples in <a href="https://github.com/membrane/service-proxy/tree/master/distribution/examples">examples/template</a>.
  * @topic 4. Interceptors/Features
  */
 
 
 @MCElement(name="template", mixed = true)
 public class TemplateInterceptor extends AbstractInterceptor{
+
+    private static final Logger log = LoggerFactory.getLogger(TemplateInterceptor.class.getName());
 
     /**
      * @description Path of template file
@@ -58,11 +61,13 @@ public class TemplateInterceptor extends AbstractInterceptor{
 
     private Template template;
 
-    private String contentType = "text/plain";
+    private String contentType = TEXT_PLAIN;
 
     private Boolean pretty = false;
 
-    private JSONBeautifier jsonBeautifier = new JSONBeautifier();
+    private final JSONBeautifier jsonBeautifier = new JSONBeautifier();
+
+    private boolean scriptAccessesJson;
 
     public TemplateInterceptor() {
         name = "Template";
@@ -70,19 +75,31 @@ public class TemplateInterceptor extends AbstractInterceptor{
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        handleInternal(exc.getRequest(), exc);
-        return CONTINUE;
+        return handleInternal(exc.getRequest(), exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        handleInternal(exc.getResponse(), exc);
-        return CONTINUE;
+        return handleInternal(exc.getResponse(), exc, RESPONSE);
     }
 
-    private void handleInternal(Message msg, Exchange exc){
+    private Outcome handleInternal(Message msg, Exchange exc, Flow flow) {
+        try {
+            msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
+        }
+        catch (TemplateExecutionException e) {
+            log.warn("Template Exception" + e);
+            log.warn("Cause: " + e.getCause());
+            createAndSetErrorResponse(exc,500,e.getMessage());
+        }
+        catch (Exception e) {
+            System.out.println(e.getClass());
+            createAndSetErrorResponse(exc,500,e.getMessage());
+        }
+
+        // Setting Content-Type must come at the end, cause before we want to know what the original type was.
         msg.getHeader().setContentType(getContentType());
-        msg.setBodyContent(fillAndGetBytes(exc));
+        return CONTINUE;
     }
 
     private String prettifyJson(String text) {
@@ -93,29 +110,40 @@ public class TemplateInterceptor extends AbstractInterceptor{
         }
     }
 
-    private String fillTemplate(Exchange exc) {
-        String payload = template.make(exc.getProperties()).toString();
-        if (contentType.equals("application/json") && pretty) {
+    @SuppressWarnings("RedundantThrows") // Declaration of exception is needed. However, Groovy does not declare it.
+    private String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
+
+        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(exc, msg, flow, scriptAccessesJson && msg.isJSON());
+        binding.put("props", binding.get("properties"));
+        binding.remove("properties");
+        binding.putAll(exc.getProperties()); // To be compatible with old Version
+
+        String payload = template.make(binding).toString();
+        if (isOfMediaType(APPLICATION_JSON,contentType) && pretty) {
             return prettifyJson(payload);
         }
         return payload;
     }
 
-    private byte[] fillAndGetBytes(Exchange exc) {
-        return fillTemplate(exc).getBytes(StandardCharsets.UTF_8);
+    private byte[] fillAndGetBytes(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
+        return fillTemplate(exc, msg, flow).getBytes(UTF_8);
     }
 
     @Override
     public void init() throws Exception {
-        if (this.getLocation() != null && !StringUtils.isBlank(this.getTextTemplate())) {
+        if (this.getLocation() != null && (getTextTemplate() != null && !getTextTemplate().isBlank())) {
             throw new IllegalStateException("On <" + getName() + ">, ./text() and ./@location cannot be set at the same time.");
         }
+
         if (location != null) {
+            scriptAccessesJson = true; // Workaround. Because the reader is passed we can not look into the template => we put json in if there is one.
             try (InputStreamReader reader = new InputStreamReader(getRouter().getResolverMap()
                     .resolve(ResolverMap.combine(router.getBaseLocation(), location)))) {
+
+                // @TODO If a file is XML or not is detected based on the Extension. That should
                 if (FilenameUtils.getExtension(getLocation()).equals("xml")) {
                     template = new XmlTemplateEngine().createTemplate(reader);
-                    setContentType("application/xml");
+                    setContentType(APPLICATION_XML);
                 }
                 else{
                     template = new StreamingTemplateEngine().createTemplate(reader);
@@ -123,7 +151,8 @@ public class TemplateInterceptor extends AbstractInterceptor{
                 return;
             }
         }
-        if(!StringUtils.isBlank(textTemplate)){
+        if(!textTemplate.isBlank()){
+            scriptAccessesJson = textTemplate.contains("json");
             template = new StreamingTemplateEngine().createTemplate(this.getTextTemplate());
             return;
         }
@@ -137,6 +166,7 @@ public class TemplateInterceptor extends AbstractInterceptor{
 
     /**
      * @description path of xml template file.
+     * @example template.xml
      */
     @MCAttribute
     public void setLocation(String location){
@@ -175,6 +205,7 @@ public class TemplateInterceptor extends AbstractInterceptor{
 
     /**
      * @description content type for body
+     * @example application/json
      */
     @MCAttribute
     public void setContentType(String contentType) {
@@ -185,6 +216,11 @@ public class TemplateInterceptor extends AbstractInterceptor{
         return pretty;
     }
 
+    /**
+     * @description Format JSON documents.
+     * @example yes
+     * @default no
+     */
     @MCAttribute
     public void setPretty(String pretty) {
         this.pretty = Boolean.valueOf(pretty);

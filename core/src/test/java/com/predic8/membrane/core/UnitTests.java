@@ -17,9 +17,9 @@ import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
-import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
@@ -29,6 +29,7 @@ import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterc
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.*;
 import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
+import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
@@ -47,6 +48,7 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathAnalyze
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLElementFinderTest;
+import com.predic8.membrane.core.interceptor.xmlprotection.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientTest;
 import com.predic8.membrane.core.magic.MagicTest;
@@ -56,7 +58,7 @@ import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
 import com.predic8.membrane.core.transport.ExchangeTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
-import com.predic8.membrane.core.transport.http.Http2ClientServerTest;
+import com.predic8.membrane.core.transport.http2.Http2ClientServerTest;
 import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
 import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
 import com.predic8.membrane.core.transport.ssl.SSLContextTest;
@@ -112,10 +114,16 @@ import org.junit.platform.suite.api.*;
 		XmlPathExtractorInterceptorTest.class, JsonPointerExtractorInterceptorTest.class,
 		AcmeStepTest.class, AcmeRenewTest.class, KubernetesClientTest.class,
 		ProxyTest.class, Http2ClientServerTest.class, ChunkedBodyTest.class,
-		JavascriptInterceptor.class
-
+		ReturnInterceptorTest.class,
+		JavascriptInterceptor.class,
+		MimeTypeTest.class,
+		MessageBytesTest.class,
+		RegExReplaceInterceptorTest.class,
+		URLParamUtilTest.class,
+		XMLProtectorTest.class,
+		AbstractExchangeStoreTest.class
 })
-@SelectPackages("com.predic8.membrane.core.openapi")
+@SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {
     /*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

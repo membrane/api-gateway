@@ -14,37 +14,44 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import io.swagger.util.Json;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.io.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import java.util.EnumSet;
+import java.io.*;
+import java.util.*;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static java.util.EnumSet.of;
+import static com.fasterxml.jackson.core.JsonParser.Feature.*;
+import static com.fasterxml.jackson.core.JsonTokenId.*;
+import static com.fasterxml.jackson.databind.DeserializationFeature.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static java.util.EnumSet.*;
 
+/**
+ * Enforces JSON restrictions.
+ */
 @MCElement(name = "jsonProtection")
 public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
 
-    private ObjectMapper om = new ObjectMapper()
+    private final ObjectMapper om = new ObjectMapper()
             .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
             .configure(STRICT_DUPLICATE_DETECTION, true);
 
     private int maxTokens = 10000;
+    private int maxSize = 50 * 1024 * 1024;
+    private int maxDepth = 50;
+    private int maxStringLength = 262144;
+    private int maxKeyLength = 256;
+    private int maxObjectSize = 1000;
+    private int maxArraySize = 1000;
+
 
     public JsonProtectionInterceptor() {
         name = "JSON protection";
@@ -52,12 +59,54 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     }
 
     @Override
+    public void init() throws Exception {
+        if (maxStringLength < maxKeyLength)
+            maxKeyLength = maxStringLength;
+    }
+
+    private abstract static class Context {
+        public abstract void check(JsonToken jsonToken, JsonParser parser) throws IOException;
+    }
+
+    private class ObjContext extends Context {
+        int n;
+
+        @Override
+        public void check(JsonToken jsonToken, JsonParser parser) throws IOException {
+            if (jsonToken.id() == ID_END_OBJECT)
+                return;
+            n++;
+            if (n > maxObjectSize)
+                throw new JsonParseException(parser, "Exceeded maxObjectSize (" + maxObjectSize + ").");
+            if (parser.getCurrentName().length() > maxKeyLength)
+                throw new JsonParseException(parser, "Exceeded maxKeyLength (" + maxKeyLength + ").");
+        }
+    }
+
+    private class ArrContext extends Context {
+        int n;
+
+        @Override
+        public void check(JsonToken jsonToken, JsonParser parser) throws JsonParseException {
+            if (jsonToken.id() == ID_END_ARRAY)
+                return;
+            n++;
+            if (n > maxArraySize)
+                throw new JsonParseException(parser, "Exceeded maxArraySize (" + maxArraySize + ").");
+        }
+    }
+
+    @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if ("GET".equals(exc.getRequest().getMethod()))
             return Outcome.CONTINUE;
         try {
-            JsonParser parser = om.createParser(exc.getRequest().getBodyAsStreamDecoded());
+            CountingInputStream cis = new CountingInputStream(exc.getRequest().getBodyAsStreamDecoded());
+            JsonParser parser = om.createParser(cis);
             int tokenCount = 0;
+            int depth = 0;
+            List<Context> contexts = new ArrayList<>();
+            Context currentContext = null;
             while (true) {
                 JsonToken jsonToken = parser.nextValue();
                 if (jsonToken == null)
@@ -65,7 +114,52 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                 tokenCount++;
                 if (tokenCount > maxTokens)
                     throw new JsonParseException(parser, "Exceeded maxTokens (" + maxTokens + ").");
+                if (cis.getCount() > maxSize)
+                    throw new JsonParseException(parser, "Exceeded maxSize (" + maxSize + ").");
+                if (currentContext != null)
+                    currentContext.check(jsonToken, parser);
+                switch (jsonToken.id()) {
+                    case ID_START_OBJECT:
+                        depth++;
+                        if (depth > maxDepth)
+                            throw new JsonParseException(parser, "Exceeded maxSize (" + maxSize + ").");
+                        contexts.add(currentContext = new ObjContext());
+                        break;
+                    case ID_START_ARRAY:
+                        depth++;
+                        if (depth > maxDepth)
+                            throw new JsonParseException(parser, "Exceeded maxSize (" + maxSize + ").");
+                        contexts.add(currentContext = new ArrContext());
+                        break;
+                    case ID_END_OBJECT:
+                    case ID_END_ARRAY:
+                        depth--;
+                        if (depth < 0)
+                            throw new JsonParseException(parser, "invalid");
+                        contexts.remove(contexts.size() - 1);
+                        currentContext = contexts.size() == 0 ? null : contexts.get(contexts.size() - 1);
+                        break;
+                    case ID_STRING:
+                        if (parser.getValueAsString().length() > maxStringLength)
+                            throw new JsonParseException(parser, "Exceeded maxStringLength (" + maxStringLength + ").");
+                        break;
+                    case ID_NUMBER_INT:
+                    case ID_NUMBER_FLOAT:
+                    case ID_TRUE:
+                    case ID_FALSE:
+                    case ID_NULL:
+                        break;
+                    case ID_NOT_AVAILABLE:
+                    case ID_NO_TOKEN:
+                    case ID_FIELD_NAME:
+                    case ID_EMBEDDED_OBJECT:
+                        throw new RuntimeException("not handled.");
+                    default:
+                        throw new RuntimeException("not handled (" + jsonToken.id() + ")");
+                }
             }
+            if (cis.getCount() > maxSize)
+                throw new JsonParseException(parser, "Exceeded maxSize (" + maxSize + ").");
         } catch (JsonParseException e) {
             LOG.error(e.getMessage());
             exc.setResponse(Response.badRequest().build());
@@ -80,12 +174,104 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Maximum number of tokens a JSON document may consist of. For example, <code>{"a":"b"}</code> counts as 3.
+     * @description Maximum number of tokens a JSON document may consist of. For example, <code>{"a":"b"}</code> counts
+     * as 3.
+     * @default 10000
      * @param maxTokens
      */
     @MCAttribute
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
+    }
+
+    public int getMaxSize() {
+        return maxSize;
+    }
+
+    /**
+     * @description Maximum total size of the JSON document in bytes.
+     * @default 52428800
+     * @param maxSize
+     */
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+    }
+
+    public int getMaxDepth() {
+        return maxDepth;
+    }
+
+    /**
+     * @description Maximum depth of nested JSON structures. For example, <code>{"a":{"b":{"c":"d"}}}</code> has a depth
+     * of 3.
+     * @default 50
+     * @param maxDepth
+     */
+    public void setMaxDepth(int maxDepth) {
+        this.maxDepth = maxDepth;
+    }
+
+    public int getMaxStringLength() {
+        return maxStringLength;
+    }
+
+    /**
+     * @description Maximum string length. For example, <code>{"abcd": "efgh", "ijkl": [ "mnop" ], "qrst": { "uvwx":
+     * 1}}</code> has a maximum string length of 4. (In this example, all 6 strings effectively have length 4.)
+     * <p>
+     * The maximum string length also affects keys ("abcd", "ijkl", "qrst" and "uvwx" in the example). The keys can be
+     * also limited by the separate property maxKeyLength. The stricter limit applies.
+     * @default 262144
+     * @param maxStringLength
+     */
+    public void setMaxStringLength(int maxStringLength) {
+        this.maxStringLength = maxStringLength;
+    }
+
+    public int getMaxKeyLength() {
+        return maxKeyLength;
+    }
+
+    /**
+     * @description Maximum key length. For example, <code>{"abcd": "efgh123", "ijkl": [ "mnop123" ], "qrst": { "uvwx":
+     * 1}}</code> has a maximum key length of 4. (In this example, all 4 strings used as keys effectively have length
+     * 4.)
+     * <p>
+     * The maximum key length also affects strings ("abcd", "ijkl", "qrst" and "uvwx" in the example). The strings can be
+     * also limited by the separate property maxStringLength. The stricter limit applies.
+     * @default 256
+     * @param maxKeyLength
+     */
+    public void setMaxKeyLength(int maxKeyLength) {
+        this.maxKeyLength = maxKeyLength;
+    }
+
+    public int getMaxObjectSize() {
+        return maxObjectSize;
+    }
+
+    /**
+     * @description Maximum size of JSON objects. For example, <code>{"a": {"b":"c", "d": "e"}, "f": "g"}</code> has a
+     * maximum object size of 2. (In this example, both objects effectively have a size of 2.)
+     * @default 1000
+     * @param maxObjectSize
+     */
+    public void setMaxObjectSize(int maxObjectSize) {
+        this.maxObjectSize = maxObjectSize;
+    }
+
+    public int getMaxArraySize() {
+        return maxArraySize;
+    }
+
+    /**
+     * @description Maximum size of JSON objects. For example, <code>{"a": {"b":"c", "d": "e"}, "f": "g"}</code> has a
+     * maximum object size of 2. (In this example, both objects effectively have a size of 2.)
+     * @default 1000
+     * @param maxArraySize
+     */
+    public void setMaxArraySize(int maxArraySize) {
+        this.maxArraySize = maxArraySize;
     }
 
     @Override
@@ -102,6 +288,17 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                 "as a token: <font style=\"font-family: monospace\">{\"a\":\"b\"}</font> counts as 3 tokens)</li>" +
                 "<li>Forbids duplicate keys. (<font style=\"font-family: monospace\">{\"a\":\"b\", \"a\":\"c\"}</font> " +
                 "will be rejected.)</li>" +
+                "<li>Limits the total size in bytes of the body to " + maxSize + ".</li>" +
+                "<li>Limits the maximum depth to " + maxDepth + ". (<font style=\"font-family: monospace\">{\"a\":[{\"b\"" +
+                ":\"c\"}]}</font> has depth 3.)</li>" +
+                "<li>Limits the maximum string length to " + maxStringLength + ". " +
+                "(<font style=\"font-family: monospace\">{\"a\":\"abc\"}</font> has max string length 3.)</li>" +
+                "<li>Limits the maximum key length to " + maxKeyLength + ". " +
+                "(<font style=\"font-family: monospace\">{\"abc\":\"a\"}</font> has key length 3.)</li>" +
+                "<li>Limits the maximum object size to " + maxObjectSize + ". " +
+                "(<font style=\"font-family: monospace\">{\"a\":\"b\",\"c\":\"d\"}</font> has object size 2.)</li>" +
+                "<li>Limits the maximum array size to " + maxArraySize + ". " +
+                "(<font style=\"font-family: monospace\">[\"a\", \"b\"]</font> has array size 2.)</li>" +
                 "</ul></div>";
     }
 }

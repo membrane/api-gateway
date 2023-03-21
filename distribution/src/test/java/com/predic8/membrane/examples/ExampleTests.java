@@ -13,12 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
+import com.predic8.membrane.errorhandling.*;
 import com.predic8.membrane.examples.config.*;
 import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.*;
+import com.predic8.membrane.examples.tests.oauth2.*;
+import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
 import com.predic8.membrane.examples.tests.openapi.*;
 import com.predic8.membrane.examples.tests.ssl.*;
+import com.predic8.membrane.examples.tests.template.json.*;
+import com.predic8.membrane.examples.tests.template.text.*;
+import com.predic8.membrane.examples.tests.template.xml.*;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
@@ -36,62 +42,8 @@ import org.junit.platform.suite.api.Suite;
  */
 @Suite
 @SelectClasses({
-
-
-        GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
-
-        AntInPath.class,
-        ConsistentVersionNumbers.class,
-        DefaultConfigAdminConsoleTest.class,
-        HelpLinkExistenceTest.class,
-        JavaLicenseInfoTest.class,
-
-        ACLTest.class,
-        BasicAuthTest.class,
-        CBRTest.class,
-        FileExchangeStoreTest.class,
-        GroovyTest.class,
-        Loadbalancing_1_static_Test.class,
-        Loadbalancing_3_client_Test.class,
-        Loadbalancing_5_multiple_Test.class,
-        Loadbalancing_4_xml_session_Test.class,
-        LoggingCSVTest.class,
-        LoggingJDBCTest.class,
-        LoggingTest.class,
-        LoginTest.class,
-//        QuickstartRESTTest.class,
-//        QuickstartSOAPTest.class,
-        REST2SOAPTest.class,
-        REST2SOAPJSONTest.class,
-        RewriterTest.class,
-        SSLServerApiWithTlsTest.class,
-        ToBackendTest.class,
-        ThrottleTest.class,
-        XSLTTest.class,
-
-        FormValidationTest.class,
-        JSONSchemaValidationTest.class,
-        XMLValidationTest.class,
-
-        CustomInterceptorTest.class,
-        StaxExampleInterceptorTest.class,
-        AddSoapHeaderTest.class,
-        BasicXmlInterceptorTest.class,
-        Xml2JsonTest.class,
-        Json2XmlTest.class,
-        RoutingTest.class,
-        XsltExampleTest.class,
-        RoutingTest.class,
-        OAuth2ApiTest.class,
-
-        // OpenAPI
-        OpenAPIProxy.class,
-        OpenAPIValidationSimple.class,
-        OpenAPIValidation.class,
-
-        // Tutorials
-        TurorialRestStepsTest.class,
-        TurorialRestInitialTest.class
+    ExampleTestsWithInternet.class,
+    ExampleTestsWithoutInternet.class
 })
 public class ExampleTests {
 }

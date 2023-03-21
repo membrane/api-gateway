@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
@@ -26,10 +27,12 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static java.lang.Boolean.*;
+
 public class HttpEndpointListener extends Thread {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpEndpointListener.class.getName());
-	public static final byte[] RATE_LIMIT_RESPONSE_MESSAGE = "HTTP/1.1 429\r\nContent-Length: 0\r\n\r\n".getBytes();
 	byte[] TLS_ALERT_INTERNAL_ERROR = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
 			2 /* fatal */, 80 /* unrecognized_name */ };
 
@@ -109,36 +112,12 @@ public class HttpEndpointListener extends Thread {
 	public void run() {
 		while (!closed) {
 			try {
-				@SuppressWarnings("resource")
 				Socket socket = serverSocket.accept();
 
 				InetAddress remoteIp = getRemoteIp(socket);
-				ClientInfo connectionCount = ipConnectionCount.get(remoteIp);
-				if (connectionCount == null) {
-					connectionCount = new ClientInfo();
-					ClientInfo oldconnectionCount = connectionCount;
-					connectionCount = ipConnectionCount.putIfAbsent(remoteIp, connectionCount);
-
-					if (connectionCount == null)
-						connectionCount = oldconnectionCount;
-				}
-				int concurrentConnectionLimitPerIp = transport.getConcurrentConnectionLimitPerIp();
-				boolean connnectionWithinLimit = true;
-				while(true) {
-					int currentConnections = connectionCount.get();
-					// TODO: if count == -1 -> try to get the counter in a while loop
-					if (currentConnections >= concurrentConnectionLimitPerIp) {
-						log.warn(constructLogMessage(new StringBuilder(), remoteIp, readUpTo1KbOfDataFrom(socket, new byte[1023])));
-						writeRateLimitReachedToSource(socket);
-						socket.close();
-						connnectionWithinLimit = false;
-						break;
-					}
-					if (connectionCount.compareAndSet(currentConnections, currentConnections + 1))
-						break;
-				}
-				if (connnectionWithinLimit) {
-					openSockets.put(socket, Boolean.TRUE);
+				ClientInfo connectionCount = getClientInfo(remoteIp);
+				if (isConnnectionWithinLimit(socket, remoteIp, connectionCount)) {
+					openSockets.put(socket, TRUE);
 					try {
 						if (log.isDebugEnabled())
 							log.debug("Accepted connection from " + socket.getRemoteSocketAddress());
@@ -164,9 +143,60 @@ public class HttpEndpointListener extends Thread {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
 				e.printStackTrace();
 			} catch (Exception e) {
-				log.error("",e);
+				log.error("", e);
+			} catch (Error e) {
+				try {
+					log.error("", e);
+				} catch (Throwable ignored) {
+				}
+				try {
+					System.err.println(e.getMessage());
+					System.err.println("Terminating because of Error in HttpEndpointListener.");
+				} catch (Throwable ignored) {
+				}
+				System.exit(1);
 			}
 		}
+	}
+
+	private ClientInfo getClientInfo(InetAddress remoteIp) {
+		ClientInfo connectionCount = ipConnectionCount.get(remoteIp);
+
+		if (connectionCount != null)
+			return connectionCount;
+
+		connectionCount = new ClientInfo();
+		ClientInfo oldconnectionCount = connectionCount;
+		connectionCount = ipConnectionCount.putIfAbsent(remoteIp, connectionCount);
+
+		if (connectionCount == null)
+			return oldconnectionCount;
+
+		return connectionCount;
+	}
+
+	private boolean isConnnectionWithinLimit(Socket socket, InetAddress remoteIp, ClientInfo connectionCount) throws IOException {
+		int concurrentConnectionLimitPerIp = transport.getConcurrentConnectionLimitPerIp();
+
+		// -1 == NoLimit => Ok
+		if (concurrentConnectionLimitPerIp == -1)
+			return true;
+
+		boolean connnectionWithinLimit = true;
+		while(true) {
+			int currentConnections = connectionCount.get();
+			// TODO: if count == -1 -> try to get the counter in a while loop
+			if (currentConnections >= concurrentConnectionLimitPerIp) {
+				log.warn(constructLogMessage(new StringBuilder(), remoteIp, NetworkUtil.readUpTo1KbOfDataFrom(socket, new byte[1023])));
+				writeRateLimitReachedToSource(socket);
+				socket.close();
+				connnectionWithinLimit = false;
+				break;
+			}
+			if (connectionCount.compareAndSet(currentConnections, currentConnections + 1))
+				break;
+		}
+		return connnectionWithinLimit;
 	}
 
 	public void closePort() throws IOException {
@@ -199,7 +229,7 @@ public class HttpEndpointListener extends Thread {
 				socket.close();
 				throw new SocketException();
 			}
-			idleSockets.put(socket, Boolean.TRUE);
+			idleSockets.put(socket, TRUE);
 		} else {
 			idleSockets.remove(socket);
 		}
@@ -233,39 +263,22 @@ public class HttpEndpointListener extends Thread {
 	private void writeRateLimitReachedToSource(Socket sourceSocket) throws IOException {
 		if (sslProvider != null)
 			sourceSocket.getOutputStream().write(TLS_ALERT_INTERNAL_ERROR,0,TLS_ALERT_INTERNAL_ERROR.length);
-		else
-			sourceSocket.getOutputStream().write(RATE_LIMIT_RESPONSE_MESSAGE,0,RATE_LIMIT_RESPONSE_MESSAGE.length);
+		else {
+			Map<String,Object> m = new HashMap<>();
+			m.put(DESCRIPTION,"There is a limit of X concurrent connections per client to avoid denial of service attacks.");
+			Response r = createProblemDetails(429,"write-ratelimit-reached","Limit of concurrent connections per client is reached.",m);
+			r.write(sourceSocket.getOutputStream(),false);
+		}
 		sourceSocket.getOutputStream().flush();
 	}
 
-	private String constructLogMessage(StringBuilder sb, InetAddress ip, AbstractMap.SimpleEntry<byte[], Integer> receivedContent) {
+	private String constructLogMessage(StringBuilder sb, InetAddress ip, Pair<byte[], Integer> receivedContent) {
 		return sb
 				.append("Concurrent connection limit reached for IP: ").append(ip.toString()).append(System.lineSeparator())
 				.append("Received the following content").append(System.lineSeparator())
 				.append("===START===").append(System.lineSeparator())
-				.append(new String(receivedContent.getKey(),0, receivedContent.getValue())).append(System.lineSeparator())
+				.append(new String(receivedContent.first(),0, receivedContent.second())).append(System.lineSeparator())
 				.append("===END===").toString();
-	}
-
-	@SuppressWarnings("ResultOfMethodCallIgnored")
-	private AbstractMap.SimpleEntry<byte[],Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
-		int available = sourceSocket.getInputStream().available();
-		int offset = 0;
-		while(available > 0){
-			if(available > buffer.length-offset){
-				available = buffer.length-offset;
-
-				//noinspection ResultOfMethodCallIgnored
-				sourceSocket.getInputStream().read(buffer,offset,available);
-				offset += available;
-				break;
-			}else {
-				sourceSocket.getInputStream().read(buffer, offset, available);
-				offset += available;
-				available = sourceSocket.getInputStream().available();
-			}
-		}
-		return new AbstractMap.SimpleEntry<>(buffer,offset);
 	}
 
 	private InetAddress getRemoteIp(Socket socket){

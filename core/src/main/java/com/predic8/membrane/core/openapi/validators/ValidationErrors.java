@@ -18,15 +18,12 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.*;
 
-import java.nio.charset.*;
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
-import static java.util.stream.Collectors.toList;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
 
 public class ValidationErrors {
 
@@ -65,6 +62,10 @@ public class ValidationErrors {
 
     public int size() {
         return errors.size();
+    }
+
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     public ValidationError get(int i) {
@@ -126,6 +127,10 @@ public class ValidationErrors {
             return ve.getContext().getLocationForRequest();
         }
         return ve.getContext().getLocationForResponse();
+    }
+
+    public boolean hasErrors() {
+        return size() > 0;
     }
 
     @Override

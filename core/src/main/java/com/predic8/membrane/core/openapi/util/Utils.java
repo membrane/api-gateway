@@ -19,14 +19,10 @@ package com.predic8.membrane.core.openapi.util;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.servers.*;
 import jakarta.mail.internet.*;
 import org.slf4j.*;
 
 import java.io.*;
-import java.net.*;
-import java.nio.charset.*;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
@@ -37,13 +33,10 @@ import static java.util.regex.Pattern.*;
 
 public class Utils {
 
-    private static Logger log = LoggerFactory.getLogger(Utils.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Utils.class.getName());
 
     //noinspection
     final static Pattern componentSchemaPattern = compile("#/components/\\w+/(.*)");
-
-    //noinspection
-    final static Pattern urlPathPattern = compile("(http://|https://)?.*?(/.*)");
 
     final static Pattern uuidPattern = compile("^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$");
 
@@ -152,7 +145,7 @@ public class Utils {
         return request;
     }
 
-    public static Response getOpenapiValidatorResponse(Exchange exc) throws IOException, ParseException {
+    public static Response getOpenapiValidatorResponse(Exchange exc) throws ParseException, IOException {
         Response response = Response.statusCode(exc.getResponse().getStatusCode()).mediaType(exc.getResponse().getHeader().getContentType());
 
         if (!exc.getResponse().isBodyEmpty()) {

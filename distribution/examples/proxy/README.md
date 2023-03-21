@@ -1,4 +1,4 @@
-### PROXY EXAMPLE
+# Proxy Example
 
 Membrane offers the functionality forward its HTTP requests to a proxy.
 Membrane can also serve as an HTTP proxy itself.
@@ -6,7 +6,7 @@ Membrane can also serve as an HTTP proxy itself.
 This example demonstrates both features.
 
 
-#### RUNNING THE EXAMPLE
+## Running the Example
 
 Using the following URL you can retreive the description of a web service.
 
@@ -17,15 +17,14 @@ To run the example execute the following steps:
 
 1. Go to the `examples/proxy` directory.
 
-2. Execute `service-proxy.bat`
+2. Execute `service-proxy.sh` or `service-proxy.bat`
 
 3. Open the URL http://localhost:2000/axis2/services/BLZService?wsdl in your browser.
 
 4. Open the URL http://localhost:2001/axis2/services/BLZService?wsdl in your browser.
 
 
-#### HOW IT IS DONE
-
+## How it is done
 The following part describes the example in detail.  
 
 First take a look at the `proxies.xml` file.

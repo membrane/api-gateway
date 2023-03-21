@@ -30,6 +30,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+
 public class Exchange extends AbstractExchange {
 
 	public static final String HTTP_SERVLET_REQUEST = "HttpServletRequest";
@@ -52,7 +55,7 @@ public class Exchange extends AbstractExchange {
 
 	public static final String WS_ORIGINAL_EXCHANGE = "WS_ORIGINAL_EXCHANGE";
 
-	private static Logger log = LoggerFactory.getLogger(Exchange.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;
 
@@ -159,9 +162,9 @@ public class Exchange extends AbstractExchange {
 
 	/**
 	 * Returns the relative original URI.
-	 *
+	 * <p>
 	 * "original" meaning "as recieved by Membrane's transport".
-	 *
+	 * <p>
 	 * To be used, for example, when generating self-referring web pages.
 	 */
 	public String getRequestURI() {
@@ -182,16 +185,16 @@ public class Exchange extends AbstractExchange {
 		builder.body(content);
 		String contentType = getRequest().getHeader().getContentType();
 		if (contentType != null)
-			builder.header(Header.CONTENT_TYPE, contentType);
+			builder.header(CONTENT_TYPE, contentType);
 		String contentEncoding = getRequest().getHeader().getContentEncoding();
 		if (contentEncoding != null)
-			builder.header(Header.CONTENT_ENCODING, contentEncoding);
+			builder.header(CONTENT_ENCODING, contentEncoding);
 		setResponse(builder.build());
-		return Outcome.RETURN;
+		return RETURN;
 	}
 
 	public Map<String, String> getStringProperties() {
-		Map<String, String> map = new HashMap<String, String>();
+		Map<String, String> map = new HashMap<>();
 
 		for (Map.Entry<String, Object> e : properties.entrySet()) {
 			if (e.getValue() instanceof String) {
@@ -236,8 +239,6 @@ public class Exchange extends AbstractExchange {
 		exc.setId(this.getId());
 		return exc;
 	}
-
-
 
 	public void setId(long id) {
 		this.id = id;

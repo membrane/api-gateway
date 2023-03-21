@@ -18,23 +18,24 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.rules.*;
-import org.apache.commons.text.*;
 import org.codehaus.groovy.control.*;
 import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.util.TextUtil.removeCommonLeadingIndentation;
-import static com.predic8.membrane.core.util.TextUtil.removeFinalChar;
-import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
+import static com.predic8.membrane.core.util.TextUtil.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
+ * @description Executes a Groovy script. The script can access and manipulate data from the request and response.
+ * Use this or the Javascript plugin to extend the functions of Membrane by scripting.
+ * See: example/groovy for working samples
  * @topic 4. Interceptors/Features
  */
 @MCElement(name = "groovy", mixed = true)
 public class GroovyInterceptor extends AbstractScriptInterceptor {
 
-    Logger log = LoggerFactory.getLogger(GroovyInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(GroovyInterceptor.class);
 
     public GroovyInterceptor() {
         name = "Groovy";

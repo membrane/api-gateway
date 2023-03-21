@@ -117,7 +117,7 @@ public class StaticSSLContext extends SSLContext {
                 KeyStore ks = KeyStore.getInstance(keyStoreType);
                 ks.load(null, "".toCharArray());
 
-                List<Certificate> certs = new ArrayList<Certificate>();
+                List<Certificate> certs = new ArrayList<>();
 
                 for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
                     certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
@@ -208,7 +208,7 @@ public class StaticSSLContext extends SSLContext {
     }
 
     private List<String> getDNSNames(Certificate certificate) throws CertificateParsingException {
-        ArrayList<String> dnsNames = new ArrayList<String>();
+        ArrayList<String> dnsNames = new ArrayList<>();
         if (certificate instanceof X509Certificate) {
             X509Certificate x = (X509Certificate) certificate;
 
@@ -282,7 +282,7 @@ public class StaticSSLContext extends SSLContext {
             sslss.setEnabledProtocols(protocols);
         } else {
             String[] protocols = sslss.getEnabledProtocols();
-            Set<String> set = new HashSet<String>();
+            Set<String> set = new HashSet<>();
             for (String protocol : protocols) {
                 if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
                     continue;
@@ -309,7 +309,7 @@ public class StaticSSLContext extends SSLContext {
             ssls.setEnabledProtocols(protocols);
         } else {
             String[] protocols = ssls.getEnabledProtocols();
-            Set<String> set = new HashSet<String>();
+            Set<String> set = new HashSet<>();
             for (String protocol : protocols) {
                 if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
                     continue;

@@ -13,19 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import org.slf4j.*;
+import org.w3c.dom.ls.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.ls.LSInput;
+import java.io.*;
 
-import com.predic8.membrane.core.Constants;
+import static java.nio.charset.StandardCharsets.*;
 
 public class LSInputImpl implements LSInput {
 
-	private static Logger log = LoggerFactory.getLogger(LSInputImpl.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(LSInputImpl.class.getName());
 
 	private String publicId;
 	private String systemId;
@@ -69,26 +66,25 @@ public class LSInputImpl implements LSInput {
 
 	@Override
 	public String getEncoding() {
-		return Constants.UTF_8;
+		return UTF_8.name();
 	}
 
 	@Override
 	public String getStringData() {
 		synchronized (inputStream) {
-			String result = "";
 			try {
-				result = streamToString();
+				return streamToString();
 			} catch (IOException e) {
 				log.error("Unable to read stream: " + e);
+				return "";
 			}
-			return result;
 		}
 	}
 
 	private String streamToString() throws IOException {
 		byte[] bytes = new byte[inputStream.available()];
 		inputStream.read(bytes);
-		return new String(bytes, Constants.UTF_8_CHARSET);
+		return new String(bytes, UTF_8);
 	}
 
 	@Override

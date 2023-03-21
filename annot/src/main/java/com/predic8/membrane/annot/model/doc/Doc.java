@@ -88,8 +88,8 @@ public class Doc {
 		}
 	}
 
-	HashSet<String> keys = new HashSet<String>();
-	List<Entry> entries = new ArrayList<Entry>();
+	HashSet<String> keys = new HashSet<>();
+	List<Entry> entries = new ArrayList<>();
 
 	static final List<String> POSITIVE = Arrays.asList("topic", "description", "example", "default", "explanation");
 	static final List<String> NEGATIVE = Arrays.asList("author", "param");

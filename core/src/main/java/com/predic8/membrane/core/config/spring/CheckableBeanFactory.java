@@ -13,16 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.spring;
 
+import java.io.*;
+
 public interface CheckableBeanFactory {
 
 	/**
 	 * Checks whether this application context's configuration file(s) contain valid bean definitions.
 	 * @throws InvalidConfigurationException if the configuration is not valid
 	 */
-	public void checkForInvalidBeanDefinitions() throws InvalidConfigurationException;
+	void checkForInvalidBeanDefinitions() throws InvalidConfigurationException;
 
-	public static class InvalidConfigurationException extends Exception {
+	class InvalidConfigurationException extends Exception {
 
+		@Serial
 		private static final long serialVersionUID = 1L;
 
 		public InvalidConfigurationException() {
