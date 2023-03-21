@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -125,5 +124,16 @@ public class OpenAPIPublisherInterceptorTest {
         assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(0).get("url").asText());
         assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(1).get("url").asText());
         assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(2).get("url").asText());
+    }
+
+    @Test
+    void rewriteRequestHostHeaderWithoutPort() throws MalformedURLException, URISyntaxException {
+        OpenAPIRecord rec = records.get("servers-3-api-v1-0");
+        get.setOriginalHostHeader("api.predic8.de");
+        interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
+        JsonNode servers = rec.node.get("servers");
+        assertEquals("http://api.predic8.de/foo", servers.get(0).get("url").textValue());
+        assertEquals("http://api.predic8.de/foo", servers.get(1).get("url").textValue());
+        assertEquals("http://api.predic8.de/foo", servers.get(2).get("url").textValue());
     }
 }

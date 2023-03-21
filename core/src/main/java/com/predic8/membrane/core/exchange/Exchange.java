@@ -122,7 +122,12 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public String getOriginalHostHeaderPort() {
-		return originalHostHeader.replaceFirst(".*:", "");
+		int pos = originalHostHeader.indexOf(':');
+		if (pos == -1) {
+			return "";
+		} else {
+			return originalHostHeader.substring(pos+1);
+		}
 	}
 
 	public String getOriginalHostHeader() {
