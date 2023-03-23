@@ -125,7 +125,16 @@ public class OpenAPIPublisherInterceptorTest {
         assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(2).get("url").asText());
     }
 
-    @Test
+    void rewriteRequestHostHeaderWithoutPort() throws MalformedURLException, URISyntaxException {
+        OpenAPIRecord rec = records.get("servers-3-api-v1-0");
+        get.setOriginalHostHeader("api.predic8.de");
+        interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
+        JsonNode servers = rec.node.get("servers");
+        assertEquals("http://api.predic8.de/foo", servers.get(0).get("url").textValue());
+        assertEquals("http://api.predic8.de/foo", servers.get(1).get("url").textValue());
+        assertEquals("http://api.predic8.de/foo", servers.get(2).get("url").textValue());
+    }
+
     void rewriteUrl() throws URISyntaxException {
         assertEquals("http://api.predic8.de/foo",interceptor.rewriteUrl(get,"http://localhost:3000/foo"));
         assertEquals("http://api.predic8.de/foo",interceptor.rewriteUrl(get,"http://localhost/foo"));

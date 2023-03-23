@@ -81,7 +81,7 @@ public class UriUtil {
         return ":"+url.getPort();
     }
 
-    public static String rewriteURL(URIFactory uriFactory, String url, String scheme, String host, int port) throws URISyntaxException {
+    public static String rewrite(URIFactory uriFactory, String url, String scheme, String host, String port) throws MalformedURLException, URISyntaxException {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme);
         sb.append("://");
@@ -99,8 +99,16 @@ public class UriUtil {
         return sb.toString() ;
     }
 
-    private static boolean nonDefaultPort(String scheme, int port) {
-        return !((port == 80 && scheme.equals("http")) || (port == 443 && scheme.equals("https")));
+    /**
+     *
+     * @param scheme http or https
+     * @param port port as string
+     * @return Returns true if the port is 2000, 3000, 8888 and false for 80, 443
+     */
+    private static boolean nonDefaultPort(String scheme, String port) {
+        if (port.isBlank())
+            return false;
+        return !((Objects.equals(port, "80") && scheme.equals("http")) || (Objects.equals(port, "443") && scheme.equals("https")));
     }
 
     public static String getPathFromURL(URIFactory factory, String str) throws URISyntaxException {

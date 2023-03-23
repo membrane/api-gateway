@@ -20,8 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExchangeTest {
 
@@ -40,4 +39,19 @@ public class ExchangeTest {
 		assertFalse(props.containsKey("Integer"));
 	}
 
+	@Test
+	void hostHeaderWithPort() {
+		Exchange exc = new Exchange(null);
+		exc.setOriginalHostHeader("localhost:2000");
+		assertEquals("localhost",exc.getOriginalHostHeaderHost());
+		assertEquals("2000",exc.getOriginalHostHeaderPort());
+	}
+
+	@Test
+	void hostHeaderWithoutPort() {
+		Exchange exc = new Exchange(null);
+		exc.setOriginalHostHeader("localhost");
+		assertEquals("localhost",exc.getOriginalHostHeaderHost());
+		assertEquals("",exc.getOriginalHostHeaderPort());
+	}
 }

@@ -167,7 +167,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return rewriteURL(router.getUriFactory(), url,
                 getProtocol(exc),
                 exc.getOriginalHostHeaderHost(),
-                parseInt(exc.getOriginalHostHeaderPort()));
+                exc.getOriginalHostHeaderPort());
     }
 
     /**
