@@ -112,7 +112,7 @@ public class UriUtilTest {
     }
 
     @NotNull
-    private String doRewrite(String url, String protocol, String host, int port) throws MalformedURLException, URISyntaxException {
+    private String doRewrite(String url, String protocol, String host, int port) throws URISyntaxException {
         return rewrite(new URIFactory(), url, protocol, host, String.valueOf(port));
     }
 }

@@ -164,7 +164,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
      * @throws URISyntaxException syntax error ín URL
      */
     protected String rewriteUrl(Exchange exc, String url) throws URISyntaxException {
-        return rewriteURL(router.getUriFactory(), url,
+        return rewrite(router.getUriFactory(), url,
                 getProtocol(exc),
                 exc.getOriginalHostHeaderHost(),
                 exc.getOriginalHostHeaderPort());

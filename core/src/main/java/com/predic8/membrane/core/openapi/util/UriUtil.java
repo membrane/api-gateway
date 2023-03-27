@@ -81,7 +81,7 @@ public class UriUtil {
         return ":"+url.getPort();
     }
 
-    public static String rewrite(URIFactory uriFactory, String url, String scheme, String host, String port) throws MalformedURLException, URISyntaxException {
+    public static String rewrite(URIFactory uriFactory, String url, String scheme, String host, String port) throws URISyntaxException {
         StringBuilder sb = new StringBuilder();
         sb.append(scheme);
         sb.append("://");
