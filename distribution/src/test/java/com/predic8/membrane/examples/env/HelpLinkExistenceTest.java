@@ -78,7 +78,7 @@ public class HelpLinkExistenceTest {
 	}
 
 	private String getDocumentationReferenceURL(String helpId) {
-		return "http://membrane-soa.org/api-gateway/" + getVersion() + "/configuration/reference/" + helpId + ".htm";
+		return "http://membrane-soa.org/api-gateway-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm";
 	}
 
 	@SuppressWarnings("unchecked")
