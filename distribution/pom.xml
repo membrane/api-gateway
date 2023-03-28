@@ -150,6 +150,7 @@
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<executions>
 					<execution>
+						<id>integration-test</id>
 						<goals>
 							<goal>integration-test</goal>
 						</goals>
@@ -179,6 +180,8 @@
 						<artifactId>maven-failsafe-plugin</artifactId>
 						<executions>
 							<execution>
+								<id>integration-test</id>
+								<phase>none</phase>
 								<goals>
 									<goal>integration-test</goal>
 								</goals>
