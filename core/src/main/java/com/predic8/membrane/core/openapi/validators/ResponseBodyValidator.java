@@ -46,6 +46,14 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
             foundMatchingResponse = matchStatuscodeWildcardsAndValidate(ctx, operation, response);
         }
 
+        // Maybe there is a default-Response
+        if (!foundMatchingResponse) {
+            if (operation.getResponses().getDefault() != null) {
+                foundMatchingResponse = true;
+                validateBody(ctx, operation.getResponses().getDefault(), response);
+            }
+        }
+
         if (!foundMatchingResponse) {
             errors.add(ctx.statusCode(500), format("Server returned a status code of %d but allowed are only %s",
                     response.getStatusCode(), joinByComma(operation.getResponses().keySet())));

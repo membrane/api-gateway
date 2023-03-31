@@ -1,0 +1,38 @@
+openapi: '3.0.3'
+info:
+  title: Default Response API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/
+paths:
+  /default:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: ["OK"]
+        '4XX':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: ["Bad Request"]
+        '5XX':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: ["Server Error"]
+        default:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                enum: ["Default"]
