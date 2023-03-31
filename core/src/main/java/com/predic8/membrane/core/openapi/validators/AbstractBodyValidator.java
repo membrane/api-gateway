@@ -16,8 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.openapi.model.Message;
+import com.predic8.membrane.core.openapi.model.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 
