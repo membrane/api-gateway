@@ -74,6 +74,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
         } catch (Exception e) {
+            log.warn("Error executing script: {}",e);
             Map<String,Object> details = new HashMap<>();
             details.put("message","See logs for details.");
             exc.setResponse(createProblemDetails(500, "/internal-error", "Internal Server Error", details));

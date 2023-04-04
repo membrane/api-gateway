@@ -1,0 +1,15 @@
+# Sample Requests
+#
+# 1. Start service-proxy.bat or service-proxy.sh
+# 2. Execute the requests in this document using:
+#    - IntelliJ (Plugin: https://plugins.jetbrains.com/plugin/13121-http-client) or
+#    - Visual Studio Code (Plugin https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
+#    - Or try the curl statements in the README.md
+#
+
+POST http://localhost:2000
+Content-Type: application/json
+
+< customers.json
+
+

@@ -15,6 +15,7 @@
 package com.predic8.membrane.examples.tests.openapi;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
@@ -23,6 +24,7 @@ import java.io.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
 
 public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -37,33 +39,49 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
     }
 
     @Test
-    void oneOfWithRightInteger() throws Exception {
-        putAndAssert(201, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
-                {
-                	"name": "Jan Vermeer",
-                	"countryCode": "DE",
-                	"address": {
-                		"city": "Bonn",
-                		"street": "Koblenzer Straße 65",
-                		"zip": 53173
-                	}
-                }
-                """);
+    void oneOfWithRightInteger() {
+        // @formatter:off
+        given()
+                .contentType(JSON)
+                .body("""
+                    {
+                        "name": "Jan Vermeer",
+                        "countryCode": "DE",
+                        "address": {
+                            "city": "Bonn",
+                            "street": "Koblenzer Straße 65",
+                            "zip": 53173
+                        }
+                    }""")
+        .when()
+                .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1")
+        .then().assertThat()
+                .statusCode(201);
+        // @formatter:on
     }
 
     @Test
-    void oneOfWithWrongStringPattern() throws Exception {
-        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
+    void oneOfWithWrongStringPattern() {
+        // @formatter:off
+        Response res = given()
+            .contentType(JSON)
+            .body("""
                 {
-                	"name": "Jan Vermeer",
-                	"countryCode": "DE",
-                	"address": {
-                		"city": "Bonn",
-                		"street": "Koblenzer Straße 65",
-                		"zip": "D-5317"
-                	}
-                }
-                """);
+                    "name": "Jan Vermeer",
+                    "countryCode": "DE",
+                    "address": {
+                        "city": "Bonn",
+                        "street": "Koblenzer Straße 65",
+                        "zip": "D-5317"
+                    }
+                }"""
+            )
+        .when()
+            .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1");
+
+        res.then().assertThat()
+            .statusCode(400);
+
         JSONAssert.assertEquals("""
                 {
                   "method" : "PUT",
@@ -76,12 +94,13 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                 	  "schemaType" : "object"
                 	} ]
                   }
-                }
-                """, res, true);
+                }""", res.asString(), true);
+        // @formatter:on
     }
 
     @Test
     void nestedObject() {
+        // @formatter:off
         given()
             .contentType(APPLICATION_JSON)
             .body("""
@@ -98,16 +117,26 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
         .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1")
         .then().assertThat()
             .statusCode(201);
+        // @formatter:on
     }
 
     @Test
-    void wrongRegexPattern() throws Exception {
-        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
-                {
-                	"name": "Jan Vermeer",
-                	"countryCode": "Germany"
-                }
-                """);
+    void wrongRegexPattern() {
+        // @formatter:off
+        Response res = given()
+                .contentType(JSON)
+                .body("""
+                    {
+                        "name": "Jan Vermeer",
+                        "countryCode": "Germany"
+                    }"""
+                )
+                .when()
+                .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1");
+
+        res.then().assertThat()
+                .statusCode(400);
+
         JSONAssert.assertEquals("""
                 {
                    "method" : "PUT",
@@ -124,18 +153,27 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                        "schemaType" : "string"
                      } ]
                    }
-                 }
-                """, res, true);
+                 }""", res.asString(), true);
+        // @formatter:on
     }
 
     @Test
-    void additionalPropertyRole() throws IOException {
-        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
-                {
-                	"name": "Jan Vermeer",
-                	"role": "admin"
-                }
-                """);
+    void additionalPropertyRole() {
+        // @formatter:off
+        Response res = given()
+                .contentType(JSON)
+                .body("""
+                    {
+                        "name": "Jan Vermeer",
+                        "role": "admin"
+                    }"""
+                )
+                .when()
+                .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1");
+
+        res.then().assertThat()
+                .statusCode(400);
+
         JSONAssert.assertEquals("""
                 {
                   "method" : "PUT",
@@ -148,17 +186,26 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                       "schemaType" : "object"
                     } ]
                   }
-                }
-                """, res, true);
+                }""", res.asString(), true);
+        // @formatter:on
     }
 
     @Test
-    void RequiredPropertyIsMissing() throws IOException {
-        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
-                  {
+    void RequiredPropertyIsMissing() {
+        // @formatter:off
+        Response res = given()
+                .contentType(JSON)
+                .body("""
+                    {
                       "email": "jan@predic8.de"
-                  }
-                """);
+                    }"""
+                )
+                .when()
+                .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1");
+
+        res.then().assertThat()
+                .statusCode(400);
+
         JSONAssert.assertEquals("""
                 {
                   "method" : "PUT",
@@ -171,31 +218,46 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                       "schemaType" : "object"
                     } ]
                   }
-                }
-                """, res, true);
+                }""", res.asString(), true);
+        // @formatter:on
     }
 
     @Test
-    void wrongContentType() throws IOException {
-        putAndAssert(415, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_XML_HEADER, """
-                	<name>Jan</name>
-                """);
+    void wrongContentType() {
+        // @formatter:off
+        given()
+            .contentType(XML)
+            .body("<name>Jan</name>")
+        .when()
+            .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1")
+        .then().assertThat()
+            .statusCode(415);
+        // @formatter:on
     }
 
     @Test
-    void invalidUUIDEmailAndEnum() throws IOException {
-        String res = putAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
-                	{
-                		"name": "Jan Vermeer",
-                		"email": "jan(at)schilderei.nl",
-                		"type": "ARTIST"
-                	}
-                """);
+    void invalidUUIDEmailAndEnum() {
+        // @formatter:off
+        Response res = given()
+                .contentType(JSON)
+                .body("""
+                    {
+                    	"name": "Jan Vermeer",
+                    	"email": "jan(at)schilderei.nl",
+                    	"type": "ARTIST"
+                    }"""
+                )
+                .when()
+                .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2D-FC3112CE89D1");
+
+        res.then().assertThat()
+                .statusCode(400);
+
         JSONAssert.assertEquals("""
                 {
                   "method" : "PUT",
                   "uriTemplate" : "/persons/{pid}",
-                  "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1",
+                  "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2D-FC3112CE89D1",
                   "validationErrors" : {
                 	"REQUEST/BODY#/type" : [ {
                 	  "message" : "The string 'ARTIST' does not contain a value from the enum PRIVAT,BUSINESS.",
@@ -208,25 +270,41 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                 	  "schemaType" : "string"
                 	} ],
                 	"REQUEST/PATH_PARAMETER/pid" : [ {
-                	  "message" : "The string '4077C19D-2C1D-427B-B2+DDFC3112CE89D1' is not a valid UUID.",
+                	  "message" : "The string '4077C19D-2C1D-427B-B2D-FC3112CE89D1' is not a valid UUID.",
                 	  "schemaType" : "string"
                 	} ]
                   }
-                }
-                """, res, true);
+                }""", res.asString(), true);
+        // @formatter:on
     }
 
     @Test
-    void validPut() throws IOException {
-        putAndAssert(201, LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1", CONTENT_TYPE_APP_JSON_HEADER, """
-                	{
-                		"name": "Jan Vermeer"
-                	}
-                """);
+    void validPut() {
+        // @formatter:off
+        given()
+            .contentType(JSON)
+            .body("""
+                {
+                    "name": "Jan Vermeer"
+                }""")
+        .when()
+            .put(LOCALHOST_2000 + "/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1")
+        .then().assertThat()
+            .statusCode(201);
+        // @formatter:on
     }
 
     @Test
-    void limitGreaterThan100() throws IOException {
+    void limitGreaterThan100() {
+        // @formatter:off
+        Response res = given()
+            .contentType(JSON)
+        .when()
+            .get(LOCALHOST_2000 + "/demo-api/v2/persons?limit=200");
+
+        res.then().assertThat()
+            .statusCode(400);
+
         JSONAssert.assertEquals("""
                 {
                 	"method" : "GET",
@@ -239,11 +317,21 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                 	  } ]
                 	}
                   }
-                """, getAndAssert(400, LOCALHOST_2000 + "/demo-api/v2/persons?limit=200"), true);
+                """, res.asString(), true);
+        // @formatter:on
     }
 
     @Test
-    void wrongPath() throws IOException {
+    void wrongPath() {
+        // @formatter:off
+        Response res = given()
+                .contentType(JSON)
+                .when()
+                .get(LOCALHOST_2000 + "/demo-api/v2/wrong");
+
+        res.then().assertThat()
+                .statusCode(404);
+
         JSONAssert.assertEquals("""
                 {
                 	"method" : "GET",
@@ -254,6 +342,7 @@ public class OpenAPIValidationTest extends AbstractSampleMembraneStartStopTestca
                 	  } ]
                 	}
                  }
-                """, getAndAssert(404, LOCALHOST_2000 + "/demo-api/v2/wrong"), true);
+                """, res.asString(), true);
+        // @formatter:on
     }
 }

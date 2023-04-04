@@ -5,15 +5,22 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-		<serviceProxy name="echo" port="2000">
+
+		<api port="2000">
 			<request>
-				<json2Xml/>
+				<xml2Json/>
 			</request>
+			<target url="http://localhost:3000"/>
+		</api>
+
+		<!--
+		Log and return the request as response
+		-->
+		<api name="echo" port="3000">
 			<log headerOnly="false"/>
-			<groovy>
-				Response.ok("Look at the output of Membrane!\n").build()
-			</groovy>
-		</serviceProxy>
+			<return/>
+		</api>
+
 	</router>
 
 </spring:beans>

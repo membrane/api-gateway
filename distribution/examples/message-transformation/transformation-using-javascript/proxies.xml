@@ -1,0 +1,89 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<!--
+		Transformation of a JSON document to one in a different format
+		-->
+		<api port="2000">
+			<path>/flight</path>
+			<request>
+				<javascript>
+					({
+					flight: json.from + " to " + json.to
+					})
+				</javascript>
+			</request>
+			<target url="http://localhost:3000"/>
+		</api>
+
+
+		<!--
+		Transformation of a GET request with query parameters into a post with a JSON body.
+
+        curl "localhost:2000/search?limit=10&page=2" -v
+         -->
+		<api port="2000">
+			<path>/search</path>
+			<request>
+				<javascript>
+					// Change the method of the request from GET to POST. This needed to pass the
+					// body further to the next API listening on port 3000.
+					message.method = "POST";
+
+					({
+					"limit": params.get("limit"),
+					"page": params.get("page")
+					})
+				</javascript>
+			</request>
+			<target url="http://localhost:3000"/>
+		</api>
+
+
+		<!--
+        Complex transformation with functions and computations
+        -->
+		<api port="2000">
+			<path>/orders</path>
+			<request>
+				<javascript>
+
+					function computeTotal(items) {
+						return items.map(i => i.price * i.quantity).reduce((a,b) => a+b);
+					}
+
+					function item2pos(item) {
+						return {
+							"product": item.article,
+							"pieces": item.quantity,
+							"amount": item.price
+						};
+					}
+
+					({
+						number: json.id,
+						positions: json.items.map(item2pos),
+						total: computeTotal(json.items)
+					})
+				</javascript>
+			</request>
+			<target url="http://localhost:3000"/>
+		</api>
+
+
+		<!--
+        Log and return the request as response
+        -->
+		<api name="echo" port="3000">
+			<log headerOnly="false"/>
+			<return/>
+		</api>
+
+	</router>
+
+</spring:beans>
