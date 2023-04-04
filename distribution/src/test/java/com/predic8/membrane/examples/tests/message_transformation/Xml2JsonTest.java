@@ -11,31 +11,30 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.examples.tests;
+package com.predic8.membrane.examples.tests.message_transformation;
 
 import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static java.lang.Thread.sleep;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static java.lang.Thread.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class Json2XmlTest extends DistributionExtractingTestcase {
+public class Xml2JsonTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "json-2-xml";
+        return "message-transformation/xml2json";
     }
 
     @Test
     public void test() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
-            sleep(1000);
-            postAndAssert(200,"http://localhost:2000/", new String[]{"Content-Type", APPLICATION_JSON}, readFileFromBaseDir("customers.json"));
-            sleep(500);
-            assertTrue(logger.toString().contains("<count>269</count>"));
+        try(Process2 ignored = startServiceProxyScript(logger)) {
+            sleep(2000);
+            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("jobs.xml"));
+            sleep(100);
+            assertTrue(logger.contains("{\"jobs\":{\"job\":"));
         }
     }
 }

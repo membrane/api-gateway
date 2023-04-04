@@ -13,13 +13,11 @@
 
 package com.predic8.membrane.core.lang.javascript;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import javax.script.*;
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;

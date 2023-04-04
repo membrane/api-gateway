@@ -7,11 +7,9 @@
 	<router>
 
 		<!--
-
         JSON Template with a variable
-
         -->
-		<api name="JSON" port="2000" method="GET">
+		<api port="2000" method="GET">
 			<request>
 				<template contentType="application/json" pretty="yes">{ "answer": ${params.answer} }</template>
 			</request>
@@ -21,11 +19,9 @@
 
 
 		<!--
-
         JSON Input
-
         -->
-		<api name="JSON" port="2000" method="POST">
+		<api port="2000" method="POST">
 			<request>
 				<template contentType="text/plain">
 					City: ${json.city}

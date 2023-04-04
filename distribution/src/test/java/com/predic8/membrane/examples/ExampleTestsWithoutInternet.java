@@ -23,8 +23,8 @@ import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientTest;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleTest;
+import com.predic8.membrane.examples.tests.message_transformation.*;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2APITest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2CredentialsTest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
@@ -54,8 +54,10 @@ import org.junit.platform.suite.api.Suite;
         JSONSchemaValidationTest.class,
         XMLValidationTest.class,
 
+        // Transformatiom
         Xml2JsonTest.class,
         Json2XmlTest.class,
+        TransformationUsingJavascriptTest.class,
 
         // OAuth2
         OAuth2APITest.class,
