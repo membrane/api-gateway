@@ -306,6 +306,4 @@ public class ResponseTest {
         assertTrue(res.isBodyEmpty());
         assertTrue(res.getBody() instanceof EmptyBody);
     }
-
-
 }
