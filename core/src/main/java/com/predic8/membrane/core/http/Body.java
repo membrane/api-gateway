@@ -14,14 +14,10 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.util.ByteUtil;
+import java.io.*;
 
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
@@ -42,10 +38,10 @@ public class Body extends AbstractBody {
 		String bufferSize = System.getProperty("membrane.core.http.body.buffersize");
 		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
 		String maxChunkLength = System.getProperty("membrane.core.http.body.maxchunklength");
-		MAX_CHUNK_LENGTH = maxChunkLength == null ? 1000000000 : Integer.parseInt(maxChunkLength);
+		MAX_CHUNK_LENGTH = maxChunkLength == null ? 1_000_000_000 : Integer.parseInt(maxChunkLength);
 	}
 
-	private static Logger log = LoggerFactory.getLogger(Body.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Body.class.getName());
 	private final InputStream inputStream;
 	private final long length;
 	private long streamedLength;
@@ -126,7 +122,7 @@ public class Body extends AbstractBody {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
 		long totalLength = 0;
-		int length = 0;
+		int length;
 		chunks.clear();
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
@@ -148,7 +144,7 @@ public class Body extends AbstractBody {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
 		long totalLength = 0;
-		int length = 0;
+		int length;
 		chunks.clear();
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
@@ -171,8 +167,8 @@ public class Body extends AbstractBody {
 	@Override
 	protected byte[] getRawLocal() throws IOException {
 		if (chunks.isEmpty()) {
-			log.debug("size of chunks list: " + chunks.size() + "  " + hashCode());
-			log.debug("chunks size is: " + chunks.size() + " at time: " + System.currentTimeMillis());
+			log.debug("Chunks list is empty: " + hashCode());
+			log.debug("At time: " + System.currentTimeMillis());
 			return new byte[0];
 		}
 

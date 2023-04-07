@@ -62,7 +62,7 @@ public class OpenAPIPublisherInterceptorTest {
 
     @Test
     public void constuctor() {
-        assertEquals(26, interceptor.apis.size());
+        assertEquals(27, interceptor.apis.size());
         assertNotNull(interceptor.apis.get("references-test-v1-0"));
         assertNotNull(interceptor.apis.get("strings-test-api-v1-0"));
         assertNotNull(interceptor.apis.get("extension-sample-v1-4"));
@@ -75,7 +75,7 @@ public class OpenAPIPublisherInterceptorTest {
     public void getApiDirectory() throws Exception {
         get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertEquals(26, TestUtils.getMapFromResponse(get).size());
+        assertEquals(27, TestUtils.getMapFromResponse(get).size());
     }
 
     @Test
