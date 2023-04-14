@@ -193,6 +193,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @default 52428800
      * @param maxSize
      */
+    @MCAttribute
     public void setMaxSize(int maxSize) {
         this.maxSize = maxSize;
     }
@@ -207,6 +208,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @default 50
      * @param maxDepth
      */
+    @MCAttribute
     public void setMaxDepth(int maxDepth) {
         this.maxDepth = maxDepth;
     }
@@ -224,6 +226,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @default 262144
      * @param maxStringLength
      */
+    @MCAttribute
     public void setMaxStringLength(int maxStringLength) {
         this.maxStringLength = maxStringLength;
     }
@@ -242,6 +245,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @default 256
      * @param maxKeyLength
      */
+    @MCAttribute
     public void setMaxKeyLength(int maxKeyLength) {
         this.maxKeyLength = maxKeyLength;
     }
@@ -256,6 +260,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @default 1000
      * @param maxObjectSize
      */
+    @MCAttribute
     public void setMaxObjectSize(int maxObjectSize) {
         this.maxObjectSize = maxObjectSize;
     }
@@ -270,6 +275,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
      * @default 1000
      * @param maxArraySize
      */
+    @MCAttribute
     public void setMaxArraySize(int maxArraySize) {
         this.maxArraySize = maxArraySize;
     }
