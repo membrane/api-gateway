@@ -17,16 +17,19 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.InitializingBean;
-import redis.clients.jedis.HostAndPort;
-import redis.clients.jedis.JedisCluster;
+
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.GetExParams;
 
 import java.util.HashSet;
+import java.util.Set;
 
 @MCElement(name = "redis", topLevel = true)
 public class RedisConnector  implements InitializingBean {
-    private JedisCluster pool;
+    private JedisPool pool;
+    private JedisSentinelPool sentinelPool;
     private String host = "localhost";
+    private int dbNumber = 0;
     private int port = 6379;
     //https://partners-intl.aliyun.com/help/en/doc-detail/98726.htm
     //connection size
@@ -38,6 +41,8 @@ public class RedisConnector  implements InitializingBean {
     private String user;
     private String password;
     private GetExParams params;
+    private boolean useSentinels = false;
+    private String masterName = "mymaster";
 
 
     @Override
@@ -47,28 +52,44 @@ public class RedisConnector  implements InitializingBean {
         jedisPoolConfig.setMaxIdle(connectionNumber);
         jedisPoolConfig.setMinIdle(minIdleConnection);
 
-        HashSet<HostAndPort> hosts = new HashSet<>();
-        for (String h : host.split(" +")) {
-            hosts.add(new HostAndPort(h, port));
-        }
+        if (useSentinels) {
+            Set<String> sentinels = new HashSet<>();
+            sentinels.add(host + ":" + port);
 
-        if(user == null && password != null){
-            pool = new JedisCluster(hosts, 2000, 2000, 5, password, null, jedisPoolConfig, ssl);
+            sentinelPool = new JedisSentinelPool(masterName, sentinels, jedisPoolConfig, timeout);
+        } else {
+            if (user == null && password != null) {
+                pool = new JedisPool(jedisPoolConfig, host, port, timeout, password, ssl);
+            } else if (user != null && password != null) {
+                pool = new JedisPool(jedisPoolConfig, host, port, timeout, user, password, ssl);
+            } else {
+                pool = new JedisPool(jedisPoolConfig, host, port, ssl);
+            }
         }
-        else if(user != null && password != null){
-            pool = new JedisCluster(hosts, 2000, 2000, 5, user, password, null, jedisPoolConfig, ssl);
-        }
-        else{
-            pool = new JedisCluster(hosts, 2000, 2000, 5, null, null, jedisPoolConfig, ssl);
-        }
-
-
 
         params = new GetExParams().ex(getTimeout());
     }
 
 
-    public JedisCluster getJedisCluster(){
+
+    public Jedis getJedisWithDb() {
+        Jedis jedis;
+        if (sentinelPool != null) {
+            jedis = sentinelPool.getResource();
+            if (password != null)
+                if (user != null)
+                    jedis.auth(user, password);
+                else
+                    jedis.auth(password);
+        } else {
+            jedis = pool.getResource();
+        }
+        jedis.select(dbNumber);
+        return jedis;
+    }
+
+
+    public JedisPool getPool() {
         return pool;
     }
 
@@ -170,5 +191,45 @@ public class RedisConnector  implements InitializingBean {
     @MCAttribute
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public int getDbNumber() {
+        return dbNumber;
+    }
+
+    /**
+     * @description Database number to use
+     * */
+    @MCAttribute
+    public void setDbNumber(int dbNumber) {
+        this.dbNumber = dbNumber;
+    }
+
+    public boolean isUseSentinels() {
+        return useSentinels;
+    }
+
+    /**
+     * Whether to use Redis Sentinels to discover the master Redis node.
+     *
+     * When this is used, the host and port properties are used to specify the sentinels.
+     * @default false
+     */
+    @MCAttribute
+    public void setUseSentinels(boolean useSentinels) {
+        this.useSentinels = useSentinels;
+    }
+
+    public String getMasterName() {
+        return masterName;
+    }
+
+    /**
+     * The name of the master node to use when using Redis Sentinels.
+     * @default mymaster
+     */
+    @MCAttribute
+    public void setMasterName(String masterName) {
+        this.masterName = masterName;
     }
 }

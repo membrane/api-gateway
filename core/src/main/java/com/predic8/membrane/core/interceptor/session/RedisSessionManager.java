@@ -51,8 +51,8 @@ public class RedisSessionManager extends SessionManager{
     @Override
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
         try {
-            return  (!connector.getJedisCluster().get(cookie.split("=true")[0]).equals("nil")) ?
-                    jsonStringtoSession(connector.getJedisCluster().getEx(cookie.split("=true")[0], connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
+            return  (!connector.getJedisWithDb().get(cookie.split("=true")[0]).equals("nil")) ?
+                    jsonStringtoSession(connector.getJedisWithDb().getEx(cookie.split("=true")[0], connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
@@ -75,7 +75,7 @@ public class RedisSessionManager extends SessionManager{
     private void addSessionToRedis(Session[] session) {
         Arrays.stream(session).forEach(s -> {
             try {
-                connector.getJedisCluster().setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
+                connector.getJedisWithDb().setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
@@ -111,12 +111,12 @@ public class RedisSessionManager extends SessionManager{
 
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
-        return cookie.startsWith(cookieNamePrefix) && !connector.getJedisCluster().get(cookie.split("=true")[0]).equals("nil");
+        return cookie.startsWith(cookieNamePrefix) && !connector.getJedisWithDb().get(cookie.split("=true")[0]).equals("nil");
     }
 
     @Override
     protected boolean cookieRenewalNeeded(String originalCookie) {
-        return !connector.getJedisCluster().get(originalCookie).equals("nil");
+        return !connector.getJedisWithDb().get(originalCookie).equals("nil");
     }
 
     public RedisConnector getConnector() {

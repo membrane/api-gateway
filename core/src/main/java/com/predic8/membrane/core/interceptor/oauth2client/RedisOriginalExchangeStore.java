@@ -49,20 +49,20 @@ public class RedisOriginalExchangeStore extends OriginalExchangeStore {
 
     @Override
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
-        connector.getJedisCluster().setex(originalRequestKeyNameInSession(state), 3600, objMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)) );
+        connector.getJedisWithDb().setex(originalRequestKeyNameInSession(state), 3600, objMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)) );
     }
 
     @Override
     public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, String state) {
         try {
-            return objMapper.readValue(connector.getJedisCluster().get(originalRequestKeyNameInSession(state)), AbstractExchangeSnapshot.class);
+            return objMapper.readValue(connector.getJedisWithDb().get(originalRequestKeyNameInSession(state)), AbstractExchangeSnapshot.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
     @Override
     public void remove(Exchange exchange, Session session, String state) {
-        connector.getJedisCluster().del(originalRequestKeyNameInSession(state));
+        connector.getJedisWithDb().del(originalRequestKeyNameInSession(state));
     }
 
 
