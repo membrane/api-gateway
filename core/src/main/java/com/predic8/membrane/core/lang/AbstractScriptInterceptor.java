@@ -100,20 +100,24 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        // Graal code @Todo move to a Graal class
-        if(res instanceof Value value) {
-            Map m = value.as(Map.class);
-            msg.getHeader().setContentType(APPLICATION_JSON);
-            msg.setBodyContent(om.writeValueAsBytes(m));
-            return CONTINUE;
-        }
-
         if(res instanceof String s) {
             if (s.equals("undefined")) {
                 return CONTINUE;
             }
             msg.getHeader().setContentType(TEXT_HTML);
             msg.setBodyContent(om.writeValueAsBytes(s));
+            return CONTINUE;
+        }
+
+        if(res == null) {
+            return CONTINUE;
+        }
+
+        // Test for packagename is needed cause the dependency is provided and maybe not on the classpath
+        if(res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
+            Map m = value.as(Map.class);
+            msg.getHeader().setContentType(APPLICATION_JSON);
+            msg.setBodyContent(om.writeValueAsBytes(m));
             return CONTINUE;
         }
 
