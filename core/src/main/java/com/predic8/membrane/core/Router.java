@@ -370,9 +370,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			log.info("Trying to activate all inactive rules.");
 			for (Rule rule : inactive) {
 				try {
+					log.info("Trying to start API {}.",rule.getName());
 					Rule newRule = rule.clone();
 					if (!newRule.isActive()) {
-						log.info("New rule is still not active.");
+						log.warn("New rule for API {} is still not active.", rule.getName());
 						stillFailing = true;
 					}
 					getRuleManager().replaceRule(rule, newRule);
