@@ -138,7 +138,7 @@ public class AbstractInterceptor implements Interceptor {
 	public static Message getMessage(Exchange exc, Interceptor.Flow flow) {
 		return switch (flow) {
 			case REQUEST -> exc.getRequest();
-			case RESPONSE -> {
+			case RESPONSE, ABORT -> {
 				if (exc.getResponse() != null)
 					yield exc.getResponse();
 				Response response = Response.ok().build();
