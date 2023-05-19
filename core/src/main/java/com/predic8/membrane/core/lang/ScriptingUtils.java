@@ -27,6 +27,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 
 public class ScriptingUtils {
 
@@ -34,16 +36,14 @@ public class ScriptingUtils {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    public static HashMap<String, Object> createParameterBindings(Exchange exc, Message msg, Interceptor.Flow flow, boolean includeJsonObject) {
+    public static HashMap<String, Object> createParameterBindings(URIFactory uriFactory, Exchange exc, Message msg, Interceptor.Flow flow, boolean includeJsonObject) {
         HashMap<String, Object> parameters = new HashMap<>();
         parameters.put("exc", exc);
         parameters.put("flow", flow);
 
         if (flow == REQUEST) {
             try {
-                // TODO get URIFactory from Router
-                Map<String, String> queryParams = URLParamUtil.getParams(new URIFactory(),exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                parameters.put("params",queryParams);
+                parameters.put("params", getParams(uriFactory, exc, MERGE_USING_COMMA));
             } catch (Exception e) {
                 log.info("Cannot parse query parameter from " + exc.getRequest().getUri());
             }

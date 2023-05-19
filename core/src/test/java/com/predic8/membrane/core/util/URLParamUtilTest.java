@@ -30,11 +30,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class URLParamUtilTest {
 
-    Exchange e1;
+    Exchange excNormal;
+    Exchange dupExc;
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        e1 = Request.get("foo?a=1&b=2&c=abc").buildExchange();
+        excNormal = Request.get("foo?a=1&b=2&c=abc").buildExchange();
+        dupExc = Request.get("foo?a=2&a=3").buildExchange();
+
     }
 
     @Test
@@ -50,11 +53,21 @@ public class URLParamUtilTest {
     }
 
     @Test
-    void getParams() throws Exception {
-        Map<String, String> params = URLParamUtil.getParams(new URIFactory(), e1, ERROR);
+    void testGetParams() throws Exception {
+        Map<String, String> params = getParams(new URIFactory(), excNormal, ERROR);
         assertEquals(3,params.size());
         assertEquals("1",params.get("a"));
         assertEquals("2",params.get("b"));
         assertEquals("abc",params.get("c"));
+    }
+
+    @Test
+    void getParamsDuplicateErrorStrategy() {
+        assertThrows(RuntimeException.class, () -> getParams(new URIFactory(), dupExc, ERROR));
+    }
+
+    @Test
+    void getParamsDuplicateMergeStrategy() throws Exception {
+        assertEquals("2,3", getParams(new URIFactory(), dupExc, MERGE_USING_COMMA).get("a"));
     }
 }
