@@ -19,6 +19,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
 import org.json.*;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -64,6 +65,7 @@ public class TemplateInterceptorTest {
         router = Mockito.mock(Router.class);
         map = new ResolverMap();
         Mockito.when(router.getResolverMap()).thenReturn(map);
+        Mockito.when(router.getUriFactory()).thenReturn(new URIFactory());
     }
 
     @AfterAll
@@ -102,7 +104,7 @@ public class TemplateInterceptorTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void createson() throws Exception {
+    void createJson() throws Exception {
         Exchange exchange = Request.put("/foo").contentType(APPLICATION_JSON).buildExchange();
 
         invokeInterceptor(exchange, """
@@ -237,7 +239,7 @@ B: <%= params.b %>
         TemplateInterceptor interceptor = new TemplateInterceptor();
         interceptor.setTextTemplate(template);
         interceptor.setContentType(mimeType);
-        interceptor.init();
+        interceptor.init(router);
         interceptor.handleRequest(exchange);
     }
 

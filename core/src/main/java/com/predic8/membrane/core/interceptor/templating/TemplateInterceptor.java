@@ -113,7 +113,7 @@ public class TemplateInterceptor extends AbstractInterceptor{
     @SuppressWarnings("RedundantThrows") // Declaration of exception is needed. However, Groovy does not declare it.
     private String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
 
-        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(exc, msg, flow, scriptAccessesJson && msg.isJSON());
+        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(router.getUriFactory(), exc, msg, flow, scriptAccessesJson && msg.isJSON());
         binding.put("props", binding.get("properties"));
         binding.remove("properties");
         binding.putAll(exc.getProperties()); // To be compatible with old Version
