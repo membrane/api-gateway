@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.util.RedisConnector;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
 import java.io.IOException;
@@ -49,20 +50,26 @@ public class RedisOriginalExchangeStore extends OriginalExchangeStore {
 
     @Override
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
-        connector.getJedisWithDb().setex(originalRequestKeyNameInSession(state), 3600, objMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)) );
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            jedis.setex(originalRequestKeyNameInSession(state), 3600, objMapper.writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, maxBodySize)));
+        }
     }
 
     @Override
     public AbstractExchangeSnapshot reconstruct(Exchange exchange, Session session, String state) {
         try {
-            return objMapper.readValue(connector.getJedisWithDb().get(originalRequestKeyNameInSession(state)), AbstractExchangeSnapshot.class);
+            try(Jedis jedis = connector.getJedisWithDb()) {
+                return objMapper.readValue(jedis.get(originalRequestKeyNameInSession(state)), AbstractExchangeSnapshot.class);
+            }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
     @Override
     public void remove(Exchange exchange, Session session, String state) {
-        connector.getJedisWithDb().del(originalRequestKeyNameInSession(state));
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            jedis.del(originalRequestKeyNameInSession(state));
+        }
     }
 
 

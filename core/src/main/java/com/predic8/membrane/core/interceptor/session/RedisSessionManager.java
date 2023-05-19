@@ -24,6 +24,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.util.RedisConnector;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 
 import java.util.*;
@@ -51,8 +52,10 @@ public class RedisSessionManager extends SessionManager{
     @Override
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
         try {
-            return  (!connector.getJedisWithDb().get(cookie.split("=true")[0]).equals("nil")) ?
-                    jsonStringtoSession(connector.getJedisWithDb().getEx(cookie.split("=true")[0], connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
+            try (Jedis jedis = connector.getJedisWithDb()) {
+                return (!jedis.get(cookie.split("=true")[0]).equals("nil")) ?
+                        jsonStringtoSession(jedis.getEx(cookie.split("=true")[0], connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
+            }
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
@@ -75,7 +78,9 @@ public class RedisSessionManager extends SessionManager{
     private void addSessionToRedis(Session[] session) {
         Arrays.stream(session).forEach(s -> {
             try {
-                connector.getJedisWithDb().setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
+                try (Jedis jedis = connector.getJedisWithDb()) {
+                    jedis.setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
+                }
             } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
@@ -111,12 +116,16 @@ public class RedisSessionManager extends SessionManager{
 
     @Override
     protected boolean isValidCookieForThisSessionManager(String cookie) {
-        return cookie.startsWith(cookieNamePrefix) && !connector.getJedisWithDb().get(cookie.split("=true")[0]).equals("nil");
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            return cookie.startsWith(cookieNamePrefix) && !jedis.get(cookie.split("=true")[0]).equals("nil");
+        }
     }
 
     @Override
     protected boolean cookieRenewalNeeded(String originalCookie) {
-        return !connector.getJedisWithDb().get(originalCookie).equals("nil");
+        try (Jedis jedis = connector.getJedisWithDb()) {
+            return !jedis.get(originalCookie).equals("nil");
+        }
     }
 
     public RedisConnector getConnector() {

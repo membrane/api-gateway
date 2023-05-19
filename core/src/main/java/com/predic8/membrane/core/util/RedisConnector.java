@@ -35,8 +35,8 @@ public class RedisConnector  implements InitializingBean {
     //connection size
     private int connectionNumber = 20;
     private int minIdleConnection = 10;
-    //timeout is in seconds
-    private int timeout = 600;
+    //timeout is in milliseconds
+    private int timeout = 5000;
     private boolean ssl = false;
     private String user;
     private String password;
@@ -51,6 +51,7 @@ public class RedisConnector  implements InitializingBean {
         jedisPoolConfig.setMaxTotal(connectionNumber);
         jedisPoolConfig.setMaxIdle(connectionNumber);
         jedisPoolConfig.setMinIdle(minIdleConnection);
+        jedisPoolConfig.setMaxWaitMillis(timeout);
 
         if (useSentinels) {
             Set<String> sentinels = new HashSet<>();
