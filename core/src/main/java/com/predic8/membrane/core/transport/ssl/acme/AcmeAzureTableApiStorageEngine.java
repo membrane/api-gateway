@@ -21,6 +21,12 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
                 .connectionString(tableClient.getConnectionString())
                 .tableName(TABLE_NAME)
                 .buildClient();
+
+        try {
+            this.tableClient.createTable();
+        } catch (TableServiceException ignore) {
+            // Ignore, table already exists
+        }
     }
 
     private TableEntity getEntity(String rowKey) {
