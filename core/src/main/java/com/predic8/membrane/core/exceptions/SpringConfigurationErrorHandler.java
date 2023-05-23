@@ -43,7 +43,7 @@ public class SpringConfigurationErrorHandler {
     private static void handlePortOccupiedException(PortOccupiedException poe) {
         printStars();
         System.err.println();
-        System.err.printf("Membrane is configured to open port %d. But this port is alreay in\n", poe.getPort());
+        System.err.printf("Membrane is configured to open port %d. But this port is already in\n", poe.getPort());
         System.err.println("""
                 use by a different program. To start Membrane do one of the following:
                                 
@@ -54,7 +54,7 @@ public class SpringConfigurationErrorHandler {
             case LINUX, MAC -> printHowToFindPortLinux();
         }
         System.err.println("""       
-                2. Configure Membrane to use a different port. Propably in the conf/proxies.xml
+                2. Configure Membrane to use a different port. Probably in the conf/proxies.xml
                 file. Then restart Membrane.
                 """);
     }
