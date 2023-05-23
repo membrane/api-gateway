@@ -4,8 +4,11 @@ import com.azure.data.tables.TableClient;
 import com.azure.data.tables.TableClientBuilder;
 import com.azure.data.tables.models.TableEntity;
 import com.azure.data.tables.models.TableServiceException;
+import com.azure.data.tables.models.TableTransactionAction;
+import com.azure.data.tables.models.TableTransactionActionType;
 import com.predic8.membrane.core.config.security.acme.AzureTableStorage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEngine {
@@ -46,7 +49,16 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
                 : null;
     }
 
-    private void createDataEntity(String rowKey, String data) {
+    private void upsertDataEntity(String rowKey, String data) {
+        var entity = getEntity(rowKey);
+
+        if (entity != null) {
+            tableClient.updateEntity(new TableEntity(PARTITION_NAME, rowKey)
+                    .addProperty("data", data)
+            );
+            return;
+        }
+
         tableClient.createEntity(new TableEntity(PARTITION_NAME, rowKey)
                 .addProperty("data", data)
         );
@@ -85,13 +97,13 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setAccountKey(String key) {
-        createDataEntity("account", key);
+        upsertDataEntity("account", key);
     }
 
     @Override
     public void setKeyPair(String[] hosts, AcmeKeyPair key) {
-        createDataEntity(getPublicKeyRowKey(hosts), key.getPublicKey());
-        createDataEntity(getPrivateKeyRowKey(hosts), key.getPrivateKey());
+        upsertDataEntity(getPublicKeyRowKey(hosts), key.getPublicKey());
+        upsertDataEntity(getPrivateKeyRowKey(hosts), key.getPrivateKey());
     }
 
     @Override
@@ -106,7 +118,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setCertChain(String[] hosts, String caChain) {
-        createDataEntity(getCertChainRowKey(hosts), caChain);
+        upsertDataEntity(getCertChainRowKey(hosts), caChain);
     }
 
     @Override
@@ -116,7 +128,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setToken(String host, String token) {
-        createDataEntity(getTokenRowKey(host), token);
+        upsertDataEntity(getTokenRowKey(host), token);
     }
 
     @Override
@@ -131,7 +143,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setOAL(String[] hosts, String oal) {
-        createDataEntity(getOALRowKey(hosts, "current"), oal);
+        upsertDataEntity(getOALRowKey(hosts, "current"), oal);
     }
 
     @Override
@@ -141,7 +153,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setAccountURL(String url) {
-        createDataEntity("account-url", url);
+        upsertDataEntity("account-url", url);
     }
 
     @Override
@@ -151,7 +163,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setAccountContacts(String contacts) {
-        createDataEntity("account-contacts", contacts);
+        upsertDataEntity("account-contacts", contacts);
     }
 
     @Override
@@ -161,7 +173,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setOALError(String[] hosts, String oalError) {
-        createDataEntity(getOALRowKey(hosts, "current-error"), oalError);
+        upsertDataEntity(getOALRowKey(hosts, "current-error"), oalError);
     }
 
     @Override
@@ -171,7 +183,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setOALKey(String[] hosts, String oalKey) {
-        createDataEntity(getOALRowKey(hosts, "current-key"), oalKey);
+        upsertDataEntity(getOALRowKey(hosts, "current-key"), oalKey);
     }
 
     @Override
@@ -188,8 +200,12 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
         if (first != null) {
             var updatedEntity = new TableEntity(PARTITION_NAME, f2)
                     .addProperty("data", first.getProperty("data"));
-            tableClient.createEntity(updatedEntity);
-            tableClient.deleteEntity(first);
+
+            var transactions = new ArrayList<TableTransactionAction>();
+            transactions.add(new TableTransactionAction(TableTransactionActionType.CREATE, updatedEntity));
+            transactions.add(new TableTransactionAction(TableTransactionActionType.DELETE, first));
+
+            tableClient.submitTransaction(transactions);
         }
     }
 
