@@ -119,7 +119,11 @@ public class AcmeClient {
             asse = new AcmeKubernetesStorageEngine((KubernetesStorage) ass, kubernetesClientFactory);
         } else if (ass instanceof MemoryStorage) {
             asse = new AcmeMemoryStorageEngine();
-        } else {
+        }
+         else if (ass instanceof AzureTableStorage) {
+            asse = new AcmeMemoryStorageEngine();
+        }
+        else {
             throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
         }
     }

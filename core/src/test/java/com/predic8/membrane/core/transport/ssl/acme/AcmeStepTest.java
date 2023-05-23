@@ -19,6 +19,7 @@ import com.predic8.membrane.core.config.security.Certificate;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Trust;
 import com.predic8.membrane.core.config.security.acme.Acme;
+import com.predic8.membrane.core.config.security.acme.AzureTableStorage;
 import com.predic8.membrane.core.config.security.acme.MemoryStorage;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
