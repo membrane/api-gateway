@@ -51,6 +51,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.util.stream.Collectors.joining;
 
 /**
  * @description Used for storing exchanges in the Elasticsearch.
@@ -135,15 +136,15 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     private void sendToElasticSearch(List<AbstractExchangeSnapshot> exchanges) throws Exception {
-        StringBuilder data = exchanges
+        String data = exchanges
                 .stream()
                 .map(exchange -> wrapForBulkOperationElasticSearch(index,getLocalMachineNameWithSuffix()+"-"+exchange.getId(),collectExchangeDataFrom(exchange)))
-                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append);
+                .collect(joining());
 
         Exchange elasticSearchExc = new Request.Builder()
                 .post(location + "/_bulk")
                 .header("Content-Type","application/x-ndjson")
-                .body(data.toString())
+                .body(data)
                 .buildExchange();
 
         client.call(elasticSearchExc);
@@ -378,14 +379,10 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     @Override
     public void removeAllExchanges(AbstractExchange[] exchanges) {
-        StringBuilder sb = Stream.of(exchanges).map(AbstractExchange::getId).collect(() -> {
-            StringBuilder acc = new StringBuilder();
-            acc.append("[");
-            return acc;
-        },(acc,id) -> acc.append(id).append(","),(acc1,acc2) -> acc1.append(",").append(acc2));
-        sb.deleteCharAt(sb.length()-1);
-        sb.append("]");
-        String exchangeIdsAsJsonArray = sb.toString();
+        var exchangeIdsCommaSeparated = Stream.of(exchanges)
+                .map(AbstractExchange::getId)
+                .map(Objects::toString)
+                .collect(joining(","));
 
         try {
             String body = """
@@ -406,7 +403,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                           ]
                         }
                       }
-                    }""".formatted(documentPrefix, exchangeIdsAsJsonArray);
+                    }""".formatted(documentPrefix, "["+exchangeIdsCommaSeparated+"]");
             Exchange exc = new Request.Builder()
                     .post(getElasticSearchExchangesPath() + "_delete_by_query")
                     .body(body)
