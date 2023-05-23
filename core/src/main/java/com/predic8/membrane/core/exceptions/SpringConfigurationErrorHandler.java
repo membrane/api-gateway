@@ -27,6 +27,9 @@ import static com.predic8.membrane.core.util.OSUtil.getOS;
 import static java.util.Objects.requireNonNull;
 
 public class SpringConfigurationErrorHandler {
+
+    public static final String STARS = "**********************************************************************************";
+
     public static void handleRootCause(Exception e, Logger log) {
         Throwable root = ExceptionUtils.getRootCause(e);
         if (root instanceof PropertyBatchUpdateException pbue) {
@@ -41,50 +44,52 @@ public class SpringConfigurationErrorHandler {
     }
 
     private static void handlePortOccupiedException(PortOccupiedException poe) {
-        printStars();
-        System.err.println();
-        System.err.printf("Membrane is configured to open port %d. But this port is already in\n", poe.getPort());
-        System.err.println("""
+        System.err.printf("""
+                %s
+                        
+                Membrane is configured to open port %d. But this port is already in"
                 use by a different program. To start Membrane do one of the following:
-                                
-                1. Find and stop the program that is occupying the port. Then restart Membrane.""");
-        System.err.println();
-        switch (getOS()) {
-            case WINDOWS -> printHowToFindPortWindows();
-            case LINUX, MAC -> printHowToFindPortLinux();
-        }
-        System.err.println("""       
+                        
+                1. Find and stop the program that is occupying the port. Then restart Membrane.
+                        
+                %s
+                        
                 2. Configure Membrane to use a different port. Probably in the conf/proxies.xml
                 file. Then restart Membrane.
-                """);
+                %n""", STARS, poe.getPort(), getHowToFindPort());
     }
 
-    private static void printHowToFindPortLinux() {
-        System.err.println("""
+    private static String getHowToFindPort() {
+        return switch (getOS()) {
+                case WINDOWS -> getHowToFindPortWindows();
+                case LINUX, MAC -> getHowToFindPortLinux();
+                case UNKNOWN -> "";
+        };
+    }
+    private static String getHowToFindPortLinux() {
+        return """
                 e.g.:
                 > lsof -i :2000
                 COMMAND    PID    USER  TYPE
                 java     80910 predic8  IPv6  TCP  (LISTEN)
                 > kill -9 80910
-                """);
+                """;
     }
 
-    private static void printHowToFindPortWindows() {
-        System.err.println("""
+    private static String getHowToFindPortWindows() {
+        return """
                 netstat -aon | find /i "listening"
-                """);
+                """;
     }
 
     private static void handleConfigurationException(ConfigurationException ce) {
-        printStars();
-        System.err.println();
-        System.err.println(ce.getMessage());
-        System.err.println();
-        System.err.println("giving up.");
-    }
-
-    private static void printStars() {
-        System.err.println("**********************************************************************************");
+        System.err.printf("""
+            %s
+            
+            %s
+            
+            giving up.
+            %n""", STARS, ce.getMessage());
     }
 
     private static void handlePropertyBatchUpdateException(Logger log, PropertyBatchUpdateException pbue) {
