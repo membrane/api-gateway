@@ -7,7 +7,6 @@ import com.azure.data.tables.models.TableServiceException;
 import com.predic8.membrane.core.config.security.acme.AzureTableStorage;
 
 import java.util.Arrays;
-import java.util.List;
 
 public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEngine {
 
@@ -25,7 +24,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
         try {
             this.tableClient.createTable();
         } catch (TableServiceException ignore) {
-            // Ignore, table already exists
+            // ignore if table exists already
         }
     }
 
@@ -47,7 +46,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
                 : null;
     }
 
-    private void createDataEntity(String rowKey, Object data) {
+    private void createDataEntity(String rowKey, String data) {
         tableClient.createEntity(new TableEntity(PARTITION_NAME, rowKey)
                 .addProperty("data", data)
         );
@@ -86,13 +85,13 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setAccountKey(String key) {
-        createDataEntity("account", List.of(key));
+        createDataEntity("account", key);
     }
 
     @Override
     public void setKeyPair(String[] hosts, AcmeKeyPair key) {
-        createDataEntity(getPublicKeyRowKey(hosts), List.of(key.getPublicKey()));
-        createDataEntity(getPrivateKeyRowKey(hosts), List.of(key.getPrivateKey()));
+        createDataEntity(getPublicKeyRowKey(hosts), key.getPublicKey());
+        createDataEntity(getPrivateKeyRowKey(hosts), key.getPrivateKey());
     }
 
     @Override
@@ -107,7 +106,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setCertChain(String[] hosts, String caChain) {
-        createDataEntity(getCertChainRowKey(hosts), List.of(caChain));
+        createDataEntity(getCertChainRowKey(hosts), caChain);
     }
 
     @Override
@@ -117,7 +116,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setToken(String host, String token) {
-        createDataEntity(getTokenRowKey(host), List.of(token));
+        createDataEntity(getTokenRowKey(host), token);
     }
 
     @Override
@@ -132,7 +131,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setOAL(String[] hosts, String oal) {
-        createDataEntity(getOALRowKey(hosts, "current"), List.of(oal));
+        createDataEntity(getOALRowKey(hosts, "current"), oal);
     }
 
     @Override
@@ -142,7 +141,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setAccountURL(String url) {
-        createDataEntity("account-url", List.of(url));
+        createDataEntity("account-url", url);
     }
 
     @Override
@@ -152,7 +151,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setAccountContacts(String contacts) {
-        createDataEntity("account-contacts", List.of(contacts));
+        createDataEntity("account-contacts", contacts);
     }
 
     @Override
@@ -162,7 +161,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setOALError(String[] hosts, String oalError) {
-        createDataEntity(getOALRowKey(hosts, "current-error"), List.of(oalError));
+        createDataEntity(getOALRowKey(hosts, "current-error"), oalError);
     }
 
     @Override
@@ -172,7 +171,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     @Override
     public void setOALKey(String[] hosts, String oalKey) {
-        createDataEntity(getOALRowKey(hosts, "current-key"), List.of(oalKey));
+        createDataEntity(getOALRowKey(hosts, "current-key"), oalKey);
     }
 
     @Override
