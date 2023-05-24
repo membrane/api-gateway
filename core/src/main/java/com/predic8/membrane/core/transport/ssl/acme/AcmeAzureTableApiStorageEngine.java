@@ -7,11 +7,15 @@ import com.azure.data.tables.models.TableServiceException;
 import com.azure.data.tables.models.TableTransactionAction;
 import com.azure.data.tables.models.TableTransactionActionType;
 import com.predic8.membrane.core.config.security.acme.AzureTableStorage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEngine {
+
+    private static final Logger log = LoggerFactory.getLogger(AcmeAzureTableApiStorageEngine.class);
 
     private final TableClient tableClient;
     private static final String TABLE_NAME = "membrane";
@@ -27,15 +31,20 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
         try {
             this.tableClient.createTable();
         } catch (TableServiceException ignore) {
+            log.debug("Ignore table already exists exception");
             // ignore if table exists already
         }
+
+        log.debug("Loaded {}", this.getClass().getSimpleName());
     }
 
     private TableEntity getEntity(String rowKey) {
         try {
+            log.debug("Get entity for {}", rowKey);
             return tableClient.getEntity(PARTITION_NAME, rowKey);
         } catch (TableServiceException e) {
             if (e.getResponse().getStatusCode() == 404) {
+                log.debug("Entity {} does not exist, returning null", rowKey);
                 return null;
             }
             throw e;
@@ -44,21 +53,25 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     private String getDataPropertyOfEntity(String rowKey) {
         var entity = getEntity(rowKey);
+
         return entity != null
                 ? entity.getProperty("data").toString()
                 : null;
     }
 
     private void upsertDataEntity(String rowKey, String data) {
+        log.debug("Upserting key {}", rowKey);
         var entity = getEntity(rowKey);
 
         if (entity != null) {
+            log.debug("Updating entity {}", rowKey);
             tableClient.updateEntity(new TableEntity(PARTITION_NAME, rowKey)
                     .addProperty("data", data)
             );
             return;
         }
 
+        log.debug("Creating entity {}", rowKey);
         tableClient.createEntity(new TableEntity(PARTITION_NAME, rowKey)
                 .addProperty("data", data)
         );
@@ -195,6 +208,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
     }
 
     private void attemptRename(String f1, String f2) {
+        log.debug("Attempt rename {} to {}", f1, f2);
         var first = getEntity(f1);
 
         if (first != null) {
@@ -206,7 +220,11 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
             transactions.add(new TableTransactionAction(TableTransactionActionType.DELETE, first));
 
             tableClient.submitTransaction(transactions);
+            log.debug("Sent rename transaction, creating {} and removing {}", updatedEntity.getRowKey(), first.getRowKey());
+            return;
         }
+
+        log.debug("Attempt rename, but there was nothing to rename");
     }
 
     @Override
