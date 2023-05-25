@@ -25,9 +25,10 @@ public class MembraneCommandLine {
 	}
 
 	public void printUsage() {
-		System.out.println("-h              Help content for router.");
-		System.out.println("--help          Help content for router.");
-		System.out.println("-c <location>   Location of the proxies configuration file");
+		System.out.println("-h                 Help content for router.");
+		System.out.println("--help             Help content for router.");
+		System.out.println("-c <location>      Location of the proxies configuration file");
+		System.out.println("--test <location>  Verify proxies configuration file");
 	}
 
 	public boolean needHelp() {
@@ -35,18 +36,23 @@ public class MembraneCommandLine {
 	}
 
 	public boolean hasConfiguration() {
-		return cl.hasOption('c');
+		return cl.hasOption('c') || cl.hasOption('t');
 	}
 
 	public String getConfiguration() {
-		return cl.getOptionValue('c');
+		return (cl.hasOption('c')) ? cl.getOptionValue('c') : cl.getOptionValue('t');
 	}
 
 	private Options getOptions() {
 		Options options = new Options();
 		options.addOption("h", "help", false, "Help content for router.");
 		options.addOption("c", "config", true, "configuration file name.");
+		options.addOption("t", "test", true, "verify configuration file.");
 		return options;
+	}
+
+	public boolean isDryRun() {
+		return cl.hasOption('t');
 	}
 
 }
