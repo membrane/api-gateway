@@ -51,6 +51,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.util.stream.Collectors.joining;
 
 /**
  * @description Used for storing exchanges in the Elasticsearch.
@@ -135,15 +136,15 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     private void sendToElasticSearch(List<AbstractExchangeSnapshot> exchanges) throws Exception {
-        StringBuilder data = exchanges
+        String data = exchanges
                 .stream()
                 .map(exchange -> wrapForBulkOperationElasticSearch(index,getLocalMachineNameWithSuffix()+"-"+exchange.getId(),collectExchangeDataFrom(exchange)))
-                .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append);
+                .collect(joining());
 
         Exchange elasticSearchExc = new Request.Builder()
                 .post(location + "/_bulk")
                 .header("Content-Type","application/x-ndjson")
-                .body(data.toString())
+                .body(data)
                 .buildExchange();
 
         client.call(elasticSearchExc);
@@ -268,26 +269,28 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     private AbstractExchangeSnapshot getFromElasticSearchById(long id) {
         try {
+            String body = """
+                    {
+                      "query": {
+                        "bool": {
+                          "must": [
+                            {
+                              "match": {
+                                "issuer": "%s"
+                              }
+                            },
+                            {
+                              "match": {
+                                "id": "%s"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }""".formatted(documentPrefix, id);
             Exchange exc = new Request.Builder()
                     .post(getElasticSearchExchangesPath() + "_search")
-                    .body("{\n" +
-                            "  \"query\": {\n" +
-                            "    \"bool\": {\n" +
-                            "      \"must\": [\n" +
-                            "        {\n" +
-                            "          \"match\": {\n" +
-                            "            \"issuer\": \""+documentPrefix+"\"\n" +
-                            "          }\n" +
-                            "        },\n" +
-                            "        {\n" +
-                            "          \"match\": {\n" +
-                            "            \"id\": \""+id+"\"\n" +
-                            "          }\n" +
-                            "        }\n" +
-                            "      ]\n" +
-                            "    }\n" +
-                            "  }\n" +
-                            "}")
+                    .body(body)
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
             exc = client.call(exc);
@@ -344,26 +347,28 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     public void removeAllExchanges(Rule rule) {
         String name = rule.toString();
         try {
+            String body = """
+                    {
+                      "query": {
+                        "bool": {
+                          "must": [
+                            {
+                              "match": {
+                                "issuer": "%s"
+                              }
+                            },
+                            {
+                              "match": {
+                                "rule.name": "%s"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }""".formatted(documentPrefix, name);
             Exchange exc = new Request.Builder()
                     .post(getElasticSearchExchangesPath() + "_delete_by_query")
-                    .body("{\n" +
-                            "  \"query\": {\n" +
-                            "    \"bool\": {\n" +
-                            "      \"must\": [\n" +
-                            "        {\n" +
-                            "          \"match\": {\n" +
-                            "            \"issuer\": \""+documentPrefix+"\"\n" +
-                            "          }\n" +
-                            "        },\n" +
-                            "        {\n" +
-                            "          \"match\": {\n" +
-                            "            \"rule.name\": \""+name+"\"\n" +
-                            "          }\n" +
-                            "        }\n" +
-                            "      ]\n" +
-                            "    }\n" +
-                            "  }\n" +
-                            "}")
+                    .body(body)
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
             client.call(exc);
@@ -374,36 +379,34 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     @Override
     public void removeAllExchanges(AbstractExchange[] exchanges) {
-        StringBuilder sb = Stream.of(exchanges).map(AbstractExchange::getId).collect(() -> {
-            StringBuilder acc = new StringBuilder();
-            acc.append("[");
-            return acc;
-        },(acc,id) -> acc.append(id).append(","),(acc1,acc2) -> acc1.append(",").append(acc2));
-        sb.deleteCharAt(sb.length()-1);
-        sb.append("]");
-        String exchangeIdsAsJsonArray = sb.toString();
+        var exchangeIdsCommaSeparated = Stream.of(exchanges)
+                .map(AbstractExchange::getId)
+                .map(Objects::toString)
+                .collect(joining(","));
 
         try {
+            String body = """
+                    {
+                      "query": {
+                        "bool": {
+                          "must": [
+                            {
+                              "match": {
+                                "issuer": "%s"
+                              }
+                            },
+                            {
+                              "terms": {
+                                "id": "%s"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }""".formatted(documentPrefix, "["+exchangeIdsCommaSeparated+"]");
             Exchange exc = new Request.Builder()
                     .post(getElasticSearchExchangesPath() + "_delete_by_query")
-                    .body("{\n" +
-                            "  \"query\": {\n" +
-                            "    \"bool\": {\n" +
-                            "      \"must\": [\n" +
-                            "        {\n" +
-                            "          \"match\": {\n" +
-                            "            \"issuer\": \""+documentPrefix+"\"\n" +
-                            "          }\n" +
-                            "        },\n" +
-                            "        {\n" +
-                            "          \"terms\": {\n" +
-                            "            \"id\": \""+exchangeIdsAsJsonArray+"\"\n" +
-                            "          }\n" +
-                            "        }\n" +
-                            "      ]\n" +
-                            "    }\n" +
-                            "  }\n" +
-                            "}")
+                    .body(body)
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
             client.call(exc);
@@ -416,26 +419,28 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     public AbstractExchange[] getExchanges(RuleKey ruleKey) {
         int port = ruleKey.getPort();
         try {
+            String body = """
+                    {
+                      "query": {
+                        "bool": {
+                          "must": [
+                            {
+                              "match": {
+                                "issuer": "%s"
+                              }
+                            },
+                            {
+                              "match": {
+                                "rule.port": "%d"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }""".formatted(documentPrefix, port);
             Exchange exc = new Request.Builder()
                     .post(getElasticSearchExchangesPath() + "_search")
-                    .body("{\n" +
-                            "  \"query\": {\n" +
-                            "    \"bool\": {\n" +
-                            "      \"must\": [\n" +
-                            "        {\n" +
-                            "          \"match\": {\n" +
-                            "            \"issuer\": \""+documentPrefix+"\"\n" +
-                            "          }\n" +
-                            "        },\n" +
-                            "        {\n" +
-                            "          \"match\": {\n" +
-                            "            \"rule.port\": \""+port+"\"\n" +
-                            "          }\n" +
-                            "        }\n" +
-                            "      ]\n" +
-                            "    }\n" +
-                            "  }\n" +
-                            "}")
+                    .body(body)
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
             exc = client.call(exc);
@@ -473,13 +478,18 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
         try{
-            Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search").contentType(APPLICATION_JSON).body("{\n" +
-                                                                                                                                                 "  \"query\": {\n" +
-                                                                                                                                                 "    \"match\": {\n" +
-                                                                                                                                                 "      \"issuer\": \"" + documentPrefix + "\"\n" +
-                                                                                                                                                 "    }\n" +
-                                                                                                                                                 "  }\n" +
-                                                                                                                                                 "}").buildExchange();
+            String body = """
+                    {
+                      "query": {
+                        "match": {
+                          "issuer": "%s"
+                        }
+                      }
+                    }""".formatted(documentPrefix);
+            Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search")
+                    .contentType(APPLICATION_JSON)
+                    .body(body)
+                    .buildExchange();
             exc = client.call(exc);
 
             if(!exc.getResponse().isOk())

@@ -128,55 +128,37 @@ public class HttpUtil {
 
 	public static String getFaultSOAPBody(String title, String text) {
 
-        String buf = "<soapenv:Envelope xmlns:soapenv=\"" + SOAP11_NS + "\">" +
-                CRLF +
-                "<soapenv:Body>" +
-                CRLF +
-                "<soapenv:Fault>" +
-                CRLF +
-                "<faultcode>soapenv:Server</faultcode>" +
-                CRLF +
-                "<faultstring>" +
-                escapeXml11(title) +
-                "</faultstring>" +
-                CRLF +
-                "<detail>" + escapeXml11(text) + "</detail>" +
-                CRLF +
-                "</soapenv:Fault>" +
-                CRLF +
-                "</soapenv:Body>" +
-                CRLF +
-                "</soapenv:Envelope>";
-		return buf;
+        return """
+                <soapenv:Envelope xmlns:soapenv="%s">
+                <soapenv:Body>
+                <soapenv:Fault>
+                <faultcode>soapenv:Server</faultcode>
+                <faultstring>%s</faultstring>
+                <detail>%s</detail>
+                </soapenv:Fault>
+                </soapenv:Body>
+                </soapenv:Envelope>"""
+				.formatted(SOAP11_NS, escapeXml11(title), escapeXml11(text))
+				.replace("\n", CRLF);
 	}
 
 	public static String getFaultSOAP12Body(String title, String text) {
 
 
-        String buf = "<soapenv:Envelope xmlns:soapenv=\"" + SOAP12_NS + "\">" +
-                CRLF +
-                "<soapenv:Body>" +
-                CRLF +
-                "<soapenv:Fault>" +
-                CRLF +
-                "<soapenv:Code>" +
-                CRLF +
-                "<soapenv:Value>soapenv:Receiver</soapenv:Value>" +
-                CRLF +
-                "</soapenv:Code>" +
-                CRLF +
-                "<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">" +
-                escapeXml11(title) +
-                "</soapenv:Text></soapenv:Reason>" +
-                CRLF +
-                "<soapenv:Detail><Text>" + escapeXml11(text) + "</Text></soapenv:Detail>" +
-                CRLF +
-                "</soapenv:Fault>" +
-                CRLF +
-                "</soapenv:Body>" +
-                CRLF +
-                "</soapenv:Envelope>";
-		return buf;
+		return """
+				<soapenv:Envelope xmlns:soapenv="%s">
+				<soapenv:Body>
+				<soapenv:Fault>
+				<soapenv:Code>
+				<soapenv:Value>soapenv:Receiver</soapenv:Value>
+				</soapenv:Code>
+				<soapenv:Reason><soapenv:Text xml:lang="en-US">%s</soapenv:Text></soapenv:Reason>
+				<soapenv:Detail><Text>%s</Text></soapenv:Detail>
+				</soapenv:Fault>
+				</soapenv:Body>
+				</soapenv:Envelope>"""
+				.formatted(SOAP12_NS, escapeXml11(title), escapeXml11(text))
+				.replace("\n", CRLF);
 	}
 
 //	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {

@@ -110,22 +110,25 @@ public abstract class DistributionExtractingTestcase {
         if (!log4jproperties.exists())
             throw new RuntimeException("log4j2.xml does not exits.");
 
+        var log4j2xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <Configuration>
+                    <Appenders>
+                        <Console name="STDOUT" target="SYSTEM_OUT">
+                            <PatternLayout pattern="%s" />
+                        </Console>
+                    </Appenders>
+                    <Loggers>
+                        <Logger name="com.predic8" level="%s" />
+                        <Root level="warn">
+                            <AppenderRef ref="STDOUT" />
+                        </Root>
+                    </Loggers>
+                </Configuration>
+                """.formatted("%d{ABSOLUTE} %5p %c{1}:%L - %m%n", MEMBRANE_LOG_LEVEL);
         writeStringToFile(
                 log4jproperties,
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<Configuration>\n" +
-                        "    <Appenders>\n" +
-                        "        <Console name=\"STDOUT\" target=\"SYSTEM_OUT\">\n" +
-                        "            <PatternLayout pattern=\"%d{ABSOLUTE} %5p %c{1}:%L - %m%n\" />\n" +
-                        "        </Console>\n" +
-                        "    </Appenders>\n" +
-                        "    <Loggers>\n" +
-                        "        <Logger name=\"com.predic8\" level=\"" + MEMBRANE_LOG_LEVEL + "\" />\n" +
-                        "        <Root level=\"warn\">\n" +
-                        "            <AppenderRef ref=\"STDOUT\" />\n" +
-                        "        </Root>\n" +
-                        "    </Loggers>\n" +
-                        "</Configuration>", UTF_8);
+                log4j2xml, UTF_8);
     }
 
     public File getExampleDir(String name) {
