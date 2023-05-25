@@ -33,9 +33,10 @@ public class RouterCLI {
     public static void main(String[] args) {
 
         Router router = null;
+        MembraneCommandLine commandLine = getMembraneCommandLine(args);
         try {
             try {
-                router = Router.init(getRulesFile(getMembraneCommandLine(args)), RouterCLI.class.getClassLoader());
+                router = Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
             } catch (XmlBeanDefinitionStoreException e) {
                 handleXmlBeanDefinitionStoreException(e);
             }
@@ -45,6 +46,10 @@ public class RouterCLI {
         } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex,log);
             System.exit(1);
+        }
+
+        if (commandLine.isDryRun()) {
+            System.exit(0);
         }
 
         try {
