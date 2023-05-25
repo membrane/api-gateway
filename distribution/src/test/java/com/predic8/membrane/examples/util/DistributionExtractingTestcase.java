@@ -78,20 +78,11 @@ public abstract class DistributionExtractingTestcase {
     }
 
     private File getZipFile(File targetDir) {
-        File zip = null;
-        {
-            File[] files = targetDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway") && name.endsWith(".zip"));
-            if (files == null) {
-                throw new RuntimeException("Could not find zip file!");
-            }
-            if (files.length > 1)
-                throw new RuntimeException("found more than one membrane-api-gateway*.zip");
-            if (files.length == 1)
-                zip = files[0];
+        File[] files = targetDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway") && name.endsWith(".zip"));
+        if (files == null || files.length != 1) {
+            throw new RuntimeException("Exactly one file matching membrane-api-gateway*.zip in %s expected!".formatted(targetDir));
         }
-        if (zip == null)
-            throw new RuntimeException("TODO: calling 'ant dist-router' automatically is not implemented.");
-        return zip;
+        return files[0];
     }
 
     private File getUnzipDir(File targetDir) throws InterruptedException {
