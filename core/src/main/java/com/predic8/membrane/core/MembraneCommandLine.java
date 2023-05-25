@@ -28,7 +28,7 @@ public class MembraneCommandLine {
 		System.out.println("-h                 Help content for router.");
 		System.out.println("--help             Help content for router.");
 		System.out.println("-c <location>      Location of the proxies configuration file");
-		System.out.println("--test <location>  Verify proxies configuration file");
+		System.out.println("-t <location>      Verify proxies configuration file");
 	}
 
 	public boolean needHelp() {
