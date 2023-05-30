@@ -122,7 +122,7 @@ public class RateLimitInterceptorTest {
 	}
 	
 	@Test
-	void testHandleRequestRateLimit1SecondConcurrency() throws Exception
+	void handleRequestRateLimit1SecondConcurrency() throws Exception
 	{
 		int tryLimit = 16;
 		int rateLimitSeconds = 1;
@@ -269,6 +269,12 @@ public class RateLimitInterceptorTest {
 		assertEquals("c", getOneBeforeTrustworthyProxy(Arrays.asList("a","b","c"),0));
 		assertEquals("b", getOneBeforeTrustworthyProxy(Arrays.asList("a","b","c"),1));
 		assertEquals("a", getOneBeforeTrustworthyProxy(Arrays.asList("a","b","c"),2));
+	}
+
+
+	@Test
+	void rateLimitInitWithoutKeyExpression() throws Exception {
+		new RateLimitInterceptor().init();
 	}
 
 

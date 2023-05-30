@@ -106,6 +106,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
     @Override
     public void init() throws Exception {
         super.init();
+        if (keyExpression == null || keyExpression.isBlank())
+            return;
         expression = new SpelExpressionParser().parseExpression(keyExpression);
     }
 
