@@ -195,7 +195,7 @@ public class Process2 implements AutoCloseable {
 
 		ps.startOutputWatchers();
 
-		waitForPIDtoBeWritten(exampleDir, pidFile, p);
+		stuff.pid = waitForPIDtoBeWritten(exampleDir, pidFile, p);
 
 		if (afterStartWaiter != null)
 			afterStartWaiter.waitFor(10000);
@@ -216,17 +216,11 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
-	private void waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
+	private Integer waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
 		for (int i = 0; i < 1001; i++) {
 			if (i % 20 == 0) {
-				try {
-					throw new RuntimeException("Process terminated with exit code " + p.exitValue());
-				} catch (IllegalThreadStateException e) {
-					// did not terminate yet
-				}
+				throwIfTerminated(p);
 			}
-			if (i == 1000)
-				throw new RuntimeException("could not read PID file");
 			sleep(100);
 			File f = new File(exampleDir, pidFile);
 			if (!f.exists())
@@ -235,11 +229,19 @@ public class Process2 implements AutoCloseable {
 				String line = new BufferedReader(new InputStreamReader(fr, getCharset())).readLine();
 				if (line == null)
 					continue;
-				stuff.pid = Integer.parseInt(line);
-				break;
+				return Integer.parseInt(line);
 			} catch (NumberFormatException e) {
 				// ignore
 			}
+		}
+		throw new RuntimeException("could not read PID file");
+	}
+
+	private void throwIfTerminated(Process p) {
+		try {
+			throw new RuntimeException("Process terminated with exit code " + p.exitValue());
+		} catch (IllegalThreadStateException e) {
+			// did not terminate yet
 		}
 	}
 
