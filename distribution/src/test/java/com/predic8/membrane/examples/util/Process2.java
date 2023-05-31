@@ -216,6 +216,12 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
+	private static String getOutputFilename(String id) {
+		synchronized(random) {
+			return id + "-" + random.nextInt() + ".txt";
+		}
+	}
+
 	private Integer waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
 		for (int i = 0; i < 1001; i++) {
 			if (i % 20 == 0) {
@@ -264,11 +270,16 @@ public class Process2 implements AutoCloseable {
 			command.add(ps1.getAbsolutePath());
 		} else {
 			// Linux and Mac OS
-			// On Mac OS the setsid command must be installed: brew install util-linux
 			File ps1 = new File(exampleDir, id + "_launcher.sh");
+			var stdOutPipe = getOutputFilename(id);
+			var launcherScript = """
+                    #!/bin/bash
+                    %s &> %s &
+                    echo $! > %s
+                    tail -f %s
+                    """.formatted(startCommand, stdOutPipe, pidFile, stdOutPipe);
 			FileWriter fw = new FileWriter(ps1);
-			fw.write("#!/bin/bash\n");
-			fw.write("echo $$ > \"" + pidFile + "\"\n" + startCommand);
+			fw.write(launcherScript);
 			fw.close();
 
 			//noinspection ResultOfMethodCallIgnored
@@ -316,6 +327,9 @@ public class Process2 implements AutoCloseable {
 		killerStuff.waitFor(60000);
 
 		// wait for membrane to terminate
+		if (!isWindows()) {
+			ps.p.destroy(); // terminate start script
+		}
 		ps.waitFor(60000);
 	}
 
@@ -326,11 +340,11 @@ public class Process2 implements AutoCloseable {
 			command.add("/T"); // kill whole subtree
 			command.add("/F");
 			command.add("/PID");
-			command.add("" + ps.pid);
+			command.add(ps.pid.toString());
 		} else {
 			command.add("kill");
 			command.add("-TERM");
-			command.add("-" + ps.pid);
+			command.add(ps.pid.toString());
 		}
 		return command;
 	}
