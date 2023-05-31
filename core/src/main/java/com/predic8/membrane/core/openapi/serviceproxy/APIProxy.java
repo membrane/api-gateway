@@ -19,6 +19,9 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.URI;
+import io.swagger.v3.oas.models.servers.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -175,6 +178,8 @@ public class APIProxy extends ServiceProxy {
 
         apiRecords = new OpenAPIRecordFactory(router).create(specs);
 
+        checkForDuplicatePaths();
+
         basePaths = getOpenAPIMap();
         configureBasePaths();
 
@@ -182,7 +187,46 @@ public class APIProxy extends ServiceProxy {
         interceptors.add(new OpenAPIInterceptor(this));
     }
 
-    // TODO Stimmen die Pfade?
+    /**
+     * One API should not have multiple OpenAPI specs sharing the same path. The interceptor needs the path to check against
+     * the right OpenAPI. Therefor the path must be unique.
+     * The check does not consider variables. Maybe this is needed in the future?
+     */
+    void checkForDuplicatePaths() {
+
+        Map<String,List<OpenAPIRecord>> paths = new HashMap<>();
+
+        apiRecords.values().forEach(rec -> {
+            for (Server server : rec.api.getServers()) {
+                URI uri;
+                try {
+                    uri = new URIFactory(true).create(server.getUrl());
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+
+                String path = uri.getPath();
+
+                if (paths.containsKey(path)) {
+                    List<OpenAPIRecord> l = paths.get(path);
+                    // Check if the path is not from the same API. One OpenAPI can have several server.urls with the same path.
+                    if (!l.contains(rec)) {
+                        log.error("Several OpenAPI documents of the API {} share the same path {}. Make sure that the values of info.servers.url in the OpenAPI documents are unique.", name, path);
+                        throw new DuplicatePathException(path);
+                    }
+                }
+
+                paths.computeIfAbsent(path, s -> {
+                    List<OpenAPIRecord> apis = new ArrayList<>();
+                    apis.add(rec);
+                    return apis;
+                });
+
+                System.out.println("paths = " + paths);
+            }
+        });
+    }
+
     private void configureBasePaths() {
         ((OpenAPIProxyServiceKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
     }

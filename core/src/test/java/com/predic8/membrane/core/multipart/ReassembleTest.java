@@ -14,33 +14,28 @@
 
 package com.predic8.membrane.core.multipart;
 
-import java.io.IOException;
-
-import javax.mail.internet.ParseException;
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.xpath.XPathExpressionException;
-
-import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
-
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilter;
-import com.predic8.membrane.core.util.ContentTypeDetector;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
-import com.predic8.membrane.core.util.EndOfStreamException;
+import jakarta.mail.internet.*;
+import org.apache.commons.io.*;
+import org.apache.commons.lang3.*;
+import org.junit.jupiter.api.*;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.xmlunit.matchers.CompareMatcher.isSimilarTo;
+import javax.xml.stream.*;
+import javax.xml.xpath.*;
+import java.io.*;
+
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.xmlunit.matchers.CompareMatcher.*;
 
 public class ReassembleTest {
 
+	@SuppressWarnings("DataFlowIssue")
 	private Response getResponse() throws IOException {
 		byte[] body = IOUtils.toByteArray(getClass().getResourceAsStream("/multipart/embedded-byte-array.txt"));
 		return Response.ok().
@@ -54,10 +49,11 @@ public class ReassembleTest {
 						build();
 	}
 
+	@SuppressWarnings("DataFlowIssue")
 	@Test
-	public void doit() throws HttpException, IOException, SAXException, XMLStreamException {
-		String actual = IOUtils.toString(new XOPReconstitutor().reconstituteIfNecessary(getResponse()));
-		String expected = IOUtils.toString(getClass().getResourceAsStream("/multipart/embedded-byte-array-reassembled.xml"));
+	public void doit() throws IOException {
+		String actual = IOUtils.toString(new XOPReconstitutor().reconstituteIfNecessary(getResponse()), UTF_8);
+		String expected = IOUtils.toString(getClass().getResourceAsStream("/multipart/embedded-byte-array-reassembled.xml"), UTF_8);
 
 		if (actual.startsWith("--"))
 			throw new AssertionError("Response was not reassembled: " + actual);
@@ -66,7 +62,7 @@ public class ReassembleTest {
 	}
 
 	@Test
-	public void checkContentType() throws ParseException, MalformedStreamException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
+	public void checkContentType() throws ParseException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
 		assertEquals("text/xml",
 				new XOPReconstitutor().getReconstitutedMessage(getResponse()).getHeader().getContentType());
 	}
@@ -75,7 +71,8 @@ public class ReassembleTest {
 		XMLContentFilter cf = new XMLContentFilter(xpath);
 		Message m = getResponse();
 		cf.removeMatchingElements(m);
-		assertEquals("text/xml", m.getHeader().getContentType());
+
+		assertEquals(TEXT_XML, m.getHeader().getContentType());
 		assertEquals(expectedNumberOfRemainingElements+1, StringUtils.countMatches(m.getBody().toString(), "<"));
 	}
 

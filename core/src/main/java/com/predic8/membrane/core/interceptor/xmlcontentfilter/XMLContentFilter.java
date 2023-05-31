@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -39,6 +38,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import jakarta.mail.internet.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -61,7 +61,7 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 @ThreadSafe
 public class XMLContentFilter {
 
-	private static final Logger LOG = LoggerFactory.getLogger(XMLContentFilter.class);
+	private static final Logger log = LoggerFactory.getLogger(XMLContentFilter.class);
 
 	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<>();
 	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<>();
@@ -91,7 +91,7 @@ public class XMLContentFilter {
 		createXPathExpression(); // to throw XPathExpressionException early
 		elementFinder = createElementFinder(xPath);
 		if (elementFinder == null)
-			LOG.warn("The XPath expression \"" + xPath + "\" could not be optimized to use a StAX parser as a first check. This means that for every SOAP message, a DOM tree has to be built to execute the XPath expression. This might degrade performance significantly.");
+			log.warn("The XPath expression \"" + xPath + "\" could not be optimized to use a StAX parser as a first check. This means that for every SOAP message, a DOM tree has to be built to execute the XPath expression. This might degrade performance significantly.");
 	}
 
 	/**
@@ -164,6 +164,7 @@ public class XMLContentFilter {
 			try {
 				xop = xopReconstitutor.getReconstitutedMessage(message);
 			} catch (ParseException | FactoryConfigurationError | EndOfStreamException e) {
+				log.warn(e.getMessage());
 			}
 
             if (elementFinder != null &&
@@ -179,28 +180,18 @@ public class XMLContentFilter {
 			}
 			removeElementsIfNecessary(message, xop, d);
 		} catch (SAXException | XMLStreamException e) {
-			return;
-		} catch (ParserConfigurationException | TransformerConfigurationException | XPathExpressionException e) {
-			throw new RuntimeException(e);
-		} catch (IOException | TransformerFactoryConfigurationError | TransformerException e) {
+			log.warn(e.getMessage());
+		} catch (ParserConfigurationException | XPathExpressionException | IOException |
+				 TransformerFactoryConfigurationError | TransformerException e) {
+			log.warn(e.getMessage());
 			throw new RuntimeException(e);
 		}
-    }
+	}
 
-	/**
-	 * @param originalMessage
-	 * @param xopDecodedMessage
-	 * @param doc
-	 * @throws XPathExpressionException
-	 * @throws TransformerException
-	 * @throws TransformerConfigurationException
-	 * @throws TransformerFactoryConfigurationError
-	 */
 	private void removeElementsIfNecessary(Message originalMessage,
 			Message xopDecodedMessage, Document doc)
 					throws XPathExpressionException, TransformerException,
-					TransformerConfigurationException,
-					TransformerFactoryConfigurationError {
+			TransformerFactoryConfigurationError {
 		NodeList toBeDeleted = (NodeList) createXPathExpression().evaluate(doc,
 				XPathConstants.NODESET);
 		if (toBeDeleted.getLength() > 0) {

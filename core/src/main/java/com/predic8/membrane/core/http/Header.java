@@ -17,9 +17,9 @@ package com.predic8.membrane.core.http;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.mail.internet.*;
 import org.slf4j.*;
 
-import javax.mail.internet.*;
 import java.io.*;
 import java.security.*;
 import java.util.*;

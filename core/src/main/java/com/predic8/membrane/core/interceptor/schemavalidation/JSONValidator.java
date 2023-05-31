@@ -18,7 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,8 +41,9 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class JSONValidator implements IValidator {
-	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private JsonSchema schema;
 	private final ResolverMap resourceResolver;
@@ -64,18 +65,15 @@ public class JSONValidator implements IValidator {
 	}
 
 	public Outcome validateMessage(Exchange exc, InputStream body, Charset charset, String source) throws Exception {
-		List<String> errors;
-		boolean success = true;
+		List<String> errors = new ArrayList<>();
+		boolean success;
 		try {
-			JsonNode node = JsonLoader.fromReader(new InputStreamReader(body, charset));
-			ProcessingReport report = schema.validateUnchecked(node);
+			ProcessingReport report = schema.validateUnchecked(JsonLoader.fromReader(new InputStreamReader(body, charset)));
 			success = report.isSuccess();
-			errors = new ArrayList<>();
 			for (ProcessingMessage message : report)
 				errors.add(message.getMessage());
 		} catch (JsonParseException e) {
 			success = false;
-			errors = new ArrayList<>();
 			errors.add(e.getMessage());
 		}
 
@@ -108,10 +106,10 @@ public class JSONValidator implements IValidator {
 		jg.close();
 
 		if (failureHandler != null) {
-			failureHandler.handleFailure(baos.toString(UTF8), exc);
+			failureHandler.handleFailure(baos.toString(UTF_8), exc);
 			exc.setResponse(Response.badRequest().
 					contentType("application/json;charset=utf-8").
-					body("{\"error\":\"error\"}".getBytes(UTF8)).
+					body("{\"error\":\"error\"}".getBytes(UTF_8)).
 					build());
 		} else {
 			exc.setResponse(Response.badRequest().
