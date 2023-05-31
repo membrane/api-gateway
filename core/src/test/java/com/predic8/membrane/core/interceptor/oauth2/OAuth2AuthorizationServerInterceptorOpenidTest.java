@@ -13,23 +13,20 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.util.Util;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.junit.jupiter.api.BeforeEach;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
+import jakarta.mail.internet.*;
+import org.jose4j.jwt.consumer.*;
+import org.junit.jupiter.api.*;
 
-import javax.mail.internet.ParseException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.regex.*;
 
+import static com.predic8.membrane.core.util.Util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2AuthorizationServerInterceptorBase {
@@ -46,15 +43,15 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
                 testGoodUserinfoRequest());
     }
 
-    private static Object[] testGoodUserinfoRequest() throws Exception {
+    private static Object[] testGoodUserinfoRequest() {
         return new Object[]{"testGoodUserinfoRequest", runUntilGoodTokenOpenidRequest(),getMockUserinfoRequest(),200,userinfoOpenidRequestPostprocessing()};
     }
 
-    private static Object[] testGoodTokenRequest() throws Exception {
+    private static Object[] testGoodTokenRequest() {
         return new Object[]{"testGoodTokenRequest", runUntilGoodGrantedAuthCodeOpenid(),getMockTokenRequest(),200, validateIdTokenAndGetTokenAndTokenTypeFromResponse()};
     }
 
-    private static Object[] testGoodGrantedAuthCode() throws Exception {
+    private static Object[] testGoodGrantedAuthCode() {
         return new Object[]{"testGoodGrantedAuthCode", runUntilGoodAuthOpenidRequest(), getMockEmptyEndpointRequest(), 307, getCodeFromResponse()};
     }
 
@@ -87,14 +84,14 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
 
     private static Consumer<Exchange> validateIdTokenAndGetTokenAndTokenTypeFromResponse() {
         return exc -> {
-            assertEquals(true, idTokenIsValid(exc.getResponse()));
+            assertTrue(idTokenIsValid(exc.getResponse()));
             getTokenAndTokenTypeFromResponse().call(exc);
         };
     }
 
     private static boolean idTokenIsValid(Response response) throws IOException, ParseException {
         // TODO: currently only checks if signature is valid -> also check if requested claims are in it
-        HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
+        HashMap<String, String> json = parseSimpleJSONResponse(response);
         try {
             oasi.getJwtGenerator().getClaimsFromSignedIdToken(json.get(ParamNames.ID_TOKEN), oasi.getIssuer(), "abc");
             return true;
@@ -103,10 +100,7 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
         }
     }
 
-    private static Consumer<Exchange> userinfoOpenidRequestPostprocessing() throws IOException, ParseException {
-        return exchange -> {
-            HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
-            assertEquals("e@mail.com", json.get("email"));
-        };
+    private static Consumer<Exchange> userinfoOpenidRequestPostprocessing() {
+        return exchange -> assertEquals("e@mail.com", parseSimpleJSONResponse(exc.getResponse()).get("email"));
     }
 }

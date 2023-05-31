@@ -76,12 +76,11 @@
 			<artifactId>jackson-datatype-joda</artifactId>
 			<version>${jackson.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<version>20230227</version>
-		</dependency>
-
+<!--		<dependency>-->
+<!--			<groupId>org.json</groupId>-->
+<!--			<artifactId>json</artifactId>-->
+<!--			<version>20230227</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>com.googlecode.jatl</groupId>
 			<artifactId>jatl</artifactId>
@@ -122,6 +121,17 @@
 			<groupId>com.google.api-client</groupId>
 			<artifactId>google-api-client</artifactId>
 		</dependency>
+
+		<!--
+            Still needed for com.github.fge.jsonschema.library.format JSON Schema dependency.
+            Can be deleted if a newer version of the JSON Schema lib will be migrated to Jakarta Mail.
+        -->
+		<dependency>
+			<groupId>javax.mail</groupId>
+			<artifactId>mail</artifactId>
+			<version>1.4.7</version>
+		</dependency>
+
 		<dependency>
 			<groupId>jakarta.mail</groupId>
 			<artifactId>jakarta.mail-api</artifactId>
@@ -142,8 +152,11 @@
 			<version>4.10.0</version>
 			<scope>test</scope>
 		</dependency>
-
-
+<!--		<dependency>-->
+<!--			<groupId>javax.mail</groupId>-->
+<!--			<artifactId>mail</artifactId>-->
+<!--			<version>1.5.0-b01</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-beans</artifactId>
@@ -154,19 +167,16 @@
 			<artifactId>spring-context</artifactId>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 		</dependency>
-
 		<!-- Rhino Javascript Engine -->
 		<dependency>
 			<groupId>org.mozilla</groupId>
 			<artifactId>rhino-engine</artifactId>
 			<version>1.7.14</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.graalvm.sdk</groupId>
 			<artifactId>graal-sdk</artifactId>
@@ -273,12 +283,10 @@
 			<artifactId>hpack</artifactId>
 			<version>1.0.2</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.groovy</groupId>
 			<artifactId>groovy-templates</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-broker</artifactId>

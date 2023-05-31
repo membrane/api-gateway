@@ -16,11 +16,11 @@ package com.predic8.membrane.core.multipart;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.mail.internet.*;
 import org.apache.commons.fileupload.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
-import javax.mail.internet.*;
 import javax.xml.namespace.*;
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;

@@ -1,0 +1,12 @@
+openapi: '3.0.2'
+info:
+  title: API B Path foo
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de/foo
+paths:
+  /doit:
+    get:
+      responses:
+        '200':
+          description: OK

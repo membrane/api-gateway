@@ -16,11 +16,11 @@ package com.predic8.membrane.core.interceptor.statistics;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import jakarta.mail.internet.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
-import javax.mail.internet.*;
 import javax.sql.*;
 import java.sql.*;
 import java.util.*;
@@ -196,7 +196,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 
 	/**
 	 * @deprecated use {@link #setDataSource(DataSource)} instead: Using
-	 *             {@link #setDataSourceBeanId(String)} from Spring works,
+	 *             setDataSourceBeanId(String) from Spring works,
 	 *             but does not create a Spring bean dependency.
 	 */
 	@Deprecated
