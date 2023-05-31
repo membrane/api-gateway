@@ -8,6 +8,7 @@ name: Build Docker Image
 on:
   release:
     types: [published]
+  workflow_dispatch: {}
 
 env:
   REGISTRY: docker.io
