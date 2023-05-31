@@ -121,3 +121,4 @@ maven-plugin/target/surefire/
 
 # Mac
 .DS_Store
+/distribution/docker/release-bin/
