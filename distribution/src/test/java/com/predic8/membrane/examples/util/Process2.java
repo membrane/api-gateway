@@ -107,11 +107,11 @@ public class Process2 implements AutoCloseable {
 	}
 
 	private final class OutputWatcher extends Thread {
-		private final ProcessStuff ps;
+		private final Process2 ps;
 		private final InputStream is;
 		private final boolean error;
 
-		private OutputWatcher(ProcessStuff ps, InputStream is, boolean error) {
+		private OutputWatcher(Process2 ps, InputStream is, boolean error) {
 			this.ps = ps;
 			this.is = is;
 			this.error = error;
@@ -138,24 +138,9 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
-	private class ProcessStuff {
-		public final Process p;
-		public Thread inputReader, errorReader;
-		public final List<ConsoleWatcher> watchers = new ArrayList<>();
-
-		public ProcessStuff(Process p) {
-			this.p = p;
-		}
-
-		public void startOutputWatchers() {
-			inputReader = new OutputWatcher(this, p.getInputStream(), false);
-			inputReader.start();
-			errorReader = new OutputWatcher(this, p.getErrorStream(), true);
-			errorReader.start();
-		}
-	}
-
-	private final ProcessStuff stuff;
+	private final Process p;
+	private Thread inputReader, errorReader;
+	private final List<ConsoleWatcher> watchers = new ArrayList<>();
 
 	private static final Random random = new Random(System.currentTimeMillis());
 
@@ -170,21 +155,19 @@ public class Process2 implements AutoCloseable {
 
 		Map<String, String> envVarAdditions = new HashMap<>();
 
-		final Process p = getProcessBuilder(exampleDir, id, startCommand, pidFile, envVarAdditions).start();
+		p = getProcessBuilder(exampleDir, id, startCommand, pidFile, envVarAdditions).start();
 
 		p.getOutputStream().close();
 
-		ProcessStuff ps = new ProcessStuff(p);
-		stuff = ps;
 		consoleWatchers.add((error, line) -> System.out.println(line));
 
-		ps.watchers.addAll(consoleWatchers);
+		watchers.addAll(consoleWatchers);
 
 		SubstringWaitableConsoleEvent afterStartWaiter = null;
 		if (waitAfterStartFor != null)
 			afterStartWaiter = new SubstringWaitableConsoleEvent(this, waitAfterStartFor);
 
-		ps.startOutputWatchers();
+		startOutputWatchers();
 
 		if (afterStartWaiter != null)
 			afterStartWaiter.waitFor(10000);
@@ -211,49 +194,6 @@ public class Process2 implements AutoCloseable {
 			return id + "-" + random.nextInt() + ".pid";
 		}
 	}
-
-//	private static String getOutputFilename(String id) {
-//		synchronized(random) {
-//			return id + "-" + random.nextInt() + ".txt";
-//		}
-//	}
-//
-//	private Integer waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
-//		for (int i = 0; i < 1001; i++) {
-//			if (i % 20 == 0) {
-//				throwIfTerminated(p);
-//			}
-//			sleep(100);
-//			File f = new File(exampleDir, pidFile);
-//			if (!f.exists())
-//				continue;
-//			try (FileInputStream fr = new FileInputStream(f)) {
-//				String line = new BufferedReader(new InputStreamReader(fr, getCharset())).readLine();
-//				if (line == null)
-//					continue;
-//				return Integer.parseInt(line);
-//			} catch (NumberFormatException e) {
-//				// ignore
-//			}
-//		}
-//		throw new RuntimeException("could not read PID file");
-//	}
-//
-//	private void throwIfTerminated(Process p) {
-//		try {
-//			throw new RuntimeException("Process terminated with exit code " + p.exitValue());
-//		} catch (IllegalThreadStateException e) {
-//			// did not terminate yet
-//		}
-//	}
-//
-//	private static Charset getCharset() {
-//		if (isWindows()) {
-//			return UTF_16; // powershell writes UTF-16 files by default
-//		} else {
-//			return defaultCharset(); // on Linux, the file is probably using some 8-bit charset
-//		}
-//	}
 
 	// TODO simplify
 	private ArrayList<String> getStartCommand(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
@@ -293,19 +233,21 @@ public class Process2 implements AutoCloseable {
 	}
 
 	public void addConsoleWatcher(ConsoleWatcher watcher) {
-		synchronized(stuff.watchers) {
-			stuff.watchers.add(watcher);
+		synchronized(watchers) {
+			watchers.add(watcher);
 		}
 	}
 
 	public void removeConsoleWatcher(ConsoleWatcher watcher) {
-		synchronized(stuff.watchers) {
-			stuff.watchers.remove(watcher);
+		synchronized(watchers) {
+			watchers.remove(watcher);
 		}
 	}
 
 	public void killScript() {
-		getChildrenRecursively(stuff.p.toHandle()).forEach(ProcessHandle::destroyForcibly);
+		if (inputReader != null) inputReader.interrupt();
+		if (errorReader != null) errorReader.interrupt();
+		getChildrenRecursively(p.toHandle()).forEach(ProcessHandle::destroyForcibly);
 	}
 
 	private static int waitForExit(Process p, long timeout) {
@@ -328,7 +270,15 @@ public class Process2 implements AutoCloseable {
 	}
 
 	public int waitForExit(long timeout) {
-		return waitForExit(stuff.p, timeout);
+		return waitForExit(p, timeout);
 	}
+
+	public void startOutputWatchers() {
+		inputReader = new OutputWatcher(this, p.getInputStream(), false);
+		inputReader.start();
+		errorReader = new OutputWatcher(this, p.getErrorStream(), true);
+		errorReader.start();
+	}
+
 
 }
