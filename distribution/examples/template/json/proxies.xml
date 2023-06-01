@@ -1,17 +1,19 @@
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
-	xmlns:spring="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-					    
+
 	<router>
 
 		<!--
-        JSON Template with a variable
+        JSON template with a variable
         -->
 		<api port="2000" method="GET">
 			<request>
-				<template contentType="application/json" pretty="yes">{ "answer": ${params.answer} }</template>
+				<template contentType="application/json" pretty="yes">
+					{ "answer": ${params.answer} }
+				</template>
 			</request>
 			<return statusCode="200"/><!-- To forward to backend use target below instead of return -->
 			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->
@@ -19,17 +21,49 @@
 
 
 		<!--
-        JSON Input
-        -->
+		JSON input is converted to XML and directed to logger, the response is then converted back to JSON and returned.
+		-->
 		<api port="2000" method="POST">
+			<!--
+			The value of the "city" field of the incoming JSON is inserted into an XML document.
+			-->
 			<request>
-				<template contentType="text/plain">
-					City: ${json.city}
+				<template contentType="application/xml">
+					<![CDATA[
+						<city>${json.city}</city>
+					]]>
 				</template>
 			</request>
-			<return statusCode="200"/>
+			<!--
+			The xpathExtractor extracts the "city" from the XML.
+			The extracted value is placed inside a JSON template.
+			Note: Consider that the response flow is bottom to top.
+			-->
+			<response>
+				<template contentType="application/json">
+					{"city": "${city}"}
+				</template>
+
+				<xpathExtractor>
+					<property name="city" xpath="city"/>
+				</xpathExtractor>
+			</response>
+			<!--
+			Directs the traffic to the logger api.
+			-->
+			<target host="localhost" port="3000" />
 		</api>
-	
+
+		<!--
+		Logs the incoming message to console.
+		-->
+		<api port="3000">
+			<request>
+				<log headerOnly="false"/>
+			</request>
+			<return statusCode="200" />
+		</api>
+
 	</router>
-	
+
 </spring:beans>
