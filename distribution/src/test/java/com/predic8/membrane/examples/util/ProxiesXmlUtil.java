@@ -16,11 +16,7 @@ package com.predic8.membrane.examples.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.*;
 import java.util.concurrent.TimeoutException;
-
-import com.predic8.membrane.examples.util.*;
-import org.apache.commons.io.FileUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.io.FileUtils.writeStringToFile;

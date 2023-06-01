@@ -15,12 +15,12 @@
 package com.predic8.membrane.examples.util;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
 
@@ -37,7 +37,7 @@ import static java.lang.Thread.sleep;
 public class Process2 implements AutoCloseable {
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		killScript();
 	}
 
