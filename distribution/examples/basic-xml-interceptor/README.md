@@ -1,9 +1,15 @@
-### BASIC XML INTERCEPTOR
+# Writing XML Processing Plugins 
 
-In this example we will install an interceptor called BasicXmlInterceptor which adds date element with current time information inside bar element.
+This example shows how you can write a plugin that reads and manipulates XML messages. You can use this as a template to write realize your own XML processing.
+
+The example installs a plugin called `BasicXmlInterceptor` which adds a date-element with the current time inside a bar-element. In the same way you can:
+
+- Read and process SOAP message headers
+- Add XML-elements as SOAP headers
+- Read and manipulate XML message bodies
      
 
-#### RUNNING THE EXAMPLE
+## Running the Example
 
 
 To run the example execute the following steps:
@@ -26,7 +32,7 @@ curl -d @example.xml http://localhost:2000 -H "Content-Type: application/xml"
 6. You can see on the console, the date tag was added with current date information
 
 
-### HOW IT IS DONE
+## How it is done
 
 Using maven, we create a jar file and copy the compiled jar file into the libs directory of membrane to make the new interceptor available to the router.
 
@@ -41,7 +47,7 @@ In the proxies.xml file, we define a name for our interceptor and write its full
 Again in the proxies.xml file inside `<serviceProxy> tag you can see that we added our basic xml interceptor using the beanname we defined above.
 
 ```
-<serviceProxy name="echo" port="2000">
+<api name="echo" port="2000">
 	<interceptor refid="basicXmlInterceptor"/>
 ```
 

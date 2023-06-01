@@ -1,12 +1,10 @@
-## Internal Proxy
+# Internal Proxy
 
-In this example we will have a look at the `<internalProxy>` and its usages
+This example explains how to realize complex message flows and how to break an api or serviceProxy into smaller units. Instead of an external target a request can be routed to an internal proxy. The internal proxy can offer reusable functionality that is shared by multiple APIs.
 
+## SOAP Example
 
-
-### SOAP EXAMPLE
-
-#### RUNNING THE EXAMPLE
+## Running the Example
 
 Let's start first example with the `<soapProxy>`
 
@@ -17,7 +15,7 @@ Let's start first example with the `<soapProxy>`
 3. Go to [http://localhost:2000/axis2/services/BLZService](http://localhost:2000/axis2/services/BLZService)
  
 4. Observe that `soapProxy` takes the `WSDL` file from `<internalProxy>`  and populates and serves the webpage
-#### HOW IT IS DONE
+## How it is done
 
 The following part describes the `<soapProxy>` example in detail.
 

@@ -1,4 +1,4 @@
-# Access and Manipulate Messages with Groovy - Example
+# Access and Manipulate Messages with Groovy Scripts - Example
 
 Using the `groovy` element you can run Groovy scripts to manipulate or monitor messages.
 

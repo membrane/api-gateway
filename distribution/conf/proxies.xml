@@ -1,16 +1,3 @@
-<!--
-	Routing Configuration (for development)
-	
-	Here you can configure routing rules for Membrane Service Proxy.
-
-	This file is used when directly starting from an IDE only (Eclipse,
-	for example).
-
-	Have a look at router/conf/proxies.xml or router/conf/proxies-full-sample.xml or
-	https://membrane-soa.org/service-proxy-doc/current/configuration/reference/ to be
-	inspired on what you can do here. ;)
-	
--->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
               xmlns:spring="http://www.springframework.org/schema/beans"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -20,27 +7,48 @@
     <router>
 
         <api port="2000">
-            <path>/shop</path>
-            <target url="https://api.predic8.de"/>
+            <wsdlPublisher wsdl="http://predic8.de/adsfdsaf"/>
+        </api>
+
+        <api port="3000">
+            <openapi location="../../core/src/test/resources/openapi/specs/paths/api-a-path-foo.yml"/>
+            <openapi location="../../core/src/test/resources/openapi/specs/paths/api-a-path-foo.yml"/>
         </api>
 
         <api port="2000">
-            <path>/restnames</path>
-            <beautifier/>
-            <xml2Json/>
-            <target url="http://www.thomas-bayer.com"/>
+            <request>
+                <javascript>
+                    ({ id:7, place: json.city })
+                </javascript>
+            </request>
+            <return contentType="application/json"/>
         </api>
 
-        <serviceProxy port="2001">
-            <rewriter>
-                <map from="^/blz-service/(.*)" to="/axis2/services/BLZService?$1" />
-            </rewriter>
-            <webServiceExplorer wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl" />
-            <wsdlRewriter  />
-            <wsdlPublisher wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"/>
-            <validator wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"/>
-            <target host="www.thomas-bayer.com"/>
-        </serviceProxy>
+<!--        <api port="2000">-->
+<!--            <response>-->
+<!--                <groovy>-->
+<!--                    header.add("X-Groovy", "Hello from Groovy!")-->
+<!--                    println("Code: ${message.statusCode}")-->
+<!--                    CONTINUE-->
+<!--                </groovy>-->
+<!--            </response>-->
+<!--            <target url="https://api.predic8.de"/>-->
+<!--        </api>-->
+
+        <api port="2000">
+            <response>
+                <javascript>
+                    var body = JSON.stringify({
+                        foo: 7,
+                        bar: 42
+                    });
+
+                    Response.ok(body).contentType("application/json").build();
+                </javascript>
+            </response>
+            <return/> <!-- Do not forward, return immediately -->
+        </api>
+
 
     </router>
 

@@ -5,16 +5,18 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-		<serviceProxy port="2000" name="example_main">
+		<api port="2000" name="example_main">
 			<switch>
+				<!-- If the case is true the message is routed to the mybackend internalProxy below -->
 				<case xPath="//order[@express='yes']" service="mybackend" />
 			</switch>
 			<groovy>
 				println("Inside proxy example_main.")
 			</groovy>
 			<target url="http://www.predic8.de"/>
-		</serviceProxy>
+		</api>
 
+		<!-- An internalProxy is like a function or subroutine for an API. -->
 		<internalProxy name="mybackend">
 			<groovy>
 				println("Inside proxy mybackend.")

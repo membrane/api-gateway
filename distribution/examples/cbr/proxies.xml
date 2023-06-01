@@ -6,20 +6,20 @@
 					    
 	<router>
 	
-		<serviceProxy port="2000" name="Router">
+		<api port="2000" name="Router">
 			<switch>
 				<case xPath="//order[@express='yes']" service="Express" />
 				<case xPath="//order/items/item[@id='7']" service="ImportItems" />
 				<case xPath="//order" service="Order" />
 			</switch>
-		</serviceProxy>
+		</api>
 
 		<!-- Instead of returning a response you can forward to a remote target -->
-		<serviceProxy name="ImportItems" port="3000">
+		<api name="ImportItems" port="3000">
 			<groovy>
 				Response.ok("Order contains import items.").build()			
 			</groovy>
-		</serviceProxy>
+		</api>
 	
 		<internalProxy name="Order">
 			<groovy>
