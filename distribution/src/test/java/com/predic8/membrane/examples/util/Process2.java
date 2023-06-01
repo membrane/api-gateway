@@ -308,7 +308,7 @@ public class Process2 implements AutoCloseable {
 		getChildrenRecursively(stuff.p.toHandle()).forEach(ProcessHandle::destroyForcibly);
 	}
 
-	private static int waitFor(Process p, long timeout) {
+	private static int waitForExit(Process p, long timeout) {
 		long start = System.currentTimeMillis();
 		while (true) {
 			try {
@@ -331,8 +331,8 @@ public class Process2 implements AutoCloseable {
 		return timeout - (System.currentTimeMillis() - start);
 	}
 
-	public int waitFor(long timeout) {
-		return waitFor(stuff.p, timeout);
+	public int waitForExit(long timeout) {
+		return waitForExit(stuff.p, timeout);
 	}
 
 }
