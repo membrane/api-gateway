@@ -18,16 +18,13 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import io.swagger.v3.oas.models.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.NO;
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.YES;
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_VALIDATION;
-import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getSingleOpenAPIRecord;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class APIProxyTest {
@@ -218,5 +215,32 @@ public class APIProxyTest {
             assertFalse((Boolean) xValidation.get("responses"));
             assertFalse((Boolean) xValidation.get("details"));
         }
+    }
+
+    @Test
+    public void multipleOpenAPIsWithTheSamePath() throws Exception {
+
+        APIProxy api = new APIProxy();
+        api.setName("TestAPI");
+        api.init(router);
+        api.setSpecs(List.of(extracted("src/test/resources/openapi/specs/paths/api-a-path-foo.yml"),
+                extracted("src/test/resources/openapi/specs/paths/api-b-path-foo.yml")));
+
+        assertThrows(DuplicatePathException.class, api::init);
+    }
+
+    @Test
+    public void oneOpenAPIWithMultipleServerUrlsSharingTheSamePath() throws Exception {
+
+        APIProxy api = new APIProxy();
+        api.setName("TestAPI");
+        api.init(router);
+        api.setSpecs(List.of(extracted("api-c-multiple-server-urls.yml")));
+    }
+
+    private APIProxy.Spec extracted(String location) {
+        APIProxy.Spec spec = new APIProxy.Spec();
+        spec.location = location;
+        return spec;
     }
 }

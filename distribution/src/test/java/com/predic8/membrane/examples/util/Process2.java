@@ -15,15 +15,14 @@
 package com.predic8.membrane.examples.util;
 
 import java.io.*;
-import java.nio.charset.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.util.OSUtil.*;
-import static java.lang.String.*;
-import static java.lang.Thread.*;
-import static java.nio.charset.Charset.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
+import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
+import static java.lang.Thread.sleep;
 
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
@@ -141,7 +140,6 @@ public class Process2 implements AutoCloseable {
 
 	private class ProcessStuff {
 		public final Process p;
-		public Integer pid;
 		public Thread inputReader, errorReader;
 		public final List<ConsoleWatcher> watchers = new ArrayList<>();
 
@@ -154,13 +152,6 @@ public class Process2 implements AutoCloseable {
 			inputReader.start();
 			errorReader = new OutputWatcher(this, p.getErrorStream(), true);
 			errorReader.start();
-		}
-
-		public int waitFor(long timeout) throws InterruptedException {
-			int res = Process2.waitFor(p, timeout);
-			inputReader.interrupt();
-			errorReader.interrupt();
-			return res;
 		}
 	}
 
@@ -195,13 +186,16 @@ public class Process2 implements AutoCloseable {
 
 		ps.startOutputWatchers();
 
-		stuff.pid = waitForPIDtoBeWritten(exampleDir, pidFile, p);
-
-		System.out.println("Pid for started process: " + stuff.pid);
-
 		if (afterStartWaiter != null)
 			afterStartWaiter.waitFor(10000);
 		sleep(100);
+	}
+
+	private List<ProcessHandle> getChildren(ProcessHandle p) {
+		return Stream.concat(
+				Stream.of(p),
+				p.children().flatMap(ph -> getChildren(ph).stream())
+		).toList();
 	}
 
 	private ProcessBuilder getProcessBuilder(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
@@ -218,49 +212,50 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
-	private static String getOutputFilename(String id) {
-		synchronized(random) {
-			return id + "-" + random.nextInt() + ".txt";
-		}
-	}
+//	private static String getOutputFilename(String id) {
+//		synchronized(random) {
+//			return id + "-" + random.nextInt() + ".txt";
+//		}
+//	}
+//
+//	private Integer waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
+//		for (int i = 0; i < 1001; i++) {
+//			if (i % 20 == 0) {
+//				throwIfTerminated(p);
+//			}
+//			sleep(100);
+//			File f = new File(exampleDir, pidFile);
+//			if (!f.exists())
+//				continue;
+//			try (FileInputStream fr = new FileInputStream(f)) {
+//				String line = new BufferedReader(new InputStreamReader(fr, getCharset())).readLine();
+//				if (line == null)
+//					continue;
+//				return Integer.parseInt(line);
+//			} catch (NumberFormatException e) {
+//				// ignore
+//			}
+//		}
+//		throw new RuntimeException("could not read PID file");
+//	}
+//
+//	private void throwIfTerminated(Process p) {
+//		try {
+//			throw new RuntimeException("Process terminated with exit code " + p.exitValue());
+//		} catch (IllegalThreadStateException e) {
+//			// did not terminate yet
+//		}
+//	}
+//
+//	private static Charset getCharset() {
+//		if (isWindows()) {
+//			return UTF_16; // powershell writes UTF-16 files by default
+//		} else {
+//			return defaultCharset(); // on Linux, the file is probably using some 8-bit charset
+//		}
+//	}
 
-	private Integer waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
-		for (int i = 0; i < 1001; i++) {
-			if (i % 20 == 0) {
-				throwIfTerminated(p);
-			}
-			sleep(100);
-			File f = new File(exampleDir, pidFile);
-			if (!f.exists())
-				continue;
-			try (FileInputStream fr = new FileInputStream(f)) {
-				String line = new BufferedReader(new InputStreamReader(fr, getCharset())).readLine();
-				if (line == null)
-					continue;
-				return Integer.parseInt(line);
-			} catch (NumberFormatException e) {
-				// ignore
-			}
-		}
-		throw new RuntimeException("could not read PID file");
-	}
-
-	private void throwIfTerminated(Process p) {
-		try {
-			throw new RuntimeException("Process terminated with exit code " + p.exitValue());
-		} catch (IllegalThreadStateException e) {
-			// did not terminate yet
-		}
-	}
-
-	private static Charset getCharset() {
-		if (isWindows()) {
-			return UTF_16; // powershell writes UTF-16 files by default
-		} else {
-			return defaultCharset(); // on Linux, the file is probably using some 8-bit charset
-		}
-	}
-
+	// TODO simplify
 	private ArrayList<String> getStartCommand(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
 		ArrayList<String> command = new ArrayList<>();
 		if (isWindows()) {
@@ -273,16 +268,11 @@ public class Process2 implements AutoCloseable {
 		} else {
 			// Linux and Mac OS
 			File ps1 = new File(exampleDir, id + "_launcher.sh");
-			var stdOutPipe = getOutputFilename(id);
+//			var stdOutPipe = getOutputFilename(id);
 			var launcherScript = """
                     #!/bin/bash
-                    sh -c 'echo $$ > %s; exec %s' 
-                    #%s &> %s &
-                    #echo "Started process $!"
-                    #ps ax | grep "$!"
-                    #echo $! > %s
-                    #tail -f %s
-                    """.formatted(pidFile, startCommand, stdOutPipe, pidFile, stdOutPipe, "");
+                    %s
+                    """.formatted(startCommand); //, stdOutPipe, pidFile, stdOutPipe);
 			FileWriter fw = new FileWriter(ps1);
 			fw.write(launcherScript);
 			fw.close();
@@ -314,45 +304,8 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
-	public void killScript() throws InterruptedException, IOException {
-		ProcessStuff ps = stuff;
-
-		// start the killer
-		ProcessBuilder pb = new ProcessBuilder(getKillCommand(ps));
-		//pb.redirectInput(Redirect.PIPE).redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE);
-
-		sleep(50); // Quickfix, sometimes Membrane gets terminated before the test is over
-
-		System.out.println("Killing process " + ps.pid);
-		// wait for killer to complete
-		Process killer = pb.start();
-		ProcessStuff killerStuff = new ProcessStuff(killer);
-		//killerStuff.watchers.add(new ConsoleLogger());
-		killerStuff.startOutputWatchers();
-		killerStuff.waitFor(60000);
-
-		// wait for membrane to terminate
-		if (!isWindows()) {
-			ps.p.destroy(); // terminate start script
-		}
-		ps.waitFor(60000);
-	}
-
-	private static ArrayList<String> getKillCommand(ProcessStuff ps) {
-		ArrayList<String> command = new ArrayList<>();
-		if (isWindows()) {
-			command.add("taskkill");
-			command.add("/T"); // kill whole subtree
-			command.add("/F");
-			command.add("/PID");
-			command.add(ps.pid.toString());
-		} else {
-			command.add("pkill");
-			command.add("-KILL");
-			command.add("-P");
-			command.add(ps.pid.toString());
-		}
-		return command;
+	public void killScript() {
+		getChildren(stuff.p.toHandle()).forEach(ProcessHandle::destroy);
 	}
 
 	private static int waitFor(Process p, long timeout) {

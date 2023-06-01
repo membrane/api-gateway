@@ -43,7 +43,8 @@ public class RouterCLI {
         } catch (InvalidConfigurationException e) {
             log.error("Fatal error: " + e.getMessage());
             System.exit(1);
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex,log);
             System.exit(1);
         }

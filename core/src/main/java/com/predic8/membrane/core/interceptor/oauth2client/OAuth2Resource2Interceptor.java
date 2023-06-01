@@ -30,6 +30,7 @@ import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.mail.internet.*;
 import org.apache.commons.codec.binary.Base64;
 import org.jose4j.jws.*;
 import org.jose4j.jwt.*;
@@ -37,7 +38,6 @@ import org.jose4j.lang.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
-import javax.mail.internet.*;
 import java.io.*;
 import java.math.*;
 import java.security.*;
