@@ -17,6 +17,7 @@ package com.predic8.membrane.examples.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.*;
+import java.util.concurrent.TimeoutException;
 
 import com.predic8.membrane.examples.util.*;
 import org.apache.commons.io.FileUtils;
@@ -34,7 +35,7 @@ public class ProxiesXmlUtil {
 			throw new IllegalArgumentException("File " + file + " does not exist.");
 	}
 
-	public void updateWith(String proxiesXmlContent, Process2 sl) throws IOException {
+	public void updateWith(String proxiesXmlContent, Process2 sl) throws IOException, TimeoutException {
 		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "Spring Hot Deployment Thread started.");
 		writeStringToFile(proxiesXml, proxiesXmlContent, UTF_8);
 		reloaded.waitFor(60000);

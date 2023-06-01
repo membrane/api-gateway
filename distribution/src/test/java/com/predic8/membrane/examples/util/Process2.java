@@ -150,7 +150,6 @@ public class Process2 implements AutoCloseable {
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 
 		p = getProcessBuilder(exampleDir, startCommand).start();
-
 		p.getOutputStream().close();
 
 		consoleWatchers.add((error, line) -> System.out.println(line));
@@ -163,8 +162,14 @@ public class Process2 implements AutoCloseable {
 
 		startOutputWatchers();
 
-		if (afterStartWaiter != null)
-			afterStartWaiter.waitFor(10000);
+		if (afterStartWaiter != null) {
+			try {
+				afterStartWaiter.waitFor(10000);
+			} catch (TimeoutException e) {
+				killScript();
+				throw new RuntimeException(e);
+			}
+		}
 		sleep(100);
 	}
 
