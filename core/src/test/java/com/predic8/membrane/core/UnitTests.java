@@ -28,7 +28,7 @@ import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.*;
-import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
+import com.predic8.membrane.core.interceptor.json.*;
 import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
@@ -125,7 +125,8 @@ import org.junit.platform.suite.api.*;
 		RegExReplaceInterceptorTest.class,
 		URLParamUtilTest.class,
 		XMLProtectorTest.class,
-		AbstractExchangeStoreTest.class
+		AbstractExchangeStoreTest.class,
+		JsonProtectionInterceptorTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {
