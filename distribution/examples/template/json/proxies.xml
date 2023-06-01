@@ -1,9 +1,9 @@
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
-	xmlns:spring="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-					    
+
 	<router>
 
 		<!--
@@ -19,17 +19,53 @@
 
 
 		<!--
-        JSON Input
-        -->
+		JSON input is converted to XML and directed to logger, the response is then converted back to JSON and returned.
+		-->
 		<api port="2000" method="POST">
+			<!--
+			The request is converted to XML format:
+			The template plugin is used to define an XML document where the value of the "city" field
+			of the incoming JSON is inserted.
+			-->
 			<request>
-				<template contentType="text/plain">
-					City: ${json.city}
+				<template contentType="application/xml">
+					<![CDATA[
+						<city>${json.city}</city>
+					]]>
 				</template>
 			</request>
-			<return statusCode="200"/>
+
+
+			<!--
+			The response is converted back to JSON format:
+			The xpathExtractor plugin is used to extract the value of "city" from the XML data,
+			then the extracted value is placed inside a JSON template.
+			Note: Keep in mind that the response plugin flow is reversed.
+			-->
+			<response>
+				<template contentType="application/json">
+					{"city": "${city}"}
+				</template>
+
+				<xpathExtractor>
+					<property name="city" xpath="city"/>
+				</xpathExtractor>
+			</response>
+
+			<!--
+			Directs the traffic to the logger api.
+			-->
+			<target host="localhost" port="3000" />
 		</api>
-	
+
+		<!--
+		Logs the incoming traffic to console.
+		-->
+		<api port="3000">
+			<log headerOnly="false"/>
+			<return statusCode="200" />
+		</api>
+
 	</router>
-	
+
 </spring:beans>
