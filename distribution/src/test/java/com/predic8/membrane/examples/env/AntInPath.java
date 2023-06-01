@@ -33,7 +33,7 @@ public class AntInPath {
 	public void checkThatAntExecutableIsAvailable() throws IOException, InterruptedException {
 		BufferLogger antOutput = new BufferLogger();
 		Process2 ant = new Process2.Builder().in(new File(".")).executable("ant -version").withWatcher(antOutput).start();
-		assertEquals(0, ant.waitFor(20000));
+		assertEquals(0, ant.waitForExit(20000));
 		assertContains("Apache Ant", antOutput.toString());
 	}
 

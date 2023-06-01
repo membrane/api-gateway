@@ -40,7 +40,7 @@ public class BalancerClientScriptUtil {
 //				.withWatcher(new ConsoleLogger())
                 .executable(getClientStartCommand(command, nodeHost, nodePort)).start();
         try {
-            assertEquals(expectedReturnCode, lbclient.waitFor(30000));
+            assertEquals(expectedReturnCode, lbclient.waitForExit(30000));
         } finally {
             lbclient.killScript();
         }
