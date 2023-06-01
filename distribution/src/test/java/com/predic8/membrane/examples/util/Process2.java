@@ -310,12 +310,7 @@ public class Process2 implements AutoCloseable {
 
 	private static int waitForExit(Process p, long timeout) {
 		long start = System.currentTimeMillis();
-		while (true) {
-			try {
-				return p.exitValue();
-			} catch (IllegalThreadStateException e) {
-				// continue waiting
-			}
+		while (p.isAlive()) {
 			if (getTimeLeft(timeout, start) <= 0)
 				throw new RuntimeException(new TimeoutException());
 			try {
@@ -325,6 +320,7 @@ public class Process2 implements AutoCloseable {
 				currentThread().interrupt();
 			}
 		}
+		return p.exitValue();
 	}
 
 	private static long getTimeLeft(long timeout, long start) {
