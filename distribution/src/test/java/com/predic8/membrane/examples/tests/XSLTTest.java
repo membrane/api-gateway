@@ -31,8 +31,8 @@ public class XSLTTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("FIRSTNAME", getAndAssert200(CUSTOMER_HOST_REMOTE + CUSTOMER_PATH));
-			assertContains("first", getAndAssert200(CUSTOMER_HOST_LOCAL + CUSTOMER_PATH));
+			assertContains("FIRSTNAME", getAndAssert200(CUSTOMER_HOST_REMOTE));
+			assertContains("first", getAndAssert200(CUSTOMER_HOST_LOCAL));
 		}
 	}
 }

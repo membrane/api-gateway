@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 public class BasicAuthTest extends DistributionExtractingTestcase {
 	public static final String CUSTOMER_HOST_LOCAL = "http://localhost:2000/";
 	public static final String CUSTOMER_HOST_REMOTE = "http://www.thomas-bayer.com/";
-	public static final String CUSTOMER_PATH = "samples/sqlrest/CUSTOMER/7/";
 
 	@Override
 	protected String getExampleDirName() {
@@ -36,10 +35,10 @@ public class BasicAuthTest extends DistributionExtractingTestcase {
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
 			disableHTTPAuthentication();
-			getAndAssert(401, CUSTOMER_HOST_LOCAL + CUSTOMER_PATH);
+			getAndAssert(401, CUSTOMER_HOST_LOCAL);
 
 			setupHTTPAuthentication("localhost", 2000, "alice", "membrane");
-			getAndAssert200(CUSTOMER_HOST_LOCAL + CUSTOMER_PATH);
+			getAndAssert200(CUSTOMER_HOST_LOCAL);
 		}
 	}
 }

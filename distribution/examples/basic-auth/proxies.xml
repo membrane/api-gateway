@@ -6,12 +6,12 @@
 					    
 	<router>
 
-		<serviceProxy port="2000">
+		<api port="2000">
 			<basicAuthentication>
 				<user name="alice" password="membrane" />
 			</basicAuthentication>
-			<target host="www.thomas-bayer.com" port="80" />
-		</serviceProxy>
+			<target url="https://api.predic8.de"/>
+		</api>
 	
 	</router>
 	

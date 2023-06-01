@@ -25,6 +25,7 @@
 			<request>
 				<groovy>
 					// JSON to JSON transformation
+					// The json-Variable contains the request or response body as JSON object.
 					import java.text.*
 
 					def dfIn = new SimpleDateFormat("d MMM yyyy",Locale.US)

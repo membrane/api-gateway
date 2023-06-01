@@ -1,9 +1,9 @@
-### Content Based Routing using XPath
+# Content Based Routing using XPath
 
 Using the switch interceptor Membrane allows you to route XML messages based on XPath expressions.
 
 
-#### RUNNING THE EXAMPLE
+## Running the Example
 
 In this example we will route three XML messages based on their content to three different destinations. 
 

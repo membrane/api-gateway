@@ -6,18 +6,22 @@
 
 
     <router>
+
+        <!-- The wsdl is fetched from an internal proxy instead of an external target. -->
         <soapProxy wsdl="service:mysoapbackend/axis2/services/BLZService?wsdl" port="2000">
             <response>
                 <groovy>
                     println "Request headers:"
                     exc.request.header.allHeaderFields.each {
-                    println it
+                      println it
                     }
                     CONTINUE
                 </groovy>
             </response>
         </soapProxy>
 
+        <!-- Here the request to the WSDL can be prepared before sending it to the target. Use this pattern
+             to add authentication headers or SSL/TLS certificates. -->
         <internalProxy name="mysoapbackend">
             <request>
                 <groovy>

@@ -40,12 +40,12 @@ public class EmbeddingJava {
         String path = ".*";
         int listenPort = 4000;
 
+        // The API should listen to GET requests on port 4000 with any path from any host
         ServiceProxyKey key = new ServiceProxyKey(hostname, method, path, listenPort);
 
-        String targetHost = "predic8.com";
-        int targetPort = 80;
+        ServiceProxy sp = new ServiceProxy(key, "predic8.com", 80);
 
-        ServiceProxy sp = new ServiceProxy(key, targetHost, targetPort);
+        // Add a simple interceptor as plugin
         sp.getInterceptors().add(new AddMyHeaderInterceptor());
 
         HttpRouter router = new HttpRouter();

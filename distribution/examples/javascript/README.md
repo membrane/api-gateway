@@ -14,7 +14,7 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
    **Create JSON with Javascript:**
 
    ```json
-   ❯ curl localhost:2000
+   curl localhost:2000
    {"id":7,"city":"Berlin"}
    ```
 
@@ -23,7 +23,7 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
    Have a look at the [order.json](order.json) file, then send it to the API to transform the JSON into a different JSON format: 
 
    ```json
-   ❯ curl -d @order.json -H "Content-Type: application/json"  http://localhost:2010
+   curl -d @order.json -H "Content-Type: application/json"  http://localhost:2010
    {
        "id": 731,
        "date": "2023-04-07",

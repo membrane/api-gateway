@@ -20,13 +20,13 @@
 
 	<router>
 
-		<serviceProxy name="echo" port="2000">
+		<api name="echo" port="2000">
 			<interceptor refid="basicXmlInterceptor"/>
 			<log headerOnly="false"/>
 			<groovy>
 				Response.ok("Look at the output of Membrane!\n").build()
 			</groovy>
-    	</serviceProxy>
+    	</api>
 
 	</router>
 	
