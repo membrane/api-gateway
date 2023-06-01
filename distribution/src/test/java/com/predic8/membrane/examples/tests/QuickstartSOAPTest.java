@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
@@ -32,7 +33,7 @@ import com.predic8.membrane.test.AssertUtils;
 public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 
 	@Test
-	public void doit() throws IOException, InterruptedException {
+	public void doit() throws IOException, InterruptedException, TimeoutException {
 		File baseDir = getExampleDir("quickstart-soap");
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
