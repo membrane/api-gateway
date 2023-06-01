@@ -191,11 +191,11 @@ public class Process2 implements AutoCloseable {
 		sleep(100);
 	}
 
-	private List<ProcessHandle> getChildren(ProcessHandle p) {
+	private Stream<ProcessHandle> getChildrenRecursively(ProcessHandle p) {
 		return Stream.concat(
 				Stream.of(p),
-				p.children().flatMap(ph -> getChildren(ph).stream())
-		).toList();
+				p.children().flatMap(this::getChildrenRecursively)
+		);
 	}
 
 	private ProcessBuilder getProcessBuilder(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
@@ -305,7 +305,7 @@ public class Process2 implements AutoCloseable {
 	}
 
 	public void killScript() {
-		getChildren(stuff.p.toHandle()).forEach(ProcessHandle::destroy);
+		getChildrenRecursively(stuff.p.toHandle()).forEach(ProcessHandle::destroyForcibly);
 	}
 
 	private static int waitFor(Process p, long timeout) {
