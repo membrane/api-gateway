@@ -106,7 +106,7 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
-	private final class OutputWatcher extends Thread {
+	private static final class OutputWatcher extends Thread {
 		private final Process2 ps;
 		private final InputStream is;
 		private final boolean error;
@@ -142,8 +142,6 @@ public class Process2 implements AutoCloseable {
 	private Thread inputReader, errorReader;
 	private final List<ConsoleWatcher> watchers = new ArrayList<>();
 
-	private static final Random random = new Random(System.currentTimeMillis());
-
 	private Process2(File exampleDir, String id, String startCommand, List<ConsoleWatcher> consoleWatchers, String waitAfterStartFor) throws IOException, InterruptedException {
 
 		System.out.println("exampleDir = " + exampleDir + ", id = " + id + ", startCommand = " + startCommand + ", consoleWatchers = " + consoleWatchers + ", waitAfterStartFor = " + waitAfterStartFor);
@@ -151,11 +149,7 @@ public class Process2 implements AutoCloseable {
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 
-		String pidFile = getPidFilename(id);
-
-		Map<String, String> envVarAdditions = new HashMap<>();
-
-		p = getProcessBuilder(exampleDir, id, startCommand, pidFile, envVarAdditions).start();
+		p = getProcessBuilder(exampleDir, startCommand).start();
 
 		p.getOutputStream().close();
 
@@ -181,55 +175,16 @@ public class Process2 implements AutoCloseable {
 		);
 	}
 
-	private ProcessBuilder getProcessBuilder(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
-		ProcessBuilder pb = new ProcessBuilder(getStartCommand(exampleDir, id, startCommand, pidFile, envVarAdditions)).directory(exampleDir);
+	private ProcessBuilder getProcessBuilder(File exampleDir, String startCommand) {
+		ProcessBuilder pb = new ProcessBuilder(startCommand.split(" "));
+		pb.directory(exampleDir);
 		pb.environment().remove("MEMBRANE_HOME");
-		pb.environment().putAll(envVarAdditions);
+		if (!isWindows()) {
+			pb.environment().put("PATH", System.getProperty("java.home") + "/bin:" + System.getenv("PATH"));
+			pb.environment().put("JAVA_HOME", System.getProperty("java.home"));
+		}
 		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
 		return pb;
-	}
-
-	private static String getPidFilename(String id) {
-		synchronized(random) {
-			return id + "-" + random.nextInt() + ".pid";
-		}
-	}
-
-	// TODO simplify
-	private ArrayList<String> getStartCommand(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
-		ArrayList<String> command = new ArrayList<>();
-		if (isWindows()) {
-			File ps1 = new File(exampleDir, id + ".ps1");
-			FileWriter fw = new FileWriter(ps1);
-			fw.write(createStartCommand(startCommand, pidFile));
-			fw.close();
-			command.add("powershell");
-			command.add(ps1.getAbsolutePath());
-		} else {
-			// Linux and Mac OS
-			File ps1 = new File(exampleDir, id + "_launcher.sh");
-//			var stdOutPipe = getOutputFilename(id);
-			var launcherScript = """
-                    #!/bin/bash
-                    %s
-                    """.formatted(startCommand); //, stdOutPipe, pidFile, stdOutPipe);
-			FileWriter fw = new FileWriter(ps1);
-			fw.write(launcherScript);
-			fw.close();
-
-			//noinspection ResultOfMethodCallIgnored
-			ps1.setExecutable(true);
-			command.add("setsid"); // start new process group so we can kill it at once
-			command.add(ps1.getAbsolutePath());
-
-			envVarAdditions.put("PATH", System.getProperty("java.home") + "/bin:" + System.getenv("PATH"));
-			envVarAdditions.put("JAVA_HOME", System.getProperty("java.home"));
-		}
-		return command;
-	}
-
-	private String createStartCommand(String startCommand, String pidFile) {
-		return format("\"\" + [System.Diagnostics.Process]::GetCurrentProcess().Id > \"%s\"\r\n%s\r\nexit $LASTEXITCODE", pidFile, startCommand);
 	}
 
 	public void addConsoleWatcher(ConsoleWatcher watcher) {
@@ -279,6 +234,5 @@ public class Process2 implements AutoCloseable {
 		errorReader = new OutputWatcher(this, p.getErrorStream(), true);
 		errorReader.start();
 	}
-
 
 }
