@@ -7,11 +7,13 @@
 	<router>
 
 		<!--
-        JSON Template with a variable
+        JSON template with a variable
         -->
 		<api port="2000" method="GET">
 			<request>
-				<template contentType="application/json" pretty="yes">{ "answer": ${params.answer} }</template>
+				<template contentType="application/json" pretty="yes">
+					{ "answer": ${params.answer} }
+				</template>
 			</request>
 			<return statusCode="200"/><!-- To forward to backend use target below instead of return -->
 			<!--  <target host="YourBackendHost" port="YourBackendPort"/>-->
@@ -23,9 +25,7 @@
 		-->
 		<api port="2000" method="POST">
 			<!--
-			The request is converted to XML format:
-			The template plugin is used to define an XML document where the value of the "city" field
-			of the incoming JSON is inserted.
+			The value of the "city" field of the incoming JSON is inserted into an XML document.
 			-->
 			<request>
 				<template contentType="application/xml">
@@ -34,13 +34,10 @@
 					]]>
 				</template>
 			</request>
-
-
 			<!--
-			The response is converted back to JSON format:
-			The xpathExtractor plugin is used to extract the value of "city" from the XML data,
-			then the extracted value is placed inside a JSON template.
-			Note: Keep in mind that the response plugin flow is reversed.
+			The xpathExtractor extracts the "city" from the XML.
+			The extracted value is placed inside a JSON template.
+			Note: Consider that the response flow is bottom to top.
 			-->
 			<response>
 				<template contentType="application/json">
@@ -51,7 +48,6 @@
 					<property name="city" xpath="city"/>
 				</xpathExtractor>
 			</response>
-
 			<!--
 			Directs the traffic to the logger api.
 			-->
@@ -59,10 +55,12 @@
 		</api>
 
 		<!--
-		Logs the incoming traffic to console.
+		Logs the incoming message to console.
 		-->
 		<api port="3000">
-			<log headerOnly="false"/>
+			<request>
+				<log headerOnly="false"/>
+			</request>
 			<return statusCode="200" />
 		</api>
 
