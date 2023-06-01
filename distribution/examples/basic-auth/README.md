@@ -1,6 +1,6 @@
 # Basic Authentication
 
-This example explains how to protect an API or a Web application using _HTTP Basic Authentication_.
+This example explains how to protect an API or a Web application using __HTTP Basic Authentication__.
 
 
 ## Running the Example
@@ -36,13 +36,13 @@ Now take a closer look at the `<basicAuthentication>` element:
 
 ```
 <basicAuthentication>
-	<user name="alice" password="membrane" />
+  <user name="alice" password="membrane" />
 </basicAuthentication>
 ```
 
-You can add users by using nested `user` elements. The `username` and the `password` are given by the attributes name and password of the `user` element. In the example there is one user with username `alice` and password `membrane`. 
+You can add users by using `user` elements. The `username` and the `password` are given by the attributes name and password of the `user` element. In the example there is one user with username `alice` and password `membrane`. 
 
-When opening the URL `http://localhost:2000/` in the browser membrane will respond with a `401 Not Authorized` message.
+When opening the URL `http://localhost:2000/` membrane will respond with `401 Not Authorized`.
 
 ```
 HTTP/1.1 401 Unauthorized
