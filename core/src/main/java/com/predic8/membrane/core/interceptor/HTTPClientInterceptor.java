@@ -61,14 +61,12 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			return RETURN;
 		} catch (ConnectException e) {
 			String msg =  format("Target %s is not reachable.", getDestination(exc));
-			log.warn(msg);
-			log.warn("Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
+			log.warn(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
 			createAndSetErrorResponse(exc,502,msg);
 			return ABORT;
 		} catch (UnknownHostException e) {
 			String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName());
-			log.error(msg);
-			log.error("Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
+			log.error(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
 			if (router.isProduction()) {
 				createAndSetProductionErrorResponse(exc,500);
 			} else {
