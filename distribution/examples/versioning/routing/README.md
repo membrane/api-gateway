@@ -62,4 +62,6 @@ You should see a response containing "Hello ... version 1.1".
   Observe that both requests, `1.1` and `2.0`, get a response from their respective service, although
   the endpoint used is the same.
 
-
+---
+See: 
+- [switch](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/switch.htm) reference

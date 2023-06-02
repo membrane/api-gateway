@@ -26,3 +26,7 @@ Execute the following steps:
    ```bash
    curl http://localhost:2000/text?name=Joe     
    ```
+
+---
+See:
+- [template](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/template.htm) reference 

@@ -31,3 +31,7 @@ Execute the following steps:
        <destination>Tokio</destination>
        <destination>Berlin</destination>
    </destinations>
+
+---
+See:
+- [template](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/template.htm) reference 

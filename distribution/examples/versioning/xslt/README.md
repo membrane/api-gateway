@@ -64,3 +64,7 @@ Execute the following steps:
   the first one uses an old request format.
 
 
+---
+See:
+- [soapProxy](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/soapProxy.htm) reference
+- [switch](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/switch.htm) reference

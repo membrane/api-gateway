@@ -61,3 +61,7 @@ The `index.js` and `package.json` files are part of the Node application that do
 This application starts a WebSocket server that listens for incoming WebSocket connections on port `8080`. Additionally,
 it starts a WebSocket client that connects to Membrane Service Proxy on port `9999` and then sends a message to the
 WebSocket server through Membrane Service Proxy. The server respond to this message and the application closes.
+
+---
+See:
+- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
