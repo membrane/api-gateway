@@ -221,3 +221,7 @@ The transformed body will show up in your browser:
   </ns1:details>
 </ns1:getBankResponse>
 ```
+
+--- 
+See: 
+- [rest2Soap](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rest2Soap.htm) reference

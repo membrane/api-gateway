@@ -84,3 +84,8 @@ rewrite.
 
 The third Service Proxy is just an Admin Console which you can use to watch
 active Service Proxies and current calls and connections.
+
+---
+See:
+- [swaggerProxy](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/swaggerProxy.htm) reference
+- [swaggerRewriter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/swaggerRewriter.htm) reference

@@ -12,3 +12,7 @@ Execute the following steps:
 3. Run `curl -d @year.xml http://localhost:2000/`. Observe that you get a successful response.
 
 4. Run `curl -d @invalid-year.xml http://localhost:2000/`. Observe that you get a validation error response.
+
+---
+See:
+- [validator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/validator.htm) reference

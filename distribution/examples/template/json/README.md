@@ -38,3 +38,7 @@ Execute the following steps:
    ```text
    City: Berlin  
    ```
+
+---
+See:
+- [template](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/template.htm) reference 

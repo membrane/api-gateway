@@ -38,3 +38,7 @@ Membrane comes with a `JSON` template that attaches the proxy name to log output
 
 You can also use your own `JSON` layout using `eventTemplateUri` property. In order to observe this you can open `logging-json/log4j2_json` file and edit
 `eventTemplateUri` to `file:(ABSOLUTE PATH OF ExampleLayout.json)` for example `file:/home/user/ExampleLayout.json`
+
+---
+See:
+- [log](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/log.htm) reference

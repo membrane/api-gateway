@@ -24,8 +24,9 @@ http://localhost:8080
 
 You will notice that requests will be routed to node 1, 2 and 3.
 
-
-
+---
+See:
+- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
 
 
 
