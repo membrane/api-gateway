@@ -36,3 +36,7 @@ is the WebSocket log interceptor of the custom WebSocket interceptor tutorial at
 
 The application starter is found in the `src/main/java/com/predic8/application` folder. The application starter starts an
 embedded Membrane Service Proxy and adds a service proxy to it that has the WebSocket log interceptor attached.
+
+See:
+- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
+- [wsInterceptor](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/wsInterceptor.htm) reference

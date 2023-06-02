@@ -76,6 +76,5 @@ Using the `groovy` element you can run Groovy scripts to manipulate or monitor m
    X-Forwarded-Host: localhost:2000
    ```
 
-## Documentation
-
-See the [groovy plugin](https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/groovy.htm) reference.
+See:
+- [groovy plugin](https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/groovy.htm) reference
