@@ -197,8 +197,6 @@ public class Process2 implements AutoCloseable {
 
 		stuff.pid = waitForPIDtoBeWritten(exampleDir, pidFile, p);
 
-		System.out.println("Pid for started process: " + stuff.pid);
-
 		if (afterStartWaiter != null)
 			afterStartWaiter.waitFor(10000);
 		sleep(100);
@@ -276,13 +274,10 @@ public class Process2 implements AutoCloseable {
 			var stdOutPipe = getOutputFilename(id);
 			var launcherScript = """
                     #!/bin/bash
-                    sh -c 'echo $$ > %s; exec %s' 
-                    #%s &> %s &
-                    #echo "Started process $!"
-                    #ps ax | grep "$!"
-                    #echo $! > %s
-                    #tail -f %s
-                    """.formatted(pidFile, startCommand, stdOutPipe, pidFile, stdOutPipe, "");
+                    %s &> %s &
+                    echo $! > %s
+                    tail -f %s
+                    """.formatted(startCommand, stdOutPipe, pidFile, stdOutPipe);
 			FileWriter fw = new FileWriter(ps1);
 			fw.write(launcherScript);
 			fw.close();
@@ -323,7 +318,7 @@ public class Process2 implements AutoCloseable {
 
 		sleep(50); // Quickfix, sometimes Membrane gets terminated before the test is over
 
-		System.out.println("Killing process " + ps.pid);
+		//System.out.println("Killing process " + ps.pid);
 		// wait for killer to complete
 		Process killer = pb.start();
 		ProcessStuff killerStuff = new ProcessStuff(killer);
@@ -347,9 +342,8 @@ public class Process2 implements AutoCloseable {
 			command.add("/PID");
 			command.add(ps.pid.toString());
 		} else {
-			command.add("pkill");
-			command.add("-KILL");
-			command.add("-P");
+			command.add("kill");
+			command.add("-TERM");
 			command.add(ps.pid.toString());
 		}
 		return command;
