@@ -112,5 +112,6 @@ Since our `internalProxy` has the name `mybackend`, Membrane sends the exchange 
 <internalProxy name="mybackend">
 ```
 
+---
 See:
 - [internalProxy](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/internalProxy.htm) reference

@@ -76,6 +76,7 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
    X-Forwarded-Host: localhost:2000
    ```
 
+---
 See: 
 - [javascript plugin](https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/javascript.htm) reference
 

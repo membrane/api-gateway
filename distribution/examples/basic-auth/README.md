@@ -62,5 +62,6 @@ Authorization: Basic bWVtYnJhbmU6bWVtYnJhbmU=
 
 Notice how the `Authorization` header is set with the hash of username and password. If the user is valid, membrane will let the request pass and the target host will respond.
 
+---
 See:
 - [basicAuthentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm) reference

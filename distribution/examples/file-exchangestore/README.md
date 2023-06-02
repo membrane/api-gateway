@@ -17,6 +17,7 @@ To run the example execute the following steps:
 
 4. Take a look at the directory `examples/file-exchangestore/exchanges it contains the exchanges of the previous call.
 
+---
 See: 
 - [exchangeStore](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/exchangeStore.htm) reference
 - [fileExchangeStore](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/fileExchangeStore.htm) reference

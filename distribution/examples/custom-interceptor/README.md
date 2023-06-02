@@ -46,5 +46,6 @@ Again in the proxies.xml file inside `<serviceProxy>` tag you can see that we ad
 
 When we run the membrane using service-proxy.sh you can see that in the console that requests and responses are being intercepted by our custom interceptor.
 
+---
 See:
 - [interceptor](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/interceptor.htm) reference
