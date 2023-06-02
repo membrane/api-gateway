@@ -26,16 +26,11 @@ import java.lang.Override;
  * @author Oliver Weiler
  */
 public class AddMyHeaderInterceptor extends AbstractInterceptor {
-    private static final Logger log = Logger.getLogger(AddMyHeaderInterceptor.class);
-
     @Override
     public Outcome handleRequest(Exchange exchange) {
-        log.info(exchange.getRequest().getHeader().getUserAgent());
-
+        System.out.println(exchange.getRequest().getHeader().getUserAgent());
         exchange.getRequest().getHeader().add("X-Hello", "Hello World!");
-
-        log.info(exchange.getRequest());
-
+        System.out.println(exchange.getRequest());
         return Outcome.CONTINUE;
     }
 }
