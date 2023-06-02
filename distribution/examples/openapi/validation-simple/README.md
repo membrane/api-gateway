@@ -117,3 +117,7 @@ In case of a validation failure an error message is returned to client without c
 ```
 
 See the [openapi-validation](../validation) folder for a more detailed example.
+
+---
+See:
+- [openapi](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/openapi.htm) reference

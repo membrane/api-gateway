@@ -128,3 +128,8 @@ Hello there, d5xxxxx2-xxxx-xxxx-xxxx-fxxxxxxxxx7e.
 This is the OID of the subject (=owner) of the token, which was assigned to the Demo Client. (See also https://learn.microsoft.com/de-de/azure/active-directory/develop/id-tokens .)
 
 The greeting, including the OID, was issued as specified in ``proxies.xml``.
+
+---
+See:
+- [jwtAuth](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/jwtAuth.htm) reference
+- [jwks](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/jwks.htm) reference

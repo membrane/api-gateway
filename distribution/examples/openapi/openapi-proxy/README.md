@@ -102,4 +102,6 @@ For more about the OpenAPI Validation features of Membrane have a look at:
 - [Simple Validation Example](../validation-simple)
 - [Extended Validation Example](git/predic8/service-proxy/distribution/examples/openapi/validation/)
 
-
+---
+See:
+- [openapi](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/openapi.htm) reference
