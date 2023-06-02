@@ -49,8 +49,8 @@ public class RoutingTest extends DistributionExtractingTestcase {
 
         BufferLogger b = new BufferLogger();
         try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn clean compile assembly:single").withWatcher(b).start()) {
-            if (mvn.waitFor(60000) != 0)
-                throw new RuntimeException("Maven exited with code " + mvn.waitFor(60000) + ": " + b);
+            if (mvn.waitForExit(60000) != 0)
+                throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + b);
         }
 
         try(Process2 ignored1 = startServiceProxyScript()) {

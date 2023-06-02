@@ -47,7 +47,7 @@ public class XsltExampleTest extends DistributionExtractingTestcase {
 
         BufferLogger logger = new BufferLogger();
         try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn clean compile assembly:single").withWatcher(logger).start()) {
-            int exitCode = mvn.waitFor(60000);
+            int exitCode = mvn.waitForExit(60000);
             if (exitCode != 0)
                 throw new RuntimeException("Maven exited with code " + exitCode + ": " + logger);
         }

@@ -15,12 +15,12 @@
 package com.predic8.membrane.examples.util;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.OSUtil.isWindows;
-import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
 
@@ -37,7 +37,7 @@ import static java.lang.Thread.sleep;
 public class Process2 implements AutoCloseable {
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		killScript();
 	}
 
@@ -106,12 +106,12 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
-	private final class OutputWatcher extends Thread {
-		private final ProcessStuff ps;
+	private static final class OutputWatcher extends Thread {
+		private final Process2 ps;
 		private final InputStream is;
 		private final boolean error;
 
-		private OutputWatcher(ProcessStuff ps, InputStream is, boolean error) {
+		private OutputWatcher(Process2 ps, InputStream is, boolean error) {
 			this.ps = ps;
 			this.is = is;
 			this.error = error;
@@ -138,26 +138,9 @@ public class Process2 implements AutoCloseable {
 		}
 	}
 
-	private class ProcessStuff {
-		public final Process p;
-		public Thread inputReader, errorReader;
-		public final List<ConsoleWatcher> watchers = new ArrayList<>();
-
-		public ProcessStuff(Process p) {
-			this.p = p;
-		}
-
-		public void startOutputWatchers() {
-			inputReader = new OutputWatcher(this, p.getInputStream(), false);
-			inputReader.start();
-			errorReader = new OutputWatcher(this, p.getErrorStream(), true);
-			errorReader.start();
-		}
-	}
-
-	private final ProcessStuff stuff;
-
-	private static final Random random = new Random(System.currentTimeMillis());
+	private final Process p;
+	private Thread inputReader, errorReader;
+	private final List<ConsoleWatcher> watchers = new ArrayList<>();
 
 	private Process2(File exampleDir, String id, String startCommand, List<ConsoleWatcher> consoleWatchers, String waitAfterStartFor) throws IOException, InterruptedException {
 
@@ -166,156 +149,70 @@ public class Process2 implements AutoCloseable {
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 
-		String pidFile = getPidFilename(id);
-
-		Map<String, String> envVarAdditions = new HashMap<>();
-
-		final Process p = getProcessBuilder(exampleDir, id, startCommand, pidFile, envVarAdditions).start();
-
+		p = getProcessBuilder(exampleDir, startCommand).start();
 		p.getOutputStream().close();
 
-		ProcessStuff ps = new ProcessStuff(p);
-		stuff = ps;
 		consoleWatchers.add((error, line) -> System.out.println(line));
 
-		ps.watchers.addAll(consoleWatchers);
+		watchers.addAll(consoleWatchers);
 
 		SubstringWaitableConsoleEvent afterStartWaiter = null;
 		if (waitAfterStartFor != null)
 			afterStartWaiter = new SubstringWaitableConsoleEvent(this, waitAfterStartFor);
 
-		ps.startOutputWatchers();
+		startOutputWatchers();
 
-		if (afterStartWaiter != null)
-			afterStartWaiter.waitFor(10000);
+		if (afterStartWaiter != null) {
+			try {
+				afterStartWaiter.waitFor(10000);
+			} catch (TimeoutException e) {
+				killScript();
+				throw new RuntimeException(e);
+			}
+		}
 		sleep(100);
 	}
 
-	private List<ProcessHandle> getChildren(ProcessHandle p) {
+	private Stream<ProcessHandle> getChildrenRecursively(ProcessHandle p) {
 		return Stream.concat(
 				Stream.of(p),
-				p.children().flatMap(ph -> getChildren(ph).stream())
-		).toList();
+				p.children().flatMap(this::getChildrenRecursively)
+		);
 	}
 
-	private ProcessBuilder getProcessBuilder(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
-		ProcessBuilder pb = new ProcessBuilder(getStartCommand(exampleDir, id, startCommand, pidFile, envVarAdditions)).directory(exampleDir);
+	private ProcessBuilder getProcessBuilder(File exampleDir, String startCommand) {
+		ProcessBuilder pb = new ProcessBuilder(startCommand.split(" "));
+		pb.directory(exampleDir);
 		pb.environment().remove("MEMBRANE_HOME");
-		pb.environment().putAll(envVarAdditions);
+		if (!isWindows()) {
+			pb.environment().put("PATH", System.getProperty("java.home") + "/bin:" + System.getenv("PATH"));
+			pb.environment().put("JAVA_HOME", System.getProperty("java.home"));
+		}
 		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
 		return pb;
 	}
 
-	private static String getPidFilename(String id) {
-		synchronized(random) {
-			return id + "-" + random.nextInt() + ".pid";
-		}
-	}
-
-//	private static String getOutputFilename(String id) {
-//		synchronized(random) {
-//			return id + "-" + random.nextInt() + ".txt";
-//		}
-//	}
-//
-//	private Integer waitForPIDtoBeWritten(File exampleDir, String pidFile, Process p) throws InterruptedException, IOException {
-//		for (int i = 0; i < 1001; i++) {
-//			if (i % 20 == 0) {
-//				throwIfTerminated(p);
-//			}
-//			sleep(100);
-//			File f = new File(exampleDir, pidFile);
-//			if (!f.exists())
-//				continue;
-//			try (FileInputStream fr = new FileInputStream(f)) {
-//				String line = new BufferedReader(new InputStreamReader(fr, getCharset())).readLine();
-//				if (line == null)
-//					continue;
-//				return Integer.parseInt(line);
-//			} catch (NumberFormatException e) {
-//				// ignore
-//			}
-//		}
-//		throw new RuntimeException("could not read PID file");
-//	}
-//
-//	private void throwIfTerminated(Process p) {
-//		try {
-//			throw new RuntimeException("Process terminated with exit code " + p.exitValue());
-//		} catch (IllegalThreadStateException e) {
-//			// did not terminate yet
-//		}
-//	}
-//
-//	private static Charset getCharset() {
-//		if (isWindows()) {
-//			return UTF_16; // powershell writes UTF-16 files by default
-//		} else {
-//			return defaultCharset(); // on Linux, the file is probably using some 8-bit charset
-//		}
-//	}
-
-	// TODO simplify
-	private ArrayList<String> getStartCommand(File exampleDir, String id, String startCommand, String pidFile, Map<String, String> envVarAdditions) throws IOException {
-		ArrayList<String> command = new ArrayList<>();
-		if (isWindows()) {
-			File ps1 = new File(exampleDir, id + ".ps1");
-			FileWriter fw = new FileWriter(ps1);
-			fw.write(createStartCommand(startCommand, pidFile));
-			fw.close();
-			command.add("powershell");
-			command.add(ps1.getAbsolutePath());
-		} else {
-			// Linux and Mac OS
-			File ps1 = new File(exampleDir, id + "_launcher.sh");
-//			var stdOutPipe = getOutputFilename(id);
-			var launcherScript = """
-                    #!/bin/bash
-                    %s
-                    """.formatted(startCommand); //, stdOutPipe, pidFile, stdOutPipe);
-			FileWriter fw = new FileWriter(ps1);
-			fw.write(launcherScript);
-			fw.close();
-
-			//noinspection ResultOfMethodCallIgnored
-			ps1.setExecutable(true);
-			command.add("setsid"); // start new process group so we can kill it at once
-			command.add(ps1.getAbsolutePath());
-
-			envVarAdditions.put("PATH", System.getProperty("java.home") + "/bin:" + System.getenv("PATH"));
-			envVarAdditions.put("JAVA_HOME", System.getProperty("java.home"));
-		}
-		return command;
-	}
-
-	private String createStartCommand(String startCommand, String pidFile) {
-		return format("\"\" + [System.Diagnostics.Process]::GetCurrentProcess().Id > \"%s\"\r\n%s\r\nexit $LASTEXITCODE", pidFile, startCommand);
-	}
-
 	public void addConsoleWatcher(ConsoleWatcher watcher) {
-		synchronized(stuff.watchers) {
-			stuff.watchers.add(watcher);
+		synchronized(watchers) {
+			watchers.add(watcher);
 		}
 	}
 
 	public void removeConsoleWatcher(ConsoleWatcher watcher) {
-		synchronized(stuff.watchers) {
-			stuff.watchers.remove(watcher);
+		synchronized(watchers) {
+			watchers.remove(watcher);
 		}
 	}
 
 	public void killScript() {
-		getChildren(stuff.p.toHandle()).forEach(ProcessHandle::destroy);
+		if (inputReader != null) inputReader.interrupt();
+		if (errorReader != null) errorReader.interrupt();
+		getChildrenRecursively(p.toHandle()).forEach(ProcessHandle::destroyForcibly);
 	}
 
-	private static int waitFor(Process p, long timeout) {
+	private static int waitForExit(Process p, long timeout) {
 		long start = System.currentTimeMillis();
-		while (true) {
-			try {
-				return p.exitValue();
-			} catch (IllegalThreadStateException e) {
-				// continue waiting
-			}
+		while (p.isAlive()) {
 			if (getTimeLeft(timeout, start) <= 0)
 				throw new RuntimeException(new TimeoutException());
 			try {
@@ -325,14 +222,22 @@ public class Process2 implements AutoCloseable {
 				currentThread().interrupt();
 			}
 		}
+		return p.exitValue();
 	}
 
 	private static long getTimeLeft(long timeout, long start) {
 		return timeout - (System.currentTimeMillis() - start);
 	}
 
-	public int waitFor(long timeout) {
-		return waitFor(stuff.p, timeout);
+	public int waitForExit(long timeout) {
+		return waitForExit(p, timeout);
+	}
+
+	public void startOutputWatchers() {
+		inputReader = new OutputWatcher(this, p.getInputStream(), false);
+		inputReader.start();
+		errorReader = new OutputWatcher(this, p.getErrorStream(), true);
+		errorReader.start();
 	}
 
 }
