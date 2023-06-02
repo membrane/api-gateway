@@ -24,12 +24,12 @@ This section describes the example in detail.
 
 First take a look at the proxies.xml file.
 ```
-	<router>
-		<serviceProxy port="2000">
-			<rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-			<target host="www.google.de" port="80" />
-		</serviceProxy>
-	</router>
+<router>
+  <serviceProxy port="2000">
+    <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+    <target host="www.google.de" port="80" />
+  </serviceProxy>
+</router>
 ```
 You will see that there is a `serviceProxy` on port `2000`. Additionally, the `RateLimiter` is added to the proxy and configured to 3 requests per 30 seconds.
 

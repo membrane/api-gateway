@@ -43,15 +43,15 @@ First take a look at the `proxies.xml` file in the publisher folder.
 ```
 
 <etcdPublisher baseUrl="http://localhost:4001" baseKey="/example" ttl="20"/>
-	<router>
-		<serviceProxy name="helloResponse" port="8081">
-			<path>/myService</path>
-			<groovy>				
-			exc.response = Response.ok("Hello").build()
-			RETURN
-			</groovy>
-		</serviceProxy>
-	</router>
+<router>
+  <serviceProxy name="helloResponse" port="8081">
+    <path>/myService</path>
+    <groovy>				
+      exc.response = Response.ok("Hello").build()
+      RETURN
+    </groovy>
+  </serviceProxy>
+</router>
 ```
 You will see that there is a service proxy that responds with `hello` when going to http://localhost:8081 in you browser. On top of that you can see the `<etcdPublisher>` that is responsible for publishing the endpoint details to an etcd.
 
@@ -64,12 +64,12 @@ Now take a look at the `proxies.xml` file in the configurator folder.
 
 ```
 <etcdBasedConfigurator baseUrl="http://localhost:4001" baseKey="/example" port="8080"/>
-	<router>
-	<transport/>
-		<serviceProxy name="Console" port="9001">
-			<adminConsole />
-		</serviceProxy>
-	</router>
+<router>
+<transport/>
+  <serviceProxy name="Console" port="9001">
+    <adminConsole />
+  </serviceProxy>
+</router>
 ```
 You will see a service proxy that provides the admin console on port `9001`. Additionally, on top you can see the etcdBasedConfigurator that reads from an etcd and creates service proxies for those services dynamically.
 The `etcdBasedConfigurator` has 3 values that you can set and by default it is set to read from an etcd on http://localhost:4001 and provides its service on port `8080`.

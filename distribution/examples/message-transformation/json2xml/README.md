@@ -26,10 +26,10 @@ Let's take a look at the `proxies.xml` file.
 
 ```
 <api port="2000">
-    <request>
-        <json2Xml/>
-    </request>
-    <target url="http://localhost:3000"/>
+  <request>
+    <json2Xml/>
+  </request>
+  <target url="http://localhost:3000"/>
 </api>
  ```
 

@@ -35,12 +35,12 @@ Take a look at the proxies.xml.
 
 ```
 <serviceProxy port="9999">
-    <!-- WebSocket intercepting starts here -->
-    <webSocket>
-        <!-- logs the content of a WebSocket frame to the console  -->
-        <wsLog/>
-    </webSocket>
-    <target port="8080" host="localhost"/>
+  <!-- WebSocket intercepting starts here -->
+  <webSocket>
+    <!-- logs the content of a WebSocket frame to the console  -->
+    <wsLog/>
+  </webSocket>
+  <target port="8080" host="localhost"/>
 </serviceProxy>
 ```
 

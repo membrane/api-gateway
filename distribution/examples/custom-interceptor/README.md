@@ -39,8 +39,8 @@ Again in the proxies.xml file inside `<serviceProxy>` tag you can see that we ad
 
 ```
 <serviceProxy port="2000">
-	<interceptor refid="myInterceptor" />
-	<target host="membrane-soa.org" />
+  <interceptor refid="myInterceptor" />
+  <target host="membrane-soa.org" />
 </serviceProxy>
 ```
 
