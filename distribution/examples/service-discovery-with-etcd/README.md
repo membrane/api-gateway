@@ -78,3 +78,7 @@ The `etcdBasedConfigurator` has 3 values that you can set and by default it is s
 * `baseKey` is the directory where the call details are saved
 * `port` is the port the `etcdBasedConfigurator` provides its service on
 
+---
+See:
+- [etcdBasedConfigurator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/etcdBasedConfigurator.htm) reference
+- [etcdPublisher](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/etcdPublisher.htm) reference

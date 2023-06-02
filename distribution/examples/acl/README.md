@@ -84,6 +84,9 @@ The element <any> can be used to grant permission to all clients.
 
 The access permissions are scanned from top to bottom, therefore the order of the rules is significant.
 
+---
+See:
+- [accessControl](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/accessControl.htm) reference
 
 
 

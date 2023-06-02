@@ -38,3 +38,6 @@ The rateLimiter element has 2 values that you can set and by default it is set t
 * `requestLimit="x"` can be any positive number. Specifies the number of requests per interval.
 * `requestLimitDuration="PTxS"` can be any duration in seconds. Specifies the interval in which `requestLimit` requests can be done. Format is "PTxS" where x is the duration in seconds.
  
+--- 
+See:
+- [rateLimiter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rateLimiter.htm) reference

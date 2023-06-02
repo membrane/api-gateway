@@ -31,3 +31,7 @@ curl --header "Content-Type: application/soap+xml" -d @blz-soap.xml http://local
 ```
 curl --header "Content-Type: application/soap+xml" -d @invalid-blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse
 ```
+
+---
+See:
+- [validator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/validator.htm) reference

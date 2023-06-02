@@ -56,3 +56,7 @@ In the regular expression, we use a group that we can reference when replacing t
 /axis2/services/BLZService?wsdl
 /axis2/services/BLZService
 ```
+
+---
+See:
+- [rewriter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rewriter.htm) reference

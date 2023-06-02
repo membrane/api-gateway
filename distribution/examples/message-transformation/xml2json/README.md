@@ -48,3 +48,6 @@ This is possible because `xml2Json` interceptor can work both ways.
 xml2Json interceptor will intercept message based on the content type, and it will use `XML.toJSONObject` from org.json for conversion.
 It will also change content type of message to `application/json;charset=utf-8`.
 
+---
+See:
+- [xml2Json](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/xml2Json.htm) reference

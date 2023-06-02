@@ -81,3 +81,8 @@ The `<wsStompReassembler>` runs typical Membrane Service Proxy interceptors on a
 
 In this example a groovy interceptor is run on the `STOMP` over `WebSocket` message. The interceptor changes the content of
 the message by prepending a prefix to the body of the message.
+
+---
+See:
+- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
+- [wsStompReassembler](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/wsStompReassembler.htm) reference

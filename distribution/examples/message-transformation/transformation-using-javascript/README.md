@@ -35,6 +35,6 @@ The underlying Javascript engine is `Rhino`. For further reference see http://mo
 
 You can exchange Rhino with the newer Javascript engine from the GraalVM. See https://membrane-api.io/plugins/javascript.html
 
-
-
-
+---
+See:
+- [javascript](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/javascript.htm) reference

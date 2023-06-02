@@ -57,3 +57,7 @@ The following items are a list of attributes that map an NTLM parameter to a cus
 * pass - (Corresponding password for username
 * domain - (Domain the Windows server is residing in)
 * workstation - (Workstation the user is assigned to)
+
+---
+See:
+- [ntlm](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/ntlm.htm) reference

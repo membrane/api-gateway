@@ -33,3 +33,7 @@ To run the example execute the following steps:
 10. Open http://localhost:2000/login/logout in your browser.
 
 11. You are logged out again.
+
+--- 
+See
+- [login](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/login.htm) reference

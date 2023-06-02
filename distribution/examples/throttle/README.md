@@ -16,3 +16,7 @@ Execute the following steps:
 2. Open the URL http://localhost:2000 in your browser.
 
 3. Notice the delay when you browse.
+
+---
+See:
+- [throttle](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/throttle.htm) reference
