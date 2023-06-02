@@ -42,17 +42,18 @@ public class URITest {
 		assertSame("scheme:?a=query#foo", true); // opaque
 	}
 
+	@SuppressWarnings("UnnecessaryUnicodeEscape")
 	@Test
 	public void testEncoding() {
-		assertSame("http://predic8.de/path/file?a=quer�y#foo");
+		assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
 		assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
-		assertSame("http://predic8.de/path/fi�le?a=query#foo");
+		assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
 		assertSame("http://predic8.de/path/fi%C3%A4le?a=query#foo");
-		assertSame("http://predic8.de/pa�th/file?a=query#foo");
+		assertSame("http://predic8.de/pa\u00E4th/file?a=query#foo");
 		assertSame("http://predic8.de/pa%C3%A4th/file?a=query#foo");
-		assertSame("http://predic8.d�e/path/file?a=query#foo");
+		assertSame("http://predic8.d\u00E4e/path/file?a=query#foo");
 		assertSame("http://predic8.d%C3%A4e/path/file?a=query#foo");
-		assertError("htt�p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
+		assertError("htt\u00E4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
 		assertError("htt%C3%A4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
 	}
 

@@ -22,6 +22,7 @@ import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.net.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -66,10 +67,12 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			return ABORT;
 		} catch (UnknownHostException e) {
 			String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName());
-			log.error(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
 			if (router.isProduction()) {
-				createAndSetProductionErrorResponse(exc,500);
+				String logKey = UUID.randomUUID().toString();
+				log.error("logKey=%s\n%s\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.", logKey, msg);
+				createAndSetProductionErrorResponse(exc,500, logKey);
 			} else {
+				log.error(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
 				createAndSetErrorResponse(exc,502, msg);
 			}
 			return ABORT;

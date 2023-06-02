@@ -33,7 +33,7 @@ public class URI {
 	private String pathDecoded, queryDecoded;
 
 	private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
-	//                                                 12            3  4          5       6   7        8 9
+	//                                                             12            3  4          5       6   7        8 9
 	// if defined, the groups are:
 	// 2: scheme, 4: host, 5: path, 7: query, 9: fragment
 
@@ -42,16 +42,6 @@ public class URI {
 		if (!m.matches())
 			return false;
 		input = s;
-
-		System.out.println("m.group(1) = " + m.group(1));
-		System.out.println("m.group(2) = " + m.group(2));
-		System.out.println("m.group(3) = " + m.group(3));
-		System.out.println("m.group(4) = " + m.group(4));
-		System.out.println("m.group(5) = " + m.group(5));
-		System.out.println("m.group(6) = " + m.group(6));
-		System.out.println("m.group(7) = " + m.group(7));
-		System.out.println("m.group(8) = " + m.group(8));
-		System.out.println("m.group(9) = " + m.group(9));
 
 		host = m.group(4);
 		path = m.group(5);
