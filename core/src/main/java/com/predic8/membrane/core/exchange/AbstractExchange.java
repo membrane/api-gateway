@@ -14,28 +14,19 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.model.IExchangeViewerListener;
-import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.DateFormat;
+import java.io.*;
+import java.net.*;
+import java.text.*;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
+
+import static com.predic8.membrane.core.exchange.ExchangeState.*;
 
 public abstract class AbstractExchange {
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
@@ -47,13 +38,13 @@ public abstract class AbstractExchange {
 
 	private Calendar time = Calendar.getInstance();
 	private String errMessage = "";
-	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<>();
-	private Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
+	private final Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<>();
+	private final Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
 	protected Rule rule;
 
 	protected Map<String, Object> properties = new HashMap<>();
 
-	private ExchangeState status = ExchangeState.STARTED;
+	private ExchangeState status = STARTED;
 
 	private boolean forceToStop = false;
 
@@ -82,7 +73,6 @@ public abstract class AbstractExchange {
 
 	/**
 	 * For HttpResendRunnable
-	 * @param original
 	 */
 	public AbstractExchange(AbstractExchange original) {
 		properties = new HashMap<>(original.properties);
@@ -164,12 +154,12 @@ public abstract class AbstractExchange {
 	}
 
 	public void setCompleted() {
-		status = ExchangeState.COMPLETED;
+		status = COMPLETED;
 		notifyExchangeFinished();
 	}
 
 	public void setStopped() {
-		status = ExchangeState.SENT;
+		status = SENT;
 		notifyExchangeStopped();
 	}
 
@@ -199,8 +189,8 @@ public abstract class AbstractExchange {
 
 	public void finishExchange(boolean refresh, String errmsg) {
 		errMessage = errmsg;
-		if (status != ExchangeState.COMPLETED) {
-			status = ExchangeState.FAILED;
+		if (status != COMPLETED) {
+			status = FAILED;
 			forceToStop = true;
 		}
 
@@ -237,7 +227,7 @@ public abstract class AbstractExchange {
 	}
 
 	public void setReceived() {
-		status = ExchangeState.RECEIVED;
+		status = RECEIVED;
 	}
 
 	public Object getProperty(String key) {
@@ -370,7 +360,7 @@ public abstract class AbstractExchange {
 	}
 
 	/**
-	 * If &lt;transport reverseDNS="true"/&gt;, {@link #getRemoteAddr()} returns the hostname of the incoming TCP connection's remote address.
+	 * If &lt;transport reverseDNS="true"/&gt;, getRemoteAddr() returns the hostname of the incoming TCP connection's remote address.
 	 * If false, it returns the IP address.
 	 */
 	public String getRemoteAddr() {
@@ -425,7 +415,7 @@ public abstract class AbstractExchange {
 				(response != null ? response.estimateHeapSize() : 0);
 	}
 
-	public static <T extends AbstractExchange> T updateCopy(T source, T copy, Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+	public static <T extends AbstractExchange> T updateCopy(T source, T copy, Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		if (bodyUpdatedCallback != null) {
 			if (source.getRequest() != null)
 				copy.setRequest(source.getRequest().createSnapshot(bodyUpdatedCallback, strategy, limit));

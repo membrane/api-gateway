@@ -31,6 +31,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
 import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.*;
 import static com.predic8.membrane.core.transport.http2.frame.Error.*;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
@@ -79,8 +80,10 @@ public class Http2ExchangeHandler implements Runnable {
             log.debug("client socket closed");
         } catch (SSLException s) {
             if(showSSLExceptions) {
-                if (s.getCause() instanceof SSLException)
-                    s = (SSLException) s.getCause();
+                if (s.getCause() instanceof SSLException) {
+                    log.error("Caused by",s.getCause());
+                    return;
+                }
                 if (s.getCause() instanceof SocketException)
                     log.debug("ssl socket closed");
                 else
@@ -187,7 +190,7 @@ public class Http2ExchangeHandler implements Runnable {
     public static void writeMessageBody(final int streamId, final StreamInfo streamInfo, final FrameSender sender, final Settings peerSettings, final PeerFlowControl peerFlowControl, Message res) throws IOException {
         res.getBody().write(new AbstractBodyTransferrer() {
             @Override
-            public void write(byte[] content, int i, int length) throws IOException {
+            public void write(byte[] content, int i, int length) {
                 sendData(content, i, length);
             }
 
@@ -215,7 +218,7 @@ public class Http2ExchangeHandler implements Runnable {
             }
 
             @Override
-            public void write(Chunk chunk) throws IOException {
+            public void write(Chunk chunk) {
                 sendData(chunk.getContent(), 0, chunk.getLength());
             }
 
@@ -335,7 +338,7 @@ public class Http2ExchangeHandler implements Runnable {
 
     private void closeConnections() {
         // TODO: improve condition for RST_STREAM
-        if (exchange.getStatus() != ExchangeState.COMPLETED) {
+        if (exchange.getStatus() != COMPLETED) {
             try {
                 sender.send(streamId, (encoder, peerSettings) -> ImmutableList.of(RstStreamFrame.construct(streamId,
                         ERROR_INTERNAL_ERROR)));
