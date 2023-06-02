@@ -119,3 +119,7 @@ given URL, which is http://localhost:61614/ in our case.
 This redirects to the local port `61614`, which is ActiveMQ's preconfigured
 standard port for the webSocket protocol.
 
+---
+See:
+- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
+- [webServer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webServer.htm) reference

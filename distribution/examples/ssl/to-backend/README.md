@@ -18,3 +18,7 @@ In the example we will route to an SSL protected API.
       </target>
     </serviceProxy>
     ```
+
+---
+See:
+- [ssl](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/ssl.htm) reference 

@@ -78,3 +78,7 @@ To run the example execute the following steps:
 
 
 Of course, you can protect the management API like any other Membrane proxy using SSL, a password or token.
+
+---
+See:
+- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference

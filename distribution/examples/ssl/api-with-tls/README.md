@@ -67,3 +67,7 @@ Just put an SSL element into a proxy. See the [documentation](https://www.membra
   <target host="localhost" port="2000"/>
 </serviceProxy>
 ```
+
+---
+See:
+- [ssl](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/ssl.htm) reference 

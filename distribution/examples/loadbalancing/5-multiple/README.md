@@ -29,7 +29,7 @@ To run the example execute the following steps:
 3. Open the URL http://localhost:8080/service in your browser and repeatedly refresh (F5). Observe that the response alternates
    between Mock Node 1 and 2.
    
-4. Open the URL http://localhost:8081/service and refresh serveral times. Observe that you now alternate between Mock Node 3
+4. Open the URL http://localhost:8081/service and refresh several times. Observe that you now alternate between Mock Node 3
    and Mock Node 4.
 
 5. Open the URL http://localhost:9000/admin/
@@ -53,4 +53,7 @@ To run the example execute the following steps:
 The names of <balancer> and <cluster> elements have to be simple (e.g. no spaces or special characters)
 for the web administration interface and LB client (see load-balancer-client-2) to work. 
 
-
+---
+See:
+- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
+- [cluster](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/cluster.htm) reference

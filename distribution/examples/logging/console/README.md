@@ -32,4 +32,6 @@ To run the example execute the following steps:
         </target>
     </serviceProxy>
     ```
-
+--- 
+See:
+- [log](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/log.htm) reference
