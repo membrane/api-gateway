@@ -26,3 +26,6 @@ To run the example execute the following steps:
 
 4. Try it again with a different banking code e.g. `curl --header "Accept: application/json" http://localhost:2000/bank/66762332`
 
+--- 
+See:
+- [rest2Soap](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rest2Soap.htm) reference

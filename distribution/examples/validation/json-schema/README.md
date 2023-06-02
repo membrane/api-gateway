@@ -32,3 +32,7 @@ Resources:
 
 (The file schema2001.json is loosely based on chapter 3 of
 http://tools.ietf.org/html/draft-zyp-json-schema-03 .)
+
+---
+See: 
+- [validator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/validator.htm) reference

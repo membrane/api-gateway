@@ -18,3 +18,7 @@ To run the example execute the following steps:
 4. Open the URL http://localhost:2000/soap-monitor-doc/csv-logging.htm in your browser.
 
 5. Open the file `log.csv` and take a look at the logged data.
+
+---
+See:
+- [statisticsCSV](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/statisticsCSV.htm) reference

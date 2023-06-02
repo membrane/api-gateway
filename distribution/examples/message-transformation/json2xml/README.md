@@ -37,3 +37,6 @@ In the `proxies.xml` file you can see the `json2Xml` plugin. The plugin is place
 
 The `xml2Json` plugin will intercept messages based on the content type, and it changes the content type to `text/xml`.
 
+---
+See:
+- [json2Xml](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/json2Xml.htm) reference
