@@ -42,3 +42,6 @@ Express order received.
 curl -d @import.xml localhost:2000
 Order contains import items.
 ```
+
+See:
+- [switch](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/switch.htm) reference
