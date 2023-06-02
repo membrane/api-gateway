@@ -43,7 +43,7 @@ public class Loadbalancing4XmlSessionTest extends DistributionExtractingTestcase
 			// call "ant compile" now so that both antNodeX processes do call it at the same time
 			BufferLogger loggerCompile = new BufferLogger();
 			try(Process2  antCompile = new Process2.Builder().in(baseDir).withWatcher(loggerCompile).executable("mvn package").start()) {
-				int result = antCompile.waitFor(40000);
+				int result = antCompile.waitForExit(40000);
 				if (result != 0)
 					throw new AssertionError("'mvn package' returned non-zero " + result + ":\r\n" + loggerCompile);
 			}
@@ -59,7 +59,7 @@ public class Loadbalancing4XmlSessionTest extends DistributionExtractingTestcase
 					sleep(300); // wait for nodes to come up
 
 					try(Process2 antClient = new Process2.Builder().in(baseDir).executable("mvn exec:java@client").start()) {
-						antClient.waitFor(30000);
+						antClient.waitForExit(30000);
 					}
 				}
 			}

@@ -18,6 +18,7 @@ import static com.predic8.membrane.test.AssertUtils.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 	}
 
 	@Test
-	public void doit() throws IOException, InterruptedException {
+	public void doit() throws IOException, InterruptedException, TimeoutException {
 		Process2 sl = startServiceProxyScript();
 		try {
 			String result = getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
