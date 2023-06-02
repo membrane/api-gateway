@@ -13,21 +13,18 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.util.Util;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import org.junit.jupiter.api.BeforeEach;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
+import org.junit.jupiter.api.*;
 
-import javax.mail.internet.ParseException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.concurrent.Callable;
+import java.util.*;
+import java.util.concurrent.*;
 
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2AuthorizationServerInterceptorBase {
@@ -46,59 +43,59 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
                 testGoodRevocationRequest());
     }
 
-    private static Object[] testGoodRevocationRequest() throws Exception{
+    private static Object[] testGoodRevocationRequest() {
         return new Object[]{"testGoodRevocationRequest", runUntilGoodTokenRequest(),getMockRevocationRequest(),200,noPostprocessing()};
     }
 
-    private static Object[] testGoodUserinfoRequest() throws Exception{
+    private static Object[] testGoodUserinfoRequest() {
         return new Object[]{"testGoodUserinfoRequest", runUntilGoodTokenRequest(),getMockUserinfoRequest(),200,userinfoRequestPostprocessing()};
     }
 
-    private static Object[] testGoodTokenRequest() throws Exception{
+    private static Object[] testGoodTokenRequest() {
         return new Object[]{"testGoodTokenRequest", runUntilGoodGrantedAuthCode(),getMockTokenRequest(),200, getTokenAndTokenTypeFromResponse()};
     }
 
-    private static Object[] testGoodGrantedAuthCode() throws Exception {
+    private static Object[] testGoodGrantedAuthCode() {
         return new Object[]{"testGoodGrantedAuthCode", runUntilGoodAuthRequest(), getMockEmptyEndpointRequest(), 307, getCodeFromResponse()};
     }
 
-    private static Object[] testGoodAuthRequest() throws Exception {
+    private static Object[] testGoodAuthRequest() {
         return new Object[]{"testGoodAuthRequest", noPreprocessing(), getMockAuthRequestExchange(),307, loginAsJohn()};
     }
 
-    private static Object[] testBadRequest() throws Exception {
+    private static Object[] testBadRequest() {
         return new Object[]{"testBadRequest", noPreprocessing(), getMockBadRequestExchange(),400, noPostprocessing()};
     }
 
-    public static Callable<Exchange> getMockBadRequestExchange() throws Exception {
+    public static Callable<Exchange> getMockBadRequestExchange() {
         return () -> new Request.Builder().get("/thisdoesntexist").buildExchange();
     }
 
-    private static Consumer<Exchange> userinfoRequestPostprocessing() throws IOException, ParseException {
+    private static Consumer<Exchange> userinfoRequestPostprocessing() {
         return exchange -> {
             HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
             assertEquals("john", json.get("username"));
         };
     }
 
-    public static Callable<Exchange> getMockRevocationRequest() throws Exception {
+    public static Callable<Exchange> getMockRevocationRequest() {
         return () -> new Request.Builder().post(mas.getRevocationEndpoint())
-                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(Header.USER_AGENT, Constants.USERAGENT)
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                .header(USER_AGENT, USERAGENT)
                 .body("token=" + afterTokenGenerationToken + "&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
                 .buildExchange();
     }
 
-    public static Callable<Exchange> getMockPasswordRequestExchange() throws Exception {
+    public static Callable<Exchange> getMockPasswordRequestExchange() {
         return () -> new Request.Builder().post(mas.getTokenEndpoint())
-                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                 .body("grant_type=password&username=john&password=password&client_id=abc&client_secret=def")
                 .buildExchange();
     }
 
-    public static Callable<Exchange> getMockClientCredentialsRequestExchange() throws Exception {
+    public static Callable<Exchange> getMockClientCredentialsRequestExchange() {
         return () -> new Request.Builder().post(mas.getTokenEndpoint())
-                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
                 .body("grant_type=password&client_id=abc&client_secret=def")
                 .buildExchange();
     }

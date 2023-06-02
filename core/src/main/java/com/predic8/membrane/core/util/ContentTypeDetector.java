@@ -13,17 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import java.util.Set;
-
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
-
-import com.google.common.collect.ImmutableSet;
-import com.predic8.membrane.core.Constants;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.multipart.*;
+
+import javax.xml.stream.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.ContentTypeDetector.ContentType.*;
+
 
 /**
  * This class tries to detect the "content type" of a given message.
@@ -81,9 +81,9 @@ public class ContentTypeDetector {
 
 	public static ContentDescriptor detect(Message m) {
 		try {
-			javax.mail.internet.ContentType t = m.getHeader().getContentTypeObject();
+			jakarta.mail.internet.ContentType t = m.getHeader().getContentTypeObject();
 			if (t == null)
-				return new ContentDescriptor(ContentType.UNKNOWN);
+				return new ContentDescriptor(UNKNOWN);
 
 			String type = t.getPrimaryType() + "/" + t.getSubType();
 
@@ -110,7 +110,7 @@ public class ContentTypeDetector {
 		} catch (Exception e) {
 			// do nothing
 		}
-		return new ContentDescriptor(ContentType.UNKNOWN);
+		return new ContentDescriptor(UNKNOWN);
 	}
 
 }

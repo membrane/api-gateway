@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.jmx.*;
 import com.predic8.membrane.core.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.*;
@@ -288,6 +289,19 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 			if (retryInitInterval > 0)
 				startAutoReinitializator();
+		} catch (DuplicatePathException e) {
+			System.err.printf("""
+					================================================================================================
+
+					Configuration Error: Several OpenAPI Documents share the same path!
+
+					An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
+					Within one API the same path should be used only by one OpenAPI. Change the paths or place
+					openapi-elements into separate api-elements.
+
+					Shared path: %s
+					%n""", e.getPath());
+			System.exit(1);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

@@ -41,14 +41,14 @@ public class WaitableConsoleEvent {
 		return event;
 	}
 
-	public synchronized void waitFor(long timeout) {
+	public synchronized void waitFor(long timeout) throws TimeoutException {
 		long start = System.currentTimeMillis();
 		while (true) {
 			if (event)
 				return;
 			long left = timeout - (System.currentTimeMillis() - start);
 			if (left <= 0)
-				throw new RuntimeException(new TimeoutException());
+				throw new TimeoutException();
 			try {
 				wait(left);
 			} catch (InterruptedException e) {

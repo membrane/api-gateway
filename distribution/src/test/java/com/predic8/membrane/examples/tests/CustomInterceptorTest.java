@@ -31,8 +31,8 @@ public class CustomInterceptorTest extends DistributionExtractingTestcase {
     public void test() throws Exception {
         BufferLogger logger = new BufferLogger();
         try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(logger).start()) {
-            if (mvn.waitFor(60000) != 0)
-                throw new RuntimeException("Maven exited with code " + mvn.waitFor(60000) + ": " + logger);
+            if (mvn.waitForExit(60000) != 0)
+                throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + logger);
         }
 
         try(Process2 sl = startServiceProxyScript()) {

@@ -16,9 +16,9 @@ package com.predic8.membrane.core.util;
 
 import com.fasterxml.jackson.core.*;
 import com.predic8.membrane.core.http.*;
+import jakarta.mail.internet.*;
 import org.slf4j.*;
 
-import javax.mail.internet.*;
 import javax.net.ssl.*;
 import java.io.*;
 import java.lang.reflect.*;
@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 
 public class Util {
