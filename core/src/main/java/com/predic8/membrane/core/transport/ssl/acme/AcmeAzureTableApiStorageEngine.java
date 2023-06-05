@@ -216,6 +216,9 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
                     .addRecord()
                         .withValue(record)
                     .create();
+
+            // https://learn.microsoft.com/en-us/azure/dns/dns-faq#how-long-does-it-take-for-dns-changes-to-take-effect-
+            Thread.sleep(60_000);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
