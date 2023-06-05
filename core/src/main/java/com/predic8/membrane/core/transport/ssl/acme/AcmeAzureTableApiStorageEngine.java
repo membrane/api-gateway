@@ -1,56 +1,44 @@
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.azure.data.tables.TableClient;
-import com.azure.data.tables.TableClientBuilder;
-import com.azure.data.tables.models.TableEntity;
-import com.azure.data.tables.models.TableServiceException;
-import com.azure.data.tables.models.TableTransactionAction;
-import com.azure.data.tables.models.TableTransactionActionType;
-import com.predic8.membrane.core.config.security.acme.AzureTableStorage;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.azure.AzureConfig;
+import com.predic8.membrane.core.azure.DnsProvisionable;
+import com.predic8.membrane.core.azure.api.AzureApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
-public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEngine {
+public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEngine, DnsProvisionable {
 
     private static final Logger log = LoggerFactory.getLogger(AcmeAzureTableApiStorageEngine.class);
 
-    private final TableClient tableClient;
-    private static final String TABLE_NAME = "membrane";
-    private static final String PARTITION_NAME = "acme";
     private static final String CURRENT = "current";
     private static final String CURRENT_ERROR = "current-error";
     private static final String CURRENT_KEY = "current-key";
 
+    private final AzureApiClient apiClient;
 
-    public AcmeAzureTableApiStorageEngine(AzureTableStorage tableClient) {
-        this.tableClient = new TableClientBuilder()
-                .connectionString(tableClient.getConnectionString())
-                .tableName(TABLE_NAME)
-                .buildClient();
+    public AcmeAzureTableApiStorageEngine(AzureConfig azureConfig) {
+        apiClient = new AzureApiClient(azureConfig);
 
         try {
-            this.tableClient.createTable();
-        } catch (TableServiceException ignore) {
-            log.debug("Ignore table already exists exception");
+            apiClient.tableStorage().table().create();
+        } catch (Exception e) {
             // ignore if table exists already
+            log.debug("Ignore table already exists exception");
         }
 
         log.debug("Loaded {}", this.getClass().getSimpleName());
     }
 
-    private TableEntity getEntity(String rowKey) {
+    private JsonNode getEntity(String rowKey) {
         try {
             log.debug("Get entity for {}", rowKey);
-            return tableClient.getEntity(PARTITION_NAME, rowKey);
-        } catch (TableServiceException e) {
-            if (e.getResponse().getStatusCode() == 404) {
-                log.debug("Entity {} does not exist, returning null", rowKey);
-                return null;
-            }
-            throw e;
+            return apiClient.tableStorage().entity(rowKey).get();
+        } catch (Exception e) {
+            log.debug("Entity {} does not exist, returning null", rowKey);
+            return null;
         }
     }
 
@@ -58,26 +46,17 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
         var entity = getEntity(rowKey);
 
         return entity != null
-                ? entity.getProperty("data").toString()
+                ? entity.get("data").asText()
                 : null;
     }
 
     private void upsertDataEntity(String rowKey, String data) {
-        log.debug("Upserting key {}", rowKey);
-        var entity = getEntity(rowKey);
-
-        if (entity != null) {
-            log.debug("Updating entity {}", rowKey);
-            tableClient.updateEntity(new TableEntity(PARTITION_NAME, rowKey)
-                    .addProperty("data", data)
-            );
-            return;
+        try {
+            log.debug("Upserting key {}", rowKey);
+            apiClient.tableStorage().entity(rowKey).insertOrReplace(data);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        log.debug("Creating entity {}", rowKey);
-        tableClient.createEntity(new TableEntity(PARTITION_NAME, rowKey)
-                .addProperty("data", data)
-        );
     }
 
     private String id(String[] hosts) {
@@ -212,22 +191,34 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
 
     private void attemptRename(String f1, String f2) {
         log.debug("Attempt rename {} to {}", f1, f2);
-        var first = getEntity(f1);
+        var first = getDataPropertyOfEntity(f1);
 
         if (first != null) {
-            var updatedEntity = new TableEntity(PARTITION_NAME, f2)
-                    .addProperty("data", first.getProperty("data"));
-
-            var transactions = new ArrayList<TableTransactionAction>();
-            transactions.add(new TableTransactionAction(TableTransactionActionType.CREATE, updatedEntity));
-            transactions.add(new TableTransactionAction(TableTransactionActionType.DELETE, first));
-
-            tableClient.submitTransaction(transactions);
-            log.debug("Sent rename transaction, creating {} and removing {}", updatedEntity.getRowKey(), first.getRowKey());
+            try {
+                log.debug("creating {}", f2);
+                apiClient.tableStorage().entity(f2).insertOrReplace(first);
+                log.debug("removing {}", f1);
+                apiClient.tableStorage().entity(f1).delete();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             return;
         }
 
         log.debug("Attempt rename, but there was nothing to rename");
+    }
+
+    @Override
+    public void provisionDns(String domain, String record) {
+        try {
+            apiClient.dnsRecords().txt(domain)
+                    .ttl(300)
+                    .addRecord()
+                        .withValue(record)
+                    .create();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

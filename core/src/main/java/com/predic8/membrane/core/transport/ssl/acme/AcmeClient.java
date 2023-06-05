@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.datatype.joda.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.azure.AzureConfig;
+import com.predic8.membrane.core.azure.DnsProvisionable;
 import com.predic8.membrane.core.config.security.acme.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -120,7 +122,7 @@ public class AcmeClient {
         } else if (ass instanceof MemoryStorage) {
             asse = new AcmeMemoryStorageEngine();
         } else if (ass instanceof AzureTableStorage) {
-            asse = new AcmeAzureTableApiStorageEngine((AzureTableStorage) ass);
+            asse = new AcmeAzureTableApiStorageEngine((AzureConfig) ass);
         } else {
             throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
         }
@@ -286,7 +288,7 @@ public class AcmeClient {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         String record = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest(keyAuth.getBytes(UTF_8)));
 
-        ((AcmeKubernetesStorageEngine)asse).provisionDns(auth.getIdentifier().getValue(), record);
+        ((DnsProvisionable)asse).provisionDns(auth.getIdentifier().getValue(), record);
     }
 
     private void provisionHttp(Authorization auth, Challenge challenge) {
