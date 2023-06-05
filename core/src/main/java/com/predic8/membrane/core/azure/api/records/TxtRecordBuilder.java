@@ -23,10 +23,10 @@ public class TxtRecordBuilder implements SupportedDnsRecordType {
     }
 
     @Override
-    public Map<String, Map<String, List<String>>> payload() {
+    public Map<String, List<Map<String, List<String>>>> payload() {
         return Map.of(
-                "TXTRecords", Map.of(
-                        "value", List.of(String.join("", values))
+                "TXTRecords", List.of(
+                        Collections.singletonMap("value", List.of(String.join("", values)))
                 )
         );
     }
