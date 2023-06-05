@@ -5,6 +5,7 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 
 COPY release-bin .
+RUN ls -l
 RUN apt-get update \
     && apt-get install unzip
 RUN unzip membrane-api-gateway-*.zip -x */examples* */tutorials* \
