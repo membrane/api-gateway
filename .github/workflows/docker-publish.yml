@@ -8,7 +8,6 @@ name: Build Docker Image
 on:
   release:
     types: [published]
-  workflow_dispatch: {}
 
 env:
   REGISTRY: docker.io
@@ -27,6 +26,14 @@ jobs:
       id-token: write
 
     steps:
+#      - name: Dump context
+#        uses: crazy-max/ghaction-dump-context@v2
+      - uses: bhowell2/github-substring-action@1.0.2
+        id: release_version
+        with:
+          value: "${{ github.ref_name }}"
+          index_of_str: "v"
+          output_name: tag
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -50,7 +57,7 @@ jobs:
         uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrect.DOCKER_HUB_USER }}
+          username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASS }}
 
       # Extract metadata (tags, labels) for Docker
@@ -65,7 +72,7 @@ jobs:
         with: 
           # The github tag. e.g: v1.0.1
           # Download assets from a specific tag/version
-          tag: "v5.1.0"
+          tag: "${{ steps.release_version.outputs.tag }}"
     
           ## The release id to download files from 
           #releaseId: ""
@@ -73,10 +80,10 @@ jobs:
           # The name of the file to download.
           # Use this field only to specify filenames other than tarball or zipball, if any.
           # Supports wildcard pattern (eg: '*', '*.deb', '*.zip' etc..)
-          fileName: "membrane-api-gateway-*.zip"
+          fileName: "membrane-api-gateway-${{ steps.release_version.outputs.tag }}.zip"
     
           # Download the attached zipball (*.zip)
-          zipBall: true
+          zipBall: false
     
           # Relative path under $GITHUB_WORKSPACE to place the downloaded file(s)
           # It will create the target directory automatically if not present
@@ -96,6 +103,7 @@ jobs:
         uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a
         with:
           context: .
+          file: distribution/docker/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
