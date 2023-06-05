@@ -211,7 +211,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
     @Override
     public void provisionDns(String domain, String record) {
         try {
-            apiClient.dnsRecords().txt(domain)
+            apiClient.dnsRecords().txt("_acme-challenge")
                     .ttl(300)
                     .addRecord()
                         .withValue(record)

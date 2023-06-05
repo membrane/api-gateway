@@ -126,6 +126,10 @@ public class AcmeClient {
         } else {
             throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
         }
+
+        if (challengeType.equals(TYPE_DNS_01) && !(asse instanceof DnsProvisionable)) {
+            throw new RuntimeException("A");
+        }
     }
 
     public void loadDirectory() throws Exception {
