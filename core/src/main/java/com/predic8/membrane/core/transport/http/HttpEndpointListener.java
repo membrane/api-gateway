@@ -78,9 +78,9 @@ public class HttpEndpointListener extends Thread {
 		this.sslProvider = sslProvider;
 		try {
 			if (sslProvider != null)
-				serverSocket = sslProvider.createServerSocket(p.getPort(), 50, p.getIp());
+				serverSocket = sslProvider.createServerSocket(p.port(), 50, p.ip());
 			else
-				serverSocket = new ServerSocket(p.getPort(), 50, p.getIp());
+				serverSocket = new ServerSocket(p.port(), 50, p.ip());
 
 			if (timerManager == null)
 				timerManager = this.timerManager = new TimerManager();
