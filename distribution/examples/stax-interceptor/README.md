@@ -37,7 +37,7 @@ In the proxies.xml file, we define a name for our interceptor and write its full
 In below, we have a part of proxies.xml file. You can see that we put our own interceptor in between `<request>` so that our interceptor will run on only requests.
 ```
 <request>
-    <interceptor refid="staxInterceptor"/>
+  <interceptor refid="staxInterceptor"/>
 </request>
 ```
 When we make the above request using curl, our interceptor changes the request body using Java STAX API and renames the foo tag to bar.

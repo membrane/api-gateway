@@ -83,10 +83,10 @@ The service proxy on port `9000` is just an admin console to watch the stream pu
 
 ```
 <serviceProxy name="Console" port="9000">
-	<basicAuthentication>
-		<user name="admin" password="membrane" />
-	</basicAuthentication>
-	<adminConsole />
+  <basicAuthentication>
+    <user name="admin" password="membrane" />
+  </basicAuthentication>
+  <adminConsole />
 </serviceProxy>
 ```
 

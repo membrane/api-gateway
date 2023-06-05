@@ -20,14 +20,14 @@ This example explains how to protect an API or a Web application using __HTTP Ba
 First take a look at the `proxies.xml` file.
 
 ```
-<proxies>
+<router>
   <api port="2000">
     <basicAuthentication>
       <user name="alice" password="membrane" />
     </basicAuthentication>
     <target url="https://api.predic8.de"/>
   </api>
-</proxies>
+</router>
 ```
 
 There is an `<api>` that directs calls from the port 2000 to `https://api.predic8.de`. The basicAuthentication-plugin is called for every request.
