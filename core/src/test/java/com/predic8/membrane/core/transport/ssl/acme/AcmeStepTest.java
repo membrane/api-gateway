@@ -19,7 +19,6 @@ import com.predic8.membrane.core.config.security.Certificate;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Trust;
 import com.predic8.membrane.core.config.security.acme.Acme;
-import com.predic8.membrane.core.config.security.acme.AzureTableStorage;
 import com.predic8.membrane.core.config.security.acme.MemoryStorage;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -45,7 +44,6 @@ import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORI
 import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_VALID;
 import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_PROCESSING;
 import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_READY;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeStepTest {
