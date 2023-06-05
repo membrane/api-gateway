@@ -175,7 +175,7 @@ public class HttpClient implements AutoCloseable {
 		Object sslPropObj = exc.getProperty(SSL_CONTEXT);
 		if(sslPropObj != null)
 			return (SSLProvider) sslPropObj;
-		if(hcp.useSSL)
+		if(hcp.useSSL())
 			if(sslContext != null)
 				return sslContext;
 			else
@@ -213,7 +213,7 @@ public class HttpClient implements AutoCloseable {
 				if (counter == 0) {
 					con = exc.getTargetConnection();
 					if (con != null) {
-						if (!con.isSame(target.host, target.port)) {
+						if (!con.isSame(target.host(), target.port())) {
 							con.close();
 							con = null;
 						} else {
@@ -226,14 +226,14 @@ public class HttpClient implements AutoCloseable {
 				SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
 				String sniServerName = getSNIServerName(exc);
 				if (con == null && useHttp2) {
-					h2c = http2ClientPool.reserveStream(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext);
+					h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext);
 					if (h2c != null) {
 						con = h2c.getConnection();
 						usingHttp2 = true;
 					}
 				}
 				if (con == null) {
-					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout,
+					con = conMgr.getConnection(target.host(), target.port(), localAddr, sslProvider, connectTimeout,
 							sniServerName, proxy, proxySSLContext, getApplicationProtocols());
 					if (useHttp2 && Http2TlsSupport.isHttp2(con.socket))
 						usingHttp2 = true;
@@ -359,7 +359,7 @@ public class HttpClient implements AutoCloseable {
 		Response response;
 		if (h2c == null) {
 			h2c = new Http2Client(con, sslProvider.showSSLExceptions());
-			http2ClientPool.share(target.host, target.port, sslProvider, sniServerName, proxy, proxySSLContext, h2c);
+			http2ClientPool.share(target.host(), target.port(), sslProvider, sniServerName, proxy, proxySSLContext, h2c);
 		}
 		response = h2c.doCall(exc, con);
 		exc.setProperty(HTTP2, true);
