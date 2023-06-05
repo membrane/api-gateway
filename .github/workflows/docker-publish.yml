@@ -67,12 +67,14 @@ jobs:
         uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
           
       - uses: robinraju/release-downloader@v1.8
         with: 
           # The github tag. e.g: v1.0.1
           # Download assets from a specific tag/version
-          tag: "${{ steps.release_version.outputs.tag }}"
+          tag: "${{ github.ref_name }}"
     
           ## The release id to download files from 
           #releaseId: ""
