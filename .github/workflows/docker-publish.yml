@@ -146,5 +146,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASS }}
-          repository: peterevans/dockerhub-description
+          repository: predic8/membrane
           readme-filepath: distribution/docker/README.md
