@@ -23,7 +23,6 @@ import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +40,7 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public class ApiManagementConfiguration {
     private static String currentDir;
@@ -203,7 +203,7 @@ public class ApiManagementConfiguration {
             if(((String)obj).isEmpty())
                 return defObj;
             else
-                return stringToTypeConverter.call((String) obj);
+                return stringToTypeConverter.apply((String) obj);
         try {
             return (T) obj;
         }catch(Exception ignored2){
