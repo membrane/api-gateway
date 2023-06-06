@@ -82,25 +82,25 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ ! github.event.release.prerelease }}
 
       - uses: robinraju/release-downloader@v1.8
-        with: 
+        with:
           # The github tag. e.g: v1.0.1
           # Download assets from a specific tag/version
           tag: "${{ github.ref_name }}"
-    
-          ## The release id to download files from 
+
+          ## The release id to download files from
           #releaseId: ""
-    
+
           # The name of the file to download.
           # Use this field only to specify filenames other than tarball or zipball, if any.
           # Supports wildcard pattern (eg: '*', '*.deb', '*.zip' etc..)
           fileName: "membrane-api-gateway-${{ steps.release_version.outputs.tag }}.zip"
-    
+
           # Download the attached zipball (*.zip)
           zipBall: false
-    
+
           # Relative path under $GITHUB_WORKSPACE to place the downloaded file(s)
           # It will create the target directory automatically if not present
           # eg: out-file-path: "my-downloads" => It will create directory $GITHUB_WORKSPACE/my-downloads
