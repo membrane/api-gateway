@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -388,9 +388,9 @@ public class ApiManagementConfiguration {
             }
             parseAndConstructConfiguration(is);
             try {
-                getResolver().observeChange(newLocation, new Consumer<>() {
+                getResolver().observeChange(newLocation, new ExceptionThrowingConsumer<>() {
                     @Override
-                    public void call(InputStream inputStream) {
+                    public void accept(InputStream inputStream) {
                         log.info("Loading configuration from [" + newLocation + "]");
                         if (!getContextLost()) {
                             try {

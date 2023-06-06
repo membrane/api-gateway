@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.resolver;
 
 import com.google.common.collect.Lists;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import java.io.*;
 import java.net.URLDecoder;
@@ -28,7 +28,7 @@ public class FileSchemaResolver implements SchemaResolver {
 
 	WatchService watchService;
 	ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<>();
-	ConcurrentHashMap<String,Consumer<InputStream>> watchedFiles = new ConcurrentHashMap<>();
+	ConcurrentHashMap<String, ExceptionThrowingConsumer<InputStream>> watchedFiles = new ConcurrentHashMap<>();
 	int fileWatchIntervalInSeconds = 1;
 	Runnable fileWatchJob = new Runnable() {
 		@Override
@@ -42,10 +42,10 @@ public class FileSchemaResolver implements SchemaResolver {
 						Path urlPath = Paths.get(url).getFileName();
 						if(changedFile.toString().equals(urlPath.toString())){
 							try {
-								Consumer<InputStream> inputStreamConsumer = watchedFiles.get(url);
+								ExceptionThrowingConsumer<InputStream> inputStreamConsumer = watchedFiles.get(url);
 								watchServiceForFile.remove(url);
 								watchedFiles.remove(url);
-								inputStreamConsumer.call(resolve(url));
+								inputStreamConsumer.accept(resolve(url));
 							} catch (Exception ignored) {
 							}
 						}
@@ -78,7 +78,7 @@ public class FileSchemaResolver implements SchemaResolver {
 	}
 
 	@Override
-	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
 		url = Paths.get(normalize(url)).toAbsolutePath().toString();
 		if(watchService == null){
 			try {
