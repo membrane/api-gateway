@@ -76,7 +76,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
     public String getLongDescription() {
         return removeFinalChar(getShortDescription()) +
                ":<br/><pre style=\"overflow-x:auto\">" +
-               escapeHtml4(removeCommonLeadingIndentation(src)) +
+               escapeHtml4(src.stripIndent()) +
                "</pre>";
     }
 }

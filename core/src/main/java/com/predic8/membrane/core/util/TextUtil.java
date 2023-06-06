@@ -173,26 +173,6 @@ public class TextUtil {
 		return sb.toString();
 	}
 
-	public static String removeCommonLeadingIndentation(String src) {
-		// TODO: only handles tabs at the moment
-		String[] lines = src.split("\n");
-		int indent = MAX_VALUE;
-		for (String line : lines) {
-			if (StringUtils.strip(line).length() == 0)
-				continue;
-			int i = 0;
-			while (i < line.length() && line.charAt(i) == '\t')
-				i++;
-			indent = Math.min(indent, i);
-		}
-		if (indent == 0 || indent == MAX_VALUE)
-			return src;
-		for (int i = 0; i < lines.length; i++)
-			lines[i] = lines[i].length() > indent ? lines[i].substring(indent) : "";
-
-		return join(lines, '\n');
-	}
-
 	/**
 	 * Counts from 1 cause this is needed for getting lines from Javascript source code.
 	 *
