@@ -74,14 +74,14 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     }
 
     private String createGroovyScript() {
-        String sb = "import groovy.text.markup.*" + "\n" +
-                "def markupEngine = new MarkupTemplateEngine()" + "\n" +
-                "def writer = new StringWriter()" + "\n" +
-                "def markup = '''" + src + "'''" + "\n" +
-                "def output = markupEngine.createTemplate(markup).make(['spring':spring, 'exc':exc,'flow':flow]).writeTo(writer)" + "\n" +
-                "exc.setProperty('GROOVY_TEMPLATE',output.toString())" + "\n" +
-                "CONTINUE";
-        return sb;
+        return """
+                import groovy.text.markup.*
+                def markupEngine = new MarkupTemplateEngine()
+                def writer = new StringWriter()
+                def markup = '''%s'''
+                def output = markupEngine.createTemplate(markup).make(['spring':spring, 'exc':exc,'flow':flow]).writeTo(writer)
+                exc.setProperty('GROOVY_TEMPLATE',output.toString())
+                CONTINUE""".formatted(src);
     }
 
     public String getSrc() {
