@@ -13,6 +13,10 @@ Simple & extensible API gateway for REST and legacy services, written in Java
 ```
 docker run -p 2000:2000 predic8/membrane
 ```
+Navigating to [http://localhost:2000](http://localhost:2000) in your browser or using `curl http://localhost:2000` should yield the same responses as calling http://api.predic8.de does:
+
+
+## Configuration
 
 Membrane is typically configured by a configuration file named *proxies.xml*
 
