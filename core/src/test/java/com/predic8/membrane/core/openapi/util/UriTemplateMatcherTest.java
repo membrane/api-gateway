@@ -16,13 +16,14 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static com.predic8.membrane.core.util.MapUtils.stringMap;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings("CatchMayIgnoreException")
 public class UriTemplateMatcherTest {
@@ -43,7 +44,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void getVariables() {
-        assertEquals(ListUtils.stringList("fid","bid"),matcher.getPathParameterNames("foo{fid}bar{bid}"));
+        assertEquals(List.of("fid","bid"),matcher.getPathParameterNames("foo{fid}bar{bid}"));
     }
 
     @Test
