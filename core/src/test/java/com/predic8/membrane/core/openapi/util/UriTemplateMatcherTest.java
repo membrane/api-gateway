@@ -20,8 +20,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.util.MapUtils.stringMap;
+import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -77,7 +78,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void match() throws PathDoesNotMatchException {
-        assertEquals(stringMap("fid","7"), matcher.match("/foo/{fid}", "/foo/7"));
-        assertEquals(stringMap("cid","42","coid","abc"), matcher.match("/customer/{cid}/contracts/{coid}", "/customer/42/contracts/abc"));
+        assertEquals(Map.of("fid", "7"), matcher.match("/foo/{fid}", "/foo/7"));
+        assertEquals(Map.ofEntries(entry("cid","42"), entry("coid","abc")), matcher.match("/customer/{cid}/contracts/{coid}", "/customer/42/contracts/abc"));
     }
 }
