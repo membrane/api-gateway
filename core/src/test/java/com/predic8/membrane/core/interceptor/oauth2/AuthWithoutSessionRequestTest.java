@@ -14,9 +14,11 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
 
@@ -26,8 +28,8 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
         exc = oasit.getMockAuthRequestExchange().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testClientIdMissing(),
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testClientIdMissing(),
                 testRedirectUriMissing(),
                 testResponseTypeMissing(),
                 testScopeMissing(),
@@ -36,46 +38,47 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
                 testRedirectUriNotEqauls(),
                 testPromptIsNone(),
                 testUnsupportedResponseType(),
-                testEmptyScopeList());
+                testEmptyScopeList()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testPromptIsNone() {
-        return new Object[]{"testPromptIsNone",addValueToRequestUri("prompt=none"),307,getBool(true),responseContainsValueInLocationHeader("error=login_required")};
+    private static RequestTestData testPromptIsNone() {
+        return new RequestTestData("testPromptIsNone",addValueToRequestUri("prompt=none"),307,getBool(true),responseContainsValueInLocationHeader("error=login_required"));
     }
 
-    private static Object[] testEmptyScopeList() {
-        return new Object[]{"testEmptyScopeList",replaceValueFromRequestUri("scope=profile","scope=123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_scope")};
+    private static RequestTestData testEmptyScopeList() {
+        return new RequestTestData("testEmptyScopeList",replaceValueFromRequestUri("scope=profile","scope=123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_scope"));
     }
 
-    private static Object[] testUnsupportedResponseType() {
-        return new Object[]{"testUnsupportedResponseType",replaceValueFromRequestUri("response_type=code","response_type=code123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=unsupported_response_type")};
+    private static RequestTestData testUnsupportedResponseType() {
+        return new RequestTestData("testUnsupportedResponseType",replaceValueFromRequestUri("response_type=code","response_type=code123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=unsupported_response_type"));
     }
 
-    private static Object[] testRedirectUriNotEqauls() {
-        return new Object[]{"testRedirectUriNotEqauls",replaceValueFromRequestUri("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=http://localhost:2001/oauth2callback2"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testRedirectUriNotEqauls() {
+        return new RequestTestData("testRedirectUriNotEqauls",replaceValueFromRequestUri("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=http://localhost:2001/oauth2callback2"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testRedirectUriNotAbsolute() {
-        return new Object[]{"testRedirectUriNotAbsolute",replaceValueFromRequestUri("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testRedirectUriNotAbsolute() {
+        return new RequestTestData("testRedirectUriNotAbsolute",replaceValueFromRequestUri("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testResponseTypeMissing() {
-        return new Object[]{"testResponseTypeMissing",removeValueFromRequestUri("&response_type=code"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
+    private static RequestTestData testResponseTypeMissing() {
+        return new RequestTestData("testResponseTypeMissing",removeValueFromRequestUri("&response_type=code"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request"));
     }
 
-    private static Object[] testRedirectUriMissing() {
-        return new Object[]{"testRedirectUriMissing",removeValueFromRequestUri("&redirect_uri=http://localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testRedirectUriMissing() {
+        return new RequestTestData("testRedirectUriMissing",removeValueFromRequestUri("&redirect_uri=http://localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testInvalidClientId() {
-        return new Object[]{"testInvalidClientId",replaceValueFromRequestUri("client_id=abc","client_id=cba"),400,getUnauthorizedClientJson(), getResponseBody()};
+    private static RequestTestData testInvalidClientId() {
+        return new RequestTestData("testInvalidClientId",replaceValueFromRequestUri("client_id=abc","client_id=cba"),400,getUnauthorizedClientJson(), getResponseBody());
     }
 
-    private static Object[] testClientIdMissing() {
-        return new Object[]{"testClientIdMissing",removeValueFromRequestUri("client_id=abc&"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testClientIdMissing() {
+        return new RequestTestData("testClientIdMissing",removeValueFromRequestUri("client_id=abc&"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testScopeMissing() {
-        return new Object[]{"testScopeMissing",removeValueFromRequestUri("&scope=profile"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
+    private static RequestTestData testScopeMissing() {
+        return new RequestTestData("testScopeMissing",removeValueFromRequestUri("&scope=profile"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request"));
     }
 }
