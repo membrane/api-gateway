@@ -18,7 +18,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -63,7 +63,7 @@ public class JwtAuthInterceptorTest{
                         .get("")
                         .header("Authorization", "Bearer " + "header.body.sig")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_DECODED_HEADER_NOT_JSON, unpackBody(exc).get("description"));
@@ -78,7 +78,7 @@ public class JwtAuthInterceptorTest{
                         .get("")
                         .header("Authorization", "Bearer " + "malformed.jwt")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_MALFORMED_COMPACT_SERIALIZATION, unpackBody(exc).get("description"));
@@ -92,7 +92,7 @@ public class JwtAuthInterceptorTest{
                 (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> new Request.Builder()
                         .get("")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_JWT_NOT_FOUND, unpackBody(exc).get("description"));
@@ -111,7 +111,7 @@ public class JwtAuthInterceptorTest{
                             .header("Authorization", "Bearer " + getSignedJwt(privateKey1) + "1")
                             .buildExchange();
                 },
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
@@ -129,7 +129,7 @@ public class JwtAuthInterceptorTest{
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1")
                         .buildExchange();
                 },
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("description"));
@@ -148,7 +148,7 @@ public class JwtAuthInterceptorTest{
                             .header("Authorization", "Bearer " + getSignedJwt(privateKey1) + "1")
                             .buildExchange();
                 },
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("description"));
@@ -163,7 +163,7 @@ public class JwtAuthInterceptorTest{
                         .get("")
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
@@ -178,7 +178,7 @@ public class JwtAuthInterceptorTest{
                         .get("")
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey, getClaimsWithWrongAudience()))
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
@@ -194,7 +194,7 @@ public class JwtAuthInterceptorTest{
                         .get("")
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey))
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (ExceptionThrowingConsumer<Exchange>)(Exchange exc) -> {
                     assertNotNull(exc.getProperties().get("jwt"));
                     assertEquals(SUB_CLAIM_CONTENT, ((Map<?, ?>)exc.getProperties().get("jwt")).get("sub"));
                 }
@@ -218,7 +218,7 @@ public class JwtAuthInterceptorTest{
     public void test(
             String testName,
             FunctionWithException<RsaJsonWebKey,Exchange> exchangeCreator,
-            Consumer<Exchange> asserts) throws Exception{
+            ExceptionThrowingConsumer<Exchange> asserts) throws Exception{
         RsaJsonWebKey privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId(KID);
 
@@ -231,7 +231,7 @@ public class JwtAuthInterceptorTest{
 
         interceptor.handleRequest(exc);
 
-        asserts.call(exc);
+        asserts.accept(exc);
     }
 
     private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) throws Exception {

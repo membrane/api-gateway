@@ -18,7 +18,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import org.bouncycastle.util.Arrays;
 
 
@@ -36,13 +36,13 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_APPLY_PATCH_YA
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class KubernetesClient {
-    private final Consumer<Exchange> client;
+    private final ExceptionThrowingConsumer<Exchange> client;
     private final String baseURL;
     private final String namespace;
     private final Schema schema;
     private final ObjectMapper om;
 
-    KubernetesClient(Consumer<Exchange> client, String baseURL, String namespace) {
+    KubernetesClient(ExceptionThrowingConsumer<Exchange> client, String baseURL, String namespace) {
         this.client = client;
         this.baseURL = baseURL;
         this.namespace = namespace == null ? "default" : namespace;
@@ -58,7 +58,7 @@ public class KubernetesClient {
         Exchange e;
         try {
             e = new Request.Builder().get(baseURL + "/version").buildExchange();
-            client.call(e);
+            client.accept(e);
         } catch (Exception ex) {
             throw new IOException(ex);
         }
@@ -69,7 +69,7 @@ public class KubernetesClient {
         return om.readValue(e.getResponse().getBodyAsStringDecoded(), Map.class);
     }
 
-    public Consumer<Exchange> getClient() {
+    public ExceptionThrowingConsumer<Exchange> getClient() {
         return client;
     }
 
@@ -471,7 +471,7 @@ public class KubernetesClient {
     private void doCall(int[] expectedHttpCode, Exchange e, boolean fullyReadBody)
             throws KubernetesApiException, IOException {
         try {
-            client.call(e);
+            client.accept(e);
         } catch (Exception ex) {
             throw new IOException(ex);
         }

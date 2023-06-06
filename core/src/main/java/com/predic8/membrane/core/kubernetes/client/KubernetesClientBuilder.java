@@ -27,7 +27,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import java.io.File;
 import java.io.IOException;
@@ -137,7 +137,7 @@ public class KubernetesClientBuilder {
         HttpClientConfiguration config = new HttpClientConfiguration();
         config.setUseExperimentalHttp2(true);
         HttpClient hc = httpClientFactory.createClient(config);
-        Consumer<Exchange> client = hc::call;
+        ExceptionThrowingConsumer<Exchange> client = hc::call;
 
         if (baseURL.endsWith("/"))
             baseURL = baseURL.substring(0, baseURL.length() - 1);
@@ -158,28 +158,28 @@ public class KubernetesClientBuilder {
                 sslParser.setTrust(trust);
             }
             StaticSSLContext sslContext = new StaticSSLContext(sslParser, null, null);
-            Consumer<Exchange> lastClient = client;
+            ExceptionThrowingConsumer<Exchange> lastClient = client;
             client = exchange -> {
                 exchange.setProperty(Exchange.SSL_CONTEXT, sslContext);
-                lastClient.call(exchange);
+                lastClient.accept(exchange);
             };
         }
         if (token != null) {
-            Consumer<Exchange> lastClient = client;
+            ExceptionThrowingConsumer<Exchange> lastClient = client;
             String theToken = token;
             client = exchange -> {
                 exchange.getRequest().getHeader().add("Authorization", "Bearer " + theToken);
-                lastClient.call(exchange);
+                lastClient.accept(exchange);
             };
         }
         if (logHttp) {
-            Consumer<Exchange> lastClient = client;
+            ExceptionThrowingConsumer<Exchange> lastClient = client;
             LogInterceptor i = new LogInterceptor();
             i.setLevel(LogInterceptor.Level.WARN);
             i.setHeaderOnly(false);
             client = exchange -> {
                 i.handleRequest(exchange);
-                lastClient.call(exchange);
+                lastClient.accept(exchange);
                 i.handleResponse(exchange);
             };
         }

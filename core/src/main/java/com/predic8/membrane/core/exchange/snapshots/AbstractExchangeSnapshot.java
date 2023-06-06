@@ -21,19 +21,18 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AbstractExchangeSnapshot {
 
     @JsonIgnore
-    private final Consumer<AbstractExchangeSnapshot> bodyCopiedCallback;
+    private final ExceptionThrowingConsumer<AbstractExchangeSnapshot> bodyCopiedCallback;
     @JsonIgnore
     private final BodyCollectingMessageObserver.Strategy strategy;
     @JsonIgnore
@@ -65,7 +64,7 @@ public class AbstractExchangeSnapshot {
      * @param strategy how to handle body lengths exceeding the {@code limit}.
      * @param limit maximum length of the body.
      */
-    public AbstractExchangeSnapshot(AbstractExchange exc, Interceptor.Flow flow, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
+    public AbstractExchangeSnapshot(AbstractExchange exc, Interceptor.Flow flow, ExceptionThrowingConsumer<AbstractExchangeSnapshot> bodyCopiedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
         this.bodyCopiedCallback = bodyCopiedCallback;
         this.strategy = strategy;
         this.limit = limit;

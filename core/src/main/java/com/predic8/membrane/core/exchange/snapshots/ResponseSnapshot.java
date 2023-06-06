@@ -16,7 +16,7 @@ package com.predic8.membrane.core.exchange.snapshots;
 
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import java.io.IOException;
 
@@ -33,7 +33,7 @@ public class ResponseSnapshot extends MessageSnapshot {
      * @param strategy how to handle body lengths exceeding the {@code limit}.
      * @param limit maximum length of the body.
      */
-    public ResponseSnapshot(Response response, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
+    public ResponseSnapshot(Response response, ExceptionThrowingConsumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
         super(response, bodyCopiedCallback, aes, strategy, limit);
         this.statusCode = response.getStatusCode();
         this.statusMessage = response.getStatusMessage();

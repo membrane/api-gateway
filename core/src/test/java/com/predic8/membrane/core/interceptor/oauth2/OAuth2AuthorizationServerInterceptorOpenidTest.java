@@ -59,9 +59,9 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
         return new Object[]{"testGoodAuthRequest", noPreprocessing(), getMockAuthOpenidRequestExchange(),307, loginAsJohnOpenid()};
     }
 
-    private static Consumer<Exchange> loginAsJohnOpenid() {
+    private static ExceptionThrowingConsumer<Exchange> loginAsJohnOpenid() {
         return exc -> {
-            loginAsJohn().call(exc);
+            loginAsJohn().accept(exc);
             SessionManager.Session s = oasi.getSessionManager().getOrCreateSession(exc);
             Map<String, String> userAttributes = s.getUserAttributes();
             synchronized (userAttributes) {
@@ -82,10 +82,10 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
         };
     }
 
-    private static Consumer<Exchange> validateIdTokenAndGetTokenAndTokenTypeFromResponse() {
+    private static ExceptionThrowingConsumer<Exchange> validateIdTokenAndGetTokenAndTokenTypeFromResponse() {
         return exc -> {
             assertTrue(idTokenIsValid(exc.getResponse()));
-            getTokenAndTokenTypeFromResponse().call(exc);
+            getTokenAndTokenTypeFromResponse().accept(exc);
         };
     }
 
@@ -100,7 +100,7 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
         }
     }
 
-    private static Consumer<Exchange> userinfoOpenidRequestPostprocessing() {
+    private static ExceptionThrowingConsumer<Exchange> userinfoOpenidRequestPostprocessing() {
         return exchange -> assertEquals("e@mail.com", parseSimpleJSONResponse(exc.getResponse()).get("email"));
     }
 }

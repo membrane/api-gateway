@@ -16,7 +16,7 @@ package com.predic8.membrane.core.cloud.etcd;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
 
@@ -70,7 +70,7 @@ public class EtcdResolver implements SchemaResolver{
     }
 
     @Override
-    public void observeChange(final String url, final Consumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(final String url, final ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
 
         final Thread etcdWatcher = new Thread(() -> {
             String normalizedUrl = normalize(url);
@@ -85,7 +85,7 @@ public class EtcdResolver implements SchemaResolver{
             if(!respLongPollForChange.is2XX()){
             }
             try {
-                consumer.call(resolve(normalizedUrl));
+                consumer.accept(resolve(normalizedUrl));
             } catch (Exception ignored) {
             }
             synchronized (etcdWatchThreads) {

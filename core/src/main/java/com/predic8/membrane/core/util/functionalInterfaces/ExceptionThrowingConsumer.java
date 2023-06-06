@@ -13,6 +13,6 @@
 
 package com.predic8.membrane.core.util.functionalInterfaces;
 
-public interface Consumer<T> {
-    void call(T t) throws Exception;
+public interface ExceptionThrowingConsumer<T> {
+    void accept(T t) throws Exception;
 }
