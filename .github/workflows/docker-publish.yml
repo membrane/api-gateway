@@ -24,11 +24,6 @@ jobs:
       # This is used to complete the identity challenge
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
-    strategy:
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
 
     steps:
 #      - name: Dump context
@@ -83,32 +78,13 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable=${{ ! github.event.release.prerelease }}
+            type=sha,enable=false
 
       - uses: robinraju/release-downloader@v1.8
         with:
-          # The github tag. e.g: v1.0.1
-          # Download assets from a specific tag/version
           tag: "${{ github.ref_name }}"
-
-          ## The release id to download files from
-          #releaseId: ""
-
-          # The name of the file to download.
-          # Use this field only to specify filenames other than tarball or zipball, if any.
-          # Supports wildcard pattern (eg: '*', '*.deb', '*.zip' etc..)
           fileName: "membrane-api-gateway-${{ steps.release_version.outputs.tag }}.zip"
-
-          # Download the attached zipball (*.zip)
-          zipBall: false
-
-          # Relative path under $GITHUB_WORKSPACE to place the downloaded file(s)
-          # It will create the target directory automatically if not present
-          # eg: out-file-path: "my-downloads" => It will create directory $GITHUB_WORKSPACE/my-downloads
           out-file-path: "distribution/docker/release-bin"
-
-          # A flag to set if the downloaded assets are archives and should be extracted
-          # Checks all downloaded files if they end with zip, tar or tar.gz and extracts them, if true.
-          # Prints a warning if enabled but file is not an archive - but does not fail.
           extract: false
 
 
@@ -119,8 +95,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: distribution/docker
-#          file: distribution/docker/Dockerfile
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
