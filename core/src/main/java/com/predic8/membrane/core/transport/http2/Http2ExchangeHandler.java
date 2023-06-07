@@ -78,11 +78,11 @@ public class Http2ExchangeHandler implements Runnable {
             log.debug("Socket timed out");
         } catch (SocketException se) {
             log.debug("client socket closed");
-        } catch (SSLException s) {
+        } catch (SSLException e) {
+            Exception s = e;
             if(showSSLExceptions) {
-                if (s.getCause() instanceof SSLException) {
-                    log.error("Caused by",s.getCause());
-                    return;
+                if (s.getCause() instanceof SSLException cause) {
+                    s = cause;
                 }
                 if (s.getCause() instanceof SocketException)
                     log.debug("ssl socket closed");
