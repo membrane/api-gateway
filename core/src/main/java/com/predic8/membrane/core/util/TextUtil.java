@@ -15,31 +15,25 @@
 package com.predic8.membrane.core.util;
 
 
+import com.predic8.beautifier.HtmlBeautifierFormatter;
+import com.predic8.beautifier.PlainBeautifierFormatter;
+import com.predic8.beautifier.XMLBeautifier;
+import com.predic8.beautifier.XMLBeautifierFormatter;
+import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.events.XMLEvent;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.events.XMLEvent;
-
-import org.apache.commons.text.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import com.predic8.beautifier.HtmlBeautifierFormatter;
-import com.predic8.beautifier.PlainBeautifierFormatter;
-import com.predic8.beautifier.XMLBeautifier;
-import com.predic8.beautifier.XMLBeautifierFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static java.lang.Character.toUpperCase;
-import static java.lang.Integer.*;
 import static javax.xml.stream.XMLInputFactory.*;
-import static org.apache.commons.lang3.StringUtils.join;
 
 
 public class TextUtil {
@@ -171,26 +165,6 @@ public class TextUtil {
 		if (sb.length() > 0)
 			sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
-	}
-
-	public static String removeCommonLeadingIndentation(String src) {
-		// TODO: only handles tabs at the moment
-		String[] lines = src.split("\n");
-		int indent = MAX_VALUE;
-		for (String line : lines) {
-			if (StringUtils.strip(line).length() == 0)
-				continue;
-			int i = 0;
-			while (i < line.length() && line.charAt(i) == '\t')
-				i++;
-			indent = Math.min(indent, i);
-		}
-		if (indent == 0 || indent == MAX_VALUE)
-			return src;
-		for (int i = 0; i < lines.length; i++)
-			lines[i] = lines[i].length() > indent ? lines[i].substring(indent) : "";
-
-		return join(lines, '\n');
 	}
 
 	/**

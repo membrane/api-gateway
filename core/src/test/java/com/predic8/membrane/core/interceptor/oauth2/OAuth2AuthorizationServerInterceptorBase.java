@@ -45,7 +45,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     static String afterTokenGenerationToken;
     static String afterTokenGenerationTokenType;
 
-    static Consumer<Exchange> noPostprocessing() {
+    static ExceptionThrowingConsumer<Exchange> noPostprocessing() {
         return exchange -> {};
     }
 
@@ -61,7 +61,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         };
     }
 
-    public static Consumer<Exchange> loginAsJohn(){
+    public static ExceptionThrowingConsumer<Exchange> loginAsJohn(){
         return exchange -> {
             SessionManager.Session session = oasi.getSessionManager().getOrCreateSession(exchange);
 
@@ -80,7 +80,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         };
     }
 
-    static Consumer<Exchange> getCodeFromResponse() {
+    static ExceptionThrowingConsumer<Exchange> getCodeFromResponse() {
         return exc -> {
             String loc = exc.getResponse().getHeader().getFirstValue("Location");
             for (String s1 : loc.split(Pattern.quote("?"))) {
@@ -109,7 +109,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                 .buildExchange();
     }
 
-    static Consumer<Exchange> getTokenAndTokenTypeFromResponse() {
+    static ExceptionThrowingConsumer<Exchange> getTokenAndTokenTypeFromResponse() {
         return exc -> {
             HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
             afterTokenGenerationToken = json.get("access_token");
@@ -169,13 +169,13 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             Runnable preprocessing,
             Callable<Exchange> preparedExchange,
             int expectedStatusCode,
-            Consumer<Exchange> postprocessing) throws Exception {
+            ExceptionThrowingConsumer<Exchange> postprocessing) throws Exception {
         preprocessing.run();
         exc = preparedExchange.call();
         OAuth2TestUtil.makeExchangeValid(exc);
         oasi.handleRequest(exc);
         assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
-        postprocessing.call(exc);
+        postprocessing.accept(exc);
     }
 
     protected static <T>Runnable runTest(final Class<T> caller, final String name){
@@ -193,14 +193,14 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                 Runnable preprocessing = (Runnable) params[1];
                 Callable<Exchange> preparedExchange = (Callable<Exchange>) params[2];
                 int expectedStatusCode = (Integer) params[3];
-                Consumer<Exchange> postprocessing = (Consumer<Exchange>) params[4];
+                ExceptionThrowingConsumer<Exchange> postprocessing = (ExceptionThrowingConsumer<Exchange>) params[4];
 
                 preprocessing.run();
                 Exchange exc = preparedExchange.call();
                 OAuth2TestUtil.makeExchangeValid(exc);
                 oasi.handleRequest(exc);
                 assertEquals(expectedStatusCode, exc.getResponse().getStatusCode());
-                postprocessing.call(exc);
+                postprocessing.accept(exc);
 
             }catch(Exception e){
                 e.printStackTrace();

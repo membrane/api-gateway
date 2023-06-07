@@ -14,10 +14,13 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class RevocationRequestTest extends RequestParameterizedTest{
     @BeforeEach
@@ -27,37 +30,38 @@ public class RevocationRequestTest extends RequestParameterizedTest{
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockRevocationRequest().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testTokenMissing(),
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testTokenMissing(),
                 testClientIdMissing(),
                 testClientSecretMissing(),
                 testWrongToken(),
                 testWrongCredentialsClientId(),
-                testWrongCredentialsClientSecret());
+                testWrongCredentialsClientSecret()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testWrongCredentialsClientSecret() {
-        return new Object[]{"testWrongCredentialsClientId", replaceValueFromRequestBody("&client_secret=def","&client_secret=123456789"),400,getInvalidGrantJson(), getResponseBody()};
+    private static RequestTestData testWrongCredentialsClientSecret() {
+        return new RequestTestData("testWrongCredentialsClientId", replaceValueFromRequestBody("&client_secret=def","&client_secret=123456789"),400,getInvalidGrantJson(), getResponseBody());
     }
 
-    private static Object[] testWrongCredentialsClientId() {
-        return new Object[]{"testWrongCredentialsClientId", replaceValueFromRequestBody("client_id=abc","client_id=123456789"),400,getInvalidGrantJson(), getResponseBody()};
+    private static RequestTestData testWrongCredentialsClientId() {
+        return new RequestTestData("testWrongCredentialsClientId", replaceValueFromRequestBody("client_id=abc","client_id=123456789"),400,getInvalidGrantJson(), getResponseBody());
     }
 
-    private static Object[] testWrongToken() {
-        return new Object[]{"testWrongToken", replaceValueFromRequestBodyLazy(getTokenQuery(),getWrongTokenQuery()),200,getEmptyBody(), getResponseBody()};
+    private static RequestTestData testWrongToken() {
+        return new RequestTestData("testWrongToken", replaceValueFromRequestBodyLazy(getTokenQuery(),getWrongTokenQuery()),200,getEmptyBody(), getResponseBody());
     }
 
-    private static Object[] testClientSecretMissing() {
-        return new Object[]{"testClientSecretMissing", removeValueFromRequestBody("&client_secret=def"),200,getEmptyBody(), getResponseBody()};
+    private static RequestTestData testClientSecretMissing() {
+        return new RequestTestData("testClientSecretMissing", removeValueFromRequestBody("&client_secret=def"),200,getEmptyBody(), getResponseBody());
     }
 
-    private static Object[] testClientIdMissing() {
-        return new Object[]{"testClientIdMissing", removeValueFromRequestBody("&client_id=abc"),200,getEmptyBody(), getResponseBody()};
+    private static RequestTestData testClientIdMissing() {
+        return new RequestTestData("testClientIdMissing", removeValueFromRequestBody("&client_id=abc"),200,getEmptyBody(), getResponseBody());
     }
 
-    private static Object[] testTokenMissing() {
-        return new Object[]{"testTokenMissing", removeValueFromRequestBodyLazy(getTokenQuery()),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testTokenMissing() {
+        return new RequestTestData("testTokenMissing", removeValueFromRequestBodyLazy(getTokenQuery()),400,getInvalidRequestJson(), getResponseBody());
     }
 
     private static Callable<String> getTokenQuery(){
@@ -68,7 +72,7 @@ public class RevocationRequestTest extends RequestParameterizedTest{
         return () -> "token=" + 123456789 + "&";
     }
 
-    private static Callable<Object> getEmptyBody() {
+    private static Supplier<Object> getEmptyBody() {
         return () -> "";
     }
 

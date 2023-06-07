@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.exchange.snapshots;
 
-import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
@@ -22,11 +21,10 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import groovy.lang.Tuple2;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.stream.Stream;
 
 public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
@@ -39,7 +37,7 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
      * @param strategy how to handle body lengths exceeding the {@code limit}.
      * @param limit maximum length of the body.
      */
-    public DynamicAbstractExchangeSnapshot(AbstractExchange exc, Interceptor.Flow flow, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
+    public DynamicAbstractExchangeSnapshot(AbstractExchange exc, Interceptor.Flow flow, ExceptionThrowingConsumer<AbstractExchangeSnapshot> bodyCopiedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
         super(exc, flow, bodyCopiedCallback, strategy, limit);
         addObservers(exc,this, bodyCopiedCallback, flow);
     }
@@ -51,7 +49,7 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
     }
 
 
-    public static void addObservers(AbstractExchange exc, AbstractExchangeSnapshot excCopy, Consumer<AbstractExchangeSnapshot> callback, Interceptor.Flow flow) {
+    public static void addObservers(AbstractExchange exc, AbstractExchangeSnapshot excCopy, ExceptionThrowingConsumer<AbstractExchangeSnapshot> callback, Interceptor.Flow flow) {
         exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
             @Override
             public void addResponse(Response response) {
@@ -88,23 +86,23 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
         update(callback,excCopy,exc,flow);
     }
 
-    public static void update(Consumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc, Interceptor.Flow flow) {
+    public static void update(ExceptionThrowingConsumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc, Interceptor.Flow flow) {
         try {
             excCopy = excCopy.updateFrom(exc, flow);
             if(callback != null)
-                callback.call(excCopy);
+                callback.accept(excCopy);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private static class UpdateExchangeCopyObserver extends BodyCollectingMessageObserver {
-        private final Consumer<AbstractExchangeSnapshot> callback;
+        private final ExceptionThrowingConsumer<AbstractExchangeSnapshot> callback;
         private final AbstractExchangeSnapshot excCopy;
         private final AbstractExchange exc;
         private final Interceptor.Flow flow;
 
-        public UpdateExchangeCopyObserver(Consumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc, Interceptor.Flow flow) {
+        public UpdateExchangeCopyObserver(ExceptionThrowingConsumer<AbstractExchangeSnapshot> callback, AbstractExchangeSnapshot excCopy, AbstractExchange exc, Interceptor.Flow flow) {
             super(Strategy.TRUNCATE, -1);
             this.callback = callback;
             this.excCopy = excCopy;

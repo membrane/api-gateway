@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -31,7 +31,7 @@ public interface Resolver {
 	 * Calls the consumer when the InputStream for the requested URL changes.
 	 * @throws ResourceRetrievalException if the resource identified by the URL does not exist.
 	 */
-	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException;
+	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException;
 
 	/**
 	 * Returns the list of child resources of the resource identified by the URL.

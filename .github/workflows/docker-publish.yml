@@ -8,7 +8,6 @@ name: Build Docker Image
 on:
   release:
     types: [published]
-  workflow_dispatch: {}
 
 env:
   REGISTRY: docker.io
@@ -27,6 +26,14 @@ jobs:
       id-token: write
 
     steps:
+#      - name: Dump context
+#        uses: crazy-max/ghaction-dump-context@v2
+      - uses: bhowell2/github-substring-action@1.0.2
+        id: release_version
+        with:
+          value: "${{ github.ref_name }}"
+          index_of_str: "v"
+          output_name: tag
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -39,6 +46,12 @@ jobs:
           cosign-release: 'v1.13.1'
 
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        # possible optimization
+#        with:
+#          platforms: ${{ matrix.platform }}
+
       # Workaround: https://github.com/docker/build-push-action/issues/461
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@79abd3f86f79a9d68a23c75a09a9a85889262adf
@@ -50,42 +63,28 @@ jobs:
         uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrect.DOCKER_HUB_USER }}
+          username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASS }}
 
       # Extract metadata (tags, labels) for Docker
       # https://github.com/docker/metadata-action
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          
-      - uses: robinraju/release-downloader@v1.8
-        with: 
-          # The github tag. e.g: v1.0.1
-          # Download assets from a specific tag/version
-          tag: "v5.1.0"
-    
-          ## The release id to download files from 
-          #releaseId: ""
-    
-          # The name of the file to download.
-          # Use this field only to specify filenames other than tarball or zipball, if any.
-          # Supports wildcard pattern (eg: '*', '*.deb', '*.zip' etc..)
-          fileName: "membrane-api-gateway-*.zip"
-    
-          # Download the attached zipball (*.zip)
-          zipBall: true
-    
-          # Relative path under $GITHUB_WORKSPACE to place the downloaded file(s)
-          # It will create the target directory automatically if not present
-          # eg: out-file-path: "my-downloads" => It will create directory $GITHUB_WORKSPACE/my-downloads
-          out-file-path: "distribution/docker/release-bin"
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable=${{ ! github.event.release.prerelease }}
+            type=sha,enable=false
 
-          # A flag to set if the downloaded assets are archives and should be extracted
-          # Checks all downloaded files if they end with zip, tar or tar.gz and extracts them, if true.
-          # Prints a warning if enabled but file is not an archive - but does not fail.
+      - uses: robinraju/release-downloader@v1.8
+        with:
+          tag: "${{ github.ref_name }}"
+          fileName: "membrane-api-gateway-${{ steps.release_version.outputs.tag }}.zip"
+          out-file-path: "distribution/docker/release-bin"
           extract: false
 
 
@@ -93,9 +92,10 @@ jobs:
       # https://github.com/docker/build-push-action
       - name: Build and push Docker image
         id: build-and-push
-        uses: docker/build-push-action@ac9327eae2b366085ac7f6a2d02df8aa8ead720a
+        uses: docker/build-push-action@v4
         with:
-          context: .
+          context: distribution/docker
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -115,3 +115,11 @@ jobs:
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
         run: echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+
+      - name: Docker Hub Description
+        uses: peter-evans/dockerhub-description@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASS }}
+          repository: predic8/membrane
+          readme-filepath: distribution/docker/README.md
