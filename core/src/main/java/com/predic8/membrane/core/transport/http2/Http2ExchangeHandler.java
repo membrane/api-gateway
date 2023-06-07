@@ -82,12 +82,10 @@ public class Http2ExchangeHandler implements Runnable {
             Exception s = e;
             if(showSSLExceptions) {
                 if (s.getCause() instanceof SSLException cause) {
-                    s = cause;
+                    logSSLException(cause);
+                    return;
                 }
-                if (s.getCause() instanceof SocketException)
-                    log.debug("ssl socket closed");
-                else
-                    log.error("", s);
+                logSSLException(s);
             }
         } catch (EndOfStreamException e) {
             log.debug("stream closed");
@@ -103,14 +101,17 @@ public class Http2ExchangeHandler implements Runnable {
         } catch (Exception e) {
             log.error("", e);
         } finally {
-
             closeConnections();
-
             exchange.detach();
-
             updateThreadName(false);
         }
+    }
 
+    private static void logSSLException(SSLException s) {
+        if (s.getCause() instanceof SocketException)
+            log.debug("ssl socket closed");
+        else
+            log.error("", s);
     }
 
     private void process() throws Exception {
