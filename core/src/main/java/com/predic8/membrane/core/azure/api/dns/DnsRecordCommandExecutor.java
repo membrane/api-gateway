@@ -1,10 +1,7 @@
-package com.predic8.membrane.core.azure.api;
+package com.predic8.membrane.core.azure.api.dns;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.azure.api.records.DnsRecordType;
-import com.predic8.membrane.core.azure.api.records.SupportedDnsRecordType;
-import com.predic8.membrane.core.azure.api.records.TxtRecordBuilder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,21 +10,27 @@ import java.util.Map;
 
 public class DnsRecordCommandExecutor {
 
-    private final AzureApiClient apiClient;
-    private String basePath;
+    private final DnsRecordApi api;
+    private final String basePath;
     private int ttl = 3600;
 
-    private List<SupportedDnsRecordType> records = new ArrayList<>();
+    private final List<SupportedDnsRecordType> records = new ArrayList<>();
 
-    public DnsRecordCommandExecutor(AzureApiClient apiClient, String recordSetName, DnsRecordType type) {
-        this.apiClient = apiClient;
+    public DnsRecordCommandExecutor(DnsRecordApi api, String recordSetName, DnsRecordType type) {
+        this.api = api;
 
-        basePath = apiClient.config().apiResourceBasePath()
-                + "/Microsoft.Network/dnsZones/"
-                + apiClient.config().getDomainName()
-                + "/" + type.toString()
-                + "/" + recordSetName
-                + "?api-version=2018-05-01";
+        var resourceBasePath = String.format("%s/subscriptions/%s/resourceGroups/%s/providers",
+                api.config().getResource(),
+                api.config().getSubscriptionId(),
+                api.config().getResourceGroup()
+                );
+
+        basePath = String.format("%s/Microsoft.Network/dnsZones/%s/%s/%s?api-version=2018-05-01",
+                resourceBasePath,
+                api.config().getDnsZoneName(),
+                type.toString(),
+                recordSetName
+                );
     }
 
     public DnsRecordCommandExecutor ttl(int ttl) {
@@ -42,8 +45,8 @@ public class DnsRecordCommandExecutor {
 
         var payload = Map.of("properties", properties);
 
-        var response = apiClient.httpClient().call(
-                apiClient.authenticatedRequestBuilder()
+        var response = api.http().call(
+                api.requestBuilder()
                         .put(basePath)
                         .contentType("application/json")
                         .body(new ObjectMapper().writeValueAsString(payload))
@@ -61,8 +64,8 @@ public class DnsRecordCommandExecutor {
     }
 
     public void delete() throws Exception {
-        apiClient.httpClient().call(
-            apiClient.authenticatedRequestBuilder()
+        api.http().call(
+            api.requestBuilder()
                     .delete(basePath)
                     .header("Accept", "application/json")
                     .buildExchange()

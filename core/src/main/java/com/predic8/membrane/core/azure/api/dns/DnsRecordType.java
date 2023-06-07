@@ -1,10 +1,10 @@
-package com.predic8.membrane.core.azure.api.records;
+package com.predic8.membrane.core.azure.api.dns;
 
 public enum DnsRecordType {
     TXT("txt")
     ;
 
-    private String value;
+    private final String value;
 
     DnsRecordType(String value) {
         this.value = value;

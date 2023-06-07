@@ -1,12 +1,15 @@
 package com.predic8.membrane.core.transport.ssl.acme;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.core.azure.AzureConfig;
-import com.predic8.membrane.core.azure.DnsProvisionable;
+import com.predic8.membrane.core.azure.AzureDns;
+import com.predic8.membrane.core.azure.AzureTableStorage;
+import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;
 import com.predic8.membrane.core.azure.api.AzureApiClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEngine, DnsProvisionable {
@@ -18,9 +21,15 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
     private static final String CURRENT_KEY = "current-key";
 
     private final AzureApiClient apiClient;
+    private final AzureDns azureDns;
 
-    public AcmeAzureTableApiStorageEngine(AzureConfig azureConfig) {
-        apiClient = new AzureApiClient(azureConfig);
+    public AcmeAzureTableApiStorageEngine(
+            AzureTableStorage tableStorage,
+            @Nullable AzureDns azureDns,
+            @Nullable HttpClientFactory httpClientFactory
+    ) {
+        this.azureDns = azureDns;
+        apiClient = new AzureApiClient(azureDns.getIdentity(), tableStorage, httpClientFactory);
 
         try {
             apiClient.tableStorage().table().create();
@@ -211,7 +220,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
     @Override
     public void provisionDns(String domain, String record) {
         try {
-            apiClient.dnsRecords().txt("_acme-challenge")
+            apiClient.dnsRecords(azureDns).txt("_acme-challenge")
                     .ttl(300)
                     .addRecord()
                         .withValue(record)

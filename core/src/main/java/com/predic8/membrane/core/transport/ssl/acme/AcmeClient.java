@@ -18,8 +18,9 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.datatype.joda.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.azure.AzureConfig;
-import com.predic8.membrane.core.azure.DnsProvisionable;
+import com.predic8.membrane.core.azure.AzureDns;
+import com.predic8.membrane.core.azure.AzureTableStorage;
+import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;
 import com.predic8.membrane.core.config.security.acme.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -93,6 +94,7 @@ public class AcmeClient {
     private final String algorithm = AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256;
     private final Duration validity;
     private AcmeSynchronizedStorageEngine asse;
+    private AcmeValidation acmeValidation;
 
     public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory) {
         directoryUrl = acme.getDirectoryUrl();
@@ -103,6 +105,7 @@ public class AcmeClient {
             httpClientFactory = new HttpClientFactory(null);
         hc = httpClientFactory.createClient(acme.getHttpClientConfiguration());
         validity = acme.getValidityDuration();
+        this.acmeValidation = acme.getValidationMethod();
         challengeType = acme.getValidationMethod() != null && acme.getValidationMethod() instanceof DnsOperatorAcmeValidation ? TYPE_DNS_01 : TYPE_HTTP_01;
 
         om.registerModule(new JodaModule());
@@ -112,7 +115,7 @@ public class AcmeClient {
             throw new RuntimeException("The ACME client is still experimental, please set <acme experimental=\"true\" ... /> to acknowledge.");
     }
 
-    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory) {
+    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory, @Nullable HttpClientFactory httpClientFactory) {
         if (ass == null) {
             throw new RuntimeException("<acme> is used, but to storage is configured.");
         } else if (ass instanceof FileStorage) {
@@ -121,8 +124,8 @@ public class AcmeClient {
             asse = new AcmeKubernetesStorageEngine((KubernetesStorage) ass, kubernetesClientFactory);
         } else if (ass instanceof MemoryStorage) {
             asse = new AcmeMemoryStorageEngine();
-        } else if (ass instanceof AzureConfig) {
-            asse = new AcmeAzureTableApiStorageEngine((AzureConfig) ass);
+        } else if (ass instanceof AzureTableStorage) {
+            asse = new AcmeAzureTableApiStorageEngine((AzureTableStorage) ass, (AzureDns) acmeValidation, httpClientFactory);
         } else {
             throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
         }

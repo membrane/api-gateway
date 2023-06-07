@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.predic8.membrane.core.azure.DnsProvisionable;
+import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;
 import com.predic8.membrane.core.config.security.acme.KubernetesStorage;
 import com.predic8.membrane.core.kubernetes.client.KubernetesApiException;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
