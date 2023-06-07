@@ -29,7 +29,7 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
             @Nullable HttpClientFactory httpClientFactory
     ) {
         this.azureDns = azureDns;
-        apiClient = new AzureApiClient(azureDns.getIdentity(), tableStorage, httpClientFactory);
+        apiClient = new AzureApiClient(azureDns == null ? null : azureDns.getIdentity(), tableStorage, httpClientFactory);
 
         try {
             apiClient.tableStorage().table().create();
