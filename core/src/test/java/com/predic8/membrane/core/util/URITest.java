@@ -22,6 +22,57 @@ import org.junit.jupiter.api.Test;
 
 public class URITest {
 
+	@Test
+	public void doit() {
+		assertSame("http://predic8.de/?a=query");
+		assertSame("http://predic8.de/#foo");
+		assertSame("http://predic8.de/path/file");
+		assertSame("http://predic8.de/path/file?a=query");
+		assertSame("http://predic8.de/path/file#foo");
+		assertSame("http://predic8.de/path/file?a=query#foo");
+		assertSame("http://foo:bar@predic8.de/path/file?a=query#foo");
+		assertSame("//predic8.de/path/file?a=query#foo");
+		assertSame("/path/file?a=query#foo");
+		assertSame("scheme:/path/file?a=query#foo");
+		assertSame("path/file?a=query#foo");
+		assertSame("scheme:path/file?a=query#foo", true); // considered 'opaque' by java.net.URI - we don't support that
+		assertSame("file?a=query#foo", true); // opaque
+		assertSame("scheme:file?a=query#foo", true); // opaque
+		assertSame("?a=query#foo");
+		assertSame("scheme:?a=query#foo", true); // opaque
+	}
+
+	@SuppressWarnings("UnnecessaryUnicodeEscape")
+	@Test
+	public void testEncoding() {
+		assertSame("http://predic8.de/path/file?a=quer\u00E4y#foo");
+		assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
+		assertSame("http://predic8.de/path/fi\u00E4le?a=query#foo");
+		assertSame("http://predic8.de/path/fi%C3%A4le?a=query#foo");
+		assertSame("http://predic8.de/pa\u00E4th/file?a=query#foo");
+		assertSame("http://predic8.de/pa%C3%A4th/file?a=query#foo");
+		assertSame("http://predic8.d\u00E4e/path/file?a=query#foo");
+		assertSame("http://predic8.d%C3%A4e/path/file?a=query#foo");
+		assertError("htt\u00E4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
+		assertError("htt%C3%A4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
+	}
+
+	@Test
+	public void testIllegalCharacter() {
+		assertError("http:///test?a=q{uery#foo", "/test", "a=q{uery");
+		assertError("http:///te{st?a=query#foo", "/te{st", "a=query");
+		assertError("http://pre{dic8.de/test?a=query#foo", "/test", "a=query");
+	}
+
+    @Test
+    void getHost() throws URISyntaxException {
+		assertEquals("predic8.de", new URI("http://predic8.de/foo",false).getHost());
+		assertEquals("predic8.de", new URI("http://predic8.de/foo",true).getHost());
+		assertEquals("predic8.de", new URI("http://predic8.de:8080/foo",false).getHost());
+		assertEquals("predic8.de", new URI("http://predic8.de:8080/foo",true).getHost());
+    }
+
+
 	private void assertSame(String uri) {
 		assertSame(uri, false);
 	}
@@ -58,46 +109,4 @@ public class URITest {
 			throw new RuntimeException(e);
 		}
 	}
-
-	@Test
-	public void doit() {
-		assertSame("http://predic8.de/?a=query");
-		assertSame("http://predic8.de/#foo");
-		assertSame("http://predic8.de/path/file");
-		assertSame("http://predic8.de/path/file?a=query");
-		assertSame("http://predic8.de/path/file#foo");
-		assertSame("http://predic8.de/path/file?a=query#foo");
-		assertSame("http://foo:bar@predic8.de/path/file?a=query#foo");
-		assertSame("//predic8.de/path/file?a=query#foo");
-		assertSame("/path/file?a=query#foo");
-		assertSame("scheme:/path/file?a=query#foo");
-		assertSame("path/file?a=query#foo");
-		assertSame("scheme:path/file?a=query#foo", true); // considered 'opaque' by java.net.URI - we don't support that
-		assertSame("file?a=query#foo", true); // opaque
-		assertSame("scheme:file?a=query#foo", true); // opaque
-		assertSame("?a=query#foo");
-		assertSame("scheme:?a=query#foo", true); // opaque
-	}
-
-	@Test
-	public void testEncoding() {
-		assertSame("http://predic8.de/path/file?a=queräy#foo");
-		assertSame("http://predic8.de/path/file?a=quer%C3%A4y#foo%C3%A4");
-		assertSame("http://predic8.de/path/fiäle?a=query#foo");
-		assertSame("http://predic8.de/path/fi%C3%A4le?a=query#foo");
-		assertSame("http://predic8.de/paäth/file?a=query#foo");
-		assertSame("http://predic8.de/pa%C3%A4th/file?a=query#foo");
-		assertSame("http://predic8.däe/path/file?a=query#foo");
-		assertSame("http://predic8.d%C3%A4e/path/file?a=query#foo");
-		assertError("httäp://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
-		assertError("htt%C3%A4p://predic8.de/path/file?a=query#foo", "/path/file", "a=query");
-	}
-
-	@Test
-	public void testIllegalCharacter() {
-		assertError("http:///test?a=q{uery#foo", "/test", "a=q{uery");
-		assertError("http:///te{st?a=query#foo", "/te{st", "a=query");
-		assertError("http://pre{dic8.de/test?a=query#foo", "/test", "a=query");
-	}
-
 }

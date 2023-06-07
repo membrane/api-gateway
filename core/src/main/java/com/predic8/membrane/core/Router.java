@@ -94,6 +94,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	protected Statistics statistics = new Statistics();
 	protected String jmxRouterName;
 
+	/**
+	 * Set production to true to run Membrane in production mode.
+	 * In production mode the security level is increased e.g. there is less information
+	 * in error messages sent to clients.
+	 */
+	private boolean production;
+
 	private boolean hotDeploy = true;
 	private final Object lock = new Object();
 	@GuardedBy("lock")
@@ -162,6 +169,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	public ExchangeStore getExchangeStore() {
 		return exchangeStore;
 	}
+
+
+
 
 	/**
 	 * @description Spring Bean ID of an {@link ExchangeStore}. The exchange store will be used by this router's
@@ -534,6 +544,24 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	public void setUriFactory(URIFactory uriFactory) {
 		this.uriFactory = uriFactory;
 	}
+
+	public boolean isProduction() {
+		return production;
+	}
+
+	/**
+	 * @explanation
+	 * <p>By default the error messages Membrane sends back to an HTTP client provide information to help the caller
+	 * find the problem. The caller might even get sensitive information. In production the error messages should not reveal
+	 * to much details. With this option you can put Membrane in production mode and reduce the amount of information in
+	 * error messages.</p>
+	 * @default false
+	 */
+	@MCAttribute
+	public void setProduction(boolean production) {
+		this.production = production;
+	}
+
 
 	public Statistics getStatistics() {
 		return statistics;
