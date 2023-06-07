@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import com.google.common.collect.Lists;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 public class ClasspathSchemaResolver implements SchemaResolver {
 
@@ -36,7 +36,7 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 	}
 
 	@Override
-	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
 		throw new RuntimeException("Not implemented");
 	}
 

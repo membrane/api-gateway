@@ -15,11 +15,14 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTest{
     @BeforeEach
@@ -28,20 +31,20 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
         exc = OAuth2AuthorizationServerInterceptorOpenidTest.getMockAuthOpenidRequestExchange().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testOpenidScopeButIsTokenResponseType(),
-                testHasClaimsButIsNotOpenid());
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testOpenidScopeButIsTokenResponseType(),
+                testHasClaimsButIsNotOpenid()).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testHasClaimsButIsNotOpenid() {
-        return new Object[]{"testHasClaimsButIsNotOpenid", replaceValueFromRequestUri("scope=openid","scope=profile"),307, getBool(true), sessionHasNoClaimsParam()};
+    private static RequestTestData testHasClaimsButIsNotOpenid() {
+        return new RequestTestData("testHasClaimsButIsNotOpenid", replaceValueFromRequestUri("scope=openid","scope=profile"),307, getBool(true), sessionHasNoClaimsParam());
     }
 
-    private static Object[] testOpenidScopeButIsTokenResponseType() {
-        return new Object[]{"testOpenidScopeButIsTokenResponseType",replaceValueFromRequestUri("response_type=code","response_type=token"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
+    private static RequestTestData testOpenidScopeButIsTokenResponseType() {
+        return new RequestTestData("testOpenidScopeButIsTokenResponseType",replaceValueFromRequestUri("response_type=code","response_type=token"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request"));
     }
 
-    private static Callable<Object> sessionHasNoClaimsParam() {
+    private static Supplier<Object> sessionHasNoClaimsParam() {
         return () -> {
             SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
             Map<String, String> userAttributes = s.getUserAttributes();

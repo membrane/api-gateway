@@ -14,11 +14,10 @@
 
 package com.predic8.membrane.core.util;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.net.*;
+import java.util.regex.*;
+
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Same behavior as {@link java.net.URI}, but accomodates '{' in paths.
@@ -27,11 +26,14 @@ public class URI {
 	private java.net.URI uri;
 
 	private String input;
-	private String path, query;
+	private String path;
+	private String query;
+
+	private String host;
 	private String pathDecoded, queryDecoded;
 
-	private static Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
-	//                                                 12            3  4          5       6   7        8 9
+	private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
+	//                                                             12            3  4          5       6   7        8 9
 	// if defined, the groups are:
 	// 2: scheme, 4: host, 5: path, 7: query, 9: fragment
 
@@ -40,6 +42,8 @@ public class URI {
 		if (!m.matches())
 			return false;
 		input = s;
+
+		host = m.group(4);
 		path = m.group(5);
 		query = m.group(7);
 		return true;
@@ -62,6 +66,12 @@ public class URI {
 		} else {
 			uri = new java.net.URI(s);
 		}
+	}
+
+	public String getHost() {
+		if (uri != null)
+			return uri.getHost();
+		return host;
 	}
 
 	public String getPath() {
@@ -89,11 +99,7 @@ public class URI {
 	private String decode(String string) {
 		if (string == null)
 			return string;
-		try {
-			return URLDecoder.decode(string, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
+		return URLDecoder.decode(string, UTF_8);
 	}
 
 	public String getRawQuery() {

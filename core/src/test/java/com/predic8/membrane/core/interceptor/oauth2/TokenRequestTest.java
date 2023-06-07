@@ -14,10 +14,12 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 public class TokenRequestTest extends RequestParameterizedTest {
 
@@ -28,8 +30,8 @@ public class TokenRequestTest extends RequestParameterizedTest {
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockTokenRequest().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testCodeMissing(),
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testCodeMissing(),
                 testClientIdMissing(),
                 testClientSecretMissing(),
                 testRedirectUriMissing(),
@@ -37,43 +39,44 @@ public class TokenRequestTest extends RequestParameterizedTest {
                 testInvalidClient(),
                 testUnauthorizedClient(),
                 testRedirectUriNotAbsolute(),
-                testRedirectUriNotEquals());
+                testRedirectUriNotEquals()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testRedirectUriNotEquals() {
-        return new Object[]{"testRedirectUriNotEquals", replaceValueFromRequestBody("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=http://localhost:2001/oauth2callback2"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testRedirectUriNotEquals() {
+        return new RequestTestData("testRedirectUriNotEquals", replaceValueFromRequestBody("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=http://localhost:2001/oauth2callback2"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testRedirectUriNotAbsolute() {
-        return new Object[]{"testRedirectUriNotAbsolute", replaceValueFromRequestBody("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testRedirectUriNotAbsolute() {
+        return new RequestTestData("testRedirectUriNotAbsolute", replaceValueFromRequestBody("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testUnauthorizedClient() {
-        return new Object[]{"testUnauthorizedClient", replaceValueFromRequestBody("&client_secret=def", "&client_secret=123456789"),400,getUnauthorizedClientJson(), getResponseBody()};
+    private static RequestTestData testUnauthorizedClient() {
+        return new RequestTestData("testUnauthorizedClient", replaceValueFromRequestBody("&client_secret=def", "&client_secret=123456789"),400,getUnauthorizedClientJson(), getResponseBody());
     }
 
-    private static Object[] testInvalidClient() {
-        return new Object[]{"testInvalidClient", replaceValueFromRequestBody("&client_id=abc", "&client_id=123456789"),400,getInvalidClientJson(), getResponseBody()};
+    private static RequestTestData testInvalidClient() {
+        return new RequestTestData("testInvalidClient", replaceValueFromRequestBody("&client_id=abc", "&client_id=123456789"),400,getInvalidClientJson(), getResponseBody());
     }
 
-    private static Object[] testNoSessionForCode() {
-        return new Object[]{"testNoSessionForCode", replaceValueFromRequestBodyLazy(getCodeQuery(), getWrongCodeQuery()),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testNoSessionForCode() {
+        return new RequestTestData("testNoSessionForCode", replaceValueFromRequestBodyLazy(getCodeQuery(), getWrongCodeQuery()),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testRedirectUriMissing() {
-        return new Object[]{"testRedirectUriMissing", removeValueFromRequestBody("&redirect_uri=http://localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testRedirectUriMissing() {
+        return new RequestTestData("testRedirectUriMissing", removeValueFromRequestBody("&redirect_uri=http://localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testClientSecretMissing() {
-        return new Object[]{"testClientSecretMissing", removeValueFromRequestBody("&client_secret=def"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testClientSecretMissing() {
+        return new RequestTestData("testClientSecretMissing", removeValueFromRequestBody("&client_secret=def"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testClientIdMissing() {
-        return new Object[]{"testClientIdMissing", removeValueFromRequestBody("&client_id=abc"),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testClientIdMissing() {
+        return new RequestTestData("testClientIdMissing", removeValueFromRequestBody("&client_id=abc"),400,getInvalidRequestJson(), getResponseBody());
     }
 
-    private static Object[] testCodeMissing() {
-        return new Object[]{"testCodeMissing", removeValueFromRequestBodyLazy(getCodeQuery()),400,getInvalidRequestJson(), getResponseBody()};
+    private static RequestTestData testCodeMissing() {
+        return new RequestTestData("testCodeMissing", removeValueFromRequestBodyLazy(getCodeQuery()),400,getInvalidRequestJson(), getResponseBody());
     }
 
     private static Callable<String> getCodeQuery(){

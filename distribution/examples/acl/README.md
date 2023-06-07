@@ -34,12 +34,12 @@ The following part describes the example in detail.
 First take a look at the proxies.xml file.
 
 ```
-<proxies>
-	<serviceProxy name="predic8.com" port="2000">
-		<accessControl file="acl.xml" />
-		<target host="predic8.com" port="80" />
-	</serviceProxy>
-</proxies>
+<router>
+  <serviceProxy name="predic8.com" port="2000">
+    <accessControl file="acl.xml" />
+    <target host="predic8.com" port="80" />
+  </serviceProxy>
+</router>
 ```
 The `serviceProxy` forwards calls to the port 2000 to `predic8.com:80`. 
 

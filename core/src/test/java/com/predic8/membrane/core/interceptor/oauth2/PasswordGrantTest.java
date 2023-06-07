@@ -14,10 +14,12 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 public class PasswordGrantTest extends RequestParameterizedTest {
 
@@ -27,20 +29,20 @@ public class PasswordGrantTest extends RequestParameterizedTest {
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockPasswordRequestExchange().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                testSuccessfulPasswordRequest(),
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(
+                testSuccessfulPasswordRequest()
 //                testUsernameMissing(),
 //                testPasswordMissing(),
 //                testClientIdMissing(),
 //                testClientSecretMissing(),
 //                testUnauthorizedClient(),
 //                testUnauthorizedUser()
-        });
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testSuccessfulPasswordRequest() {
-        return new Object[]{"testSuccessfulPasswordRequest", doNothing(),200, getBool(true),getBool(true)};
+    private static RequestTestData testSuccessfulPasswordRequest() {
+        return new RequestTestData("testSuccessfulPasswordRequest", doNothing(),200, getBool(true),getBool(true));
     }
 
     private static Callable<Object> doNothing(){

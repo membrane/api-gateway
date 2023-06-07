@@ -45,24 +45,32 @@ First, take a look at the proxies.xml file.
 
 ```
 <serviceProxy port="9998">
-    <!-- WebSocket intercepting starts here -->
-    <webSocket url="http://localhost:61614/">
-        <!-- the wsStompReassembler take a STOMP over WebSocket frame and constructs an exchange from it -->
-        <wsStompReassembler>
-            <!-- modify the exchange to have a "[MEMBRANE]:" prefix -->
-            <groovy>
-                def method = exc.getRequest().getMethod();
-                def header = exc.getRequest().getHeader();
-                def body = exc.getRequest().getBodyAsStringDecoded();
-                if(exc.getRequest().getMethod() == "SEND")
-                    body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
-                exc.setRequest(new Request.Builder().method(method).header(header).body(body).build());
-            </groovy>
-        </wsStompReassembler>
-        <!-- logs the content of a WebSocket frame to the console  -->
-        <wsLog/>
-    </webSocket>
-    <target host="localhost" port="9999"/>
+  <!-- Membrane does not support WebSocket Extensions for now, so we remove the header -->
+  <groovy>
+    if(exc.getRequest() != null)
+    exc.getRequest().getHeader().removeFields("Sec-WebSocket-Extensions");
+    if(exc.getResponse() != null)
+    exc.getResponse().getHeader().removeFields("Sec-WebSocket-Extensions");
+  </groovy>
+
+  <!-- WebSocket intercepting starts here -->
+  <webSocket url="http://localhost:61614/">
+    <!-- the wsStompReassembler take a STOMP over WebSocket frame and constructs an exchange from it -->
+    <wsStompReassembler>
+      <!-- modify the exchange to have a "[MEMBRANE]:" prefix -->
+      <groovy>
+        def method = exc.getRequest().getMethod();
+        def header = exc.getRequest().getHeader();
+        def body = exc.getRequest().getBodyAsStringDecoded();
+        if(exc.getRequest().getMethod() == "SEND")
+        body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
+        exc.setRequest(new Request.Builder().method(method).header(header).body(body).build());
+      </groovy>
+    </wsStompReassembler>
+    <!-- logs the content of a WebSocket frame to the console  -->
+    <wsLog/>
+  </webSocket>
+  <target host="localhost" port="9999"/>
 </serviceProxy>
 ```
 

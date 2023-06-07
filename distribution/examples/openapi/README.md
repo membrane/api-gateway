@@ -44,7 +44,7 @@ servers:
 
 If the basepath does not match, the next API is checked. 
 
-It is also possilbe to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
+It is also possible to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
 
 ```xml
 <serviceProxy>
@@ -65,7 +65,7 @@ Membrane can validate requests and responses against OpenAPI definitions and che
 - Status codes
 - Body content according to the JSON Schema component definitions 
 
-Validation can be activated for requests and responses separatly. Set _validationDetails_ to _no_ if you do not want to send validation errors in detail to the client.
+Validation can be activated for requests and responses separately. Set _validationDetails_ to _no_ if you do not want to send validation errors in detail to the client.
 
 ```xml
 <openapi location="fruitshop-api.yml" 
@@ -96,9 +96,9 @@ curl http://localhost:2000/api-doc
 ```
 
 
-# Rewirting of Server Addresses
+# Rewriting of Server Addresses
 
-When an API is published on a gateway the OpenAPI must point to the gateway instead of pointing to the backend server. Rewriting changes the backend addresses of an OpenAPI document to the adress of the gateway.
+When an API is published on a gateway the OpenAPI must point to the gateway instead of pointing to the backend server. Rewriting changes the backend addresses of an OpenAPI document to the address of the gateway.
 
 The _openAPIProxy_ exposes the OpenAPI specifications in the UI and over an endpoint:
 
@@ -120,14 +120,14 @@ GET /api-doc/fruit-shop-api-v1-0
 Host: api.predic8.de:443
 ```
 
-Then the rewritter of the _openAPIProxy_ will turn the _servers_ field into:
+Then the rewriter of the _openAPIProxy_ will turn the _servers_ field into:
 
 ```yaml
 servers:
 - url: "https://api.predic8.de:443/shop"
 ```
 
-If you use the rewritten OpenAPI-document for your client, then requests will be sent to Membrane at _https://api.predic8.de:443/shop_ and then forwared to the destination _http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop_.
+If you use the rewritten OpenAPI-document for your client, then requests will be sent to Membrane at _https://api.predic8.de:443/shop_ and then forwarded to the destination _http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop_.
 
 
 # SSL/TLS

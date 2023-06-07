@@ -71,7 +71,7 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
         return () -> new Request.Builder().get("/thisdoesntexist").buildExchange();
     }
 
-    private static Consumer<Exchange> userinfoRequestPostprocessing() {
+    private static ExceptionThrowingConsumer<Exchange> userinfoRequestPostprocessing() {
         return exchange -> {
             HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
             assertEquals("john", json.get("username"));
