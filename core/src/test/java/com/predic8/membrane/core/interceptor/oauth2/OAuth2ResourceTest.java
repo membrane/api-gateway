@@ -29,7 +29,6 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -52,6 +51,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
@@ -107,7 +107,7 @@ public class OAuth2ResourceTest {
     public void getOriginalRequest() throws Exception {
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
 
-        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
         assertEquals("", body2.get("body"));
@@ -118,7 +118,7 @@ public class OAuth2ResourceTest {
     public void postOriginalRequest() throws Exception {
         Exchange excCallResource = new Request.Builder().post(getClientAddress() + "/init").body("demobody").buildExchange();
 
-        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
         assertEquals("demobody", body2.get("body"));
@@ -130,7 +130,7 @@ public class OAuth2ResourceTest {
     public void testUseRefreshTokenOnTokenExpiration() throws Exception {
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
 
-        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
 
@@ -144,7 +144,7 @@ public class OAuth2ResourceTest {
                     cdl.await();
                     String uuid = UUID.randomUUID().toString();
                     Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
-                    excCallResource2 = cookieHandlingRedirectingHttpClient.call(excCallResource2);
+                    excCallResource2 = cookieHandlingRedirectingHttpClient.apply(excCallResource2);
                     Map body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
                     String path = (String)body.get("path");
                     assertEquals("/" + uuid, path);
@@ -195,7 +195,7 @@ public class OAuth2ResourceTest {
 
                     Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
                     LOG.debug("getting " + excCallResource.getDestinations().get(0));
-                    excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+                    excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
                     Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
                     assertEquals("/init" + j, body2.get("path"));
 
@@ -219,7 +219,7 @@ public class OAuth2ResourceTest {
         int j = limit+1;
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
         LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init" + j, body2.get("path"));
 
@@ -245,7 +245,7 @@ public class OAuth2ResourceTest {
         for (int j = 0; j < 2; j++) {
             Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
             LOG.debug("getting " + excCallResource.getDestinations().get(0));
-            excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+            excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
             Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
             assertEquals("/init" + j, body2.get("path"));
         }
@@ -280,11 +280,11 @@ public class OAuth2ResourceTest {
 
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
         LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource); // will be aborted
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource); // will be aborted
 
         cookie.clear(); // send the auth link to some helpless (other) user
 
-        excCallResource = cookieHandlingRedirectingHttpClient.call(new Request.Builder().get("http://localhost:1337" + ref.get()).buildExchange());
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(new Request.Builder().get("http://localhost:1337" + ref.get()).buildExchange());
 
         assertEquals(400, excCallResource.getResponse().getStatusCode());
 
@@ -307,7 +307,7 @@ public class OAuth2ResourceTest {
 
         // hit the client, do not continue at AS with login
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 0).buildExchange();
-        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
 
         assertEquals(200, excCallResource.getResponse().getStatusCode());
         assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("Login aborted"));
@@ -316,7 +316,7 @@ public class OAuth2ResourceTest {
 
         // hit client again, login
         excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 1).buildExchange();
-        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
 
         // works
         assertEquals(200, excCallResource.getResponse().getStatusCode());
@@ -370,7 +370,7 @@ public class OAuth2ResourceTest {
                     Exchange finalExc = exc;
                     cookies.forEach((k, v) -> finalExc.getRequest().getHeader().add("Cookie", k + "=" + v));
                 }
-            exc = consumer.call(exc);
+            exc = consumer.apply(exc);
 
             for (HeaderField headerField : exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
                 LOG.debug("from " + domain + " got Set-Cookie: " + headerField.getValue());
@@ -429,7 +429,7 @@ public class OAuth2ResourceTest {
             while (true) {
                 if (urls.size() == 19)
                     throw new RuntimeException("Too many redirects: " + urls);
-                exc = consumer.call(exc);
+                exc = consumer.apply(exc);
 
                 int statusCode = exc.getResponse().getStatusCode();
                 String location = exc.getResponse().getHeader().getFirstValue("Location");
@@ -455,7 +455,7 @@ public class OAuth2ResourceTest {
             HttpClient httpClient = new HttpClient();
 
             @Override
-            public Exchange call(Exchange exchange) {
+            public Exchange apply(Exchange exchange) {
                 try {
                     return httpClient.call(exchange);
                 } catch (Exception e) {

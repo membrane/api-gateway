@@ -17,19 +17,16 @@ package com.predic8.membrane.core.resolver;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import io.opencensus.common.Internal;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -101,7 +98,7 @@ public class RuleResolver implements SchemaResolver {
     }
 
     @Override
-    public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
         throw new RuntimeException("Not implemented");
     }
 

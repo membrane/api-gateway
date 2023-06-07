@@ -20,7 +20,7 @@ To run the example execute the following steps:
 
     You will see a simple web app that counts how often it was called. There are 2 more endpoints of the same kind listening at port `4001` and `4002`. However, it is possible that it will count twice a single connection, due to the browser checking for the favicon.
 
-4. Register a node on `localhost` on port `4000` by runing the `lbclient.sh/bat` script.
+4. Register a node on `localhost` on port `4000` by running the `lbclient.sh/bat` script.
 
     `lbclient.sh up localhost 4000`
 

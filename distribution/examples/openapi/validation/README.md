@@ -46,7 +46,7 @@ Run the file _curl-requests.sh_ or parts of it.
 </api>
 ```
 
-2. Incomming requests are validated against the definitions in the OpenAPI specification. In case of a validation failure an error message is returned. 
+2. Incoming requests are validated against the definitions in the OpenAPI specification. In case of a validation failure an error message is returned. 
 
 3. The request is sent to the backend server with the server url from the OpenAPI definition:
 

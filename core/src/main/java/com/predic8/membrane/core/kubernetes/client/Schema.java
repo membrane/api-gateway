@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -90,7 +89,7 @@ class Schema {
         Exchange e = null;
         try {
             e = new Request.Builder().get(client.getBaseURL() + path).buildExchange();
-            client.getClient().call(e);
+            client.getClient().accept(e);
         } catch (Exception ex) {
             throw new IOException(ex);
         }

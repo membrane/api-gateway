@@ -23,6 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,6 +33,13 @@ public abstract class RequestParameterizedTest {
     protected static OAuth2AuthorizationServerInterceptorBase oasit;
     protected static Exchange exc;
 
+    protected record RequestTestData(
+            String testName,
+            Callable<Object> modification,
+            int expectedStatusCode,
+            Supplier<Object> expectedResult,
+            Supplier<Object> actualResult) {}
+
 
 
     @BeforeEach
@@ -40,19 +48,15 @@ public abstract class RequestParameterizedTest {
         oasit.setUp();
     }
 
-    @ParameterizedTest(name="{0}")
+    @ParameterizedTest
     @MethodSource("data")
-    public void test(String testName,
-        Callable<Object> modification,
-        int expectedStatusCode,
-        Callable<Object> expectedResult,
-        Callable<Object> actualResult) throws Exception {
-        modification.call();
+    public void test(RequestTestData data) throws Exception {
+        data.modification().call();
         OAuth2TestUtil.makeExchangeValid(exc);
         oasit.oasi.handleRequest(exc);
 
-        assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
-        assertEquals(expectedResult.call(),actualResult.call());
+        assertEquals(data.expectedStatusCode(),exc.getResponse().getStatusCode());
+        assertEquals(data.expectedResult().get(),data.actualResult().get());
     }
 
     static Callable<Exchange> getExchange(){
@@ -101,54 +105,53 @@ public abstract class RequestParameterizedTest {
         return () -> replaceValueFromRequestBody(value.call(), "").call();
     }
 
-    public static Callable<Object> responseContainsValueInLocationHeader(final String value){
+    public static Supplier<Object> responseContainsValueInLocationHeader(final String value){
         return () -> exc.getResponse().getHeader().getFirstValue("Location").contains(value);
-
     }
 
-    public static Callable<Object> getInvalidRequestJson(){
+    public static Supplier<Object> getInvalidRequestJson(){
         return () -> "{\"error\":\"invalid_request\"}";
     }
 
-    public static Callable<Object> getUnauthorizedClientJson(){
+    public static Supplier<Object> getUnauthorizedClientJson(){
         return () -> "{\"error\":\"unauthorized_client\"}";
     }
 
-    public static Callable<Object> getInvalidClientJson(){
+    public static Supplier<Object> getInvalidClientJson(){
         return () -> "{\"error\":\"invalid_client\"}";
     }
 
     public static Callable<Object> addValueToRequestUri(final String value) {
         return new Callable<>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 exc.getRequest().setUri(exc.getRequest().getUri() + "&" + value);
                 return this;
             }
         };
     }
 
-    public static Callable<Object> getResponseBody(){
+    public static Supplier<Object> getResponseBody(){
         return () -> exc.getResponse().getBodyAsStringDecoded();
     }
 
-    public static Callable<Boolean> getBool(final boolean bool){
+    public static Supplier<Object> getBool(final boolean bool){
         return () -> bool;
     }
 
-    public static Callable<Object> getLoginRequiredJson(){
+    public static Supplier<Object> getLoginRequiredJson(){
         return () -> "{\"error\":\"login_required\"}";
     }
 
-    public static Callable<Object> getInvalidGrantJson(){
+    public static Supplier<Object> getInvalidGrantJson(){
         return () -> "{\"error\":\"invalid_grant\"}";
     }
 
-    public static Callable<Object> getUnsupportedResponseTypeJson(){
+    public static Supplier<Object> getUnsupportedResponseTypeJson(){
         return () -> "{\"error\":\"unsupported_response_type\"}";
     }
 
-    public static Callable<Object> getConsentRequiredJson(){
+    public static Supplier<Object> getConsentRequiredJson(){
         return () -> "{\"error\":\"consent_required\"}";
     }
 

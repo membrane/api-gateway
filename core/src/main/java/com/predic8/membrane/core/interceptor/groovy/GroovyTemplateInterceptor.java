@@ -22,10 +22,7 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TextUtil;
-import org.springframework.web.util.HtmlUtils;
 
-import static com.predic8.membrane.core.util.TextUtil.removeCommonLeadingIndentation;
 import static org.springframework.web.util.HtmlUtils.htmlEscape;
 
 /**
@@ -77,14 +74,14 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     }
 
     private String createGroovyScript() {
-        String sb = "import groovy.text.markup.*" + "\n" +
-                "def markupEngine = new MarkupTemplateEngine()" + "\n" +
-                "def writer = new StringWriter()" + "\n" +
-                "def markup = '''" + src + "'''" + "\n" +
-                "def output = markupEngine.createTemplate(markup).make(['spring':spring, 'exc':exc,'flow':flow]).writeTo(writer)" + "\n" +
-                "exc.setProperty('GROOVY_TEMPLATE',output.toString())" + "\n" +
-                "CONTINUE";
-        return sb;
+        return """
+                import groovy.text.markup.*
+                def markupEngine = new MarkupTemplateEngine()
+                def writer = new StringWriter()
+                def markup = '''%s'''
+                def output = markupEngine.createTemplate(markup).make(['spring':spring, 'exc':exc,'flow':flow]).writeTo(writer)
+                exc.setProperty('GROOVY_TEMPLATE',output.toString())
+                CONTINUE""".formatted(src);
     }
 
     public String getSrc() {
@@ -105,7 +102,7 @@ public class GroovyTemplateInterceptor extends AbstractInterceptor {
     public String getLongDescription() {
         return "<div>Responds with the result of a the Groovy Template (see <a href=\"https://docs.groovy-lang.org/docs/next/html/documentation/template-engine" +
                 "s.html#_the_markuptemplateengine\">MarkupTemplateEngine</a>):<br/><br/><pre>"+
-                htmlEscape(removeCommonLeadingIndentation(src)) +
+                htmlEscape(src.stripIndent()) +
                 "</pre></div>";
     }
 }

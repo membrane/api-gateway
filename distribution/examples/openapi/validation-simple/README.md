@@ -82,7 +82,7 @@ age:
   minimum: 0
 ```
 
-3. Incomming requests are validated against the definitions in the OpenAPI specification. How things evolve is dependend on the result of the validation. 
+3. Incoming requests are validated against the definitions in the OpenAPI specification. How things evolve is dependent on the result of the validation. 
 
 **a.) There are no validation errors**
 

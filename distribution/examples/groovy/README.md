@@ -9,7 +9,7 @@ Using the `groovy` element you can run Groovy scripts to manipulate or monitor m
 1. Take a look at [proxies.xml](proxies.xml). There you'll find the APIs with Groovy scripts.
 2. Open a commandline session or a terminal.
 3. Run `service-proxy.bat` or `./service-proxy.sh` in this folder
-4. Open a secound terminal and run the commands:
+4. Open a second terminal and run the commands:
 
    **Create JSON with Groovy:**
 

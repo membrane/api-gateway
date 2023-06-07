@@ -15,34 +15,18 @@
 package com.predic8.membrane.core.kubernetes;
 
 import com.google.common.collect.Lists;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
-import com.predic8.membrane.core.kubernetes.client.KubernetesClientBuilder;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class KubernetesSchemaResolver implements SchemaResolver {
 
@@ -95,7 +79,7 @@ public class KubernetesSchemaResolver implements SchemaResolver {
     }
 
     @Override
-    public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
         throw new RuntimeException("not implemented");
     }
 
