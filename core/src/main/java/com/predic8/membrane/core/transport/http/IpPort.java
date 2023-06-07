@@ -17,30 +17,10 @@ package com.predic8.membrane.core.transport.http;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class IpPort {
-	public final InetAddress ip;
-	public final int port;
+public record IpPort (InetAddress ip, int port) {
 
 	public IpPort(String ip, int port) throws UnknownHostException {
-		this.ip = (ip == null) ? null : InetAddress.getByName(ip);
-		this.port = port;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof IpPort))
-			return false;
-		IpPort other = (IpPort)obj;
-		if (other.port != port)
-			return false;
-		if (ip == null)
-			return other.ip == null;
-		return ip.equals(other.ip);
-	}
-
-	@Override
-	public int hashCode() {
-		return 5 * port + (ip != null ? 3 * ip.hashCode() : 0);
+		this((ip == null) ? null : InetAddress.getByName(ip), port);
 	}
 
 	@Override
@@ -48,24 +28,8 @@ public class IpPort {
 		return "port=" + port + " ip=" + ip;
 	}
 
-
 	public String toShortString() {
-	    return "'" + ((ip == null) ? "*" : ip.toString()) +
-                ':' + port + '\'';
-	}
-
-	/**
-	 * @return the ip
-	 */
-	public InetAddress getIp() {
-		return ip;
-	}
-
-	/**
-	 * @return the port
-	 */
-	public int getPort() {
-		return port;
+		return "'%s:%d'".formatted((ip == null) ? "*" : ip.toString(), port);
 	}
 
 }

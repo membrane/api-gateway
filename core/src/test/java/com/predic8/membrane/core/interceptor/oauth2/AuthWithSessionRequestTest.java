@@ -14,9 +14,11 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 public class AuthWithSessionRequestTest extends RequestParameterizedTest {
 
@@ -27,21 +29,22 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
         exc = oasit.getMockAuthRequestExchange().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testPromptEqualsLogin(),
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testPromptEqualsLogin(),
                 testPromptEqualsNone(),
-                testPromptValueUnknown());
+                testPromptValueUnknown()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testPromptValueUnknown() {
-        return new Object[]{"testPromptValueUnknown",addValueToRequestUri("prompt=123456789"),400,getLoginRequiredJson(),getResponseBody()};
+    private static RequestTestData testPromptValueUnknown() {
+        return new RequestTestData("testPromptValueUnknown",addValueToRequestUri("prompt=123456789"),400,getLoginRequiredJson(),getResponseBody());
     }
 
-    private static Object[] testPromptEqualsNone() {
-        return new Object[]{"testPromptEqualsNone",addValueToRequestUri("prompt=none"),400,getLoginRequiredJson(),getResponseBody()};
+    private static RequestTestData testPromptEqualsNone() {
+        return new RequestTestData("testPromptEqualsNone",addValueToRequestUri("prompt=none"),400,getLoginRequiredJson(),getResponseBody());
     }
 
-    private static Object[] testPromptEqualsLogin() {
-        return new Object[]{"testPromptEqualsLogin",addValueToRequestUri("prompt=login"),307,getBool(true),responseContainsValueInLocationHeader("/oauth2/auth")};
+    private static RequestTestData testPromptEqualsLogin() {
+        return new RequestTestData("testPromptEqualsLogin",addValueToRequestUri("prompt=login"),307,getBool(true),responseContainsValueInLocationHeader("/oauth2/auth"));
     }
 }

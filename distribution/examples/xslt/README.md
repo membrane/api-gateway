@@ -33,14 +33,14 @@ First take a look at the proxies.xml file.
 
 
 ```
-<proxies>
-	<serviceProxy port="2000">
-		<response>
-			<transform xslt="customer2person.xsl" />
-		</response>		
-		<target host="www.thomas-bayer.com" port="80" />
-	</serviceProxy>
-</proxies>
+<router>
+  <serviceProxy port="2000">
+    <response>
+      <transform xslt="customer2person.xsl" />
+    </response>		
+    <target host="www.thomas-bayer.com" port="80" />
+  </serviceProxy>
+</router>
 ```
 
 You will see that there is a `<serviceProxy>` that directs calls to the port `2000` to www.thomas-bayer.com. Additionally, the `XSLTInterceptor` is set for the rule. The interceptor will be called while processing each request and response.
@@ -55,7 +55,7 @@ You can reference stylesheets that will be applied to the request and response w
 
 ```
 <response>
-	<transform xslt="customer2person.xsl" />
+  <transform xslt="customer2person.xsl" />
 </response>		
 ```
 
@@ -64,36 +64,36 @@ Take a look at the stylesheet:
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
-	<xsl:template match="/CUSTOMER">
-		<person>
-			<name>
-				<first><xsl:value-of select="FIRSTNAME" /></first>
-				<last><xsl:value-of select="LASTNAME" /></last>
-			</name>
-			<address>
-				<street><xsl:value-of select="STREET" /></street>
-				<city><xsl:value-of select="CITY" /></city>
-			</address>
-		</person>
-	</xsl:template>
-	
-	<xsl:template match="@*|node()">
-		<xsl:copy>
-			<xsl:apply-templates select="@*"/>
-			<xsl:apply-templates select="node()|text()"/>
-		</xsl:copy>
-	</xsl:template>	
+  <xsl:template match="/CUSTOMER">
+    <person>
+      <name>
+        <first><xsl:value-of select="FIRSTNAME" /></first>
+        <last><xsl:value-of select="LASTNAME" /></last>
+      </name>
+      <address>
+        <street><xsl:value-of select="STREET" /></street>
+        <city><xsl:value-of select="CITY" /></city>
+      </address>
+    </person>
+  </xsl:template>
+
+  <xsl:template match="@*|node()">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:apply-templates select="node()|text()"/>
+    </xsl:copy>
+  </xsl:template>	
 </xsl:stylesheet>
 ```
 We will use the stylesheet to transform the REST resource into another representation. When we open http://www.thomas-bayer.com/samples/sqlrest/CUSTOMER/7/ in our browser, the REST resource will return the following XML document. 
 
 ```
 <?xml version="1.0"?><CUSTOMER xmlns:xlink="http://www.w3.org/1999/xlink">
-    <ID>7</ID>
-    <FIRSTNAME>Roger</FIRSTNAME>
-    <LASTNAME>Seid</LASTNAME>
-    <STREET>3738 N Monroe St</STREET>
-    <CITY>Tallahassee</CITY>
+  <ID>7</ID>
+  <FIRSTNAME>Roger</FIRSTNAME>
+  <LASTNAME>Seid</LASTNAME>
+  <STREET>3738 N Monroe St</STREET>
+  <CITY>Tallahassee</CITY>
 </CUSTOMER>
 ```
 
@@ -102,13 +102,13 @@ When we open http://localhost:2000/samples/sqlrest/CUSTOMER/7/ in a browser the 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <person>
-	<name>
-		<first>Roger</first>
-		<last>Seid</last>
-	</name>
-	<address>
-		<street>3738 N Monroe St</street>
-		<city>Tallahassee</city>
-	</address>
+  <name>
+    <first>Roger</first>
+    <last>Seid</last>
+  </name>
+  <address>
+    <street>3738 N Monroe St</street>
+	<city>Tallahassee</city>
+  </address>
 </person>
 ```

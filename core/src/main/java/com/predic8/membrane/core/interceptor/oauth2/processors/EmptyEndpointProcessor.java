@@ -22,10 +22,10 @@ import com.predic8.membrane.core.interceptor.oauth2.flows.CodeFlow;
 import com.predic8.membrane.core.interceptor.oauth2.flows.IdTokenTokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
-import com.predic8.membrane.core.util.functionalInterfaces.Function;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
+import java.util.function.Function;
 
 public class EmptyEndpointProcessor extends EndpointProcessor {
 
@@ -109,10 +109,10 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         StringBuilder builder = new StringBuilder();
         HashSet<String> alreadyAddedParams = new HashSet<>();
         for(String param : params) {
-            String correctedParamName = paramNameConverter.call(param);
+            String correctedParamName = paramNameConverter.apply(param);
             if(!correctedParamName.isEmpty() && !alreadyAddedParams.contains(correctedParamName)){
                 alreadyAddedParams.add(correctedParamName);
-                builder.append(" ").append(correctedParamName).append(" ").append(OAuth2Util.urlencode(paramValueConverter.call(param)));
+                builder.append(" ").append(correctedParamName).append(" ").append(OAuth2Util.urlencode(paramValueConverter.apply(param)));
             }
         }
         return builder.toString().trim();

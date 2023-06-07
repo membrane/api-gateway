@@ -19,7 +19,7 @@ import java.util.List;
 
 import jakarta.servlet.ServletContext;
 
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -58,7 +58,7 @@ public class FileSchemaWebAppResolver implements SchemaResolver {
 	}
 
 	@Override
-	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
 		throw new RuntimeException("Not implemented");
 	}
 

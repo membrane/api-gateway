@@ -16,11 +16,13 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     @BeforeEach
@@ -30,17 +32,18 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockEmptyEndpointRequest().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testConsentNotGiven(),
-                testIdTokenTokenResponse());
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testConsentNotGiven(),
+                testIdTokenTokenResponse()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testIdTokenTokenResponse() {
-        return new Object[] {"testIdTokenTokenResponse", modifySessionToIdTokenTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("id_token=")};
+    private static RequestTestData testIdTokenTokenResponse() {
+        return new RequestTestData ("testIdTokenTokenResponse", modifySessionToIdTokenTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("id_token="));
     }
 
-    private static Object[] testConsentNotGiven() {
-        return new Object[]{"testConsentNotGiven", setConsentToFalse(getExchange()),400,getConsentRequiredJson(),getResponseBody()};
+    private static RequestTestData testConsentNotGiven() {
+        return new RequestTestData("testConsentNotGiven", setConsentToFalse(getExchange()),400,getConsentRequiredJson(),getResponseBody());
     }
 
     private static Callable<Object> setConsentToFalse(Callable<Exchange> exchange) {

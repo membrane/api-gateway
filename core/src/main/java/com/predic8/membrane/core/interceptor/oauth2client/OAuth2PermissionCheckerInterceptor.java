@@ -21,7 +21,6 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
@@ -31,6 +30,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.util.List;
+import java.util.function.Function;
 
 @MCElement(name = "oauth2PermissionChecker")
 public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
@@ -67,7 +67,7 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         Object value = valueSource.evaluate(exc);
-        if (!valueChecker.call(value)) {
+        if (!valueChecker.apply(value)) {
             log.warn("OAuth2 permission check " + expression + " failed on value " + value);
             exc.setResponse(Response.forbidden().build());
             return Outcome.RETURN;

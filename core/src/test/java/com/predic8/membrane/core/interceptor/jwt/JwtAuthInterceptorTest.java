@@ -13,26 +13,27 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.lang.JoseException;
+import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -44,8 +45,8 @@ public class JwtAuthInterceptorTest{
     public static final String SUB_CLAIM_CONTENT = "Till, der fleissige Programmierer";
     private static final String AUDIENCE = "AusgestelltFuer";
 
-    public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(happyPath(),
+    public static Stream<Named<TestData>> data() throws Exception {
+        return Stream.of(happyPath(),
                 wrongAudience(),
                 manipulatedSignature(),
                 unknownKey(),
@@ -53,57 +54,58 @@ public class JwtAuthInterceptorTest{
                 unknownKeyWithCorrectKid(),
                 noJwtInHeader(),
                 malformedJwt(),
-                threeDotsNonJwt());
+                threeDotsNonJwt()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] threeDotsNonJwt() {
-        return new Object[] {
+    private static TestData threeDotsNonJwt() {
+        return new TestData(
                 "threeDotsNonJwt",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> new Request.Builder()
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
                         .get("")
                         .header("Authorization", "Bearer " + "header.body.sig")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_DECODED_HEADER_NOT_JSON, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
-    private static Object[] malformedJwt() {
-        return new Object[] {
+    private static TestData malformedJwt() {
+        return new TestData(
                 "malformedJwt",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> new Request.Builder()
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
                         .get("")
                         .header("Authorization", "Bearer " + "malformed.jwt")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_MALFORMED_COMPACT_SERIALIZATION, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
-    private static Object[] noJwtInHeader() {
-        return new Object[] {
+    private static TestData noJwtInHeader() {
+        return new TestData(
                 "noJwtInHeader",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> new Request.Builder()
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
                         .get("")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_JWT_NOT_FOUND, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
-    private static Object[] unknownKeyWithCorrectKid() {
-        return new Object[] {
+    private static TestData unknownKeyWithCorrectKid() {
+        return new TestData(
                 "unknownKeyWithCorrectKid",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> {
+                (RsaJsonWebKey privateKey) -> {
                     RsaJsonWebKey privateKey1 = RsaJwkGenerator.generateJwk(2048);
                     privateKey1.setKeyId(KID);
                     return new Request.Builder()
@@ -111,36 +113,36 @@ public class JwtAuthInterceptorTest{
                             .header("Authorization", "Bearer " + getSignedJwt(privateKey1) + "1")
                             .buildExchange();
                 },
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
-    private static Object[] wrongKId() {
-        return new Object[] {
+    private static TestData wrongKId() {
+        return new TestData(
                 "wrongKId",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> {
+                (RsaJsonWebKey privateKey) -> {
                     privateKey.setKeyId(KID + "q2342341");
                     return new Request.Builder()
                         .get("")
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1")
                         .buildExchange();
                 },
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
-    private static Object[] unknownKey() {
-        return new Object[] {
+    private static TestData unknownKey() {
+        return new TestData(
                 "unknownKey",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> {
+                (RsaJsonWebKey privateKey) -> {
                     RsaJsonWebKey privateKey1 = RsaJwkGenerator.generateJwk(2048);
                     privateKey1.setKeyId(KID + "q2342341");
                     return new Request.Builder()
@@ -148,77 +150,81 @@ public class JwtAuthInterceptorTest{
                             .header("Authorization", "Bearer " + getSignedJwt(privateKey1) + "1")
                             .buildExchange();
                 },
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_UNKNOWN_KEY, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
-    private static Object[] manipulatedSignature() {
-        return new Object[] {
+    private static TestData manipulatedSignature() {
+        return new TestData(
                 "manipulatedSignature",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> new Request.Builder()
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
                         .get("")
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1")
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
-    private static Object[] wrongAudience() {
-        return new Object[] {
+    private static TestData wrongAudience() {
+        return new TestData(
                 "wrongAudience",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> new Request.Builder()
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
                         .get("")
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey, getClaimsWithWrongAudience()))
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
                     assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("description"));
                 }
-        };
+        );
     }
 
 
-    private static Object[] happyPath() {
-        return new Object[] {
+    private static TestData happyPath() {
+        return new TestData(
                 "happyPath",
-                (FunctionWithException<RsaJsonWebKey,Exchange>)(RsaJsonWebKey privateKey) -> new Request.Builder()
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
                         .get("")
                         .header("Authorization", "Bearer " + getSignedJwt(privateKey))
                         .buildExchange(),
-                (Consumer<Exchange>)(Exchange exc) -> {
+                (Exchange exc) -> {
                     assertNotNull(exc.getProperties().get("jwt"));
                     assertEquals(SUB_CLAIM_CONTENT, ((Map<?, ?>)exc.getProperties().get("jwt")).get("sub"));
                 }
-        };
+        );
     }
 
     private static Map<String,Object> unpackBody(Exchange exc) {
         try {
-            return new ObjectMapper().readValue(exc.getResponse().getBodyAsStream(),Map.class);
+            return new ObjectMapper().readValue(exc.getResponse().getBodyAsStream(), new TypeReference<>() {
+            });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    public static interface FunctionWithException<T,R>{
+    public interface FunctionWithException<T,R>{
 
         R call(T param) throws Exception;
     }
 
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("data")
-    public void test(
+    private record TestData(
             String testName,
             FunctionWithException<RsaJsonWebKey,Exchange> exchangeCreator,
-            Consumer<Exchange> asserts) throws Exception{
+            ExceptionThrowingConsumer<Exchange> asserts
+    ) {}
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void test(TestData data) throws Exception{
         RsaJsonWebKey privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId(KID);
 
@@ -227,11 +233,11 @@ public class JwtAuthInterceptorTest{
 
         JwtAuthInterceptor interceptor = prepareInterceptor(publicOnly);
 
-        Exchange exc = exchangeCreator.call(privateKey);
+        Exchange exc = data.exchangeCreator().call(privateKey);
 
         interceptor.handleRequest(exc);
 
-        asserts.call(exc);
+        data.asserts().accept(exc);
     }
 
     private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) throws Exception {

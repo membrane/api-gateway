@@ -31,11 +31,11 @@ public class PortOccupiedException extends BindException {
 	}
 
 	public int getPort() {
-		return ipPort.getPort();
+		return ipPort.port();
 	}
 
 	public InetAddress getIp() {
-		return ipPort.getIp();
+		return ipPort.ip();
 	}
 
 	@Override

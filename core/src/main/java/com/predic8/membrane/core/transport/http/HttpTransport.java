@@ -70,7 +70,7 @@ public class HttpTransport extends Transport {
 	 * this method completes.
 	 */
 	public synchronized void closePort(IpPort p) throws IOException {
-	    Map<IpPort, HttpEndpointListener> mih = portListenerMapping.get(p.getPort());
+	    Map<IpPort, HttpEndpointListener> mih = portListenerMapping.get(p.port());
 	    if (mih == null || mih.isEmpty()) {
 	        return;
 	    }
@@ -87,12 +87,12 @@ public class HttpTransport extends Transport {
 		}
 		mih.remove(p);
 		if (mih.isEmpty()) {
-		    portListenerMapping.remove(p.getPort());
+		    portListenerMapping.remove(p.port());
 		}
 		stillRunning.add(new WeakReference<>(plt));
 
 		for (IPortChangeListener listener : menuListeners) {
-			listener.removePort(p.getPort());
+			listener.removePort(p.port());
 		}
 
 	}
@@ -165,7 +165,7 @@ public class HttpTransport extends Transport {
 	        throw new RuntimeException(format("Lister thread on %s should use the same SSL config", p.toShortString()));
 	    }
 	    if ((ip == null && !mih.isEmpty())                             // '*:port' vs 'XXX:port'
-	      || (ip != null && mih.containsKey(new IpPort(null, port)))   // 'XXX:port' vs '*:port'
+	      || (ip != null && mih.containsKey(new IpPort((String) null, port)))   // 'XXX:port' vs '*:port'
 	      ) {
 	        throw new RuntimeException(createDiffInterfacesErrorMsg(p,mih));
 	    }
@@ -184,7 +184,7 @@ public class HttpTransport extends Transport {
 		Map<IpPort, HttpEndpointListener> pl = portListenerMapping.get(port);
 		if (pl != null)
 			for (IpPort ipPort : pl.keySet())
-				if (ipPort.port == port)
+				if (ipPort.port() == port)
 					return Integer.toString(pl.get(ipPort).getNumberOfOpenConnections());
 		return "N/A";
 	}

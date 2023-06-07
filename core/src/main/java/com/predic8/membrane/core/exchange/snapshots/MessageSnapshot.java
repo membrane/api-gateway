@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.exchange.snapshots;
 
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CountingInputStream;
 
@@ -39,7 +39,7 @@ public class MessageSnapshot {
      * @param strategy how to handle body lengths exceeding the {@code limit}.
      * @param limit maximum length of the body.
      */
-    public MessageSnapshot(Message msg, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
+    public MessageSnapshot(Message msg, ExceptionThrowingConsumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes, BodyCollectingMessageObserver.Strategy strategy, long limit) throws IOException {
         header = new HashMap<>();
         Stream.of(msg.getHeader().getAllHeaderFields()).forEach(headerField -> {
             String key = headerField.getHeaderName().toString();
@@ -96,10 +96,10 @@ public class MessageSnapshot {
     }
 
     private class SnapshottingObserver extends BodyCollectingMessageObserver {
-        private final Consumer<AbstractExchangeSnapshot> bodyCopiedCallback;
+        private final ExceptionThrowingConsumer<AbstractExchangeSnapshot> bodyCopiedCallback;
         private final AbstractExchangeSnapshot aes;
 
-        public SnapshottingObserver(Strategy strategy, long limit, Consumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes) {
+        public SnapshottingObserver(Strategy strategy, long limit, ExceptionThrowingConsumer<AbstractExchangeSnapshot> bodyCopiedCallback, AbstractExchangeSnapshot aes) {
             super(strategy, limit);
             this.bodyCopiedCallback = bodyCopiedCallback;
             this.aes = aes;
@@ -121,7 +121,7 @@ public class MessageSnapshot {
             }
             body = baos.toByteArray();
             try {
-                bodyCopiedCallback.call(aes);
+                bodyCopiedCallback.accept(aes);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
