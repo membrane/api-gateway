@@ -18,4 +18,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots -Pno-internet verify
+        run: |
+          export MAVEN_OPTS="-Xmx3000m"
+          mvn --batch-mode --update-snapshots -Pno-internet verify
