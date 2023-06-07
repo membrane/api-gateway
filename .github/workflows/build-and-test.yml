@@ -1,6 +1,8 @@
 name: Maven Build and Tests
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
 
 # Matrix test does not work cause MAVEN_OPTS must be set
 jobs:
