@@ -43,8 +43,6 @@ public class EmbeddingJava {
         int listenPort = 4000;
 
         ServiceProxyKey key = new ServiceProxyKey(hostname, method, path, listenPort);
-        key.setMethod(method);
-        key.setPath(path);
 
         APIProxy api = new APIProxy();
         api.setKey(key);
