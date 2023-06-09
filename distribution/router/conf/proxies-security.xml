@@ -14,7 +14,8 @@
 	                    http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<router>	
+	<!-- production="true" reduces the details in error messages sent to the client -->
+	<router production="true">
 
 		<!--  
 			Administration UI with secured access

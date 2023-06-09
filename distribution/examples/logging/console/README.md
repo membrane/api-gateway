@@ -24,12 +24,14 @@ To run the example execute the following steps:
 
 6. Hava a look at the `proxies.xml` file:
 
-    ```
-    <serviceProxy port="2000">
-        <statisticsCSV file="./log.csv" />
-        <target host="api.predic8.de">
-            <ssl/>
-        </target>
-    </serviceProxy>
-    ```
-
+```
+<serviceProxy port="2000">
+  <log headerOnly="false"/>
+  <target host="api.predic8.de">
+    <ssl/>
+  </target>
+</serviceProxy>
+```
+--- 
+See:
+- [log](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/log.htm) reference

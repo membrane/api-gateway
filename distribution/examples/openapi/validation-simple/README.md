@@ -82,7 +82,7 @@ age:
   minimum: 0
 ```
 
-3. Incomming requests are validated against the definitions in the OpenAPI specification. How things evolve is dependend on the result of the validation. 
+3. Incoming requests are validated against the definitions in the OpenAPI specification. How things evolve is dependent on the result of the validation. 
 
 **a.) There are no validation errors**
 
@@ -117,3 +117,7 @@ In case of a validation failure an error message is returned to client without c
 ```
 
 See the [openapi-validation](../validation) folder for a more detailed example.
+
+---
+See:
+- [openapi](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/openapi.htm) reference

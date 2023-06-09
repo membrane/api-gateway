@@ -1,7 +1,7 @@
 ### VERSIONING WEBSERVICES BY ROUTING TO DIFFERENT ENDPOINTS
 
 In this example we investigate how web services can be versioned by running
-each version on its own seperate end point.
+each version on its own separate end point.
 
 Membrane acts as a common proxy and routes SOAP requests to the service endpoint,
 depending on the XML namespace used in the SOAP message body.
@@ -62,4 +62,6 @@ You should see a response containing "Hello ... version 1.1".
   Observe that both requests, `1.1` and `2.0`, get a response from their respective service, although
   the endpoint used is the same.
 
-
+---
+See: 
+- [switch](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/switch.htm) reference

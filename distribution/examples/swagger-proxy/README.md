@@ -43,8 +43,8 @@ First, take a look at the proxies.xml file.
 <swaggerProxy port="7000" url="http://petstore.swagger.io/v2/swagger.json" />
 
 <serviceProxy port="8000">
-	<swaggerRewriter />
-	<target host="petstore.swagger.io" port="80" />
+  <swaggerRewriter />
+  <target host="petstore.swagger.io" port="80" />
 </serviceProxy>
 ```
 There are three Service Proxies defined here:
@@ -60,8 +60,8 @@ offers a shorter and more concise way to define a Swagger Proxy,
 whereas the second method
 ```
 <serviceProxy port="8000">
-	<swaggerRewriter />
-	<target host="petstore.swagger.io" port="80" />
+  <swaggerRewriter />
+  <target host="petstore.swagger.io" port="80" />
 </serviceProxy>
 ```
 is more explicit and has more potential for more advanced setups.
@@ -84,3 +84,8 @@ rewrite.
 
 The third Service Proxy is just an Admin Console which you can use to watch
 active Service Proxies and current calls and connections.
+
+---
+See:
+- [swaggerProxy](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/swaggerProxy.htm) reference
+- [swaggerRewriter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/swaggerRewriter.htm) reference

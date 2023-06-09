@@ -9,7 +9,7 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
 1. Take a look at [proxies.xml](proxies.xml). There you'll find the APIs with the `javascript`plugin.
 2. Open a commandline session or a terminal.
 3. Run `service-proxy.bat` or `./service-proxy.sh` in this folder
-4. Open a secound terminal and run the commands:
+4. Open a second terminal and run the commands:
 
    **Create JSON with Javascript:**
 
@@ -76,9 +76,9 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
    X-Forwarded-Host: localhost:2000
    ```
 
-## Documentation
-
-See the [javascript plugin](https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/javascript.htm) reference.
+---
+See: 
+- [javascript plugin](https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/javascript.htm) reference
 
 
 

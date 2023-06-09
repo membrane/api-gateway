@@ -28,15 +28,11 @@ Let's take a look at the proxies.xml file.
 
 ```
 <router>
-	<serviceProxy name="echo" port="2000">
-		<log headerOnly="false"/>
-		<request>
-			<xml2Json/>
-		</request>
-		<groovy>
-			Response.ok("Look at the output of Membrane!\n").build()
-		</groovy>
-	</serviceProxy>
+  <api port="2000">
+    <request>
+      <xml2Json/>
+    </request>
+  </api>
 </router>
  ```
 
@@ -48,3 +44,6 @@ This is possible because `xml2Json` interceptor can work both ways.
 xml2Json interceptor will intercept message based on the content type, and it will use `XML.toJSONObject` from org.json for conversion.
 It will also change content type of message to `application/json;charset=utf-8`.
 
+---
+See:
+- [xml2Json](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/xml2Json.htm) reference

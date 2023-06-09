@@ -1,0 +1,112 @@
+### Post valid JSON
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "a": "av",
+  "b": [
+    2,
+    "Tests",
+    {
+      "c": "cv"
+    }
+  ],
+  "d": {
+    "e": {
+      "f": "fv"
+    }
+  }
+}
+
+### Post document exceeding maxTokens
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "a": {},
+  "b": [
+    2,
+    "Tests",
+    {
+      "c": "cv"
+    }
+  ],
+  "d": {
+    "e": {
+      "f": "fv"
+    }
+  }
+}
+
+### Post document exceeding maxSize
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "a": "av",
+  "b": [
+    2,
+    "Tests",
+    {
+      "c": "too"
+    }
+  ],
+  "d": {
+    "e": "many",
+    "f": "chars"
+  }
+}
+
+### Post document with nesting exceeding maxDepth
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "a": {
+    "b": {
+      "c": {
+        "d": "dv"
+      }
+    }
+  }
+}
+
+### Post document with string exceeding maxStringLength
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "a": "Exceeds max string length"
+}
+
+### Post document with key exceeding maxKeyLength
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "Key too long": "av"
+}
+
+### Post document with object exceeding maxObjectSize
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "a": "av",
+  "b": "bv",
+  "c": "cv",
+  "d": "dv"
+}
+
+### Post document with array exceeding maxArraySize
+POST localhost:2000
+Content-Type: application/json
+
+{
+  "a": [
+    1,
+    2,
+    true,
+    "Four"
+  ]
+}

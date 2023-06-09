@@ -48,3 +48,7 @@ http://localhost:9010/clustermanager/down?balancer=default&host=localhost&port=4
 You find more balancer configurations at the [Loadbalancing](..) page.
 
 Note that the `adminConsole` and the `clusterNotification` are optional, you can take them out of the `proxies.xml` if you want to.
+
+---
+See:
+- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference

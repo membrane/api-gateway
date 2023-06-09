@@ -24,12 +24,12 @@ This section describes the example in detail.
 
 First take a look at the proxies.xml file.
 ```
-	<router>
-		<serviceProxy port="2000">
-			<rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-			<target host="www.google.de" port="80" />
-		</serviceProxy>
-	</router>
+<router>
+  <serviceProxy port="2000">
+    <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+    <target host="www.google.de" port="80" />
+  </serviceProxy>
+</router>
 ```
 You will see that there is a `serviceProxy` on port `2000`. Additionally, the `RateLimiter` is added to the proxy and configured to 3 requests per 30 seconds.
 
@@ -38,3 +38,6 @@ The rateLimiter element has 2 values that you can set and by default it is set t
 * `requestLimit="x"` can be any positive number. Specifies the number of requests per interval.
 * `requestLimitDuration="PTxS"` can be any duration in seconds. Specifies the interval in which `requestLimit` requests can be done. Format is "PTxS" where x is the duration in seconds.
  
+--- 
+See:
+- [rateLimiter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rateLimiter.htm) reference

@@ -24,14 +24,14 @@ This section describes the example in detail.
 
 First take a look at the `proxies.xml` file.
 ```
-<proxies>
-	<serviceProxy port="2000">
-		<rewriter>
-			<map from="^/bank/(.*)" to="/axis2/$1" />
-		</rewriter>
-		<target host="www.thomas-bayer.com" port="80" />
-	</serviceProxy>
-</proxies>
+<router>
+  <serviceProxy port="2000">
+    <rewriter>
+      <map from="^/bank/(.*)" to="/axis2/$1" />
+    </rewriter>
+    <target host="www.thomas-bayer.com" port="80" />
+  </serviceProxy>
+</router>
 ```
 
 You will see that there is a `<serviceProxy>` that directs calls to the port `2000` to www.thomas-bayer.com:80. Additionally, the `RewriteInterceptor` is added to the proxy. The interceptor will be called while processing each request and response.
@@ -40,7 +40,7 @@ Now take a closer look at the <rewriter> element:
 
 ```
 <rewriter>
-	<map from="^/bank/(.*)" to="/axis2/$1" />
+  <map from="^/bank/(.*)" to="/axis2/$1" />
 </rewriter>
 ```
 
@@ -56,3 +56,7 @@ In the regular expression, we use a group that we can reference when replacing t
 /axis2/services/BLZService?wsdl
 /axis2/services/BLZService
 ```
+
+---
+See:
+- [rewriter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rewriter.htm) reference

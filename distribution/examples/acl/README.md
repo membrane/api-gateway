@@ -34,12 +34,12 @@ The following part describes the example in detail.
 First take a look at the proxies.xml file.
 
 ```
-<proxies>
-	<serviceProxy name="predic8.com" port="2000">
-		<accessControl file="acl.xml" />
-		<target host="predic8.com" port="80" />
-	</serviceProxy>
-</proxies>
+<router>
+  <serviceProxy name="predic8.com" port="2000">
+    <accessControl file="acl.xml" />
+    <target host="predic8.com" port="80" />
+  </serviceProxy>
+</router>
 ```
 The `serviceProxy` forwards calls to the port 2000 to `predic8.com:80`. 
 
@@ -84,6 +84,9 @@ The element <any> can be used to grant permission to all clients.
 
 The access permissions are scanned from top to bottom, therefore the order of the rules is significant.
 
+---
+See:
+- [accessControl](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/accessControl.htm) reference
 
 
 

@@ -47,12 +47,7 @@ To run the example execute the following steps:
 9. Take a look at the console output of node 1 and node 2. You will notice that only node 1 received requests, because of the session id. Membrane sends messages with the same session id to the same node.  
 
 10. Run the client again, and you will notice that this time all requests are sent to node 2. 
-     
-     
 
-
-
-
-
-
-
+---
+See:
+- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference

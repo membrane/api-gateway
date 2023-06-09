@@ -4,7 +4,7 @@ This sample demonstrates:
 
 * How to use OpenAPI as a source of API Gateway configuration
 * How to validate requests and responses against OpenAPI definitions
-* How to publish a Swagger UI for depolyed APIs
+* How to publish a Swagger UI for deployed APIs
 
 ## Running the Example
 
@@ -102,4 +102,6 @@ For more about the OpenAPI Validation features of Membrane have a look at:
 - [Simple Validation Example](../validation-simple)
 - [Extended Validation Example](git/predic8/service-proxy/distribution/examples/openapi/validation/)
 
-
+---
+See:
+- [openapi](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/openapi.htm) reference

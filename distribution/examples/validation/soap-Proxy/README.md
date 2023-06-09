@@ -12,7 +12,7 @@ As a SOAP-Proxy is a specialized version of `the ServiceProxy`, a SOAP-Proxy has
 
 ```
 <soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-	<validator />
+  <validator />
 </soapProxy>
 ```
 
@@ -31,3 +31,7 @@ curl --header "Content-Type: application/soap+xml" -d @blz-soap.xml http://local
 ```
 curl --header "Content-Type: application/soap+xml" -d @invalid-blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse
 ```
+
+---
+See:
+- [validator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/validator.htm) reference

@@ -29,8 +29,7 @@ import com.predic8.membrane.core.kubernetes.KubernetesSchemaResolver;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.util.TimerManager;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import org.w3c.dom.ls.LSInput;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import com.google.common.base.Objects;
@@ -202,7 +201,7 @@ public class ResolverMap implements Cloneable, Resolver {
 	}
 
 	@Override
-	public void observeChange(String uri, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+	public void observeChange(String uri, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
 		try {
 			getSchemaResolver(uri).observeChange(uri,consumer);
 		} catch (ResourceRetrievalException e) {

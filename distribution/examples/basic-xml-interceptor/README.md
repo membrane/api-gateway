@@ -48,7 +48,7 @@ Again in the proxies.xml file inside `<serviceProxy> tag you can see that we add
 
 ```
 <api name="echo" port="2000">
-	<interceptor refid="basicXmlInterceptor"/>
+  <interceptor refid="basicXmlInterceptor"/>
 ```
 
 Our interceptor checks if the content of the request is xml and creates a date element which contains current time information and adds it into the bar element using Java DOM API. 

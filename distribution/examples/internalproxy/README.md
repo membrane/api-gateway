@@ -87,7 +87,7 @@ When we run first command in step 4 from a command line, `<groovy>` interceptor 
 
 ```
     <groovy>
-        println("Inside proxy example_main.")
+      println("Inside proxy example_main.")
     </groovy>
 ```
 
@@ -95,7 +95,7 @@ You can see in file we have `<switch>` element. This is a `XPathCBRInterceptor`.
 
 ```
     <switch>
-        <case xPath="//order[@express='yes']" service="mybackend" />
+      <case xPath="//order[@express='yes']" service="mybackend" />
     </switch>
 ```
 
@@ -111,3 +111,7 @@ Since our `internalProxy` has the name `mybackend`, Membrane sends the exchange 
 ```
 <internalProxy name="mybackend">
 ```
+
+---
+See:
+- [internalProxy](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/internalProxy.htm) reference

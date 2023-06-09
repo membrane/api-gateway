@@ -30,19 +30,18 @@ The following part describes the example in detail.
 First take a look at the proxies.xml file.
 
 ```
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-	<serviceProxy port="2000">
-		<rest2Soap>		
-			<mapping regex="/bank/.*" soapAction=""
-				soapURI="/axis2/services/BLZService" 
-				requestXSLT="get2soap.xsl"
-				responseXSLT="strip-env.xsl" />
-		</rest2Soap>
-		<target host="thomas-bayer.com" />
-	</serviceProxy>
-</proxies>
+<router>
+  <serviceProxy port="2000">
+    <rest2Soap>
+      <mapping regex="/bank/.*" 
+               soapAction=""
+               soapURI="/axis2/services/BLZService"
+               requestXSLT="blz-httpget2soap-request.xsl" 
+               responseXSLT="strip-soap-envelope.xsl" />
+    </rest2Soap>
+    <target host="thomas-bayer.com" />
+  </serviceProxy>
+</router>
 ```
 
 
@@ -52,11 +51,11 @@ Now take a closer look at the rest2Soap element:
 
 ```
 <rest2Soap>
-	<mapping regex="/bank/.*" 
-			 soapAction=""
-			 soapURI="/axis2/services/BLZService"
-			 requestXSLT="blz-httpget2soap-request.xsl" 
-			 responseXSLT="strip-soap-envelope.xsl" />
+  <mapping regex="/bank/.*" 
+           soapAction=""
+           soapURI="/axis2/services/BLZService"
+           requestXSLT="blz-httpget2soap-request.xsl" 
+           responseXSLT="strip-soap-envelope.xsl" />
 </rest2Soap>			
 ```
 
@@ -221,3 +220,7 @@ The transformed body will show up in your browser:
   </ns1:details>
 </ns1:getBankResponse>
 ```
+
+--- 
+See: 
+- [rest2Soap](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rest2Soap.htm) reference
