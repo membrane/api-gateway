@@ -36,6 +36,12 @@
             <artifactId>service-proxy-core</artifactId>
             <version>5.1.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.28</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <repositories>
