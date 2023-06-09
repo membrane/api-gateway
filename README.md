@@ -350,7 +350,7 @@ Limit the number of incoming requests:
 </api>
 ```
 
-# Loadbalancing
+# Load balancing
 
 Distribute workload to multiple backend nodes. [more ...](distribution/examples/loadbalancing)
 ```xml
