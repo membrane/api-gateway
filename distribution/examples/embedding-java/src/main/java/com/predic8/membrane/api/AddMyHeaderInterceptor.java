@@ -16,7 +16,11 @@ package com.predic8.membrane.api;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import groovy.util.logging.Slf4j;
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import lombok.extern.log4j.Log4j2;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.lang.Override;
 
@@ -25,17 +29,13 @@ import java.lang.Override;
  *
  * @author Oliver Weiler
  */
+@Log4j2
 public class AddMyHeaderInterceptor extends AbstractInterceptor {
-    private static final Logger log = Logger.getLogger(AddMyHeaderInterceptor.class);
-
     @Override
     public Outcome handleRequest(Exchange exchange) {
         log.info(exchange.getRequest().getHeader().getUserAgent());
-
         exchange.getRequest().getHeader().add("X-Hello", "Hello World!");
-
         log.info(exchange.getRequest());
-
         return Outcome.CONTINUE;
     }
 }
