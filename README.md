@@ -22,7 +22,7 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 
 **Other:**
 * Admin Web console
-* [Load balancing](#loadbalancing)
+* [Load balancing](#load-balancing)
 * [Message Transformation](#message-transformation)
 * Embeddable reverse proxy HTTP framework for own API gateways
 
