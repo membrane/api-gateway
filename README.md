@@ -385,7 +385,7 @@ Log data about requests and responses to a file or [database](distribution/examp
 ```xml
 <api port="2000">
   <log/> <!-- Logs to the console -->
-  <statisticsCSV file="./log.csv" /> <!-- Logs finegrained CSV --> 
+  <statisticsCSV file="./log.csv" /> <!-- Logs fine-grained CSV --> 
   <target url="https://api.predic8.de"/>
 </api>
 ```
