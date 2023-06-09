@@ -28,7 +28,7 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 
 
 
-# Get Started
+# Getting Started
 
 1. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it
 
