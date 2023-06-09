@@ -14,11 +14,7 @@
 package com.predic8.membrane.api;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
-import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIProxyServiceKey;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 /**
