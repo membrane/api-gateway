@@ -41,6 +41,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * This test checks that all version numbers in the miscellaneous project files
  * are the same.
+ *
+ * Call from distribution directory.
+ * For Release, use:
+ * {@code mvn test-compile exec:java -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" -Dexec.classpathScope="test" -DmainArgs="-release 5.2"}
+ * For Snapshot version, use:
+ * {@code mvn test-compile exec:java -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" -Dexec.classpathScope="test" -DmainArgs="-snapshot"}
  */
 public class ConsistentVersionNumbers {
 
