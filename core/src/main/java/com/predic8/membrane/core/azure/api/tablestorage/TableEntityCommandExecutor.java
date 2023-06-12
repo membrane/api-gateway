@@ -16,11 +16,15 @@ public class TableEntityCommandExecutor {
     public TableEntityCommandExecutor(TableStorageApi api, String rowKey) {
         this.api = api;
 
-        path = String.format("https://%s.table.core.windows.net/%s%s",
-                api.config().getStorageAccountName(),
-                api.config().getTableName(),
-                URLEncoder.encode("(PartitionKey='" + api.config().getPartitionKey() + "',RowKey='" + rowKey + "')", StandardCharsets.UTF_8)
-        );
+        path = api.config().getCustomHost() == null
+                ? String.format("https://%s.table.core.windows.net/%s%s",
+                    api.config().getStorageAccountName(),
+                    api.config().getTableName(),
+                    URLEncoder.encode("(PartitionKey='" + api.config().getPartitionKey() + "',RowKey='" + rowKey + "')", StandardCharsets.UTF_8))
+                : String.format("%s/%s%s",
+                    api.config().getCustomHost(),
+                    api.config().getTableName(),
+                    URLEncoder.encode("(PartitionKey='" + api.config().getPartitionKey() + "',RowKey='" + rowKey + "')", StandardCharsets.UTF_8));
     }
 
     public JsonNode get() throws Exception {
