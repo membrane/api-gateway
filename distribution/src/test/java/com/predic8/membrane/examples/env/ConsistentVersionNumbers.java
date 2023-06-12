@@ -147,18 +147,23 @@ public class ConsistentVersionNumbers {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		//dbf.setNamespaceAware(true);
 		Document d = dbf.newDocumentBuilder().parse(child);
-		XPathFactory pf = XPathFactory.newInstance();
-		XPath p = pf.newXPath();
-		NodeList l = (NodeList) p.compile(
-				isPartOfProject ?
-						"//project/version | //project/parent/version" :
-							"//project/dependencies/dependency[./artifactId='service-proxy-core']/version"
-				).evaluate(d, NODESET);
+		NodeList l = (NodeList) getNodeSelector(isPartOfProject).evaluate(d, NODESET);
 		for (int i = 0; i < l.getLength(); i++) {
 			Element e = (Element) l.item(i);
 			e.getFirstChild().setNodeValue(handler.handle(child, e.getFirstChild().getNodeValue()));
 		}
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(child));
+	}
+
+	private static XPathExpression getNodeSelector(boolean isPartOfProject) throws XPathExpressionException {
+		XPathFactory pf = XPathFactory.newInstance();
+		XPath p = pf.newXPath();
+		return p.compile(
+				isPartOfProject ?
+						"//project/version | //project/parent/version" :
+						"//project/dependencies/dependency[./artifactId='service-proxy-core']/version"
+		);
+
 	}
 
 	private static void handleFactoryPath(File child) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerException, TransformerFactoryConfigurationError {
