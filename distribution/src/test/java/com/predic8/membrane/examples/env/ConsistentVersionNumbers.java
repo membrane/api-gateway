@@ -29,6 +29,7 @@ import javax.xml.transform.stream.*;
 import javax.xml.xpath.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.*;
 
 import static com.predic8.membrane.examples.util.TestFileUtil.*;
@@ -43,21 +44,22 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ConsistentVersionNumbers {
 
-	static Handler handler;
-	String version;
+	public static final Option SNAPSHOT = Option.builder("snapshot").desc("Increase patch version and append SNAPSHOT tag").build();
+	public static final Option RELEASE = Option.builder("release").desc("Release version").hasArg().argName("x.y.z").build();
 
 	@Test
 	public void doit() throws Exception {
+		AtomicReference<Semver> version = new AtomicReference<>(null);
 		File base = new File("..");
 		validateBase(base);
 
 		transformRecursively(base, (file, old) -> {
-			if (version == null)
-				version = old;
+			if (version.get() == null)
+				version.set(old);
 			else {
 				try {
 					System.out.println(file);
-					assertTrue(version.isEqualTo(old) || removePatchVersion(version).isEqualTo(old));
+					assertTrue(version.get().isEqualTo(old) || removePatchVersion(version.get()).isEqualTo(old));
 				} catch (RuntimeException e) {
 					throw new RuntimeException("in file " + file.getAbsolutePath(), e);
 				}
@@ -67,15 +69,20 @@ public class ConsistentVersionNumbers {
 	}
 
 	private Semver removePatchVersion(Semver version) {
-		return new Semver("%d.%d".formatted(version.getMajor(), version.getMinor()), LOOSE);
+		return new MembraneVersion("%d.%d".formatted(version.getMajor(), version.getMinor()));
 	}
 
 	@Test
 	public void testRemovePatch() {
-		assertTrue(removePatchVersion(new Semver("5.0.0")).isEqualTo("5.0"));
+		assertTrue(removePatchVersion(new MembraneVersion("5.0.0")).isEqualTo("5.0"));
 	}
 
 	public static void main(String[] args) throws Exception {
+		var cl = new DefaultParser().parse(getOptions(), args, true);
+		if (!cl.hasOption(SNAPSHOT) && !cl.hasOption(RELEASE)) {
+			new HelpFormatter().printHelp("ConsistentVersionNumbers", getOptions());
+			System.exit(1);
+		}
 		File base = new File("..");
 		validateBase(base);
 
@@ -84,10 +91,13 @@ public class ConsistentVersionNumbers {
 			return old;
 		});
 
-		System.out.println("Please enter the new version:");
-		final Semver version = new Semver(new BufferedReader(new InputStreamReader(System.in)).readLine(), LOOSE);
-
-		transformRecursively(base, (file, old) -> version);
+		if (cl.hasOption(RELEASE)) {
+			var version = new MembraneVersion(cl.getOptionValue(RELEASE)).withClearedSuffix();
+			transformRecursively(base, (file, old) -> version);
+		} else if (cl.hasOption(SNAPSHOT)) {
+			var version = readPOMVersion(new File(base, "pom.xml")).withIncPatch().withSuffix("SNAPSHOT");
+			transformRecursively(base, (file, old) -> version);
+		}
 	}
 
 	private static Options getOptions() {
@@ -115,7 +125,7 @@ public class ConsistentVersionNumbers {
 			Matcher m = pattern.matcher(content.get(i));
 			if (m.find()) {
 				found = true;
-				Semver v = versionTransformer.map(file, new Semver(m.group(2), LOOSE));
+				var v = versionTransformer.map(file, new MembraneVersion(m.group(2)));
 				content.set(i, m.replaceFirst(m.group(1) + "%d.%d".formatted(v.getMajor(), v.getMinor()) + m.group(3)));
 			}
 		}
@@ -148,17 +158,33 @@ public class ConsistentVersionNumbers {
 		}
 	}
 
+	private static MembraneVersion readPOMVersion(File pomFilename) throws Exception {
+		Document d = readDocument(pomFilename);
+		NodeList l = (NodeList) getNodeSelector(true).evaluate(d, NODESET);
+		if (l.getLength() == 0) {
+			throw new Exception("could not find version number");
+		}
+		return readVersion(l.item(0));
+	}
 	private static void handlePOM(File pomFilename, boolean isPartOfProject, VersionTransformer versionTransformer) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerException, TransformerFactoryConfigurationError {
-		//System.out.println(pomFilename.getName());
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		//dbf.setNamespaceAware(true);
-		Document d = dbf.newDocumentBuilder().parse(pomFilename);
+		Document d = readDocument(pomFilename);
 		NodeList l = (NodeList) getNodeSelector(isPartOfProject).evaluate(d, NODESET);
 		for (int i = 0; i < l.getLength(); i++) {
 			Element e = (Element) l.item(i);
-			e.getFirstChild().setNodeValue(versionTransformer.map(pomFilename, new Semver(e.getFirstChild().getNodeValue(), LOOSE)).getValue());
+			e.getFirstChild().setNodeValue(versionTransformer.map(pomFilename, readVersion(l.item(i))).getValue());
 		}
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(pomFilename));
+	}
+
+	private static Document readDocument(File pomFilename) throws SAXException, IOException, ParserConfigurationException {
+		//System.out.println(pomFilename.getName());
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		//dbf.setNamespaceAware(true);
+		return dbf.newDocumentBuilder().parse(pomFilename);
+	}
+
+	private static MembraneVersion readVersion(Node node) {
+		return new MembraneVersion(node.getFirstChild().getNodeValue());
 	}
 
 	private static XPathExpression getNodeSelector(boolean isPartOfProject) throws XPathExpressionException {
@@ -173,9 +199,7 @@ public class ConsistentVersionNumbers {
 	}
 
 	private static void handleFactoryPath(File factoryPath, VersionTransformer versionTransformer) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerException, TransformerFactoryConfigurationError {
-		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		//dbf.setNamespaceAware(true);
-		Document d = dbf.newDocumentBuilder().parse(factoryPath);
+		Document d = readDocument(factoryPath);
 		XPathFactory pf = XPathFactory.newInstance();
 		XPath p = pf.newXPath();
 		NodeList l = (NodeList) p.compile("//factorypath/factorypathentry[@kind='VARJAR' and contains(@id, 'service-proxy-annot')]").evaluate(d, NODESET);
@@ -185,10 +209,28 @@ public class ConsistentVersionNumbers {
 			Matcher m = Pattern.compile("service-proxy-annot-(.*?).jar").matcher(e.getAttribute("id"));
 			if (!m.find())
 				throw new RuntimeException("Could not match: " + e.getAttribute("id"));
-			String newValue = versionTransformer.map(factoryPath, new Semver(m.group(1), LOOSE)).getValue();
+			String newValue = versionTransformer.map(factoryPath, new MembraneVersion(m.group(1))).getValue();
 			e.setAttribute("id", "M2_REPO/org/membrane-soa/service-proxy-annot/" + newValue + "/service-proxy-annot-" + newValue + ".jar");
 		}
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(factoryPath));
+	}
+
+	private static class MembraneVersion extends Semver {
+
+		public MembraneVersion(String value) {
+			super(value, LOOSE);
+		}
+
+		@Override
+		public Semver withIncPatch() {
+			if (this.getMinor() == null) {
+				new MembraneVersion("%d.%d".formatted(this.getMajor(), 0)).withIncPatch();
+			}
+			if (this.getPatch() == null) {
+				return new MembraneVersion("%d.%d.%d".formatted(this.getMajor(), this.getMinor(), 0)).withIncPatch();
+			}
+			return super.withIncPatch();
+		}
 	}
 
 	private interface VersionTransformer {
