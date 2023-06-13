@@ -22,13 +22,13 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 
 **Other:**
 * Admin Web console
-* [Load balancing](#loadbalancing)
+* [Load balancing](#load-balancing)
 * [Message Transformation](#message-transformation)
 * Embeddable reverse proxy HTTP framework for own API gateways
 
 
 
-# Get Started
+# Getting Started
 
 1. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it
 
@@ -44,7 +44,7 @@ Try the following snippets by copying them into the `conf/proxies.xml` file.
 
 ## Using OpenAPI for Configuration & Validation
 
-Configures APIs from OpenAPI  and validates messages against the definitions. Needed data like backend addresses are taken from the OpenAPI description.  [more...](distribution/examples/openapi)
+Configures APIs from OpenAPI  and validates messages against the definitions. Needed data like backend addresses are taken from the OpenAPI description. [See the example](distribution/examples/openapi)
 
 This configuration is all you need to deploy from OpenAPI:
 ```xml
@@ -53,7 +53,7 @@ This configuration is all you need to deploy from OpenAPI:
 </api>
 ```
 
-A list of deployed APIs if available at `http://localhost:2000/api-doc`
+A list of deployed APIs is available at `http://localhost:2000/api-doc`
 
 ![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
 
@@ -152,6 +152,8 @@ Using the `xpathExtractor` you can extract values from XML request or response b
 </api>
 ```
 
+See: [message-transformation examples](./distribution/examples/message-transformation)
+
 ## Complex Transformations using Javascript or Groovy
 
 Use the Javascript or Groovy plugin for more powerful yet simple transformations.
@@ -249,7 +251,7 @@ Membrane offers lots of security features to protect backend servers.
 
 ## JSON Web Tokens
 
-The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT token validator for other identity providers.
+The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT validator for other identity providers.
 
 ```xml
 <api port="8080">
@@ -264,7 +266,7 @@ The API below only allows requests with valid tokens from Microsoft's Azure AD. 
 
 ### Secure an API with OAuth2
 
-Use OAuth2/OpenID to secure endpoints against Google, Azure AD, github, Keycloak or Membrane authentication servers.
+Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak or Membrane authentication servers.
 
 ```xml
 <api port="2001">
@@ -350,9 +352,9 @@ Limit the number of incoming requests:
 </api>
 ```
 
-# Loadbalancing
+# Load balancing
 
-Distribute workload to multiple backend nodes. [more ...](distribution/examples/loadbalancing)
+Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
 ```xml
 <api port="8080">
   <balancer name="balancer">
@@ -385,7 +387,7 @@ Log data about requests and responses to a file or [database](distribution/examp
 ```xml
 <api port="2000">
   <log/> <!-- Logs to the console -->
-  <statisticsCSV file="./log.csv" /> <!-- Logs finegrained CSV --> 
+  <statisticsCSV file="./log.csv" /> <!-- Logs fine-grained CSV --> 
   <target url="https://api.predic8.de"/>
 </api>
 ```
