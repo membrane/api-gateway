@@ -11,13 +11,13 @@ In the example we will route to an SSL protected API.
 
 3. Have a look at the `proxies.xml` file.
 
-    ```
-    <serviceProxy port="2000">
-      <target host="api.predic8.de" port="443">
-        <ssl/>
-      </target>
-    </serviceProxy>
-    ```
+ ```
+ <serviceProxy port="2000">
+   <target host="api.predic8.de" port="443">
+     <ssl/>
+   </target>
+ </serviceProxy>
+ ```
 
 ---
 See:

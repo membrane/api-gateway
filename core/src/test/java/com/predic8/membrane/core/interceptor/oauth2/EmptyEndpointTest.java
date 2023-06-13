@@ -14,10 +14,12 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 public class EmptyEndpointTest extends RequestParameterizedTest{
 
@@ -28,28 +30,29 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockEmptyEndpointRequest().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testCodeResponse(),
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testCodeResponse(),
                 testTokenResponse(),
-                testUnsupportedResponseType());
+                testUnsupportedResponseType()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testUnsupportedResponseType() {
-        return new Object[]{"testUnsupportedResponseType", modifySessionToUnsupportedType(),400,getUnsupportedResponseTypeJson(),getResponseBody()};
+    private static RequestTestData testUnsupportedResponseType() {
+        return new RequestTestData("testUnsupportedResponseType", modifySessionToUnsupportedType(),400,getUnsupportedResponseTypeJson(),getResponseBody());
     }
 
-    private static Object[] testTokenResponse() {
-        return new Object[]{"testTokenResponse", modifySessionToTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("token=")};
+    private static RequestTestData testTokenResponse() {
+        return new RequestTestData("testTokenResponse", modifySessionToTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("token="));
     }
 
-    private static Object[] testCodeResponse() {
-        return new Object[]{"testCodeResponse", modifySessionToCodeResponseType(),307,getBool(true),responseContainsValueInLocationHeader("code=")};
+    private static RequestTestData testCodeResponse() {
+        return new RequestTestData("testCodeResponse", modifySessionToCodeResponseType(),307,getBool(true),responseContainsValueInLocationHeader("code="));
     }
 
     private static Callable<Object> modifySessionToCodeResponseType() {
         return new Callable<>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 modifySessionAttributes("response_type", "code");
                 return this;
             }
@@ -59,7 +62,7 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     private static Callable<Object> modifySessionToTokenResponseType() {
         return new Callable<>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 modifySessionAttributes("response_type", "token");
                 return this;
             }
@@ -69,7 +72,7 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     private static Callable<Object> modifySessionToUnsupportedType(){
         return new Callable<>() {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 modifySessionAttributes("response_type", "123456789");
                 return this;
             }

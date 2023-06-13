@@ -15,51 +15,30 @@ package com.predic8.membrane.core.transport.http;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
 
 import com.predic8.membrane.core.util.HttpUtil;
 
-public class HostColonPort {
-
-	public final boolean useSSL;
-	public final String host;
-	public final int port;
+public record HostColonPort(boolean useSSL, String host, int port) {
 
 	public HostColonPort(boolean useSSL, String hostAndPort) {
-		String[] strs = hostAndPort.split(":");
-
-		this.useSSL = useSSL;
-		host = strs[0];
-		port = strs.length > 1 ? Integer.parseInt(strs[1]) : 80;
-	}
-
-	public HostColonPort(boolean useSSL, String host, int port) {
-		this.useSSL = useSSL;
-		this.host = host;
-		this.port = port;
+		this(useSSL, hostPart(hostAndPort), portPart(hostAndPort, 80));
 	}
 
 	public HostColonPort(String host, int port) {
-		this.host = host;
-		this.port = port;
-		this.useSSL = false;
+		this(false, host, port);
 	}
 
 	public HostColonPort(URL url) throws MalformedURLException {
-		useSSL = url.getProtocol().endsWith("s");
-		host = url.getHost();
-		port = HttpUtil.getPort(url);
+		this(url.getProtocol().endsWith("s"), url.getHost(), HttpUtil.getPort(url));
 	}
 
 	public String getProtocol() {
-		if (port == 443 || port == 8443)
-			return "https";
-
-		return "http";
+		// TODO shouldn't this check useSSL instead?
+		return (isHttpsPort() ? "https" : "http");
 	}
 
 	public String getUrl() {
-		return getProtocol() + "://" + host + ":" + port;
+		return "%s://%s".formatted(getProtocol(), this);
 	}
 
 	@Override
@@ -67,23 +46,17 @@ public class HostColonPort {
 		return host + ":" + port;
 	}
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-
-		HostColonPort that = (HostColonPort) o;
-
-		if (useSSL != that.useSSL) return false;
-		if (port != that.port) return false;
-		return Objects.equals(host, that.host);
+	private boolean isHttpsPort() {
+		return port == 443 || port == 8443;
 	}
 
-	@Override
-	public int hashCode() {
-		int result = (useSSL ? 1 : 0);
-		result = 31 * result + (host != null ? host.hashCode() : 0);
-		result = 31 * result + port;
-		return result;
+	private static String hostPart(String addr) {
+		var colon = addr.indexOf(":");
+		return (colon > -1 ? addr.substring(0, colon) : addr);
+	}
+
+	private static int portPart(String addr, int defaultValue) {
+		var colon = addr.indexOf(":");
+		return (colon > -1 ? Integer.parseInt(addr.substring(colon+1)) : defaultValue);
 	}
 }

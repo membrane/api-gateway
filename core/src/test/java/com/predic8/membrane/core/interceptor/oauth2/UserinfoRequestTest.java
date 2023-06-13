@@ -15,10 +15,15 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Named;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class UserinfoRequestTest extends RequestParameterizedTest {
     @BeforeEach
@@ -28,22 +33,23 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
         exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockUserinfoRequest().call();
     }
 
-    public static Collection<Object[]> data() {
-        return Arrays.asList(testAuthorizationHeaderMissing(),
+    public static Stream<Named<RequestTestData>> data() {
+        return Stream.of(testAuthorizationHeaderMissing(),
                 testEmptyAuthorizationHeader(),
-                testWrongTokenInAuthorizationHeader());
+                testWrongTokenInAuthorizationHeader()
+        ).map(data -> Named.of(data.testName(), data));
     }
 
-    private static Object[] testWrongTokenInAuthorizationHeader() {
-        return new Object[]{"testWrongTokenInAuthorizationHeader", changeTokenInAuthorizationHeaderInRequestHeader(getExchange(),"123456789"),401,getBool(true), responseWwwAuthenticateHeaderContainsValue(getExchange(),"error=\"invalid_token\"")};
+    private static RequestTestData testWrongTokenInAuthorizationHeader() {
+        return new RequestTestData("testWrongTokenInAuthorizationHeader", changeTokenInAuthorizationHeaderInRequestHeader(getExchange(),"123456789"),401,getBool(true), responseWwwAuthenticateHeaderContainsValue(getExchange(),"error=\"invalid_token\""));
     }
 
-    private static Object[] testEmptyAuthorizationHeader() {
-        return new Object[]{"testEmptyAuthorizationHeader", changeValueOfAuthorizationHeaderInRequestHeader(getExchange(),""),401,getBool(true), responseWwwAuthenticateHeaderContainsValue(getExchange(),"error=\"invalid_token\"")};
+    private static RequestTestData testEmptyAuthorizationHeader() {
+        return new RequestTestData("testEmptyAuthorizationHeader", changeValueOfAuthorizationHeaderInRequestHeader(getExchange(),""),401,getBool(true), responseWwwAuthenticateHeaderContainsValue(getExchange(),"error=\"invalid_token\""));
     }
 
-    private static Object[] testAuthorizationHeaderMissing() {
-        return new Object[]{"testAuthorizationHeaderMissing", removeAuthorizationHeaderInRequestHeader(getExchange()),400,getBool(true), responseWwwAuthenticateHeaderContainsValue(getExchange(),"error=\"invalid_request\"")};
+    private static RequestTestData testAuthorizationHeaderMissing() {
+        return new RequestTestData("testAuthorizationHeaderMissing", removeAuthorizationHeaderInRequestHeader(getExchange()),400,getBool(true), responseWwwAuthenticateHeaderContainsValue(getExchange(),"error=\"invalid_request\""));
     }
 
     public static Callable<Object> removeAuthorizationHeaderInRequestHeader(final Callable<Exchange> exc){
@@ -71,8 +77,16 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
         };
     }
 
-    public static Callable<Boolean> responseWwwAuthenticateHeaderContainsValue(final Callable<Exchange> exc, final String value){
-        return () -> exc.call().getResponse().getHeader().getWwwAuthenticate().contains(value);
+    public static Supplier<Object> responseWwwAuthenticateHeaderContainsValue(final Callable<Exchange> exc, final String value){
+        return () -> {
+            Exchange call = null;
+            try {
+                call = exc.call();
+            } catch (Exception e) {
+                fail();
+            }
+            return call.getResponse().getHeader().getWwwAuthenticate().contains(value);
+        };
     }
 
 }

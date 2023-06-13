@@ -13,8 +13,6 @@
 
 package com.predic8.membrane.core.util.functionalInterfaces;
 
-import java.io.IOException;
-
-public interface Function<T,R> {
-    R call(T param);
+public interface ExceptionThrowingConsumer<T> {
+    void accept(T t) throws Exception;
 }

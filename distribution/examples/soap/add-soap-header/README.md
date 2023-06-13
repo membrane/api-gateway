@@ -36,7 +36,7 @@ Again in the proxies.xml file inside `<serviceProxy>` tag you can see that we ad
 
 ``` 
 <serviceProxy name="echo" port="2000">
-    <interceptor refid="headerAddInterceptor"/>
+  <interceptor refid="headerAddInterceptor"/>
 ``` 
 The add header interceptor checks if the content of the request is xml and the existence of a Header element. If both conditions are met it adds a Security element to the SOAP header. Have a look at the AddSoapHeaderInterceptor source code as well.
 

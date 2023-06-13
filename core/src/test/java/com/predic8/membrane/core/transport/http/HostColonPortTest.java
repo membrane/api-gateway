@@ -22,18 +22,18 @@ public class HostColonPortTest {
 	@Test
 	public void testDefaultPort() {
 		HostColonPort hcp = new HostColonPort(false, "predic8.com");
-		assertEquals("predic8.com", hcp.host);
-		assertEquals(80, hcp.port);
+		assertEquals("predic8.com", hcp.host());
+		assertEquals(80, hcp.port());
 	}
 
 	@Test
 	public void testGetHost() {
-		assertEquals("predic8.com", new HostColonPort(false, "predic8.com:80").host);
+		assertEquals("predic8.com", new HostColonPort(false, "predic8.com:80").host());
 	}
 
 	@Test
 	public void testGetPort() {
-		assertEquals(80, new HostColonPort(false, "predic8.com:80").port);
+		assertEquals(80, new HostColonPort(false, "predic8.com:80").port());
 	}
 
 	@Test

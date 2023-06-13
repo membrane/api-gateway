@@ -12,7 +12,7 @@ As a SOAP-Proxy is a specialized version of `the ServiceProxy`, a SOAP-Proxy has
 
 ```
 <soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-	<validator />
+  <validator />
 </soapProxy>
 ```
 

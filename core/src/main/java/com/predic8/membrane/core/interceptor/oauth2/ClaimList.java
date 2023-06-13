@@ -17,10 +17,10 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import com.predic8.membrane.annot.Required;
 
 import java.util.*;
+import java.util.function.Function;
 
 
 @MCElement(name="claims")
@@ -117,7 +117,7 @@ public class ClaimList {
     private <T> String toString(Iterable<T> iterable, Function<T,String> fun){
         StringBuilder builder = new StringBuilder();
         for(T element : iterable)
-            builder.append(" ").append(fun.call(element));
+            builder.append(" ").append(fun.apply(element));
         return builder.toString().trim();
     }
 

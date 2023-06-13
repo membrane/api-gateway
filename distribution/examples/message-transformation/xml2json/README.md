@@ -28,15 +28,11 @@ Let's take a look at the proxies.xml file.
 
 ```
 <router>
-	<serviceProxy name="echo" port="2000">
-		<log headerOnly="false"/>
-		<request>
-			<xml2Json/>
-		</request>
-		<groovy>
-			Response.ok("Look at the output of Membrane!\n").build()
-		</groovy>
-	</serviceProxy>
+  <api port="2000">
+    <request>
+      <xml2Json/>
+    </request>
+  </api>
 </router>
  ```
 

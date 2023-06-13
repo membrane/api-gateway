@@ -23,18 +23,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
 import javax.annotation.Nullable;
 
@@ -48,7 +44,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     private HttpClientFactory httpClientFactory;
     private ConcurrentHashMap<String,String> watchedUrlMd5s = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String,Consumer<InputStream>> consumerForUrls = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, ExceptionThrowingConsumer<InputStream>> consumerForUrls = new ConcurrentHashMap<>();
     int httpWatchIntervalInSeconds = 1;
     Thread httpWatcher = null;
     Runnable httpWatchJob = new Runnable() {
@@ -75,10 +71,10 @@ public class HTTPSchemaResolver implements SchemaResolver {
                             watchedUrlMd5s.put(url, hash);
                         } else {
                             if (!hash.equals(watchedUrlMd5s.get(url))) {
-                                Consumer<InputStream> inputStreamConsumer = consumerForUrls.get(url);
+                                ExceptionThrowingConsumer<InputStream> inputStreamConsumer = consumerForUrls.get(url);
                                 watchedUrlMd5s.remove(url);
                                 consumerForUrls.remove(url);
-                                inputStreamConsumer.call(response.getBodyAsStream());
+                                inputStreamConsumer.accept(response.getBodyAsStream());
                             }
                         }
                     }
@@ -137,7 +133,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     @Override
-    public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
         watchedUrlMd5s.put(url,"");
         consumerForUrls.put(url,consumer);
         if(httpWatcher == null){
