@@ -17,6 +17,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>membrane-api-gateway</artifactId>
 	<name>${project.artifactId}</name>
+	<properties>
+		<mainClass>com.predic8.membrane.core.IDEStarter</mainClass>
+		<mainArgs/>
+	</properties>
 	<packaging>jar</packaging>
 
 	<parent>
@@ -94,6 +98,12 @@
 			<version>1.5.1</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.vdurmont</groupId>
+			<artifactId>semver4j</artifactId>
+			<version>3.1.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -164,7 +174,8 @@
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>com.predic8.membrane.core.IDEStarter</mainClass>
+					<mainClass>${mainClass}</mainClass>
+					<commandlineArgs>${mainArgs}</commandlineArgs>
 				</configuration>
 			</plugin>
 		</plugins>

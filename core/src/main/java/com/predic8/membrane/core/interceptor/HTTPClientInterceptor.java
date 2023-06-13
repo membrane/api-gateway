@@ -13,27 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.net.ConnectException;
-import java.net.UnknownHostException;
-
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.util.ErrorUtil.createAndSetErrorResponse;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.ErrorUtil.*;
+import static java.lang.String.*;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web
@@ -46,7 +40,7 @@ import static java.lang.String.format;
 @MCElement(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
 
 	private boolean failOverOn5XX;
 	private boolean adjustHostHeader = true;
@@ -68,15 +62,19 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			return RETURN;
 		} catch (ConnectException e) {
 			String msg =  format("Target %s is not reachable.", getDestination(exc));
-			log.warn(msg);
-			log.warn("Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
+			log.warn(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
 			createAndSetErrorResponse(exc,502,msg);
 			return ABORT;
 		} catch (UnknownHostException e) {
-			String msg = format("Target host %s is unknown. DNS was unable to resolve host name.", URLUtil.getHost(getDestination(exc)));
-			log.warn(msg);
-			log.warn("Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
-			createAndSetErrorResponse(exc,500, msg);
+			String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName());
+			if (router.isProduction()) {
+				String logKey = UUID.randomUUID().toString();
+				log.error("logKey=%s\n%s\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.", logKey, msg);
+				createAndSetProductionErrorResponse(exc,500, logKey);
+			} else {
+				log.error(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
+				createAndSetErrorResponse(exc,502, msg);
+			}
 			return ABORT;
 		}
 	}

@@ -14,9 +14,7 @@
 package com.predic8.membrane.api;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 /**
@@ -40,16 +38,18 @@ public class EmbeddingJava {
         String path = ".*";
         int listenPort = 4000;
 
-        // The API should listen to GET requests on port 4000 with any path from any host
         ServiceProxyKey key = new ServiceProxyKey(hostname, method, path, listenPort);
 
-        ServiceProxy sp = new ServiceProxy(key, "predic8.com", 80);
+        APIProxy api = new APIProxy();
+        api.setKey(key);
+        api.setTargetHost("api.predic8.de");
+        api.setTargetPort(80);
 
         // Add a simple interceptor as plugin
-        sp.getInterceptors().add(new AddMyHeaderInterceptor());
+        api.getInterceptors().add(new AddMyHeaderInterceptor());
 
         HttpRouter router = new HttpRouter();
-        router.add(sp);
+        router.add(api);
         router.init();
     }
 }

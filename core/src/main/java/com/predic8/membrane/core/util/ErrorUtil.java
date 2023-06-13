@@ -35,6 +35,10 @@ public class ErrorUtil {
 
     public static ObjectMapper om = new ObjectMapper(); // GSON ?
 
+    public static void createAndSetProductionErrorResponse(Exchange exc, int statusCode, String logKey) {
+        createAndSetErrorResponse(exc,statusCode, "An error has happened. For security reasons no details are exposed to the client. Details can be found in the log using the log key: " + logKey);
+    }
+
     public static void createAndSetErrorResponse(Exchange exc, int statusCode, String message) {
         Response.ResponseBuilder builder = Response.ResponseBuilder.newInstance().
                 status(statusCode, getMessageForStatusCode(statusCode));

@@ -18,41 +18,38 @@ import org.apache.commons.cli.*;
 
 public class MembraneCommandLine {
 
-	CommandLine cl;
+    CommandLine cl;
 
-	public void parse(String[] args) throws ParseException {
-		cl = new DefaultParser().parse(getOptions(), args, true);
-	}
+    public void parse(String[] args) throws ParseException {
+        cl = new DefaultParser().parse(getOptions(), args, true);
+    }
 
-	public void printUsage() {
-		System.out.println("-h                 Help content for router.");
-		System.out.println("--help             Help content for router.");
-		System.out.println("-c <location>      Location of the proxies configuration file");
-		System.out.println("-t <location>      Verify proxies configuration file");
-	}
+    public void printUsage() {
+        new HelpFormatter().printHelp("service-proxy", getOptions());
+    }
 
-	public boolean needHelp() {
-		return cl.hasOption('h');
-	}
+    public boolean needHelp() {
+        return cl == null || cl.hasOption('h');
+    }
 
-	public boolean hasConfiguration() {
-		return cl.hasOption('c') || cl.hasOption('t');
-	}
+    public boolean hasConfiguration() {
+        return cl.hasOption('c') || cl.hasOption('t');
+    }
 
-	public String getConfiguration() {
-		return (cl.hasOption('c')) ? cl.getOptionValue('c') : cl.getOptionValue('t');
-	}
+    public String getConfiguration() {
+        return (cl.hasOption('c')) ? cl.getOptionValue('c') : cl.getOptionValue('t');
+    }
 
-	private Options getOptions() {
-		Options options = new Options();
-		options.addOption("h", "help", false, "Help content for router.");
-		options.addOption("c", "config", true, "configuration file name.");
-		options.addOption("t", "test", true, "verify configuration file.");
-		return options;
-	}
+    private Options getOptions() {
+        Options options = new Options();
+        options.addOption(Option.builder("h").longOpt("help").desc("Help content for router.").build());
+        options.addOption(Option.builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build());
+        options.addOption(Option.builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verify proxies configuration file").build());
+        return options;
+    }
 
-	public boolean isDryRun() {
-		return cl.hasOption('t');
-	}
+    public boolean isDryRun() {
+        return cl.hasOption('t');
+    }
 
 }
