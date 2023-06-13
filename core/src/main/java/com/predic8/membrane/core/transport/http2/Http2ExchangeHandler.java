@@ -78,16 +78,13 @@ public class Http2ExchangeHandler implements Runnable {
             log.debug("Socket timed out");
         } catch (SocketException se) {
             log.debug("client socket closed");
-        } catch (SSLException e) {
-            Exception s = e;
+        } catch (SSLException s) {
             if(showSSLExceptions) {
                 if (s.getCause() instanceof SSLException cause) {
-                    s = cause;
+                    logSSLException(cause);
+                    return;
                 }
-                if (s.getCause() instanceof SocketException)
-                    log.debug("ssl socket closed");
-                else
-                    log.error("", s);
+                logSSLException(s);
             }
         } catch (EndOfStreamException e) {
             log.debug("stream closed");
@@ -99,18 +96,21 @@ public class Http2ExchangeHandler implements Runnable {
             log.debug("No response received. Maybe increase the keep-alive timeout on the server.");
         } catch (EOFWhileReadingFirstLineException e) {
             log.debug("Client connection terminated before line was read. Line so far: ("
-                    + e.getLineSoFar() + ")");
+                      + e.getLineSoFar() + ")");
         } catch (Exception e) {
             log.error("", e);
         } finally {
-
             closeConnections();
-
             exchange.detach();
-
             updateThreadName(false);
         }
+    }
 
+    private static void logSSLException(SSLException s) {
+        if (s.getCause() instanceof SocketException)
+            log.debug("ssl socket closed");
+        else
+            log.error("", s);
     }
 
     private void process() throws Exception {
@@ -168,10 +168,10 @@ public class Http2ExchangeHandler implements Runnable {
     private void updateThreadName(boolean fromConnection) {
         if (fromConnection) {
             String sb = HttpServerThreadFactory.DEFAULT_THREAD_NAME +
-                    " " +
-                    remoteAddr +
-                    " stream " +
-                    streamId;
+                        " " +
+                        remoteAddr +
+                        " stream " +
+                        streamId;
             Thread.currentThread().setName(sb);
         } else {
             Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
