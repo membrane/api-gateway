@@ -1,0 +1,67 @@
+name: Create Release
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+jobs:
+  build-release:
+    if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get version
+        id: get_version
+        run: echo '${{ github.head_ref }}' | sed 's/release\/v/::set-output name=VERSION::/'
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: actions/checkout@v3
+      - name: Setup next Snapshot version
+        run: |
+          cd distribution 
+          mvn test-compile exec:java \
+            -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
+            -Dexec.classpathScope="test" \ 
+            -DmainArgs="-snapshot"
+          cd ..
+      - name: Create Pull Request for next Snapshot
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "Snapshot version"
+          title: "Snapshot version"
+          author: "github-actions <github-actions@github.com>"
+          body: "Update all project `pom.xml` and related files to post-${{ steps.get_version.outputs.VERSION }} snapshot version"
+      - uses: actions/checkout@v3
+      - id: install-secret-key
+        name: Install gpg secret key
+        run: |
+          # Install gpg secret key
+          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+          # Verify gpg secret key
+          gpg --list-secret-keys --keyid-format LONG
+      - id: build-artifact
+        name: Build release artefacts
+        run: |
+          mvn \
+            --no-transfer-progress \
+            --batch-mode \
+            -DskipTests \
+            -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
+            clean package
+      - name: Ensure release files exist
+        run: |
+          touch distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md
+          touch distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc
+      - name: Create Release v${{ steps.get_version.outputs.VERSION }}
+        uses: ncipollo/release-action@v1
+        with:
+          name: v${{ steps.get_version.outputs.VERSION }}
+          tag: ${{ github.head_ref }}
+          prerelease: true
+          #          makeLatest: true
+          bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
+          artifacts: "distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
