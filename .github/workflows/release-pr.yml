@@ -40,7 +40,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v5
         with:
-          branch: release/v${{ github.event.inputs.version }}
+          branch: v${{ github.event.inputs.version }}
           commit-message: "Release ${{ github.event.inputs.version }}"
           title: "Release ${{ github.event.inputs.version }}"
           author: "github-actions <github-actions@github.com>"
@@ -51,6 +51,6 @@ jobs:
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git checkout release/v${{ github.event.inputs.version }}
+          git checkout v${{ github.event.inputs.version }}
           git tag -a v${{ github.event.inputs.version }} -m "Release Tag ${{ github.event.inputs.version }}"
           git push --tags

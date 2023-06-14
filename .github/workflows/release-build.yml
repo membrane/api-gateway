@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Get version
         id: get_version
-        run: echo '${{ github.head_ref }}' | sed 's/release\/v/::set-output name=VERSION::/'
+        run: echo '${{ github.head_ref }}' | sed 's/v/::set-output name=VERSION::/'
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
@@ -59,8 +59,9 @@ jobs:
             --no-transfer-progress \
             --batch-mode \
             -DskipTests \
+            -Possrh \
             -Dgpg.passphrase=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }} \
-            clean package
+            clean verify
       - name: Ensure release files exist
         run: |
           touch distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md
@@ -71,6 +72,7 @@ jobs:
           name: v${{ steps.get_version.outputs.VERSION }}
           tag: ${{ github.head_ref }}
           prerelease: true
-          #          makeLatest: true
+#          makeLatest: true
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
           artifacts: "distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
+          token: ${{ secrets.PAT }}
