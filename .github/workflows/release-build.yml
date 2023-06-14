@@ -4,7 +4,7 @@ on:
     types:
       - closed
     branches:
-      - main
+      - master
 jobs:
   build-release:
     if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
