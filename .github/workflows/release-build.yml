@@ -19,13 +19,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       - uses: actions/checkout@v3
+      - id: compile-membrane
+        name: Compile Membrane
+        run: |
+          mvn install \
+            --no-transfer-progress \
+            --batch-mode \
+            -DskipTests
       - name: Setup next Snapshot version
         run: |
-          mvn install -DskipTests
           cd distribution 
           mvn test-compile exec:java \
+            --no-transfer-progress \
+            --batch-mode \
             -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
-            -Dexec.classpathScope="test" \ 
+            -Dexec.classpathScope="test" \
             -DmainArgs="-snapshot"
           cd ..
       - name: Create Pull Request for next Snapshot

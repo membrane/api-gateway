@@ -18,12 +18,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       - uses: actions/checkout@v3
+      - id: compile-membrane
+        name: Compile Membrane
+        run: |
+          mvn install \
+            --no-transfer-progress \
+            --batch-mode \
+            -DskipTests
       - id: create-release-version
         name: Create Release Version
         run: |
-          mvn install -DskipTests
           cd distribution 
           mvn test-compile exec:java \
+            --no-transfer-progress \
+            --batch-mode \
             -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
             -Dexec.classpathScope="test" \
             -DmainArgs="-release ${{ github.event.inputs.version }}"
