@@ -25,7 +25,7 @@ jobs:
           set -x
           mvn test-compile exec:java \
             -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
-            -Dexec.classpathScope="test" \ 
+            -Dexec.classpathScope="test" \
             -DmainArgs="-release ${{ github.event.inputs.version }}"
           cd ..
       - name: Create Pull Request
