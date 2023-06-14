@@ -21,8 +21,8 @@ jobs:
       - id: create-release-version
         name: Create Release Version
         run: |
+          mvn install -DskipTests
           cd distribution 
-          set -x
           mvn test-compile exec:java \
             -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
             -Dexec.classpathScope="test" \
