@@ -1,3 +1,3 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><factorypath>
-    <factorypathentry enabled="true" id="M2_REPO/org/membrane-soa/service-proxy-annot/5.1.18/service-proxy-annot-5.1.18.jar" kind="VARJAR" runInBatchMode="false"/>
+    <factorypathentry enabled="true" id="M2_REPO/org/membrane-soa/service-proxy-annot/5.1.19-SNAPSHOT/service-proxy-annot-5.1.19-SNAPSHOT.jar" kind="VARJAR" runInBatchMode="false"/>
 </factorypath>
