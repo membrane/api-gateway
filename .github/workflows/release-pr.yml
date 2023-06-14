@@ -22,6 +22,7 @@ jobs:
         name: Create Release Version
         run: |
           cd distribution 
+          set -x
           mvn test-compile exec:java \
             -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
             -Dexec.classpathScope="test" \ 
