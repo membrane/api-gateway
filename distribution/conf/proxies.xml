@@ -7,48 +7,8 @@
     <router>
 
         <api port="2000">
-            <wsdlPublisher wsdl="http://predic8.de/adsfdsaf"/>
+            <target host="api.predic8.de"/>
         </api>
-
-        <api port="3000">
-            <openapi location="../../core/src/test/resources/openapi/specs/paths/api-a-path-foo.yml"/>
-            <openapi location="../../core/src/test/resources/openapi/specs/paths/api-a-path-foo.yml"/>
-        </api>
-
-        <api port="2000">
-            <request>
-                <javascript>
-                    ({ id:7, place: json.city })
-                </javascript>
-            </request>
-            <return contentType="application/json"/>
-        </api>
-
-<!--        <api port="2000">-->
-<!--            <response>-->
-<!--                <groovy>-->
-<!--                    header.add("X-Groovy", "Hello from Groovy!")-->
-<!--                    println("Code: ${message.statusCode}")-->
-<!--                    CONTINUE-->
-<!--                </groovy>-->
-<!--            </response>-->
-<!--            <target url="https://api.predic8.de"/>-->
-<!--        </api>-->
-
-        <api port="2000">
-            <response>
-                <javascript>
-                    var body = JSON.stringify({
-                        foo: 7,
-                        bar: 42
-                    });
-
-                    Response.ok(body).contentType("application/json").build();
-                </javascript>
-            </response>
-            <return/> <!-- Do not forward, return immediately -->
-        </api>
-
 
     </router>
 
