@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "master" ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "master" ]
   schedule:
     - cron: '22 14 * * 1'
@@ -12,8 +11,8 @@ on:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    runs-on: ${{ 'ubuntu-latest' }}
+    timeout-minutes: ${{ 360 }}
     permissions:
       actions: read
       contents: read
@@ -36,7 +35,7 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-        config-file: .github/workflows/codeql-config.yml
+        config-file: .github/codeql-config.yml
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
@@ -59,7 +58,8 @@ jobs:
     - name: Build with Maven
       run: mvn --batch-mode --update-snapshots -Pno-internet -DskipTests package |
            rm -r core/src/test |
-           rm -r distribution/src/test
+           rm -r distribution/src/test |
+           rm -r test
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
