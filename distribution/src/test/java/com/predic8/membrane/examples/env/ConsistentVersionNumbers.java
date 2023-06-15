@@ -134,6 +134,13 @@ public class ConsistentVersionNumbers {
 
 		handleHelpReference(new File(baseDirectory.getAbsolutePath(), "/annot/src/main/java/com/predic8/membrane/annot/generator/HelpReference.java"), versionTransformer);
 		handleRpmSpec(new File(baseDirectory.getAbsolutePath(), "/membrane.spec"), versionTransformer);
+		handleConstants(new File(baseDirectory.getAbsolutePath(), "core/src/main/java/com/predic8/membrane/core/Constants.java"), versionTransformer);
+	}
+
+	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
+		//		String version = "5"; // fallback
+		Pattern versionPattern = Pattern.compile("(\\s*String version = \")(\\d+)(\";.*)");
+		handleByRegex(file, versionTransformer, versionPattern, v -> v.getMajor().toString());
 	}
 
 	private static void handleRpmSpec(File file, VersionTransformer versionTransformer) throws Exception {
