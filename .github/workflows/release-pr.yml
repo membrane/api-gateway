@@ -1,0 +1,56 @@
+name: Pull Request for Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version Number of release to be created (e.g. 1.2.3)
+        type: string
+        default: ''
+        required: true
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - uses: actions/checkout@v3
+      - id: compile-membrane
+        name: Compile Membrane
+        run: |
+          mvn install \
+            --no-transfer-progress \
+            --batch-mode \
+            -DskipTests
+      - id: create-release-version
+        name: Create Release Version
+        run: |
+          cd distribution 
+          mvn test-compile exec:java \
+            --no-transfer-progress \
+            --batch-mode \
+            -DmainClass="com.predic8.membrane.examples.env.ConsistentVersionNumbers" \
+            -Dexec.classpathScope="test" \
+            -DmainArgs="-release ${{ github.event.inputs.version }}"
+          cd ..
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          branch: v${{ github.event.inputs.version }}
+          commit-message: "Release ${{ github.event.inputs.version }}"
+          title: "Release ${{ github.event.inputs.version }}"
+          author: "github-actions <github-actions@github.com>"
+          body: "Update all project `pom.xml` and related files to release version **${{ github.event.inputs.version }}**"
+          delete-branch: false
+      - id: tag-release
+        name: Tag release
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git checkout v${{ github.event.inputs.version }}
+          git tag -a v${{ github.event.inputs.version }} -m "Release Tag ${{ github.event.inputs.version }}"
+          git push --tags

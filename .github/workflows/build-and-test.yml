@@ -1,15 +1,13 @@
 name: Maven Build and Tests
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
 
+# Matrix test does not work cause MAVEN_OPTS must be set
 jobs:
-  test:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-
-    runs-on: ${{ matrix.os }}
-
+  test-ubuntu:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 17
@@ -17,5 +15,20 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Build with Maven
-        run: mvn --batch-mode --update-snapshots -Pno-internet verify
+      - name: Maven Build
+        run: |
+          export MAVEN_OPTS="-Xmx3000m"
+          mvn --batch-mode --update-snapshots -Pno-internet verify
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Maven Build
+        run: |
+          set MAVEN_OPTS="-Xmx3000m"
+          mvn --batch-mode --update-snapshots -Pno-internet verify
