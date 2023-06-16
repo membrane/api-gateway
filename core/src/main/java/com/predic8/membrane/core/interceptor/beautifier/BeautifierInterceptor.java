@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.TextUtil;
 
 import javax.xml.xpath.*;
 import java.io.*;
@@ -26,9 +27,10 @@ import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Beautifies request and response bodies. Supported are the Formats: JSON
+ * @description Beautifies request and response bodies. Supported are the Formats: JSON, XML
  * @topic 4. Interceptors/Features
  */
 @MCElement(name="beautifier")
@@ -36,6 +38,7 @@ public class BeautifierInterceptor extends AbstractInterceptor{
 
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper om = new ObjectMapper();
+
 
     public BeautifierInterceptor() {
         name = "Beautifier";
@@ -52,10 +55,26 @@ public class BeautifierInterceptor extends AbstractInterceptor{
     }
 
     private Outcome handleInternal(Exchange exc, Message msg) throws IOException {
-        if(!msg.isJSON()){
+        if(msg.isJSON()) {
+            msg.setBodyContent(
+                    ow.writeValueAsBytes(
+                            om.readTree(msg.getBodyAsStreamDecoded())
+                    )
+            );
             return CONTINUE;
         }
-        msg.setBodyContent(ow.writeValueAsBytes(om.readTree(msg.getBodyAsStreamDecoded())));
+        if(msg.isXML()) {
+            msg.setBodyContent(
+                    TextUtil.formatXML(
+                            new InputStreamReader(
+                                    msg.getBodyAsStream(),
+                                    msg.getHeader().getCharset()
+                            )
+                    ).getBytes(UTF_8)
+            );
+            return CONTINUE;
+        }
+
         return CONTINUE;
     }
 
