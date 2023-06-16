@@ -35,7 +35,7 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-        config:
+        config: |
           query-filters:
             - exclude:
                 id: java/redos
