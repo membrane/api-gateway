@@ -7,12 +7,15 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import org.json.XML;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
+import java.util.Arrays;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BeautifierInterceptorTest {
@@ -29,7 +32,7 @@ public class BeautifierInterceptorTest {
 
 
     JsonNode testJson = om.readTree("{\"test\": \"foo\", \"sad\": \"sad\"}");
-    String testXml = "<test><foo>asd</foo></test>";
+    byte[] testXml = ("<test><foo>asd</foo></test>").getBytes(UTF_8);
 
     public BeautifierInterceptorTest() throws JsonProcessingException {}
 
@@ -54,11 +57,10 @@ public class BeautifierInterceptorTest {
     @Test
     void XMLBeautifierTest() throws Exception {
         req = xmlExchange.getRequest();
-        req.setBodyContent(om.writeValueAsBytes(testXml));
+        req.setBodyContent(testXml);
         xmlExchange.setRequest(req);
-        System.out.println(xmlExchange.getRequest().getBody().toString());
+        assertFalse(xmlExchange.getRequest().getBody().toString().contains("\n"));
         beautifierInterceptor.handleRequest(xmlExchange);
-        System.out.println(xmlExchange.getRequest().getBody().toString());
+        assertTrue(xmlExchange.getRequest().getBody().toString().contains("\n"));
     }
-
 }
