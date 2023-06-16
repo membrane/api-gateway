@@ -1,11 +1,19 @@
 package com.predic8.membrane.examples.tests;
 
+import com.predic8.membrane.core.util.Pair;
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.test.AssertUtils.disableHTTPAuthentication;
 import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import static io.restassured.RestAssured.given;
 import static java.lang.Thread.sleep;
@@ -25,6 +33,7 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License. */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class JsonProtectionTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
@@ -32,76 +41,30 @@ public class JsonProtectionTest extends AbstractSampleMembraneStartStopTestcase 
         return "json-protection";
     }
 
-    @Test
-    public void testValid() throws Exception {
-        postAndAssert(
-                200,
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/valid.json")
-        );
+    private final HashMap<String, Integer> statusCodeFileMap = new HashMap<>() {{
+        put("valid.json", 200);
+        put("max_tokens.json", 400);
+        put("max_size.json", 400);
+        put("max_depth.json", 400);
+        put("max_string_length.json", 400);
+        put("max_key_length.json", 400);
+        put("max_object_size.json", 400);
+        put("max_array_size.json", 400);
+    }};
+
+    final List<String> parameters() {
+        return statusCodeFileMap.keySet().stream().toList();
     }
-    @Test
-    public void testMaxTokens() throws Exception {
+
+    @ParameterizedTest
+    @MethodSource("parameters")
+    public void testEndpoint(String filename) throws Exception {
+        disableHTTPAuthentication(); // TODO Tempfix for busy HTTP client connection. See GitHub Issue #626
         postAndAssert(
-                400,
+                statusCodeFileMap.get(filename),
                 "http://localhost:2000/",
                 new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/max_tokens.json")
-        );
-    }
-    @Test
-    public void testMaxSize() throws Exception {
-        postAndAssert(
-                400,
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/max_size.json")
-        );
-    }
-    @Test
-    public void testMaxDepth() throws Exception {
-        postAndAssert(
-                400,
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/max_depth.json")
-        );
-    }
-    @Test
-    public void testStringLength() throws Exception {
-        postAndAssert(
-                400,
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/max_string_length.json")
-        );
-    }
-    @Test
-    public void testMaxKeyLength() throws Exception {
-        postAndAssert(
-                400,
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/max_key_length.json")
-        );
-    }
-    @Test
-    public void testMaxObjectSize() throws Exception {
-        postAndAssert(
-                400,
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/max_object_size.json")
-        );
-    }
-    @Test
-    public void testMaxArraySize() throws Exception {
-        postAndAssert(
-                400,
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/max_array_size.json")
+                readFileFromBaseDir("requests/" + filename)
         );
     }
 }
