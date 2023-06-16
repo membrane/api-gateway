@@ -32,7 +32,7 @@ public class BeautifierInterceptorTest {
 
 
     JsonNode testJson = om.readTree("{\"test\": \"foo\", \"sad\": \"sad\"}");
-    byte[] testXml = ("<test><foo>asd</foo></test>").getBytes(UTF_8);
+    byte[] testXml = ("<foo><bar>baz</bar></foo>").getBytes(UTF_8);
 
     public BeautifierInterceptorTest() throws JsonProcessingException {}
 
