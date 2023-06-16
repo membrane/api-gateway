@@ -14,17 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.beautifier;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
-import javax.xml.xpath.*;
-import java.io.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
