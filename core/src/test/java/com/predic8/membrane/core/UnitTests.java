@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptorTest;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
@@ -126,7 +127,8 @@ import org.junit.platform.suite.api.*;
 		URLParamUtilTest.class,
 		XMLProtectorTest.class,
 		AbstractExchangeStoreTest.class,
-		JsonProtectionInterceptorTest.class
+		JsonProtectionInterceptorTest.class,
+		BeautifierInterceptorTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

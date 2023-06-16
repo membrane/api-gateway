@@ -207,6 +207,25 @@ This script transforms the input and adds some calculations.
 
 See [examples/javascript](distribution/examples/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/groovy)
 
+## Beautifier
+You can beautify a JSON or XML using the `<beautifier/>` plugin.  
+```xml
+<api port="2000">
+    <template contentType="application/xml"><![CDATA[
+        <foo><bar>baz</bar></foo>
+    ]]></template>
+    
+    <beautifier/>
+    
+    <return statusCode="200" />
+</api>
+```  
+Returns:
+```xml
+    <foo>
+      <bar>baz</bar>
+    </foo>
+```
 
 # Writing Extensions with Groovy or Javascript
 

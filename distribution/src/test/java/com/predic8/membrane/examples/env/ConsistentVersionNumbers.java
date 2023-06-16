@@ -18,25 +18,38 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.junit.jupiter.api.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import javax.xml.xpath.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.*;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.examples.util.TestFileUtil.*;
+import static com.predic8.membrane.examples.util.TestFileUtil.getFileContentAsLines;
+import static com.predic8.membrane.examples.util.TestFileUtil.writeLinesToFile;
 import static com.vdurmont.semver4j.Semver.SemverType.LOOSE;
-import static java.util.Objects.*;
-import static javax.xml.xpath.XPathConstants.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.Objects.requireNonNull;
+import static javax.xml.xpath.XPathConstants.NODESET;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test checks that all version numbers in the miscellaneous project files
@@ -120,23 +133,41 @@ public class ConsistentVersionNumbers {
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/stax-interceptor/pom.xml"), false, versionTransformer);
 
 		handleHelpReference(new File(baseDirectory.getAbsolutePath(), "/annot/src/main/java/com/predic8/membrane/annot/generator/HelpReference.java"), versionTransformer);
+		handleRpmSpec(new File(baseDirectory.getAbsolutePath(), "/membrane.spec"), versionTransformer);
+		handleConstants(new File(baseDirectory.getAbsolutePath(), "core/src/main/java/com/predic8/membrane/core/Constants.java"), versionTransformer);
+	}
+
+	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
+		//		String version = "5"; // fallback
+		Pattern versionPattern = Pattern.compile("(\\s*String version = \")(\\d+)(\";.*)");
+		handleByRegex(file, versionTransformer, versionPattern, v -> v.getMajor().toString());
+	}
+
+	private static void handleRpmSpec(File file, VersionTransformer versionTransformer) throws Exception {
+		// Version:          5.1.0
+		Pattern versionPattern = Pattern.compile("(Version:\\s+)(\\S+)(.*)");
+		handleByRegex(file, versionTransformer, versionPattern, Semver::getValue);
 	}
 
 	private static void handleHelpReference(File file, VersionTransformer versionTransformer) throws Exception {
 		// path.replace("%VERSION%", "5.0")
+		Pattern versionPattern = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
+		handleByRegex(file, versionTransformer, versionPattern, v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
+	}
+
+	private static void handleByRegex(File file, VersionTransformer versionTransformer, Pattern pattern, Function<Semver, String> versionFormatter) throws Exception {
 		List<String> content = getFileContentAsLines(file);
 		boolean found = false;
-		Pattern pattern = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
 		for (int i = 0; i < content.size(); i++) {
 			Matcher m = pattern.matcher(content.get(i));
 			if (m.find()) {
 				found = true;
 				var v = versionTransformer.map(file, new MembraneVersion(m.group(2)));
-				content.set(i, m.replaceFirst(m.group(1) + "%d.%d".formatted(v.getMajor(), v.getMinor()) + m.group(3)));
+				content.set(i, m.replaceFirst(m.group(1) + versionFormatter.apply(v) + m.group(3)));
 			}
 		}
 		if (!found)
-			throw new RuntimeException("Did not find version in HelpReference.java .");
+			throw new RuntimeException("Did not find version in %s .".formatted(file.getName()));
 		writeLinesToFile(file, content);
 	}
 
