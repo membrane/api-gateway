@@ -56,10 +56,7 @@ jobs:
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
     - name: Build with Maven
-      run: rm -r core/src/test |
-           rm -r distribution/src/test |
-           rm -r test |
-           mvn --batch-mode --update-snapshots -Pno-internet -DskipTests package
+      run: mvn --batch-mode --update-snapshots -Pno-internet -DskipTests package
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
