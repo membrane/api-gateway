@@ -305,12 +305,12 @@ $(function() {
           }		              
 	});
 
-	$('.hovericon').hover(
+	$('.hovericon').on('hover',
 		function(){ $(this).addClass('ui-state-hover'); }, 
 		function(){ $(this).removeClass('ui-state-hover'); }
 	);
-	$('.hovericon').click(function(){ $(this).toggleClass('ui-state-active'); });
-	$('.icons').append(' <a href="#">Toggle text</a>').find('a').click(function(){ $('.icon-collection li span.text').toggle(); return false; }).trigger('click');
+	$('.hovericon').on('click', function(){ $(this).toggleClass('ui-state-active'); });
+	$('.icons').append(' <a href="#">Toggle text</a>').find('a').on('click', function(){ $('.icon-collection li span.text').toggle(); return false; }).trigger('click');
 
 	function shorten(s) {
 		if (s.length < 80)
@@ -418,7 +418,7 @@ $(function() {
             }		              
 	});
 			
-	$('#tabs li').hover(
+	$('#tabs li').on('hover',
     	    function () {
     	    	    $(this).addClass("ui-state-hover");
     	    },
@@ -429,11 +429,11 @@ $(function() {
     
     $('.mb-button').button();
 
-	$('#reload-data-button').click(function() {
+	$('#reload-data-button').on('click', function() {
 		updateCallsTable();
 	});
 
-	$('#reload-data-checkbox').change(function() {
+	$('#reload-data-checkbox').on('change', function() {
 		if ($('#reload-data-checkbox').attr('checked')) {
 			updateCallsTablePeriodically();
 		}
@@ -452,7 +452,7 @@ $(function() {
 	}
 
     $('form').validationEngine('attach', {promptPosition : 'bottomRight', scroll: false});
-    $('form').submit(function() {
+    $('form').on('submit', function() {
 		return this.validationEngine('validate');
     });			
 });
