@@ -409,10 +409,9 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
         assertEquals(ctx.numRequests, ctx.runCounter.get());
         assertEquals(0, ctx.exceptionCounter.get());
 
-        int totalInterceptorCount = 0;
-        for (RandomlyFailingDummyWebServiceInterceptor dummyInterceptor : dummyInterceptors) {
-            totalInterceptorCount += dummyInterceptor.getCount();
-        }
+        var totalInterceptorCount = dummyInterceptors.stream()
+                .mapToLong(RandomlyFailingDummyWebServiceInterceptor::getCount)
+                .sum();
         assertTrue(totalInterceptorCount >= ctx.numRequests); //there are more interceptor calls, one more for every failure.
     }
 
