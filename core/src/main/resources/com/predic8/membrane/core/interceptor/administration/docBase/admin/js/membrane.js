@@ -8,7 +8,7 @@ var membrane = function() {
 		
 		if (params) {
 			for (i = 0; i < params.length; i++) {
-				if (i == 0) {
+				if (i === 0) {
 					url += "?";
 				} else {
 					url += "&";
@@ -113,7 +113,7 @@ var membrane = function() {
 
 		$.get(exchangeUrl, function(exc) {
 			function isXMLContentType(s) {
-				return s == 'text/xml' || (s.indexOf('application/') == 0 && s.indexOf('xml', s.length - 3) != -1);
+				return s === 'text/xml' || (s.indexOf('application/') === 0 && s.indexOf('xml', s.length - 3) !== -1);
 			}
 			
 			if (isXMLContentType(exc.respContentType)) {
@@ -138,7 +138,7 @@ var membrane = function() {
 		return [
 		   ["Time", data.time],
 		   ["Method", data.method],
-   		   ["Path", data.method=="GET"?createLink(fullPath, data.path):data.path],
+   		   ["Path", data.method==="GET"?createLink(fullPath, data.path):data.path],
 		   ["Proxy", createLink(relativeRootPath + '/admin/service-proxy/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
 		   ["Client", createLink(relativeRootPath + '/admin/calls',  data.client, [['client', data.client]])],
 		   ["Content Type", data.reqContentType],
@@ -207,7 +207,7 @@ $(function() {
 			"fnServerData": function ( sSource, aoData, fnCallback ) {
 		      	  function getParam(name) {
 		      		  function byName(it) {
-		      			  return it.name == name;
+		      			  return it.name === name;
 		      		  }
 		      		  return $.grep(aoData, byName)[0].value;
 		      	  }
@@ -282,7 +282,7 @@ $(function() {
          "fnServerData": function ( sSource, aoData, fnCallback ) {
       	  function getParam(name) {
       		  function byName(it) {
-      			  return it.name == name;
+      			  return it.name === name;
       		  }
       		  return $.grep(aoData, byName)[0].value;
       	  }
@@ -365,14 +365,14 @@ $(function() {
                           {name:'order', value:getParam('sSortDir_0')}];
         	  
         	  function addFilterProps(name) {
-        		  if ($("#message-filter-"+name).val()!='*') {
+        		  if ($("#message-filter-"+name).val()!=='*') {
         			  queryData.push({name:name, value:$("#message-filter-"+name).val()});
         		  }
         	  }
         	  
         	  function getParam(name) {
         		  function byName(it) {
-        			  return it.name == name;
+        			  return it.name === name;
         		  }
         		  return $.grep(aoData, byName)[0].value;
         	  }
@@ -387,7 +387,7 @@ $(function() {
 			  addFilterProps('search');
 
         	  var queryKey = JSON.stringify(queryData)
-        	  if (membrane.lastQuery && queryKey != membrane.lastQuery) {
+        	  if (membrane.lastQuery && queryKey !== membrane.lastQuery) {
         	      membrane.lastMod = 0; // if the queryKey changed, we need to reload the page immediately
         	  }
         	  membrane.lastQuery = queryKey;
@@ -446,8 +446,6 @@ $(function() {
 	function updateCallsTablePeriodically() {
 		if ($('#reload-data-checkbox').attr('checked')) {
 			updateCallsTable();
-		} else {
-			return;
 		}
 	}
 
