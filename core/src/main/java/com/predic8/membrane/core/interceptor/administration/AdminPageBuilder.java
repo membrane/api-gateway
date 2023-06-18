@@ -94,6 +94,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	public String createPage() throws Exception {
+		start("!DOCTYPE html");
 		html();
 		createHead();
 		body();
@@ -126,11 +127,14 @@ public class AdminPageBuilder extends Html {
 		title().text(getTitle()).end();
 		style().attr("type", "text/css").text("@import '" + relativeRootPath + "/admin/datatables/css/demo_table_jui.css';\n" +
 				"@import '" + relativeRootPath + "/admin/jquery-ui/css/custom-theme/jquery-ui-1.8.13.custom.css';"+
+//				"@import '" + relativeRootPath + "/admin/jquery-ui/css/custom-theme/jquery-ui-1.13.2.custom.css';"+
 				"@import '" + relativeRootPath + "/admin/css/membrane.css';").end();
 		link().rel("stylesheet").href("/admin/formValidator/validationEngine.jquery.css").type("text/css");
-		script().attr("type","text/javascript").src("/admin/jquery/jquery-1.6.1.js").end();
+		script().attr("type","text/javascript").src("/admin/jquery/jquery-3.7.0.js").end();
+//		script().attr("type","text/javascript").src("https://code.jquery.com/jquery-migrate-3.4.1.js").end();
 		script().attr("type","text/javascript").src("/admin/datatables/js/jquery.dataTables.min.js").end();
-		script().attr("type","text/javascript").src("/admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
+//		script().attr("type","text/javascript").src("https://cdn.datatables.net/1.13.4/js/jquery.dataTables.js").end();
+		script().attr("type","text/javascript").src("/admin/jquery-ui/js/jquery-ui-1.13.2.custom.min.js").end();
 		script().attr("type","text/javascript").src("/admin/formValidator/jquery.validationEngine-en.js").end();
 		script().attr("type","text/javascript").src("/admin/formValidator/jquery.validationEngine.js").end();
 		script().attr("type","text/javascript").raw("var relativeRootPath=\"" + StringEscapeUtils.escapeEcmaScript(relativeRootPath) + "\";").end();
