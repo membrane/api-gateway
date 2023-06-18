@@ -38,7 +38,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.lang.String.*;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
@@ -113,7 +112,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnNoFound(Exchange exc, String id) {
-        exc.setResponse(Response.notFound().contentType(APPLICATION_JSON).body(createErrorMessage(format("OpenAPI document with the id '%s' not found.", id))).build());
+        Map<String, Object> details = new HashMap<>();
+        details.put("message", "OpenAPI document with the id %s not found.".formatted(id));
+        details.put("id", id);
+        exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "OpenAPI not found", details));
         return RETURN;
     }
 
@@ -205,11 +207,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
         OpenAPIRecord record = apis.get(id);
         if (record == null) {
-            Map<String,Object> details = new HashMap<>();
-            details.put("message","There is no OpenAPI with the id %s.".formatted(id));
-            details.put("id",id);
-            exc.setResponse(createProblemDetails(404,"/openapi/wrong-id","No OpenAPI found",details));
-            return RETURN;
+            return returnNoFound(exc,id);
         }
 
         exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(id, record.api)).build());
