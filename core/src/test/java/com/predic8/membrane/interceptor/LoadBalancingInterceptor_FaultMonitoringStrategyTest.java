@@ -14,41 +14,29 @@
 
 package com.predic8.membrane.interceptor;
 
-import com.google.common.base.Stopwatch;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.google.common.base.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
-import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.FaultMonitoringStrategy;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.services.RandomlyFailingDummyWebServiceInterceptor;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.services.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.apache.http.params.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.util.concurrent.TimeUnit.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the LoadBalancingInterceptor using the SuccessStrategy.
@@ -62,8 +50,8 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
     protected LoadBalancingInterceptor balancingInterceptor;
     protected HttpRouter balancer;
-    private List<HttpRouter> httpRouters = new ArrayList<>();
-    private List<RandomlyFailingDummyWebServiceInterceptor> dummyInterceptors = new ArrayList<>();
+    private final List<HttpRouter> httpRouters = new ArrayList<>();
+    private final List<RandomlyFailingDummyWebServiceInterceptor> dummyInterceptors = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
         for (int i = 1; i <= ctx.numNodes; i++) {
@@ -76,7 +64,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
             ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", (2000 + i)), "thomas-bayer.com", 80);
             serviceProxy.getInterceptors().add(new AbstractInterceptor() {
                 @Override
-                public Outcome handleResponse(Exchange exc) throws Exception {
+                public Outcome handleResponse(Exchange exc) {
                     exc.getResponse().getHeader().add("Connection", "close");
                     return Outcome.CONTINUE;
                 }
@@ -312,7 +300,6 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
         private final int numNodes;
         private final DispatchingStrategy dispatchingStrategy;
-        private final int numThreads;
         private final int numRequests;
         private final double successChance;
         private final Function<Integer, Void> preSubmitCallback;
@@ -337,7 +324,6 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
             this.numNodes = numNodes;
             this.dispatchingStrategy = dispatchingStrategy;
             this.numRequests = numRequests;
-            this.numThreads = numThreads;
             this.successChance = successChance;
             this.preSubmitCallback = preSubmitCallback;
 
@@ -357,7 +343,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
         public void shutdown() throws InterruptedException {
             tpe.shutdown();
-            tpe.awaitTermination(10, TimeUnit.SECONDS);
+            tpe.awaitTermination(10, SECONDS);
         }
 
     }
@@ -390,6 +376,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 try {
                     ctx.runCounter.incrementAndGet();
                     final HttpClient client = new HttpClient();
+
                     client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
                     int responseCode = client.executeMethod(getPostMethod());
                     if (responseCode == 200) {
@@ -408,10 +395,11 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
     private void standardExpectations(TestingContext ctx) {
         assertEquals(ctx.numRequests, ctx.runCounter.get());
         assertEquals(0, ctx.exceptionCounter.get());
-
+      
         var totalInterceptorCount = dummyInterceptors.stream()
                 .mapToLong(RandomlyFailingDummyWebServiceInterceptor::getCount)
                 .sum();
+
         assertTrue(totalInterceptorCount >= ctx.numRequests); //there are more interceptor calls, one more for every failure.
     }
 
@@ -422,7 +410,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
     private static ThreadPoolExecutor createThreadPoolExecutor(int numThreads) {
         return new ThreadPoolExecutor(
                 numThreads, numThreads,
-                1, TimeUnit.SECONDS,
+                1, SECONDS,
                 new SynchronousQueue<>(),
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
