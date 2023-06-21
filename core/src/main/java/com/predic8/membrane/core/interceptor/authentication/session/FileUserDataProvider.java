@@ -22,12 +22,24 @@ import java.nio.file.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+/**
+ * @description A <i>user data provider</i> utilizing htaccess formatted files.
+ * @explanation <p>
+ *              the <i>fileuserdataprovider</i> can be used to source authentication data from htaccess files.
+ *              </p>
+ *              <p>
+ *              The files can only utilize algorithm magic strings supported by <i>crypt(3)</i>.
+ *              </p>
+ */
 @MCElement(name="fileUserDataProvider")
 public class FileUserDataProvider implements UserDataProvider {
     private final Map<String, User> usersByName = new HashMap<>();
 
     private String htpasswdPath;
 
+    /**
+     * @description A path pointing to the htaccess file.
+     */
     @MCAttribute
     public void setHtpasswdPath(String path) {
         this.htpasswdPath = path;
