@@ -33,10 +33,10 @@ public class FileUserDataProvider implements UserDataProvider {
         String postDataPassword = postData.get("password");
         String userHash = userAttributes.getPassword();
         String[] userHashSplit = userHash.split("\\$");
-        String salt = userHashSplit[1];
-        String algo = userHashSplit[0];
+        String salt = userHashSplit[2];
+        String algo = userHashSplit[1];
         try {
-            pw = createPasswdCompatibleHash(algo, postDataPassword, salt);
+            pw = createHtpasswdKeyString(algo, postDataPassword, salt);
         } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -47,7 +47,7 @@ public class FileUserDataProvider implements UserDataProvider {
         return userAttributes.getAttributes();
     }
 
-    private String createPasswdCompatibleHash(String algo, String password, String salt) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+    private String createHtpasswdKeyString(String algo, String password, String salt) throws UnsupportedEncodingException, NoSuchAlgorithmException {
         return Crypt.crypt(password, "$" + algo + "$" + salt);
     }
 
