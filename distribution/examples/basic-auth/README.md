@@ -35,6 +35,7 @@ First take a look at the `proxies.xml` file.
 	<basicAuthentication>
 	  <fileUserDataProvider htpasswdPath="./.htpasswd" />
 	</basicAuthentication>
+	<target url="https://api.predic8.de"/>
   </api>
 </router>
 ```
