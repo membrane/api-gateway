@@ -23,9 +23,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
- * @description A <i>user data provider</i> utilizing htaccess formatted files.
+ * @description A <i>user data provider</i> utilizing htpasswd formatted files.
  * @explanation <p>
- *              the <i>fileuserdataprovider</i> can be used to source authentication data from htaccess files.
+ *              the <i>fileuserdataprovider</i> can be used to source authentication data from htpasswd files.
  *              </p>
  *              <p>
  *              The files can only utilize algorithm magic strings supported by <i>crypt(3)</i>.
@@ -38,7 +38,7 @@ public class FileUserDataProvider implements UserDataProvider {
     private String htpasswdPath;
 
     /**
-     * @description A path pointing to the htaccess file.
+     * @description A path pointing to the htpasswd file.
      */
     @MCAttribute
     public void setHtpasswdPath(String path) {
