@@ -131,7 +131,6 @@ public class FileUserDataProvider implements UserDataProvider {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
         for (String line : lines) {
             String[] parts = line.split(":");
             if (parts.length == 2) {
