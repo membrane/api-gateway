@@ -22,7 +22,8 @@ import static com.predic8.membrane.test.AssertUtils.setupHTTPAuthentication;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
-public class BasicAuthTest extends DistributionExtractingTestcase {
+public class BasicAuthTest extends AbstractSampleMembraneStartStopTestcase {
+
 	public static final String CUSTOMER_HOST_LOCAL_STATIC = "http://localhost:2000/";
 	public static final String CUSTOMER_HOST_LOCAL_FILE = "http://localhost:3000/";
 
@@ -33,23 +34,19 @@ public class BasicAuthTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void testStaticUDProvider() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			disableHTTPAuthentication();
-			getAndAssert(401, CUSTOMER_HOST_LOCAL_STATIC);
+		disableHTTPAuthentication();
+		getAndAssert(401, CUSTOMER_HOST_LOCAL_STATIC);
 
-			setupHTTPAuthentication("localhost", 2000, "alice", "membrane");
-			getAndAssert200(CUSTOMER_HOST_LOCAL_STATIC);
-		}
+		setupHTTPAuthentication("localhost", 2000, "alice", "membrane");
+		getAndAssert200(CUSTOMER_HOST_LOCAL_STATIC);
 	}
 
 	@Test
 	public void testFileUDProvider() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			disableHTTPAuthentication();
-			getAndAssert(401, CUSTOMER_HOST_LOCAL_FILE);
+		disableHTTPAuthentication();
+		getAndAssert(401, CUSTOMER_HOST_LOCAL_FILE);
 
-			setupHTTPAuthentication("localhost", 3000, "membrane", "proxy");
-			getAndAssert200(CUSTOMER_HOST_LOCAL_FILE);
-		}
+		setupHTTPAuthentication("localhost", 3000, "membrane", "proxy");
+		getAndAssert200(CUSTOMER_HOST_LOCAL_FILE);
 	}
 }
