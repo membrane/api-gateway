@@ -16,10 +16,8 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.resolver.ResolverMap;
 import org.apache.commons.codec.digest.Crypt;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -117,17 +115,9 @@ public class FileUserDataProvider implements UserDataProvider {
 
     @Override
     public void init(Router router) {
-        List<String> lines = null;
+        List<String> lines;
         try {
-            InputStreamReader streamReader = new InputStreamReader(
-                    router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), this.htpasswdPath)),
-                    StandardCharsets.UTF_8);
-            BufferedReader reader = new BufferedReader(streamReader);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-            reader.close();
+            lines = Files.readAllLines(Paths.get(this.htpasswdPath));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
