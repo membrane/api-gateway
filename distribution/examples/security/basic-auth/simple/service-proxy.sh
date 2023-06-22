@@ -19,11 +19,11 @@ homeNotSet() {
   echo "In $(pwd)"
   echo "ls $(ls)"
   echo "---"
-  echo "ls $(ls ../..)"
+  echo "ls $(ls ../../../..)"
 
-  if [ -f  "$(pwd)/../../starter.jar" ]
+  if [ -f  "$(pwd)/../../../../starter.jar" ]
     then 
-    	export MEMBRANE_HOME="`pwd`/../.."
+    	export MEMBRANE_HOME="`pwd`/../../../.."
     	homeSet	
     else
     	terminate    

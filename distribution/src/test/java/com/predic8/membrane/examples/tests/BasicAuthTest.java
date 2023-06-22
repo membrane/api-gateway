@@ -23,12 +23,13 @@ import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.Test;
 
 public class BasicAuthTest extends AbstractSampleMembraneStartStopTestcase {
+
 	public static final String CUSTOMER_HOST_LOCAL_STATIC = "http://localhost:2000/";
 	public static final String CUSTOMER_HOST_LOCAL_FILE = "http://localhost:3000/";
 
 	@Override
 	protected String getExampleDirName() {
-		return "basic-auth";
+		return "security/basic-auth/simple";
 	}
 
 	@Test
