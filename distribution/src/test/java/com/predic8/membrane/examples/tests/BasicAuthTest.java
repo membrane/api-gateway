@@ -28,7 +28,7 @@ public class BasicAuthTest extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "basic-auth";
+		return "security/basic-auth/simple";
 	}
 
 	@Test
