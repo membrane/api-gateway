@@ -23,6 +23,9 @@ import org.junit.jupiter.api.Test;
 
 public class XSLTTest extends DistributionExtractingTestcase {
 
+	public static final String CUSTOMER_HOST_LOCAL = "http://localhost:2000/";
+	public static final String CUSTOMER_HOST_REMOTE = "http://www.thomas-bayer.com/";
+
 	@Override
 	protected String getExampleDirName() {
 		return "xslt";
