@@ -46,8 +46,15 @@ public class SecurityUtils {
         return password.split(Pattern.quote("$"))[2];
     }
 
+    public static String createPasswdCompatibleHash(String algo, String password, String salt) {
+        return Crypt.crypt(password, "$" + algo + "$" + salt);
+    }
+
     public static String createPasswdCompatibleHash(String password, String saltString) {
-        saltString = "$6$" + saltString;
-        return Crypt.crypt(password, saltString);
+        return createPasswdCompatibleHash("6", password, saltString);
+    }
+
+    public static String extractMagicString(String password) {
+        return password.split(Pattern.quote("$"))[1];
     }
 }
