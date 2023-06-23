@@ -4,6 +4,7 @@ import com.predic8.membrane.core.util.Pair;
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.Process2;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,12 +60,12 @@ public class JsonProtectionTest extends AbstractSampleMembraneStartStopTestcase 
     @ParameterizedTest
     @MethodSource("parameters")
     public void testEndpoint(String filename) throws Exception {
-        disableHTTPAuthentication(); // TODO Tempfix for busy HTTP client connection. See GitHub Issue #626
-        postAndAssert(
-                statusCodeFileMap.get(filename),
-                "http://localhost:2000/",
-                new String[]{"Content-Type", APPLICATION_JSON},
-                readFileFromBaseDir("requests/" + filename)
-        );
+        given()
+                .contentType(ContentType.JSON)
+                .body(readFileFromBaseDir("requests/" + filename).replaceAll("\r|\n", ""))
+                .when()
+                .post("http://localhost:2000/")
+                .then()
+                .statusCode(statusCodeFileMap.get(filename));
     }
 }
