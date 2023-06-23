@@ -1,0 +1,18 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+					    
+	<router>
+
+		<api port="2000">
+			<basicAuthentication>
+				<jdbcUserDataProvider datasource="jdbc:h2:mem:userdata" tableName="user" userColumnName="nickname" passwordColumnName="password" />
+			</basicAuthentication>
+			<target url="https://api.predic8.de"/>
+		</api>
+
+	</router>
+	
+</spring:beans>

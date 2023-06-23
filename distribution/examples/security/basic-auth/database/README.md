@@ -1,22 +1,37 @@
-# Basic Authentication - Simple
+# Basic Authentication - JDBC
 
-This example explains how to protect an API or a Web application using __HTTP Basic Authentication__ with config embedded user data or an htpasswd file.
+This example explains how to protect an API or a Web application using __HTTP Basic Authentication__ with a JDBC datasource.
 
 
 ## Running the Example
 
+1. Go to the `examples/security/basic-auth/database` directory.
 
-1. Go to the `examples/security/basic-auth/simple` directory.
+2. Visit [H2 Downloads](https://www.h2database.com/html/download-archive.html) and download the most recent `Platform-Independent Zip`.
 
-2. Execute `service-proxy.bat` or `service-proxy.sh`
+3. Unzip the downloaded file inside the current directory (should result in an h2 folder), then run `run_h2.sh` or `run_h2.bat`.
 
-3. Open the URL http://localhost:2000 in your browser.
+4. The web console opens in your primary browser (if not, press the H2 tray icon), enter `org.h2.Driver` as `Driver Class`, `jdbc:h2:mem:userdata` as `JDBC URL` and `sa` as username with an empty password.
 
-4. Login with the username `alice` and the password `membrane`.
+5. Create demo users:  
+   
+   Once logged in, enter the following SQL into the text box, then press the run button above it.
+   ```SQL
+   CREATE TABLE "user" (
+     "nickname" VARCHAR(255) NOT NULL,
+     "password" VARCHAR(255) NOT NULL,
+     PRIMARY KEY ("nickname")
+   );
+   
+   INSERT INTO "user" ("nickname", "password")
+   VALUES ('johnsmith123', 'pass123'), ('membrane', 'proxy');
+   ```
 
-5. Open the URL http://localhost:3000 in your browser.
+5. Execute `service-proxy.bat` or `service-proxy.sh`.
 
-6. Login with credentials `membrane` & `proxy` or `john` & `smith123`
+6. Open the URL http://localhost:2000 in your browser.
+
+7. Login with the username `membrane` and the password `gateway`.
 
 
 ## How it is done
@@ -27,15 +42,9 @@ First take a look at the `proxies.xml` file.
 <router>
   <api port="2000">
     <basicAuthentication>
-      <user name="alice" password="membrane" />
+      <jdbcUserDataProvider />
     </basicAuthentication>
     <target url="https://api.predic8.de"/>
-  </api>
-  <api port="3000">
-	<basicAuthentication>
-	  <fileUserDataProvider htpasswdPath="./.htpasswd" />
-	</basicAuthentication>
-	<target url="https://api.predic8.de"/>
   </api>
 </router>
 ```
