@@ -61,11 +61,11 @@ public class JsonProtectionTest extends AbstractSampleMembraneStartStopTestcase 
     @MethodSource("parameters")
     public void testEndpoint(String filename) throws Exception {
         given()
-                .contentType(ContentType.JSON)
-                .body(readFileFromBaseDir("requests/" + filename).replaceAll("\r|\n", ""))
-                .when()
-                .post("http://localhost:2000/")
-                .then()
-                .statusCode(statusCodeFileMap.get(filename));
+            .contentType(ContentType.JSON)
+            .body(readFileFromBaseDir("requests/" + filename).replaceAll("\r|\n", ""))
+        .when()
+            .post("http://localhost:2000/")
+        .then()
+            .statusCode(statusCodeFileMap.get(filename));
     }
 }
