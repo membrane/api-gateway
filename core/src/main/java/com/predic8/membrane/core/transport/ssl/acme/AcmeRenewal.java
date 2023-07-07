@@ -201,7 +201,7 @@ public class AcmeRenewal {
     private Challenge getChallenge(Authorization auth) throws JsonProcessingException, FatalAcmeException {
         Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> client.getChallengeType().equals(c.getType())).findAny();
         if (challenge.isEmpty())
-            throw new FatalAcmeException("Could not find challenge of type http01: " + om.writeValueAsString(auth));
+            throw new FatalAcmeException("Could not find challenge of type "+client.getChallengeType()+": " + om.writeValueAsString(auth));
         return challenge.get();
     }
 

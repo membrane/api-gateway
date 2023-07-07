@@ -106,7 +106,7 @@ public class AcmeClient {
         hc = httpClientFactory.createClient(acme.getHttpClientConfiguration());
         validity = acme.getValidityDuration();
         this.acmeValidation = acme.getValidationMethod();
-        challengeType = acme.getValidationMethod() != null && acme.getValidationMethod() instanceof DnsOperatorAcmeValidation ? TYPE_DNS_01 : TYPE_HTTP_01;
+        challengeType = acme.getValidationMethod() != null && acme.getValidationMethod().useDnsValidation() ? TYPE_DNS_01 : TYPE_HTTP_01;
 
         om.registerModule(new JodaModule());
 
