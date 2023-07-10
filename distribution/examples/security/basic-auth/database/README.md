@@ -1,17 +1,17 @@
 # Basic Authentication - JDBC
 
-This example explains how to protect an API or a Web application using __HTTP Basic Authentication__ with a JDBC datasource.
+This example walks you through setting up **HTTP Basic Authentication** for an API or Web application using a JDBC data source.
 
 
 ## Running the Example
 
-1. Go to the `examples/security/basic-auth/database` directory.
+1. Navigate to the `examples/security/basic-auth/database` directory.
 
-2. Visit [H2 Downloads](https://www.h2database.com/html/download-archive.html) and download the most recent `Platform-Independent Zip`.
+2. Download the latest `Platform-Independent Zip` from the [H2 Downloads](https://www.h2database.com/html/download-archive.html) page.
 
-3. Unzip the downloaded file inside the current directory (should result in an h2 folder), make sure to install the `h2-*.jar` (database driver) from `./h2/bin` into the `<membrane-root>/lib` directory.
+3. Unzip the downloaded file inside the current directory (resulting in an h2 folder). Install the `h2-*.jar` (database driver) from `./h2/bin` into the `<membrane-root>/lib` directory.
 
-4. Run `run_h2.sh` or `run_h2.bat`, the web console opens in your primary browser (if not, press the H2 tray icon), enter `org.h2.Driver` as `Driver Class`, `jdbc:h2:mem:userdata` as `JDBC URL` and `sa` as username with an empty password.
+4. Execute `run_h2.sh` or `run_h2.bat`.  This should open the web console in your primary browser (if not, press the H2 tray icon). Log in using `org.h2.Driver` as `Driver Class`, `jdbc:h2:mem:userdata` as `JDBC URL` and `sa` as username with an empty password.
 
 5. Create demo users:  
    
@@ -36,7 +36,7 @@ This example explains how to protect an API or a Web application using __HTTP Ba
 
 ## How it is done
 
-First take a look at the `proxies.xml` file.
+Let's examine the `proxies.xml` file.
 
 ```xml
 <router>
@@ -49,9 +49,9 @@ First take a look at the `proxies.xml` file.
 </router>
 ```
 
-There is an `<api>` component that directs calls from port `2000` to `https://api.predic8.de`, the basicAuthentication-plugin is called for every of its requests.
+This configuration sets up an `<api>` component that directs calls from port `2000` to `https://api.predic8.de`, invoking the basicAuthentication-plugin for each request.
 
-Now take a closer look at the `<basicAuthentication>` element:
+Let's take a closer look at the `<basicAuthentication>` element:
 
 ```xml
 <basicAuthentication>
@@ -59,8 +59,9 @@ Now take a closer look at the `<basicAuthentication>` element:
 </basicAuthentication>
 ```
 
-We define a new `jdbcUserDataProvider`, this userDataProvider loads basic authentication login data from a JDBC datasource. The table name, username and password columns are specified using the according attributes of the provider element.
-The datasource is defined through the attribute of the same name, and accepts a JDBC uri.
+We define a new `jdbcUserDataProvider` that fetches authentication details from a JDBC datasource.
+The attributes of the provider element specify the table name and the columns for username and password. 
+The datasource attribute accepts a JDBC URI for setting the target database.
 
 When opening the URL `http://localhost:2000/`, membrane will respond with `401 Unauthorized`.
 
