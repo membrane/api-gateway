@@ -43,6 +43,10 @@ public class ProblemDetails {
         return createMessage(statusCode, type, title, details, root);
     }
 
+    public static Response createProblemDetailsForProduction(int statusCode, String type, String logKey) {
+        return createProblemDetails(statusCode, type,"An error has happened. For security reasons no details are exposed to the client. Details can be found in the log using the log key: " + logKey, null);
+    }
+
     private static Response createMessage(int statusCode, String type, String title, Map<String, Object> details, Map<String, Object> root) {
         Response.ResponseBuilder builder = Response.statusCode(statusCode);
         try {
@@ -55,4 +59,7 @@ public class ProblemDetails {
         }
         return builder.build();
     }
+
+
+
 }

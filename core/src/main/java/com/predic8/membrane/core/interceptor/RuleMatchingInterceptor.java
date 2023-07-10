@@ -14,34 +14,20 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.NullRule;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.util.ErrorUtil.createAndSetErrorResponse;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());
 
 	private boolean xForwardedForEnabled = true;
 	private int maxXForwardedForHeaders = 20;
@@ -59,7 +45,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		assignRule(exc, rule);
 
 		if (rule instanceof NullRule) {
-			createAndSetErrorResponse(exc,400,"This request was not accepted by Membrane. Please check HTTP method and path.");
+			exc.setResponse(createProblemDetails(400,"/gateway", "This request was not accepted by Membrane. Please check HTTP method and path."));
 			return ABORT;
 		}
 
