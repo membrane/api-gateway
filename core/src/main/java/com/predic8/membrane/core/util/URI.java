@@ -33,7 +33,7 @@ public class URI {
 
     private String host;
 
-    private int port;
+    private int port = -1;
 
     private String pathDecoded, queryDecoded;
 
@@ -69,11 +69,6 @@ public class URI {
         input = s;
 
         scheme = m.group(2);
-
-        if ("https".equals(scheme))
-            port = 443;
-        else
-            port = 80;
 
         processHostAndPort(m.group(4));
 
@@ -114,18 +109,9 @@ public class URI {
 
     public int getPort() {
         if (uri != null) {
-            var port = uri.getPort();
-            if (port != -1)
-                return port;
-            return getDefaultPort();
+            return uri.getPort();
         }
         return port;
-    }
-
-    private int getDefaultPort() {
-        if ("https".equals(uri.getScheme()))
-            return 443;
-        return 80;
     }
 
     public String getPath() {

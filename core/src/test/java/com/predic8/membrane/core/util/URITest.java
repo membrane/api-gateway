@@ -107,9 +107,17 @@ public class URITest {
 		getPortCustomParsing(true);
 	}
 
+	/**
+	 * Default port should be returned as unknown.
+	 */
+	@Test
+	void urlStandardBehaviour() throws URISyntaxException {
+		assertEquals(-1, new java.net.URI("http://predic8.de/foo").getPort());
+	}
+
 	private void getPortCustomParsing(boolean custom) throws URISyntaxException {
-		assertEquals(80, new URI("http://predic8.de/foo",custom).getPort());
-		assertEquals(443, new URI("https://predic8.de/foo",custom).getPort());
+		assertEquals(-1, new URI("http://predic8.de/foo",custom).getPort());
+		assertEquals(-1, new URI("https://predic8.de/foo",custom).getPort());
 		assertEquals(8090, new URI("http://predic8.de:8090/foo",custom).getPort());
 		assertEquals(8443, new URI("https://predic8.de:8443/foo",custom).getPort());
 		assertEquals(8090, new URI("http://user:pwd@predic8.de:8090/foo",custom).getPort());
