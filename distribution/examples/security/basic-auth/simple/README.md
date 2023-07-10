@@ -1,12 +1,12 @@
-# Basic Authentication
+# Basic Authentication - Simple
 
-This example explains how to protect an API or a Web application using __HTTP Basic Authentication__.
+This example explains how to protect an API or a Web application using __HTTP Basic Authentication__ with config embedded user data or an htpasswd file.
 
 
 ## Running the Example
 
 
-1. Go to the `examples/basic-auth` directory.
+1. Go to the `examples/security/basic-auth/simple` directory.
 
 2. Execute `service-proxy.bat` or `service-proxy.sh`
 
