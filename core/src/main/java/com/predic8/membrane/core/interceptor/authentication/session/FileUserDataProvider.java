@@ -16,11 +16,12 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import org.apache.commons.codec.digest.Crypt;
 import java.io.*;
 import java.nio.file.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;
 
 /**
  * @description A <i>user data provider</i> utilizing htpasswd formatted files.
@@ -60,20 +61,12 @@ public class FileUserDataProvider implements UserDataProvider {
         String[] userHashSplit = userHash.split("\\$");
         String salt = userHashSplit[2];
         String algo = userHashSplit[1];
-        try {
-            pw = createHtpasswdKeyString(algo, postDataPassword, salt);
-        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+        pw = createPasswdCompatibleHash(algo, postDataPassword, salt);
         String pw2;
         pw2 = userAttributes.getPassword();
         if (pw2 == null || !pw2.equals(pw))
             throw new NoSuchElementException();
         return userAttributes.getAttributes();
-    }
-
-    private String createHtpasswdKeyString(String algo, String password, String salt) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-        return Crypt.crypt(password, "$" + algo + "$" + salt);
     }
 
     public static class User {
