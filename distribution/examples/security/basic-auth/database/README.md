@@ -9,13 +9,13 @@ This example explains how to protect an API or a Web application using __HTTP Ba
 
 2. Visit [H2 Downloads](https://www.h2database.com/html/download-archive.html) and download the most recent `Platform-Independent Zip`.
 
-3. Unzip the downloaded file inside the current directory (should result in an h2 folder), then run `run_h2.sh` or `run_h2.bat`.
+3. Unzip the downloaded file inside the current directory (should result in an h2 folder), make sure to install the `h2-*.jar` (database driver) from `./h2/bin` into the `<membrane-root>/lib` directory.
 
-4. The web console opens in your primary browser (if not, press the H2 tray icon), enter `org.h2.Driver` as `Driver Class`, `jdbc:h2:mem:userdata` as `JDBC URL` and `sa` as username with an empty password.
+4. Run `run_h2.sh` or `run_h2.bat`, the web console opens in your primary browser (if not, press the H2 tray icon), enter `org.h2.Driver` as `Driver Class`, `jdbc:h2:mem:userdata` as `JDBC URL` and `sa` as username with an empty password.
 
 5. Create demo users:  
    
-   Once logged in, enter the following SQL into the text box, then press the run button above it.
+   Once logged in, enter the following SQL into the text box, then press the run button above.
    ```SQL
    CREATE TABLE "user" (
      "nickname" VARCHAR(255) NOT NULL,
@@ -38,33 +38,33 @@ This example explains how to protect an API or a Web application using __HTTP Ba
 
 First take a look at the `proxies.xml` file.
 
-```
+```xml
 <router>
   <api port="2000">
     <basicAuthentication>
-      <jdbcUserDataProvider />
-    </basicAuthentication>
-    <target url="https://api.predic8.de"/>
+	  <jdbcUserDataProvider datasource="jdbc:h2:mem:userdata" tableName="user" userColumnName="nickname" passwordColumnName="password" />
+	</basicAuthentication>
+	<target url="https://api.predic8.de"/>
   </api>
 </router>
 ```
 
-There are two `<api>` components that direct calls from port `2000` and `3000` to `https://api.predic8.de`. The basicAuthentication-plugin is called for every request.
+There is an `<api>` component that directs calls from port `2000` to `https://api.predic8.de`, the basicAuthentication-plugin is called for every of its requests.
 
 Now take a closer look at the `<basicAuthentication>` element:
 
-```
+```xml
 <basicAuthentication>
-  <user name="alice" password="membrane" />
+  <jdbcUserDataProvider datasource="jdbc:h2:mem:userdata" tableName="user" userColumnName="nickname" passwordColumnName="password" />
 </basicAuthentication>
 ```
 
-Users are added through `user` elements. The username and the password are given by the attributes `name` and `password` of the `user` element. The example demonstrates one user, with username `alice` and password `membrane`.   
-Alternatively, the `fileUserDataProvider` can be used to read basic authentication data from an htpasswd formatted file. The algorithm magic strings must be compatible with Unix `crypt(3)`.
+We define a new `jdbcUserDataProvider`, this userDataProvider loads basic authentication login data from a JDBC datasource. The table name, username and password columns are specified using the according attributes of the provider element.
+The datasource is defined through the attribute of the same name, and accepts a JDBC uri.
 
-When opening the URL `http://localhost:2000/` or the `3000` port equivalent, membrane will respond with `401 Not Authorized`.
+When opening the URL `http://localhost:2000/`, membrane will respond with `401 Unauthorized`.
 
-```
+```html
 HTTP/1.1 401 Unauthorized
 Content-Type: text/html;charset=utf-8
 WWW-Authenticate: Basic realm="Membrane Authentication"
