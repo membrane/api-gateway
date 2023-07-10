@@ -125,7 +125,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
         if (result != null && result.size() > 0) {
             String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
             if (!SecurityUtils.isHashedPassword(password))
-                password = SecurityUtils.createPasswdCompatibleHash(password, SecurityUtils.extractSalt(passwordFromDB));
+                password = SecurityUtils.createPasswdCompatibleHash(SecurityUtils.extractMagicString(passwordFromDB), password, SecurityUtils.extractSalt(passwordFromDB));
 
             if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
                 return result;

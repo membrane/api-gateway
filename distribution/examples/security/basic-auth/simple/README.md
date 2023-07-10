@@ -1,18 +1,22 @@
-# Basic Authentication
+# Basic Authentication - Simple
 
-This example explains how to protect an API or a Web application using __HTTP Basic Authentication__.
+This example explains how to protect an API or a Web application using __HTTP Basic Authentication__ with config embedded user data or an htpasswd file.
 
 
 ## Running the Example
 
 
-1. Go to the `examples/basic-auth` directory.
+1. Go to the `examples/security/basic-auth/simple` directory.
 
 2. Execute `service-proxy.bat` or `service-proxy.sh`
 
 3. Open the URL http://localhost:2000 in your browser.
 
 4. Login with the username `alice` and the password `membrane`.
+
+5. Open the URL http://localhost:3000 in your browser.
+
+6. Login with credentials `membrane` & `proxy` or `john` & `smith123`
 
 
 ## How it is done
@@ -27,10 +31,16 @@ First take a look at the `proxies.xml` file.
     </basicAuthentication>
     <target url="https://api.predic8.de"/>
   </api>
+  <api port="3000">
+	<basicAuthentication>
+	  <fileUserDataProvider htpasswdPath="./.htpasswd" />
+	</basicAuthentication>
+	<target url="https://api.predic8.de"/>
+  </api>
 </router>
 ```
 
-There is an `<api>` that directs calls from the port 2000 to `https://api.predic8.de`. The basicAuthentication-plugin is called for every request.
+There are two `<api>` components that direct calls from port `2000` and `3000` to `https://api.predic8.de`. The basicAuthentication-plugin is called for every request.
 
 Now take a closer look at the `<basicAuthentication>` element:
 
@@ -40,9 +50,10 @@ Now take a closer look at the `<basicAuthentication>` element:
 </basicAuthentication>
 ```
 
-You can add users by using `user` elements. The `username` and the `password` are given by the attributes name and password of the `user` element. In the example there is one user with username `alice` and password `membrane`. 
+Users are added through `user` elements. The username and the password are given by the attributes `name` and `password` of the `user` element. The example demonstrates one user, with username `alice` and password `membrane`.   
+Alternatively, the `fileUserDataProvider` can be used to read basic authentication data from an htpasswd formatted file. The algorithm magic strings must be compatible with Unix `crypt(3)`.
 
-When opening the URL `http://localhost:2000/` membrane will respond with `401 Not Authorized`.
+When opening the URL `http://localhost:2000/` or the `3000` port equivalent, membrane will respond with `401 Not Authorized`.
 
 ```
 HTTP/1.1 401 Unauthorized
