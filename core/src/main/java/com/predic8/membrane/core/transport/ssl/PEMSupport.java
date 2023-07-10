@@ -23,6 +23,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.jose4j.base64url.Base64;
+import org.slf4j.*;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -36,6 +37,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public abstract class PEMSupport {
+
+    private static final Logger log = LoggerFactory.getLogger(PEMSupport.class.getName());
 
     public abstract X509Certificate parseCertificate(String pemBlock) throws IOException;
     public abstract List<? extends Certificate> parseCertificates(String certificates) throws IOException;
@@ -130,8 +133,10 @@ public abstract class PEMSupport {
         public Object parseKey(String pemBlock) throws IOException {
             PEMParser p = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
             Object o = p.readObject();
-            if (o == null)
-                throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
+            if (o == null) {
+                log.error("Could not read PEM file. Check the contents of PEM file or configuration. Content is {}", pemBlock);
+                throw new InvalidParameterException("Could not read PEM file. Check the contents of PEM file or configuration.");
+            }
             if (o instanceof X9ECParameters) {
                 o = p.readObject();
             }
