@@ -39,10 +39,17 @@ This example walks you through setting up **HTTP Basic Authentication** for an A
 Let's examine the `proxies.xml` file.
 
 ```xml
+<spring:bean name="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+   <spring:property name="driverClassName" value="org.h2.Driver" />
+   <spring:property name="url" value="jdbc:h2:tcp://localhost/mem:userdata" />
+   <spring:property name="username" value="sa" />
+   <spring:property name="password" value="" />
+</spring:bean>
+
 <router>
   <api port="2000">
     <basicAuthentication>
-	  <jdbcUserDataProvider datasource="jdbc:h2:mem:userdata" tableName="user" userColumnName="nickname" passwordColumnName="password" />
+	  <jdbcUserDataProvider datasource="dataSource" tableName="user" userColumnName="nickname" passwordColumnName="password" />
 	</basicAuthentication>
 	<target url="https://api.predic8.de"/>
   </api>
@@ -60,9 +67,25 @@ Let's take a closer look at the `<basicAuthentication>` element:
 ```
 
 We define a new `jdbcUserDataProvider` that fetches authentication details from a JDBC datasource.
-The attributes of the provider element specify the table name and the columns for username and password. 
-The datasource attribute accepts a JDBC URI for setting the target database.
+The attributes of the provider element specify the table name and the columns for username and password.
 
+The datasource attribute requires a bean that implements the java DataSource interface,
+in this example we use the following spring `bean` element definition to create one:
+
+```xml
+<spring:bean name="dataSource" class="org.apache.commons.dbcp2.BasicDataSource">
+   <spring:property name="driverClassName" value="org.h2.Driver" />
+   <spring:property name="url" value="jdbc:h2:tcp://localhost/mem:userdata" />
+   <spring:property name="username" value="sa" />
+   <spring:property name="password" value="" />
+</spring:bean>
+```
+
+Membrane includes the class `org.apache.commons.dbcp2.BasicDataSource`, we can use it as a DataSource implementor.
+Now we simply define our connection data as we did for the web console, except for the url.
+Because we are targeting an external database, we will have to specify the address within in the JDBC url `...tcp://localhost/mem...`.
+
+---
 When opening the URL `http://localhost:2000/`, membrane will respond with `401 Unauthorized`.
 
 ```html
