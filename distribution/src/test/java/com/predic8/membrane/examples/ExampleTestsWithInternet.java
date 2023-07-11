@@ -49,8 +49,6 @@ import org.junit.platform.suite.api.Suite;
         LoggingJDBCTest.class,
         LoggingTest.class,
         LoginTest.class,
-//        QuickstartRESTTest.class,
-//        QuickstartSOAPTest.class,
         REST2SOAPTest.class,
         REST2SOAPJSONTest.class,
         RewriterTest.class,

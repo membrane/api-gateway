@@ -14,28 +14,25 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.examples.tests.BasicAuthTest.*;
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-
 import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-public class XSLTTest extends DistributionExtractingTestcase {
+import static com.predic8.membrane.test.AssertUtils.*;
 
-	public static final String CUSTOMER_HOST_LOCAL = "http://localhost:2000/";
-	public static final String CUSTOMER_HOST_REMOTE = "http://www.thomas-bayer.com/";
+public class XSLTTest extends AbstractSampleMembraneStartStopTestcase {
 
-	@Override
-	protected String getExampleDirName() {
-		return "xslt";
-	}
+    public static final String PATH = "/samples/sqlrest/CUSTOMER/7/";
+    public static final String CUSTOMER_HOST_LOCAL = "http://localhost:2000";
+    public static final String CUSTOMER_HOST_REMOTE = "http://www.thomas-bayer.com";
 
-	@Test
-	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			assertContains("FIRSTNAME", getAndAssert200(CUSTOMER_HOST_REMOTE));
-			assertContains("first", getAndAssert200(CUSTOMER_HOST_LOCAL));
-		}
-	}
+    @Override
+    protected String getExampleDirName() {
+        return "xslt";
+    }
+
+    @Test
+    public void test() throws Exception {
+        assertContains("FIRSTNAME", getAndAssert200(CUSTOMER_HOST_REMOTE + PATH));
+        assertContains("first", getAndAssert200(CUSTOMER_HOST_LOCAL + PATH));
+    }
 }

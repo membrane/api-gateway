@@ -1,1 +1,0 @@
-Please follow http://membrane-soa.org/service-proxy-doc/current/soap-quickstart.htm .
