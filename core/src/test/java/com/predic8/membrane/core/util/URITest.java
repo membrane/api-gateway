@@ -64,14 +64,65 @@ public class URITest {
 		assertError("http://pre{dic8.de/test?a=query#foo", "/test", "a=query");
 	}
 
+	@Test
+	void getScheme() throws URISyntaxException {
+		checkGetSchemeCustomParsing(false);
+	}
+
+	@Test
+	void getSchemeCustom() throws URISyntaxException {
+		checkGetSchemeCustomParsing(true);
+	}
+
+	private void checkGetSchemeCustomParsing(boolean custom) throws URISyntaxException {
+		assertEquals("http", new URI("http://predic8.de",custom).getScheme());
+		assertEquals("https", new URI("https://predic8.de",custom).getScheme());
+	}
+
     @Test
     void getHost() throws URISyntaxException {
-		assertEquals("predic8.de", new URI("http://predic8.de/foo",false).getHost());
-		assertEquals("predic8.de", new URI("http://predic8.de/foo",true).getHost());
-		assertEquals("predic8.de", new URI("http://predic8.de:8080/foo",false).getHost());
-		assertEquals("predic8.de", new URI("http://predic8.de:8080/foo",true).getHost());
+		checkGetHost(false);
     }
 
+	@Test
+	void getHostCustom() throws URISyntaxException {
+		checkGetHost(true);
+	}
+
+	private void checkGetHost(boolean custom) throws URISyntaxException {
+		assertEquals("predic8.de", new URI("http://predic8.de/foo",custom).getHost());
+		assertEquals("predic8.de", new URI("http://user:pwd@predic8.de:8080/foo",custom).getHost());
+		assertEquals("predic8.de", new URI("http://predic8.de:8080/foo",custom).getHost());
+		assertEquals("predic8.de", new URI("https://predic8.de/foo",custom).getHost());
+		assertEquals("predic8.de", new URI("https://predic8.de:8443/foo",custom).getHost());
+	}
+
+	@Test
+	void getPort() throws URISyntaxException {
+		getPortCustomParsing(false);
+	}
+
+	@Test
+	void getPortCustom() throws URISyntaxException {
+		getPortCustomParsing(true);
+	}
+
+	/**
+	 * Default port should be returned as unknown.
+	 */
+	@Test
+	void urlStandardBehaviour() throws URISyntaxException {
+		assertEquals(-1, new java.net.URI("http://predic8.de/foo").getPort());
+	}
+
+	private void getPortCustomParsing(boolean custom) throws URISyntaxException {
+		assertEquals(-1, new URI("http://predic8.de/foo",custom).getPort());
+		assertEquals(-1, new URI("https://predic8.de/foo",custom).getPort());
+		assertEquals(8090, new URI("http://predic8.de:8090/foo",custom).getPort());
+		assertEquals(8443, new URI("https://predic8.de:8443/foo",custom).getPort());
+		assertEquals(8090, new URI("http://user:pwd@predic8.de:8090/foo",custom).getPort());
+		assertEquals(8443, new URI("https://user:pwd@predic8.de:8443/foo",custom).getPort());
+	}
 
 	private void assertSame(String uri) {
 		assertSame(uri, false);
@@ -109,4 +160,6 @@ public class URITest {
 			throw new RuntimeException(e);
 		}
 	}
+
+
 }

@@ -30,12 +30,14 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIPublisherInterceptorTest {
 
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private final ObjectMapper om = new ObjectMapper();
 
     OpenAPIRecordFactory openAPIRecordFactory;
     OpenAPIPublisherInterceptor interceptor;
@@ -96,6 +98,32 @@ public class OpenAPIPublisherInterceptorTest {
     }
 
     @Test
+    public void getSwaggerUIWrongId() throws Exception {
+        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI + "/wrong-id-0");
+        assertEquals( RETURN, interceptor.handleRequest(get));
+        assertEquals( 404, get.getResponse().getStatusCode());
+        checkHasValidProblemJSOM(get);
+    }
+
+    @Test
+    public void getSwaggerUINoId() throws Exception {
+        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI);
+        assertEquals( RETURN, interceptor.handleRequest(get));
+        assertEquals( 404, get.getResponse().getStatusCode());
+        checkHasValidProblemJSOM(get);
+    }
+
+    private void checkHasValidProblemJSOM(Exchange exc) throws IOException {
+        assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
+        assertTrue(exc.getResponse().isJSON());
+
+        JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
+
+        assertTrue(json.has("title"));
+        assertTrue(json.has("type"));
+    }
+
+    @Test
     public void getApiById() throws Exception {
         get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH  + "/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
@@ -125,7 +153,8 @@ public class OpenAPIPublisherInterceptorTest {
         assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(2).get("url").asText());
     }
 
-    void rewriteRequestHostHeaderWithoutPort() throws MalformedURLException, URISyntaxException {
+    @Test
+    void rewriteRequestHostHeaderWithoutPort() throws URISyntaxException {
         OpenAPIRecord rec = records.get("servers-3-api-v1-0");
         get.setOriginalHostHeader("api.predic8.de");
         interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
@@ -135,6 +164,7 @@ public class OpenAPIPublisherInterceptorTest {
         assertEquals("http://api.predic8.de/foo", servers.get(2).get("url").textValue());
     }
 
+    @Test
     void rewriteUrl() throws URISyntaxException {
         assertEquals("http://api.predic8.de/foo",interceptor.rewriteUrl(get,"http://localhost:3000/foo"));
         assertEquals("http://api.predic8.de/foo",interceptor.rewriteUrl(get,"http://localhost/foo"));

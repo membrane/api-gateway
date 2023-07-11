@@ -14,40 +14,25 @@
 
 package com.predic8.membrane.examples.tests.openapi;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.examples.util.*;
+import io.restassured.response.*;
+import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
 import java.io.*;
-import java.util.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
-import static java.lang.Thread.sleep;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
 
-public class APIProxyTest extends DistributionExtractingTestcase {
-
-    final ObjectMapper om = new ObjectMapper();
+public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase  {
 
     final String[] ACCEPT_HTML_HEADER = {"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"};
 
     @Override
     protected String getExampleDirName() {
         return "openapi/openapi-proxy";
-    }
-
-    private Process2 process;
-
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        process = startServiceProxyScript();
-        sleep(100);
-    }
-
-    @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
-        process.killScript();
     }
 
     @SuppressWarnings("JsonSchemaCompliance")
@@ -64,7 +49,7 @@ public class APIProxyTest extends DistributionExtractingTestcase {
                     "ui_link" : "/api-doc/ui/fruitshop-v1-0"
                   }
                 }
-                """, andAssert,true);
+                """, andAssert, true);
     }
 
     @Test
@@ -85,41 +70,57 @@ public class APIProxyTest extends DistributionExtractingTestcase {
         assertContains("/api-doc/fruitshop-v1-0", body);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    void postLikeSwaggerUI() throws Exception {
-
-        Map<String,Object> json = om.readValue(postAndAssert(201, LOCALHOST_2000 + "/shop/products/", CONTENT_TYPE_APP_JSON_HEADER, """
-                {
-                     "name": "Figs",
-                     "price": 2.7
-                 }
-                """), Map.class);
-        assertEquals("Figs", json.get("name"));
-        assertEquals(2.7, json.get("price"));
+    void postLikeSwaggerUI() {
+        // @formatter:off
+        given()
+            .contentType(JSON)
+            .body("""
+                    {
+                         "name": "Figs",
+                         "price": 2.7
+                    }
+                """)
+        .when()
+            .post(LOCALHOST_2000 + "/shop/products/")
+        .then()
+                .statusCode(201)
+                .body("name", Matchers.equalTo("Figs"))
+                .body("price", Matchers.equalTo(2.7F));
+        // @formatter:on
     }
 
     @Test
-    void postLikeSwaggerUIInvalidPrice() throws Exception {
-        JSONAssert.assertEquals("""
+    void postLikeSwaggerUIInvalidPrice() {
+        // @formatter:off
+        Response res = given()
+            .contentType(JSON)
+            .body("""
                 {
-                  "method" : "POST",
-                  "uriTemplate" : "/products/",
-                  "path" : "/shop/products/",
-                  "validationErrors" : {
-                    "REQUEST/BODY#/price" : [ {
-                      "message" : "-2.7 is smaller than the minimum of 0",
-                      "complexType" : "Product",
-                      "schemaType" : "number"
-                    } ]
-                  }
+                     "name": "Figs",
+                     "price": -2.7
                 }
-                """
-                , postAndAssert(400, LOCALHOST_2000 + "/shop/products/", CONTENT_TYPE_APP_JSON_HEADER, """
+            """)
+        .when()
+            .post(LOCALHOST_2000 + "/shop/products/");
+        // @formatter:on
+
+        res.then().assertThat().statusCode(400);
+
+        JSONAssert.assertEquals("""
                         {
-                             "name": "Figs",
-                             "price": -2.7
-                         }
-                """),true);
+                          "method" : "POST",
+                          "uriTemplate" : "/products/",
+                          "path" : "/shop/products/",
+                          "validationErrors" : {
+                            "REQUEST/BODY#/price" : [ {
+                              "message" : "-2.7 is smaller than the minimum of 0",
+                              "complexType" : "Product",
+                              "schemaType" : "number"
+                            } ]
+                          }
+                        }
+                        """
+                , res.body().asString(), true);
     }
 }

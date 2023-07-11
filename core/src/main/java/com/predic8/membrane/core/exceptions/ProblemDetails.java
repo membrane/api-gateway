@@ -32,7 +32,7 @@ public class ProblemDetails {
     }
 
     public static Response createProblemDetails(int statusCode, String type, String title, Map<String,Object> details) {
-        Map<String,Object> root = new HashMap<>();
+        Map<String,Object> root = new LinkedHashMap<>();
         root.put("type","http://membrane-api.io/error" + type);
         root.put("title",title);
 
