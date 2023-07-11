@@ -29,10 +29,10 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.ErrorUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -90,11 +90,10 @@ public class TemplateInterceptor extends AbstractInterceptor{
         catch (TemplateExecutionException e) {
             log.warn("Template Exception" + e);
             log.warn("Cause: " + e.getCause());
-            createAndSetErrorResponse(exc,500,e.getMessage());
+            exc.setResponse(createProblemDetails(500,"/gateway", e.getMessage()));
         }
         catch (Exception e) {
-            System.out.println(e.getClass());
-            createAndSetErrorResponse(exc,500,e.getMessage());
+            exc.setResponse(createProblemDetails(500,"/gateway", e.getMessage()));
         }
 
         // Setting Content-Type must come at the end, cause before we want to know what the original type was.

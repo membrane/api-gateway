@@ -24,10 +24,9 @@ import org.slf4j.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.ErrorUtil.*;
-import static java.lang.String.*;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web
@@ -41,6 +40,8 @@ import static java.lang.String.*;
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
+
+	private static final String PROXIES_HINT = " String Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
 	private boolean failOverOn5XX;
 	private boolean adjustHostHeader = true;
@@ -61,21 +62,22 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			hc.call(exc, adjustHostHeader, failOverOn5XX);
 			return RETURN;
 		} catch (ConnectException e) {
-			String msg =  format("Target %s is not reachable.", getDestination(exc));
-			log.warn(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
-			createAndSetErrorResponse(exc,502,msg);
+			setErrorResponse(exc, "Target %s is not reachable.".formatted(getDestination(exc)) + PROXIES_HINT);
 			return ABORT;
 		} catch (UnknownHostException e) {
-			String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName());
-			if (router.isProduction()) {
-				String logKey = UUID.randomUUID().toString();
-				log.error("logKey=%s\n%s\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.", logKey, msg);
-				createAndSetProductionErrorResponse(exc,500, logKey);
-			} else {
-				log.error(msg + "\nMaybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.");
-				createAndSetErrorResponse(exc,502, msg);
-			}
+			setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName()) + PROXIES_HINT);
 			return ABORT;
+		}
+	}
+
+	private void setErrorResponse(Exchange exc, String msg) {
+		if (router.isProduction()) {
+			String logKey = UUID.randomUUID().toString();
+			log.error("logKey={}\n{}\n.", logKey, msg);
+			exc.setResponse(createProblemDetailsForProduction(500,"/gateway",logKey));
+		} else {
+			log.error(msg);
+			exc.setResponse(createProblemDetails(502,"/gateway", msg));
 		}
 	}
 
