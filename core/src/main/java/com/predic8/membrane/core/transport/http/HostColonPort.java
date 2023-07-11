@@ -21,7 +21,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 public record HostColonPort(boolean useSSL, String host, int port) {
 
 	public HostColonPort(boolean useSSL, String hostAndPort) {
-		this(useSSL, hostPart(hostAndPort), portPart(hostAndPort, 80));
+		this(useSSL, hostPart(hostAndPort), portPart(hostAndPort,  useSSL ? 443 : 80));
 	}
 
 	public HostColonPort(String host, int port) {
@@ -57,6 +57,6 @@ public record HostColonPort(boolean useSSL, String host, int port) {
 
 	private static int portPart(String addr, int defaultValue) {
 		var colon = addr.indexOf(":");
-		return (colon > -1 ? Integer.parseInt(addr.substring(colon+1)) : defaultValue);
+		return (colon > -1 ? Integer.parseInt(addr.substring(colon + 1)) : defaultValue);
 	}
 }

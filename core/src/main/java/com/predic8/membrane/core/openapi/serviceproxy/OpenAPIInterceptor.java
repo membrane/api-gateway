@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
@@ -31,6 +30,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -54,10 +54,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         String basePath = getMatchingBasePath(exc);
         // No matching API found
         if (basePath == null) {
-            // @TODO ProblemDetails
-            Map<String,String> m = new HashMap<>();
-            m.put("description","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
-            exc.setResponse(ProblemDetails.createProblemDetails(404, "/not-found", "No matching API found!"));
+            Map<String,Object> m = new HashMap<>();
+            m.put("message","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
+            m.put("path",basePath);
+            exc.setResponse(createProblemDetails(404, "/not-found", "No matching API found!",m));
             return RETURN;
         }
 
@@ -70,7 +70,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
         ValidationErrors errors = validateRequest(rec.api, exc);
 
-        if (errors != null && errors.size() > 0) {
+        if (!errors.isEmpty()) {
             proxy.statisticCollector.collect(errors);
             return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
         }

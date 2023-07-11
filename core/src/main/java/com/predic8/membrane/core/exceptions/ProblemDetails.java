@@ -32,7 +32,7 @@ public class ProblemDetails {
     }
 
     public static Response createProblemDetails(int statusCode, String type, String title, Map<String,Object> details) {
-        Map<String,Object> root = new HashMap<>();
+        Map<String,Object> root = new LinkedHashMap<>();
         root.put("type","http://membrane-api.io/error" + type);
         root.put("title",title);
 
@@ -41,6 +41,10 @@ public class ProblemDetails {
         }
 
         return createMessage(statusCode, type, title, details, root);
+    }
+
+    public static Response createProblemDetailsForProduction(int statusCode, String type, String logKey) {
+        return createProblemDetails(statusCode, type,"An error has happened. For security reasons no details are exposed to the client. Details can be found in the log using the log key: " + logKey, null);
     }
 
     private static Response createMessage(int statusCode, String type, String title, Map<String, Object> details, Map<String, Object> root) {
@@ -55,4 +59,7 @@ public class ProblemDetails {
         }
         return builder.build();
     }
+
+
+
 }

@@ -23,6 +23,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import groovy.text.*;
+import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import org.slf4j.*;
 
@@ -31,13 +32,12 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.lang.Integer.*;
-import static java.lang.String.*;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
@@ -111,8 +111,11 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    private Outcome returnNoFound(Exchange exc,String id) {
-        exc.setResponse(Response.notFound().contentType(APPLICATION_JSON).body(createErrorMessage(format("OpenAPI document with the id '%s' not found.",id))).build());
+    private Outcome returnNoFound(Exchange exc, String id) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("message", "OpenAPI document with the id %s not found.".formatted(id));
+        details.put("id", id);
+        exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "OpenAPI not found", details));
         return RETURN;
     }
 
@@ -137,10 +140,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         ((ObjectNode) rec.node).put("host", rewrittenHost);
 
         // Add protocol http or https
-        ArrayNode schemes =  ((ObjectNode) rec.node).putArray("schemes");
+        ArrayNode schemes = ((ObjectNode) rec.node).putArray("schemes");
         schemes.add(getProtocol(exc));
 
-        log.debug("Rewriting {} to {}",host,rewrittenHost);
+        log.debug("Rewriting {} to {}", host, rewrittenHost);
     }
 
     private void rewriteOpenAPIVersion3(Exchange exc, OpenAPIRecord rec) throws URISyntaxException {
@@ -152,7 +155,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             String serverUrl = server.get("url").asText();
             String rewrittenUrl = rewriteUrl(exc, serverUrl);
             ((ObjectNode) server).put("url", rewrittenUrl);
-            log.debug("Rewriting {} to {}",serverUrl,rewrittenUrl);
+            log.debug("Rewriting {} to {}", serverUrl, rewrittenUrl);
         }
     }
 
@@ -181,18 +184,34 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private String getProtocol(Exchange exc) {
         if (exc.getRule().getSslInboundContext() == null)
-            return  "http";
+            return "http";
         else
-            return  "https";
+            return "https";
     }
 
     private Outcome handleSwaggerUi(Exchange exc) {
         Matcher m = patternUI.matcher(exc.getRequest().getUri());
-        if (!m.matches()) { // No id specified
-            exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body("Please specify an Id").build());
+
+        // No id specified
+        if (!m.matches()) {
+            Map<String,Object> details = new HashMap<>();
+            details.put("message","Please specify an id of an OpenAPI document. Path should match this pattern: /api-doc/ui/<<id>>");
+            exc.setResponse(createProblemDetails(404,"/openapi/wrong-id","No OpenAPI document id",details));
             return RETURN;
         }
-        exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(m.group(1))).build());
+
+        // /api-doc/ui/(.*)
+        String id = m.group(1);
+
+        log.info("OpenAPI with id {} requested",id);
+
+        OpenAPIRecord record = apis.get(id);
+        if (record == null) {
+            return returnNoFound(exc,id);
+        }
+
+        exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(id, record.api)).build());
+
         return RETURN;
     }
 
@@ -205,10 +224,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return apiOverviewHtmlTemplate.make(tempCtx).toString();
     }
 
-    private String renderSwaggerUITemplate(String id) {
+    private String renderSwaggerUITemplate(String id, OpenAPI api) {
         Map<String, Object> tempCtx = new HashMap<>();
         tempCtx.put("openApiUrl", PATH + "/" + id);
-        tempCtx.put("openApiTitle", apis.get(id).api.getInfo().getTitle());
+        tempCtx.put("openApiTitle", api.getInfo().getTitle());
         return swaggerUiHtmlTemplate.make(tempCtx).toString();
     }
 
@@ -232,7 +251,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         } else if (isOpenAPI3(node)) {
             return node.get("openapi").asText();
         }
-        log.info("Unknown OpenAPI version ignoring {}",node);
+        log.info("Unknown OpenAPI version ignoring {}", node);
         return "?";
     }
 

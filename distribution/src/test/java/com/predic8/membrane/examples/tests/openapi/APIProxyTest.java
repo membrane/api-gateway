@@ -26,7 +26,7 @@ import static com.predic8.membrane.test.AssertUtils.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
 
-public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase {
+public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase  {
 
     final String[] ACCEPT_HTML_HEADER = {"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"};
 
@@ -49,7 +49,7 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase {
                     "ui_link" : "/api-doc/ui/fruitshop-v1-0"
                   }
                 }
-                """, andAssert,true);
+                """, andAssert, true);
     }
 
     @Test
@@ -72,19 +72,18 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Test
     void postLikeSwaggerUI() {
-
         // @formatter:off
         given()
-                .contentType(JSON)
-                .body("""
-                {
-                     "name": "Figs",
-                     "price": 2.7
-                }
+            .contentType(JSON)
+            .body("""
+                    {
+                         "name": "Figs",
+                         "price": 2.7
+                    }
                 """)
         .when()
-                .post(LOCALHOST_2000 + "/shop/products/")
-        .then().assertThat()
+            .post(LOCALHOST_2000 + "/shop/products/")
+        .then()
                 .statusCode(201)
                 .body("name", Matchers.equalTo("Figs"))
                 .body("price", Matchers.equalTo(2.7F));
@@ -101,28 +100,27 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase {
                      "name": "Figs",
                      "price": -2.7
                 }
-                """)
+            """)
         .when()
             .post(LOCALHOST_2000 + "/shop/products/");
-
-        res.then().assertThat()
-            .statusCode(400);
         // @formatter:on
 
+        res.then().assertThat().statusCode(400);
+
         JSONAssert.assertEquals("""
-                {
-                  "method" : "POST",
-                  "uriTemplate" : "/products/",
-                  "path" : "/shop/products/",
-                  "validationErrors" : {
-                    "REQUEST/BODY#/price" : [ {
-                      "message" : "-2.7 is smaller than the minimum of 0",
-                      "complexType" : "Product",
-                      "schemaType" : "number"
-                    } ]
-                  }
-                }
-                """
-            , res.getBody().asString(),true);
+                        {
+                          "method" : "POST",
+                          "uriTemplate" : "/products/",
+                          "path" : "/shop/products/",
+                          "validationErrors" : {
+                            "REQUEST/BODY#/price" : [ {
+                              "message" : "-2.7 is smaller than the minimum of 0",
+                              "complexType" : "Product",
+                              "schemaType" : "number"
+                            } ]
+                          }
+                        }
+                        """
+                , res.body().asString(), true);
     }
 }
