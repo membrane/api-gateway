@@ -30,13 +30,38 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 
 # Getting Started
 
-1. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it
+## Java
+
+1. Make sure Java 17 or newer is installed.
+
+2. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it.
 
 3. Run `service-proxy.sh` or `service-proxy.bat` in a terminal
+4. Open http://localhost:2000 to access https://api.predic8.de over the gateway.
 
-4. Change the configuration `conf/proxies.xml`
+5. Change the configuration in `conf/proxies.xml`
 
-Run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/) or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial, see the [documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
+
+## Docker
+
+```
+$ docker run -p 2000:2000 predic8/membrane
+```
+
+Browse to http://localhost:2000 or use curl:
+
+```
+curl http://localhost:2000
+```
+
+This should yield the same response as calling https://api.predic8.de does.
+
+More about setting up [Membrane for Docker](https://membrane-api.io/deployment/#docker).
+
+## Next Steps
+ 
+See the snippets below, run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/) or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial or have a look at the [documentation](https://www.membrane-soa.org/service-proxy-doc/).
+
 
 # Configuration
 
