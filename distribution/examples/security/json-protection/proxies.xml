@@ -7,8 +7,13 @@
 	<router>
 
 		<api port="2000">
-			<jsonProtection maxTokens="15" maxSize="110" maxDepth="3" maxStringLength="5" maxKeyLength="1" maxObjectSize="3" maxArraySize="3" />
-			<beautifier />
+			<jsonProtection maxTokens="15" 
+			                maxSize="110" 
+							maxDepth="3"
+							maxStringLength="5"
+							maxKeyLength="1"
+							maxObjectSize="3"
+							maxArraySize="3" />
 
 			<return statusCode="200" />
 		</api>
@@ -16,4 +21,3 @@
 	</router>
 	
 </spring:beans>
-
