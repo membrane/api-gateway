@@ -11,20 +11,16 @@
 
 
 ### Valid request, should work => 200 Ok
-GET /demo-api/v2/persons?limit=10
-Host: localhost:2000
+GET http://localhost:2000/demo-api/v2/persons?limit=10
 
 ### Wrong path => 404 Not Found
-GET /demo-api/v2/wrong
-Host: localhost:2000
+GET http://localhost:2000/demo-api/v2/wrong
 
 ### Limit greater than 100 => 400 Bad Request
-GET /demo-api/v2/persons?limit=200
-Host: localhost:2000
+GET http://localhost:2000/demo-api/v2/persons?limit=200
 
 ### Valid => 201 Ok
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/json
 
 {
@@ -32,8 +28,7 @@ Content-Type: application/json
 }
 
 ### Invalid UUID, email and enum => 400 Bad Request
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2+DDFC3112CE89D1
 Content-Type: application/json
 
 {
@@ -43,15 +38,13 @@ Content-Type: application/json
 }
 
 ### Wrong Content-Type => 415 Unsupported Mediatype
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/xml
 
 <name>Jan</name>
 
 ### Required property is missing => 400 Bad Request
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/json
 
 {
@@ -59,8 +52,7 @@ Content-Type: application/json
 }
 
 ### Additional property role => 400 Bad Request
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/json
 
 {
@@ -69,8 +61,7 @@ Content-Type: application/json
 }
 
 ### Wrong regex pattern => 400 Bad Request
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/json
 
 {
@@ -79,8 +70,7 @@ Content-Type: application/json
 }
 
 ### Nested Object => 201 Created
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/json
 
 {
@@ -94,8 +84,7 @@ Content-Type: application/json
 }
 
 ### OneOf with wrong string pattern => 400 Bad Request
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/json
 
 {
@@ -109,8 +98,7 @@ Content-Type: application/json
 }
 
 ### OneOf with right integer => 201 Created
-PUT /demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
-Host: localhost:2000
+PUT http://localhost:2000/demo-api/v2/persons/4077C19D-2C1D-427B-B2DD-FC3112CE89D1
 Content-Type: application/json
 
 {

@@ -17,7 +17,7 @@ Content-Type: application/json
 
 ###
 
-GET localhost:2000/search?limit=10&page=2
+GET http://localhost:2000/search?limit=10&page=2
 
 ###
 
