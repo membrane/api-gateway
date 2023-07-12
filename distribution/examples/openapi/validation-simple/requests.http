@@ -11,8 +11,7 @@
 
 ### Valid request, should work
 
-POST /persons
-Host: localhost:2000
+POST http://localhost:2000/persons
 Content-Type: application/json
 
 {
@@ -22,8 +21,7 @@ Content-Type: application/json
 
 ### Invalid request, should fail
 
-POST /persons
-Host: localhost:2000
+POST http://localhost:2000/persons
 Content-Type: application/json
 
 {
