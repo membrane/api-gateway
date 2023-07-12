@@ -1,5 +1,5 @@
-### Post valid JSON
-POST localhost:2000
+### Valid JSON - Should go through
+POST http://localhost:2000
 Content-Type: application/json
 
 {
@@ -18,8 +18,8 @@ Content-Type: application/json
   }
 }
 
-### Post document exceeding maxTokens
-POST localhost:2000
+### Exceeding maxTokens of 15
+POST http://localhost:2000
 Content-Type: application/json
 
 {
@@ -38,8 +38,8 @@ Content-Type: application/json
   }
 }
 
-### Post document exceeding maxSize
-POST localhost:2000
+### Document exceeding maxSize of 110
+POST http://localhost:2000
 Content-Type: application/json
 
 {
@@ -57,8 +57,8 @@ Content-Type: application/json
   }
 }
 
-### Post document with nesting exceeding maxDepth
-POST localhost:2000
+### Document with nesting exceeding maxDepth of 3
+POST http://localhost:2000
 Content-Type: application/json
 
 {
@@ -71,24 +71,24 @@ Content-Type: application/json
   }
 }
 
-### Post document with string exceeding maxStringLength
-POST localhost:2000
+### Document with string exceeding maxStringLength of 5
+POST http://localhost:2000
 Content-Type: application/json
 
 {
   "a": "Exceeds max string length"
 }
 
-### Post document with key exceeding maxKeyLength
-POST localhost:2000
+### Document with key exceeding maxKeyLength 1
+POST http://localhost:2000
 Content-Type: application/json
 
 {
   "Key too long": "av"
 }
 
-### Post document with object exceeding maxObjectSize
-POST localhost:2000
+### Document with object exceeding maxObjectSize of 3
+POST http://localhost:2000
 Content-Type: application/json
 
 {
@@ -98,8 +98,8 @@ Content-Type: application/json
   "d": "dv"
 }
 
-### Post document with array exceeding maxArraySize
-POST localhost:2000
+### Document with array exceeding maxArraySize of 3
+POST http://localhost:2000
 Content-Type: application/json
 
 {
