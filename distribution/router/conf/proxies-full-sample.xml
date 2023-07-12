@@ -188,7 +188,12 @@
 		</soapProxy>
 
 		<!--
-			Acts as a webserver. 
+			Serves static files like a webserver.
+
+			Try: curl localhost:2001/static/proxies.xml
+
+			Attention: Do not provide access to the conf folder in production!
+
 		 -->
 		<api port="2001">
 			<!-- Answers all requests incoming on port 2001 starting with "/static/". -->
