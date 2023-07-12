@@ -28,7 +28,7 @@ Membrane can identify misuse in JSON documents such as duplicate fields, unusual
 
     The API Gateway should answer with a `400 Bad Request`.
 
-4. Have a look at the configuration in the `proxies.xml` file.
+3. Have a look at the configuration in the `proxies.xml` file.
 
     ```xml
     <jsonProtection maxTokens="15" 
