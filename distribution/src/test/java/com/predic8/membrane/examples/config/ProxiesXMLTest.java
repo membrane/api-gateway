@@ -120,4 +120,16 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                .contentType(APPLICATION_JSON)
                .body("apis[0]['name']",equalTo("Shop API Showcase"));
     }
+
+    @Test
+    void adminConsole() {
+        // @formatter:off
+        given().
+        when().
+                get("http://localhost:9000/admin").
+        then().assertThat()
+                .statusCode(200)
+                .contentType(TEXT_HTML);
+        // @formatter:on
+    }
 }

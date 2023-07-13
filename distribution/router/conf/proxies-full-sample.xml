@@ -30,16 +30,6 @@
 		maxDays="30" />
 
 	<router hotDeploy="true" retryInitInterval="30000" exchangeStore="myFileExchangeStore" >
-	      	 
-	    <!-- Configure all outbound HTTP connections for this router. -->
-	    <httpClientConfig>
-	    	<!-- configure timeouts -->
-	    	<connection timeout="10000" keepAliveTimeout="4000" />
-	    	<!-- use a HTTP proxy -->
-	    	<!-- <proxy host="proxy.predic8.de" port="3128" /> -->
-	    	<!-- use Basic Authentication -->
-	    	<authentication username="john" password="secret" />
-	    </httpClientConfig>
 	    
 	    <!--
 	    	Configure the global interceptor chain used to handle all incoming HTTP requests.
@@ -142,7 +132,18 @@
 				executed so far will get the chance to alter the response.
 				The unwinding takes place in the reverse order.
 			-->
-			<httpClient />
+			<httpClient>
+				<!-- Configure all outbound HTTP connections for this router. -->
+				<httpClientConfig>
+					<!-- configure timeouts -->
+					<connection timeout="10000" keepAliveTimeout="4000" />
+					<!-- use a HTTP proxy -->
+					<!-- <proxy host="proxy.predic8.de" port="3128" /> -->
+					<!-- use Basic Authentication -->
+					<authentication username="john" password="secret" />
+				</httpClientConfig>
+			</httpClient>
+
 	    </transport>
 	      	 
 		<!--
