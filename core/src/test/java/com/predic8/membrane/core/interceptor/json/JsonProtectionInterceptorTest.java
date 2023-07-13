@@ -14,9 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
+
+import java.util.Arrays;
 
 import static com.google.common.base.Strings.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -24,11 +31,14 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonProtectionInterceptorTest {
-    static JsonProtectionInterceptor jpi;
+    static JsonProtectionInterceptor jpiProd;
+    static JsonProtectionInterceptor jpiDev;
 
-    @BeforeAll
-    public static void init() {
-        jpi = new JsonProtectionInterceptor();
+    private static JsonProtectionInterceptor buildJPI(boolean prod) throws Exception {
+        Router router = new Router();
+        router.setProduction(prod);
+        JsonProtectionInterceptor jpi = new JsonProtectionInterceptor();
+
         jpi.setMaxTokens(4096);
         jpi.setMaxSize(10240);
         jpi.setMaxDepth(10);
@@ -36,6 +46,15 @@ public class JsonProtectionInterceptorTest {
         jpi.setMaxKeyLength(10);
         jpi.setMaxObjectSize(10);
         jpi.setMaxArraySize(2048);
+
+        jpi.init(router);
+        return jpi;
+    }
+
+    @BeforeAll
+    public static void init() throws Exception {
+        jpiProd = buildJPI(true);
+        jpiDev = buildJPI(false);
     }
 
     @Test
@@ -53,17 +72,22 @@ public class JsonProtectionInterceptorTest {
     }
 
     @Test
-    public void duplicateKey() throws Exception {
+    void duplicateKey() throws Exception {
         send("""
                 {"a":1,"a":2}""",
-                RETURN);
+                RETURN,
+                "Duplicate field 'a'\n"
+                        + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 11]");
     }
 
     @Test
     public void malformed() throws Exception {
         send("""
                 {""",
-                RETURN);
+                RETURN,
+                "Unexpected end-of-input: expected close marker for Object"
+                        + " (start marker at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 1])\n"
+                        + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 2]");
     }
 
     @Test
@@ -74,7 +98,8 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void tooLong() throws Exception {
         send("[" + repeat("\"0123456\",", 1024) + "\"x\"]",
-                RETURN);
+                RETURN,
+                "Exceeded maxSize.");
     }
 
     @Test
@@ -86,7 +111,8 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void tooDeep() throws Exception {
         send(repeat("{\"a\":", 11) + "1" + repeat("}", 11),
-                RETURN);
+                RETURN,
+                "Exceeded maxDepth.");
     }
 
     @Test
@@ -98,7 +124,8 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void stringTooLong() throws Exception {
         send("[\"" + repeat("1", 21) + "\"]",
-                RETURN);
+                RETURN,
+                "Exceeded maxStringLength.");
     }
 
     @Test
@@ -110,19 +137,22 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void keyTooLong() throws Exception {
         send("{\"01234567890\": \"" + repeat("1", 20) + "\"}",
-                RETURN);
+                RETURN,
+                "Exceeded maxKeyLength.");
     }
 
     @Test
     public void keyTooLong2() throws Exception {
         send("{\"0123456789\": { \"01234567890\": \"" + repeat("1", 20) + "\"} }",
-                RETURN);
+                RETURN,
+                "Exceeded maxKeyLength.");
     }
 
     @Test
     public void keyTooLong3() throws Exception {
         send("{\"0123456789\": [ { \"01234567890\": \"" + repeat("1", 20) + "\"} ] }",
-                RETURN);
+                RETURN,
+                "Exceeded maxKeyLength.");
     }
 
     @Test
@@ -141,7 +171,8 @@ public class JsonProtectionInterceptorTest {
         }
         sb.append("}");
         send(sb.toString(),
-                RETURN);
+                RETURN,
+                "Exceeded maxObjectSize.");
     }
 
     @Test
@@ -160,7 +191,8 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void arrayTooLarge() throws Exception {
         send("[" + repeat("1,", 2048) + "1]",
-                RETURN);
+                RETURN,
+                "Exceeded maxArraySize.");
     }
 
     @Test
@@ -172,7 +204,8 @@ public class JsonProtectionInterceptorTest {
     @Test
     public void tooManyTokens() throws Exception {
         send("[" + repeat("1,", 2047) + "[" + repeat("1,", 2047) + "1]" + "]",
-                RETURN);
+                RETURN,
+                "Exceeded maxTokens.");
     }
 
     @Test
@@ -181,9 +214,27 @@ public class JsonProtectionInterceptorTest {
                 CONTINUE);
     }
 
+    private void send(String body, Outcome expectOut, Object ...parameters) throws Exception {
+        ObjectMapper om = new ObjectMapper();
+        Exchange e = new Request.Builder()
+                .post("/")
+                .contentType(APPLICATION_JSON)
+                .body(body)
+                .buildExchange();
 
-    private void send(String body, Outcome expectedOutcome) throws Exception {
-        var e = new Request.Builder().post("/").contentType(APPLICATION_JSON).body(body).buildExchange();
-        assertEquals(expectedOutcome, jpi.handleRequest(e));
+        if (expectOut == CONTINUE) {
+            assertEquals(expectOut, jpiProd.handleRequest(e));
+            assertNull(e.getResponse());
+
+            assertEquals(expectOut, jpiDev.handleRequest(e));
+            assertNull(e.getResponse());
+        } else {
+            assertEquals(expectOut, jpiProd.handleRequest(e));
+            assertEquals("", e.getResponse().getBodyAsStringDecoded());
+
+            assertEquals(expectOut, jpiDev.handleRequest(e));
+            JsonNode jn = om.readTree(e.getResponse().getBodyAsStringDecoded());
+            assertEquals(parameters[0], jn.get("details").get("message").asText());
+        }
     }
 }
