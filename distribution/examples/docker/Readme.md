@@ -30,7 +30,7 @@ Take a look at the `proxies.xml` file.
              validateRequests="yes"
              validateResponses="yes"
              validationDetails="yes"/>
-    <target url="api.predic8.de" />
+    <target url="https://api.predic8.de" />
   </api>
 </router>
 ```
