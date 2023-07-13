@@ -1,30 +1,53 @@
-# Membrane Dockerfile
+# Membrane Deployment with Docker
 
-Creates an image with Membrane and copies over the proxies.xml configuration file from this folder.
+This example illustrates how to deploy Membrane as a Docker container whilst making use of a custom `proxies.xml` file.
 
-## Create image
-	docker build -t predic8/membrane:latestRelease .
+## Running the Example
 
-## Run container
-	docker run -d -p 8000-9000:8000-9000 --name membrane predic8/membrane:latestRelease
+1. **Build the Docker image:**  
+	`docker build -t predic8/membrane:latestRelease .`
 
-## Open Example Proxies
 
-###   REST Names
-	http://<<docker-machine>>:8080/restnames/name.groovy?name=Franz
+2. **Generate a Docker container from the built image and expose the API port:**  
+    `docker run -d -p 2000:2000 --name membrane predic8/membrane:latestRelease`
 
-###   Membrane Web Console
-	http://<<docker-machine>>:9000/
 
-###   Whole Web Site
-	http://<<docker-machine>>:9000/
+3. **Send a simple get request to Membrane:**  
+    `curl localhost:2000/shop/products/`  
+   The request gets relayed to api.predic8.de.
 
-## Troubleshooting
 
-###   Display Logs
-	docker logs membrane
+4. **Access the OpenAPI UI by visiting `localhost:2000/shop/docs` in your browser.**
 
-###   Open shell in container and take a look at the Membrane log
-	docker exec -it membrane /bin/bash
-	less /opt/membrane/memrouter.log
+## How it is done
 
+Take a look at the `proxies.xml` file.
+
+```xml
+<router>
+  <api port="2000">
+    <openapi location="fruitshop-api.yml"
+             validateRequests="yes"
+             validateResponses="yes"
+             validationDetails="yes"/>
+    <target url="api.predic8.de" />
+  </api>
+</router>
+```
+This file defines a simple API proxy with an OpenAPI validation plugin. All requests that the Docker container receives at port 2000 will be validated against the provided OpenAPI manifest.  
+In this instance, we use the manifest YAML that is provided with Membrane and target its corresponding server.
+
+For deploying Membrane with our custom proxies.xml file and OpenAPI manifest, we utilize a straightforward Dockerfile as follows:
+
+```Dockerfile
+FROM predic8/membrane
+
+COPY proxies.xml /opt/membrane/conf/
+COPY ./../../conf/fruitshop-api.yml /opt/membrane/conf
+
+EXPOSE 2000
+
+ENTRYPOINT ["/opt/membrane/service-proxy.sh"]
+```
+
+In this Dockerfile, we pull the Membrane base image from Docker Hub, then copy both proxies.xml and the OpenAPI manifest into the Membrane configuration directory. We declare that port 2000 should be exposed, and set the entrypoint to the Membrane startup script.
