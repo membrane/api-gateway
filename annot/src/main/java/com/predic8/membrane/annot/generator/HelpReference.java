@@ -15,6 +15,7 @@ package com.predic8.membrane.annot.generator;
 
 import com.predic8.membrane.annot.model.*;
 import com.predic8.membrane.annot.model.doc.*;
+import org.slf4j.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
@@ -22,11 +23,14 @@ import javax.xml.stream.*;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 
 import static java.util.Comparator.*;
 
 public class HelpReference {
+
+	private static final Logger log = LoggerFactory.getLogger(HelpReference.class.getName());
 
 	private final ProcessingEnvironment processingEnv;
 
@@ -64,13 +68,30 @@ public class HelpReference {
 
 	}
 
-	private void writeFiles(Model m, String path) throws TransformerException {
+	private void writeFiles(Model m, String path) throws TransformerException, IOException {
 		// indent
 		TransformerFactory factory = TransformerFactory.newInstance();
 		Transformer transformer = factory.newTransformer();
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-		transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
+
+		String xml = sw.toString();
+		try {
+			transformer.transform(new StreamSource(new StringReader(xml)), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
+		} catch (Exception e) {
+			log.error("**************************************************************************");
+			log.error("Error Parsing generated XML. " + e);
+
+			Path docPath =  Paths.get(System.getProperty("user.dir") + "/annot/target/error-doc.xml");
+
+			log.error("See {}", docPath);
+
+			System.err.println("See XML in: " + docPath);
+			
+			Files.writeString(docPath, xml);
+			System.exit(1);
+		}
+
 	}
 
 	private String getFileName(Model m) {

@@ -34,10 +34,13 @@ import static java.lang.String.*;
  * <p>
  * 1. If there is already a response in the exchange, that response is returned
  * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
+ * </p>
  * <p>
  * The options statusCode and contentType will overwrite the values from the messages.
+ * </p>
  * <p>
  * This plugin is useful together with the template plugin. See examples/template.
+ * </p>
  * @topic 4. Interceptors/Features
  */
 @MCElement(name = "return")
