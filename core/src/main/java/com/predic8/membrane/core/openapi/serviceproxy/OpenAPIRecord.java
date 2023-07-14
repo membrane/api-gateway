@@ -17,7 +17,13 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
+import org.slf4j.*;
+
+import java.io.*;
+import java.net.*;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 
@@ -33,15 +39,23 @@ public class OpenAPIRecord {
      */
     JsonNode node;
 
+    OpenAPISpec spec;
+
     /**
      * Version of the OpenAPI standard e.g. 2.0, 3.0.1
      */
     String version;
 
-    public OpenAPIRecord(OpenAPI api, JsonNode node) {
+    /**
+     * Used for tests
+     */
+    public OpenAPIRecord() {}
+
+    public OpenAPIRecord(OpenAPI api, JsonNode node, OpenAPISpec spec) {
         this.api = api;
         this.node = node;
         this.version = getOpenAPIVersion(node);
+        this.spec = spec;
     }
 
     public boolean isVersion2() {
@@ -51,4 +65,9 @@ public class OpenAPIRecord {
     public boolean isVersion3() {
         return version.startsWith("3");
     }
+
+    public JsonNode rewriteOpenAPI(Exchange exc, URIFactory uriFactory) throws URISyntaxException, IOException {
+        return spec.rewrite.rewrite(this,exc,uriFactory);
+    }
+
 }

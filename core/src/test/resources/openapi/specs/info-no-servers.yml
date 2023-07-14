@@ -1,0 +1,11 @@
+openapi: '3.0.2'
+info:
+  title: No Servers
+  version: '1.0'
+servers: []
+paths:
+  /foo:
+    get:
+      responses:
+        '200':
+          description: OK

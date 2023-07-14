@@ -22,8 +22,9 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,7 +40,7 @@ public class APIProxyTest {
     @Test
     public void noOptionsNoExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
 
         APIProxy proxy = createProxy(router,spec);
@@ -61,7 +62,7 @@ public class APIProxyTest {
     @Test
     public void validationRequestNoExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateRequests = YES;
 
@@ -83,7 +84,7 @@ public class APIProxyTest {
     @Test
     public void validationResponsesNoExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateResponses = YES;
 
@@ -106,7 +107,7 @@ public class APIProxyTest {
     @Test
     public void validationAllNoExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateRequests = YES;
         spec.validateResponses = YES;
@@ -129,7 +130,7 @@ public class APIProxyTest {
     @Test
     public void requestsExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/validate-requests-extensions.yml";
 
         APIProxy proxy = createProxy(router,spec);
@@ -150,7 +151,7 @@ public class APIProxyTest {
     @Test
     public void responsesExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/validate-responses-extensions.yml";
 
         APIProxy proxy = createProxy(router,spec);
@@ -172,7 +173,7 @@ public class APIProxyTest {
     @Test
     public void validationRequestNoDetailsNoExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
         spec.validateRequests = YES;
         spec.validationDetails = NO;
@@ -196,7 +197,7 @@ public class APIProxyTest {
     @Test
     public void validationDetailsFalseExtensions() throws Exception {
 
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/openapi-proxy/validation-details-false-extensions.yml";
         spec.validateRequests = YES;
 
@@ -238,8 +239,8 @@ public class APIProxyTest {
         api.setSpecs(List.of(extracted("api-c-multiple-server-urls.yml")));
     }
 
-    private APIProxy.Spec extracted(String location) {
-        APIProxy.Spec spec = new APIProxy.Spec();
+    private OpenAPISpec extracted(String location) {
+        OpenAPISpec spec = new OpenAPISpec();
         spec.location = location;
         return spec;
     }
