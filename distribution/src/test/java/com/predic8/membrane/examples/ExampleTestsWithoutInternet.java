@@ -15,9 +15,7 @@
 package com.predic8.membrane.examples;
 
 import com.predic8.membrane.errorhandling.OpenAPIConfigErrorTest;
-import com.predic8.membrane.examples.config.DefaultConfigAdminConsoleTest;
-import com.predic8.membrane.examples.config.ProxiesXMLOfflineTest;
-import com.predic8.membrane.examples.config.ProxiesXMLSecurityTest;
+import com.predic8.membrane.examples.config.*;
 import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
 import com.predic8.membrane.examples.tests.*;
@@ -69,6 +67,7 @@ import org.junit.platform.suite.api.Suite;
 
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,
+        ProxiesXMLFullSampleTest.class,
 
         // Not an example test. Maybe we can find a better location?
         OpenAPIConfigErrorTest.class,
