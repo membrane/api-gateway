@@ -76,6 +76,8 @@ public class JsonProtectionInterceptorTest {
         send("""
                 {"a":1,"a":2}""",
                 RETURN,
+                1,
+                11,
                 "Duplicate field 'a'\n"
                         + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 11]");
     }
@@ -85,6 +87,8 @@ public class JsonProtectionInterceptorTest {
         send("""
                 {""",
                 RETURN,
+                1,
+                2,
                 "Unexpected end-of-input: expected close marker for Object"
                         + " (start marker at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 1])\n"
                         + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 2]");
@@ -99,6 +103,8 @@ public class JsonProtectionInterceptorTest {
     public void tooLong() throws Exception {
         send("[" + repeat("\"0123456\",", 1024) + "\"x\"]",
                 RETURN,
+                1,
+                8003,
                 "Exceeded maxSize.");
     }
 
@@ -112,6 +118,8 @@ public class JsonProtectionInterceptorTest {
     public void tooDeep() throws Exception {
         send(repeat("{\"a\":", 11) + "1" + repeat("}", 11),
                 RETURN,
+                1,
+                52,
                 "Exceeded maxDepth.");
     }
 
@@ -125,6 +133,8 @@ public class JsonProtectionInterceptorTest {
     public void stringTooLong() throws Exception {
         send("[\"" + repeat("1", 21) + "\"]",
                 RETURN,
+                1,
+                25,
                 "Exceeded maxStringLength.");
     }
 
@@ -138,6 +148,8 @@ public class JsonProtectionInterceptorTest {
     public void keyTooLong() throws Exception {
         send("{\"01234567890\": \"" + repeat("1", 20) + "\"}",
                 RETURN,
+                1,
+                18,
                 "Exceeded maxKeyLength.");
     }
 
@@ -145,6 +157,8 @@ public class JsonProtectionInterceptorTest {
     public void keyTooLong2() throws Exception {
         send("{\"0123456789\": { \"01234567890\": \"" + repeat("1", 20) + "\"} }",
                 RETURN,
+                1,
+                34,
                 "Exceeded maxKeyLength.");
     }
 
@@ -152,6 +166,8 @@ public class JsonProtectionInterceptorTest {
     public void keyTooLong3() throws Exception {
         send("{\"0123456789\": [ { \"01234567890\": \"" + repeat("1", 20) + "\"} ] }",
                 RETURN,
+                1,
+                36,
                 "Exceeded maxKeyLength.");
     }
 
@@ -172,6 +188,8 @@ public class JsonProtectionInterceptorTest {
         sb.append("}");
         send(sb.toString(),
                 RETURN,
+                1,
+                79,
                 "Exceeded maxObjectSize.");
     }
 
@@ -192,6 +210,8 @@ public class JsonProtectionInterceptorTest {
     public void arrayTooLarge() throws Exception {
         send("[" + repeat("1,", 2048) + "1]",
                 RETURN,
+                1,
+                4099,
                 "Exceeded maxArraySize.");
     }
 
@@ -205,6 +225,8 @@ public class JsonProtectionInterceptorTest {
     public void tooManyTokens() throws Exception {
         send("[" + repeat("1,", 2047) + "[" + repeat("1,", 2047) + "1]" + "]",
                 RETURN,
+                1,
+                8192,
                 "Exceeded maxTokens.");
     }
 
@@ -234,7 +256,10 @@ public class JsonProtectionInterceptorTest {
 
             assertEquals(expectOut, jpiDev.handleRequest(e));
             JsonNode jn = om.readTree(e.getResponse().getBodyAsStringDecoded());
-            assertEquals(parameters[0], jn.get("details").get("message").asText());
+            assertEquals(parameters[2], jn.get("details").get("message").asText());
+            assertEquals("JSON Protection Violation", jn.get("title").asText());
+            assertEquals(parameters[0],jn.get("details").get("line").asInt());
+            assertEquals(parameters[1], jn.get("details").get("column").asInt());
         }
     }
 }
