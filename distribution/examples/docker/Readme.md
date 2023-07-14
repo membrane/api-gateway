@@ -4,20 +4,24 @@ This example illustrates how to deploy Membrane as a Docker container whilst mak
 
 ## Running the Example
 
-1. **Build the Docker image:**  
+1. **Copy OpenAPI manifest:**  
+    Copy the file `fruitshop-api.yml` from `<membrane-root>/distribution/conf/` to this directory.
+
+
+2. **Build the Docker image:**  
 	`docker build -t predic8/membrane:latestRelease .`
 
 
-2. **Generate a Docker container from the built image and expose the API port:**  
+3. **Generate a Docker container from the built image and expose the API port:**  
     `docker run -d -p 2000:2000 --name membrane predic8/membrane:latestRelease`
 
 
-3. **Send a simple get request to Membrane:**  
+4. **Send a simple get request to Membrane:**  
     `curl localhost:2000/shop/products/`  
    The request gets relayed to api.predic8.de.
 
 
-4. **Access the OpenAPI UI by visiting `localhost:2000/shop/docs` in your browser.**
+5. **Access the OpenAPI UI by visiting `localhost:2000/shop/docs` in your browser.**
 
 ## How it is done
 
