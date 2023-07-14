@@ -8,10 +8,10 @@
 	<router>
 
 		<api port="2000">
-			<openapi location="fruitshop-api.yml"
-					 validateRequests="yes"
-					 validateResponses="yes"
-					 validationDetails="yes"/>
+			<openapi location="https://api.predic8.de/shop/v2/api-docs" />
+		</api>
+
+		<api port="2000">
 			<target url="https://api.predic8.de" />
 		</api>
 
