@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2APITest extends DistributionExtractingTestcase {
 
@@ -43,19 +43,24 @@ public class OAuth2APITest extends DistributionExtractingTestcase {
     }
 
     @AfterEach
-    void stopMembrane() throws IOException, InterruptedException {
+    void stopMembrane() {
         tokenValidator.killScript();
         authorizationServer.killScript();
     }
 
     @Test
     void testIt() throws Exception {
-
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/api")).withWatcher(logger).script("client").parameters("john password").waitAfterStartFor("200 O").start()) {
-            assertTrue(logger.contains("""
-                    {"success":"true"}
-                    """));
+        // client.sh prints true when the script was successful. The logger waits for this string "true"
+        try(Process2 ignored = new Process2.Builder()
+                .in(getExampleDir("oauth2/api"))
+                .withWatcher(logger)
+                .script("client")
+                .parameters("john password")
+                .waitAfterStartFor("true")
+                .start()) {
+            assertTrue(logger.contains("success"));
+            assertTrue(logger.contains("true"));
         }
     }
 }

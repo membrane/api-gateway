@@ -31,7 +31,7 @@ import java.util.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
 
 /**
- * @description The APIProxy extends the serviceProxy with API related functions like OpenAPI support.
+ * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support.
  *
  * @topic 2. Proxies
  */

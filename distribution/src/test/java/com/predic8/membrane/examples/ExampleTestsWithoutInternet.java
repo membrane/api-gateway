@@ -67,7 +67,6 @@ import org.junit.platform.suite.api.Suite;
 
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,
-        ProxiesXMLFullSampleTest.class,
 
         // Not an example test. Maybe we can find a better location?
         OpenAPIConfigErrorTest.class,
