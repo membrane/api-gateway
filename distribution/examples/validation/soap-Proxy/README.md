@@ -1,24 +1,11 @@
-### SOAP Message Validation
+# Validation - SOAP
 
-To run this example execute the following steps
+This sample explains how to set up and use the `validator` plugin within a `soapProxy` component.
 
-#### PREREQUISITES:
 
-- Install Curl from http://curl.haxx.se/download.html , if you have not done so already. Let us assume it is in your PATH.
+## Running the Example
 
-As the URL of a WSDL is specified in proxies.xml, the Service Proxy retrieves all corresponding schemas and tries to validate the message body using them.
-
-As a SOAP-Proxy is a specialized version of `the ServiceProxy`, a SOAP-Proxy has a certain advantage if it is used for a SOAP Service. A SOAP-Proxy needs the WSDL's URL just once. Adding a Validator then needs less code, as you can see in the example below:
-
-```
-<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-  <validator />
-</soapProxy>
-```
-
-Execute the following steps:
-
-1. Go to `examples/validation/soap-Proxy`
+1. Go to `<membrane-root>/examples/validation/soap-Proxy`
 
 2. Start `service-proxy.bat` or `service-proxy.sh`
 
