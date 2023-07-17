@@ -9,18 +9,18 @@ Execute the following steps:
 
 1. Set sample directory (`<membrane-root>/examples/throttle/`) as working directory.
 
-2. Execute `service-proxy.sh` or the windows `.bat` equivalent.
+2. Execute the `service-proxy.sh` script or its Windows batch file equivalent.
 
-3. Execute `timing.sh` or the windows `.bat` equivalent.
+3. Run the `timing.sh` script or its Windows batch file equivalent.
 
-4. Watch curl perform 5 requests each, once without throttling and once with.
+4. Observe as Curl carries out five requests each, initially without any throttling and subsequently with it.
 
-5. Check the recorded times, with throttling enabled every request will take an additional second.
+5. Check the recorded times, with throttling enabled, every request will take an additional second.
 
 
 ## How it is done
 
-Let's check the elements inside the `router` component inside the `proxies.xml` file:
+Let's check the elements inside the `router` component in the `proxies.xml` file:
 
 ```xml
 <api port="2000">
@@ -33,10 +33,10 @@ Let's check the elements inside the `router` component inside the `proxies.xml` 
 </api>
 ```
 
-Notice two `api` components, these proxy requests from localhost port `2000` and `3000` respectively, targeting the predic8 homepage.
-The upper `api` component additionally has the `throttle` plugin configured for a 1 second delay.
+Observe the two api components, which respectively proxy requests from the localhost ports 2000 and 3000 to the predic8 homepage.
+The former api component additionally configures the throttle plugin for a delay of 1 second.
 
-Now looking at what the timing script executes:
+Let's examine the commands executed by the timing script:
 ```sh
 #!/bin/bash
 
@@ -48,7 +48,7 @@ curl -o /dev/null -s -w "Total time: %{time_total}\n" http://localhost:2000
 # ... (x5)
 ```
 
-We simply perform a curl request to the two membrane addresses, each 5 times, but discarding the response body and instead showing the time the response took.
+It simply executes a curl request to the two Membrane addresses, five times each, though discarding the response body and displaying the total response time instead.
 
 ---
 See:
