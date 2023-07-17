@@ -1,6 +1,6 @@
 # Validation - JSON Schema 
 
-This sample explains how to set up and use the `validation` plugin, utilizing JSON schemas for validation.
+This sample explains how to set up and use the `validator` plugin, utilizing JSON schemas for validation.
 
 
 ## Running the Example
