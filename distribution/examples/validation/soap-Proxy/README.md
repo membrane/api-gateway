@@ -20,7 +20,7 @@ This sample explains how to set up and use the `validator` plugin within a `soap
 
 ## How it is done
 
-Let's examine  the `proxies.xml` file.
+Let's examine the `proxies.xml` file.
 
 ```xml
 <router>
