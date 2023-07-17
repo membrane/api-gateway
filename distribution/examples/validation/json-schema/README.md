@@ -1,6 +1,6 @@
 # Validation - JSON Schema 
 
-This sample explains how to set up and use the `validation` plugin within a `soapProxy` component.
+This sample explains how to set up and use the `validation` plugin, utilizing JSON schemas for validation.
 
 
 ## Running the Example
