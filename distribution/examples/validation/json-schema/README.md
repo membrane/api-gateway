@@ -5,7 +5,7 @@ This sample explains how to set up and use the `validator` plugin, utilizing JSO
 
 ## Running the Example
 
-1. Go to the directory `examples/validation/json-schema`.
+1. Go to the directory `<membrane-root>/examples/validation/json-schema`.
 
 2. Start `service-proxy.bat` or `service-proxy.sh`.
 
@@ -14,8 +14,6 @@ This sample explains how to set up and use the `validator` plugin, utilizing JSO
 4. Run `curl -d @good2000.json http://localhost:2000/` on the console. Observe that you get a successful response.
 
 5. Run `curl -d @bad2000.json http://localhost:2000/`. Observe that you get a validation error response.
-
-
 
 Keeping the router running, you can try a more complex schema.
 
