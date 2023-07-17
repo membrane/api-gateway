@@ -1,9 +1,9 @@
-### JSON Schema Validation
+# Validation - JSON Schema 
 
-To run this example you should install Curl from http://curl.haxx.se/download.html , if
-you have not done so already.
+This sample explains how to set up and use the `validation` plugin within a `soapProxy` component.
 
-To run this example execute the following steps:
+
+## Running the Example
 
 1. Go to the directory `examples/validation/json-schema`.
 
@@ -25,14 +25,39 @@ Keeping the router running, you can try a more complex schema.
 
 3. Run `curl -d @bad2001.json http://localhost:2001/`. Observe that you get a validation error response.
 
+## How it is done
 
+Let's examine  the `proxies.xml` file.
 
-Resources:
-  http://tools.ietf.org/html/draft-zyp-json-schema-03
+```xml
+<router>
+  <api port="2000">
+    <request>
+      <validator jsonSchema="schema2000.json" />
+    </request>
+    <target host="localhost" port="2002" />
+  </api>
 
-(The file schema2001.json is loosely based on chapter 3 of
-http://tools.ietf.org/html/draft-zyp-json-schema-03 .)
+  <api port="2001">
+    <request>
+      <validator jsonSchema="schema2001.json" />
+    </request>
+    <target host="localhost" port="2002" />
+  </api>
+
+  <api port="2002">
+    <groovy>
+      Response.ok("&lt;response&gt;good request&lt;/response&gt;").build()
+    </groovy>
+  </api>
+</router>
+```
+
+We define three `<api>` components, running on ports 2000-2002.
+The first two validate all requests using the JSON schema defined in the `<validator />` component's `jsonSchema` attribute.  
+The successfully validated requests then get sent to the third `<api>` component, where we simply return a 200 "Ok" response.
 
 ---
 See: 
+- [JSON Schema](https://json-schema.org/) documentation
 - [validator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/validator.htm) reference
