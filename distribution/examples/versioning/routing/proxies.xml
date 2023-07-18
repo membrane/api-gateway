@@ -6,12 +6,12 @@
 
 	<router>
 
-		<serviceProxy port="2000" name="ContactService">
+		<api port="2000" name="ContactService">
 			<switch>
 				<case xPath="//*[namespace-uri()='http://predic8.com/contactService/v11']" url="http://localhost:8080/ContactService/v11" />
 				<case xPath="//*[namespace-uri()='http://predic8.com/contactService/v20']" url="http://localhost:8080/ContactService/v20"/>
 			</switch>
-		</serviceProxy>
+		</api>
 
 	</router>
 	
