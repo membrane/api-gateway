@@ -25,12 +25,13 @@ This sample demonstrates how to rewrite SOAP message versions using `XSLT`.
     ```sh
     curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:8080/ContactService/v20
     ```
-    You should see a response containing "Cannot find dispatch method".
+    You should see a response containing `Cannot find dispatch method`.
 
-    Lastly try accessing a v1.1 endpoint with a similar command:
+    Lastly try accessing a `v1.1` endpoint with a similar command:
     ```sh
     curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:8080/ContactService/v11
     ```
+   You should see a response containing `<h1>404 Not Found</h1>`, `No context found for request`.
     No endpoint for this version is available.
 
 
