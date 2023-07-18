@@ -18,15 +18,15 @@ This example walks you through configuring versioned endpoints in a SOAP service
 3. Now test if the two endpoints are reachable, in a separate terminal instance run:
     ```sh
     # Should respond with "Hello ... version 1.1"
-    curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:8080/ContactService/v11
+    curl --header "Content-Type: application/soap+xml" -d @request_v11.xml http://localhost:8080/ContactService/v11
     # Should Respond with "Hello ... version 2.0"
-    curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:8080/ContactService/v20
+    curl --header "Content-Type: application/soap+xml" -d @request_v20.xml http://localhost:8080/ContactService/v20
     ```
    
 
 4. If you now send a `1.1` request to a `2.0` endpoint using the command below, you get a response containing "Cannot find dispatch method".
     ```sh
-    curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:8080/ContactService/v20
+    curl --header "Content-Type: application/soap+xml" -d @request_v11.xml http://localhost:8080/ContactService/v20
     ```
    
 
@@ -36,8 +36,8 @@ This example walks you through configuring versioned endpoints in a SOAP service
 7. Return to another terminal, now send two requests to the single Membrane endpoint,  
     once using the `v1.1` namespace URL and another using the `2.0` version:
     ```sh
-    curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:2000/ContactService
-    curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:2000/ContactService
+    curl --header "Content-Type: application/soap+xml" -d @request_v11.xml http://localhost:2000/ContactService
+    curl --header "Content-Type: application/soap+xml" -d @request_v20.xml http://localhost:2000/ContactService
     ```
     Observe that both requests, `1.1` and `2.0`, get a response from their respective service, although the endpoint used is the same.
 

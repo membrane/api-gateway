@@ -18,18 +18,18 @@ This sample demonstrates how to rewrite SOAP message versions using `XSLT`.
 3. Now test if the endpoint is reachable, in a separate terminal instance run:
     ```sh
    # Should Respond with "Hello ... version 2.0"
-    curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:9000/ContactService/v20
+    curl --header "Content-Type: application/soap+xml" -d @request_v20.xml http://localhost:9000/ContactService/v20
     ```
    
     Now run the same command but sending a message using `v1.1` instead of `v2.0`:
     ```sh
-    curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:9000/ContactService/v20
+    curl --header "Content-Type: application/soap+xml" -d @request_v11.xml http://localhost:9000/ContactService/v20
     ```
     You should see a response containing `<h1>404 Not Found</h1>`, `No context found for request`.
 
     Lastly try accessing a v1.1 endpoint with a similar command:
     ```sh
-    curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:9000/ContactService/v11
+    curl --header "Content-Type: application/soap+xml" -d @request_v11.xml http://localhost:9000/ContactService/v11
     ```
     No endpoint for this version is available.
 
@@ -40,8 +40,8 @@ This sample demonstrates how to rewrite SOAP message versions using `XSLT`.
 5. Return to another terminal, send two requests, one for versions `1.1` and `2.0` respectively, 
     to the single Membrane endpoint:
     ```sh
-    curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:2000/ContactService
-    curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:2000/ContactService
+    curl --header "Content-Type: application/soap+xml" -d @request_v11.xml http://localhost:2000/ContactService
+    curl --header "Content-Type: application/soap+xml" -d @request_v20.xml http://localhost:2000/ContactService
     ```
    Observe that both requests, `1.1` and `2.0`, get a valid response from the service, although 
     the first one uses an old request format.
