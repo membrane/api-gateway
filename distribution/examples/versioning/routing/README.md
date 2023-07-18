@@ -32,15 +32,14 @@ This example walks you through configuring versioned endpoints in a SOAP service
 
 6. Start Membrane by running `service-proxy.sh` or the `.bat` equivalent.
 
-7. Return to the terminal, now send two requests to the single Membrane endpoint,  
-    once using the v1.1 namespace URL and another using the 2.0 version:
-    ```
+
+7. Return to another terminal, now send two requests to the single Membrane endpoint,  
+    once using the `v1.1` namespace URL and another using the `2.0` version:
+    ```sh
     curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:2000/ContactService
     curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:2000/ContactService
     ```
     Observe that both requests, `1.1` and `2.0`, get a response from their respective service, although the endpoint used is the same.
-
-
 
 ## How it is done
 
