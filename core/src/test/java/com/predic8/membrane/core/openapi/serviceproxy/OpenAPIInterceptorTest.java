@@ -29,8 +29,6 @@ import java.util.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.NO;
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,9 +37,9 @@ public class OpenAPIInterceptorTest {
 
     Router router;
 
-    APIProxy.Spec specInfoServers;
-    APIProxy.Spec specInfo3Servers;
-    APIProxy.Spec specCustomers;
+    OpenAPISpec specInfoServers;
+    OpenAPISpec specInfo3Servers;
+    OpenAPISpec specCustomers;
 
     Exchange exc = new Exchange(null);
     OpenAPIInterceptor interceptor1Server;
@@ -52,13 +50,13 @@ public class OpenAPIInterceptorTest {
         router = new Router();
         router.setUriFactory(new URIFactory());
 
-        specInfoServers = new APIProxy.Spec();
+        specInfoServers = new OpenAPISpec();
         specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
 
-        specInfo3Servers = new APIProxy.Spec();
+        specInfo3Servers = new OpenAPISpec();
         specInfo3Servers.location = "src/test/resources/openapi/specs/info-3-servers.yml";
 
-        specCustomers = new APIProxy.Spec();
+        specCustomers = new OpenAPISpec();
         specCustomers.location = "src/test/resources/openapi/specs/customers.yml";
 
         exc.setRequest(new Request.Builder().method("GET").build());
@@ -128,7 +126,7 @@ public class OpenAPIInterceptorTest {
     @Test
     public void validateRequest() throws Exception {
 
-        specCustomers.validateRequests = YES;
+        specCustomers.validateRequests = OpenAPISpec.YesNoOpenAPIOption.YES;
 
         Map<String,Object> customer = new HashMap<>();
         customer.put("id","CUST-7");
@@ -151,20 +149,20 @@ public class OpenAPIInterceptorTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void validateResponse() throws Exception {
-        specCustomers.validateResponses = YES;
+        specCustomers.validateResponses = OpenAPISpec.YesNoOpenAPIOption.YES;
         assertEquals("PUT", getMapFromResponse(callPut(specCustomers)).get("method"));
         testValidationResults(getMapFromResponse(callPut(specCustomers)), "RESPONSE");
     }
 
     @Test
     public void validateResponseLessDetails() throws Exception {
-        specCustomers.validateResponses = YES;
-        specCustomers.validationDetails = NO;
+        specCustomers.validateResponses = OpenAPISpec.YesNoOpenAPIOption.YES;
+        specCustomers.validationDetails = OpenAPISpec.YesNoOpenAPIOption.NO;
         assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("error"));
     }
 
     @NotNull
-    private Exchange callPut(APIProxy.Spec spec) throws Exception {
+    private Exchange callPut(OpenAPISpec spec) throws Exception {
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
         exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());

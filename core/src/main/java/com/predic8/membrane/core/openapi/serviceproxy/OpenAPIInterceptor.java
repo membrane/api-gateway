@@ -43,10 +43,10 @@ import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Dire
 
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
-    protected final APIProxy proxy;
+    protected final APIProxy apiProxy;
 
-    public OpenAPIInterceptor(APIProxy proxy) {
-        this.proxy = proxy;
+    public OpenAPIInterceptor(APIProxy apiProxy) {
+        this.apiProxy = apiProxy;
     }
 
     @Override
@@ -61,7 +61,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
-        OpenAPIRecord rec = proxy.getBasePaths().get(basePath);
+        OpenAPIRecord rec = apiProxy.getBasePaths().get(basePath);
 
         // If OpenAPIProxy has a <target> Element use this for routing otherwise
         // take the urls from the info.servers field in the OpenAPI document.
@@ -71,7 +71,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         ValidationErrors errors = validateRequest(rec.api, exc);
 
         if (!errors.isEmpty()) {
-            proxy.statisticCollector.collect(errors);
+            apiProxy.statisticCollector.collect(errors);
             return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
         }
 
@@ -81,7 +81,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private boolean hasProxyATargetElement() {
-        return proxy.getTarget() != null && (proxy.getTarget().getHost() != null || proxy.getTarget().getUrl() != null);
+        return apiProxy.getTarget() != null && (apiProxy.getTarget().getHost() != null || apiProxy.getTarget().getUrl() != null);
     }
 
     @Override
@@ -92,14 +92,14 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
         if (errors != null && errors.hasErrors()) {
             exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
-            proxy.statisticCollector.collect(errors);
+            apiProxy.statisticCollector.collect(errors);
             return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
         }
         return CONTINUE;
     }
 
     protected String getMatchingBasePath(Exchange exc) {
-        for (String basePath : proxy.getBasePaths().keySet()) {
+        for (String basePath : apiProxy.getBasePaths().keySet()) {
             if (exc.getRequest().getUri().startsWith(basePath)) {
                 return basePath;
             }
@@ -196,7 +196,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         sb.append("<table>");
         sb.append("<thead><th>API</th><th>Base Path</th><th>Validation</th></thead>");
 
-        for (Map.Entry<String, OpenAPIRecord> entry : proxy.getBasePaths().entrySet()) {
+        for (Map.Entry<String, OpenAPIRecord> entry : apiProxy.getBasePaths().entrySet()) {
             sb.append("<tr>");
             sb.append("<td>");
             sb.append(entry.getValue().api.getInfo().getTitle());
