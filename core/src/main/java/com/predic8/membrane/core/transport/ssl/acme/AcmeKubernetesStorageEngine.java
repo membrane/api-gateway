@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
+import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;
 import com.predic8.membrane.core.config.security.acme.KubernetesStorage;
 import com.predic8.membrane.core.kubernetes.client.KubernetesApiException;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
@@ -30,7 +31,7 @@ import static com.google.common.collect.ImmutableMap.of;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngine {
+public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngine, DnsProvisionable {
 
     private static final Logger LOG = LoggerFactory.getLogger(AcmeKubernetesStorageEngine.class);
 
@@ -370,6 +371,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
         }
     }
 
+    @Override
     public void provisionDns(String domain, String record) {
         Map wantedRecord = of("type", "TXT",
                 "timeout", 300,
