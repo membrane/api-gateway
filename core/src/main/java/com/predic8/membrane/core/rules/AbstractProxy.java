@@ -15,8 +15,6 @@ package com.predic8.membrane.core.rules;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import com.predic8.membrane.core.transport.ssl.*;
@@ -27,7 +25,6 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
 public abstract class AbstractProxy implements Rule {
@@ -189,7 +186,7 @@ public abstract class AbstractProxy implements Rule {
             if (acmeCtx == null)
                 acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
             setSslInboundContext(acmeCtx);
-            acmeCtx.init(router.getKubernetesClientFactory());
+            acmeCtx.init(router.getKubernetesClientFactory(), router.getHttpClientFactory());
             return;
         }
 
