@@ -13,5 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security.acme;
 
-public class AcmeValidation {
+public abstract class AcmeValidation {
+
+    public boolean useDnsValidation() {
+        return true;
+    }
+
 }
