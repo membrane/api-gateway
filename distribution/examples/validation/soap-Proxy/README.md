@@ -1,36 +1,37 @@
-### SOAP Message Validation
+# Validation - SOAP
 
-To run this example execute the following steps
+This sample explains how to set up and use the `validator` plugin within a `soapProxy` component.
 
-#### PREREQUISITES:
 
-- Install Curl from http://curl.haxx.se/download.html , if you have not done so already. Let us assume it is in your PATH.
+## Running the Example
 
-As the URL of a WSDL is specified in proxies.xml, the Service Proxy retrieves all corresponding schemas and tries to validate the message body using them.
+1. Go to `<membrane-root>/examples/validation/soap-Proxy`
 
-As a SOAP-Proxy is a specialized version of `the ServiceProxy`, a SOAP-Proxy has a certain advantage if it is used for a SOAP Service. A SOAP-Proxy needs the WSDL's URL just once. Adding a Validator then needs less code, as you can see in the example below:
-
-```
-<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-  <validator />
-</soapProxy>
-```
-
-Execute the following steps:
-
-1. Go to `examples/validation/soap-Proxy`
 
 2. Start `service-proxy.bat` or `service-proxy.sh`
 
-3. Navigate into the `soap-Proxy` folder and run the following command on the console. Observe a successful response.
 
+3. Run the following command, observe a successful response:  
+    `curl --header "Content-Type: application/soap+xml" -d @blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse`
+
+
+4. Run this next command and observe that verification fails:  
+    `curl --header "Content-Type: application/soap+xml" -d @invalid-blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse`
+
+## How it is done
+
+Let's examine the `proxies.xml` file.
+
+```xml
+<router>
+  <soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+    <validator />
+  </soapProxy>
+</router>
 ```
-curl --header "Content-Type: application/soap+xml" -d @blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse
-```
-4. Run the following command in the same directory and observe that verification fails.
-```
-curl --header "Content-Type: application/soap+xml" -d @invalid-blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse
-```
+
+We define a `<soapProxy>` component running on port 2000, which is an expanded version of the basic `<api>` and `<serviceProxy>` components, capable of storing a WSDL manifest.
+Now we simply put a `<validator />` component withing the `<soapProxy>`, without any attributes, as it inherits the WSDL from the proxy component.
 
 ---
 See:

@@ -31,7 +31,8 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.ASINOPENAPI;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static java.lang.String.*;
@@ -48,9 +49,9 @@ public class OpenAPIRecordFactory {
         this.router = router;
     }
 
-    public Map<String, OpenAPIRecord> create(Collection<Spec> specs) throws IOException {
+    public Map<String, OpenAPIRecord> create(Collection<OpenAPISpec> specs) throws IOException {
         Map<String, OpenAPIRecord> apiRecords = new LinkedHashMap<>();
-        for (Spec spec : specs) {
+        for (OpenAPISpec spec : specs) {
             // Maybe a spec has both location and dir.
             addOpenApisFromLocation(apiRecords, spec);
             addOpenApisFromDirectory(apiRecords, spec);
@@ -58,7 +59,7 @@ public class OpenAPIRecordFactory {
         return apiRecords;
     }
 
-    private void addOpenApisFromDirectory(Map<String, OpenAPIRecord> apiRecords, Spec spec) throws IOException {
+    private void addOpenApisFromDirectory(Map<String, OpenAPIRecord> apiRecords, OpenAPISpec spec) throws IOException {
         if (spec.dir == null)
             return;
 
@@ -75,7 +76,7 @@ public class OpenAPIRecordFactory {
         }
     }
 
-    private void addOpenApisFromLocation(Map<String, OpenAPIRecord> apiRecords, Spec spec) {
+    private void addOpenApisFromLocation(Map<String, OpenAPIRecord> apiRecords, OpenAPISpec spec) {
         if (spec.location == null)
             return;
 
@@ -112,19 +113,19 @@ public class OpenAPIRecordFactory {
         return id;
     }
 
-    private OpenAPIRecord create(Spec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec));
+    private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec),spec);
         setExtentsionOnAPI(spec, record.api);
         return record;
     }
 
-    private OpenAPIRecord create(Spec spec, File file) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file));
+    private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
+        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file),spec);
         setExtentsionOnAPI(spec, record.api);
         return record;
     }
 
-    private OpenAPI getOpenAPI(Router router, Spec spec) throws ResourceRetrievalException {
+    private OpenAPI getOpenAPI(Router router, OpenAPISpec spec) throws ResourceRetrievalException {
 
             OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
                     null, null).getOpenAPI();
@@ -143,7 +144,7 @@ public class OpenAPIRecordFactory {
         return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
     }
 
-    private JsonNode getSpec(Router router, Spec spec) throws IOException {
+    private JsonNode getSpec(Router router, OpenAPISpec spec) throws IOException {
         return omYaml.readTree(getInputStreamForLocation(router, spec.location));
     }
 
@@ -151,7 +152,7 @@ public class OpenAPIRecordFactory {
         return omYaml.readTree(file);
     }
 
-    private void setExtentsionOnAPI(Spec spec, OpenAPI api) {
+    private void setExtentsionOnAPI(OpenAPISpec spec, OpenAPI api) {
         if (api.getExtensions() == null) {
             api.setExtensions(new HashMap<>());
         }
@@ -170,7 +171,7 @@ public class OpenAPIRecordFactory {
         return extension;
     }
 
-    private Map<String, Object> updateExtension(Map<String, Object> extension, Spec spec) {
+    private Map<String, Object> updateExtension(Map<String, Object> extension, OpenAPISpec spec) {
 
         if (spec.validationDetails != ASINOPENAPI)
             extension.put(VALIDATION_DETAILS, toYesNo(spec.validationDetails));
@@ -187,7 +188,7 @@ public class OpenAPIRecordFactory {
         return extension;
     }
 
-    private boolean toYesNo(Spec.YesNoOpenAPIOption option) {
+    private boolean toYesNo(OpenAPISpec.YesNoOpenAPIOption option) {
         return option == YES;
     }
 

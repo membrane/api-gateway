@@ -36,7 +36,6 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
@@ -83,7 +82,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return handleOverviewOpenAPIDoc(exc);
     }
 
-    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws JsonProcessingException, URISyntaxException {
+    private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws IOException, URISyntaxException {
         Matcher m = patternMeta.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
@@ -119,74 +118,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws JsonProcessingException, URISyntaxException {
-        rewriteOpenAPIaccordingToRequest(exc, rec);
+    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws IOException, URISyntaxException {
+        rec.rewriteOpenAPI(exc, getRouter().getUriFactory());
         exc.setResponse(Response.ok().contentType(APPLICATION_X_YAML).body(omYaml.writeValueAsBytes(rec.node)).build());
         return RETURN;
-    }
-
-    protected void rewriteOpenAPIaccordingToRequest(Exchange exc, OpenAPIRecord rec) throws URISyntaxException {
-        rewriteOpenAPIVersion3(exc, rec);
-        rewriteSwaggerVersion2(exc, rec);
-    }
-
-    private void rewriteSwaggerVersion2(Exchange exc, OpenAPIRecord rec) {
-        // Rewrite OpenAPI 2.X
-        JsonNode host = rec.node.get("host");
-        if (host == null)
-            return;
-
-        String rewrittenHost = rewriteHost(exc);
-        ((ObjectNode) rec.node).put("host", rewrittenHost);
-
-        // Add protocol http or https
-        ArrayNode schemes = ((ObjectNode) rec.node).putArray("schemes");
-        schemes.add(getProtocol(exc));
-
-        log.debug("Rewriting {} to {}", host, rewrittenHost);
-    }
-
-    private void rewriteOpenAPIVersion3(Exchange exc, OpenAPIRecord rec) throws URISyntaxException {
-        JsonNode servers = rec.node.get("servers");
-        if (servers == null)
-            return;
-
-        for (JsonNode server : servers) {
-            String serverUrl = server.get("url").asText();
-            String rewrittenUrl = rewriteUrl(exc, serverUrl);
-            ((ObjectNode) server).put("url", rewrittenUrl);
-            log.debug("Rewriting {} to {}", serverUrl, rewrittenUrl);
-        }
-    }
-
-    /**
-     * Rewrites URL from <b>OpenAPI 3.X</b>
-     * @param exc Exchange
-     * @param url URL to rewrite
-     * @return Rewritten URL
-     * @throws URISyntaxException syntax error ín URL
-     */
-    protected String rewriteUrl(Exchange exc, String url) throws URISyntaxException {
-        return rewrite(router.getUriFactory(), url,
-                getProtocol(exc),
-                exc.getOriginalHostHeaderHost(),
-                exc.getOriginalHostHeaderPort());
-    }
-
-    /**
-     * Rewrites Host from <b>Swagger 2.X</b>
-     * @param exc Exchange
-     * @return Rewritten host with port
-     */
-    protected String rewriteHost(Exchange exc) {
-        return exc.getOriginalHostHeaderHost() + ":" + exc.getOriginalHostHeaderPort();
-    }
-
-    private String getProtocol(Exchange exc) {
-        if (exc.getRule().getSslInboundContext() == null)
-            return "http";
-        else
-            return "https";
     }
 
     private Outcome handleSwaggerUi(Exchange exc) {
@@ -194,20 +129,20 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
         // No id specified
         if (!m.matches()) {
-            Map<String,Object> details = new HashMap<>();
-            details.put("message","Please specify an id of an OpenAPI document. Path should match this pattern: /api-doc/ui/<<id>>");
-            exc.setResponse(createProblemDetails(404,"/openapi/wrong-id","No OpenAPI document id",details));
+            Map<String, Object> details = new HashMap<>();
+            details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-doc/ui/<<id>>");
+            exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details));
             return RETURN;
         }
 
         // /api-doc/ui/(.*)
         String id = m.group(1);
 
-        log.info("OpenAPI with id {} requested",id);
+        log.info("OpenAPI with id {} requested", id);
 
         OpenAPIRecord record = apis.get(id);
         if (record == null) {
-            return returnNoFound(exc,id);
+            return returnNoFound(exc, id);
         }
 
         exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(id, record.api)).build());
