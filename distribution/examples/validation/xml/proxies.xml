@@ -6,7 +6,7 @@
 
 	<router>
 
-		<serviceProxy port="2000">
+		<api port="2000">
 			<request>
 				<validator schema="year.xsd" />
 			</request>
@@ -14,13 +14,13 @@
 				<validator schema="amount.xsd" />
 			</response>
 			<target host="localhost" port="2001" />
-		</serviceProxy>
+		</api>
 	
-		<serviceProxy port="2001">
+		<api port="2001">
 			<groovy>
 				Response.ok("&lt;amount&gt;100&lt;/amount&gt;").build()			
 			</groovy>
-		</serviceProxy>
+		</api>
 		
 	</router>
 	

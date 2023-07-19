@@ -45,7 +45,6 @@ import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORI
 import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_PROCESSING;
 import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_READY;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeStepTest {
 

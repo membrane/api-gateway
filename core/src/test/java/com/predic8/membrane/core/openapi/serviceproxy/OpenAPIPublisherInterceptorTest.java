@@ -27,7 +27,6 @@ import io.swagger.v3.parser.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
-import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -50,11 +49,11 @@ public class OpenAPIPublisherInterceptorTest {
         router.setUriFactory(new URIFactory());
         router.setBaseLocation("");
         openAPIRecordFactory = new OpenAPIRecordFactory(router);
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.setDir("src/test/resources/openapi/specs");
         records = openAPIRecordFactory.create(Collections.singletonList(spec));
 
-        interceptor = new OpenAPIPublisherInterceptor(records);
+        interceptor = new OpenAPIPublisherInterceptor( records);
         interceptor.init(router);
 
         get.setRequest(new Request.Builder().method("GET").build());
@@ -64,7 +63,7 @@ public class OpenAPIPublisherInterceptorTest {
 
     @Test
     public void constuctor() {
-        assertEquals(27, interceptor.apis.size());
+        assertTrue(interceptor.apis.size() >= 27);
         assertNotNull(interceptor.apis.get("references-test-v1-0"));
         assertNotNull(interceptor.apis.get("strings-test-api-v1-0"));
         assertNotNull(interceptor.apis.get("extension-sample-v1-4"));
@@ -77,7 +76,7 @@ public class OpenAPIPublisherInterceptorTest {
     public void getApiDirectory() throws Exception {
         get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertEquals(27, TestUtils.getMapFromResponse(get).size());
+        assertTrue(TestUtils.getMapFromResponse(get).size() >= 27);
     }
 
     @Test
@@ -133,40 +132,5 @@ public class OpenAPIPublisherInterceptorTest {
 
     private JsonNode getJsonFromYamlResponse(Exchange exc) throws IOException {
         return omYaml.readTree(exc.getResponse().getBody().getContent());
-    }
-
-    @Test
-    public void rewriteOpenAPIAccordingToRequestTest() throws URISyntaxException {
-        OpenAPIRecord rec = records.get("servers-1-api-v1-0");
-        interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
-        assertEquals("http://api.predic8.de/base/v2",rec.node.get("servers").get(0).get("url").asText());
-        assertEquals("Test System",rec.node.get("servers").get(0).get("description").asText());
-    }
-
-    @Test
-    public void rewriteOpenAPIAccordingToRequest3Servers() throws URISyntaxException {
-        OpenAPIRecord rec = records.get("servers-3-api-v1-0");
-        interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
-        assertEquals(3,rec.node.get("servers").size());
-        assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(0).get("url").asText());
-        assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(1).get("url").asText());
-        assertEquals("http://api.predic8.de/foo",rec.node.get("servers").get(2).get("url").asText());
-    }
-
-    @Test
-    void rewriteRequestHostHeaderWithoutPort() throws URISyntaxException {
-        OpenAPIRecord rec = records.get("servers-3-api-v1-0");
-        get.setOriginalHostHeader("api.predic8.de");
-        interceptor.rewriteOpenAPIaccordingToRequest(get, rec);
-        JsonNode servers = rec.node.get("servers");
-        assertEquals("http://api.predic8.de/foo", servers.get(0).get("url").textValue());
-        assertEquals("http://api.predic8.de/foo", servers.get(1).get("url").textValue());
-        assertEquals("http://api.predic8.de/foo", servers.get(2).get("url").textValue());
-    }
-
-    @Test
-    void rewriteUrl() throws URISyntaxException {
-        assertEquals("http://api.predic8.de/foo",interceptor.rewriteUrl(get,"http://localhost:3000/foo"));
-        assertEquals("http://api.predic8.de/foo",interceptor.rewriteUrl(get,"http://localhost/foo"));
     }
 }

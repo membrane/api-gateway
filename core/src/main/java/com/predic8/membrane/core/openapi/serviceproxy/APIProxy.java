@@ -28,8 +28,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.Spec.YesNoOpenAPIOption.*;
-
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support.
  *
@@ -59,100 +57,10 @@ public class APIProxy extends ServiceProxy {
         return new APIProxy();
     }
 
-    /**
-     * @description Reads an OpenAPI description and deploys an API with the information of it.
-     */
-    @MCElement(name = "openapi", topLevel = false)
-    public static class Spec {
 
-        String location;
-        String dir;
-        YesNoOpenAPIOption validateRequests = ASINOPENAPI;
-        YesNoOpenAPIOption validateResponses = ASINOPENAPI;
-        YesNoOpenAPIOption validationDetails = ASINOPENAPI;
+    protected List<OpenAPISpec> specs = new ArrayList<>();
 
-        public Spec() {
-        }
-
-        public String getLocation() {
-            return location;
-        }
-
-        /**
-         * @description Filename or URL pointing to an OpenAPI document. Relative filenames use the %MEMBRANE_HOME%/conf folder as base directory.
-         * @example openapi/fruitstore-v1.yaml, <a href="https://api.predic8.de/shop/swagger">https://api.predic8.de/shop/swagger</a>
-         */
-        @MCAttribute()
-        public void setLocation(String location) {
-            this.location = location;
-        }
-
-        public String getDir() {
-            return dir;
-        }
-
-        /**
-         * @description Directory containing OpenAPI definitions to deploy.
-         * @example openapi
-         */
-        @MCAttribute()
-        public void setDir(String dir) {
-            this.dir = dir;
-        }
-
-        public YesNoOpenAPIOption getValidateRequests() {
-            return validateRequests;
-        }
-
-        /**
-         * @description Turn validation of requests on or off.
-         * @example yes
-         * @default no
-         */
-        @MCAttribute
-        public void setValidateRequests(YesNoOpenAPIOption validateRequests) {
-            this.validateRequests = validateRequests;
-        }
-
-        @SuppressWarnings("unused")
-        public YesNoOpenAPIOption getValidateResponses() {
-            return validateResponses;
-        }
-
-        /**
-         * @description Turn validation of responses on or off.
-         * @example yes
-         * @default no
-         */
-        @MCAttribute()
-        public void setValidateResponses(YesNoOpenAPIOption validateResponses) {
-            this.validateResponses = validateResponses;
-        }
-
-        /**
-         * @description Show details of the validation to the caller.
-         * @example yes
-         * @default no
-         */
-        @MCAttribute()
-        public void setValidationDetails(YesNoOpenAPIOption validationDetails) {
-            this.validationDetails = validationDetails;
-        }
-
-        public YesNoOpenAPIOption getValidationDetails() {
-            return validationDetails;
-        }
-
-        public enum YesNoOpenAPIOption {
-            YES,
-            NO,
-            ASINOPENAPI
-        }
-    }
-
-    protected List<Spec> specs = new ArrayList<>();
-
-    public List<Spec> getSpecs() {
+    public List<OpenAPISpec> getSpecs() {
         return specs;
     }
 
@@ -160,7 +68,7 @@ public class APIProxy extends ServiceProxy {
      * @description Deploys an API from an OpenAPI document.
      */
     @MCChildElement(order = 25)
-    public void setSpecs(List<Spec> specs) {
+    public void setSpecs(List<OpenAPISpec> specs) {
         this.specs = specs;
     }
 
