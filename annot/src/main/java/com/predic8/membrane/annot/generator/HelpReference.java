@@ -19,6 +19,9 @@ import org.slf4j.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 import javax.xml.stream.*;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
@@ -29,9 +32,6 @@ import java.util.*;
 import static java.util.Comparator.*;
 
 public class HelpReference {
-
-	private static final Logger log = LoggerFactory.getLogger(HelpReference.class.getName());
-
 	private final ProcessingEnvironment processingEnv;
 
 	private XMLStreamWriter xew;
@@ -57,8 +57,6 @@ public class HelpReference {
 			handle(m);
 			xew.writeEndDocument();
 
-			System.out.println(sw.toString());
-
 			writeFiles(m, path);
 
 			xew = null;
@@ -79,17 +77,12 @@ public class HelpReference {
 		try {
 			transformer.transform(new StreamSource(new StringReader(xml)), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
 		} catch (Exception e) {
-			log.error("**************************************************************************");
-			log.error("Error Parsing generated XML. " + e);
+			FileObject docPath = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "error-doc.xml");
+			try (Writer w = docPath.openWriter()) {
+				w.write(xml);
+			}
 
-			Path docPath =  Paths.get(System.getProperty("user.dir") + "/annot/target/error-doc.xml");
-
-			log.error("See {}", docPath);
-
-			System.err.println("See XML in: " + docPath);
-			
-			Files.writeString(docPath, xml);
-			System.exit(1);
+			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Error parsing generated XML in " + docPath.getName() + " " + e.getMessage());
 		}
 
 	}
