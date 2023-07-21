@@ -16,6 +16,11 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -25,16 +30,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIRecordTest {
 
+    Exchange get = new Exchange(null);
+
+    @BeforeEach
+    void setUp() {
+        Router router = new Router();
+        router.setUriFactory(new URIFactory());
+        router.setBaseLocation("");
+
+        get.setRequest(new Request.Builder().method("GET").build());
+        get.setRule(new NullRule());
+        get.setOriginalHostHeader("api.predic8.de:80");
+    }
+
     @Test
     void isVersion3() throws IOException {
-        OpenAPIRecord rec = new OpenAPIRecord(null, getYAMLResource(this,"/openapi/specs/array.yml"));
+        OpenAPIRecord rec = new OpenAPIRecord(null, getYAMLResource(this,"/openapi/specs/array.yml"), null);
         assertEquals("3.0.2", rec.version);
         assertTrue(rec.isVersion3());
     }
 
     @Test
     void isVersion2() throws IOException {
-        OpenAPIRecord rec = new OpenAPIRecord(null, getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json"));
+        OpenAPIRecord rec = new OpenAPIRecord(null, getYAMLResource(this,"/openapi/specs/fruitshop-swagger-2.0.json"), null);
         assertEquals("2.0", rec.version);
         assertTrue(rec.isVersion2());
     }

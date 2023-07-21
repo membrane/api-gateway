@@ -6,25 +6,25 @@
 
 	<router>
       	 
-		<serviceProxy port="2000">
+		<api port="2000">
 			<request>
 				<validator jsonSchema="schema2000.json" />
 			</request>
 			<target host="localhost" port="2002" />
-		</serviceProxy>
+		</api>
 
-		<serviceProxy port="2001">
+		<api port="2001">
 			<request>
 				<validator jsonSchema="schema2001.json" />
 			</request>
 			<target host="localhost" port="2002" />
-		</serviceProxy>
+		</api>
 	
-		<serviceProxy port="2002">
+		<api port="2002">
 			<groovy>
 				Response.ok("&lt;response&gt;good request&lt;/response&gt;").build()			
 			</groovy>
-		</serviceProxy>
+		</api>
 		
 	</router>
 	
