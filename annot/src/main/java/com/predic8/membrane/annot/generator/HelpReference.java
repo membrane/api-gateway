@@ -15,7 +15,6 @@ package com.predic8.membrane.annot.generator;
 
 import com.predic8.membrane.annot.model.*;
 import com.predic8.membrane.annot.model.doc.*;
-import org.slf4j.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
