@@ -43,19 +43,19 @@ public class HelpReference {
 
 	public void writeHelp(Model m) {
 		try {
-			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
-			if (path == null)
-				return;
-			path = path.replace("%VERSION%", "5.1");
-
-			System.out.println("Generating Reference in location: " + path);
-
 			sw = new StringWriter();
 			XMLOutputFactory output = XMLOutputFactory.newInstance();
 			xew = output.createXMLStreamWriter(sw);
 			xew.writeStartDocument();
 			handle(m);
 			xew.writeEndDocument();
+
+			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
+			if (path == null)
+				return;
+			path = path.replace("%VERSION%", "5.1");
+
+			System.out.println("Generating Reference in location: " + path);
 
 			writeFiles(m, path);
 
