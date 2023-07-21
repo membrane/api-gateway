@@ -61,8 +61,8 @@ public class AcmeSSLContext extends SSLContext {
         this.timerManager = timerManager != null ? timerManager : new TimerManager();
     }
 
-    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory) {
-        client.init(kubernetesClientFactory);
+    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory, @Nullable HttpClientFactory httpClientFactory) {
+        client.init(kubernetesClientFactory, httpClientFactory);
         initAndSchedule();
     }
 
