@@ -95,7 +95,10 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	public List<User> getUsers() {
-		return ((StaticUserDataProvider)userDataProvider).getUsers();
+		if (userDataProvider.getClass() == StaticUserDataProvider.class) {
+			return ((StaticUserDataProvider) userDataProvider).getUsers();
+		}
+		return null;
 	}
 
 	/**

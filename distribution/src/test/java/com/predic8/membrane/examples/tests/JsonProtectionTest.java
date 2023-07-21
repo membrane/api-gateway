@@ -39,7 +39,7 @@ public class JsonProtectionTest extends AbstractSampleMembraneStartStopTestcase 
 
     @Override
     protected String getExampleDirName() {
-        return "json-protection";
+        return "security/json-protection";
     }
 
     private final HashMap<String, Integer> statusCodeFileMap = new HashMap<>() {{
