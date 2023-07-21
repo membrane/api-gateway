@@ -34,8 +34,6 @@ public class AbstractInterceptor implements Interceptor {
 
 	private EnumSet<Flow> flow = Flow.Set.REQUEST_RESPONSE;
 
-	protected String id;
-
 	protected Router router;
 
 	public AbstractInterceptor() {
@@ -60,15 +58,6 @@ public class AbstractInterceptor implements Interceptor {
 
 	public void setDisplayName(String name) {
 		this.name = name;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	@MCAttribute
-	public void setId(String id) {
-		this.id = id;
 	}
 
 	public void setFlow(EnumSet<Flow> flow) {
