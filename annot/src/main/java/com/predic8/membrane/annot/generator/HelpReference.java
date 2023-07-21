@@ -18,16 +18,19 @@ import com.predic8.membrane.annot.model.doc.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 import javax.xml.stream.*;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 
 import static java.util.Comparator.*;
 
 public class HelpReference {
-
 	private final ProcessingEnvironment processingEnv;
 
 	private XMLStreamWriter xew;
@@ -39,13 +42,6 @@ public class HelpReference {
 
 	public void writeHelp(Model m) {
 		try {
-			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
-			if (path == null)
-				return;
-			path = path.replace("%VERSION%", "5.1");
-
-			System.out.println("Generating Reference in location: " + path);
-
 			sw = new StringWriter();
 			XMLOutputFactory output = XMLOutputFactory.newInstance();
 			xew = output.createXMLStreamWriter(sw);
@@ -53,7 +49,12 @@ public class HelpReference {
 			handle(m);
 			xew.writeEndDocument();
 
-			System.out.println(sw.toString());
+			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
+			if (path == null)
+				return;
+			path = path.replace("%VERSION%", "5.1");
+
+			System.out.println("Generating Reference in location: " + path);
 
 			writeFiles(m, path);
 
@@ -64,13 +65,25 @@ public class HelpReference {
 
 	}
 
-	private void writeFiles(Model m, String path) throws TransformerException {
+	private void writeFiles(Model m, String path) throws TransformerException, IOException {
 		// indent
 		TransformerFactory factory = TransformerFactory.newInstance();
 		Transformer transformer = factory.newTransformer();
 		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-		transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
+
+		String xml = sw.toString();
+		try {
+			transformer.transform(new StreamSource(new StringReader(xml)), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
+		} catch (Exception e) {
+			FileObject docPath = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "error-doc.xml");
+			try (Writer w = docPath.openWriter()) {
+				w.write(xml);
+			}
+
+			processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Error parsing generated XML in " + docPath.getName() + " " + e.getMessage());
+		}
+
 	}
 
 	private String getFileName(Model m) {
