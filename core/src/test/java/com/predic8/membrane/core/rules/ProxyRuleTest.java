@@ -58,9 +58,7 @@ public class ProxyRuleTest {
 
 		List<Interceptor> inters = rule.getInterceptors();
 		assertFalse(inters.isEmpty());
-		assertTrue(inters.size()  == 2);
-		inters.get(0).getId().equals("roundRobinBalancer");
-		inters.get(1).getId().equals("accessControlInterceptor");
+		assertTrue(inters.size() == 2);
 
 		assertEquals(true, rule.isBlockResponse());
 		assertFalse(rule.isBlockRequest());
@@ -69,11 +67,9 @@ public class ProxyRuleTest {
 	private static List<Interceptor> getInterceptors() {
 		List<Interceptor> interceptors = new ArrayList<>();
 		Interceptor balancer = new LoadBalancingInterceptor();
-		balancer.setId("roundRobinBalancer");
 		interceptors.add(balancer);
 
 		Interceptor acl = new AccessControlInterceptor();
-		acl.setId("accessControlInterceptor");
 		interceptors.add(acl);
 		return interceptors;
 	}

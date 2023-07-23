@@ -28,7 +28,6 @@
 
 	<spring:bean id="accessControlInterceptor"
 		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
-		<spring:property name="id" value="accessControlInterceptor" />
 		<spring:property name="displayName" value="Access Control List Interceptor" />
 		<spring:property name="file" value="acl/acl.xml" />
 	</spring:bean>

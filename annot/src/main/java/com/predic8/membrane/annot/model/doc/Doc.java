@@ -57,8 +57,8 @@ public class Doc {
 					}
 				}
 			} catch (XMLStreamException f) {
-				value = "";
-				processingEnv.getMessager().printMessage(Kind.WARNING, f.getMessage(), e);
+				this.value = "";
+				processingEnv.getMessager().printMessage(Kind.ERROR, f.getMessage().replaceAll("[\\r\\n]", ""), e);
 			}
 		}
 
