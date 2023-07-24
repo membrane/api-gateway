@@ -160,8 +160,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	private void applyBackendAuthorization(Exchange exc, Session s) {
-        if (getId() != null)
-            exc.setProperty(getId() + "-session", s);
+        exc.setProperty("session", s);
         Header h = exc.getRequest().getHeader();
 		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
 			if (e.getKey().startsWith("header")) {

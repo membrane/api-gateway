@@ -48,14 +48,17 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * <p>
  * To create the CustomResourceDefinitions, apply kubernetes-config.yaml from
  * core/target/classes/com/predic8/membrane/core/config/kubernetes/ or a part (e.g. the 'serviceproxies' CRD) of the file.
+ * </p>
  * <p>
  * Create a key and certificate for TLS for <a href="https://membrane-validator.membrane-soa.svc:444/">https://membrane-validator.membrane-soa.svc:444/</a> and setup Membrane to serve
  * this address. The configuration shown below configures Membrane on a fixed IP address outside of the Kubernetes cluster,
  * but this is no requirement.
+ * </p>
  * <p>
  * Embed the following serviceProxy and adjust the 'resources' attribute to a comma-separated list of CRDs that you applied.
  * Note that while the CRDs have plural names, here you need to use the corresponding singular. Configure the "ssl" section
  * using your key and certificate.
+ * </p>
  * <code>
  *    &gt;serviceProxy port="444">
  *      &gt;ssl>
@@ -78,7 +81,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * <p>
  * Now register a Webhook to validate the new CRDs. (A note to the experts: Membrane's validation schemas are too
  * complex to fit into the CRD, because they are highly nestable and self-referencing. We therefore use webhooks.)
- * <p>
+ * </p>
  * <code>
  * apiVersion: admissionregistration.k8s.io/v1
  * kind: ValidatingWebhookConfiguration
@@ -101,16 +104,12 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  *         port: 444
  *       caBundle: LS0t...LQ0K        # base64 encoded, PEM-formatted CA certificate
  *     sideEffects: None
- * <p>
  * ---
- * <p>
  * apiVersion: v1
  * kind: Namespace
  * metadata:
  *   name: membrane-soa
- * <p>
  * ---
- * <p>
  * apiVersion: v1
  * kind: Service
  * metadata:
@@ -119,9 +118,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * spec:
  *   ports:
  *     - port: 444
- * <p>
  * ---
- * <p>
  * apiVersion: v1
  * kind: Endpoints
  * metadata:
@@ -135,7 +132,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * </code>
  * <p>
  * Once this setup is complete, you can enable serviceProxies like this:
- * <p>
+ * </p>
  * <code>
  * apiVersion: membrane-soa.org/v1beta1
  * kind: serviceproxy

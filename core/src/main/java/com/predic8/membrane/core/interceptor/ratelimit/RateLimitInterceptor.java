@@ -45,7 +45,7 @@ import static java.lang.String.*;
  * <p>
  * The X-Forwarded-For header can only be trusted when a trustworthy reverse proxy or load balancer is between the client and server. The gateway not should be
  * reachable directly. Only activate this feature when you know what you are doing.
- * <p>
+ * </p>
  * @see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For">X-Forwarded-For @Mozilla</a>
  */
 @MCElement(name = "rateLimiter")

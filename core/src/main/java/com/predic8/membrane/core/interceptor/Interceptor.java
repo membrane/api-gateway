@@ -53,9 +53,6 @@ public interface Interceptor {
 	String getDisplayName();
 	void setDisplayName(String name);
 
-	String getId();
-	void setId(String id);
-
 	Router getRouter();
 
 	void setFlow(EnumSet<Flow> flow);
