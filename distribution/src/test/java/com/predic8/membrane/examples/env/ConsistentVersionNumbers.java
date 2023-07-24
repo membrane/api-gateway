@@ -142,7 +142,7 @@ public class ConsistentVersionNumbers {
 		handleByRegex(file, versionTransformer, getConstantsVersionPattern(), v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
 	}
 
-	public static Pattern getConstantsVersionPattern() {
+	static Pattern getConstantsVersionPattern() {
 		return Pattern.compile("(\\s*String version = \")(\\d+.\\d+)(\";.*)");
 	}
 
