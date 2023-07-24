@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.util.*;
+import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 
 import java.util.*;
 
@@ -94,11 +95,11 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		return new String(decodeBase64(value.substring(6).getBytes(UTF_8)), UTF_8);
 	}
 
-	public List<User> getUsers() {
-		if (userDataProvider.getClass() == StaticUserDataProvider.class) {
-			return ((StaticUserDataProvider) userDataProvider).getUsers();
+	public List<User> getUsers() throws NotImplementedException {
+		if (userDataProvider instanceof StaticUserDataProvider sud) {
+			return sud.getUsers();
 		}
-		return null;
+		throw new NotImplementedException("getUsers not implemented for this userDataProvider.");
 	}
 
 	/**

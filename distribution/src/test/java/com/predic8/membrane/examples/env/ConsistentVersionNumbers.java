@@ -139,8 +139,11 @@ public class ConsistentVersionNumbers {
 
 	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
 		//		String version = "5.1"; // fallback
-		Pattern versionPattern = Pattern.compile("(\\s*String version = \")(\\d+.\\d+)(\";.*)");
-		handleByRegex(file, versionTransformer, versionPattern, v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
+		handleByRegex(file, versionTransformer, getConstantsVersionPattern(), v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
+	}
+
+	public static Pattern getConstantsVersionPattern() {
+		return Pattern.compile("(\\s*String version = \")(\\d+.\\d+)(\";.*)");
 	}
 
 	private static void handleRpmSpec(File file, VersionTransformer versionTransformer) throws Exception {

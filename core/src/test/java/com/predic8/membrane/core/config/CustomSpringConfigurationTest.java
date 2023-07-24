@@ -31,6 +31,7 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorIntercept
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
+import jdk.jshell.spi.ExecutionControl;
 import org.junit.jupiter.api.*;
 
 @SuppressWarnings("unused")
@@ -181,7 +182,7 @@ public class CustomSpringConfigurationTest {
 
 	@SuppressWarnings("OptionalGetWithoutIsPresent")
 	private void assertBasicAuthenticationInterceptor(
-			BasicAuthenticationInterceptor i) {
+			BasicAuthenticationInterceptor i) throws ExecutionControl.NotImplementedException {
 		assertTrue(i.getUsers().stream().anyMatch(u -> u.getUsername().equals("jim")));
 		assertEquals("password", i.getUsers().stream().filter(u -> u.getUsername().equals("jim")).findFirst().get().getPassword());
 	}
