@@ -66,6 +66,10 @@ public class ConsistentVersionNumbers {
 	public static final Option SNAPSHOT = Option.builder("snapshot").desc("Increase patch version and append SNAPSHOT tag").build();
 	public static final Option RELEASE = Option.builder("release").desc("Release version").hasArg().argName("x.y.z").build();
 
+	private static final Pattern constantsVersionPattern = Pattern.compile("(\\s*String version = \")(\\d+.\\d+)(\";.*)");
+	private static final Pattern rpmSpecVersionPattern = Pattern.compile("(Version:\\s+)(\\S+)(.*)");
+	private static final Pattern helpReferenceVersionPattern = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
+
 	@Test
 	public void doit() throws Exception {
 		AtomicReference<Semver> version = new AtomicReference<>(null);
@@ -139,23 +143,17 @@ public class ConsistentVersionNumbers {
 
 	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
 		//		String version = "5.1"; // fallback
-		handleByRegex(file, versionTransformer, getConstantsVersionPattern(), v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
-	}
-
-	static Pattern getConstantsVersionPattern() {
-		return Pattern.compile("(\\s*String version = \")(\\d+.\\d+)(\";.*)");
+		handleByRegex(file, versionTransformer, constantsVersionPattern, v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
 	}
 
 	private static void handleRpmSpec(File file, VersionTransformer versionTransformer) throws Exception {
 		// Version:          5.1.0
-		Pattern versionPattern = Pattern.compile("(Version:\\s+)(\\S+)(.*)");
-		handleByRegex(file, versionTransformer, versionPattern, Semver::getValue);
+		handleByRegex(file, versionTransformer, rpmSpecVersionPattern, Semver::getValue);
 	}
 
 	private static void handleHelpReference(File file, VersionTransformer versionTransformer) throws Exception {
 		// path.replace("%VERSION%", "5.0")
-		Pattern versionPattern = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
-		handleByRegex(file, versionTransformer, versionPattern, v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
+		handleByRegex(file, versionTransformer, helpReferenceVersionPattern, v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
 	}
 
 	private static void handleByRegex(File file, VersionTransformer versionTransformer, Pattern pattern, Function<Semver, String> versionFormatter) throws Exception {

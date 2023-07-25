@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.env.ConsistentVersionNumbersTest;
 import com.predic8.membrane.examples.tests.integration.OAuth2Test;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
@@ -21,7 +20,6 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @SelectClasses({
 	ConfigSerializationTest.class,
-	ConsistentVersionNumbersTest.class,
 	OAuth2Test.class
 })
 public class ExampleUnitTests {}
