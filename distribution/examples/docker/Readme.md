@@ -4,21 +4,21 @@ This example illustrates how to deploy Membrane as a Docker container whilst mak
 
 ## Running the Example
 
-1. **Build the Docker image:**  
-	`docker build -t predic8/membrane:latestRelease .`
+1. **Build the Docker image:**
+    `docker build -t membrane:1 .`
 
 
 2. **Generate a Docker container from the built image and expose the API port:**  
-    `docker run -d -p 2000:2000 --name membrane predic8/membrane:latestRelease`
+    `docker run -d -p 2000:2000 --name membrane membrane:1`
 
 
 3. **Send a simple get request to Membrane:**  
     `curl localhost:2000/shop/v2/products`  
-   The request gets relayed to `api.predic8.de`.
+     The request gets relayed to `api.predic8.de`.
 
 
 4. **Access the API documentation:**  
-    Visit `localhost:2000/api-doc/ui/fruit-shop-api-v2-0-0` in your browser.  
+    Visit `localhost:2000/api-doc` in your browser.
     Membrane automatically generates this address out of the provided manifest.
 
 ## How it is done
@@ -32,7 +32,7 @@ Take a look at the `proxies.xml` file.
     </api>
 </router>
 ```
-This file defines a simple API proxy with an OpenAPI validation plugin. All requests that the Docker container receives at port 2000 will be validated against the provided OpenAPI manifest.  
+This file defines a simple API proxy with an OpenAPI plugin.  
 In this instance, we define an online path to the manifest YAML, this will make membrane automatically set the manifest's host as the proxy target.
 
 For deploying Membrane with our custom proxies.xml file, we utilize a straightforward Dockerfile as follows:
