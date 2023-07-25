@@ -77,7 +77,7 @@ public class Exchange extends AbstractExchange {
 	/**
 	 * For HttpResendRunnable
 	 *
-	 * @param original
+	 * @param original Exchange
 	 */
 	public Exchange(Exchange original, AbstractHttpHandler handler) {
 		super(original);
@@ -234,7 +234,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	@Override
-	public AbstractExchange createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception {
+	public AbstractExchange createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		Exchange exc = updateCopy(this, new Exchange(null), bodyUpdatedCallback, strategy, limit);
 		exc.setId(this.getId());
 		return exc;
@@ -258,5 +258,12 @@ public class Exchange extends AbstractExchange {
 
 	public void setNodeExceptions(Exception[] nodeExceptions) {
 		this.nodeExceptions = nodeExceptions;
+	}
+
+	public String getInboundProtocol() {
+		if (getRule().getSslInboundContext() == null)
+			return "http";
+		else
+			return "https";
 	}
 }

@@ -14,33 +14,26 @@
 
 package com.predic8.membrane.core.graphql;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TextUtil;
-import com.predic8.membrane.core.util.URLParamUtil;
-import jakarta.mail.internet.ContentType;
-import jakarta.mail.internet.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import jakarta.mail.internet.*;
+import org.slf4j.*;
 
-import java.io.ByteArrayInputStream;
-import java.security.InvalidParameterException;
+import java.io.*;
+import java.security.*;
 import java.util.*;
 
-import static com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION;
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY;
-import static com.google.common.collect.Iterables.getOnlyElement;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.fasterxml.jackson.core.JsonParser.Feature.*;
+import static com.fasterxml.jackson.databind.DeserializationFeature.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description
@@ -48,13 +41,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * the attack surface.
  * <p>
  * GraphQL Specification "October2021" is used. (But GraphQL only covers formulation of Documents/Queries.)
+ * </p>
  * <p>
  * GraphQL-over-HTTP, which specifies how to submit GraphQL queries via HTTP, has not been released/finalized yet. We
  * therefore use Version
  * <a href="https://github.com/graphql/graphql-over-http/blob/a1e6d8ca248c9a19eb59a2eedd988c204909ee3f/spec/GraphQLOverHTTP.md">a1e6d8ca</a>.
+ * </p>
  * <p>
  * Only GraphQL documents conforming to the 'ExecutableDocument' of the grammar are allowed: This includes the usual
  * 'query', 'mutation', 'subscription' and 'fragment's.
+ * </p>
  */
 @MCElement(name = "graphQLProtection")
 public class GraphQLProtectionInterceptor extends AbstractInterceptor {

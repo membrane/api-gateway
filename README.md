@@ -14,7 +14,7 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 * [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/api-gateway/current/configuration/reference/basicAuthentication.htm) 
 * [OAuth2 authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.htm) 
 * [Rate limiting](#rate-limiting)
-* GraphQL, JSON and XML protection
+* GraphQL-, JSON- and XML protection
 
 **Legacy Web Services:**
 * [SOAP message routing](#soap-web-services)

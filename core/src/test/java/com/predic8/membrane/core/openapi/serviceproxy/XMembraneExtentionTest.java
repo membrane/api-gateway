@@ -16,11 +16,9 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import io.swagger.v3.parser.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +36,7 @@ public class XMembraneExtentionTest {
         Router router = new Router();
         router.setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
-        APIProxy.Spec spec = new APIProxy.Spec();
+        OpenAPISpec spec = new OpenAPISpec();
         spec.setDir("src/test/resources/openapi/specs");
         Map<String,OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
 

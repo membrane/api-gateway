@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-//import io.swagger.models.Swagger;
-//import io.swagger.parser.SwaggerParser;
 import com.predic8.membrane.core.interceptor.swagger.OpenAPIAdapter;
 import com.predic8.membrane.core.interceptor.swagger.SwaggerAdapter;
 import com.predic8.membrane.core.interceptor.swagger.SwaggerCompatibleOpenAPI;

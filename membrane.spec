@@ -4,7 +4,7 @@
 %global logdir %{_var}/log/%{name}
 
 Name:             membrane
-Version:          5.1.19
+Version:          5.1.20-SNAPSHOT
 Release:          1%{?dist}
 URL:              https://github.com/membrane/service-proxy
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
