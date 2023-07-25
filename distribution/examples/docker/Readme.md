@@ -13,7 +13,7 @@ This example illustrates how to deploy Membrane as a Docker container whilst mak
 
 
 3. **Send a simple get request to Membrane:**  
-    `curl localhost:2000/shop/v2/products/`  
+    `curl localhost:2000/shop/v2/products`  
    The request gets relayed to `api.predic8.de`.
 
 
