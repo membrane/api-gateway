@@ -57,6 +57,7 @@ public class ConfigSerializationTest {
 			"stax-interceptor", // has external classpath dependencies
 			"soap", // has external classpath dependencies
 			"basic-xml-interceptor", // has external classpath dependencies
+			"database", // contains a reference to a DataSource bean (not serializable)
 			"template");
 
 	public static List<Object[]> getPorts() {

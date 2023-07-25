@@ -46,6 +46,8 @@ public class FileUserDataProvider implements UserDataProvider {
         this.htpasswdPath = path;
     }
 
+    public String getHtpasswdPath() { return this.htpasswdPath; }
+
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
