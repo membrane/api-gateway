@@ -14,24 +14,27 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.authentication.session.*;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
-import com.predic8.membrane.core.util.*;
-import jdk.jshell.spi.ExecutionControl.NotImplementedException;
+import com.google.common.collect.ImmutableMap;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
+import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
+import com.predic8.membrane.core.util.HttpUtil;
 
-import java.util.*;
+import java.util.List;
+import java.util.NoSuchElementException;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.codec.binary.Base64.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.codec.binary.Base64.decodeBase64;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
@@ -95,11 +98,11 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		return new String(decodeBase64(value.substring(6).getBytes(UTF_8)), UTF_8);
 	}
 
-	public List<User> getUsers() throws NotImplementedException {
+	public List<User> getUsers() {
 		if (userDataProvider instanceof StaticUserDataProvider sud) {
 			return sud.getUsers();
 		}
-		throw new NotImplementedException("getUsers not implemented for this userDataProvider.");
+		throw new UnsupportedOperationException("getUsers not implemented for this userDataProvider.");
 	}
 
 	/**

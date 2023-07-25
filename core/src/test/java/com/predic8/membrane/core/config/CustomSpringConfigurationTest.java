@@ -182,7 +182,7 @@ public class CustomSpringConfigurationTest {
 
 	@SuppressWarnings("OptionalGetWithoutIsPresent")
 	private void assertBasicAuthenticationInterceptor(
-			BasicAuthenticationInterceptor i) throws ExecutionControl.NotImplementedException {
+			BasicAuthenticationInterceptor i) {
 		assertTrue(i.getUsers().stream().anyMatch(u -> u.getUsername().equals("jim")));
 		assertEquals("password", i.getUsers().stream().filter(u -> u.getUsername().equals("jim")).findFirst().get().getPassword());
 	}
