@@ -55,7 +55,7 @@ EOF
 <!--
     Membrane Configuration Reference:
      - https://membrane-soa.org/api-gateway-doc/current/configuration/reference/
-     - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
+     - https://www.membrane-soa.org/api-gateway-doc/current/configuration/samples.html
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
   xmlns:spring="http://www.springframework.org/schema/beans"
