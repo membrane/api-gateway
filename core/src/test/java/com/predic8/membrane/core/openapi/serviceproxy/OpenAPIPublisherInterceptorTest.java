@@ -96,7 +96,7 @@ public class OpenAPIPublisherInterceptorTest {
         header.setAccept("html");
         get.getRequest().setHeader(header);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"" + uiOld + "/servers-1-api-v1-0\">Servers 1 API</a>"));
+        assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"" + OpenAPIPublisherInterceptor.PATH_UI + "/servers-1-api-v1-0\">Servers 1 API</a>"));
     }
 
     @Test
