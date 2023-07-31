@@ -73,15 +73,17 @@ public class OpenAPIPublisherInterceptorTest {
     }
 
     @Test
-    public void getApiDirectory() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
+    public void getApiDirectoryOld() throws Exception {
+        get.getRequest().setUri("/api-doc");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertTrue(TestUtils.getMapFromResponse(get).size() >= 27);
     }
 
+    // TODO Same Test with /api-docs
+
     @Test
-    public void getHTMLOverview() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
+    public void getHTMLOverviewOld() throws Exception {
+        get.getRequest().setUri("/api-doc");
         Header header = new Header();
         header.setAccept("html");
         get.getRequest().setHeader(header);
@@ -89,16 +91,18 @@ public class OpenAPIPublisherInterceptorTest {
         assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"/api-doc/ui/servers-1-api-v1-0\">Servers 1 API</a>"));
     }
 
+    // TODO ditto
+
     @Test
     public void getSwaggerUI() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI + "/nested-objects-and-arrays-test-api-v1-0");
+        get.getRequest().setUri("/api-doc/ui/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertTrue(get.getResponse().getBodyAsStringDecoded().contains("html"));
     }
 
     @Test
-    public void getSwaggerUIWrongId() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI + "/wrong-id-0");
+    public void getSwaggerUIWrongIdOld() throws Exception {
+        get.getRequest().setUri("/api-doc/ui/wrong-id-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals( 404, get.getResponse().getStatusCode());
         checkHasValidProblemJSOM(get);
@@ -106,13 +110,13 @@ public class OpenAPIPublisherInterceptorTest {
 
     @Test
     public void getSwaggerUINoId() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI);
+        get.getRequest().setUri("/api-doc");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals( 404, get.getResponse().getStatusCode());
         checkHasValidProblemJSOM(get);
     }
 
-    private void checkHasValidProblemJSOM(Exchange exc) throws IOException {
+    private void checkHasValidProblemJSON(Exchange exc) throws IOException {
         assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
         assertTrue(exc.getResponse().isJSON());
 
@@ -124,7 +128,7 @@ public class OpenAPIPublisherInterceptorTest {
 
     @Test
     public void getApiById() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH  + "/nested-objects-and-arrays-test-api-v1-0");
+        get.getRequest().setUri("/api-doc/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals("application/x-yaml", get.getResponse().getHeader().getContentType());
         assertEquals("Nested Objects and Arrays Test API", getJsonFromYamlResponse(get).get("info").get("title").textValue());

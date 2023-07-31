@@ -47,11 +47,11 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    public static final String PATH = "/api-doc";
-    public static final String PATH_UI = "/api-doc/ui";
+    public static final String PATH = "/api-docs";
+    public static final String PATH_UI = "/api-docs/ui";
 
-    private static final Pattern patternMeta = Pattern.compile(PATH + "/(.*)");
-    private static final Pattern patternUI = Pattern.compile(PATH_UI + "/(.*)");
+    private static final Pattern patternMeta = Pattern.compile("/api-docs?/(.*)");
+    private static final Pattern patternUI = Pattern.compile("/api-docs?/(.*)");
 
     protected Map<String, OpenAPIRecord> apis;
 
@@ -72,9 +72,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
-        if (!exc.getRequest().getUri().startsWith(PATH))
+        if (!exc.getRequest().getUri().startsWith("/api-doc"))
             return CONTINUE;
 
+        // Should be called with /api-doc/ui and /api-docs/ui Pattern Match?
         if (exc.getRequest().getUri().startsWith(PATH_UI)) {
             return handleSwaggerUi(exc);
         }

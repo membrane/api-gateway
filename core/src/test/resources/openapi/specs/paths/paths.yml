@@ -1,0 +1,42 @@
+openapi: '3.0.3'
+info:
+  title: Path API
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de/apis/apix
+paths:
+  /foos:
+    get:
+      responses:
+        '200':
+          description: OK
+  /foos/{id}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+    get:
+      responses:
+        '200':
+          description: OK
+  /foos/{id}/{eid}:
+    parameters:
+      - $ref: "#/components/parameters/id"
+      - $ref: "#/components/parameters/eid"
+    get:
+      responses:
+        '200':
+          description: OK
+
+components:
+  parameters:
+    id:
+      required: true
+      in: path
+      name: id
+      schema:
+        type: string
+    eid:
+      required: true
+      in: path
+      name: eid
+      schema:
+        type: string
