@@ -33,9 +33,9 @@ public interface RuleKey {
 	/**
 	 * Returns the request URI.
 	 * For the request
-	 * GET index.htm
+	 * GET index.html
 	 * it is
-	 * index.htm
+	 * index.html
 	 *
 	 * @return a String specifying the request URI
 	 */

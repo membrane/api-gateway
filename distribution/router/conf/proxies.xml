@@ -5,7 +5,7 @@
 	 - proxies-*.xml files in this folder
 	 - The examples/* folders with working samples for proxies.xml
 	 - Configuration Reference: https://membrane-soa.org/api-gateway-doc/current/configuration/reference/
-	 - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
+	 - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.html
 
 	 Start Membrane with:
 	 ./service-proxy.sh or service-proxy.bat
