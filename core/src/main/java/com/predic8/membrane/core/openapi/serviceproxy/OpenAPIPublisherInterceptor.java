@@ -51,7 +51,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     public static final String PATH_UI = "/api-docs/ui";
 
     private static final Pattern patternMeta = Pattern.compile("/api-docs?/(.*)");
-    private static final Pattern patternUI = Pattern.compile("/api-docs?/(.*)");
+    private static final Pattern patternUI = Pattern.compile("/api-docs?/ui(.*)");
 
     protected Map<String, OpenAPIRecord> apis;
 
@@ -75,8 +75,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().getUri().startsWith("/api-doc"))
             return CONTINUE;
 
-        // Should be called with /api-doc/ui and /api-docs/ui Pattern Match?
-        if (exc.getRequest().getUri().startsWith(PATH_UI)) {
+        if (exc.getRequest().getUri().matches("/api-docs?/ui")) {
             return handleSwaggerUi(exc);
         }
 
@@ -131,7 +130,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         // No id specified
         if (!m.matches()) {
             Map<String, Object> details = new HashMap<>();
-            details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-doc/ui/<<id>>");
+            details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>");
             exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details));
             return RETURN;
         }
