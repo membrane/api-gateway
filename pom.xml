@@ -226,7 +226,6 @@
 				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
-				<!-- Used nowhere currently (2015-11-09) -->
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-expression</artifactId>
 				<version>${spring.version}</version>

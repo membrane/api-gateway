@@ -76,11 +76,6 @@
 			<artifactId>jackson-datatype-joda</artifactId>
 			<version>${jackson.version}</version>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>org.json</groupId>-->
-<!--			<artifactId>json</artifactId>-->
-<!--			<version>20230227</version>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>com.googlecode.jatl</groupId>
 			<artifactId>jatl</artifactId>
@@ -152,11 +147,6 @@
 			<version>4.10.0</version>
 			<scope>test</scope>
 		</dependency>
-<!--		<dependency>-->
-<!--			<groupId>javax.mail</groupId>-->
-<!--			<artifactId>mail</artifactId>-->
-<!--			<version>1.5.0-b01</version>-->
-<!--		</dependency>-->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-beans</artifactId>
