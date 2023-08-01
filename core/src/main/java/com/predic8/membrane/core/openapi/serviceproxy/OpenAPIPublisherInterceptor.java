@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static java.lang.String.valueOf;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
@@ -51,7 +52,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     public static final String PATH_UI = "/api-docs/ui";
 
     private static final Pattern patternMeta = Pattern.compile("/api-docs?/(.*)");
-    private static final Pattern patternUI = Pattern.compile("/api-docs?/ui(.*)");
+    private static final Pattern patternUI = Pattern.compile("/api-docs?/ui/(.*)");
 
     protected Map<String, OpenAPIRecord> apis;
 
@@ -72,12 +73,13 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
+        if (exc.getRequest().getUri().matches(valueOf(patternUI))) {
+            return handleSwaggerUi(exc);
+        }
+
         if (!exc.getRequest().getUri().startsWith("/api-doc"))
             return CONTINUE;
 
-        if (exc.getRequest().getUri().matches("/api-docs?/ui")) {
-            return handleSwaggerUi(exc);
-        }
 
         return handleOverviewOpenAPIDoc(exc);
     }
