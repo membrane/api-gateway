@@ -90,6 +90,47 @@ brew install util-linux
 
 Run Testclass `ExampleTests`
 
+## Project Site
+
+To build the maven project site, run the `site` goal:
+```shell
+mvn site
+```
+Besides the maven project site, a set of reports is generated for:
+* CVE Vulnerabilities
+* Dependency Versions
+* Maven Plugin Versions
+
+## Dependency updates
+
+After generating the version reports, Maven can automatically update the POM with the latest dependency versions:
+
+### Apply changes to POM
+To apply the latest version information to the POM, make sure to run `mvn site` to generate the reports, then run the following command:
+```shell
+mvn versions:use-latest-versions
+```
+By default, dependencies are updated to the next latest version available, be it patch, minor or major version.
+If the version target should be limited, use any combination of the following properties:
+
+* `-DallowIncrementalUpdates=false`
+* `-DallowMinorUpdates=false`
+* `-DallowMajorUpdates=false`
+
+For more detailed information visit the [versions-maven-plugin](https://www.mojohaus.org/versions/versions-maven-plugin/examples/advancing-dependency-versions.html) reference.
+
+### Reverting changes to POM
+*Note: Do not rely on this mechanism, make sure to utilize an SCM system.*
+```shell
+mvn versions:revert
+```
+
+### Finalizing changes to POM
+*Note: This will remove any backup data and permanently accept the new POM information.*
+```shell
+mvn versions:commit
+```
+
 ## Troubleshooting
 
 - 
