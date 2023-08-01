@@ -51,8 +51,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     public static final String PATH = "/api-docs";
     public static final String PATH_UI = "/api-docs/ui";
 
-    private static final Pattern patternMeta = Pattern.compile("/api-docs?/(.*)");
-    private static final Pattern patternUI = Pattern.compile("/api-docs?/ui/(.*)");
+    private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
+    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
     protected Map<String, OpenAPIRecord> apis;
 
@@ -73,7 +73,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
-        if (exc.getRequest().getUri().matches(valueOf(patternUI))) {
+        if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
             return handleSwaggerUi(exc);
         }
 
@@ -85,7 +85,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws IOException, URISyntaxException {
-        Matcher m = patternMeta.matcher(exc.getRequest().getUri());
+        Matcher m = PATTERN_META.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
                 return returnHtmlOverview(exc);
@@ -127,7 +127,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleSwaggerUi(Exchange exc) {
-        Matcher m = patternUI.matcher(exc.getRequest().getUri());
+        Matcher m = PATTERN_UI.matcher(exc.getRequest().getUri());
 
         // No id specified
         if (!m.matches()) {
