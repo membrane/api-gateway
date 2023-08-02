@@ -124,7 +124,7 @@
 		<dependency>
 			<groupId>javax.mail</groupId>
 			<artifactId>mail</artifactId>
-			<version>1.4.7</version>
+			<version>1.5.0-b01</version>
 		</dependency>
 
 		<dependency>
@@ -134,7 +134,7 @@
 		<dependency>
 			<groupId>redis.clients</groupId>
 			<artifactId>jedis</artifactId>
-			<version>4.4.1</version>
+			<version>4.4.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.bornium</groupId>
@@ -144,7 +144,7 @@
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>okhttp</artifactId>
-			<version>4.10.0</version>
+			<version>4.11.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -170,7 +170,7 @@
 		<dependency>
 			<groupId>org.graalvm.sdk</groupId>
 			<artifactId>graal-sdk</artifactId>
-			<version>22.3.0</version>
+			<version>22.3.3</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -178,7 +178,7 @@
 		<dependency>
 			<groupId>org.graalvm.js</groupId>
 			<artifactId>js</artifactId>
-			<version>22.3.0</version>
+			<version>22.3.3</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -280,7 +280,7 @@
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>activemq-broker</artifactId>
-			<version>5.17.3</version>
+			<version>5.18.2</version>
 			<scope>test</scope>
 		</dependency>
 
