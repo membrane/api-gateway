@@ -384,7 +384,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.10.1</version>
+				<version>3.11.0</version>
 				<configuration>
 					<source>${javac.source}</source>
 					<target>${javac.target}</target>
@@ -406,7 +406,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.2.1</version>
+				<version>3.3.0</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -420,7 +420,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.4.1</version>
+				<version>3.5.0</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -477,7 +477,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.1.0</version>
+				<version>3.3.0</version>
 				<executions>
 					<execution>
 						<id>enforce-java</id>
@@ -534,7 +534,7 @@
 
 				<plugin>
 					<artifactId>maven-war-plugin</artifactId>
-					<version>3.3.2</version>
+					<version>3.4.0</version>
 					<configuration>
 						<archive>
 							<manifest>
@@ -553,29 +553,29 @@
 
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.0.0-M7</version>
+					<version>3.1.2</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-failsafe-plugin</artifactId>
-					<version>3.0.0-M7</version>
+					<version>3.1.2</version>
 				</plugin>
 
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.4.1</version>
+					<version>3.5.0</version>
 				</plugin>
 
 				<plugin>
 					<groupId>org.cyclonedx</groupId>
 					<artifactId>cyclonedx-maven-plugin</artifactId>
-					<version>2.7.5</version>
+					<version>2.7.9</version>
 				</plugin>
 
 				<plugin>
 					<artifactId>maven-assembly-plugin</artifactId>
-					<version>3.4.2</version>
+					<version>3.6.0</version>
 				</plugin>
 
 			</plugins>
