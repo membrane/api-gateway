@@ -94,6 +94,7 @@ Run Testclass `ExampleTests`
 
 To build the maven project site, run the `site` goal:
 ```shell
+mvn install #Optionally with -DskipTests
 mvn site
 ```
 Besides the maven project site, a set of reports is generated for:
@@ -108,7 +109,8 @@ After generating the version reports, Maven can automatically update the POM wit
 ### Apply changes to POM
 To apply the latest version information to the POM, make sure to run `mvn site` to generate the reports, then run the following command:
 ```shell
-mvn versions:use-latest-versions
+mvn versions:use-latest-versions #Update all standard versions.
+mvn versions:update-properties #Update all versions listed in properties.
 ```
 By default, dependencies are updated to the next latest version available, be it patch, minor or major version.
 If the version target should be limited, use any combination of the following properties:
