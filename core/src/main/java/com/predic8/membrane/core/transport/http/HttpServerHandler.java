@@ -31,6 +31,7 @@ import javax.net.ssl.SSLSocket;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http2.Http2ServerHandler;
 import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
+import com.predic8.membrane.core.transport.ssl.TLSUnrecognizedNameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,6 +145,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("Socket of thread " + counter + " timed out");
 		} catch (SocketException se) {
 			log.debug("client socket closed");
+		} catch (TLSUnrecognizedNameException e) {
+			if (showSSLExceptions)
+				log.error(e.getMessage());
 		} catch (SSLException s) {
 			SSLException ex = s;
 			if(showSSLExceptions) {
