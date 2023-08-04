@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static java.lang.String.valueOf;
 
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
@@ -47,11 +48,11 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    public static final String PATH = "/api-doc";
-    public static final String PATH_UI = "/api-doc/ui";
+    public static final String PATH = "/api-docs";
+    public static final String PATH_UI = "/api-docs/ui";
 
-    private static final Pattern patternMeta = Pattern.compile(PATH + "/(.*)");
-    private static final Pattern patternUI = Pattern.compile(PATH_UI + "/(.*)");
+    private static final Pattern PATTERN_META = Pattern.compile(PATH + "?/(.*)");
+    private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
     protected Map<String, OpenAPIRecord> apis;
 
@@ -72,18 +73,19 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
-        if (!exc.getRequest().getUri().startsWith(PATH))
-            return CONTINUE;
-
-        if (exc.getRequest().getUri().startsWith(PATH_UI)) {
+        if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
             return handleSwaggerUi(exc);
         }
+
+        if (!exc.getRequest().getUri().startsWith("/api-doc"))
+            return CONTINUE;
+
 
         return handleOverviewOpenAPIDoc(exc);
     }
 
     private Outcome handleOverviewOpenAPIDoc(Exchange exc) throws IOException, URISyntaxException {
-        Matcher m = patternMeta.matcher(exc.getRequest().getUri());
+        Matcher m = PATTERN_META.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
                 return returnHtmlOverview(exc);
@@ -125,12 +127,12 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleSwaggerUi(Exchange exc) {
-        Matcher m = patternUI.matcher(exc.getRequest().getUri());
+        Matcher m = PATTERN_UI.matcher(exc.getRequest().getUri());
 
         // No id specified
         if (!m.matches()) {
             Map<String, Object> details = new HashMap<>();
-            details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-doc/ui/<<id>>");
+            details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>");
             exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details));
             return RETURN;
         }

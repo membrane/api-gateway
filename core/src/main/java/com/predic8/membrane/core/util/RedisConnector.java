@@ -31,7 +31,7 @@ public class RedisConnector  implements InitializingBean {
     private String host = "localhost";
     private int dbNumber = 0;
     private int port = 6379;
-    //https://partners-intl.aliyun.com/help/en/doc-detail/98726.htm
+    //https://partners-intl.aliyun.com/help/en/redis/use-cases/jedispool-optimization
     //connection size
     private int connectionNumber = 20;
     private int minIdleConnection = 10;

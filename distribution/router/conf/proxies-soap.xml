@@ -28,7 +28,7 @@
 			 http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000
 
 			 Documentation:
-			 https://membrane-soa.org/api-gateway/5.1/configuration/reference/soapProxy.htm
+			 https://membrane-soa.org/api-gateway-doc/current/configuration/reference/soapProxy.htm
 
 		-->
 		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">

@@ -52,7 +52,7 @@ public class OAuth2APITest extends DistributionExtractingTestcase {
     void testIt() throws Exception {
 
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/api")).withWatcher(logger).script("client").parameters("john password").waitAfterStartFor("200 O").start()) {
+        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/api")).withWatcher(logger).script("client").parameters("john password").waitAfterStartFor("success").start()) {
             assertTrue(logger.contains("""
                     {"success":"true"}
                     """));
