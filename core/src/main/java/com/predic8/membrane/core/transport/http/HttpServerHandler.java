@@ -147,7 +147,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("client socket closed");
 		} catch (TLSUnrecognizedNameException e) {
 			if (showSSLExceptions)
-				log.error(e.getMessage());
+				log.error("{}", e.getMessage());
 		} catch (SSLException s) {
 			SSLException ex = s;
 			if(showSSLExceptions) {
