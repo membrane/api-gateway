@@ -35,6 +35,10 @@ public class AbstractBodyValidator<T> {
         // Use the value of the OpenAPI spec for comparison, so it can not
         // be influenced from the outside.
         if ( APPLICATION_JSON_CONTENT_TYPE.match(mediaType)) {
+            // MediaType but no schema. => No schema therefore no schema validation => ok
+            if (mediaTypeObj.getSchema() == null) {
+                return;
+            }
             if (mediaTypeObj.getSchema().get$ref() != null) {
                 ctx.schemaType(mediaTypeObj.getSchema().get$ref());
             }

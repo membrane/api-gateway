@@ -1,0 +1,32 @@
+openapi: '3.0.2'
+info:
+  title: Edge Cases Test API
+  version: '1.0'
+paths:
+  /no-content:
+    get:
+      responses:
+        '200':
+          description: OK
+  /content-no-schema:
+    get:
+      responses:
+        '200':
+          description: OK
+          content: {}
+  /content-mediatype-no-schema:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: {}
+  /content-empty-schema:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: {}
+

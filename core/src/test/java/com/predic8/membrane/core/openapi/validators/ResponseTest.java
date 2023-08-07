@@ -35,17 +35,17 @@ public class ResponseTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void validCustomerResponse() throws ParseException {
+    public void validCustomerResponse() {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).json().body(getResourceAsStream("/openapi/messages/customer.json")));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void invalidCustomerResponse() throws ParseException {
+    public void invalidCustomerResponse() {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/invalid-customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).json().body(getResourceAsStream("/openapi/messages/invalid-customer.json")));
 
 //        System.out.println("errors = " + errors);
 
@@ -93,9 +93,9 @@ public class ResponseTest extends AbstractValidatorTest {
      * The OpenAPI does not specify a content for a response, but der backend is sending a body.
      */
     @Test
-    public void noContentInResponseSendPayload() throws ParseException {
+    public void noContentInResponseSendPayload() {
 
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(200).mediaType(APPLICATION_JSON).body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").json().body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(200).json().body("{ }"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -108,7 +108,7 @@ public class ResponseTest extends AbstractValidatorTest {
     @Test
     public void statusCodeNotInResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(202).mediaType(APPLICATION_JSON).body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").json().body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(202).mediaType(APPLICATION_JSON).body("{ }"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
