@@ -72,6 +72,9 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleMessage(Exchange exchange, Message msg) {
+
+        // if ifNot...
+
         msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg).getStandardEvaluationContext()));
         return CONTINUE;
     }

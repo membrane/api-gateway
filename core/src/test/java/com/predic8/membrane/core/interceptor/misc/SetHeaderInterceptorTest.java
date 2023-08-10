@@ -121,6 +121,22 @@ class SetHeaderInterceptorTest {
         assertEquals("foo null baz", interceptor.evaluateExpression(evalCtx));
     }
 
+    @Test
+    // Beide cases
+    void onlySetIfNotSet() throws Exception {
+
+        exc.getRequest().getHeader().add("X-FOO","0");
+
+        interceptor.setName("X-FOO");
+        interceptor.setValue("42");
+        //interceptor.setIfNot..(true)
+
+        interceptor.handleRequest(exc);
+
+        // assert
+
+    }
+
     class EvalContextValues {
         public String getFoo() {
             return "foo";
