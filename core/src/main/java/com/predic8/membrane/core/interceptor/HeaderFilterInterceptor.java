@@ -69,7 +69,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 		@MCTextContent
 		public void setPattern(String pattern) {
 			this.pattern = pattern;
-			p = Pattern.compile(pattern);
+			p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
 		}
 
 		public boolean matches(String header) {
