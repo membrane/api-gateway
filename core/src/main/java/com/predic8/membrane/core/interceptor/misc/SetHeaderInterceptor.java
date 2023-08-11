@@ -83,10 +83,11 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleMessage(Exchange exchange, Message msg) {
-        if (!ifAbsent || !msg.getHeader().contains(name)) {
-            msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg).getStandardEvaluationContext()));
+        if (msg.getHeader().contains(name) && ifAbsent) {
+            return CONTINUE;
         }
 
+        msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg).getStandardEvaluationContext()));
         return CONTINUE;
     }
 
