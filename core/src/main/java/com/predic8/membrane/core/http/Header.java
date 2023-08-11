@@ -191,6 +191,11 @@ public class Header {
 		return fields.toArray(new HeaderField[0]);
 	}
 
+	public boolean contains(String header) {
+		return fields.stream()
+				.anyMatch(headerField -> headerField.getHeaderName().equals(header));
+	}
+
 	/**
 	 * Since {@link HttpUtil#readLine(InputStream)} assembles the String byte-by-byte
 	 * converting it to char-by-char, we use ISO-8859-1 for output here.

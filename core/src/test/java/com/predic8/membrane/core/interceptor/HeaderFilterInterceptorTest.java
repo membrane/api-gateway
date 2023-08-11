@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
@@ -23,6 +24,8 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Action;
 import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Rule;
+
+import java.util.List;
 
 public class HeaderFilterInterceptorTest {
 
@@ -38,10 +41,22 @@ public class HeaderFilterInterceptorTest {
 		fhi.handleResponse(exc);
 
 		HeaderField[] h = exc.getResponse().getHeader().getAllHeaderFields();
-		assertEquals(3, h.length);
-		assertEquals("Content-Length", h[0].getHeaderName().toString());
-		assertEquals("a", h[1].getHeaderName().toString());
-		assertEquals("e", h[2].getHeaderName().toString());
+		assertEquals(2, h.length);
+		assertEquals("a", h[0].getHeaderName().toString());
+		assertEquals("e", h[1].getHeaderName().toString());
 	}
 
+	@Test
+	@DisplayName("Remove header from Response")
+	void remove() throws Exception {
+		var exc = new Exchange(null);
+		exc.setResponse(Response.ok().header("Strict-Transport-Security", "foo").build());
+
+		var filter = new HeaderFilterInterceptor();
+		filter.setRules(List.of(new Rule("strict-transport-security", Action.REMOVE)));
+
+		filter.handleResponse(exc);
+
+		assertFalse(exc.getResponse().getHeader().contains("STRICT-TRANSPORT-SECURITY"));
+	}
 }

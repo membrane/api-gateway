@@ -240,7 +240,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.reportError = reportError;
     }
 
-    public boolean getReportError() {
+    public Boolean getReportError() {
         return reportError;
     }
 

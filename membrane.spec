@@ -4,7 +4,7 @@
 %global logdir %{_var}/log/%{name}
 
 Name:             membrane
-Version:          5.1.19
+Version:          5.1.20-SNAPSHOT
 Release:          1%{?dist}
 URL:              https://github.com/membrane/service-proxy
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
@@ -55,7 +55,7 @@ EOF
 <!--
     Membrane Configuration Reference:
      - https://membrane-soa.org/api-gateway-doc/current/configuration/reference/
-     - https://www.membrane-soa.org/service-proxy-doc/current/configuration/samples.htm
+     - https://www.membrane-soa.org/api-gateway-doc/current/configuration/samples.html
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
   xmlns:spring="http://www.springframework.org/schema/beans"

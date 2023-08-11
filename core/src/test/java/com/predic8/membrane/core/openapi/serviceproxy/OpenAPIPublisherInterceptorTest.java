@@ -25,6 +25,8 @@ import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.parser.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
 import java.util.*;
@@ -33,10 +35,14 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class OpenAPIPublisherInterceptorTest {
 
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
     private final ObjectMapper om = new ObjectMapper();
+
+    private static final String META_OLD = "/api-doc";
+    private static final String UI_OLD = "/api-doc/ui";
 
     OpenAPIRecordFactory openAPIRecordFactory;
     OpenAPIPublisherInterceptor interceptor;
@@ -62,7 +68,7 @@ public class OpenAPIPublisherInterceptorTest {
     }
 
     @Test
-    public void constuctor() {
+    public void constructor() {
         assertTrue(interceptor.apis.size() >= 27);
         assertNotNull(interceptor.apis.get("references-test-v1-0"));
         assertNotNull(interceptor.apis.get("strings-test-api-v1-0"));
@@ -72,47 +78,66 @@ public class OpenAPIPublisherInterceptorTest {
         assertNotNull(interceptor.apis.get("references-response-test-v1-0"));
     }
 
-    @Test
-    public void getApiDirectory() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
+    final List<String> uiParameters() {
+        return new ArrayList<>() {{
+            add(UI_OLD);
+            add(OpenAPIPublisherInterceptor.PATH_UI);
+        }};
+    }
+
+    final List<String> metaParameters() {
+        return new ArrayList<>() {{
+            add(META_OLD);
+            add(OpenAPIPublisherInterceptor.PATH);
+        }};
+    }
+
+    @ParameterizedTest
+    @MethodSource("metaParameters")
+    public void getApiDirectory(String testPath) throws Exception {
+        get.getRequest().setUri(testPath);
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertTrue(TestUtils.getMapFromResponse(get).size() >= 27);
     }
 
-    @Test
-    public void getHTMLOverview() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH);
+    @ParameterizedTest
+    @MethodSource("metaParameters")
+    public void getHTMLOverview(String testPath) throws Exception {
+        get.getRequest().setUri(testPath);
         Header header = new Header();
         header.setAccept("html");
         get.getRequest().setHeader(header);
         assertEquals( RETURN, interceptor.handleRequest(get));
-        assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"/api-doc/ui/servers-1-api-v1-0\">Servers 1 API</a>"));
+        assertTrue(get.getResponse().getBodyAsStringDecoded().contains("<a href=\"" + OpenAPIPublisherInterceptor.PATH_UI + "/servers-1-api-v1-0\">Servers 1 API</a>"));
     }
 
-    @Test
-    public void getSwaggerUI() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI + "/nested-objects-and-arrays-test-api-v1-0");
+    @ParameterizedTest
+    @MethodSource("uiParameters")
+    public void getSwaggerUI(String testPath) throws Exception {
+        get.getRequest().setUri(testPath + "/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertTrue(get.getResponse().getBodyAsStringDecoded().contains("html"));
     }
 
-    @Test
-    public void getSwaggerUIWrongId() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI + "/wrong-id-0");
+    @ParameterizedTest
+    @MethodSource("uiParameters")
+    public void getSwaggerUIWrongId(String testPath) throws Exception {
+        get.getRequest().setUri(testPath + "/wrong-id-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals( 404, get.getResponse().getStatusCode());
-        checkHasValidProblemJSOM(get);
+        checkHasValidProblemJSON(get);
     }
 
-    @Test
-    public void getSwaggerUINoId() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH_UI);
+    @ParameterizedTest
+    @MethodSource("uiParameters")
+    public void getSwaggerUINoId(String testPath) throws Exception {
+        get.getRequest().setUri(testPath);
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals( 404, get.getResponse().getStatusCode());
-        checkHasValidProblemJSOM(get);
+        checkHasValidProblemJSON(get);
     }
 
-    private void checkHasValidProblemJSOM(Exchange exc) throws IOException {
+    private void checkHasValidProblemJSON(Exchange exc) throws IOException {
         assertEquals(APPLICATION_PROBLEM_JSON, exc.getResponse().getHeader().getContentType());
         assertTrue(exc.getResponse().isJSON());
 
@@ -122,9 +147,10 @@ public class OpenAPIPublisherInterceptorTest {
         assertTrue(json.has("type"));
     }
 
-    @Test
-    public void getApiById() throws Exception {
-        get.getRequest().setUri(OpenAPIPublisherInterceptor.PATH  + "/nested-objects-and-arrays-test-api-v1-0");
+    @ParameterizedTest
+    @MethodSource("metaParameters")
+    public void getApiById(String testPath) throws Exception {
+        get.getRequest().setUri(testPath + "/nested-objects-and-arrays-test-api-v1-0");
         assertEquals( RETURN, interceptor.handleRequest(get));
         assertEquals("application/x-yaml", get.getResponse().getHeader().getContentType());
         assertEquals("Nested Objects and Arrays Test API", getJsonFromYamlResponse(get).get("info").get("title").textValue());
