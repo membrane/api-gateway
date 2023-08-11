@@ -24,6 +24,7 @@ import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
 import org.springframework.expression.spel.support.*;
 
+import java.util.Arrays;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -42,6 +43,16 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
 
     private String name;
     private String value;
+    private boolean ifAbsent;
+
+    public boolean isIfAbsent() {
+        return ifAbsent;
+    }
+
+    @MCAttribute
+    public void setIfAbsent(boolean ifAbsent) {
+        this.ifAbsent = ifAbsent;
+    }
 
     public String getName() {
         return name;
@@ -72,10 +83,12 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleMessage(Exchange exchange, Message msg) {
+        var msgContainsHeader = Arrays.stream(msg.getHeader().getAllHeaderFields()).anyMatch(headerField -> headerField.getHeaderName().equals(name));
 
-        // if ifNot...
+        if (!ifAbsent || !msgContainsHeader) {
+            msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg).getStandardEvaluationContext()));
+        }
 
-        msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg).getStandardEvaluationContext()));
         return CONTINUE;
     }
 

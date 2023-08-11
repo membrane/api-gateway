@@ -122,19 +122,30 @@ class SetHeaderInterceptorTest {
     }
 
     @Test
-    // Beide cases
-    void onlySetIfNotSet() throws Exception {
-
+    @DisplayName("Only set if the header is absent")
+    void onlyIfAbsent() throws Exception {
         exc.getRequest().getHeader().add("X-FOO","0");
 
         interceptor.setName("X-FOO");
         interceptor.setValue("42");
-        //interceptor.setIfNot..(true)
+        interceptor.setIfAbsent(true);
 
         interceptor.handleRequest(exc);
 
-        // assert
+        assertEquals("0", exc.getRequest().getHeader().getFirstValue("X-FOO"));
+    }
 
+    @Test
+    @DisplayName("Overwrite header when it is not absent")
+    void notIfAbsent() throws Exception {
+        exc.getRequest().getHeader().add("X-FOO", "0");
+
+        interceptor.setName("X-FOO");
+        interceptor.setValue("42");
+
+        interceptor.handleRequest(exc);
+
+        assertEquals("42", exc.getRequest().getHeader().getFirstValue("X-FOO"));
     }
 
     class EvalContextValues {
