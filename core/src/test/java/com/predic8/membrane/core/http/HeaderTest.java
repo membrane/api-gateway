@@ -66,6 +66,16 @@ public class HeaderTest {
     }
 
     @Test
+    @DisplayName("Find containing headers")
+    void headerContains() {
+        var header = new Header();
+        header.setValue("X-Foo", "123");
+
+        assertTrue(header.contains("x-foo"));
+        assertFalse(header.contains("x-bar"));
+    }
+
+    @Test
     public void testGetCharsetNull() {
         Header header = new Header();
         header.setContentType(TEXT_XML);
