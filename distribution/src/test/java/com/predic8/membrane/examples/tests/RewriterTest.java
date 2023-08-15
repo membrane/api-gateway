@@ -17,7 +17,8 @@ package com.predic8.membrane.examples.tests;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 public class RewriterTest extends DistributionExtractingTestcase {
 
@@ -29,7 +30,12 @@ public class RewriterTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignore = startServiceProxyScript()) {
-			assertContains("wsdl:documentation", getAndAssert200(BLZ_SERVICE_WSDL));
+
+			given()
+				.get("http://localhost:2000/store/products/")
+			.then()
+				.statusCode(200)
+				.body("meta.count", greaterThanOrEqualTo(0));
 		}
 	}
 }

@@ -1,6 +1,6 @@
 ### STOMP OVER WEBSOCKET INTERCEPTING
 
-In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane Service Proxy.
+In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane API Gateway.
 Additionally, regular interceptors can be run on those messages (with limitations) in addition to all WebSocket
 interceptors.
 

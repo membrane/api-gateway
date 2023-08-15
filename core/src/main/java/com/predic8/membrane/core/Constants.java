@@ -24,8 +24,6 @@ public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
 
-	public static final String EMPTY_STRING = "";
-
 	public static final String CRLF = "" + ((char) 13) + ((char) 10);
 
 	public static final byte[] CRLF_BYTES = { 13, 10 };
@@ -49,8 +47,6 @@ public class Constants {
 		VERSION = version;
 	}
 
-	public static final String XML_VERSION = "1.0";
-
 	public static final String ISO_8859_1 = "ISO-8859-1";
 
 	public static final String UNKNOWN = "unknown";
@@ -58,8 +54,6 @@ public class Constants {
 	public static final String N_A = "N/A";
 
 	public static final String HTTP_VERSION_11 = "1.1";
-
-	public static final String HTTP_VERSION_10 = "1.0";
 
 	public static final String WSDL_SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";
 	public static final String WSDL_SOAP12_NS = "http://schemas.xmlsoap.org/wsdl/soap12/";
@@ -76,9 +70,7 @@ public class Constants {
 
 	public static final String PROTOCOL_SOAP12 = "SOAP12";
 
-	public static final String PROTOCOL_HTTP = "HTTP";
-
-	public static final String PRODUCT_NAME = "Membrane Service Proxy";
+	public static final String PRODUCT_NAME = "Membrane API Gateway";
 	public static final String PRODUCT_WEBSITE = "http://www.membrane-soa.org/api-gateway/";
 	public static final String PRODUCT_WEBSITE_DOC = "http://www.membrane-soa.org/api-gateway-doc/";
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";

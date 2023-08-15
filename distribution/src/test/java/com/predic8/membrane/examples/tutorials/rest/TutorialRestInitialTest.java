@@ -34,6 +34,6 @@ public class TutorialRestInitialTest extends AbstractSampleMembraneStartStopTest
     @Test
     public void testStart() throws Exception {
         assertContains("Shop API", getAndAssert200(LOCALHOST_2000));
-        assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:9000/admin/"));
+        assertContains("Membrane API Gateway Administration", getAndAssert200("http://localhost:9000/admin/"));
     }
 }

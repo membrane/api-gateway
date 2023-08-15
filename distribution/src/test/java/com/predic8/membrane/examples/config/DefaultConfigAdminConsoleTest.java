@@ -47,7 +47,7 @@ public class DefaultConfigAdminConsoleTest extends DistributionExtractingTestcas
 
 		try(Process2 sl = startServiceProxyScript()) {
 			setupHTTPAuthentication("localhost", 2003, "admin", "membrane");
-			assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:2003/admin/"));
+			assertContains("Membrane API Gateway Administration", getAndAssert200("http://localhost:2003/admin/"));
 
 			new ProxiesXmlUtil(proxies).updateWith(readFileToString(proxiesFull, UTF_8), sl);
 			readFileFromBaseDir("conf/proxies-full-sample.xml");

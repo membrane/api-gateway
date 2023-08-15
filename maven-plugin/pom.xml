@@ -18,7 +18,7 @@
     <artifactId>service-proxy-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <name>${project.artifactId}</name>
-    <description>A Maven plugin for the Membrane Service Proxy.</description>
+    <description>A Maven plugin for the Membrane API Gateway.</description>
     <url>http://membrane-soa.org/service-proxy/</url>
 
     <parent>

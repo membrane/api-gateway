@@ -41,11 +41,11 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                     "openapi" : "3.0.2",
                     "title" : "Fruit Shop API",
                     "version" : "1.0",
-                    "openapi_link" : "/api-doc/fruitshop-v1-0",
-                    "ui_link" : "/api-doc/ui/fruitshop-v1-0"
+                    "openapi_link" : "/api-docs/fruitshop-v1-0",
+                    "ui_link" : "/api-docs/ui/fruitshop-v1-0"
                   }
                 }
-                """, get(LOCALHOST_2000 + "/api-doc").asString(), true);
+                """, get(LOCALHOST_2000 + "/api-docs").asString(), true);
     }
 
     @Test
@@ -59,7 +59,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                          }
                         """)
         .when()
-                .post(LOCALHOST_2000 + "/shop/products/")
+                .post(LOCALHOST_2000 + "/shop/v2/products/")
         .then().assertThat()
                 .statusCode(201)
                 .contentType(APPLICATION_JSON)

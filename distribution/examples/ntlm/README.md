@@ -15,7 +15,7 @@ In this example we are going to see how NTLM authentication is handled with Memb
 
 To run the example execute the following steps:
 
-1. Start Membrane Service proxy by running the `service-proxy.[bat|sh]` in this folder.
+1. Start Membrane API Gateway proxy by running the `service-proxy.[bat|sh]` in this folder.
    
 2. Look at the console window and wait until `'Membrane ... up and running!'`. This window will remain open
    
