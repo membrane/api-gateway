@@ -11,7 +11,7 @@ import java.net.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ExchangeEvaluationContextTest {
+public class ExchangeEvaluationContextTest {
 
     Exchange exc;
 
