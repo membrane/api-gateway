@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 class HeaderMap implements Map<String, String> {
 
-    private Header headers;
+    private final Header headers;
 
     public HeaderMap(Header headers) {
         this.headers = headers;

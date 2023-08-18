@@ -2,12 +2,9 @@ package com.predic8.membrane.core.lang.spel;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import org.apache.http.client.methods.*;
 import org.junit.jupiter.api.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
-
-import java.net.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

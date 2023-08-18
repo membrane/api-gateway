@@ -52,6 +52,7 @@ public class ExchangeEvaluationContext {
         return properties;
     }
 
+    // We need to expose HeaderMap outside its defined visibility scope for SpEL
     public HeaderMap getHeaders() {
         return headers;
     }
