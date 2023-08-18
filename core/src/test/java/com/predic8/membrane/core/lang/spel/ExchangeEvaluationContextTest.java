@@ -16,17 +16,24 @@ public class ExchangeEvaluationContextTest {
     Exchange exc;
 
     @BeforeEach
-    void setup() throws URISyntaxException {
-        exc = new Request.Builder().header("Authentication","foo").buildExchange();
+    void setup() {
+        exc = new Request.Builder()
+                .header("Authentication","foo")
+                .buildExchange();
+    }
 
-
+    String keyExpression(String spel) {
+        Expression expression = new SpelExpressionParser().parseExpression(spel);
+        return expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()).getStandardEvaluationContext(), String.class);
     }
 
     @Test
     void getMethod() {
+        assertEquals("foo", keyExpression("headers[authentication]"));
+    }
 
-        Expression expression = new SpelExpressionParser().parseExpression("headers.Authentication");
-
-        expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()).getStandardEvaluationContext(), String.class);
+    @Test
+    void getMethodIgnoreCase() {
+        assertEquals("foo", keyExpression("headers[AUTHenticatioN]"));
     }
 }

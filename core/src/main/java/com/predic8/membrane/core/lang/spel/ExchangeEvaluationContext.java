@@ -28,7 +28,7 @@ public class ExchangeEvaluationContext {
 
     private final Exchange exchange;
     private final Message message;
-    private final Header headers;
+    private final HeaderMap headers;
     private final Map<String, Object> properties;
     private final String path;
     private final String method;
@@ -37,7 +37,7 @@ public class ExchangeEvaluationContext {
         this.exchange = exchange;
         this.message = message;
         properties = exchange.getProperties();
-        this.headers = message.getHeader();
+        this.headers = new HeaderMap(message.getHeader());
 
         Request request = exchange.getRequest();
         path = request.getUri();
@@ -52,7 +52,7 @@ public class ExchangeEvaluationContext {
         return properties;
     }
 
-    public Header getHeaders() {
+    public HeaderMap getHeaders() {
         return headers;
     }
 
