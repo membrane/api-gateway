@@ -33,7 +33,7 @@ import static org.apache.commons.codec.binary.Base64.*;
 /**
  * The headers of an HTTP message.
  */
-public class Header {
+public class Header implements Map<String,String> {
 
 	private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
 
@@ -431,8 +431,67 @@ public class Header {
 		return Long.parseLong(m.group(1));
 	}
 
+	@Override
+	public int size() {
+		return fields.size();
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return fields.isEmpty();
+	}
+
+	@Override
+	public boolean containsKey(Object key) {
+		return false;
+	}
+
+	@Override
+	public boolean containsValue(Object value) {
+		return false;
+	}
+
+	@Override
+	public String get(Object key) {
+		return null;
+	}
+
+	@org.jetbrains.annotations.Nullable
+	@Override
+	public String put(String key, String value) {
+		return null;
+	}
+
+	@Override
+	public String remove(Object key) {
+		return null;
+	}
+
+	@Override
+	public void putAll(@org.jetbrains.annotations.NotNull Map<? extends String, ? extends String> m) {
+
+	}
+
 	public void clear() {
 		fields.clear();
+	}
+
+	@org.jetbrains.annotations.NotNull
+	@Override
+	public Set<String> keySet() {
+		return null;
+	}
+
+	@org.jetbrains.annotations.NotNull
+	@Override
+	public Collection<String> values() {
+		return null;
+	}
+
+	@org.jetbrains.annotations.NotNull
+	@Override
+	public Set<Entry<String, String>> entrySet() {
+		return null;
 	}
 
 	public void setNoCacheResponseHeaders() {

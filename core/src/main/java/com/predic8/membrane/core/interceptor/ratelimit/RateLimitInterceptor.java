@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
+import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
 import java.time.*;
@@ -92,12 +93,19 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        if (!strategy.isRequestLimitReached(getKey(exc)))
-            return CONTINUE;
+
+        try {
+            if (!strategy.isRequestLimitReached(getKey(exc)))
+                return CONTINUE;
+        } catch (SpelEvaluationException e) {
+            log.error("Cannot evaluate keyExpression '{}' cause is {}",keyExpression,e.getMessage());
+            exc.setResponse(createProblemDetails(500, "/internal-error", "Internal Server Error"));
+            return RETURN;
+        }
 
         Map<String,Object> details = new HashMap<>();
         details.put("message","The quota of the ratelimiter is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())));
-        exc.setResponse(createProblemDetails(429, "/ratelimiter/exceeded", "Rate Limit is Exceeded", details));
+        exc.setResponse(createProblemDetails(429, "/ratelimiter/exceeded", "Rate limit is exceeded", details));
         setHeaderRateLimitFieldsOnResponse(exc);
 
         return RETURN;
