@@ -11,8 +11,8 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 
 **API Security:**
 * [JSON Web Tokens](#json-web-tokens)
-* [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.htm), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/api-gateway/current/configuration/reference/basicAuthentication.htm) 
-* [OAuth2 authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.htm) 
+* [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm) 
+* [OAuth2 authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html) 
 * [Rate limiting](#rate-limiting)
 * GraphQL-, JSON- and XML protection
 
@@ -78,7 +78,7 @@ This configuration is all you need to deploy from OpenAPI:
 </api>
 ```
 
-A list of deployed APIs is available at `http://localhost:2000/api-doc`
+A list of deployed APIs is available at `http://localhost:2000/api-docs`
 
 ![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
 
@@ -88,16 +88,16 @@ Click on the API title to get the Swagger UI.
 
 ## REST and HTTP APIs
 
-Routing requests from port `2000` to `api.predic8.de` when the path starts with `/shop`. 
+Routing requests from port `2000` to `api.predic8.de` when the path starts with `/shop/v2/`. 
 
 ```xml
 <api port="2000">
-    <path>/shop</path>
+    <path>/shop/v2/</path>
     <target url="https://api.predic8.de"/>
 </api>
 ```
 
-Call the API by opening `http://localhost:2000/shop` in the browser.
+Call the API by opening `http://localhost:2000/shop/v2/` in the browser.
 
 
 # Message Transformation
@@ -139,7 +139,7 @@ This template will transform the JSON input into plain text:
 </api>
 ```
 
-Use this one to transform into JSON:
+...into JSON:
 
 ```xml
 <template contentType="application/json" pretty="true">
@@ -149,7 +149,7 @@ Use this one to transform into JSON:
 </template>
 ```
 
-and that into XML:
+...and into XML:
 
 ```xml
 <template contentType="application/xml">
@@ -330,7 +330,7 @@ Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak
     <target url="https://backend"/>
 </api>
 ```
-Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.org/api-gateway-doc/current/oauth2-openid.htm)
+Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.org/api-gateway-doc/current/oauth2-openid.html)
 
 ### Membrane as Authorization Server
 
@@ -352,7 +352,7 @@ Operate your own identity provider:
   </oauth2authserver>
 </api>
 ```
-See the [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.htm) example.
+See the [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.html) example.
 
 ## Basic Authentication
 
@@ -448,7 +448,7 @@ Route and intercept WebSocket traffic:
   <target port="8080" host="localhost"/>
 </api>
 ```
-See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.htm)
+See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.html)
 
 
 # SOAP Web Services
