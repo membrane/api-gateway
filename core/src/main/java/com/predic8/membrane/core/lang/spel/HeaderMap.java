@@ -70,7 +70,7 @@ class HeaderMap implements Map<String, String> {
 
     @Override
     public void putAll(@NotNull Map<? extends String, ? extends String> m) {
-        m.forEach((key, value) -> headers.add(key, value));
+        m.forEach(headers::add);
     }
 
     @Override
