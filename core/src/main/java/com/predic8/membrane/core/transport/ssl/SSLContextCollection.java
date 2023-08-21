@@ -140,27 +140,27 @@ public class SSLContextCollection implements SSLProvider {
 								break OUTER;
 							}
 					}
-			if (sslContext == null) {
-				// no hostname matched: send 'unrecognized_name' alert and close socket
+				if (sslContext == null) {
+					// no hostname matched: send 'unrecognized_name' alert and close socket
 
-				byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-						2 /* fatal */, 112 /* unrecognized_name */ };
+					byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+							2 /* fatal */, 112 /* unrecognized_name */ };
 
-				try (socket) {
-					socket.getOutputStream().write(alert_unrecognized_name);
+					try (socket) {
+						socket.getOutputStream().write(alert_unrecognized_name);
+					}
+
+					StringBuilder hostname = null;
+					for (SNIServerName snisn : serverNames) {
+						if (hostname == null)
+							hostname = new StringBuilder();
+						else
+							hostname.append(", ");
+						hostname.append(new String(snisn.getEncoded(), "UTF-8"));
+					}
+
+					throw new TLSUnrecognizedNameException(hostname.toString());
 				}
-
-				StringBuilder hostname = null;
-				for (SNIServerName snisn : serverNames) {
-					if (hostname == null)
-						hostname = new StringBuilder();
-					else
-						hostname.append(", ");
-					hostname.append(new String(snisn.getEncoded(), "UTF-8"));
-				}
-
-				throw new RuntimeException("no certificate configured (sending unrecognized_name alert) for hostname \"" + hostname + "\"");
-			}
 			}
 		}
 
