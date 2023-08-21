@@ -52,7 +52,7 @@ public class RateLimitInterceptorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource( strings = {"properties[a]","path","json[foo]","method","path + method","headers.host","exchange.remoteAddrIp"})
+	@ValueSource( strings = {"properties[a]","path","json[foo]","method","path + method","headers[host]","exchange.remoteAddrIp"})
 	void simplePropertyExpression(String expression) throws Exception {
 
 		Exchange exc1 = prepareRequest("aaa");

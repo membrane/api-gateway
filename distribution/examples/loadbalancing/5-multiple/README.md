@@ -1,6 +1,6 @@
 ### MULTIPLE LOAD BALANCERS
 
-This example shows how to use multiple load balancers (LBs) within the same Membrane Service Proxy instance, and how to statically
+This example shows how to use multiple load balancers (LBs) within the same Membrane API Gateway instance, and how to statically
 configure your nodes within. You should be familiar with [1-static](../1-static) and [2-dynamic](../2-dynamic).
 
 The LBs are distinguished by giving them different names ("balancer1" and "balancer2" in the example).

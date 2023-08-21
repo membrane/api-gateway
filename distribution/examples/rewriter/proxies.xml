@@ -6,12 +6,14 @@
 
 	<router>
 
-		<serviceProxy port="2000">
+		<api port="2000">
 			<rewriter>
-				<map from="^/bank/(.*)" to="/axis2/$1" />
+				<map from="^/store/(.*)" to="/shop/v2/$1" />
 			</rewriter>
-			<target host="www.thomas-bayer.com" port="80" />
-		</serviceProxy>
+			<target host="api.predic8.de" port="443">
+				<ssl/>
+			</target>
+		</api>
 		
 	</router>
 	

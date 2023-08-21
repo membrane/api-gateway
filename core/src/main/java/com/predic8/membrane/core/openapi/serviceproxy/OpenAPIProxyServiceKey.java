@@ -23,7 +23,7 @@ import java.util.*;
 
 public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
-    private static Logger log = LoggerFactory.getLogger(OpenAPIProxyServiceKey.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIProxyServiceKey.class.getName());
 
     ArrayList<String> basePaths = new ArrayList<>();
 
@@ -31,8 +31,10 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
         super(host, "*", null, port, ip);
 
         // Add basePaths of OpenAPIPublisherInterceptor to accept them also
-        basePaths.add(OpenAPIPublisherInterceptor.PATH);
-        basePaths.add(OpenAPIPublisherInterceptor.PATH_UI);
+        basePaths.add(OpenAPIPublisherInterceptor.PATH);    // new path
+        basePaths.add(OpenAPIPublisherInterceptor.PATH_UI); // "
+        basePaths.add("/api-doc");                          // old to stay compatible
+        basePaths.add("/api-doc/ui");                       // "
     }
 
     @Override

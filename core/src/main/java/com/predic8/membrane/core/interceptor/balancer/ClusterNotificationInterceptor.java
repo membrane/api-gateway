@@ -14,39 +14,34 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.codec.binary.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import javax.crypto.*;
+import javax.crypto.spec.*;
+import java.util.*;
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Receives control messages to dynamically modify the configuration of a {@link LoadBalancingInterceptor}.
- * @explanation See also examples/loadbalancer-client-2 in the Membrane Service Proxy distribution.
+ * @explanation See also examples/loadbalancer-client-2 in the Membrane API Gateway distribution.
  * @topic 7. Clustering and Loadbalancing
  */
 @MCElement(name="clusterNotification")
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
-	private static Logger log = LoggerFactory.getLogger(ClusterNotificationInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ClusterNotificationInterceptor.class.getName());
 
-	private Pattern urlPattern = Pattern.compile("/clustermanager/(up|down|takeout)/?\\??(.*)");
+	private final Pattern urlPattern = Pattern.compile("/clustermanager/(up|down|takeout)/?\\??(.*)");
 
 	private boolean validateSignature = false;
 	private int timeout = 0;
@@ -85,24 +80,23 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 				return Outcome.RETURN;
 	}
 
-	private void updateClusterManager(Matcher m, Map<String, String> params)
-			throws Exception {
+	private void updateClusterManager(Matcher m, Map<String, String> params) {
 		if ("up".equals(m.group(1))) {
-			BalancerUtil.up(
+			up(
 					router,
 					getBalancerParam(params),
 					getClusterParam(params),
 					params.get("host"),
 					getPortParam(params));
 		} else if ("down".equals(m.group(1))) {
-			BalancerUtil.down(
+			down(
 					router,
 					getBalancerParam(params),
 					getClusterParam(params),
 					params.get("host"),
 					getPortParam(params));
 		} else {
-			BalancerUtil.takeout(
+			takeout(
 					router,
 					getBalancerParam(params),
 					getClusterParam(params),
@@ -119,22 +113,22 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		Cipher cipher = Cipher.getInstance("AES");
 		SecretKeySpec skeySpec = new SecretKeySpec(Hex.decodeHex(keyHex.toCharArray()), "AES");
 		cipher.init(Cipher.DECRYPT_MODE, skeySpec);
-		return parseQueryString(new String(cipher.doFinal(Base64.decodeBase64(data.getBytes("UTF-8"))),"UTF-8"), ERROR);
+		return parseQueryString(new String(cipher.doFinal(Base64.decodeBase64(data.getBytes(UTF_8))), UTF_8), ERROR);
 	}
 
-	private int getPortParam(Map<String, String> params) throws Exception {
+	private int getPortParam(Map<String, String> params) {
 		return Integer.parseInt(params.get("port"));
 	}
 
-	private String getClusterParam(Map<String, String> params) throws Exception {
+	private String getClusterParam(Map<String, String> params) {
 		return params.get("cluster") == null ? Cluster.DEFAULT_NAME : params.get("cluster");
 	}
 
-	private String getBalancerParam(Map<String, String> params) throws Exception {
+	private String getBalancerParam(Map<String, String> params) {
 		return params.get("balancer") == null ? Balancer.DEFAULT_NAME : params.get("balancer");
 	}
 
-	private Map<String, String> getParams(Exchange exc) throws Exception {
+	private Map<String, String> getParams(Exchange exc) {
 
 		String uri = exc.getOriginalRequestUri();
 		int qStart = uri.indexOf('?');

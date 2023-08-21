@@ -48,7 +48,7 @@ import static com.predic8.membrane.core.jmx.JmxExporter.*;
 
 /**
  * @description <p>
- *              Membrane Service Proxy's main object.
+ *              Membrane API Gateway's main object.
  *              </p>
  *              <p>
  *              The router is a Spring Lifecycle object: It is automatically started and stopped according to the

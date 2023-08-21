@@ -1,11 +1,11 @@
-Membrane Service Proxy 
+Membrane API Gateway
 -------------------------------------------------------------------------------
-Thanks for downloading Membrane Service Proxy.
+Thanks for downloading Membrane API Gateway.
 
 
-Running Membrane Service Proxy
+Running API Gateway
 -------------------------------------------------------------------------------
-Make sure you have installed Java 1.6 or higher. Then do the following:
+Make sure you have installed Java 17 or higher. Then do the following:
 
 * Starting the Service Proxy (Windows)
   Execute service-proxy.bat

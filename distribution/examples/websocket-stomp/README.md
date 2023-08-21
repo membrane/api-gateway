@@ -1,7 +1,7 @@
 ### WEBSOCKET STOMP EXAMPLE
 
 In this example we are going to send STOMP over WebSocket, all handled by
-Membrane Service Proxy.
+Membrane API Gateway.
 
 STOMP is an abbreviation for Streaming Text Oriented Messaging Protocol. It's a
 text based protocol for messaging, supported by ActiveMQ. Because of this, we

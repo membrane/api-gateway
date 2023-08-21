@@ -30,7 +30,7 @@ import static com.predic8.membrane.core.util.URLUtil.*;
 /**
  * @description Rewrites the scheme, hostname and port in the "Location" header in HTTP responses,
  * as well as in the "Destination" header in HTTP requests. The rewriting reflects the different schemes,
- * hostnames and ports used to access Membrane Service Proxy vs. the target HTTP server.
+ * hostnames and ports used to access Membrane  vs. the target HTTP server.
  * @topic 4. Interceptors/Features
  */
 @MCElement(name="reverseProxying")

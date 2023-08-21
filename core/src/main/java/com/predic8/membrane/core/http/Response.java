@@ -156,7 +156,7 @@ public class Response extends Message {
 		return ok().contentType(TEXT_HTML_UTF8).body(msg);
 	}
 
-	private static final String SERVER_HEADER = PRODUCT_NAME + " " + VERSION + " http://membrane-api.io";
+	private static final String SERVER_HEADER = PRODUCT_NAME;
 
 	public static ResponseBuilder statusCode(int statusCode) {
 		return newInstance().status(statusCode);
