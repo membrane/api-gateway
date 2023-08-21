@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.of;
 import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
 
@@ -105,16 +106,14 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         if(jwt == null)
             return setJsonErrorAndReturn(null,exc,400, ERROR_JWT_NOT_FOUND);
 
-        String decode;
+        //
+
+        String decode = null;
         try {
-            String[] split = jwt.split(Pattern.quote("."));
-            if(split.length < 3)
-                return setJsonErrorAndReturn(null,exc,400, ERROR_MALFORMED_COMPACT_SERIALIZATION);
-
-            decode = new String(Base64Url.decode(split[0]));
-
-        }catch (Exception e){
-            return setJsonErrorAndReturn(e,exc,400, ERROR_MALFORMED_COMPACT_SERIALIZATION);
+            // return JWTToken
+            decode = parseJWT(jwt);
+        } catch (JWTException e) {
+            return setJsonErrorAndReturn(null,exc,400, ERROR_MALFORMED_COMPACT_SERIALIZATION);
         }
 
         String kid;
@@ -156,7 +155,22 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
         exc.getProperties().put("jwt",jwtClaims);
 
-        return Outcome.CONTINUE;
+        return CONTINUE;
+    }
+
+    private static String parseJWT(String jwt) throws JWTException {
+        String decode;
+        try {
+            String[] split = jwt.split(Pattern.quote("."));
+            if(split.length < 3)
+                throw new JWTException();
+
+            decode = new String(Base64Url.decode(split[0]));
+
+        }catch (Exception e){
+            throw new JWTException();
+        }
+        return decode;
     }
 
     private JwtConsumer createValidator(RsaJsonWebKey key) {
@@ -201,7 +215,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         } catch (JsonProcessingException jsonProcessingException) {
             throw new RuntimeException(jsonProcessingException);
         }
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     public JwtRetriever getJwtRetriever() {
