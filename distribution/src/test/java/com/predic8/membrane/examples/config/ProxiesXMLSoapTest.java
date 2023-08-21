@@ -21,6 +21,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
+@Disabled("We need to replace BLZ Service")
 public class ProxiesXMLSoapTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override

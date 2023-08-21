@@ -45,10 +45,6 @@ public class HttpTransport extends Transport {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpTransport.class.getName());
 
-	public static final String SOURCE_HOSTNAME = "com.predic8.membrane.transport.http.source.Hostname";
-	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";
-	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
-
 	private int socketTimeout = 30000;
 	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
@@ -271,7 +267,7 @@ public class HttpTransport extends Transport {
 
 	/**
 	 * @description When proxies.xml is changed and &lt;router hotDeploy="true"&gt;, the Spring Context is automatically refreshed,
-	 * which restarts the {@link Router} object (=Membrane Service Proxy). Before the context refresh, all open socket connections
+	 * which restarts the {@link Router} object (=Membrane API Gateway). Before the context refresh, all open socket connections
 	 * have to be closed. Exchange objects which are still running might delay this process. Setting forceSocketCloseOnHotDeployAfter
 	 * to a non-zero number of milliseconds forces connections to be closed after this time.
 	 * @default 30000

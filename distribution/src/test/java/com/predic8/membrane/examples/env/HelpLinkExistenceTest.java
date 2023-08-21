@@ -57,28 +57,30 @@ public class HelpLinkExistenceTest {
 		Set<Class<?>> classes = getElementClasses();
 
 		assertNotEquals(0, classes.size());
-		HttpClient hc = new HttpClient();
+
 		StringBuilder errors = new StringBuilder();
-		for (Class<?> clazz : classes) {
-			if (Interceptor.class.isAssignableFrom(clazz)) {
-				Interceptor i = (Interceptor) clazz.getDeclaredConstructor().newInstance();
-				String helpId = i.getHelpId();
+		try(HttpClient hc = new HttpClient()) {
+			for (Class<?> clazz : classes) {
+				if (Interceptor.class.isAssignableFrom(clazz)) {
+					Interceptor i = (Interceptor) clazz.getDeclaredConstructor().newInstance();
+					String helpId = i.getHelpId();
 
-				Response r = hc.call(new Request.Builder().get(getDocumentationReferenceURL(helpId)).buildExchange()).getResponse();
+					Response r = hc.call(new Request.Builder().get(getDocumentationReferenceURL(helpId)).buildExchange()).getResponse();
 
-				if (r.getStatusCode() != 200)
-					errors.append(getDocumentationReferenceURL(helpId))
-							.append(" returned ")
-							.append(r.getStatusCode())
-							.append(".")
-							.append(System.lineSeparator());
+					if (r.getStatusCode() != 200)
+						errors.append(getDocumentationReferenceURL(helpId))
+								.append(" returned ")
+								.append(r.getStatusCode())
+								.append(".")
+								.append(System.lineSeparator());
+				}
 			}
 		}
 		assertEquals(0, errors.length(), errors.toString());
 	}
 
 	private String getDocumentationReferenceURL(String helpId) {
-		return "http://membrane-soa.org/api-gateway-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm";
+		return "https://www.membrane-soa.org/api-gateway-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm";
 	}
 
 	@SuppressWarnings("unchecked")

@@ -19,11 +19,10 @@
 	<artifactId>service-proxy-parent</artifactId>
 	<version>5.1.20-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
-	<description>Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
-	- Service Virtualization layer
-	- an API Gateway
-	- a synchronous ESB for HTTP based Integration
-	- a Security Proxy
+	<description>Membrane is an open source API Gateway written in Java that features:
+	- OpenAPI support with validation
+	- OAuth2, JWT, NTLM, ...
+	- Legacy support for SOAP and WSDL
 	</description>
 	<url>http://membrane-soa.org/service-proxy/</url>
 	<packaging>pom</packaging>

@@ -4,7 +4,7 @@ info:
   version: '1.0'
   x-membrane-id: fruitshop
 servers:
-  - url: https://api.predic8.de/shop
+  - url: https://api.predic8.de/shop/v2
 paths:
   /products/:
     get:
@@ -82,6 +82,10 @@ components:
       required: ["name","price"]
       additionalProperties: false
       properties:
+        id:
+            type: integer
+        self_link:
+            type: string
         name:
           type: string
           example: Figs

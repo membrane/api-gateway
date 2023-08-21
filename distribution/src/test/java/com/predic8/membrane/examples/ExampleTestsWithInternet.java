@@ -14,23 +14,16 @@
 
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.config.GettingStartedTest;
-import com.predic8.membrane.examples.config.ProxiesXMLSoapTest;
-import com.predic8.membrane.examples.config.ProxiesXMLTest;
-import com.predic8.membrane.examples.env.AntInPath;
-import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
+import com.predic8.membrane.examples.config.*;
+import com.predic8.membrane.examples.env.*;
 import com.predic8.membrane.examples.tests.*;
-import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
-import com.predic8.membrane.examples.tests.openapi.APIProxyTest;
-import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsTest;
-import com.predic8.membrane.examples.tests.ssl.ToBackendTest;
-import com.predic8.membrane.examples.tests.validation.FormValidationTest;
-import com.predic8.membrane.examples.tests.versioning.RoutingTest;
-import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
-import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialTest;
-import com.predic8.membrane.examples.tutorials.rest.TutorialRestStepsTest;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import com.predic8.membrane.examples.tests.loadbalancing.*;
+import com.predic8.membrane.examples.tests.openapi.*;
+import com.predic8.membrane.examples.tests.ssl.*;
+import com.predic8.membrane.examples.tests.validation.*;
+import com.predic8.membrane.examples.tests.versioning.*;
+import com.predic8.membrane.examples.tutorials.rest.*;
+import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({
@@ -49,8 +42,6 @@ import org.junit.platform.suite.api.Suite;
         LoggingJDBCTest.class,
         LoggingTest.class,
         LoginTest.class,
-        REST2SOAPTest.class,
-        REST2SOAPJSONTest.class,
         RewriterTest.class,
         SSLServerApiWithTlsTest.class,
         ToBackendTest.class,
@@ -76,7 +67,9 @@ import org.junit.platform.suite.api.Suite;
 
         // Configuration
         ProxiesXMLTest.class,
-        ProxiesXMLSoapTest.class,
+
+        // @Todo Replace with new SOAP demo service
+        //ProxiesXMLSoapTest.class,
 })
 public class ExampleTestsWithInternet {
 }
