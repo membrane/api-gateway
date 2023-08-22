@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +36,8 @@ import com.oracle.util.ssl.SSLExplorer;
 import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
+import static java.nio.charset.StandardCharsets.*;
+
 /**
  * Manages multiple {@link SSLContext}s using the same port. This is only possible when using SSL with
  * "Server Name Indication", see <a href="http://en.wikipedia.org/wiki/Server_Name_Indication">...</a> .
@@ -46,8 +49,8 @@ public class SSLContextCollection implements SSLProvider {
 	private static final Logger log = LoggerFactory.getLogger(SSLContextCollection.class.getName());
 
 	public static class Builder {
-		private List<String> dnsNames = new ArrayList<>();
-		private List<SSLContext> sslContexts = new ArrayList<>();
+		private final List<String> dnsNames = new ArrayList<>();
+		private final List<SSLContext> sslContexts = new ArrayList<>();
 
 		public SSLProvider build() throws ConfigurationException {
 			if (sslContexts.isEmpty())
@@ -94,7 +97,7 @@ public class SSLContextCollection implements SSLProvider {
 
 		byte[] buffer = new byte[0xFF];
 		int position = 0;
-		SSLCapabilities capabilities = null;
+		SSLCapabilities capabilities;
 
 		//Set socket read timeout to 30 seconds
 		socket.setSoTimeout(30000);
@@ -133,7 +136,7 @@ public class SSLContextCollection implements SSLProvider {
 			if (serverNames != null && serverNames.size() > 0) {
 				OUTER:
 					for (SNIServerName snisn : serverNames) {
-						String hostname = new String(snisn.getEncoded(), "UTF-8");
+						String hostname = new String(snisn.getEncoded(), UTF_8);
 						for (int i = 0; i < dnsNames.size(); i++)
 							if (dnsNames.get(i).matcher(hostname).matches()) {
 								sslContext = sslContexts.get(i);
@@ -156,7 +159,7 @@ public class SSLContextCollection implements SSLProvider {
 							hostname = new StringBuilder();
 						else
 							hostname.append(", ");
-						hostname.append(new String(snisn.getEncoded(), "UTF-8"));
+						hostname.append(new String(snisn.getEncoded(), UTF_8));
 					}
 
 					throw new TLSUnrecognizedNameException(hostname.toString());
@@ -206,7 +209,7 @@ public class SSLContextCollection implements SSLProvider {
 	@Override
 	public boolean showSSLExceptions() {
 		for(SSLContext ctx : sslContexts)
-			if(ctx.showSSLExceptions() == false)
+			if(!ctx.showSSLExceptions())
 				return false;
 		return true;
 	}

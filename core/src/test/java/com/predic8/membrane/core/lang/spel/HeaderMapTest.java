@@ -75,6 +75,7 @@ class HeaderMapTest {
         assertEquals("www", headerMap.get("www"));
     }
 
+    @SuppressWarnings("ConstantValue")
     @Test
     void clear() {
         headerMap.clear();

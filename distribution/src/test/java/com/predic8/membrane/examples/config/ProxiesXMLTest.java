@@ -129,7 +129,8 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                 get("http://localhost:9000/admin").
         then().assertThat()
                 .statusCode(200)
-                .contentType(TEXT_HTML);
+                .contentType(TEXT_HTML)
+                .body(containsString("Administration"));
         // @formatter:on
     }
 }
