@@ -29,20 +29,17 @@ service.proxy.bat
 curl localhost:2000/api-docs
 
 {
-  "description": {
-    "openapi": "/shop/v2/api-docs",
-    "swagger_ui": "/shop/v2/swagger-ui"
-  },
-  "link": {
-    "products_link": "/shop/v2/products",
-    "vendors_link": "/shop/v2/vendors",
-    "orders_link": "/shop/v2/orders",
-    "customer_link": "/shop/v2/customers"
+  "fruitshop-v1-0" : {
+    "openapi": "3.0.2",
+    "title" : "Fruit Shop API",
+    "version": "1.0",
+    "openapi_link": "/api-docs/fruitshop-v1-0",
+    "ui_link": "/api-docs/ui/fruitshop-v1-0"
   }
 }
 ```
 
-Open the same URL [http://localhost:2000/swagger-ui](http://localhost:2000/api-doc) in the browser, and you get a UI.
+Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc) in the browser, and you get a UI.
 
 ![API Overview](api-overview.png)
 
