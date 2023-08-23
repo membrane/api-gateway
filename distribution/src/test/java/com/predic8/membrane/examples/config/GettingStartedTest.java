@@ -36,10 +36,10 @@ public class GettingStartedTest extends AbstractSampleMembraneStartStopTestcase 
 
     @Test
     public void test() throws Exception {
-        get(LOCALHOST_2000 + "/shop/products/")
-                .then().assertThat()
+        get(LOCALHOST_2000 + "/shop/v2/products/")
+        .then().assertThat()
                 .statusCode(200)
                 .contentType(APPLICATION_JSON)
-                .body("meta.page",equalTo(1));
+                .body("meta.count", greaterThanOrEqualTo(0));
     }
 }

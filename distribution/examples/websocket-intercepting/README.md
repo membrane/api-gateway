@@ -1,6 +1,6 @@
 ### WEBSOCKET INTERCEPTING EXAMPLE
 
-In this example we are going to see how Websocket frames are routed through Membrane Service Proxy. Additionally, 
+In this example we are going to see how Websocket frames are routed through Membrane API Gateway. Additionally, 
 Membrane Service Proxy logs the content of the WebSocket stream by intercepting and processing it.
 
 WebSocket is a protocol which allows full-duplex communication with a single TCP connection. One can "upgrade" an

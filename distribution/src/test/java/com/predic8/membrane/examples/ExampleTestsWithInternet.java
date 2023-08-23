@@ -14,9 +14,7 @@
 
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.config.GettingStartedTest;
-import com.predic8.membrane.examples.config.ProxiesXMLSoapTest;
-import com.predic8.membrane.examples.config.ProxiesXMLTest;
+import com.predic8.membrane.examples.config.*;
 import com.predic8.membrane.examples.env.AntInPath;
 import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.tests.*;
@@ -77,6 +75,8 @@ import org.junit.platform.suite.api.Suite;
         // Configuration
         ProxiesXMLTest.class,
         ProxiesXMLSoapTest.class,
+        ProxiesXMLFullSampleTest.class
+
 })
 public class ExampleTestsWithInternet {
 }

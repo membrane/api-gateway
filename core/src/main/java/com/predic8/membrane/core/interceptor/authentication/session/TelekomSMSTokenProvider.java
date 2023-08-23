@@ -48,7 +48,7 @@ import static java.nio.charset.StandardCharsets.*;
  *              <p>
  *              The text message is sent via <a href="http://www.developergarden.com/">Deutsche Telekom's developer
  *              garden</a> REST API. To use this API, a registered user account with sufficient balance is necessary and
- *              the <i>Send SMS</i> API has to be enabled for this account. Membrane Service Proxy must be registered as an
+ *              the <i>Send SMS</i> API has to be enabled for this account. Membrane API Gateway must be registered as an
  *              "application" on the developer garden website, and the "Global SMS API" must be enabled both for the user account
  *              as well as the registered application. Once completed, the <i>scope</i>, <i>clientId</i> and <i>clientSecret</i>
  *              settings must be copied from the website into Membrane's proxies.xml configuration file. Membrane uses these three

@@ -78,7 +78,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (WSDL.matcher(exc.getRequest().getUri()).find()) {
 			exc.setResponse(Response.ok().
-					header(SERVER, PRODUCT_NAME + " " + VERSION).
+					header(SERVER, PRODUCT_NAME).
 					header(CONTENT_TYPE, TEXT_XML).
 					body(getClass().getResourceAsStream("the.wsdl"), true).
 					build());
@@ -107,7 +107,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		String body = useSoap11 ? HttpUtil.getFaultSOAPBody(title, message) : HttpUtil.getFaultSOAP12Body(title,
 				message);
 		return Response.internalServerError().
-				header(SERVER, PRODUCT_NAME + " " + VERSION).
+				header(SERVER, PRODUCT_NAME).
 				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
 				body(body.getBytes(UTF_8)).
 				build();
@@ -272,7 +272,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 				"</ns1:ort><ns1:plz>" + escape(plz) +
 				"</ns1:plz></ns1:details></ns1:getBankResponse></soapenv:Body></soapenv:Envelope>";
 		return Response.ok().
-				header(SERVER, PRODUCT_NAME + " " + VERSION).
+				header(SERVER, PRODUCT_NAME).
 				header(CONTENT_TYPE, TEXT_XML_UTF8).
 				body(body.getBytes(UTF_8)).
 				build();

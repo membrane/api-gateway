@@ -1,4 +1,4 @@
-# Building Membrane Service Proxy
+# Building Membrane API Gateway
 
 ### What you need
 * Java JDK 17

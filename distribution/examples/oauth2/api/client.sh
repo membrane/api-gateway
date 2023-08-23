@@ -7,21 +7,30 @@ username=$1
 password=$2
 
 parseResponse(){
-    IFS='"' read -ra ADDR <<< "$1"    
+    IFS='"' read -ra ADDR <<< "$1" 
+    echo "Got Token: ${ADDR[3]}"
     authHeader="Authorization: ${ADDR[7]} ${ADDR[3]}"
 }
 
 getToken(){
-    call=$(curl -v --data "grant_type=password&username=${username}&password=${password}&client_id=${clientId}&client_secret=${clientSecret}" $tokenEndpoint)
-    echo $call
+    body="grant_type=password&username=${username}&password=${password}&client_id=${clientId}&client_secret=${clientSecret}"
+    echo "1.) Requesting Token"
+    echo "POST $tokenEndpoint"
+    echo $body
+    echo
+    call=$(curl -s -d $body $tokenEndpoint)
     parseResponse $call
 }
 
 sendRequestToTarget(){
-    targetResult=$(curl -v -H "$authHeader" $target)
-    echo $targetResult
+    echo
+    echo "2.) Calling API"
+    echo "GET $target"
+    echo "$authHeader"
+    targetResult=$(curl -s -H "$authHeader" $target)
+    echo
+    echo Got: $targetResult
 }
 
 getToken
 sendRequestToTarget
-echo $targetResult

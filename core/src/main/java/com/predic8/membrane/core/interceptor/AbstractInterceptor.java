@@ -84,6 +84,8 @@ public class AbstractInterceptor implements Interceptor {
 		MCElement annotation = getClass().getAnnotation(MCElement.class);
 		if (annotation == null)
 			return null;
+		if (!annotation.id().isEmpty())
+			return annotation.id();
 		return annotation.name();
 	}
 
@@ -133,10 +135,6 @@ public class AbstractInterceptor implements Interceptor {
 				Response response = Response.ok().build();
 				exc.setResponse(response);
 				yield response;
-			}
-			default -> {
-				log.info("Should never happen!");
-				yield null;
 			}
 		};
 	}

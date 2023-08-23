@@ -1,6 +1,6 @@
 ### LOGIN INTERCEPTOR
 
-Using the `LoginInterceptor`, Membrane Service Proxy can log requests and responses.
+Using the `LoginInterceptor`, Membrane API Gateway can log requests and responses.
 
 
 #### RUNNING THE EXAMPLE

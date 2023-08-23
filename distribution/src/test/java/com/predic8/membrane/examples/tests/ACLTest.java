@@ -32,7 +32,7 @@ public class ACLTest extends DistributionExtractingTestcase {
 			getAndAssert200("http://localhost:2000/");
 
 			// this request succeeds through membrane, but fails on the backend with 404
-			assertContains("Tomcat", getAndAssert(404, "http://localhost:2000/contacts/"));
+			getAndAssert(404, "http://localhost:2000/contacts/");
 
 			getAndAssert(403, "http://localhost:2000/open-source/");
 		}

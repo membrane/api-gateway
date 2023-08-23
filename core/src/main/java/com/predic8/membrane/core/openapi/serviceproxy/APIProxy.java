@@ -29,7 +29,7 @@ import java.net.*;
 import java.util.*;
 
 /**
- * @description The APIProxy extends the serviceProxy with API related functions like OpenAPI support.
+ * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support.
  *
  * @topic 2. Proxies
  */
