@@ -17,12 +17,6 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
         return "/openapi/specs/content-type-wildcards.yml";
     }
 
-    @Test
-    void contentTypeMatchingSubtype() throws ParseException {
-        ContentType ct = new ContentType("application/*");
-        assertTrue(ct.match(MimeType.APPLICATION_JSON));
-    }
-
     // See https://datatracker.ietf.org/doc/html/rfc7231#appendix-D
     // media-range = ( "*/*" / ( type "/*" ) / ( type "/" subtype ) ) *( OWS
     //    ";" OWS parameter )
@@ -41,9 +35,20 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
     }
 
     @Test
-    void starStarAcceptAll() {
+    void starStarTest() {
         ValidationErrors errors = validator.validate(Request.post().json().path("/star-star").body("{}"));
-//            System.out.println(errors);
+        assertTrue(errors.isEmpty());
+    }
+
+    @Test
+    void starTypeTest() {
+        ValidationErrors errors = validator.validate(Request.post().json().path("/star-json").body("{}"));
+        assertFalse(errors.isEmpty());
+    }
+
+    @Test
+    void typeStarTest() {
+        ValidationErrors errors = validator.validate(Request.post().json().path("/application-star").body("{}"));
         assertTrue(errors.isEmpty());
     }
 }
