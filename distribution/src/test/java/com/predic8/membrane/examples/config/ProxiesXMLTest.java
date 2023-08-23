@@ -50,17 +50,12 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                 """, get(LOCALHOST_2000 + "/api-docs").asString(), true);
     }
 
-    // Todo
     @Test
     void rewrittenOpenAPIFromUI() {
-        Response res = given()
-                .get("http://localhost:2000/api-docs/fruitshop-v1-0");
-              //  .then().statusCode(200);
-
-        System.out.println(res.asString());
-
-        res.then()
-                .body(contains("http://localhost:2000/shop/v2"));
+        given()
+                .get("http://localhost:2000/api-docs/fruitshop-v1-0")
+        .then()
+                .body(containsString("http://localhost:2000/shop/v2"));
     }
 
     @Test
