@@ -6,7 +6,7 @@
 
     <router>
 
-        <serviceProxy name="Authorization Server" port="7007">
+        <api name="Authorization Server" port="7007">
 
             <oauth2authserver issuer="http://localhost:7007">
 
@@ -31,11 +31,11 @@
                 </claims>
             </oauth2authserver>
 
-        </serviceProxy>
+        </api>
 
-        <serviceProxy port="9000">
+        <api port="9000">
             <adminConsole/>
-        </serviceProxy>
+        </api>
 
     </router>
 

@@ -15,6 +15,8 @@
 package com.predic8.membrane.examples.config;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.*;
+import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
 
@@ -46,6 +48,14 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                   }
                 }
                 """, get(LOCALHOST_2000 + "/api-docs").asString(), true);
+    }
+
+    @Test
+    void rewrittenOpenAPIFromUI() {
+        given()
+                .get("http://localhost:2000/api-docs/fruitshop-v1-0")
+        .then()
+                .body(containsString("http://localhost:2000/shop/v2"));
     }
 
     @Test
@@ -129,7 +139,8 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                 get("http://localhost:9000/admin").
         then().assertThat()
                 .statusCode(200)
-                .contentType(TEXT_HTML);
+                .contentType(TEXT_HTML)
+                .body(containsString("Administration"));
         // @formatter:on
     }
 }

@@ -6,62 +6,171 @@ info:
 servers:
   - url: https://api.predic8.de/shop/v2
 paths:
-  /products/:
+  /products:
     get:
       tags:
-        - Shop
+        - Products
+      summary: Get all products
+      description: Get a list of all the products available over the Fruitshop API.
+      operationId: getProducts
       parameters:
-        - name: limit
+        - $ref: "#/components/parameters/Start"
+        - $ref: "#/components/parameters/Limit"
+        - name: search
           in: query
-          required: false
-          schema: 
-            type: integer
-            maximum: 100
-            minimum: 0
-            example: 10
+          description: Search for products containing this String
+          schema:
+            type: string
       responses:
         '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProductList"
+          $ref: "#/components/responses/Products"
+          
     post:
       tags:
-        - Shop
+        - Products
+      summary: Create a product
+      description: Create a new product for the store.
+      operationId: createProduct
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Product"
+        $ref: "#/components/requestBodies/Product"
       responses:
         '201':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Product"
-          
-  /products/{pid}:
+          $ref: "#/components/responses/ProductCreated"
+
+  /products/{id}:
     parameters:
-      - in: path
-        name: pid
-        schema:
-          type: integer
-          minimum: 0
-        required: true
+      - $ref: "#/components/parameters/Id"
     get:
       tags:
-        - Shop
+        - Products
+      summary: Get product by id
+      description: Get detailed information about the product.
+      operationId: getProduct
       responses:
         '200':
-          description: OK  
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Product"
+          $ref: "#/components/responses/Product"
 
 components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      description: Id of the object
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    Start:
+      name: start
+      in: query
+      description: Starting entry of the result list
+      schema:
+        type: number
+        minimum: 1
+        default: 1
+        example: 7
+    Limit:
+      name: limit
+      in: query
+      description: Limits the number of result entries
+      schema:
+        minimum: 1
+        type: number
+        default: 10
+        example: 100
+
+  responses:
+    Product:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Product"
+          example:
+            id: 8
+            name: Mangos,
+            price: 2.79
+    Products:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: "#/components/schemas/Meta"
+              products:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/Id"
+                    name:
+                      type: string
+                      description: Name of the product
+                      example: Cherries
+                    self_link:
+                      $ref: "#/components/schemas/SelfLink"
+                  example:
+                    id: 1
+                    name: Banana
+                    self_link: /shop/v2/products/1
+    ProductCreated:
+      description: Created
+      headers:
+        location:
+          schema:
+            type: string
+            format: uri
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Product"
+          example:
+            id: 8
+            name: Mangos,
+            price: 2.79
+            self_link: /shop/v2/products/8
+
+  requestBodies:
+    Product:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Product'
+          example:
+            name: Mangos
+            price: 2.79
+
+    Products:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              meta:
+                $ref: "#/components/schemas/Meta"
+              products:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/Id"
+                    name:
+                      type: string
+                      description: Name of the product
+                      example: Cherries
+                    self_link:
+                      $ref: "#/components/schemas/SelfLink"
+                  example:
+                    id: 1
+                    name: Banana
+                    self_link: /shop/v2/products/1
+
+
+
   schemas:
     ProductList:
       type: object
@@ -77,39 +186,85 @@ components:
                 type: string
               product_url:
                 type: string
+    SelfLink:
+      type: string
+      format: url
+      readOnly: true
+      example: /shop/v2/...
+      description: Link to the resource itself
+    Meta:
+      required:
+        - count
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Number of resources
+          example: 22
+        start:
+          type: integer
+          description: Starting entry of the result list
+          example: 11
+        limit:
+          type: integer
+          description: How many entries are delivered in one response
+          example: 10
+        previous_link:
+          type: string
+          description: URL to the previous page of results
+          example: /shop/v2/products/?start=1&limit=10
+        next_link:
+          type: string
+          description: URL to the next page of results
+          example: /shop/v2/products/?start=21&limit=10
+      description: Metadata about a collection of resources.
+
     Product:
       type: object
-      required: ["name","price"]
-      additionalProperties: false
+      description: Description of a product
+      required:
+        - name
+        - price
       properties:
         id:
-            type: integer
-        self_link:
-            type: string
+          $ref: "#/components/schemas/Id"
         name:
           type: string
-          example: Figs
-          maxLength: 10
+          description: Name of a product
+          example: Berries
+          maxLength: 30
         price:
           type: number
-          example: 2.70
+          description: Price of a good
+          example: 4.5
           minimum: 0
-        category_url:
-          type: string
-          example: /shop/categories/Fruits
+          maximum: 1000
+        vendors:
+          type: array
           readOnly: true
-        vendor_url:
+          items:
+            type: object
+            properties:
+              id:
+                $ref: "#/components/schemas/Id"
+              name:
+                type: string
+                description: Name of the vendor
+                example: Exotic Fruits LLC
+                maxLength: 30
+              self_link:
+                $ref: "#/components/schemas/SelfLink"
+        image_link:
           type: string
-          example: /shop/vendors/672
           readOnly: true
-        product_url:
-          type: string
-          example: /shop/products/44
-          readOnly: true
-        photo_url:
-          type: string
-          example: /shop/products/44/photo
-          readOnly: true
-
-
-
+        self_link:
+          $ref: "#/components/schemas/SelfLink"
+      example:
+        name: Wildberries
+        price: 4.99
+    Id:
+      type: integer
+      description: Id of an object
+      example: 8
+      minimum: 1
+      readOnly: true
