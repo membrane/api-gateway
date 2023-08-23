@@ -12,21 +12,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessageTest {
 
+    private Request request;
+
+    @BeforeEach
+    void setup() throws URISyntaxException {
+        request = Request.post().json().path("/star-star").body("{}");
+    }
+
     @Test
-    void starStarTest() throws URISyntaxException {
-        Request request = Request.post().json().path("/star-star").body("{}");
+    void starStarTest() {
         assertTrue(request.isOfMediaType("*/*"));
     }
 
     @Test
-    void typeStarTest() throws URISyntaxException {
-        Request request = Request.post().json().path("/star-star").body("{}");
+    void typeStarTest() {
         assertTrue(request.isOfMediaType("application/*"));
     }
 
     @Test
-    void starTypeTest() throws URISyntaxException {
-        Request request = Request.post().json().path("/star-star").body("{}");
+    void starTypeTest() {
         assertFalse(request.isOfMediaType("*/json"));
     }
 }
