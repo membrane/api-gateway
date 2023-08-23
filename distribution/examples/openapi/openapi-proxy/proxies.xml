@@ -11,6 +11,7 @@
 				  validateRequests="yes"
 				  validateResponses="yes"
 				  validationDetails="yes"/>
+			<log/>
         </api>
 		
 	</router>
