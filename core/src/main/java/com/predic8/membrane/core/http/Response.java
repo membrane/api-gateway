@@ -137,6 +137,11 @@ public class Response extends Message {
 			return this;
 		}
 
+		public ResponseBuilder yaml() {
+			res.getHeader().setContentType(APPLICATION_X_YAML);
+			return this;
+		}
+
 		public ResponseBuilder location(String location) {
 			res.getHeader().setLocation(location);
 			return this;

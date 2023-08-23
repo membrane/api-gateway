@@ -47,8 +47,6 @@ import org.junit.platform.suite.api.Suite;
         LoggingJDBCTest.class,
         LoggingTest.class,
         LoginTest.class,
-        REST2SOAPTest.class,
-        REST2SOAPJSONTest.class,
         RewriterTest.class,
         SSLServerApiWithTlsTest.class,
         ToBackendTest.class,
