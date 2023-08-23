@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.lang.spel;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.model.doc.Doc;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.jose4j.jwt.JwtClaims;
@@ -40,12 +39,7 @@ public class ExchangeEvaluationContext {
         this.exchange = exchange;
         this.message = message;
         properties = exchange.getProperties().entrySet().stream()
-                .map(entry -> {
-                    if (entry.getKey().equals("jwt") && entry.getValue() instanceof JwtClaims) {
-                        return new AbstractMap.SimpleEntry<String, Object>("jwt", ((JwtClaims) entry.getValue()).getClaimsMap());
-                    }
-                    return entry;
-                })
+                .map(this::prettifyEntriesForSpelUsage)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
         ;
         this.headers = new HeaderMap(message.getHeader());
@@ -53,6 +47,13 @@ public class ExchangeEvaluationContext {
         Request request = exchange.getRequest();
         path = request.getUri();
         method = request.getMethod();
+    }
+
+    private Map.Entry<String, Object> prettifyEntriesForSpelUsage(Map.Entry<String, Object> entry) {
+        if (entry.getKey().equals("jwt") && entry.getValue() instanceof JwtClaims) {
+            return new AbstractMap.SimpleEntry<>("jwt", ((JwtClaims) entry.getValue()).getClaimsMap());
+        }
+        return entry;
     }
 
     public StandardEvaluationContext getStandardEvaluationContext() {
