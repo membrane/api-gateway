@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
+import org.jose4j.jwt.JwtClaims;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -28,6 +29,7 @@ import org.junit.jupiter.params.provider.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.stream.IntStream;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -119,6 +121,34 @@ public class RateLimitInterceptorTest {
 
 		assertEquals(RETURN, rli.handleRequest(exc));
 
+	}
+
+	@Test
+	void rateLimitByJWT() throws Exception {
+		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
+		interceptor.setKeyExpression("properties[jwt][sub]");
+		interceptor.init();
+
+		var exc = new Request.Builder().buildExchange();
+
+		// done by JwtAuthInterceptor
+		var claims = new JwtClaims();
+		claims.setSubject("fooman");
+		exc.getProperties().put("jwt", claims);
+
+		IntStream.range(0, interceptor.getRequestLimit())
+				.parallel()
+				.forEach(i -> {
+					try {
+						var outcome = interceptor.handleRequest(exc);
+						assertEquals(CONTINUE, outcome);
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				});
+
+		var outcome = interceptor.handleRequest(exc);
+		assertEquals(RETURN, outcome);
 	}
 	
 	@Test

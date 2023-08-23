@@ -15,12 +15,15 @@
 package com.predic8.membrane.core.lang.spel;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.model.doc.Doc;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import org.jose4j.jwt.JwtClaims;
 import org.springframework.expression.spel.support.*;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ExchangeEvaluationContext {
 
@@ -36,7 +39,15 @@ public class ExchangeEvaluationContext {
     public ExchangeEvaluationContext(Exchange exchange, Message message) {
         this.exchange = exchange;
         this.message = message;
-        properties = exchange.getProperties();
+        properties = exchange.getProperties().entrySet().stream()
+                .map(entry -> {
+                    if (entry.getKey().equals("jwt") && entry.getValue() instanceof JwtClaims) {
+                        return new AbstractMap.SimpleEntry<String, Object>("jwt", ((JwtClaims) entry.getValue()).getClaimsMap());
+                    }
+                    return entry;
+                })
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+        ;
         this.headers = new HeaderMap(message.getHeader());
 
         Request request = exchange.getRequest();
