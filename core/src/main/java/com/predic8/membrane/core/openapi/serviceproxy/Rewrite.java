@@ -42,8 +42,9 @@ public class Rewrite {
     String host;
 
     public JsonNode rewrite(OpenAPIRecord rec, Exchange exc, URIFactory uriFactory) throws URISyntaxException, IOException {
-        if (rec.isVersion3())
+        if (rec.isVersion3()) {
             return rewriteOpenAPI3(exc, uriFactory, rec.node);
+        }
 
         return rewriteSwagger2(exc, rec.node);
     }
