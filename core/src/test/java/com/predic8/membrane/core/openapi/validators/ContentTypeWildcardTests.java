@@ -24,14 +24,12 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
     // In Message.isOfMediaType we fix that for Membrane
     @Test
     void contentTypeMatching() throws ParseException {
-        ContentType ct = new ContentType("*/*");
-        assertFalse(ct.match(MimeType.APPLICATION_JSON));
+        assertFalse(new ContentType("*/*").match(MimeType.APPLICATION_JSON));
     }
 
     @Test
     void contentTypeMatchingSwitch() throws ParseException {
-        ContentType ct = new ContentType(MimeType.APPLICATION_JSON);
-        assertTrue(ct.match("application/*"));
+        assertTrue(new ContentType(MimeType.APPLICATION_JSON).match("application/*"));
     }
 
     @Test
