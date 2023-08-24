@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.lang.spel;
 
-import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.lang.spel.spelable.SPeLablePropertyAware;
 import org.springframework.expression.AccessException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.PropertyAccessor;
@@ -22,19 +22,6 @@ public class AwareExchangePropertyAccessor implements PropertyAccessor {
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) throws AccessException {
         return ((SPeLablePropertyAware) target).read(context, target, name);
-
-        // alternative
-
-//        if (target.getClass() == ExchangeEvaluationContext.class) {
-//            return new TypedValue(fieldReflection.get(...));
-//        }
-//
-//        if (target.getClass() == Header.class) {
-//            var foo = (Header) target;
-//            return new TypedValue(foo.getValues(name));
-//        }
-//
-//        return null;
     }
 
     @Override

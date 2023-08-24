@@ -124,7 +124,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
             return getClientIp(exc);
         }
 
-        String result = expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()).getStandardEvaluationContext(), String.class);
+        String result = expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), String.class);
         if (result != null)
             return result;
 

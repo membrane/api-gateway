@@ -17,60 +17,47 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import org.jose4j.jwt.JwtClaims;
-import org.springframework.expression.AccessException;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.PropertyAccessor;
-import org.springframework.expression.TypedValue;
+import com.predic8.membrane.core.lang.spel.spelable.SPeLProperties;
+import com.predic8.membrane.core.lang.spel.spelable.SPeLablePropertyAware;
+import com.predic8.membrane.core.lang.spel.spelable.SPelMap;
+import com.predic8.membrane.core.lang.spel.spelable.SpeLHeader;
 import org.springframework.expression.spel.support.*;
 
 import java.io.*;
 import java.util.*;
 
-public class ExchangeEvaluationContext  {
+public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     private static  final ObjectMapper om = new ObjectMapper();
 
     private final Exchange exchange;
     private final Message message;
     private final SPeLablePropertyAware headers;
-//    private final SPeLablePropertyAware properties;
-    private final Map<String, Object> properties;
+    private final SPeLablePropertyAware properties;
     private final String path;
     private final String method;
 
     public ExchangeEvaluationContext(Exchange exchange, Message message) {
+        super();
+
         this.exchange = exchange;
         this.message = message;
-        properties = exchange.getProperties();
-//        ;
-//        this.properties = new PropertiesMap(exchange.getProperties());
-//        this.headers = new HeaderMap(message.getHeader());
-        this.headers = message.getHeader();
+        this.properties = new SPeLProperties(exchange.getProperties());
+        this.headers = new SpeLHeader(message.getHeader());
 
         Request request = exchange.getRequest();
         path = request.getUri();
         method = request.getMethod();
+
+        setRootObject(this);
+        addPropertyAccessor(new AwareExchangePropertyAccessor());
     }
 
-    private Map.Entry<String, Object> prettifyEntriesForSpelUsage(Map.Entry<String, Object> entry) {
-        if (entry.getKey().equals("jwt") && entry.getValue() instanceof JwtClaims) {
-            return new AbstractMap.SimpleEntry<>("jwt", ((JwtClaims) entry.getValue()).getClaimsMap());
-        }
-        return entry;
+
+    public SPeLablePropertyAware getProperties() {
+        return properties;
     }
 
-    public StandardEvaluationContext getStandardEvaluationContext() {
-        var ctx = new StandardEvaluationContext(this);
-        ctx.addPropertyAccessor(new AwareExchangePropertyAccessor());
-        return ctx;
-    }
-
-//    public Map<String, Object> getProperties() {
-//        return properties;
-//    }
-
-    // We need to expose HeaderMap outside its defined visibility scope for SpEL
     public SPeLablePropertyAware getHeaders() {
         return headers;
     }
@@ -91,25 +78,7 @@ public class ExchangeEvaluationContext  {
         return method;
     }
 
-    @SuppressWarnings("rawtypes")
-    public Map getJson() throws IOException {
-        return om.readValue(message.getBodyAsStreamDecoded(), Map.class);
+    public SPelMap<String, Object> getJson() throws IOException {
+        return new SPelMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
     }
-
-//    @Override
-//    public boolean canRead(EvaluationContext context, Object target, String name) {
-//        return true;
-//    }
-//
-//    @Override
-//    public TypedValue read(EvaluationContext context, Object target, String name) {
-//        try {
-//            var field = target.getClass().getDeclaredField(name);
-//            field.setAccessible(true);
-//
-//            return new TypedValue(field.get(target));
-//        } catch (NoSuchFieldException | IllegalAccessException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 }

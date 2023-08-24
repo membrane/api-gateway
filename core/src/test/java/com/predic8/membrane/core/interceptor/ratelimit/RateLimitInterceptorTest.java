@@ -54,7 +54,7 @@ public class RateLimitInterceptorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource( strings = {"properties[a]","path","json[foo]","method","path + method","headers[host]","exchange.remoteAddrIp"})
+	@ValueSource( strings = {"properties.a","path","json.foo","method","path + method","headers.host","exchange.remoteAddrIp"})
 	void simplePropertyExpression(String expression) throws Exception {
 
 		Exchange exc1 = prepareRequest("aaa");
@@ -126,7 +126,7 @@ public class RateLimitInterceptorTest {
 	@Test
 	void rateLimitByJWT() throws Exception {
 		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
-		interceptor.setKeyExpression("properties[jwt][sub]");
+		interceptor.setKeyExpression("properties.jwt.sub");
 		interceptor.init();
 
 		var exc = new Request.Builder().buildExchange();
