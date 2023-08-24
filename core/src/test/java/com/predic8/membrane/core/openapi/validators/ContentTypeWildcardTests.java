@@ -11,6 +11,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ContentTypeWildcardTests extends AbstractValidatorTest {
 
+    private static final String STAR_STAR_PATH = "/star-star";
+    private static final String STAR_JSON_PATH = "/star-json";
+    private static final String APPLICATION_STAR_PATH = "/application-star";
+
     @Override
     String getOpenAPIFileName() {
         return "/openapi/specs/content-type-wildcards.yml";
@@ -38,17 +42,17 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
 
     @Test
     void starStarTest() {
-        validateAndAssert(Request.post().json().path("/star-star").body("{}"), true);
+        validateAndAssert(Request.post().json().path(STAR_STAR_PATH).body("{}"), true);
     }
 
     @Test
     void starTypeTest() {
-        validateAndAssert(Request.post().json().path("/star-json").body("{}"), false);
+        validateAndAssert(Request.post().json().path(STAR_JSON_PATH).body("{}"), false);
     }
 
     @Test
     void typeStarTest() {
-        validateAndAssert(Request.post().json().path("/application-star").body("{}"), true);
+        validateAndAssert(Request.post().json().path(APPLICATION_STAR_PATH).body("{}"), true);
     }
 
     void responseTest(Request request, boolean expectedResult) throws ParseException {
@@ -60,16 +64,16 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
 
     @Test
     void starStarResponseTest() throws ParseException {
-        responseTest(Request.post().json().path("/star-star").body("{}"), true);
+        responseTest(Request.post().json().path(STAR_STAR_PATH).body("{}"), true);
     }
 
     @Test
     void starTypeResponseTest() throws ParseException {
-        responseTest(Request.post().json().path("/star-json").body("{}"), false);
+        responseTest(Request.post().json().path(STAR_JSON_PATH).body("{}"), false);
     }
 
     @Test
     void typeStarResponseTest() throws ParseException {
-        responseTest(Request.post().json().path("/application-star").body("{}"), true);
+        responseTest(Request.post().json().path(APPLICATION_STAR_PATH).body("{}"), true);
     }
 }
