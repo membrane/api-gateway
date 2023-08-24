@@ -38,7 +38,6 @@ public class OpenAPIRecord {
      * Specification parsed with JSON/YAML parser
      */
     JsonNode node;
-
     OpenAPISpec spec;
 
     /**

@@ -14,14 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class LazyRateLimit extends RateLimitStrategy {
 
+	private final Object lock = new Object();
+	@GuardedBy("lock")
 	private java.time.LocalDateTime nextCleanup = LocalDateTime.now();
-	public ConcurrentHashMap<String, AtomicInteger> requestCounterFromKey = new ConcurrentHashMap<>();
+	public final ConcurrentHashMap<String, AtomicInteger> requestCounterFromKey = new ConcurrentHashMap<>();
 
 	public LazyRateLimit(java.time.Duration requestLimitDuration, int requestLimit) {
 		this.requestLimitDuration = requestLimitDuration;
@@ -31,29 +34,26 @@ public class LazyRateLimit extends RateLimitStrategy {
 
 	@Override
 	public boolean isRequestLimitReached(String key) {
-		synchronized (nextCleanup) {
+		synchronized (lock) {
 			if (java.time.LocalDateTime.now().isAfter(nextCleanup)) {
-				for (AtomicInteger info : requestCounterFromKey.values()) {
-					info.set(0);
-				}
+				requestCounterFromKey.clear();
 				incrementNextCleanupTime();
 			}
 		}
+
 		addRequestEntry(key);
 		return requestCounterFromKey.get(key).get() > requestLimit;
 	}
 
 	private void addRequestEntry(String addr) {
-		synchronized (requestCounterFromKey) {
-			if (!requestCounterFromKey.containsKey(addr)) {
-				requestCounterFromKey.put(addr, new AtomicInteger());
-			}
-		}
+		requestCounterFromKey.computeIfAbsent(addr, s -> new AtomicInteger());
 		requestCounterFromKey.get(addr).incrementAndGet();
 	}
 
 	private void incrementNextCleanupTime() {
-		nextCleanup = java.time.LocalDateTime.now().plus(requestLimitDuration);
+		synchronized (lock) {
+			nextCleanup = java.time.LocalDateTime.now().plus(requestLimitDuration);
+		}
 	}
 
 	@Override
@@ -63,9 +63,7 @@ public class LazyRateLimit extends RateLimitStrategy {
 
 	@Override
 	public void updateAfterConfigChange() {
-		for (AtomicInteger info : requestCounterFromKey.values()) {
-			info.set(0);
-		}
+		requestCounterFromKey.clear();
 		incrementNextCleanupTime();
 	}
 }

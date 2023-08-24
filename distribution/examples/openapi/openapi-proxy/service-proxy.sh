@@ -5,8 +5,7 @@ homeSet() {
  CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
  export CLASSPATH
  echo Membrane Router running...
- java  -classpath "$CLASSPATH" -Dlog4j.configurationFile=file:/Users/thomas/tmp/kurs-msa/membrane-service-proxy-5.0.0-SNAPSHOT/examples/openapi/openapi-proxy/log4j2.xml com.predic8.membrane.core.Starter -c   proxies.xml
- 
+ java -classpath "$CLASSPATH" -Dlog4j.configurationFile=log4j2.xml com.predic8.membrane.core.Starter -c proxies.xml
 }
 
 terminate() {

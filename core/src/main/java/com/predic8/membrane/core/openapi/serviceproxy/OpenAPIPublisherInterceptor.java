@@ -34,6 +34,7 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
@@ -103,12 +104,12 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnJsonOverview(Exchange exc) throws JsonProcessingException {
-        exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
+        exc.setResponse(ok().contentType(APPLICATION_JSON).body(ow.writeValueAsBytes(createDictionaryOfAPIs())).build());
         return RETURN;
     }
 
     private Outcome returnHtmlOverview(Exchange exc) {
-        exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderOverviewTemplate()).build());
+        exc.setResponse(ok().contentType(HTML_UTF_8).body(renderOverviewTemplate()).build());
         return RETURN;
     }
 
@@ -121,8 +122,9 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws IOException, URISyntaxException {
-        rec.rewriteOpenAPI(exc, getRouter().getUriFactory());
-        exc.setResponse(Response.ok().contentType(APPLICATION_X_YAML).body(omYaml.writeValueAsBytes(rec.node)).build());
+        exc.setResponse(ok().yaml()
+                .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, getRouter().getUriFactory())))
+                .build());
         return RETURN;
     }
 
@@ -147,7 +149,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             return returnNoFound(exc, id);
         }
 
-        exc.setResponse(Response.ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(id, record.api)).build());
+        exc.setResponse(ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(id, record.api)).build());
 
         return RETURN;
     }

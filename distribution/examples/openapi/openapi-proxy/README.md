@@ -29,12 +29,12 @@ service.proxy.bat
 curl localhost:2000/api-docs
 
 {
-  "fruit-shop-api-v1-0" : {
-    "openapi" : "3.0.2",
+  "fruitshop-v1-0" : {
+    "openapi": "3.0.2",
     "title" : "Fruit Shop API",
-    "version" : "1.0",
-    "openapi_link" : "/api-doc/fruit-shop-api-v1-0",
-    "ui_link" : "/api-doc/ui/fruit-shop-api-v1-0"
+    "version": "1.0",
+    "openapi_link": "/api-docs/fruitshop-v1-0",
+    "ui_link": "/api-docs/ui/fruitshop-v1-0"
   }
 }
 ```
@@ -70,12 +70,12 @@ The validator checks the request against the OpenAPI definition. Cause the value
 ```JSON
 {
   "method": "POST",
-  "uriTemplate": "/products/",
-  "path": "/shop/products/",
+  "uriTemplate": "/products",
+  "path": "/shop/v2/products",
   "validationErrors": {
     "REQUEST/BODY#/price": [
       {
-        "message": "-2.7 is smaller than the minimum of 0",
+        "message": "-2.79 is smaller than the minimum of 0",
         "complexType": "Product",
         "schemaType": "number"
       }
@@ -84,7 +84,7 @@ The validator checks the request against the OpenAPI definition. Cause the value
 }
 ```
 
-7. Try also a value for _name_ that is longer than 10 characters.
+7. Try also a value for _name_ that is longer than 30 characters.
 
 8. Have a look at the configuration in the `proxies.xml`file:
 
