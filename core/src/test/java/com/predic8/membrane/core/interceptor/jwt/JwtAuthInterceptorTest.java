@@ -83,7 +83,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_MALFORMED_COMPACT_SERIALIZATION, unpackBody(exc).get("description"));
+                    assertEquals(JsonWebToken.ERROR_MALFORMED_COMPACT_SERIALIZATION, unpackBody(exc).get("description"));
                 }
         );
     }
