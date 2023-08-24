@@ -54,7 +54,7 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
     void responseTest(Request request, boolean expectedResult) throws ParseException {
         ValidationErrors errors = validator.validateResponse(
                 request,
-                Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
+                Response.statusCode(200).json().body("{}"));
         assertEquals(expectedResult, errors.isEmpty());
     }
 
