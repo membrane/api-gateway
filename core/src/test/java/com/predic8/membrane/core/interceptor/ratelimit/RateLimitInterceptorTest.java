@@ -37,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitIntercept
 import static java.lang.Long.parseLong;
 import static java.lang.Thread.*;
 import static java.time.Duration.*;
+import static java.util.stream.IntStream.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RateLimitInterceptorTest {
@@ -136,19 +137,17 @@ public class RateLimitInterceptorTest {
 		claims.setSubject("fooman");
 		exc.getProperties().put("jwt", claims);
 
-		IntStream.range(0, interceptor.getRequestLimit())
+		range(0, interceptor.getRequestLimit())
 				.parallel()
 				.forEach(i -> {
 					try {
-						var outcome = interceptor.handleRequest(exc);
-						assertEquals(CONTINUE, outcome);
+						assertEquals(CONTINUE, interceptor.handleRequest(exc));
 					} catch (Exception e) {
 						throw new RuntimeException(e);
 					}
 				});
 
-		var outcome = interceptor.handleRequest(exc);
-		assertEquals(RETURN, outcome);
+		assertEquals(RETURN, interceptor.handleRequest(exc));
 	}
 	
 	@Test

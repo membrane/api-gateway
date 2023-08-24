@@ -15,7 +15,7 @@ public class AwareExchangePropertyAccessor implements PropertyAccessor {
     }
 
     @Override
-    public boolean canRead(EvaluationContext context, Object target, String name) throws AccessException {
+    public boolean canRead(EvaluationContext context, Object target, String name) {
         return ((SPeLablePropertyAware) target).canRead(context, target, name);
     }
 
