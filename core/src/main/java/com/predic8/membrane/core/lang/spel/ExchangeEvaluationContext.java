@@ -17,43 +17,48 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.spel.spelable.SPeLProperties;
+import com.predic8.membrane.core.lang.spel.spelable.SPeLablePropertyAware;
+import com.predic8.membrane.core.lang.spel.spelable.SPelMap;
+import com.predic8.membrane.core.lang.spel.spelable.SpeLHeader;
 import org.springframework.expression.spel.support.*;
 
 import java.io.*;
 import java.util.*;
 
-public class ExchangeEvaluationContext {
+public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     private static  final ObjectMapper om = new ObjectMapper();
 
     private final Exchange exchange;
     private final Message message;
-    private final HeaderMap headers;
-    private final Map<String, Object> properties;
+    private final SPeLablePropertyAware headers;
+    private final SPeLablePropertyAware properties;
     private final String path;
     private final String method;
 
     public ExchangeEvaluationContext(Exchange exchange, Message message) {
+        super();
+
         this.exchange = exchange;
         this.message = message;
-        properties = exchange.getProperties();
-        this.headers = new HeaderMap(message.getHeader());
+        this.properties = new SPeLProperties(exchange.getProperties());
+        this.headers = new SpeLHeader(message.getHeader());
 
         Request request = exchange.getRequest();
         path = request.getUri();
         method = request.getMethod();
+
+        setRootObject(this);
+        addPropertyAccessor(new AwareExchangePropertyAccessor());
     }
 
-    public StandardEvaluationContext getStandardEvaluationContext() {
-        return new StandardEvaluationContext(this);
-    }
 
-    public Map<String, Object> getProperties() {
+    public SPeLablePropertyAware getProperties() {
         return properties;
     }
 
-    // We need to expose HeaderMap outside its defined visibility scope for SpEL
-    public HeaderMap getHeaders() {
+    public SPeLablePropertyAware getHeaders() {
         return headers;
     }
 
@@ -73,8 +78,7 @@ public class ExchangeEvaluationContext {
         return method;
     }
 
-    @SuppressWarnings("rawtypes")
-    public Map getJson() throws IOException {
-        return om.readValue(message.getBodyAsStreamDecoded(), Map.class);
+    public SPelMap<String, Object> getJson() throws IOException {
+        return new SPelMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
     }
 }
