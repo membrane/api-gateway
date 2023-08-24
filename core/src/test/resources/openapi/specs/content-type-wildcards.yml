@@ -31,6 +31,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            'application/*':
+              schema:
+                type: object
 
   /star-json:
     post:
@@ -42,3 +46,7 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            '*/json':
+              schema:
+                type: string
