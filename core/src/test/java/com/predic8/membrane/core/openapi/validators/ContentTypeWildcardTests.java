@@ -8,8 +8,7 @@ import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.mapToJson;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ContentTypeWildcardTests extends AbstractValidatorTest {
 
@@ -33,45 +32,45 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
         assertTrue(new ContentType(APPLICATION_JSON).match("application/*"));
     }
 
+    void validateAndAssert(Request request, boolean expectedResult) {
+        ValidationErrors errors = validator.validate(request);
+        assertEquals(expectedResult, errors.isEmpty());
+    }
+
     @Test
     void starStarTest() {
-        ValidationErrors errors = validator.validate(Request.post().json().path("/star-star").body("{}"));
-        assertTrue(errors.isEmpty());
+        validateAndAssert(Request.post().json().path("/star-star").body("{}"), true);
     }
 
     @Test
     void starTypeTest() {
-        ValidationErrors errors = validator.validate(Request.post().json().path("/star-json").body("{}"));
-        assertFalse(errors.isEmpty());
+        validateAndAssert(Request.post().json().path("/star-json").body("{}"), false);
     }
 
     @Test
     void typeStarTest() {
-        ValidationErrors errors = validator.validate(Request.post().json().path("/application-star").body("{}"));
-        assertTrue(errors.isEmpty());
+        validateAndAssert(Request.post().json().path("/application-star").body("{}"), true);
+    }
+
+    void responseTest(Request request, boolean expectedResult) throws ParseException {
+        ValidationErrors errors = validator.validateResponse(
+                request,
+                Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
+        assertEquals(expectedResult, errors.isEmpty());
     }
 
     @Test
     void starStarResponseTest() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(
-                Request.post().json().path("/application-star").body("{}"),
-                Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
-        assertTrue(errors.isEmpty());
+        responseTest(Request.post().json().path("/star-star").body("{}"), true);
     }
 
     @Test
     void starTypeResponseTest() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(
-                Request.post().json().path("/star-json").body("{}"),
-                Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
-        assertFalse(errors.isEmpty());
+        responseTest(Request.post().json().path("/star-json").body("{}"), false);
     }
 
     @Test
     void typeStarResponseTest() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(
-                Request.post().json().path("/star-star").body("{}"),
-                Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
-        assertTrue(errors.isEmpty());
+        responseTest(Request.post().json().path("/application-star").body("{}"), true);
     }
 }
