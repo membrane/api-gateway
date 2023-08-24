@@ -15,7 +15,7 @@ class HeaderMap implements Map<String, String> {
 
     private final Header headers;
 
-    public HeaderMap(Header headers) {
+    HeaderMap(Header headers) {
         this.headers = headers;
     }
 

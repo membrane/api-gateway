@@ -16,9 +16,12 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.cookie.*;
+import com.predic8.membrane.core.lang.spel.SPeLablePropertyAware;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
 import org.slf4j.*;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.TypedValue;
 
 import java.io.*;
 import java.security.*;
@@ -33,7 +36,7 @@ import static org.apache.commons.codec.binary.Base64.*;
 /**
  * The headers of an HTTP message.
  */
-public class Header {
+public class Header implements SPeLablePropertyAware {
 
 	private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
 
@@ -516,5 +519,15 @@ public class Header {
 			version = version * 10 + (c - '0');
 		}
 		return version;
+	}
+
+	@Override
+	public boolean canRead(EvaluationContext context, Object target, String name) {
+		return contains(name);
+	}
+
+	@Override
+	public TypedValue read(EvaluationContext context, Object target, String name) {
+		return new TypedValue(getFirstValue(name));
 	}
 }

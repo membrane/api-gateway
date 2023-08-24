@@ -33,4 +33,10 @@ public class ExchangeEvaluationContextTest {
     void getMethodIgnoreCase() {
         assertEquals("foo", keyExpression("headers[AUTHenticatioN]"));
     }
+
+    @Test
+    void testNotation() {
+        assertEquals("foo", keyExpression("headers.authentication"));
+    }
+
 }
