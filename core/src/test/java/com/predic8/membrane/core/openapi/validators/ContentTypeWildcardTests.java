@@ -1,13 +1,12 @@
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.*;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.openapi.util.JsonUtil.mapToJson;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ContentTypeWildcardTests extends AbstractValidatorTest {
