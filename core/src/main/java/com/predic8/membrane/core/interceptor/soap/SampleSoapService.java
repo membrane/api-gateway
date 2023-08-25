@@ -32,11 +32,11 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 public class SampleSoapService extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        String cityName = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
-        if(cityName.equals("404")){
-            exc.setResponse(Response.ok(getSoapFault("city element not found")).header("Content-Type", "application/xml").build());
-        }else{
+        try {
+            String cityName = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
             exc.setResponse(Response.ok(getResponse(cityName)).header("Content-Type", "application/xml").build());
+        } catch (Exception e) {
+            exc.setResponse(Response.ok(getSoapFault("city element not found")).header("Content-Type", "application/xml").build());
         }
         return RETURN;
     }
@@ -56,7 +56,7 @@ public class SampleSoapService extends AbstractInterceptor {
                 "</soapenv:Envelope>";
     }
 
-    public static String getElementAsString(InputStream is, String localName) throws XMLStreamException {
+    public static String getElementAsString(InputStream is, String localName) throws Exception {
         XMLInputFactory factory = XMLInputFactory.newInstance();
         XMLStreamReader reader = factory.createXMLStreamReader(is);
 
@@ -69,7 +69,7 @@ public class SampleSoapService extends AbstractInterceptor {
                 }
             }
         }
-        return "404";
+        throw new Exception();
     }
 
     public static String getResponse(String result) throws ParserConfigurationException, TransformerException {
