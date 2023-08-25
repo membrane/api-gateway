@@ -36,12 +36,28 @@ public class SampleSoapInterceptorTest {
                 .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/sampleSoapService/request1.xml")))).build());
         service.handleRequest(exc);
         assertEquals(getValidResponse("Germany", "84 million"), exc.getResponse().getBody().toString());
+    }
+
+    @Test
+    public void validRequest2Test() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
+                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/sampleSoapService/request2.xml")))).build());
+        service.handleRequest(exc);
+        assertEquals(getValidResponse("England", "56 million"), exc.getResponse().getBody().toString());
+    }
+
+    @Test
+    public void validRequest3Test() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
+                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/sampleSoapService/request3.xml")))).build());
+        service.handleRequest(exc);
+        assertEquals(getValidResponse("USA", "332 million"), exc.getResponse().getBody().toString());
         //TODO strings are equal but test fails
     }
 
+
     private String getValidResponse(String country, String population) {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n" +
-                "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+        return  "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                 "  <s:Body>\n" +
                 "    <cs:cityDetails>\n" +
                 "      <cs:country>" + country + "</cs:country>\n" +
