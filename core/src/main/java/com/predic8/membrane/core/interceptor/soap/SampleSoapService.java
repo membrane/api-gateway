@@ -37,7 +37,7 @@ public class SampleSoapService extends AbstractInterceptor {
         if(result.equals("404")){
             exc.setResponse(Response.ok(getSoapFault("city element not found")).header("Content-Type", "application/xml").build());
         }else{
-            exc.setResponse(Response.ok(getResponse(result, exc)).header("Content-Type", "application/xml").build());
+            exc.setResponse(Response.ok(getResponse(result)).header("Content-Type", "application/xml").build());
         }
         return RETURN;
     }
@@ -73,7 +73,7 @@ public class SampleSoapService extends AbstractInterceptor {
         return "404";
     }
 
-    public static String getResponse(String result, Exchange exc) throws ParserConfigurationException, TransformerException {
+    public static String getResponse(String result) throws ParserConfigurationException, TransformerException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document responseDocument = builder.newDocument();
@@ -85,9 +85,7 @@ public class SampleSoapService extends AbstractInterceptor {
         Element cityCountry = responseDocument.createElement("cs:country");
         Element cityPopulation = responseDocument.createElement("cs:population");
         cityCountry.appendChild(responseDocument.createTextNode(getCountry(result)));
-        exc.setProperty("country", getCountry(result));
         cityPopulation.appendChild(responseDocument.createTextNode(getPopulation(result)));
-        exc.setProperty("population", getPopulation(result));
         cityDetailsResponseElement.appendChild(cityCountry);
         cityDetailsResponseElement.appendChild(cityPopulation);
         bodyElement.appendChild(cityDetailsResponseElement);
@@ -96,13 +94,14 @@ public class SampleSoapService extends AbstractInterceptor {
 
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
         DOMSource source = new DOMSource(responseDocument);
         StreamResult res = new StreamResult(System.out);
         StringWriter writer = new StringWriter();
         StreamResult reswr = new StreamResult(writer);
-        transformer.transform(source, res);
+        transformer.transform(source, reswr);
         return writer.toString();
     }
 
