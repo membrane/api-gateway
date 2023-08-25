@@ -1,9 +1,9 @@
 package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import groovy.util.logging.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -23,25 +23,38 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.InputStream;
+import java.io.StringWriter;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 public class SampleSoapService extends AbstractInterceptor {
     private static Logger logger = LoggerFactory.getLogger(SampleSoapService.class);
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        try {
-            String result = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
-            if(result.equals("404")){
-                logger.info("city element not found");
-            }else{
-                getResponse(result);
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage());
+        String result = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
+        if(result.equals("404")){
+            exc.setResponse(Response.ok(getSoapFault("city element not found")).header("Content-Type", "application/xml").build());
+        }else{
+            exc.setResponse(Response.ok(getResponse(result, exc)).header("Content-Type", "application/xml").build());
         }
-        return CONTINUE;
+        return RETURN;
+    }
+
+    public static String getSoapFault(String error) {
+        return "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                "    <soapenv:Body>\n" +
+                "        <soapenv:Fault>\n" +
+                "            <faultcode>soapenv:Client</faultcode>\n" +
+                "            <faultstring>Resource Not Found</faultstring>\n" +
+                "            <detail>\n" +
+                "                <errorcode>404</errorcode>\n" +
+                "                <errormessage>" + error + "</errormessage>\n" +
+                "            </detail>\n" +
+                "        </soapenv:Fault>\n" +
+                "    </soapenv:Body>\n" +
+                "</soapenv:Envelope>";
     }
 
     public static String getElementAsString(InputStream is, String localName) throws XMLStreamException {
@@ -60,7 +73,7 @@ public class SampleSoapService extends AbstractInterceptor {
         return "404";
     }
 
-    public static void getResponse(String result) throws ParserConfigurationException, TransformerException {
+    public static String getResponse(String result, Exchange exc) throws ParserConfigurationException, TransformerException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document responseDocument = builder.newDocument();
@@ -72,7 +85,9 @@ public class SampleSoapService extends AbstractInterceptor {
         Element cityCountry = responseDocument.createElement("cs:country");
         Element cityPopulation = responseDocument.createElement("cs:population");
         cityCountry.appendChild(responseDocument.createTextNode(getCountry(result)));
+        exc.setProperty("country", getCountry(result));
         cityPopulation.appendChild(responseDocument.createTextNode(getPopulation(result)));
+        exc.setProperty("population", getPopulation(result));
         cityDetailsResponseElement.appendChild(cityCountry);
         cityDetailsResponseElement.appendChild(cityPopulation);
         bodyElement.appendChild(cityDetailsResponseElement);
@@ -85,7 +100,10 @@ public class SampleSoapService extends AbstractInterceptor {
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
         DOMSource source = new DOMSource(responseDocument);
         StreamResult res = new StreamResult(System.out);
+        StringWriter writer = new StringWriter();
+        StreamResult reswr = new StreamResult(writer);
         transformer.transform(source, res);
+        return writer.toString();
     }
 
     private static String getPopulation(String city) {
