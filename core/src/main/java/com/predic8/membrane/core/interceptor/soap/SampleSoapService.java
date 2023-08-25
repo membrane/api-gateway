@@ -30,7 +30,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 public class SampleSoapService extends AbstractInterceptor {
-    private static Logger logger = LoggerFactory.getLogger(SampleSoapService.class);
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         String result = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
