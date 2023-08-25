@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,29 +31,26 @@ public class SampleSoapInterceptorTest {
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
+    private void testValidRequest(String requestFileName, String country, String population) throws Exception {
+        InputStream requestStream = getClass().getResourceAsStream("/sampleSoapService/" + requestFileName);
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).body(IOUtils.toByteArray(Objects.requireNonNull(requestStream))).build());
+        service.handleRequest(exc);
+        assertEquals(getValidResponse(country, population), exc.getResponse().getBody().toString());
+    }
+
     @Test
     public void validRequest1Test() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
-                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/sampleSoapService/request1.xml")))).build());
-        service.handleRequest(exc);
-        assertEquals(getValidResponse("Germany", "84 million"), exc.getResponse().getBody().toString());
+        testValidRequest("request1.xml", "Germany", "84 million");
     }
 
     @Test
     public void validRequest2Test() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
-                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/sampleSoapService/request2.xml")))).build());
-        service.handleRequest(exc);
-        assertEquals(getValidResponse("England", "56 million"), exc.getResponse().getBody().toString());
+        testValidRequest("request2.xml", "England", "56 million");
     }
 
     @Test
     public void validRequest3Test() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
-                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/sampleSoapService/request3.xml")))).build());
-        service.handleRequest(exc);
-        assertEquals(getValidResponse("USA", "332 million"), exc.getResponse().getBody().toString());
-        //TODO strings are equal but test fails
+        testValidRequest("request3.xml", "USA", "332 million");
     }
 
 
