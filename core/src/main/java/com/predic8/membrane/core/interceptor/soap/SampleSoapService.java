@@ -3,6 +3,9 @@ package com.predic8.membrane.core.interceptor.soap;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import groovy.util.logging.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -25,18 +28,18 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 public class SampleSoapService extends AbstractInterceptor {
-
+    private static Logger logger = LoggerFactory.getLogger(SampleSoapService.class);
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         try {
             String result = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
             if(result.equals("404")){
-                System.out.println(result);
+                logger.info("city element not found");
             }else{
                 getResponse(result);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
         }
         return CONTINUE;
     }
