@@ -32,11 +32,11 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 public class SampleSoapService extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        String result = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
-        if(result.equals("404")){
+        String cityName = getElementAsString(exc.getRequest().getBodyAsStream(), "city");
+        if(cityName.equals("404")){
             exc.setResponse(Response.ok(getSoapFault("city element not found")).header("Content-Type", "application/xml").build());
         }else{
-            exc.setResponse(Response.ok(getResponse(result)).header("Content-Type", "application/xml").build());
+            exc.setResponse(Response.ok(getResponse(cityName)).header("Content-Type", "application/xml").build());
         }
         return RETURN;
     }
@@ -73,43 +73,46 @@ public class SampleSoapService extends AbstractInterceptor {
     }
 
     public static String getResponse(String result) throws ParserConfigurationException, TransformerException {
+        // DocumentBuilderFactory is not guaranteed to be thread safe
+        // https://docs.oracle.com/cd/E17802_01/webservices/webservices/docs/1.5/api/javax/xml/parsers/DocumentBuilderFactory.html
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
-        Document responseDocument = builder.newDocument();
+        Document responseDoc = builder.newDocument();
+        Element envElement = responseDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "s:Envelope");
+        envElement.setAttribute("xmlns:s", "http://schemas.xmlsoap.org/soap/envelope/");
+        Element body = responseDoc.createElement("s:Body");
+        Element cityDetailsRes = responseDoc.createElement("cs:cityDetails");
+        Element country = responseDoc.createElement("cs:country");
+        Element population = responseDoc.createElement("cs:population");
+        country.appendChild(responseDoc.createTextNode(getCountry(result)));
+        population.appendChild(responseDoc.createTextNode(String.valueOf(getPopulation(result))));
+        cityDetailsRes.appendChild(country);
+        cityDetailsRes.appendChild(population);
+        body.appendChild(cityDetailsRes);
+        envElement.appendChild(body);
+        responseDoc.appendChild(envElement);
+        return getString(responseDoc);
+    }
 
-        Element envelopeElement = responseDocument.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "s:Envelope");
-        envelopeElement.setAttribute("xmlns:s", "http://schemas.xmlsoap.org/soap/envelope/");
-        Element bodyElement = responseDocument.createElement("s:Body");
-        Element cityDetailsResponseElement = responseDocument.createElement("cs:cityDetails");
-        Element cityCountry = responseDocument.createElement("cs:country");
-        Element cityPopulation = responseDocument.createElement("cs:population");
-        cityCountry.appendChild(responseDocument.createTextNode(getCountry(result)));
-        cityPopulation.appendChild(responseDocument.createTextNode(getPopulation(result)));
-        cityDetailsResponseElement.appendChild(cityCountry);
-        cityDetailsResponseElement.appendChild(cityPopulation);
-        bodyElement.appendChild(cityDetailsResponseElement);
-        envelopeElement.appendChild(bodyElement);
-        responseDocument.appendChild(envelopeElement);
-
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-        DOMSource source = new DOMSource(responseDocument);
-        StreamResult res = new StreamResult(System.out);
+    private static String getString(Document responseDoc) throws TransformerException {
+        TransformerFactory tfFactory = TransformerFactory.newInstance();
+        Transformer tf = tfFactory.newTransformer();
+        tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+        tf.setOutputProperty(OutputKeys.INDENT, "yes");
+        tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+        DOMSource source = new DOMSource(responseDoc);
         StringWriter writer = new StringWriter();
         StreamResult reswr = new StreamResult(writer);
-        transformer.transform(source, reswr);
+        tf.transform(source, reswr);
         return writer.toString();
     }
 
-    private static String getPopulation(String city) {
+    private static int getPopulation(String city) {
         return switch (city) {
-            case "Bonn" -> "84 million";
-            case "London" -> "56 million";
-            case "New York" -> "332 million";
-            default -> "Unknown";
+            case "Bonn" -> 84000000;
+            case "London" -> 56000000;
+            case "New York" -> 332000000;
+            default -> 0;
         };
     }
 

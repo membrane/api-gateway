@@ -25,14 +25,14 @@ public class SampleSoapInterceptorTest {
     @Test
     public void notFoundTest() throws Exception {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
-                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/sampleSoapService/wrongRequest.xml")))).build());
+                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrongRequest.xml")))).build());
         service.handleRequest(exc);
         assertEquals(SampleSoapService.getSoapFault("city element not found"), exc.getResponse().getBody().toString());
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
     private void testValidRequest(String requestFileName, String country, String population) throws Exception {
-        InputStream requestStream = getClass().getResourceAsStream("/sampleSoapService/" + requestFileName);
+        InputStream requestStream = getClass().getResourceAsStream("/soap-sample/" + requestFileName);
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).body(IOUtils.toByteArray(Objects.requireNonNull(requestStream))).build());
         service.handleRequest(exc);
         assertEquals(getValidResponse(country, population), exc.getResponse().getBody().toString());
@@ -40,17 +40,17 @@ public class SampleSoapInterceptorTest {
 
     @Test
     public void validRequest1Test() throws Exception {
-        testValidRequest("request1.xml", "Germany", "84 million");
+        testValidRequest("soapRequest-Bonn.xml", "Germany", "84 million");
     }
 
     @Test
     public void validRequest2Test() throws Exception {
-        testValidRequest("request2.xml", "England", "56 million");
+        testValidRequest("soapRequest-London.xml", "England", "56 million");
     }
 
     @Test
     public void validRequest3Test() throws Exception {
-        testValidRequest("request3.xml", "USA", "332 million");
+        testValidRequest("soapRequest-NewYork.xml", "USA", "332 million");
     }
 
 
