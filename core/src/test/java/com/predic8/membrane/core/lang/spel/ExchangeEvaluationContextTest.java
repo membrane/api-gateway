@@ -21,16 +21,16 @@ public class ExchangeEvaluationContextTest {
 
     String keyExpression(String spel) {
         Expression expression = new SpelExpressionParser().parseExpression(spel);
-        return expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()).getStandardEvaluationContext(), String.class);
+        return expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), String.class);
     }
 
     @Test
     void getMethod() {
-        assertEquals("foo", keyExpression("headers[authentication]"));
+        assertEquals("foo", keyExpression("headers.authentication"));
     }
 
     @Test
     void getMethodIgnoreCase() {
-        assertEquals("foo", keyExpression("headers[AUTHenticatioN]"));
+        assertEquals("foo", keyExpression("headers.AUTHenticatioN"));
     }
 }

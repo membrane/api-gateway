@@ -7,26 +7,28 @@
 
 	<router>
 
-		<serviceProxy name="Token Validator" port="2000">
-
+		<api name="Token Validator" port="2000">
 			<!-- Validates tokens against authorization server - blocks request on invalid tokens -->
 			<tokenValidator endpoint="http://localhost:7007/oauth2/userinfo"/>
 
+			<!-- Forwards the request if the token is valid -->
 			<target host="localhost" port="3000"/>
+		</api>
 
-		</serviceProxy>
+		<!-- Simulates the backend that should be protected -->
+		<api port="3000">			
+			<response>
+				<template contentType="application/json" pretty="yes">
+					{ "success": true }
+				</template>
+			</response>
+			<return/>
+		</api>
 
-
-		<serviceProxy port="3000">
-			<groovy>
-				exc.setResponse(Response.ok('{"success":"true"}\n').contentType("application/json").build())
-				RETURN
-			</groovy>
-		</serviceProxy>
-
-		<serviceProxy port="9001">
+		<api port="9001">
 			<adminConsole/>
-		</serviceProxy>
+		</api>
+
 	</router>
 
 </spring:beans>

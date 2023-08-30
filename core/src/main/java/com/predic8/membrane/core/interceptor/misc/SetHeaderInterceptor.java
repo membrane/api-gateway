@@ -24,7 +24,6 @@ import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
 import org.springframework.expression.spel.support.*;
 
-import java.util.Arrays;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -87,7 +86,7 @@ public class SetHeaderInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg).getStandardEvaluationContext()));
+        msg.getHeader().setValue(name, evaluateExpression(new ExchangeEvaluationContext(exchange, msg)));
         return CONTINUE;
     }
 

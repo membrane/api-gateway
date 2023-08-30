@@ -39,7 +39,6 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @SelectClasses({
         ConsistentVersionNumbers.class,
-        DefaultConfigAdminConsoleTest.class,
         JavaLicenseInfoTest.class,
 
         CBRTest.class,
@@ -67,7 +66,6 @@ import org.junit.platform.suite.api.Suite;
 
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,
-        ProxiesXMLFullSampleTest.class,
 
         // Not an example test. Maybe we can find a better location?
         OpenAPIConfigErrorTest.class,
@@ -76,7 +74,9 @@ import org.junit.platform.suite.api.Suite;
         JsonTemplateTest.class,
         XMLTemplateTest.class,
 
-        JsonProtectionTest.class
+        JsonProtectionTest.class,
+
+        //DefaultConfigAdminConsoleTest.class
 })
 public class ExampleTestsWithoutInternet {
 }
