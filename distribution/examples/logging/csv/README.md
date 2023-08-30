@@ -15,10 +15,14 @@ To run the example execute the following steps:
 
 3. Open the URL http://localhost:2000 in your browser. 
 
-4. Look into the file `log.csv` that is created in the `logging-csv` directory. You should see something like:
+4. Look into the file `log.csv` that is created in the `logging-csv` directory. You should see something like:  
+  
 ```
 200;2023-08-30 14:51:25.760;:2000;GET;/shop/v2/;ip6-localhost;null;;unknown;application/json;unknown;613;
+200;2023-08-30 16:25:03.501;:2000;GET;/shop/v2/;ip6-localhost;null;;unknown;application/json;unknown;605;
 ```
+
+
 ---
 See:
 - [statisticsCSV](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/statisticsCSV.htm) reference
