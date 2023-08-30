@@ -11,11 +11,11 @@ To run the example execute the following steps:
 
 1. Go to the `examples/logging-csv` directory.
 
-2. Execute `service-proxy.bat`
+2. Execute `service-proxy.sh` or service-proxy.bat`
 
 3. Open the URL http://localhost:2000 in your browser. 
 
-4. Look into the file `log.csv` that is created in the `logging-csv` directory.
+4. Look into the file `log.csv` that is created in the `logging-csv` directory. You should see something like `200;2023-08-30 14:51:25.760;:2000;GET;/shop/v2/;ip6-localhost;null;;unknown;application/json;unknown;613;
 
 ---
 See:
