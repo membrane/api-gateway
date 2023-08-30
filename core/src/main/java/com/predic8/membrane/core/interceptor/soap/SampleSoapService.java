@@ -80,26 +80,30 @@ public class SampleSoapService extends AbstractInterceptor {
     }
 
     public static String getResponse(String result) throws ParserConfigurationException, TransformerException {
-        // DocumentBuilderFactory is not guaranteed to be thread safe
-        // https://docs.oracle.com/cd/E17802_01/webservices/webservices/docs/1.5/api/javax/xml/parsers/DocumentBuilderFactory.html
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document responseDoc = builder.newDocument();
-        Element envElement = responseDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "s:Envelope");
-        envElement.setAttribute("xmlns:s", "http://schemas.xmlsoap.org/soap/envelope/");
-        envElement.setAttribute("xmlns:cs", "https://predic8.de/city-service");
-        Element body = responseDoc.createElement("s:Body");
-        Element cityDetailsRes = responseDoc.createElement("cs:cityDetails");
-        Element country = responseDoc.createElement("cs:country");
-        Element population = responseDoc.createElement("cs:population");
-        country.appendChild(responseDoc.createTextNode(getCountry(result)));
-        population.appendChild(responseDoc.createTextNode(String.valueOf(getPopulation(result))));
-        cityDetailsRes.appendChild(country);
-        cityDetailsRes.appendChild(population);
-        body.appendChild(cityDetailsRes);
-        envElement.appendChild(body);
-        responseDoc.appendChild(envElement);
-        return getString(responseDoc);
+        if(result.equals("Bonn") || result.equals("London") || result.equals("New York")) {
+            // DocumentBuilderFactory is not guaranteed to be thread safe
+            // https://docs.oracle.com/cd/E17802_01/webservices/webservices/docs/1.5/api/javax/xml/parsers/DocumentBuilderFactory.html
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document responseDoc = builder.newDocument();
+            Element envElement = responseDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "s:Envelope");
+            envElement.setAttribute("xmlns:s", "http://schemas.xmlsoap.org/soap/envelope/");
+            envElement.setAttribute("xmlns:cs", "https://predic8.de/city-service");
+            Element body = responseDoc.createElement("s:Body");
+            Element cityDetailsRes = responseDoc.createElement("cs:cityDetails");
+            Element country = responseDoc.createElement("cs:country");
+            Element population = responseDoc.createElement("cs:population");
+            country.appendChild(responseDoc.createTextNode(getCountry(result)));
+            population.appendChild(responseDoc.createTextNode(String.valueOf(getPopulation(result))));
+            cityDetailsRes.appendChild(country);
+            cityDetailsRes.appendChild(population);
+            body.appendChild(cityDetailsRes);
+            envElement.appendChild(body);
+            responseDoc.appendChild(envElement);
+            return getString(responseDoc);
+        }else{
+            return getSoapFault("No city data available. Try Bonn, London or new York");
+        }
     }
 
     private static String getString(Document responseDoc) throws TransformerException {

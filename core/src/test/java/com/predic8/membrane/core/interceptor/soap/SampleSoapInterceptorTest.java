@@ -52,7 +52,7 @@ public class SampleSoapInterceptorTest {
         service.handleRequest(exc);
 
         String responseXML = exc.getResponse().getBody().toString();
-        // System.out.println(exc.getResponse().getBody().toString());
+        System.out.println(exc.getResponse().getBody().toString());
 
         assertTrue(compareXmlStrings(responseXML, country, population));
     }
