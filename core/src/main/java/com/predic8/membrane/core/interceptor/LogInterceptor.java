@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.slf4j.LoggerFactory.*;
 
 /**
@@ -46,14 +47,14 @@ public class LogInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log("==== Request ===");
 		logMessage(exc.getRequest());
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		log("==== Response ===");
 		logMessage(exc.getResponse());
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	public boolean isHeaderOnly() {
@@ -125,6 +126,7 @@ public class LogInterceptor extends AbstractInterceptor {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public String getCategory() {
 		return category;
 	}
@@ -134,6 +136,7 @@ public class LogInterceptor extends AbstractInterceptor {
 	 * @description Sets the category of the logged message.
 	 * @example Membrane
 	 */
+	@SuppressWarnings("unused")
 	@MCAttribute
 	public void setCategory(String category) {
 		this.category = category;
