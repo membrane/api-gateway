@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.soap;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -29,7 +30,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
+@MCElement(name="sampleSoapService")
 public class SampleSoapService extends AbstractInterceptor {
+
+    public SampleSoapService() {
+        name = "SampleSoapService";
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         try {
