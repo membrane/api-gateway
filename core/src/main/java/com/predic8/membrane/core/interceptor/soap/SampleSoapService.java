@@ -80,6 +80,7 @@ public class SampleSoapService extends AbstractInterceptor {
         Document responseDoc = builder.newDocument();
         Element envElement = responseDoc.createElementNS("http://schemas.xmlsoap.org/soap/envelope/", "s:Envelope");
         envElement.setAttribute("xmlns:s", "http://schemas.xmlsoap.org/soap/envelope/");
+        envElement.setAttribute("xmlns:cs", "https://predic8.de/city-service");
         Element body = responseDoc.createElement("s:Body");
         Element cityDetailsRes = responseDoc.createElement("cs:cityDetails");
         Element country = responseDoc.createElement("cs:country");

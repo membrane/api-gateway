@@ -7,7 +7,9 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.namespace.NamespaceContext;
@@ -50,7 +52,7 @@ public class SampleSoapInterceptorTest {
         service.handleRequest(exc);
 
         String responseXML = exc.getResponse().getBody().toString();
-        System.out.println(exc.getResponse().getBody().toString());
+        // System.out.println(exc.getResponse().getBody().toString());
 
         assertTrue(compareXmlStrings(responseXML, country, population));
     }
@@ -85,44 +87,53 @@ public class SampleSoapInterceptorTest {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes());
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(new InputSource(inputStream));
 
-            XPathFactory xPathFactory = XPathFactory.newInstance();
-            XPath xPath = xPathFactory.newXPath();
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            xPath.setNamespaceContext(new NamespaceContext() {
+                @Override
+                public Iterator<String> getPrefixes(String namespaceURI) {
+                    return null;
+                }
 
-            String countryXPath = "/s:Envelope/s:Body/cs:cityDetails/cs:country[text()='%s']";
-            String populationXPath = "/s:Envelope/s:Body/cs:cityDetails/cs:population[text()='%s']";
-            NamespaceContext nsContext = new NamespaceContext() {
-                public String getNamespaceURI(String prefix) {
-                    if ("s".equals(prefix)) {
-                        return "http://schemas.xmlsoap.org/soap/envelope/";
-                    } else if ("cs".equals(prefix)) {
-                        return "http://custom.namespace";
+                @Override
+                public String getPrefix(String namespaceURI) {
+                    if ("http://schemas.xmlsoap.org/soap/envelope/".equals(namespaceURI)) {
+                        return "s";
+                    } else if ("https://predic8.de/city-service".equals(namespaceURI)) {
+                        return "cs";
                     }
                     return null;
                 }
 
-                public String getPrefix(String namespaceURI) {
-                    throw new UnsupportedOperationException();
+                @Override
+                public String getNamespaceURI(String prefix) {
+                    if ("s".equals(prefix)) {
+                        return "http://schemas.xmlsoap.org/soap/envelope/";
+                    } else if ("cs".equals(prefix)) {
+                        return "https://predic8.de/city-service";
+                    }
+                    return null;
                 }
+            });
 
-                public Iterator<String> getPrefixes(String namespaceURI) {
-                    throw new UnsupportedOperationException();
-                }
-            };
+            Node countryNode = (Node) xPath.evaluate(
+                    String.format("/s:Envelope/s:Body/cs:cityDetails/cs:country[text()='%s']", country),
+                    document,
+                    XPathConstants.NODE
+            );
+            Node populationNode = (Node) xPath.evaluate(
+                    String.format("/s:Envelope/s:Body/cs:cityDetails/cs:population[text()='%s']", population),
+                    document,
+                    XPathConstants.NODE
+            );
 
-            xPath.setNamespaceContext(nsContext);
+            return country.equals(countryNode != null ? countryNode.getTextContent() : null)
+                    && population.equals(populationNode != null ? populationNode.getTextContent() : null);
 
-            // Define the XPath expression with namespace prefixes
-            String xpathExpression = "/s:Envelope/s:Body/cs:cityDetails/cs:country";
 
-            // Evaluate the XPath expression
-            Node countryNode = (Node) xPath.evaluate(xpathExpression, document, XPathConstants.NODE);
-            String countryValue = countryNode.getTextContent();
-
-            System.out.println("Country: " + countryValue);
-            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
