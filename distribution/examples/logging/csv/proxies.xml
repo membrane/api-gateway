@@ -8,7 +8,7 @@
 
 		<api port="2000">
 			<statisticsCSV file="./log.csv" />
-			<target url="https://api.predic8.de/shop/v2"/>
+			<target url="https://api.predic8.de"/>
 		</api>
 		
 	</router>
