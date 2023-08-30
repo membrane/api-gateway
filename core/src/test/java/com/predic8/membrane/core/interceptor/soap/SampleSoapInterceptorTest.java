@@ -7,9 +7,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import javax.xml.namespace.NamespaceContext;
@@ -29,11 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SampleSoapInterceptorTest {
 
-    private static SampleSoapService service;
+    private static SampleSoapServiceInterceptor service;
     private static Exchange exc = new Exchange(null);
     @BeforeAll
     public static void setUp() throws IOException {
-        service = new SampleSoapService();
+        service = new SampleSoapServiceInterceptor();
     }
 
     @Test
@@ -41,7 +39,7 @@ public class SampleSoapInterceptorTest {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
                 .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrongRequest.xml")))).build());
         service.handleRequest(exc);
-        assertEquals(SampleSoapService.getSoapFault("city element not found"), exc.getResponse().getBody().toString());
+        assertEquals(SampleSoapServiceInterceptor.getSoapFault("city element not found"), exc.getResponse().getBody().toString());
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
