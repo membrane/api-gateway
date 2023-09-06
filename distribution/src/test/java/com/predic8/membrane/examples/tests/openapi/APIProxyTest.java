@@ -82,7 +82,7 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase  {
                     }
                 """)
         .when()
-            .post(LOCALHOST_2000 + "/shop/v2/products/")
+            .post(LOCALHOST_2000 + "/shop/v2/products")
         .then()
                 .statusCode(201)
                 .body("name", Matchers.equalTo("Figs"))
@@ -102,7 +102,7 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase  {
                 }
             """)
         .when()
-            .post(LOCALHOST_2000 + "/shop/v2/products/");
+            .post(LOCALHOST_2000 + "/shop/v2/products");
         // @formatter:on
 
         res.then().assertThat().statusCode(400);
@@ -110,8 +110,8 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase  {
         JSONAssert.assertEquals("""
                         {
                           "method" : "POST",
-                          "uriTemplate" : "/products/",
-                          "path" : "/shop/v2/products/",
+                          "uriTemplate" : "/products",
+                          "path" : "/shop/v2/products",
                           "validationErrors" : {
                             "REQUEST/BODY#/price" : [ {
                               "message" : "-2.7 is smaller than the minimum of 0",
