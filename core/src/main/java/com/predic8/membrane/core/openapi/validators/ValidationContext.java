@@ -143,13 +143,13 @@ public class ValidationContext {
         return ctx;
     }
 
-    public ValidationContext validatedEntityType(ValidatedEntityType type) {
+    public ValidationContext entityType(ValidatedEntityType type) {
         ValidationContext ctx = this.deepCopy();
         ctx.validatedEntityType = type;
         return ctx;
     }
 
-    public ValidationContext validatedEntity(String entity) {
+    public ValidationContext entity(String entity) {
         ValidationContext ctx = this.deepCopy();
         ctx.validatedEntity = entity;
         return ctx;

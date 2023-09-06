@@ -30,13 +30,18 @@ class MimeTypeUtilTest {
         assertTrue(isXML("application/xhtml+xml"));
         assertTrue(isXML("application/xhtml"));
         assertTrue(isXML("application/xhtml"));
-        assertTrue(isXML(  "image/svg+xml"));
+        assertTrue(isXML("image/svg+xml"));
         assertTrue(isXML("text/xml-external-parsed-entity"));
     }
 
     @Test
     void isXWWWFormUrlencoded() {
         assertTrue(isWWWFormUrlEncoded(APPLICATION_X_WWW_FORM_URLENCODED));
+    }
+
+    @Test
+    void isStarStarWWWFormUrlencoded() {
+        assertFalse(isWWWFormUrlEncoded("*/*"));
     }
 
 }

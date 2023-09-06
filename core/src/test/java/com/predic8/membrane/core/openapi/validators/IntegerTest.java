@@ -117,14 +117,8 @@ public class IntegerTest extends AbstractValidatorTest {
     }
 
     private JsonNode getNumbers(String name, BigDecimal n) {
-        ObjectNode root = objectMapper.createObjectNode();
+        ObjectNode root = om.createObjectNode();
         root.put(name,n);
-        return root;
-    }
-
-    private JsonNode getStrings(String name, String value) {
-        ObjectNode root = objectMapper.createObjectNode();
-        root.put(name,value);
         return root;
     }
 }

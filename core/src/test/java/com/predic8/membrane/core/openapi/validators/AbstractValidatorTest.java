@@ -19,14 +19,13 @@ package com.predic8.membrane.core.openapi.validators;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.util.*;
-import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 public abstract class AbstractValidatorTest {
 
-    protected final static ObjectMapper objectMapper = new ObjectMapper();
+    protected final static ObjectMapper om = new ObjectMapper();
 
     OpenAPIValidator validator;
 

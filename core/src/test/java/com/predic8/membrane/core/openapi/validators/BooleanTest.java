@@ -71,13 +71,13 @@ public class BooleanTest extends AbstractValidatorTest {
     }
 
     private JsonNode getBoolean(String name, boolean bool) {
-        ObjectNode root = objectMapper.createObjectNode();
+        ObjectNode root = om.createObjectNode();
         root.put(name,bool);
         return root;
     }
 
     private JsonNode getStrings(String name, String value) {
-        ObjectNode root = objectMapper.createObjectNode();
+        ObjectNode root = om.createObjectNode();
         root.put(name,value);
         return root;
     }
