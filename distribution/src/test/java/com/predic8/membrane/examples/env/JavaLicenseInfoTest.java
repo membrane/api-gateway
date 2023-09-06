@@ -19,12 +19,12 @@ import java.io.*;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.io.FileUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JavaLicenseInfoTest {
-
-	private final List<File> files = new ArrayList<>();
 
 	@BeforeEach
 	public void precondition() {
@@ -33,52 +33,46 @@ public class JavaLicenseInfoTest {
 	}
 
 	@Test
-	public void doit() throws IOException {
-		recurse(new File("..").getCanonicalFile());
-
+	public void checkFiles() throws IOException {
+		var files = findJavaFiles(new File("..").getCanonicalFile()).stream()
+				.filter(file -> !containsLicense(file))
+				.toList();
 		if (!files.isEmpty()) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("Missing license information in ");
-			sb.append("" + files.size());
-			sb.append(" files:\n");
-			for (File file : files) {
-				sb.append("  at ");
-				sb.append(file.getAbsolutePath());
-				sb.append(" (");
-				sb.append(file.getName());
-				sb.append(":1)\n");
-			}
-			String s = sb.toString();
-			System.err.println(s);
+			String s = getFailureMessage(files);
+			System.out.println(s);
 			fail(s);
 		}
 	}
 
-	@SuppressWarnings("DataFlowIssue")
-	private void recurse(File file) throws IOException {
-		if (file.isFile()) {
-			if (file.getName().endsWith(".java"))
-				handle(file);
+	private List<File> findJavaFiles(File startLocation) {
+		if (startLocation.isFile()) {
+			if (startLocation.getName().endsWith(".java"))
+				return List.of(startLocation);
+		} else if (startLocation.isDirectory()) {
+			if (startLocation.getName().equals("target"))
+				return emptyList(); // do not enter maven build directories
+			return Arrays.stream(Objects.requireNonNull(startLocation.listFiles()))
+					.flatMap(file -> findJavaFiles(file).stream())
+					.toList();
 		}
-		if (file.isDirectory()) {
-			if (file.getName().equals("target"))
-				return; // do not enter maven build directories
-			for (File child : file.listFiles()) {
-				recurse(child);
-			}
+		return emptyList();
+	}
+
+	private static boolean containsLicense(File file) {
+		try {
+			String content = readFileToString(file, UTF_8);
+			return content.contains("Apache License") || content.contains("Copyright (c) 2013, Oracle and/or its affiliates");
+		} catch (Exception e) {
+			return false;
 		}
 	}
 
-	private void handle(File file) throws IOException {
-		String content = readFileToString(file, UTF_8);
-
-		if (content.contains("Apache License"))
-			return;
-
-		if (content.contains("Copyright (c) 2013, Oracle and/or its affiliates"))
-			return;
-
-		files.add(file);
+	private String getFailureMessage(List<File> files) {
+		return "Missing license information in %d files:%n".formatted(files.size()) +
+				files.stream().map(JavaLicenseInfoTest::formatFileAsStacktraceLine).collect(joining("\n"));
 	}
 
+	private static String formatFileAsStacktraceLine(File file) {
+		return "  at %s (%s:1))".formatted(file.getAbsolutePath(), file.getName());
+	}
 }
