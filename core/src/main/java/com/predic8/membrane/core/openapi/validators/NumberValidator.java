@@ -17,11 +17,10 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
-import io.swagger.v3.oas.models.media.*;
 
 import java.math.*;
 
-import static java.lang.Double.parseDouble;
+import static java.lang.Double.*;
 
 public class NumberValidator implements IJSONSchemaValidator {
 
@@ -30,7 +29,7 @@ public class NumberValidator implements IJSONSchemaValidator {
      */
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
-       try {
+        try {
             if (obj instanceof JsonNode) {
                 // Not using double prevents from losing fractions
                 new BigDecimal(((JsonNode) obj).asText());

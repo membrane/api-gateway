@@ -17,8 +17,6 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
 
 public class BooleanValidator implements IJSONSchemaValidator {
 
@@ -39,7 +37,7 @@ public class BooleanValidator implements IJSONSchemaValidator {
         if (str.equals("true") || str.equals("false"))
             return errors;
 
-        errors.add(ctx,String.format("Value '%s' is not a boolean (true/false).",value));
+        errors.add(ctx.schemaType("boolean"),String.format("Value '%s' is not a boolean (true/false).",value));
 
         return errors;
     }

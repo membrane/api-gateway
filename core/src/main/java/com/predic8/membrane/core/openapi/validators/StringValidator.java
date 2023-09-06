@@ -39,6 +39,7 @@ public class StringValidator implements IJSONSchemaValidator {
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
+        ctx.schemaType("string");
 
         ValidationErrors errors = new ValidationErrors();
 
@@ -48,8 +49,7 @@ public class StringValidator implements IJSONSchemaValidator {
         }
 
         String value;
-        if (obj instanceof JsonNode) {
-            JsonNode node = ((JsonNode) obj);
+        if (obj instanceof JsonNode node) {
             if (!JsonNodeType.STRING.equals(node.getNodeType())) {
                 errors.add(ctx, format("String expected but got %s of type %s", node, node.getNodeType()));
                 return errors;
