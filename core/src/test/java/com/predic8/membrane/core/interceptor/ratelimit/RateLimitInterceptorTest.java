@@ -149,7 +149,34 @@ public class RateLimitInterceptorTest {
 
 		assertEquals(RETURN, interceptor.handleRequest(exc));
 	}
-	
+
+	@Test
+	void rateLimitByJWTDifferentProperties() throws Exception {
+		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
+		interceptor.setKeyExpression("properties.jwt.sub");
+		interceptor.init();
+
+		var exc = new Request.Builder().buildExchange();
+
+		// done by JwtAuthInterceptor
+		var claims = Map.of(
+				"sub", "fooman"
+		);
+		exc.getProperties().put("jwt", claims);
+
+		range(0, interceptor.getRequestLimit())
+				.parallel()
+				.forEach(i -> {
+					try {
+						assertEquals(CONTINUE, interceptor.handleRequest(exc));
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				});
+
+		assertEquals(RETURN, interceptor.handleRequest(exc));
+	}
+
 	@Test
 	void handleRequestRateLimit1SecondConcurrency() throws Exception
 	{
