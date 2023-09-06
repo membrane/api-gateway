@@ -128,7 +128,7 @@ public class NumberTest extends AbstractValidatorTest {
     }
 
     private JsonNode getNumbers(String name, BigDecimal n) {
-        ObjectNode root = objectMapper.createObjectNode();
+        ObjectNode root = om.createObjectNode();
         root.put(name,n);
         return root;
     }

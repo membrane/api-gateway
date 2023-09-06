@@ -20,7 +20,6 @@ import com.predic8.membrane.core.openapi.validators.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class ValidationContextTest {
 
@@ -29,8 +28,8 @@ public class ValidationContextTest {
         Assertions.assertEquals("REQUEST/BODY#/only-numbers/1",
                 new ValidationContext().path("/array")
                         .complexType("Array")
-                        .validatedEntityType(BODY)
-                        .validatedEntity("REQUEST")
+                        .entityType(BODY)
+                        .entity("REQUEST")
                         .addJSONpointerSegment("only-numbers")
                         .addJSONpointerSegment("1")
                         .getLocationForRequest());

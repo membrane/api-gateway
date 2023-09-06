@@ -171,7 +171,7 @@ public class StringTest extends AbstractValidatorTest {
 
 
     private JsonNode getStrings(String name, String value) {
-        ObjectNode root = objectMapper.createObjectNode();
+        ObjectNode root = om.createObjectNode();
         root.put(name,value);
         return root;
     }

@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
@@ -44,8 +43,8 @@ public class PathParametersValidator {
             if (value == null) {
                 throw new RuntimeException("Should not happen!");
             }
-            errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.validatedEntityType(PATH_PARAMETER)
-                    .validatedEntity(parameter.getName())
+            errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
+                    .entity(parameter.getName())
                     .path(req.getPath())
                     .statusCode(400), value));
         });
