@@ -18,10 +18,10 @@ import org.springframework.expression.TypedValue;
 
 import java.util.Map;
 
-public class SPelMap<K, V> implements SPeLablePropertyAware {
+public class SPeLMap<K, V> implements SPeLablePropertyAware {
     protected final Map<K, V> data;
 
-    public SPelMap(Map<K, V> data) {
+    public SPeLMap(Map<K, V> data) {
         this.data = data;
     }
 
