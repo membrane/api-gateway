@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.spel.spelable.SPeLProperties;
 import com.predic8.membrane.core.lang.spel.spelable.SPeLablePropertyAware;
-import com.predic8.membrane.core.lang.spel.spelable.SPelMap;
+import com.predic8.membrane.core.lang.spel.spelable.SPeLMap;
 import com.predic8.membrane.core.lang.spel.spelable.SpeLHeader;
 import org.springframework.expression.spel.support.*;
 
@@ -78,7 +78,7 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
         return method;
     }
 
-    public SPelMap<String, Object> getJson() throws IOException {
-        return new SPelMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
+    public SPeLMap<String, Object> getJson() throws IOException {
+        return new SPeLMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
     }
 }

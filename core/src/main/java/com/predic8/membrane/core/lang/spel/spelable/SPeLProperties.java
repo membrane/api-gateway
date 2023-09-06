@@ -15,9 +15,10 @@ package com.predic8.membrane.core.lang.spel.spelable;
 
 import org.jose4j.jwt.JwtClaims;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class SPeLProperties extends SPelMap<String, Object> {
+public class SPeLProperties extends SPeLMap<String, Object> {
 
     public SPeLProperties(Map<String, Object> properties) {
         super(properties);
@@ -25,6 +26,10 @@ public class SPeLProperties extends SPelMap<String, Object> {
         this.data.computeIfPresent("jwt", (s, o) -> {
             if (o instanceof JwtClaims claims) {
                 return new SpeLJwtClaims(claims);
+            }
+            if (o instanceof Map) {
+                //noinspection unchecked
+                return new SPeLMap<>((Map<String, Object>) o);
             }
             return o;
         });
