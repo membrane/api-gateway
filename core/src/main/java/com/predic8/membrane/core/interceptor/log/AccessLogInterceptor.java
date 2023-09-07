@@ -148,8 +148,4 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         this.dateTimePattern = dateTimePattern;
         this.dateTimeFormat = new SimpleDateFormat(dateTimePattern);
     }
-
-    Logger getLog() {
-        return log;
-    }
 }
