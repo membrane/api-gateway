@@ -24,8 +24,9 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
+import static java.util.stream.Collectors.*;
 
-public class ValidationErrors {
+public class ValidationErrors  {
 
     private final static ObjectMapper om = new ObjectMapper();
 
@@ -115,16 +116,11 @@ public class ValidationErrors {
     }
 
     private Map<String, List<Map<String, Object>>> getValidationErrorsGroupedByLocation(Direction direction) {
-        Map<String, List<Map<String, Object>>> m = new HashMap<>();
-        errors.forEach(ve -> {
-            List<Map<String, Object>> ves = new ArrayList<>();
-            ves.add(ve.getContentMap());
-            m.merge(getLocationFor(direction, ve), ves, (vesOld, vesNew) -> {
-                vesOld.addAll(vesNew);
-                return vesOld;
-            });
-        });
-        return m;
+        return errors.stream().collect(
+                groupingBy(
+                        e -> getLocationFor(direction, e),
+                        mapping(ValidationError::getContentMap, toList())
+                ));
     }
 
     private String getLocationFor(Direction direction, ValidationError ve) {
