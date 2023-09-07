@@ -122,7 +122,6 @@ public class OpenAPIInterceptorTest {
         assertEquals(0, exc.getDestinations().size());
     }
 
-    @SuppressWarnings({"unchecked"})
     @Test
     public void validateRequest() throws Exception {
 
@@ -146,7 +145,6 @@ public class OpenAPIInterceptorTest {
         testValidationResults(getMapFromResponse(exc), "REQUEST");
     }
 
-    @SuppressWarnings({"unchecked"})
     @Test
     public void validateResponse() throws Exception {
         specCustomers.validateResponses = OpenAPISpec.YesNoOpenAPIOption.YES;
@@ -184,29 +182,29 @@ public class OpenAPIInterceptorTest {
         return exc;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked"})
     private void testValidationResults(Map<String, Object> errors, String direction) {
 
         assertEquals("/customers", errors.get("uriTemplate"));
         assertEquals("/customers", errors.get("path"));
 
-        Map<String,Object> validationErrors = (Map<String, Object>) errors.get("validationErrors");
+        Map<String,List<?>> validationErrors = (Map<String, List<?>>) errors.get("validationErrors");
 
         assertEquals(3,validationErrors.size());
 
-        Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).get(0);
+        Map<String,Object> m1 = (Map<String, Object>) (validationErrors.get( direction + "/BODY")).get(0);
         assertEquals("Customer",m1.get("complexType"));
         assertEquals("object",m1.get("schemaType"));
 
         assertTrue(((String)m1.get("message")).contains("additional properties"));
 
-        Map<String,Object> m2 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/firstName")).get(0);
+        Map<String,Object> m2 = (Map<String, Object>) (validationErrors.get(direction + "/BODY#/firstName")).get(0);
 
         assertEquals("Customer",m2.get("complexType"));
         assertEquals("object",m2.get("schemaType"));
         assertTrue(((String)m2.get("message")).contains("missing"));
 
-        Map<String,Object> m3 = (Map<String, Object>) ((List)validationErrors.get(direction + "/BODY#/age")).get(0);
+        Map<String,Object> m3 = (Map<String, Object>) (validationErrors.get(direction + "/BODY#/age")).get(0);
 
         assertEquals("Customer",m3.get("complexType"));
         assertEquals("integer",m3.get("schemaType"));

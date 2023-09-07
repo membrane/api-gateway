@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
@@ -59,9 +60,8 @@ public class TestUtils {
         return proxy;
     }
 
-    @SuppressWarnings("rawtypes")
-    public static Map getMapFromResponse(Exchange exc) throws IOException {
-        return om.readValue(exc.getResponse().getBody().getContent(), Map.class);
+    public static Map<String, Object> getMapFromResponse(Exchange exc) throws IOException {
+        return om.readValue(exc.getResponse().getBody().getContent(), new TypeReference<>() {});
     }
 
     public static OpenAPIRecord getSingleOpenAPIRecord(Map<String,OpenAPIRecord> m) {

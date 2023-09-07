@@ -16,14 +16,19 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.google.common.collect.Streams;
+
 import java.io.*;
 import java.net.*;
 import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toMap;
 
 public class UriTemplateMatcher {
 
@@ -37,7 +42,12 @@ public class UriTemplateMatcher {
         final Matcher matcher = Pattern.compile(escapeSlash(prepareRegex(template))).matcher(trimQueryString(uri));
 
         final List<String> parameterNames = getPathParameterNames(template);
-
+// More concise, but uses @Beta API
+//        return Streams.zip(
+//                parameterNames.stream(),
+//                matcher.results().flatMap(UriTemplateMatcher::extractCapturingGroups),
+//                Map::entry
+//        ).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String,String> pathParameters = new HashMap<>();
 
         while (matcher.find()) {
@@ -62,14 +72,15 @@ public class UriTemplateMatcher {
 
 
     public List<String> getPathParameterNames(String uriTemplate) {
-        final Matcher matcher = pathParameterNamePattern.matcher(uriTemplate);
+        return pathParameterNamePattern.matcher(uriTemplate)
+                .results()
+                .flatMap(UriTemplateMatcher::extractCapturingGroups)
+                .toList();
+    }
 
-        List<String> variables = new ArrayList<>();
-        while (matcher.find()) {
-            for (int i = 1; i <= matcher.groupCount(); i++) {
-                variables.add(matcher.group(i));
-            }
-        }
-        return variables;
+    public static Stream<String> extractCapturingGroups(MatchResult result) {
+        return (result.groupCount() == 0) ?
+                Stream.of() :
+                IntStream.rangeClosed(1, result.groupCount()).mapToObj(result::group);
     }
 }
