@@ -74,22 +74,24 @@ public class OperationValidator {
 
     private void validatePathParameters(ValidationContext ctx, Request req, List<Parameter> schemaParameters) {
 
-        if (schemaParameters == null || req.getPathParameters().size() == 0)
+        if (schemaParameters == null || req.getPathParameters().isEmpty())
             return;
 
         errors.addAll(schemaParameters.stream()
                 .filter(this::isPathParameter)
-                .map(parameter -> {
-            String value = req.getPathParameters().get(parameter.getName());
-            if (value == null) {
-                throw new RuntimeException("Should not happen!");
-            }
-            return new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
-                    .entity(parameter.getName())
-                    .path(req.getPath())
-                    .statusCode(400), value);
-        })
+                .map(parameter -> getValidationErrors(ctx, req, parameter))
                 .toList());
+    }
+
+    private ValidationErrors getValidationErrors(ValidationContext ctx, Request req, Parameter parameter) {
+        String value = req.getPathParameters().get(parameter.getName());
+        if (value == null) {
+            throw new RuntimeException("Should not happen!");
+        }
+        return new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
+                .entity(parameter.getName())
+                .path(req.getPath())
+                .statusCode(400), value);
     }
 
     private boolean isPathParameter(Parameter p) {
