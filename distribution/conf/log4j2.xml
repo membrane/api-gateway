@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
     <Appenders>
+        <Console name="ACCESS" target="SYSTEM_OUT">
+            <PatternLayout pattern="%X{ip} [%X{time}] &quot;%X{http.method} %X{proto}/%X{http.version}&quot; %X{statusCode} %X{payload.size}%n" />
+        </Console>
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L - %m%n" />
         </Console>
@@ -15,6 +18,9 @@
     <Loggers>
         <Logger name="com.predic8.membrane.core.openapi" level="debug">
             <AppenderRef ref="FILE" />
+        </Logger>
+        <Logger name="com.predic8.membrane.core.interceptor.log" level="info" additivity="false">
+            <AppenderRef ref="ACCESS" />
         </Logger>
         <Logger name="com.predic8" level="info">
             <AppenderRef ref="FILE" />
