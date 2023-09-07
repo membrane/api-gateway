@@ -34,10 +34,10 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request> {
     ValidationErrors validateRequestBody(ValidationContext ctx, Operation operation, Request request) {
 
         if (operation.getRequestBody() == null) {
-            if (!request.hasBody())
-                return errors;
-            else
-                return errors.add(ctx.statusCode(400),"Request has a body although it should't.");
+            if (request.hasBody()) {
+                errors.add(ctx.statusCode(400), "Request has a body although it shouldn't.");
+            }
+            return errors;
         }
 
         if (operation.getRequestBody().getContent() != null) {

@@ -112,11 +112,13 @@ public class OpenAPIValidator {
     private ValidationErrors validateMethods(ValidationContext ctx, Request req, Response response, PathItem pathItem) {
         ValidationErrors errors = new ValidationErrors();
         try {
-            return errors.add(new OperationValidator(api).validateOperation(ctx, req, response, pathItem));
+            errors.add(new OperationValidator(api).validateOperation(ctx, req, response, pathItem));
+            return errors;
         } catch (MethodNotAllowException e) {
-            return errors.add(ctx.statusCode(405)
+            errors.add(ctx.statusCode(405)
                     .entity(req.getMethod())
                     .entityType(METHOD), format("Method %s is not allowed", req.getMethod()));
+            return errors;
         }
     }
 }

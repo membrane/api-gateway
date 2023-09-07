@@ -48,10 +48,11 @@ public class OperationValidator {
             validatePathParameters(ctx, req, operation.getParameters());
 
             errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
-
-            return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
+            errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
+            return errors;
         } else {
-            return errors.add(new ResponseBodyValidator(api).validateResponseBody(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
+            errors.add(new ResponseBodyValidator(api).validateResponseBody(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
+            return errors;
         }
     }
 
@@ -80,7 +81,7 @@ public class OperationValidator {
         errors.addAll(schemaParameters.stream()
                 .filter(this::isPathParameter)
                 .map(parameter -> getValidationErrors(ctx, req, parameter))
-                .toList());
+                .reduce(new ValidationErrors(), (a, b) -> { a.addAll(b); return a; }));
     }
 
     private ValidationErrors getValidationErrors(ValidationContext ctx, Request req, Parameter parameter) {

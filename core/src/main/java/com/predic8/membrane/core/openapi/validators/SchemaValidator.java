@@ -51,7 +51,8 @@ public class SchemaValidator implements IJSONSchemaValidator {
         ValidationErrors errors = new ValidationErrors();
 
         if (obj == null) {
-            return errors.add(ctx, "Got null to validate!");
+            errors.add(ctx, "Got null to validate!");
+            return errors;
         }
 
         Object value ;
@@ -59,7 +60,8 @@ public class SchemaValidator implements IJSONSchemaValidator {
             value = resolveValueAndParseJSON(obj);
         } catch (IOException e) {
             log.warn("Cannot parse body. " + e);
-            return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
+            errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
+            return errors;
         }
 
         if (schema.getAllOf() != null) {

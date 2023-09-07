@@ -41,7 +41,7 @@ public class PathParametersValidator {
         errors.addAll(schemaParameters.stream()
                 .filter(this::isPathParameter)
                 .map(parameter -> getValidationErrors(ctx, req, parameter))
-                .toList());
+                .reduce(new ValidationErrors(), (a, b) -> { a.addAll(b); return a; }));
         return errors;
     }
 

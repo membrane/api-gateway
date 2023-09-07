@@ -26,11 +26,9 @@ import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
 import static java.util.stream.Collectors.*;
 
-public class ValidationErrors  {
+public class ValidationErrors extends ArrayList<ValidationError> {
 
     private final static ObjectMapper om = new ObjectMapper();
-
-    private final List<ValidationError> errors = new ArrayList<>();
 
     public enum Direction { REQUEST, RESPONSE }
 
@@ -40,53 +38,28 @@ public class ValidationErrors  {
         return ve;
     }
 
-    public ValidationErrors add(ValidationError error) {
+    public boolean add(ValidationError error) {
         if (error != null)
-            errors.add(error);
-        return this;
+            return super.add(error);
+        return false;
     }
 
-    public void add(List<ValidationError> errors) {
-        this.errors.addAll(errors);
-    }
-
-    public ValidationErrors add(ValidationErrors ve) {
+    public boolean add(ValidationErrors ve) {
         if (ve != null)
-            this.errors.addAll(ve.errors);
-        return this;
+            return super.addAll(ve);
+        return false;
     }
 
-    public ValidationErrors addAll(Collection<ValidationErrors> errors) {
-        errors.forEach(this::add);
-        return this;
+    public boolean add(ValidationContext ctx, String message) {
+        return super.add(new ValidationError(ctx, message));
     }
 
-    public ValidationErrors add(ValidationContext ctx, String message) {
-        errors.add(new ValidationError(ctx, message));
-        return this;
-    }
-
-    public int size() {
-        return errors.size();
-    }
-
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
-    public ValidationError get(int i) {
-        return errors.get(i);
-    }
-
-    public Stream<ValidationError> stream() {
-        return errors.stream();
-    }
 
     /**
      * Call with 400 or 500. Returns a more specifiy status code if there is any.
      */
     public int getConsolidatedStatusCode(int defaultValue) {
-        return errors.stream().map(e -> e.getContext().getStatusCode()).reduce((code, acc) -> {
+        return stream().map(e -> e.getContext().getStatusCode()).reduce((code, acc) -> {
             if (acc == defaultValue) return code;
             return acc;
         }).orElse(defaultValue);
@@ -94,13 +67,13 @@ public class ValidationErrors  {
 
     public byte[] getErrorMessage(Direction direction) {
 
-        if (errors.size() == 0)
+        if (isEmpty())
             return "No validation errors!".getBytes();
 
         Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction);
         Map<String, Object> wrapper = new LinkedHashMap<>();
 
-        ValidationContext ctx = errors.get(0).getContext();
+        ValidationContext ctx = get(0).getContext();
         setFieldIfNotNull(wrapper, "method", ctx.getMethod());
         setFieldIfNotNull(wrapper, "uriTemplate", ctx.getUriTemplate());
         setFieldIfNotNull(wrapper, "path", ctx.getPath());
@@ -116,7 +89,7 @@ public class ValidationErrors  {
     }
 
     private Map<String, List<Map<String, Object>>> getValidationErrorsGroupedByLocation(Direction direction) {
-        return errors.stream().collect(
+        return stream().collect(
                 groupingBy(
                         e -> getLocationFor(direction, e),
                         mapping(ValidationError::getContentMap, toList())
@@ -137,7 +110,7 @@ public class ValidationErrors  {
     @Override
     public String toString() {
         return "ValidationErrors{" +
-                "errors=" + errors +
+                "errors=" + super.toString() +
                 '}';
     }
 }
