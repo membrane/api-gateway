@@ -55,6 +55,11 @@ public class ValidationErrors {
         return this;
     }
 
+    public ValidationErrors addAll(Collection<ValidationErrors> errors) {
+        errors.forEach(this::add);
+        return this;
+    }
+
     public ValidationErrors add(ValidationContext ctx, String message) {
         errors.add(new ValidationError(ctx, message));
         return this;

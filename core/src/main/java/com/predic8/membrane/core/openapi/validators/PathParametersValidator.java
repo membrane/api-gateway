@@ -38,16 +38,20 @@ public class PathParametersValidator {
         if (schemaParameters == null || req.getPathParameters().size() == 0)
             return null;
 
-        schemaParameters.stream().filter(this::isPathParameter).forEach(parameter -> {
-            String value = req.getPathParameters().get(parameter.getName());
-            if (value == null) {
-                throw new RuntimeException("Should not happen!");
-            }
-            errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
-                    .entity(parameter.getName())
-                    .path(req.getPath())
-                    .statusCode(400), value));
-        });
+        errors.addAll(schemaParameters.stream()
+                .filter(this::isPathParameter)
+                .map(parameter -> {
+                    String value = req.getPathParameters().get(parameter.getName());
+                    if (value == null) {
+                        throw new RuntimeException("Should not happen!");
+                    }
+                    return new SchemaValidator(api, parameter.getSchema()).validate(ctx
+                            .entityType(PATH_PARAMETER)
+                            .entity(parameter.getName())
+                            .path(req.getPath())
+                            .statusCode(400), value);
+                })
+                .toList());
         return errors;
     }
 

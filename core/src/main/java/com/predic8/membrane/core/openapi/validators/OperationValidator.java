@@ -77,16 +77,19 @@ public class OperationValidator {
         if (schemaParameters == null || req.getPathParameters().size() == 0)
             return;
 
-        schemaParameters.stream().filter(this::isPathParameter).forEach(parameter -> {
+        errors.addAll(schemaParameters.stream()
+                .filter(this::isPathParameter)
+                .map(parameter -> {
             String value = req.getPathParameters().get(parameter.getName());
             if (value == null) {
                 throw new RuntimeException("Should not happen!");
             }
-            errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
+            return new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
                     .entity(parameter.getName())
                     .path(req.getPath())
-                    .statusCode(400), value));
-        });
+                    .statusCode(400), value);
+        })
+                .toList());
     }
 
     private boolean isPathParameter(Parameter p) {
