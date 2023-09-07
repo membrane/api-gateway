@@ -92,7 +92,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
                 "time", convert(exchange.getTimeReqReceived()),
                 "host", exchange.getOriginalHostHeaderHost(),
                 "port", exchange.getOriginalHostHeaderPort(),
-                "uri", exchange.getRequestURI(),
+                "uri", exchange.getOriginalRequestUri(),
                 "proto", exchange.getRequest().getHeader().getFirstValue("x-forwarded-proto").toUpperCase(),
                 "http.version", exchange.getRequest().getVersion(),
                 "http.method", exchange.getRequest().getMethod(),
@@ -108,10 +108,9 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         if (exchange.getResponse() == null) return Map.of();
 
         return Map.of(
-                "statusCode", exchange.getResponse().getStatusCode(),
+                "statusCode", exchange.getResponse().getStatusCode()
                 // TODO this will disable "streaming" as noticed in the method
                 // "payload.size", exchange.getResponse().getBody().getLength()
-                "payload.size", exchange.getResponse().getHeader().getFirstValue("content-length")
         );
     }
 
