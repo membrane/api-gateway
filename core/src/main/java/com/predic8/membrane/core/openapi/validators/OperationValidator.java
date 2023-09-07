@@ -81,7 +81,7 @@ public class OperationValidator {
         errors.addAll(schemaParameters.stream()
                 .filter(this::isPathParameter)
                 .map(parameter -> getValidationErrors(ctx, req, parameter))
-                .reduce(new ValidationErrors(), (a, b) -> { a.addAll(b); return a; }));
+                .collect(new ValidationErrors.ValidationErrorsCollector()));
     }
 
     private ValidationErrors getValidationErrors(ValidationContext ctx, Request req, Parameter parameter) {

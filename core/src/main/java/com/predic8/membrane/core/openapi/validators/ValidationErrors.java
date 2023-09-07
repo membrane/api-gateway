@@ -20,6 +20,10 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
@@ -113,4 +117,36 @@ public class ValidationErrors extends ArrayList<ValidationError> {
                 "errors=" + super.toString() +
                 '}';
     }
+
+    public static class ValidationErrorsCollector implements Collector<ValidationErrors, ValidationErrors, ValidationErrors> {
+
+        @Override
+        public Supplier<ValidationErrors> supplier() {
+            return ValidationErrors::new;
+        }
+
+        @Override
+        public BiConsumer<ValidationErrors, ValidationErrors> accumulator() {
+            return ValidationErrors::add;
+        }
+
+        @Override
+        public BinaryOperator<ValidationErrors> combiner() {
+            return (a, b) -> {
+                a.addAll(b);
+                return a;
+            };
+        }
+
+        @Override
+        public Function<ValidationErrors, ValidationErrors> finisher() {
+            return f -> f;
+        }
+
+        @Override
+        public Set<Characteristics> characteristics() {
+            return Set.of(Characteristics.IDENTITY_FINISH);
+        }
+    }
+
 }

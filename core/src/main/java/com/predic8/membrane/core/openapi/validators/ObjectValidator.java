@@ -16,18 +16,20 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.openapi.util.ObjectHolder;
+import com.predic8.membrane.core.openapi.util.Utils;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.InputStream;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
+import static java.lang.String.format;
 
 /**
  * Not supported:
@@ -138,16 +140,13 @@ public class ObjectValidator implements IJSONSchemaValidator {
         if (addionalProperties.isEmpty())
             return null;
 
-        ValidationErrors errors = new ValidationErrors();
-
         if (schema.getAdditionalProperties() instanceof Schema) {
-            addionalProperties.forEach((propName, value) ->
-                errors.add(new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(propName), value)));
-            return errors;
+            return addionalProperties.entrySet().stream()
+                    .map(entry -> new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(entry.getKey()), entry.getValue()))
+                    .collect(new ValidationErrors.ValidationErrorsCollector());
         }
 
-        errors.add(ctx.statusCode(400), format("The object has the additional %s: %s .But the schema does not allow additional properties.", getPropertyOrIes(addionalProperties.keySet()), joinByComma(addionalProperties.keySet())));
-        return errors;
+        return ValidationErrors.create(ctx.statusCode(400), format("The object has the additional %s: %s .But the schema does not allow additional properties.", getPropertyOrIes(addionalProperties.keySet()), joinByComma(addionalProperties.keySet())));
     }
 
     private String getPropertyOrIes(Set<String> addionalProperties) {
