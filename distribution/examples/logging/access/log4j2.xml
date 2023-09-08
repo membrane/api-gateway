@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="ACCESS" target="SYSTEM_OUT">
+            <PatternLayout pattern="%X{ip} [%X{time.req.received.format}] &quot;%X{http.method} %X{uri} %X{proto}/%X{http.version}&quot; %X{statusCode} %X{req.payload.size}%n" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.predic8.membrane.core.interceptor.log" level="info" additivity="false">
+            <AppenderRef ref="ACCESS" />
+        </Logger>
+    </Loggers>
+</Configuration>
