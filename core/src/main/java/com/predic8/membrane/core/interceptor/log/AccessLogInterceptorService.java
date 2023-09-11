@@ -144,7 +144,8 @@ public class AccessLogInterceptorService {
     }
 
     private static Predicate<AdditionalPattern> existingAndNotOverridablePattern(Map<String, String> existingPatternMap) {
-        return additionalPattern -> existingPatternMap.containsKey(additionalPattern.getCreate()) && !additionalPattern.isOverride();
+        return additionalPattern ->
+            additionalPattern.isOverride() || !existingPatternMap.containsKey(additionalPattern.getCreate());
     }
 
     private String convert(String timestamp) {
