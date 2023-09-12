@@ -39,7 +39,7 @@ public class SampleSoapInterceptorTest {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
                 .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrongRequest.xml")))).build());
         service.handleRequest(exc);
-        assertEquals(SampleSoapServiceInterceptor.getSoapFault("city element not found"), exc.getResponse().getBody().toString());
+        assertEquals(SampleSoapServiceInterceptor.getSoapFault("Cannot parse SOAP message"), exc.getResponse().getBody().toString());
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
@@ -57,17 +57,17 @@ public class SampleSoapInterceptorTest {
 
     @Test
     public void validRequest1Test() throws Exception {
-        testValidRequest("soapRequest-Bonn.xml", "Germany", "84000000");
+        testValidRequest("soapRequest-Bonn.xml", "Germany", "83200000");
     }
 
     @Test
     public void validRequest2Test() throws Exception {
-        testValidRequest("soapRequest-London.xml", "England", "56000000");
+        testValidRequest("soapRequest-London.xml", "England", "55980000");
     }
 
     @Test
     public void validRequest3Test() throws Exception {
-        testValidRequest("soapRequest-NewYork.xml", "USA", "332000000");
+        testValidRequest("soapRequest-NewYork.xml", "USA", "331900000");
     }
 
 

@@ -9,6 +9,8 @@ import javax.xml.parsers.*;
 import javax.xml.stream.*;
 import javax.xml.transform.*;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -39,6 +41,15 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     private static String getCity(Exchange exc) throws Exception {
         return getElementAsString(exc.getRequest().getBodyAsStream(), "city");
     }
+
+    private static final HashMap<String, City> cityMap = new HashMap<String, City>() {{
+        put("Bonn", new City("Bonn", 83_200_000, "Germany"));
+        put("Bielefeld", new City("Bielefeld", 83_200_000, "Germany"));
+        put("Manila", new City("Manila", 113_900_000, "Philippines"));
+        put("Da Nang", new City("Da Nang", 97_470_000, "Vietnam"));
+        put("London", new City("London", 55_980_000, "England"));
+        put("New York", new City("New York", 331_900_000, "USA"));
+    }};
 
     public static String getSoapFault(String error) {
         // Multiline String """ ... """
@@ -112,13 +123,13 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     private static Element createPopulation(String city, Document res) throws Exception {
         Element pop = res.createElement("cs:population");
-        pop.appendChild(res.createTextNode(String.valueOf(getPopulation(city))));
+        pop.appendChild(res.createTextNode(String.valueOf(cityMap.get(city).population)));
         return pop;
     }
 
     private static Element createCountry(String city, Document res) {
         Element country = res.createElement("cs:country");
-        country.appendChild(res.createTextNode(getCountry(city)));
+        country.appendChild(res.createTextNode(cityMap.get(city).country));
         return country;
     }
 
@@ -126,26 +137,6 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return DocumentBuilderFactory.newInstance().newDocumentBuilder();
     }
 
-    // Todo Put cities in Map<String,City>
-    // record City(Name,Pop,Country)
-    private static int getPopulation(String city) throws Exception {
-        return switch (city) {
-            case "Bonn" -> 300_000;
-            case "Manila" -> 1000;
-            case "Da Nang" -> 1100;
-            case "Bielefeld" -> 1222;
-            case "London" -> 56_000_000;
-            case "New York" -> 332000000;
-            default -> throw new Exception("What city?");
-        };
-    }
+    public record City(String name, int population, String country) {}
 
-    private static String getCountry(String city) {
-        return switch (city) {
-            case "Bonn" -> "Germany";
-            case "London" -> "England";
-            case "New York" -> "USA";
-            default -> "Unknown";
-        };
-    }
 }
