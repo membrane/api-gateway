@@ -2,7 +2,9 @@ package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
+import org.apache.commons.io.IOUtils;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
@@ -11,6 +13,7 @@ import javax.xml.transform.*;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -30,10 +33,23 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
+        if (exc.getRequest().getUri().matches("(?i).+\\?.*wsdl.*")) {
+            exc.setResponse(ok().body(IOUtils.toByteArray(
+                    Objects.requireNonNull(getClass().getResourceAsStream(
+                            "city.wsdl"
+                    ))
+            )).build());
+            return RETURN;
+        }
+
+        if(!exc.getRequest().isPOSTRequest()) {
+            exc.setResponse(ok(getSoapFault("Method Not Allowed", "405", "Only method POST is allowed")).contentType(APPLICATION_XML).build());
+            return RETURN;
+        }
         try {
             exc.setResponse(ok(getResponse(getCity(exc))).contentType(APPLICATION_XML).build());
         } catch (Exception e) {
-            exc.setResponse(ok(getSoapFault("Cannot parse SOAP message")).contentType(APPLICATION_XML).build());
+            exc.setResponse(ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <city>Bonn</city>")).contentType(APPLICATION_XML).build());
         }
         return RETURN;
     }
@@ -51,22 +67,23 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         put("New York", new City("New York", 8_460_000, "USA"));
     }};
 
-    public static String getSoapFault(String error) {
-        // Multiline String """ ... """
-        // soapenv => s11
-        return "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-               "    <soapenv:Body>\n" +
-               "        <soapenv:Fault>\n" +
-               "            <faultcode>soapenv:Client</faultcode>\n" +
-               "            <faultstring>Resource Not Found</faultstring>\n" +
-               "            <detail>\n" +
-               "                <errorcode>404</errorcode>\n" +
-               "                <errormessage>" + error + "</errormessage>\n" +
-               "            </detail>\n" +
-               "        </soapenv:Fault>\n" +
-               "    </soapenv:Body>\n" +
-               "</soapenv:Envelope>";
+    public static String getSoapFault(String faultString, String code, String errorMessage) {
+        return """
+        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+                <s11:Fault>
+                    <faultcode>s11:Client</faultcode>
+                    <faultstring>%s</faultstring>
+                    <detail>
+                        <errorcode>%s</errorcode>
+                        <errormessage>%s</errormessage>
+                    </detail>
+                </s11:Fault>
+            </s11:Body>
+        </s11:Envelope>
+    """.formatted(faultString, code, errorMessage);
     }
+
 
 
     // Test: Make String => InputStream
@@ -88,7 +105,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         try {
             return xml2string(createResponse(city));
         } catch (Exception e) {
-            return getSoapFault("Do not know %s. Try Bonn, London or new York".formatted(city)); // Todo abgleichen
+            return getSoapFault("Not Found", "404", "Do not know %s. Try Bonn, London or new York".formatted(city));
         }
     }
 

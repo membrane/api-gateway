@@ -36,21 +36,37 @@ public class SampleSoapInterceptorTest {
 
     @Test
     public void notFoundTest() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML)
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).post("/foo")
                 .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrongRequest.xml")))).build());
         service.handleRequest(exc);
-        assertEquals(SampleSoapServiceInterceptor.getSoapFault("Cannot parse SOAP message"), exc.getResponse().getBody().toString());
+        assertEquals(SampleSoapServiceInterceptor.getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <city>Bonn</city>"), exc.getResponse().getBody().toString());
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
+    @Test
+    public void wsdlTest() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).post("/foo?bar-Wsdl").build());
+        service.handleRequest(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("xmlns:tns=\"https://predic8.de/randomcity\""));
+    }
+
+
+    @Test
+    public void methodTest() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/foo").build());
+        service.handleRequest(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Only method POST is allowed"));
+    }
+
+
     private void testValidRequest(String requestFileName, String country, String population) throws Exception {
         InputStream requestStream = getClass().getResourceAsStream("/soap-sample/" + requestFileName);
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).body(IOUtils.toByteArray(Objects.requireNonNull(requestStream))).build());
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).body(IOUtils.toByteArray(Objects.requireNonNull(requestStream))).post("/foo").build());
         service.handleRequest(exc);
         service.handleRequest(exc);
 
         String responseXML = exc.getResponse().getBody().toString();
-        // System.out.println(exc.getResponse().getBody().toString());
+        System.out.println(exc.getResponse().getBody().toString());
 
         assertTrue(compareXmlStrings(responseXML, country, population));
     }

@@ -1,0 +1,51 @@
+<wsdl:definitions name="randomcity" targetNamespace="https://predic8.de/randomcity"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="https://predic8.de/randomcity"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://predic8.de/randomcity">
+            <xsd:element name="getCityDetails">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="city" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityDetailsResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="city" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="getCityDetails" element="tns:getCityDetails"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="getCityDetailsResponse" element="tns:getCityDetailsResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCityDetails">
+            <wsdl:input message="tns:City"/>
+            <wsdl:output message="tns:CityResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CitySoapBinding" type="tns:CityPort">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCityDetails">
+            <soap:operation soapAction="http://www.soapui.org/sample/login"/>
+            <wsdl:input>
+                <soap:body use="literal" namespace="http://www.soapui.org/sample/"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" namespace="http://www.soapui.org/sample/"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPort" binding="tns:CitySoapBinding">
+            <soap:address location="http://www.soapui.org/sample"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
