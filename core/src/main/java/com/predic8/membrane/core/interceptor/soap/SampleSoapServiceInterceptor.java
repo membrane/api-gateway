@@ -1,25 +1,23 @@
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.google.common.io.ByteSource;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import org.apache.commons.io.IOUtils;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
 import javax.xml.stream.*;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.stream.events.*;
 import javax.xml.transform.*;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.util.XMLUtil.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
@@ -34,33 +32,46 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        if (exc.getRequest().getUri().matches("(?i).+\\?.*wsdl.*")) {
-            exc.setResponse(ok().body(setWsdlServer(ByteSource.wrap(IOUtils.toByteArray(
-                    Objects.requireNonNull(getClass().getResourceAsStream(
-                            "city.wsdl"
-                    ))
-
-            )).openStream(), exc)).build());
-            return RETURN;
-        }
-
-        if(!exc.getRequest().isPOSTRequest()) {
-            exc.setResponse(ok(getSoapFault("Method Not Allowed", "405", "Only method POST is allowed")).contentType(APPLICATION_XML).build());
-            return RETURN;
-        }
-        try {
-            exc.setResponse(ok(getResponse(getCity(exc))).contentType(APPLICATION_XML).build());
-        } catch (Exception e) {
-            exc.setResponse(ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <city>Bonn</city>")).contentType(APPLICATION_XML).build());
+        if (isWSDLRequest(exc)) {
+            exc.setResponse(createWSDLResponse(exc));
+        } else if(!exc.getRequest().isPOSTRequest()) {
+            exc.setResponse(createMethodNotAllowedSOAPFault());
+        } else {
+            try {
+                exc.setResponse(createGetCityResponse(exc));
+            } catch (Exception e) {
+                exc.setResponse(createResourceNotFoundSOAPFault());
+            }
         }
         return RETURN;
+    }
+
+    private static Response createResourceNotFoundSOAPFault() throws Exception {
+        return ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <city>Bonn</city>")).contentType(APPLICATION_XML).build();
+    }
+
+    private static Response createGetCityResponse(Exchange exc) throws Exception {
+        return ok(getResponse(getCity(exc))).contentType(TEXT_XML).build();
+    }
+
+    private static Response createMethodNotAllowedSOAPFault() throws Exception {
+        return ok(getSoapFault("Method Not Allowed", "405", "Use POST to access the service.")).contentType(APPLICATION_XML).build();
+    }
+
+    private Response createWSDLResponse(Exchange exc) throws XMLStreamException {
+        return ok().body(setWsdlServer(getResourceAsStream(this,"city.wsdl"),exc)).build();
+    }
+
+    private static boolean isWSDLRequest(Exchange exc) {
+        // TODO Pattern as constant, Compile Pattern, Match Methode, Test
+        return exc.getRequest().getUri().matches("(?i).+\\?.*wsdl.*");
     }
 
     private static String getCity(Exchange exc) throws Exception {
         return getElementAsString(exc.getRequest().getBodyAsStream(), "city");
     }
 
-    private static final HashMap<String, City> cityMap = new HashMap<String, City>() {{
+    private static final HashMap<String, City> cityMap = new HashMap<>() {{
         put("Bonn", new City("Bonn", 327_000, "Germany"));
         put("Bielefeld", new City("Bielefeld", 333_000, "Germany"));
         put("Manila", new City("Manila", 1_780_000, "Philippines"));
@@ -103,29 +114,34 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     public static String setWsdlServer(InputStream is, Exchange exc) throws XMLStreamException {
-        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-        XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
         StringWriter modifiedXmlWriter = new StringWriter();
-        XMLEventReader eventReader = xmlInputFactory.createXMLEventReader(Objects.requireNonNull(is));
-        XMLEventWriter eventWriter = xmlOutputFactory.createXMLEventWriter(modifiedXmlWriter);
-        XMLEventFactory eventFactory = XMLEventFactory.newInstance();
+        XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(Objects.requireNonNull(is));
+        XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(modifiedXmlWriter);
+        XMLEventFactory fac = XMLEventFactory.newInstance();
 
-        while (eventReader.hasNext()) {
-            XMLEvent event = eventReader.nextEvent();
+        while (reader.hasNext()) {
+            XMLEvent event = reader.nextEvent();
             if (event.isStartElement()) {
                 StartElement startElement = event.asStartElement();
                 if ("address".equals(startElement.getName().getLocalPart())) {
-                    eventWriter.add(eventFactory.createStartElement("", "soap", "address"));
-                    eventWriter.add(eventFactory.createAttribute("location", exc.getRequest().getHeader().getHost()));
+                    writer.add(fac.createStartElement("soap", "soap", "address"));
+                    // TODO http or https dependent on request(exc)
+                    // trim ?dsfasf
+                    // Tests
+                    writer.add(fac.createAttribute("location", getSOAPAddress(exc)));
                 } else {
-                    eventWriter.add(event);
+                    writer.add(event);
                 }
             } else {
-                eventWriter.add(event);
+                writer.add(event);
             }
         }
 
         return modifiedXmlWriter.toString();
+    }
+
+    public static String getSOAPAddress(Exchange exc) {
+        return exc.getInboundProtocol() + "://" + exc.getRequest().getHeader().getHost() + exc.getOriginalRequestUri();
     }
 
 
@@ -145,7 +161,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return res;
     }
 
-    private static Element createResponseEnvelope(String city, Document res) throws Exception {
+    private static Element createResponseEnvelope(String city, Document res) {
         Element env = res.createElementNS(SOAP11_NS, "s:Envelope");
         env.setAttribute("xmlns:s", SOAP11_NS);
         env.setAttribute("xmlns:cs", CITY_SERVICE_NS);
@@ -153,20 +169,20 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return env;
     }
 
-    private static Element createBody(String city, Document res) throws Exception {
+    private static Element createBody(String city, Document res) {
         Element body = res.createElement("s:Body");
         body.appendChild(createCityDetails(city, res));
         return body;
     }
 
-    private static Element createCityDetails(String city, Document res) throws Exception {
+    private static Element createCityDetails(String city, Document res) {
         Element details = res.createElement("cs:cityDetails");
         details.appendChild(createCountry(city, res));
         details.appendChild(createPopulation(city, res));
         return details;
     }
 
-    private static Element createPopulation(String city, Document res) throws Exception {
+    private static Element createPopulation(String city, Document res) {
         Element pop = res.createElement("population");
         pop.appendChild(res.createTextNode(String.valueOf(cityMap.get(city).population)));
         return pop;
