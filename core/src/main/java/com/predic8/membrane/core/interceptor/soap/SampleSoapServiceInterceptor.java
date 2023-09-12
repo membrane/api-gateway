@@ -106,10 +106,9 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     public static String setWsdlServer(InputStream is, Exchange exc) throws XMLStreamException {
         XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-        XMLEventReader eventReader = xmlInputFactory.createXMLEventReader(is);
-
-        StringWriter modifiedXmlWriter = new StringWriter();
         XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
+        StringWriter modifiedXmlWriter = new StringWriter();
+        XMLEventReader eventReader = xmlInputFactory.createXMLEventReader(Objects.requireNonNull(is));
         XMLEventWriter eventWriter = xmlOutputFactory.createXMLEventWriter(modifiedXmlWriter);
         XMLEventFactory eventFactory = XMLEventFactory.newInstance();
 
@@ -117,9 +116,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
             XMLEvent event = eventReader.nextEvent();
             if (event.isStartElement()) {
                 StartElement startElement = event.asStartElement();
-                String string = startElement.getName().getLocalPart();
-                System.out.println(string);
-                if ("address".equals(string)) {
+                if ("address".equals(startElement.getName().getLocalPart())) {
                     eventWriter.add(eventFactory.createStartElement("", "soap", "address"));
                     eventWriter.add(eventFactory.createAttribute("location", exc.getRequest().getHeader().getHost()));
                 } else {
@@ -129,9 +126,6 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
                 eventWriter.add(event);
             }
         }
-
-        eventReader.close();
-        eventWriter.close();
 
         return modifiedXmlWriter.toString();
     }

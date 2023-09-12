@@ -55,6 +55,7 @@ public class SampleSoapInterceptorTest {
     public void wsdlServerTest() throws Exception {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/foo?wsdl").header("Host", "Host").build());
         service.handleRequest(exc);
+        // System.out.println(exc.getResponse().getBody().toString());
         assertTrue(exc.getResponse().getBody().toString().contains("Host"));
     }
 
