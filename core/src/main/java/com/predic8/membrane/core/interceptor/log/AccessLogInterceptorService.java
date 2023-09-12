@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -47,63 +48,71 @@ public class AccessLogInterceptorService {
      * @param exchange - The HTTP exchange
      */
     public void handleAccessLogging(Exchange exchange) {
-        fillMDCMap(exchange);
+        MDC.setContextMap(generateMDCMap(exchange));
         log.info("");
         MDC.clear();
     }
 
-    private void fillMDCMap(Exchange exchange) {
-        var contextMap = new HashMap<>(Map.of(
-                "ip", safe(exchange::getRemoteAddrIp),
-                "host", safe(exchange::getOriginalHostHeaderHost),
-                "port", safe(exchange::getOriginalHostHeaderPort),
-                "uri", safe(exchange::getOriginalRequestUri),
-                "proto", safe(() -> exchange.getRequest().getHeader().getFirstValue("x-forwarded-proto").toUpperCase()),
-                "http.version", safe(() -> exchange.getRequest().getVersion()),
-                "http.method", safe(() -> exchange.getRequest().getMethod()),
-                "statusCode", safe(() -> getResponseStatusCode(exchange))
-        ));
+    private Map<String,String> generateMDCMap(Exchange exc) {
+        var ctx = new HashMap<>(getBaseProperties(exc));
 
-        contextMap.putAll(Map.of(
-                "time.req.received.raw", safe(exchange::getTimeReqReceived),
-                "time.req.received.format", convert(safe(exchange::getTimeReqReceived)),
-                "time.req.sent.raw", safe(exchange::getTimeReqSent),
-                "time.req.sent.format", convert(safe(exchange::getTimeReqSent)),
-
-                "time.res.received.raw", safe(exchange::getTimeResReceived),
-                "time.res.received.format", convert(safe(exchange::getTimeResReceived)),
-                "time.res.sent.raw", safe(exchange::getTimeResSent),
-                "time.res.sent.format", convert(safe(exchange::getTimeResSent))
-        ));
-
-        contextMap.putAll(Map.of(
-                "time.diff.received.raw", safe(() -> exchange.getTimeResReceived() - exchange.getTimeReqReceived()),
-                "time.diff.received.format", convert(safe(() -> exchange.getTimeResReceived() - exchange.getTimeReqReceived())),
-
-                "time.diff.sent.raw", safe(() -> exchange.getTimeResSent() - exchange.getTimeReqSent()),
-                "time.diff.sent.format", convert(safe(() -> exchange.getTimeResSent() - exchange.getTimeReqSent()))
-        ));
+        ctx.putAll(getTimeProperties(exc));
+        ctx.putAll(getTimeProperties2(exc));
 
         if (!excludePayloadSize) {
-            contextMap.put("res.payload.size", safe(() -> {
-                try {
-                    return exchange.getResponse().getBody().getLength();
-                } catch (IOException e) {
-                    return defaultValue;
-                }
-            }));
-            contextMap.put("req.payload.size", safe(() -> {
-                try {
-                    return exchange.getRequest().getBody().getLength();
-                } catch (IOException e) {
-                    return defaultValue;
-                }
-            }));
+            ctx.put("req.payload.size", safe(getPayLoadSize(exc.getRequest())));
+            ctx.put("res.payload.size", safe(getPayLoadSize(exc.getResponse())));
         }
 
-        contextMap.putAll(getAdditionalProvidedPattern(exchange, contextMap));
+        ctx.putAll(getAdditionalProvidedPattern(exc, ctx));
+        return ctx;
+    }
 
-        MDC.setContextMap(contextMap);
+    private Map<String, String> getTimeProperties2(Exchange exc) {
+        return Map.of(
+                "time.diff.received.raw", safe(() -> exc.getTimeResReceived() - exc.getTimeReqReceived()),
+                "time.diff.received.format", convert(safe(() -> exc.getTimeResReceived() - exc.getTimeReqReceived())),
+
+                "time.diff.sent.raw", safe(() -> exc.getTimeResSent() - exc.getTimeReqSent()),
+                "time.diff.sent.format", convert(safe(() -> exc.getTimeResSent() - exc.getTimeReqSent()))
+        );
+    }
+
+    private Map<String, String> getTimeProperties(Exchange exc) {
+        return Map.of(
+                "time.req.received.raw", safe(exc::getTimeReqReceived),
+                "time.req.received.format", convert(safe(exc::getTimeReqReceived)),
+                "time.req.sent.raw", safe(exc::getTimeReqSent),
+                "time.req.sent.format", convert(safe(exc::getTimeReqSent)),
+
+                "time.res.received.raw", safe(exc::getTimeResReceived),
+                "time.res.received.format", convert(safe(exc::getTimeResReceived)),
+                "time.res.sent.raw", safe(exc::getTimeResSent),
+                "time.res.sent.format", convert(safe(exc::getTimeResSent))
+        );
+    }
+
+    private Map<String, String> getBaseProperties(Exchange exc) {
+        return Map.of(
+                "ip", safe(exc::getRemoteAddrIp),
+                "host", safe(exc::getOriginalHostHeaderHost),
+                "port", safe(exc::getOriginalHostHeaderPort),
+                "uri", safe(exc::getOriginalRequestUri),
+                "proto", safe(() -> exc.getRequest().getHeader().getFirstValue("x-forwarded-proto").toUpperCase()),
+                "http.version", safe(() -> exc.getRequest().getVersion()),
+                "http.method", safe(() -> exc.getRequest().getMethod()),
+                "statusCode", safe(() -> getResponseStatusCode(exc))
+        );
+    }
+
+    private Supplier<Object> getPayLoadSize(Message msg) {
+        return () -> {
+            try {
+                return msg.getBody().getLength();
+            } catch (IOException e) {
+                return defaultValue;
+            }
+        };
     }
 
     private String safe(Supplier<Object> access) {

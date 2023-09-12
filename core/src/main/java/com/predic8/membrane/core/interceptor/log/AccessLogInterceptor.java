@@ -9,6 +9,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 /**
  * @description Writes exchange metrics into a Log4j appender
  * @explanation Defaults to Apache Common Log pattern
@@ -37,7 +39,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
         accessLogInterceptorService.handleAccessLogging(exc);
-        return super.handleResponse(exc);
+        return CONTINUE;
     }
 
     public List<AdditionalPattern> getAdditionalPatternList() {
