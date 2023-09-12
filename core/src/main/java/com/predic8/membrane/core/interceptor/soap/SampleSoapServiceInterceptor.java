@@ -139,13 +139,13 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static Element createPopulation(String city, Document res) throws Exception {
-        Element pop = res.createElement("cs:population");
+        Element pop = res.createElement("population");
         pop.appendChild(res.createTextNode(String.valueOf(cityMap.get(city).population)));
         return pop;
     }
 
     private static Element createCountry(String city, Document res) {
-        Element country = res.createElement("cs:country");
+        Element country = res.createElement("country");
         country.appendChild(res.createTextNode(cityMap.get(city).country));
         return country;
     }

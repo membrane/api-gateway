@@ -63,7 +63,6 @@ public class SampleSoapInterceptorTest {
         InputStream requestStream = getClass().getResourceAsStream("/soap-sample/" + requestFileName);
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).body(IOUtils.toByteArray(Objects.requireNonNull(requestStream))).post("/foo").build());
         service.handleRequest(exc);
-        service.handleRequest(exc);
 
         String responseXML = exc.getResponse().getBody().toString();
         System.out.println(exc.getResponse().getBody().toString());
@@ -91,8 +90,8 @@ public class SampleSoapInterceptorTest {
         return  "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                 "  <s:Body>\n" +
                 "    <cs:cityDetails>\n" +
-                "      <cs:country>" + country + "</cs:country>\n" +
-                "      <cs:population>" + population + "</cs:population>\n" +
+                "      <country>" + country + "</cs:country>\n" +
+                "      <population>" + population + "</cs:population>\n" +
                 "    </cs:cityDetails>\n" +
                 "  </s:Body>\n" +
                 "</s:Envelope>\n";
@@ -134,12 +133,12 @@ public class SampleSoapInterceptorTest {
             });
 
             Node countryNode = (Node) xPath.evaluate(
-                    String.format("/s:Envelope/s:Body/cs:cityDetails/cs:country[text()='%s']", country),
+                    String.format("/s:Envelope/s:Body/cs:cityDetails/country[text()='%s']", country),
                     document,
                     XPathConstants.NODE
             );
             Node populationNode = (Node) xPath.evaluate(
-                    String.format("/s:Envelope/s:Body/cs:cityDetails/cs:population[text()='%s']", population),
+                    String.format("/s:Envelope/s:Body/cs:cityDetails/population[text()='%s']", population),
                     document,
                     XPathConstants.NODE
             );
