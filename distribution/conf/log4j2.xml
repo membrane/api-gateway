@@ -2,7 +2,7 @@
 <Configuration>
     <Appenders>
         <Console name="ACCESS" target="SYSTEM_OUT">
-            <PatternLayout pattern="%X{ip} [%X{time}] &quot;%X{http.method} %X{uri} %X{proto}/%X{http.version}&quot; %X{statusCode} %X{payload.size} %X{host}%n" />
+            <PatternLayout pattern="%X{ip} [%X{time.req.received.format}] &quot;%X{http.method} %X{uri} %X{proto}/%X{http.version}&quot; %X{statusCode} %X{req.payload.size}%n" />
         </Console>
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L - %m%n" />
