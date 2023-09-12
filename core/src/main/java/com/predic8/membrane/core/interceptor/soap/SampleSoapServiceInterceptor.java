@@ -43,12 +43,12 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static final HashMap<String, City> cityMap = new HashMap<String, City>() {{
-        put("Bonn", new City("Bonn", 83_200_000, "Germany"));
-        put("Bielefeld", new City("Bielefeld", 83_200_000, "Germany"));
-        put("Manila", new City("Manila", 113_900_000, "Philippines"));
-        put("Da Nang", new City("Da Nang", 97_470_000, "Vietnam"));
-        put("London", new City("London", 55_980_000, "England"));
-        put("New York", new City("New York", 331_900_000, "USA"));
+        put("Bonn", new City("Bonn", 327_000, "Germany"));
+        put("Bielefeld", new City("Bielefeld", 333_000, "Germany"));
+        put("Manila", new City("Manila", 1_780_000, "Philippines"));
+        put("Da Nang", new City("Da Nang", 1_220_000, "Vietnam"));
+        put("London", new City("London", 8_980_000, "England"));
+        put("New York", new City("New York", 8_460_000, "USA"));
     }};
 
     public static String getSoapFault(String error) {

@@ -57,17 +57,17 @@ public class SampleSoapInterceptorTest {
 
     @Test
     public void validRequest1Test() throws Exception {
-        testValidRequest("soapRequest-Bonn.xml", "Germany", "83200000");
+        testValidRequest("soapRequest-Bonn.xml", "Germany", "327000");
     }
 
     @Test
     public void validRequest2Test() throws Exception {
-        testValidRequest("soapRequest-London.xml", "England", "55980000");
+        testValidRequest("soapRequest-London.xml", "England", "8980000");
     }
 
     @Test
     public void validRequest3Test() throws Exception {
-        testValidRequest("soapRequest-NewYork.xml", "USA", "331900000");
+        testValidRequest("soapRequest-NewYork.xml", "USA", "8460000");
     }
 
 
