@@ -18,9 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
@@ -28,7 +26,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.lang.String.*;
 
 /**
@@ -40,19 +38,12 @@ import static java.lang.String.*;
 
 public class ObjectValidator implements IJSONSchemaValidator {
 
-    private static Logger log = LoggerFactory.getLogger(ObjectValidator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ObjectValidator.class.getName());
 
     @SuppressWarnings("rawtypes")
     private Schema schema;
 
     final private OpenAPI api;
-
-    /**
-     * ObjectMapper is Thread safe!
-     * <a href="https://fasterxml.github.io/jackson-databind/javadoc/2.6/com/fasterxml/jackson/databind/ObjectMapper.html">ObjectMapper.html</a>
-     */
-    final private ObjectMapper om = new ObjectMapper();
-
 
     @SuppressWarnings("rawtypes")
     public ObjectValidator(OpenAPI api, Schema schema) {
@@ -65,6 +56,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
+        ctx.schemaType("object");
 
         JsonNode node;
         if (obj instanceof JsonNode) {

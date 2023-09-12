@@ -28,8 +28,16 @@ Membrane is typically configured by a configuration file named *proxies.xml*
 
 To start Membrane with this configuration, run:
 
+**Linux & Windows**:
+
 ```
 docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+```
+
+**macOS**:
+
+```
+docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
 ```
 
 ## More examples

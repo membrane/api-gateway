@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_CONTENT_T
 
 public abstract class Message<T> {
 
-    private static Logger log = LoggerFactory.getLogger(Message.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Message.class.getName());
 
     protected Body body = new NoBody();
     protected ContentType mediaType;
@@ -77,6 +77,12 @@ public abstract class Message<T> {
     }
 
     public boolean isOfMediaType(String mediaType) {
+        // See https://datatracker.ietf.org/doc/html/rfc7231#appendix-D
+        // media-range = ( "*/*" / ( type "/*" ) / ( type "/" subtype ) ) *( OWS
+        //    ";" OWS parameter )
+        // So */foo is illegal => We do not have to check that.
+        if (mediaType.startsWith("*/*"))
+            return true;
         return this.mediaType.match(mediaType);
     }
 

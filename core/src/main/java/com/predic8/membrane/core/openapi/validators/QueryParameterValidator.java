@@ -16,15 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.google.common.collect.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
-import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
@@ -57,7 +53,7 @@ public class QueryParameterValidator {
             if (!(param instanceof QueryParameter)) {
                 return;
             }
-            errors.add(validateQueryParameter(ctx.validatedEntity(param.getName()).validatedEntityType(QUERY_PARAMETER), qparams, param));
+            errors.add(validateQueryParameter(ctx.entity(param.getName()).entityType(QUERY_PARAMETER), qparams, param));
             qparams.remove(param.getName()); // Delete param so there should't be any parameter left
         });
 
@@ -92,8 +88,8 @@ public class QueryParameterValidator {
         if (value != null) {
             errors.add(new SchemaValidator(api, param.getSchema()).validate(ctx
                             .statusCode(400)
-                            .validatedEntity(param.getName())
-                            .validatedEntityType(QUERY_PARAMETER)
+                            .entity(param.getName())
+                            .entityType(QUERY_PARAMETER)
                     , value));
         } else if (param.getRequired()) {
             errors.add(ctx, format("Missing required query parameter %s.", param.getName()));
@@ -103,7 +99,7 @@ public class QueryParameterValidator {
 
     private ValidationError checkForAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams) {
         if (qparams.size() > 0) {
-            return new ValidationError(ctx.validatedEntityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
+            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
         }
         return null;
     }

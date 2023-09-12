@@ -1,0 +1,52 @@
+# TODO Also make examples for responses
+openapi: '3.0.2'
+info:
+  title: Wildcard API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /star-star:
+    post:
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+
+  /application-star:
+    post:
+      requestBody:
+        content:
+          'application/*':
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/*':
+              schema:
+                type: object
+
+  /star-json:
+    post:
+      requestBody:
+        content:
+          '*/json':
+            schema:
+              type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/json':
+              schema:
+                type: string

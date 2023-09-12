@@ -21,7 +21,6 @@ import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
 
-import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
@@ -50,9 +49,9 @@ public class OperationValidator {
 
             errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
 
-            return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.validatedEntityType(BODY).validatedEntity("REQUEST"), operation, req));
+            return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
         } else {
-            return errors.add(new ResponseBodyValidator(api).validateResponseBody(ctx.validatedEntityType(BODY).validatedEntity("RESPONSE"), response, operation));
+            return errors.add(new ResponseBodyValidator(api).validateResponseBody(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
         }
     }
 
@@ -69,7 +68,7 @@ public class OperationValidator {
 
     private void isMethodDeclaredInAPI(ValidationContext ctx, String method, Object apiMethod) {
         if (apiMethod == null) {
-            errors.add(new ValidationError(ctx.validatedEntity(method).validatedEntityType(METHOD).statusCode(405), format("Path %s does not support method %s", ctx.getUriTemplate(), method)));
+            errors.add(new ValidationError(ctx.entity(method).entityType(METHOD).statusCode(405), format("Path %s does not support method %s", ctx.getUriTemplate(), method)));
         }
     }
 
@@ -83,8 +82,8 @@ public class OperationValidator {
             if (value == null) {
                 throw new RuntimeException("Should not happen!");
             }
-            errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.validatedEntityType(PATH_PARAMETER)
-                    .validatedEntity(parameter.getName())
+            errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
+                    .entity(parameter.getName())
                     .path(req.getPath())
                     .statusCode(400), value));
         });

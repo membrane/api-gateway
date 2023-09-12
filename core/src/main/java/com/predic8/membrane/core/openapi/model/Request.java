@@ -18,14 +18,13 @@ package com.predic8.membrane.core.openapi.model;
 
 import com.predic8.membrane.core.openapi.util.*;
 
-import java.io.*;
 import java.util.*;
 
 public class Request extends Message<Request> {
 
-    private String method;
+    private final String method;
     private String path;
-    private UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
+    private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
 
     public Request(String method) {
@@ -69,20 +68,12 @@ public class Request extends Message<Request> {
         return path;
     }
 
-    // TODO
-    public Map<String,String> getQueryParams() {
-        return UriUtil.parseQueryString(path);
-    }
-
     public Map<String, String> getPathParameters() {
         return pathParameters;
     }
 
-    public Map<String, String> parsePathParameters(String uriTemplate) throws PathDoesNotMatchException, UnsupportedEncodingException {
-        if (pathParameters == null) {
-            pathParameters = uriTemplateMatcher.match(uriTemplate, path);
-        }
-        return pathParameters;
+    public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
+        pathParameters = uriTemplateMatcher.match(uriTemplate, path);
     }
 
     @Override

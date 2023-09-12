@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_HTML;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import org.junit.jupiter.api.Test;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
 
 public class LoggingCSVTest extends DistributionExtractingTestcase {
 
@@ -33,6 +34,6 @@ public class LoggingCSVTest extends DistributionExtractingTestcase {
 		try(Process2 ignored = startServiceProxyScript()) {
 			getAndAssert200("http://localhost:2000/");
 		}
-		assertContains(TEXT_HTML, readFile("log.csv"));
+		assertContains(APPLICATION_JSON, readFile("log.csv"));
 	}
 }

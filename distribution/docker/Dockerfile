@@ -1,4 +1,4 @@
-FROM docker.io/eclipse-temurin:20-jre
+FROM docker.io/eclipse-temurin:17.0.8_7-jre
 LABEL authors="info@predic8.de"
 ARG USERNAME=membrane
 ARG USER_UID=1000

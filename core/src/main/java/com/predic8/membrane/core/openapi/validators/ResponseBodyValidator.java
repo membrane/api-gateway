@@ -130,8 +130,8 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         // Check if the mediaType of the message is the same as the one declared for that status code
         // in the OpenAPI document.
         if (!response.isOfMediaType(mediaType)) {
-            errors.add(ctx.statusCode(500).validatedEntityType(MEDIA_TYPE)
-                            .validatedEntity(response.getMediaType().toString()),
+            errors.add(ctx.statusCode(500).entityType(MEDIA_TYPE)
+                            .entity(response.getMediaType().toString()),
                     format("Response with status code %d has mediatype %s instead of the expected type %s.", response.getStatusCode(), response.getMediaType(), mediaType));
             return;
         }

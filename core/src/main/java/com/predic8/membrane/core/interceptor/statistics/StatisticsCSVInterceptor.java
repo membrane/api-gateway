@@ -22,6 +22,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -50,10 +51,9 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		log.debug("logging statistics to "
-				+ new File(fileName).getAbsolutePath());
+		log.debug("logging statistics to " + new File(fileName).getAbsolutePath());
 		writeExchange(exc);
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private void writeExchange(Exchange exc) throws Exception {
@@ -124,7 +124,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	}
 
 	private void writeCSV(String value, OutputStreamWriter w) throws IOException {
-		w.append(value + ";");
+		w.append(value).append(";");
 	}
 
 	private void writeNewLine(OutputStreamWriter w) throws IOException {

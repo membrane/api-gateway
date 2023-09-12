@@ -26,7 +26,7 @@ import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
-import java.util.concurrent.atomic.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
@@ -52,12 +52,6 @@ public class OpenAPIValidator {
         init();
     }
 
-    public OpenAPIValidator(String openApiUrl, URIFactory uriFactory) {
-        api = new OpenAPIParser().readLocation(openApiUrl, null, null).getOpenAPI();
-        this.uriFactory = uriFactory;
-        init();
-    }
-
     /**
      * @TODO Handle basepath also for multiple server entries
      */
@@ -66,7 +60,7 @@ public class OpenAPIValidator {
             String url = api.getServers().get(0).getUrl();
             log.debug("Found server " + url);
             try {
-                basePath = UriUtil.getPathFromURL(uriFactory,url);
+                basePath = UriUtil.getPathFromURL(uriFactory, url);
             } catch (URISyntaxException e) {
                 // @TODO
                 throw new RuntimeException("Config Error ", e);
@@ -82,42 +76,36 @@ public class OpenAPIValidator {
         return validateMessage(request, response);
     }
 
-    private ValidationErrors validateMessage(Request req, Response response) {
-        ValidationContext ctx = ValidationContext.fromRequest(req);
+    private ValidationErrors validateMessage(Request req, Response res) {
 
-        ValidationErrors errors = new ValidationErrors();
-
-        AtomicBoolean pathFound = new AtomicBoolean(false);
-        api.getPaths().forEach((uriTemplate, pathItem) -> {
-
-            // Path was already found so we do not need to check this uriTemplate
-            if (pathFound.get()) {
-                return;
-            }
-
+        for (Map.Entry<String, PathItem> path : api.getPaths().entrySet()) {
             try {
-                req.parsePathParameters(normalizeUri(basePath + uriTemplate));
-                pathFound.set(true);
-            } catch (PathDoesNotMatchException ignore) {
-                return;
-            } catch (UnsupportedEncodingException e) {
-                log.warn(format("Cannot decode path %s/%s. Request will be rejected.", basePath, uriTemplate));
-                return;
+                return validateMethodsAndParametersIfPathMatches(req, res, path.getKey(), path.getValue());
+            } catch (PathDoesNotMatchException ignored) {
+                // All paths from the OpenAPI that do not match will cause an exception while parsing the path and parameter. Then the next uriTemplate
+                // is tried until we get a match or there is no matching path in the OpenAPI.
             }
-
-            errors.add(validateMethods(ctx.uriTemplate(uriTemplate), req, response, pathItem));
-
-            // If there is no response we validate the request
-            if (response == null) {
-                PathParametersValidator pathParametersValidator = new PathParametersValidator(api);
-                errors.add(pathParametersValidator.validatePathParameters(ctx.uriTemplate(uriTemplate), req, pathItem.getParameters()));
-            }
-        });
-
-        if (!pathFound.get()) {
-            errors.add(new ValidationError(ctx.validatedEntity(req.getPath()).validatedEntityType(PATH).statusCode(404), format("Path %s is invalid.", req.getPath())));
         }
 
+        return ValidationErrors.create( ValidationContext.fromRequest(req)
+                .entity(req.getPath())
+                .entityType(PATH)
+                .statusCode(404), format("Path %s is invalid.", req.getPath()));
+    }
+
+    private ValidationErrors validateMethodsAndParametersIfPathMatches(Request req, Response response, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
+
+        // Throws exception if path or parameters do not match
+        req.parsePathParameters(normalizeUri(basePath + uriTemplate));
+
+        ValidationContext ctx = ValidationContext.fromRequest(req);
+
+        ValidationErrors errors = validateMethods(ctx.uriTemplate(uriTemplate), req, response, pathItem);
+
+        // If there is no response it is a request by logic, so we validate the request parameters
+        if (response == null) {
+            errors.add(new PathParametersValidator(api).validatePathParameters(ctx.uriTemplate(uriTemplate), req, pathItem.getParameters()));
+        }
         return errors;
     }
 
@@ -127,8 +115,8 @@ public class OpenAPIValidator {
             return errors.add(new OperationValidator(api).validateOperation(ctx, req, response, pathItem));
         } catch (MethodNotAllowException e) {
             return errors.add(ctx.statusCode(405)
-                    .validatedEntity(req.getMethod())
-                    .validatedEntityType(METHOD), format("Method %s is not allowed", req.getMethod()));
+                    .entity(req.getMethod())
+                    .entityType(METHOD), format("Method %s is not allowed", req.getMethod()));
         }
     }
 }

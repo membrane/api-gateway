@@ -15,7 +15,6 @@
 package com.predic8.membrane.examples;
 
 import com.predic8.membrane.examples.config.*;
-import com.predic8.membrane.examples.env.AntInPath;
 import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
@@ -34,7 +33,6 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
 
-        AntInPath.class,
         ExampleTestsWithoutInternet.class,
 
         HelpLinkExistenceTest.class,
@@ -47,8 +45,6 @@ import org.junit.platform.suite.api.Suite;
         LoggingJDBCTest.class,
         LoggingTest.class,
         LoginTest.class,
-        REST2SOAPTest.class,
-        REST2SOAPJSONTest.class,
         RewriterTest.class,
         SSLServerApiWithTlsTest.class,
         ToBackendTest.class,

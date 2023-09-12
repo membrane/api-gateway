@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
+import org.jose4j.jwt.JwtClaims;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -28,6 +29,7 @@ import org.junit.jupiter.params.provider.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.util.stream.IntStream;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -35,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitIntercept
 import static java.lang.Long.parseLong;
 import static java.lang.Thread.*;
 import static java.time.Duration.*;
+import static java.util.stream.IntStream.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RateLimitInterceptorTest {
@@ -52,7 +55,7 @@ public class RateLimitInterceptorTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource( strings = {"properties[a]","path","json[foo]","method","path + method","headers[host]","exchange.remoteAddrIp"})
+	@ValueSource( strings = {"properties.a","path","json.foo","method","path + method","headers.host","exchange.remoteAddrIp"})
 	void simplePropertyExpression(String expression) throws Exception {
 
 		Exchange exc1 = prepareRequest("aaa");
@@ -120,7 +123,60 @@ public class RateLimitInterceptorTest {
 		assertEquals(RETURN, rli.handleRequest(exc));
 
 	}
-	
+
+	@Test
+	void rateLimitByJWT() throws Exception {
+		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
+		interceptor.setKeyExpression("properties.jwt.sub");
+		interceptor.init();
+
+		var exc = new Request.Builder().buildExchange();
+
+		// done by JwtAuthInterceptor
+		var claims = new JwtClaims();
+		claims.setSubject("fooman");
+		exc.getProperties().put("jwt", claims);
+
+		range(0, interceptor.getRequestLimit())
+				.parallel()
+				.forEach(i -> {
+					try {
+						assertEquals(CONTINUE, interceptor.handleRequest(exc));
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				});
+
+		assertEquals(RETURN, interceptor.handleRequest(exc));
+	}
+
+	@Test
+	void rateLimitByJWTDifferentProperties() throws Exception {
+		var interceptor = new RateLimitInterceptor(ofSeconds(10), 100);
+		interceptor.setKeyExpression("properties.jwt.sub");
+		interceptor.init();
+
+		var exc = new Request.Builder().buildExchange();
+
+		// done by JwtAuthInterceptor
+		var claims = Map.of(
+				"sub", "fooman"
+		);
+		exc.getProperties().put("jwt", claims);
+
+		range(0, interceptor.getRequestLimit())
+				.parallel()
+				.forEach(i -> {
+					try {
+						assertEquals(CONTINUE, interceptor.handleRequest(exc));
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
+				});
+
+		assertEquals(RETURN, interceptor.handleRequest(exc));
+	}
+
 	@Test
 	void handleRequestRateLimit1SecondConcurrency() throws Exception
 	{

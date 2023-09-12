@@ -70,7 +70,7 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request> {
         }
 
         if (!request.isOfMediaType(mediaType)) {
-            errors.add(ctx.statusCode(415).validatedEntityType(MEDIA_TYPE).validatedEntity(request.getMediaType().toString()), format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
+            errors.add(ctx.statusCode(415).entityType(MEDIA_TYPE).entity(request.getMediaType().toString()), format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
             return;
         }
         validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, request, 400);

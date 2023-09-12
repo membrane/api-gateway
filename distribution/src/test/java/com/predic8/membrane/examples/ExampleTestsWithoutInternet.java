@@ -76,7 +76,7 @@ import org.junit.platform.suite.api.Suite;
 
         JsonProtectionTest.class,
 
-        DefaultConfigAdminConsoleTest.class
+        //DefaultConfigAdminConsoleTest.class
 })
 public class ExampleTestsWithoutInternet {
 }

@@ -16,25 +16,21 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.util.*;
-
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 
 public class SchemaValidator implements IJSONSchemaValidator {
 
-    private static Logger log = LoggerFactory.getLogger(SchemaValidator.class.getName());
-
-    final private ObjectMapper om = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(SchemaValidator.class.getName());
 
     @SuppressWarnings("rawtypes")
     private Schema schema;
@@ -63,7 +59,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
             value = resolveValueAndParseJSON(obj);
         } catch (IOException e) {
             log.warn("Cannot parse body. " + e);
-            return errors.add(new ValidationError(ctx.statusCode(400).validatedEntityType(BODY).validatedEntity("REQUEST"), "Request body cannot be parsed as JSON"));
+            return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
         }
 
         if (schema.getAllOf() != null) {
@@ -111,24 +107,17 @@ public class SchemaValidator implements IJSONSchemaValidator {
         }
 
         try {
-            switch (schema.getType()) {
-                case "number":
-                    return new NumberValidator().validate(ctx.schemaType("number"), value);
-                case "integer":
-                    return new IntegerValidator().validate(ctx.schemaType("integer"), value);
-                case "string":
-                    return new StringValidator(schema).validate(ctx.schemaType("string"), value);
-                case "boolean":
-                    return new BooleanValidator().validate(ctx.schemaType("boolean"), value);
-                case "array":
-                    return new ArrayValidator(api, schema).validate(ctx.schemaType("array"), value);
-                case "object":
-                    return new ObjectValidator(api, schema).validate(ctx.schemaType("object"), value);
-                default:
-                    throw new RuntimeException("Should not happen! " + schema.getType());
-            }
+            return switch (schema.getType()) {
+                case "number" -> new NumberValidator().validate(ctx, value);
+                case "integer" -> new IntegerValidator().validate(ctx, value);
+                case "string" -> new StringValidator(schema).validate(ctx, value);
+                case "boolean" -> new BooleanValidator().validate(ctx, value);
+                case "array" -> new ArrayValidator(api, schema).validate(ctx, value);
+                case "object" -> new ObjectValidator(api, schema).validate(ctx, value);
+                default -> throw new RuntimeException("Should not happen! " + schema.getType());
+            };
         } catch (Exception e) {
-            return ValidationErrors.create(ctx, String.format("%s is not of %s format.", value, schema.getType()));
+            return ValidationErrors.create(ctx, "%s is not of %s format.".formatted(value, schema.getType()));
         }
     }
 
