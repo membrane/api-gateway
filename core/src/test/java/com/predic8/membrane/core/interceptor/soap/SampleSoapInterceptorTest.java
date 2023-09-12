@@ -85,17 +85,6 @@ public class SampleSoapInterceptorTest {
         testValidRequest("soapRequest-NewYork.xml", "USA", "8460000");
     }
 
-
-    private String getValidResponse(String country, String population) {
-        return  "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                "  <s:Body>\n" +
-                "    <cs:cityDetails>\n" +
-                "      <country>" + country + "</cs:country>\n" +
-                "      <population>" + population + "</cs:population>\n" +
-                "    </cs:cityDetails>\n" +
-                "  </s:Body>\n" +
-                "</s:Envelope>\n";
-    }
     private boolean compareXmlStrings(String xml, String country, String population) {
         try {
             ByteArrayInputStream inputStream = new ByteArrayInputStream(xml.getBytes());
