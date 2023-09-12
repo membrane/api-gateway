@@ -84,10 +84,9 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     """.formatted(faultString, code, errorMessage);
     }
 
-
-
-    // Test: Make String => InputStream
     public static String getElementAsString(InputStream is, String localName) throws Exception {
+        // MLInputFactory is not required to be thread-safe, ...
+        // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html#:~:text=XMLInputFactory%20is%20not%20required%20to,using%20a%20XMLInputFactory%20per%20thread.
         XMLInputFactory factory = XMLInputFactory.newInstance(); // TODO Comment about Threadsafe
         XMLStreamReader reader = factory.createXMLStreamReader(is);
 
