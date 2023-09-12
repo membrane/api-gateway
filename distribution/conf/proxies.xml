@@ -7,7 +7,12 @@
     <router>
 
         <api port="2000">
-            <target host="api.predic8.de"/>
+            <accessLog>
+                <additionalPattern create="port" withExchange="originalHostHeaderPort" override="false" />
+                <additionalPattern create="response.status" withExchange="response?.statusCode" orDefaultValue="NOT" />
+                <additionalPattern create="host" withExchange="request.header.getFirstValue('host')" orDefaultValue="NIRVANA" />
+            </accessLog>
+            <target url="https://api.predic8.de"/>
         </api>
 
     </router>
