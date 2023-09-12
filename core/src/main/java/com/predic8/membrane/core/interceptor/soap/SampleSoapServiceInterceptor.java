@@ -3,7 +3,6 @@ package com.predic8.membrane.core.interceptor.soap;
 import com.google.common.io.ByteSource;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.*;
@@ -15,7 +14,6 @@ import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.*;
 import java.io.*;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 import static com.predic8.membrane.core.Constants.*;

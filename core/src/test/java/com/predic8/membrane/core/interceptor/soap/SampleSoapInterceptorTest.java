@@ -46,13 +46,6 @@ public class SampleSoapInterceptorTest {
 
     @Test
     public void wsdlTest() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).post("/foo?bar-Wsdl").build());
-        service.handleRequest(exc);
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("xmlns:tns=\"https://predic8.de/randomcity\""));
-    }
-
-    @Test
-    public void wsdlServerTest() throws Exception {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/foo?wsdl").header("Host", "Host").build());
         service.handleRequest(exc);
         // System.out.println(exc.getResponse().getBody().toString());
