@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.soap;
 
+import com.google.common.io.ByteSource;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response;
@@ -9,6 +10,8 @@ import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
 import javax.xml.stream.*;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.*;
 import java.io.*;
 import java.util.HashMap;
@@ -34,11 +37,12 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (exc.getRequest().getUri().matches("(?i).+\\?.*wsdl.*")) {
-            exc.setResponse(ok().body(IOUtils.toByteArray(
+            exc.setResponse(ok().body(setWsdlServer(ByteSource.wrap(IOUtils.toByteArray(
                     Objects.requireNonNull(getClass().getResourceAsStream(
                             "city.wsdl"
                     ))
-            )).build());
+
+            )).openStream(), exc)).build());
             return RETURN;
         }
 
@@ -99,6 +103,39 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         }
         throw new Exception();
     }
+
+    public static String setWsdlServer(InputStream is, Exchange exc) throws XMLStreamException {
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        XMLEventReader eventReader = xmlInputFactory.createXMLEventReader(is);
+
+        StringWriter modifiedXmlWriter = new StringWriter();
+        XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newInstance();
+        XMLEventWriter eventWriter = xmlOutputFactory.createXMLEventWriter(modifiedXmlWriter);
+        XMLEventFactory eventFactory = XMLEventFactory.newInstance();
+
+        while (eventReader.hasNext()) {
+            XMLEvent event = eventReader.nextEvent();
+            if (event.isStartElement()) {
+                StartElement startElement = event.asStartElement();
+                String string = startElement.getName().getLocalPart();
+                System.out.println(string);
+                if ("address".equals(string)) {
+                    eventWriter.add(eventFactory.createStartElement("", "soap", "address"));
+                    eventWriter.add(eventFactory.createAttribute("location", exc.getRequest().getHeader().getHost()));
+                } else {
+                    eventWriter.add(event);
+                }
+            } else {
+                eventWriter.add(event);
+            }
+        }
+
+        eventReader.close();
+        eventWriter.close();
+
+        return modifiedXmlWriter.toString();
+    }
+
 
     public static String getResponse(String city) throws ParserConfigurationException, TransformerException {
         try {

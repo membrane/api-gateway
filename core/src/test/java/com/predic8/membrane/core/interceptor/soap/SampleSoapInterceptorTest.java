@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import org.apache.commons.io.IOUtils;
@@ -48,6 +49,13 @@ public class SampleSoapInterceptorTest {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).post("/foo?bar-Wsdl").build());
         service.handleRequest(exc);
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("xmlns:tns=\"https://predic8.de/randomcity\""));
+    }
+
+    @Test
+    public void wsdlServerTest() throws Exception {
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/foo?wsdl").header("Host", "Host").build());
+        service.handleRequest(exc);
+        assertTrue(exc.getResponse().getBody().toString().contains("Host"));
     }
 
 
