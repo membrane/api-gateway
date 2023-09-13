@@ -5,7 +5,7 @@ homeSet() {
  CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
  export CLASSPATH
  echo Membrane Router running...
- java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies.xml
+ java -Dlog4j.configurationFile=$(pwd)/log4j2_access.xml  -Dlog4j.debug=true -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies.xml
  
 }
 
@@ -18,9 +18,9 @@ terminate() {
 homeNotSet() {
   echo "MEMBRANE_HOME variable is not set"
 
-  if [ -f  "`pwd`/../../../starter.jar" ]
+  if [ -f  "`pwd`/../../starter.jar" ]
     then 
-    	export MEMBRANE_HOME="`pwd`/../../.."
+    	export MEMBRANE_HOME="`pwd`/../.."
     	homeSet	
     else
     	terminate    

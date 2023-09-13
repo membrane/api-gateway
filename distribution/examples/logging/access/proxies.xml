@@ -8,7 +8,8 @@
 
         <api port="2000">
             <accessLog>
-                <additionalVariable name="port" expression="originalHostHeaderPort" orDefault="" />
+                <additionalVariable name="res.contentLength" expression="response?.headers['content-length']" />
+                <additionalVariable name="res.contentType" expression="response?.headers.contentType" defaultValue="?"/>
             </accessLog>
             <target host="api.predic8.de">
                 <ssl />
