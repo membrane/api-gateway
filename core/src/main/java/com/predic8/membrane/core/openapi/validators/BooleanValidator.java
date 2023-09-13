@@ -27,12 +27,7 @@ public class BooleanValidator implements IJSONSchemaValidator {
         if (value instanceof BooleanNode)
             return errors;
 
-        String str = "";
-        if (value instanceof TextNode) {
-            str = ((TextNode) value).asText();
-        } else if (value instanceof String) {
-            str = (String) value;
-        }
+        String str = getStringValue(value);
 
         if (str.equals("true") || str.equals("false"))
             return errors;
@@ -40,5 +35,15 @@ public class BooleanValidator implements IJSONSchemaValidator {
         errors.add(ctx.schemaType("boolean"),String.format("Value '%s' is not a boolean (true/false).",value));
 
         return errors;
+    }
+
+    private static String getStringValue(Object value) {
+        String str = "";
+        if (value instanceof TextNode) {
+            str = ((TextNode) value).asText();
+        } else if (value instanceof String) {
+            str = (String) value;
+        }
+        return str;
     }
 }
