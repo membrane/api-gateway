@@ -1,29 +1,38 @@
 package com.predic8.membrane.core.interceptor.security;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+class PaddingHeaderInterceptorTest {
 
-public class PaddingHeaderInterceptorTest {
+    private PaddingHeaderInterceptor interceptor;
 
-    private static PaddingHeaderInterceptor interceptor;
-    private static Exchange exc = new Exchange(null);
-
-    @BeforeAll
-    public static void setUp() throws IOException {
-        interceptor = new PaddingHeaderInterceptor(1, 1, 1);
+    @BeforeEach
+    void setUp() {
+        interceptor = new PaddingHeaderInterceptor(5, 7, 10);
     }
+
     @Test
-    void test() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).body("bar").post("/foo").build());
-        interceptor.handleRequest(exc);
-        assertTrue(true);
+    void testGenerateLookupTableLength() {
+        char[] lookupTable = PaddingHeaderInterceptor.generateLookupTable();
+        assertEquals(62, lookupTable.length);
     }
 
+    @Test
+    void testHttpCryptoSafePaddingLength() {
+        String padding = interceptor.httpCryptoSafePadding(10);
+        assertEquals(10, padding.length());
+    }
+
+    @Test
+    void testHttpCryptoSafePaddingCharacters() {
+        String padding = interceptor.httpCryptoSafePadding(100);
+        for (char c : padding.toCharArray()) {
+            assertTrue(Character.isLetterOrDigit(c));
+            assertFalse(Character.isWhitespace(c));
+        }
+    }
 }
+

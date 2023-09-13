@@ -70,7 +70,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         return new String(result);
     }
 
-    private static char[] generateLookupTable() {
+    static char[] generateLookupTable() {
         char[] chars = new char[62];
         int index = 0;
 
