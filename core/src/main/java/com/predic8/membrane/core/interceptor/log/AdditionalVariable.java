@@ -17,6 +17,7 @@ public class AdditionalVariable {
 
     /**
      * @description The SPEL expression to access the property on an ExchangeEvaluationContext
+     * Using camelCased headers like camelHeader will resolve to camel-header if the camelHeader is not present.
      */
     @Required
     @MCAttribute
