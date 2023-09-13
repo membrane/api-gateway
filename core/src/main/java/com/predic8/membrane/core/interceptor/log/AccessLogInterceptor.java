@@ -17,7 +17,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  */
 @MCElement(name = "accessLog")
 public class AccessLogInterceptor extends AbstractInterceptor {
-    private List<AdditionalPattern> additionalPatternList = new ArrayList<>();
+    private List<AdditionalVariable> additionalVariables = new ArrayList<>();
     private String defaultValue = "-";
     private String dateTimePattern = "dd/MM/yyyy:HH:mm:ss Z";
     private boolean excludePayloadSize = false;
@@ -31,7 +31,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         accessLogInterceptorService = new AccessLogInterceptorService(
                 dateTimePattern,
                 defaultValue,
-                additionalPatternList,
+                additionalVariables,
                 excludePayloadSize
         );
     }
@@ -42,13 +42,13 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    public List<AdditionalPattern> getAdditionalPatternList() {
-        return additionalPatternList;
+    public List<AdditionalVariable> getAdditionalPatternList() {
+        return additionalVariables;
     }
 
     @MCChildElement
-    public void setAdditionalPatternList(List<AdditionalPattern> additionalPatternList) {
-        this.additionalPatternList = additionalPatternList;
+    public void setAdditionalPatternList(List<AdditionalVariable> additionalVariableList) {
+        this.additionalVariables = additionalVariableList;
     }
 
     public String getDefaultValue() {
