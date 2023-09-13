@@ -3,15 +3,21 @@ package com.predic8.membrane.core.interceptor.security;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 import java.security.SecureRandom;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+
 @MCElement(name = "paddingHeader")
 public class PaddingHeaderInterceptor extends AbstractInterceptor {
-
     private Integer roundUp;
+
     private Integer constant;
     private Integer random;
 
@@ -22,6 +28,22 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         this.roundUp = roundUp;
         this.constant = constant;
         this.random = random;
+    }
+
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        exc.getRequest().setHeader(new Header("X-Padding: " + httpCryptoSafePadding(calculatePaddingSize(exc.getRequest()))));
+        return CONTINUE;
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) throws Exception {
+        exc.getResponse().setHeader(new Header("X-Padding: " + httpCryptoSafePadding(calculatePaddingSize(exc.getResponse()))));
+        return CONTINUE;
+    }
+
+    private int calculatePaddingSize(Message msg) {
+       return getRoundUp() % msg.estimateHeapSize() + getConstant() + secRdm.nextInt(0, getRandom()-1);
     }
 
     private char[] randomizeLookupTable() {
@@ -63,11 +85,6 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         }
 
         return chars;
-    }
-
-    @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        return super.handleRequest(exc);
     }
 
     @MCAttribute
