@@ -17,7 +17,7 @@ import static java.util.EnumSet.of;
 
 // TODO JAVADOC!
 /**
- * Uses secure random function for the randmon length according to FIPS 140-2 standard.
+ * Uses secure random function for the random length according to FIPS 140-2 standard.
  */
 @MCElement(name = "paddingHeader")
 public class PaddingHeaderInterceptor extends AbstractInterceptor {
@@ -80,7 +80,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     // StringWriter or StringBuffer
     // char[] as is
     // for 100_000_000
-    // Write a Test that messure this
+    // Write a Test that measure this
     // Timer
     public String httpCryptoSafePadding(int len) {
         char[] result = new char[len];
