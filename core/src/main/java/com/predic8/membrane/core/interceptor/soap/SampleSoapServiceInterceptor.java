@@ -143,7 +143,11 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     public static String getSOAPAddress(Exchange exc) {
-        return exc.getInboundProtocol() + "://" + exc.getRequest().getHeader().getHost() + exc.getOriginalRequestUri();
+        return exc.getInboundProtocol() + "://" + exc.getRequest().getHeader().getHost() + getPathWithoutParam(exc.getOriginalRequestUri());
+    }
+
+    static String getPathWithoutParam(String exc) {
+        return exc.replaceAll("\\?.*$", "");
     }
 
 

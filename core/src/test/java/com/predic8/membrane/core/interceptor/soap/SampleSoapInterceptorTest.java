@@ -23,10 +23,11 @@ import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.Objects;
 
-import static com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor.isWSDLRequest;
+import static com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -64,7 +65,6 @@ public class SampleSoapInterceptorTest {
         assertEquals(expected, isWSDLRequest(exc));
     }
 
-
     @Test
     public void wsdlTest() throws Exception {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/bar?wsdl").header("Host", "Host").build());
@@ -72,6 +72,17 @@ public class SampleSoapInterceptorTest {
         service.handleRequest(exc);
         // System.out.println(exc.getResponse().getBody().toString());
         assertTrue(exc.getResponse().getBody().toString().contains("Host"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "/foo?bar, /foo",
+            "/foo?content-wsdl, /foo",
+            "/foo?wSdL, /foo",
+            "/foo?w-sdl, /foo"
+    })
+    public void getPathWithoutParamTest(String path, String expected) throws Exception {
+        assertEquals(getPathWithoutParam(path), expected);
     }
 
 
