@@ -19,4 +19,8 @@ import org.springframework.expression.TypedValue;
 public interface SPeLablePropertyAware {
     boolean canRead(EvaluationContext context, Object target, String name);
     TypedValue read(EvaluationContext context, Object target, String name);
+
+    default String camelToKebab(String string) {
+        return string.replaceAll("([a-z0-9]|(?=[A-Z]))([A-Z])", "$1-$2").toLowerCase();
+    }
 }

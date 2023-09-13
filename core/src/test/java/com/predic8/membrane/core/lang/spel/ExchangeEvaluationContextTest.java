@@ -29,12 +29,30 @@ public class ExchangeEvaluationContextTest {
     void setup() {
         exc = new Request.Builder()
                 .header("Authentication","foo")
+                .header("Content-Type", "application/json")
+                .header("shadow-ing", "nothappening")
+                .header("shadowIng", "test")
                 .buildExchange();
     }
 
     String keyExpression(String spel) {
         Expression expression = new SpelExpressionParser().parseExpression(spel);
         return expression.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), String.class);
+    }
+
+    @Test
+    void hyphen() {
+        assertEquals("application/json", keyExpression("request.headers['content-type']"));
+    }
+
+    @Test
+    void conversion() {
+        assertEquals("application/json", keyExpression("request.headers.contentType"));
+    }
+
+    @Test
+    void dontShadowConversion() {
+        assertEquals("test", keyExpression("request.headers.shadowIng"));
     }
 
     @Test
