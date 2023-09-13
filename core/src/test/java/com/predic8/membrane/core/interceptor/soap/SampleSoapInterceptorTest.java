@@ -1,15 +1,15 @@
 package com.predic8.membrane.core.interceptor.soap;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SampleSoapInterceptorTest {
 
     private static SampleSoapServiceInterceptor service;
-    private static Exchange exc = new Exchange(null);
+    private static final Exchange exc = new Exchange(null);
 
     private static ServiceProxy serviceProxy;
 
@@ -52,7 +52,17 @@ public class SampleSoapInterceptorTest {
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
-
+    @ParameterizedTest
+    @CsvSource({
+            "/foo?bar, false",
+            "/foo?content-wsdl, true",
+            "/foo?wSdL, true",
+            "/foo?w-sdl, false"
+    })
+    public void isWsdlTest(String path, boolean expected) throws Exception {
+        exc.setRequest(new Request.Builder().get(path).build());
+        assertEquals(expected, isWSDLRequest(exc));
+    }
 
 
     @Test

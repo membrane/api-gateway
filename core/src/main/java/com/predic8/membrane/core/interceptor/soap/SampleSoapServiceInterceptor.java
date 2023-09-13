@@ -64,7 +64,8 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return ok().body(setWsdlServer(getResourceAsStream(this,"city.wsdl"),exc)).build();
     }
 
-    private static boolean isWSDLRequest(Exchange exc) {
+
+    static boolean isWSDLRequest(Exchange exc) {
         return WSDL_PATH_PARAM.matcher(exc.getRequest().getUri()).matches();
     }
 
