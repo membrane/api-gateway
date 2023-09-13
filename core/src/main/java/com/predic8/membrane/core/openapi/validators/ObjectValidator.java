@@ -56,7 +56,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
-        ctx.schemaType("object");
+        ctx = ctx.schemaType("object");
 
         JsonNode node;
         if (obj instanceof JsonNode) {
@@ -133,20 +133,20 @@ public class ObjectValidator implements IJSONSchemaValidator {
         if (schema.getAdditionalProperties() == null)
             return null;
 
-        Map<String, JsonNode> addionalProperties = getAddionalProperties(node);
+        Map<String, JsonNode> additionalProperties = getAddionalProperties(node);
 
-        if (addionalProperties.size() == 0)
+        if (additionalProperties.size() == 0)
             return null;
 
         ValidationErrors errors = new ValidationErrors();
 
         if (schema.getAdditionalProperties() instanceof Schema) {
-            addionalProperties.forEach((propName, value) ->
+            additionalProperties.forEach((propName, value) ->
                 errors.add(new SchemaValidator(api, (Schema) schema.getAdditionalProperties()).validate(ctx.addJSONpointerSegment(propName), value)));
             return errors;
         }
 
-        return errors.add(ctx.statusCode(400), format("The object has the additional %s: %s .But the schema does not allow additional properties.", getPropertyOrIes(addionalProperties.keySet()), joinByComma(addionalProperties.keySet())));
+        return errors.add(ctx.statusCode(400), format("The object has the additional %s: %s .But the schema does not allow additional properties.", getPropertyOrIes(additionalProperties.keySet()), joinByComma(additionalProperties.keySet())));
     }
 
     private String getPropertyOrIes(Set<String> addionalProperties) {

@@ -39,7 +39,7 @@ public class StringValidator implements IJSONSchemaValidator {
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
-        ctx.schemaType("string");
+        ctx = ctx.schemaType("string");
 
         ValidationErrors errors = new ValidationErrors();
 
