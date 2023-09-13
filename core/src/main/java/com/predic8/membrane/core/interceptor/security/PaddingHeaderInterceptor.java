@@ -3,8 +3,7 @@ package com.predic8.membrane.core.interceptor.security;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
@@ -15,8 +14,12 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.util.EnumSet.of;
 
+/**
+ * Uses secure random function for the randmon length according to FIPS 140-2 standard.
+ */
 @MCElement(name = "paddingHeader")
 public class PaddingHeaderInterceptor extends AbstractInterceptor {
+    public static final String X_PADDING = "X-Padding";
     private int roundUp = 20;
     private int constant = 5;
     private int random = 10;
@@ -30,12 +33,10 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     }
 
     public PaddingHeaderInterceptor() {
-        setInterceptorMeta();
     }
 
     public PaddingHeaderInterceptor(Integer roundUp, Integer constant, Integer random) {
         setInterceptorMeta();
-
         this.roundUp = roundUp;
         this.constant = constant;
         this.random = random;
@@ -43,46 +44,57 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.getRequest().setHeader(new Header("X-Padding: " + httpCryptoSafePadding(calculatePaddingSize(exc.getRequest()))));
-        return CONTINUE;
+        return handleInternal(exc.getRequest());
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        exc.getResponse().setHeader(new Header("X-Padding: " + httpCryptoSafePadding(calculatePaddingSize(exc.getResponse()))));
+        return handleInternal(exc.getResponse());
+    }
+
+    private Outcome handleInternal(Message msg) {
+        msg.getHeader().add(X_PADDING,httpCryptoSafePadding(calculatePaddingSize(msg)));
         return CONTINUE;
     }
 
-    private int calculatePaddingSize(Message msg) {
-       return getRoundUp() % msg.estimateHeapSize() + getConstant() + secRdm.nextInt(0, getRandom()-1);
+    public int calculatePaddingSize(Message msg) {
+       return calculatePaddingSize(msg.estimateHeapSize());
     }
 
-    private char[] randomizeCharArray(char[] lookup) {
-        char[] randomized = lookup.clone();
-
-        for (int i = randomized.length - 1; i > 0; i--) {
-            int j = secRdm.nextInt(i + 1);
-            char temp = randomized[i];
-            randomized[i] = randomized[j];
-            randomized[j] = temp;
-        }
-
-        return randomized;
+    public int calculatePaddingSize(long size) {
+        return roundUp(size) + constant + getRandomNumber();
     }
 
+    public int getRandomNumber() {
+        return secRdm.nextInt(0, random);
+    }
+
+    public int roundUp(long n) {
+        return (int)(roundUp - (n % roundUp));
+    }
+
+    // Compare as:
+    // String concat s + s
+    // StringWriter or StringBuffer
+    // char[] as is
+    // for 100_000_000
+    // Write a Test that messure this
+    // Timer
     public String httpCryptoSafePadding(int len) {
         char[] result = new char[len];
 
-        char[] randomTable = randomizeCharArray(LOOKUP_TABLE);
-
         for (int i = 0; i < len; i++) {
-            int rdmIdx = secRdm.nextInt(randomTable.length);
-            result[i] = randomTable[rdmIdx];
+            result[i] = getRandomChar();
         }
 
         return new String(result);
     }
 
+    private char getRandomChar() {
+        return LOOKUP_TABLE[secRdm.nextInt(LOOKUP_TABLE.length)];
+    }
+
+    // TODO Test HTTP Safe 0..9, $-_.+!*'(),
     static char[] generateLookupTable() {
         char[] chars = new char[62];
         int index = 0;
@@ -104,6 +116,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     public void setRoundUp(int roundUp) {
         this.roundUp = roundUp;
     }
+    @SuppressWarnings("unused")
     public Integer getRoundUp() {
         return roundUp;
     }
@@ -112,6 +125,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     public void setConstant(int constant) {
         this.constant = constant;
     }
+    @SuppressWarnings("unused")
     public Integer getConstant() {
         return constant;
     }

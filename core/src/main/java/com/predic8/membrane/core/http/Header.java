@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.regex.Pattern.*;
 import static org.apache.commons.codec.binary.Base64.*;
@@ -66,9 +67,6 @@ public class Header {
 	public static final String SOAP_ACTION = "SOAPAction";
 
 	public static final String ACCEPT = "Accept";
-
-	public static final String DATE = "Date";
-
 	public static final String LOCATION = "Location";
 
 	public static final String AUTHORIZATION = "Authorization";
@@ -128,7 +126,7 @@ public class Header {
 	public Header(InputStream in) throws IOException, EndOfStreamException {
 		String line;
 
-		while ((line = HttpUtil.readLine(in)).length() > 0) {
+		while ((line = readLine(in)).length() > 0) {
 			try {
 				add(new HeaderField(line));
 			} catch (StringIndexOutOfBoundsException sie) {
