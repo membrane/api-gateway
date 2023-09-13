@@ -10,8 +10,8 @@ This guide demonstrates how to use the Sample SOAP Service.
 
 ## Using the Service 
 ### Get the WSDL
-To obtain the Web Services Description Language (WSDL) file for this service, use the following command:
-`curl --location --request GET 'http://localhost:2000?wsdl'`
+To obtain the Web Service Description Language (WSDL) file for this service, use the following command:
+`curl --request GET 'http://localhost:2000?wsdl'`
 
 ### Get City Information
 You can retrieve information about a city by making a POST request to the service. Use the following curl command as an example:
