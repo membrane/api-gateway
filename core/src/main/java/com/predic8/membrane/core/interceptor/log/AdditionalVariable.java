@@ -4,7 +4,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 
-@MCElement(name = "additionalPattern", topLevel = false, id = "accessLog-scope")
+@MCElement(name = "additionalVariable", topLevel = false, id = "accessLog-scope")
 public class AdditionalVariable {
 
     private String name;
