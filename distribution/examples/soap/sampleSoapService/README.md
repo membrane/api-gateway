@@ -5,7 +5,7 @@ This guide demonstrates how to use the Sample SOAP Service.
 ## Running the Sample 
 
 1. Go to the `examples/soap/sampleSoapService` directory.
-2. Run `service-proxy.sh` or `service-proxy.bat` to start the API Gateway.
+2. Run `service-proxy.sh` or `service-proxy.bat to start the API Gateway.
 3. You can now access the service at http://localhost:2000.
 
 ## Using the Service 
