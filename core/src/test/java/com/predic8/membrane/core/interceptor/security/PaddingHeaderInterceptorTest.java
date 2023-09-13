@@ -62,28 +62,8 @@ class PaddingHeaderInterceptorTest {
         }
     }
 
-    private void testHeaderSafePadding(String header) {
-        assertEquals(10, header.length());
-    }
-
-    @Test
-    void headerSafePadding() {
-        testHeaderSafePadding(interceptor.headerSafePadding(10));
-    }
-
-    @Test
-    void headerSafePaddingOperator() {
-        testHeaderSafePadding(interceptor.headerSafePaddingOperator(10));
-    }
-
-    @Test
-    void headerSafePaddingBuilder() {
-        testHeaderSafePadding(interceptor.headerSafePaddingBuilder(10));
-    }
-
-    @Test
-    void headerSafePaddingBuffer() {
-        testHeaderSafePadding(interceptor.headerSafePaddingBuffer(10));
+    private void testHeaderSafePadding() {
+        assertEquals(10, interceptor.headerSafePadding(10).length());
     }
 }
 

@@ -77,37 +77,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     }
 
     public String headerSafePadding(int len) {
-        char[] result = new char[len];
-
-        for (int i = 0; i < len; i++) {
-            result[i] = getRandomChar();
-        }
-
-        return new String(result);
-    }
-
-    public String headerSafePaddingOperator(int len) {
-        String result = "";
-
-        for (int i = 0; i < len; i++) {
-            result += getRandomChar();
-        }
-
-        return result;
-    }
-
-    public String headerSafePaddingBuilder(int len) {
         StringBuilder result = new StringBuilder();
-
-        for (int i = 0; i < len; i++) {
-            result.append(getRandomChar());
-        }
-
-        return result.toString();
-    }
-
-    public String headerSafePaddingBuffer(int len) {
-        StringBuffer result = new StringBuffer();
 
         for (int i = 0; i < len; i++) {
             result.append(getRandomChar());
