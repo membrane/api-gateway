@@ -21,12 +21,11 @@ import static java.util.EnumSet.of;
  */
 @MCElement(name = "paddingHeader")
 public class PaddingHeaderInterceptor extends AbstractInterceptor {
-    public static final String X_PADDING = "X-Padding";
+    static final String LOOKUP_TABLE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _:;.,\\/\"'?!(){}[]@<>=-+*#$&`|~^%";
+    static final String X_PADDING = "X-Padding";
     private int roundUp = 20;
     private int constant = 5;
     private int random = 10;
-
-    private static final char[] LOOKUP_TABLE = generateLookupTable();
     private final SecureRandom secRdm = new SecureRandom();
 
     private void setInterceptorMeta() {
@@ -34,7 +33,9 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         setFlow(of(REQUEST, RESPONSE));
     }
 
+    @SuppressWarnings("unused")
     public PaddingHeaderInterceptor() {
+        setInterceptorMeta();
     }
 
     public PaddingHeaderInterceptor(Integer roundUp, Integer constant, Integer random) {
@@ -55,7 +56,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleInternal(Message msg) {
-        msg.getHeader().add(X_PADDING,httpCryptoSafePadding(calculatePaddingSize(msg)));
+        msg.getHeader().add(X_PADDING, headerSafePadding(calculatePaddingSize(msg)));
         return CONTINUE;
     }
 
@@ -75,14 +76,7 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         return (int)(roundUp - (n % roundUp));
     }
 
-    // Compare as:
-    // String concat s + s
-    // StringWriter or StringBuffer
-    // char[] as is
-    // for 100_000_000
-    // Write a Test that messure this
-    // Timer
-    public String httpCryptoSafePadding(int len) {
+    public String headerSafePadding(int len) {
         char[] result = new char[len];
 
         for (int i = 0; i < len; i++) {
@@ -92,26 +86,38 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         return new String(result);
     }
 
-    private char getRandomChar() {
-        return LOOKUP_TABLE[secRdm.nextInt(LOOKUP_TABLE.length)];
+    public String headerSafePaddingOperator(int len) {
+        String result = "";
+
+        for (int i = 0; i < len; i++) {
+            result += getRandomChar();
+        }
+
+        return result;
     }
 
-    // TODO Test HTTP Safe 0..9, $-_.+!*'(),
-    static char[] generateLookupTable() {
-        char[] chars = new char[62];
-        int index = 0;
+    public String headerSafePaddingBuilder(int len) {
+        StringBuilder result = new StringBuilder();
 
-        for (char c = 'a'; c <= 'z'; c++) {
-            chars[index++] = c;
-        }
-        for (char c = 'A'; c <= 'Z'; c++) {
-            chars[index++] = c;
-        }
-        for (char c = '0'; c <= '9'; c++) {
-            chars[index++] = c;
+        for (int i = 0; i < len; i++) {
+            result.append(getRandomChar());
         }
 
-        return chars;
+        return result.toString();
+    }
+
+    public String headerSafePaddingBuffer(int len) {
+        StringBuffer result = new StringBuffer();
+
+        for (int i = 0; i < len; i++) {
+            result.append(getRandomChar());
+        }
+
+        return result.toString();
+    }
+
+    private char getRandomChar() {
+        return LOOKUP_TABLE.charAt(secRdm.nextInt(LOOKUP_TABLE.length()));
     }
 
     @MCAttribute

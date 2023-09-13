@@ -3,13 +3,12 @@ package com.predic8.membrane.core.interceptor.security;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.interceptor.security.PaddingHeaderInterceptor.generateLookupTable;
-import static java.lang.Character.isLetterOrDigit;
-import static java.lang.Character.isWhitespace;
+import static com.predic8.membrane.core.interceptor.security.PaddingHeaderInterceptor.LOOKUP_TABLE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PaddingHeaderInterceptorTest {
 
+    public static final String HTTP_HEADER_SPECIAL_CHARS = " _:;.,\\/\"'?!(){}[]@<>=-+*#$&`|~^%";
     private PaddingHeaderInterceptor interceptor;
 
     @BeforeEach
@@ -18,23 +17,25 @@ class PaddingHeaderInterceptorTest {
     }
 
     @Test
-    void testGenerateLookupTableLength() {
-        assertEquals(62, generateLookupTable().length);
+    void testLookupTableLength() {
+        assertEquals(95, LOOKUP_TABLE.length());
     }
 
     @Test
-    void testHttpCryptoSafePaddingLength() {
-        assertEquals(10, interceptor.httpCryptoSafePadding(10).length());
-    }
-
-    @Test
-    void testHttpCryptoSafePaddingCharacters() {
-        char[] padding = interceptor.httpCryptoSafePadding(100).toCharArray();
-        assertEquals(100, padding.length);
-        for (char c : padding) {
-            assertTrue(isLetterOrDigit(c));
-            assertFalse(isWhitespace(c));
-        }
+    void testLookupTableCompleteness() {
+            char[] chars = new char[72];
+            int index = 0;
+            for (char c = 'a'; c <= 'z'; c++) {
+                chars[index++] = c;
+            }
+            for (char c = 'A'; c <= 'Z'; c++) {
+                chars[index++] = c;
+            }
+            for (char c = '0'; c <= '9'; c++) {
+                chars[index++] = c;
+            }
+            String headerValueSafeChars = new String(chars).trim() + HTTP_HEADER_SPECIAL_CHARS;
+            assertEquals(headerValueSafeChars, LOOKUP_TABLE);
     }
 
     @Test
@@ -59,6 +60,30 @@ class PaddingHeaderInterceptorTest {
             assertTrue(interceptor.getRandomNumber() < 10);
             assertTrue(interceptor.getRandomNumber() >= 0);
         }
+    }
+
+    private void testHeaderSafePadding(String header) {
+        assertEquals(10, header.length());
+    }
+
+    @Test
+    void headerSafePadding() {
+        testHeaderSafePadding(interceptor.headerSafePadding(10));
+    }
+
+    @Test
+    void headerSafePaddingOperator() {
+        testHeaderSafePadding(interceptor.headerSafePaddingOperator(10));
+    }
+
+    @Test
+    void headerSafePaddingBuilder() {
+        testHeaderSafePadding(interceptor.headerSafePaddingBuilder(10));
+    }
+
+    @Test
+    void headerSafePaddingBuffer() {
+        testHeaderSafePadding(interceptor.headerSafePaddingBuffer(10));
     }
 }
 
