@@ -8,10 +8,11 @@
 
         <api port="2000">
             <accessLog>
-                <additionalPattern create="port" withExchange="originalHostHeaderPort" override="false" />
-                <additionalPattern create="response.statusCode" withExchange="response?.statusCode" orDefaultValue="???" />
+                <additionalVariable name="port" expression="originalHostHeaderPort" orDefault="" />
             </accessLog>
-            <target host="www.predic8.de" port="80" />
+            <target host="api.predic8.de">
+                <ssl />
+            </target>
         </api>
 
     </router>
