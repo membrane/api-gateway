@@ -12,6 +12,7 @@ import javax.xml.stream.events.*;
 import javax.xml.transform.*;
 import java.io.*;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -24,6 +25,7 @@ import static javax.xml.stream.XMLStreamConstants.*;
 @MCElement(name = "sampleSoapService")
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
+    public static final Pattern WSDL_PATH_PARAM = Pattern.compile("(?i).+\\?.*wsdl.*");
     public static final String CITY_SERVICE_NS = "https://predic8.de/city-service";
 
     public SampleSoapServiceInterceptor() {
@@ -63,8 +65,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static boolean isWSDLRequest(Exchange exc) {
-        // TODO Pattern as constant, Compile Pattern, Match Methode, Test
-        return exc.getRequest().getUri().matches("(?i).+\\?.*wsdl.*");
+        return WSDL_PATH_PARAM.matcher(exc.getRequest().getUri()).matches();
     }
 
     private static String getCity(Exchange exc) throws Exception {
@@ -100,7 +101,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     public static String getElementAsString(InputStream is, String localName) throws Exception {
         // MLInputFactory is not required to be thread-safe, ...
         // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html#:~:text=XMLInputFactory%20is%20not%20required%20to,using%20a%20XMLInputFactory%20per%20thread.
-        XMLInputFactory factory = XMLInputFactory.newInstance(); // TODO Comment about Threadsafe
+        XMLInputFactory factory = XMLInputFactory.newInstance();
         XMLStreamReader reader = factory.createXMLStreamReader(is);
 
         while (reader.hasNext()) {

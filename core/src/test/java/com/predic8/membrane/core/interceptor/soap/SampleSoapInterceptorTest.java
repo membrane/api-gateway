@@ -4,6 +4,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,7 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Objects;
 
+import static com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor.isWSDLRequest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -30,9 +34,13 @@ public class SampleSoapInterceptorTest {
 
     private static SampleSoapServiceInterceptor service;
     private static Exchange exc = new Exchange(null);
+
+    private static ServiceProxy serviceProxy;
+
     @BeforeAll
     public static void setUp() throws IOException {
         service = new SampleSoapServiceInterceptor();
+        serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
     }
 
     @Test
@@ -44,9 +52,13 @@ public class SampleSoapInterceptorTest {
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
+
+
+
     @Test
     public void wsdlTest() throws Exception {
-        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/foo?wsdl").header("Host", "Host").build());
+        exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/bar?wsdl").header("Host", "Host").build());
+        exc.setRule(serviceProxy);
         service.handleRequest(exc);
         // System.out.println(exc.getResponse().getBody().toString());
         assertTrue(exc.getResponse().getBody().toString().contains("Host"));
@@ -57,7 +69,7 @@ public class SampleSoapInterceptorTest {
     public void methodTest() throws Exception {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).get("/foo").build());
         service.handleRequest(exc);
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Only method POST is allowed"));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Use POST to access the service."));
     }
 
 
@@ -67,7 +79,7 @@ public class SampleSoapInterceptorTest {
         service.handleRequest(exc);
 
         String responseXML = exc.getResponse().getBody().toString();
-        System.out.println(exc.getResponse().getBody().toString());
+        // System.out.println(exc.getResponse().getBody().toString());
 
         assertTrue(compareXmlStrings(responseXML, country, population));
     }
