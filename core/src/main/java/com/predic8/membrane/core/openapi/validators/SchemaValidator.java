@@ -107,18 +107,23 @@ public class SchemaValidator implements IJSONSchemaValidator {
         }
 
         try {
-            return switch (schema.getType()) {
-                case "number" -> new NumberValidator().validate(ctx, value);
-                case "integer" -> new IntegerValidator().validate(ctx, value);
-                case "string" -> new StringValidator(schema).validate(ctx, value);
-                case "boolean" -> new BooleanValidator().validate(ctx, value);
-                case "array" -> new ArrayValidator(api, schema).validate(ctx, value);
-                case "object" -> new ObjectValidator(api, schema).validate(ctx, value);
-                default -> throw new RuntimeException("Should not happen! " + schema.getType());
-            };
+            // ctx.schemaType also deepcopies and is needed otherwise we'll lose schemaType information
+            return getValidator().validate(ctx.schemaType(schema.getType()), value);
         } catch (Exception e) {
             return ValidationErrors.create(ctx, "%s is not of %s format.".formatted(value, schema.getType()));
         }
+    }
+
+    private IJSONSchemaValidator getValidator() {
+        return switch (schema.getType()) {
+            case "number" -> new NumberValidator();
+            case "integer" -> new IntegerValidator();
+            case "string" -> new StringValidator(schema);
+            case "boolean" -> new BooleanValidator();
+            case "array" -> new ArrayValidator(api, schema);
+            case "object" -> new ObjectValidator(api, schema);
+            default -> throw new RuntimeException("Should not happen! " + schema.getType());
+        };
     }
 
     /**
