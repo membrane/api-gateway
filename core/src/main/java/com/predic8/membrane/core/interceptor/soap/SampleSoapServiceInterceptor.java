@@ -116,6 +116,8 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     public static String setWsdlServer(InputStream is, Exchange exc) throws XMLStreamException {
+        // XMLEventFactory is not required to be thread-safe, ...
+        // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html
         StringWriter modifiedXmlWriter = new StringWriter();
         XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(Objects.requireNonNull(is));
         XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(modifiedXmlWriter);
