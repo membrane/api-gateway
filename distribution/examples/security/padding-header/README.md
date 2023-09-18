@@ -1,7 +1,7 @@
 # Padding Header
 
 This guide demonstrates how to use the Padding Header.
-
+The Padding Header is utilized to protect against [breach attacks](https://nvd.nist.gov/vuln/detail/CVE-2013-3587) on HTTPS requests by introducing random padding, which thwarts attackers from exploiting variations in encrypted content length when repeatedly sending identical requests.
 ## Running the Sample
 
 1. Go to the `examples/security/padding-header` directory.
