@@ -49,7 +49,7 @@ public class SampleSoapInterceptorTest {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).post("/foo")
                 .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrongRequest.xml")))).build());
         service.handleRequest(exc);
-        assertEquals(SampleSoapServiceInterceptor.getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <city>Bonn</city>"), exc.getResponse().getBody().toString());
+        assertEquals(SampleSoapServiceInterceptor.getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <name>Bonn</name>"), exc.getResponse().getBody().toString());
         // System.out.println(exc.getResponse().getBody().toString());
     }
 
@@ -101,7 +101,7 @@ public class SampleSoapInterceptorTest {
         service.handleRequest(exc);
 
         String responseXML = exc.getResponse().getBody().toString();
-        // System.out.println(exc.getResponse().getBody().toString());
+        System.out.println(exc.getResponse().getBody().toString());
 
         assertTrue(compareXmlStrings(responseXML, country, population));
     }
@@ -158,12 +158,12 @@ public class SampleSoapInterceptorTest {
             });
 
             Node countryNode = (Node) xPath.evaluate(
-                    String.format("/s:Envelope/s:Body/cs:cityDetails/country[text()='%s']", country),
+                    String.format("/s:Envelope/s:Body/cs:getCityResponse/country[text()='%s']", country),
                     document,
                     XPathConstants.NODE
             );
             Node populationNode = (Node) xPath.evaluate(
-                    String.format("/s:Envelope/s:Body/cs:cityDetails/population[text()='%s']", population),
+                    String.format("/s:Envelope/s:Body/cs:getCityResponse/population[text()='%s']", population),
                     document,
                     XPathConstants.NODE
             );

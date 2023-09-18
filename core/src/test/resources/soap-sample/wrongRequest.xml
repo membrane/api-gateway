@@ -1,7 +1,7 @@
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/city-service">
     <s:Body>
-        <cs:getCityDetails>
+        <cs:getCity>
             <ccity>Bonn</ccity>
-        </cs:getCityDetails>
+        </cs:getCity>
     </s:Body>
 </s:Envelope>

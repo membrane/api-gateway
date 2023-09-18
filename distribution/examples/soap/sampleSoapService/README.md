@@ -21,9 +21,9 @@ curl --location --request POST 'http://localhost:2000' \
 --data-raw '
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/city-service">
   <s:Body>
-    <cs:getCityDetails>
-      <city>Bonn</city>
-    </cs:getCityDetails>
+    <cs:getCity>
+      <name>Bonn</name>
+    </cs:getCity>
   </s:Body>
 </s:Envelope>'
 ``` 

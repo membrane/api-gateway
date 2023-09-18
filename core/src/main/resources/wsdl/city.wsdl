@@ -6,15 +6,15 @@
             <xsd:element name="getCity">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                        <xsd:element name="name" type="xsd:string" />
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
             <xsd:element name="getCityResponse">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="country" type="xsd:string" maxOccurs="1" minOccurs="1"/>
-                        <xsd:element name="population" type="xsd:integer" maxOccurs="1" minOccurs="1"/>
+                        <xsd:element name="country" type="xsd:string" />
+                        <xsd:element name="population" type="xsd:integer" />
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>

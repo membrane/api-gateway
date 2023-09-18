@@ -49,7 +49,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static Response createResourceNotFoundSOAPFault() throws Exception {
-        return ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <city>Bonn</city>")).contentType(APPLICATION_XML).build();
+        return ok(getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <name>Bonn</name>")).contentType(APPLICATION_XML).build();
     }
 
     private static Response createGetCityResponse(Exchange exc) throws Exception {
@@ -70,7 +70,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static String getCity(Exchange exc) throws Exception {
-        return getElementAsString(exc.getRequest().getBodyAsStream(), "city");
+        return getElementAsString(exc.getRequest().getBodyAsStream(), "name");
     }
 
     private static final HashMap<String, City> cityMap = new HashMap<>() {{

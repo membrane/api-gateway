@@ -7,7 +7,7 @@
     <router>
 
         <api port="2000">
-            <target host="api.predic8.de"/>
+            <sampleSoapService />
         </api>
 
     </router>
