@@ -1,6 +1,7 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.regex.Pattern;
@@ -31,7 +32,7 @@ public class PaddingHeaderTest extends AbstractSampleMembraneStartStopTestcase {
         return "security/padding-header";
     }
 
-    @Test
+    @RepeatedTest(10)
     public void testHeader() throws Exception {
         given()
                 .when()
