@@ -8,7 +8,7 @@
 
         <api port="2000">
             <paddingHeader roundUp="20" constant="5" random="10" />
-            <target url="api.predic8.de"/>
+            <target url="https://api.predic8.de"/>
         </api>
 
     </router>
