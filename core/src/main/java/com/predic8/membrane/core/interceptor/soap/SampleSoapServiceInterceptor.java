@@ -157,7 +157,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         try {
             return xml2string(createResponse(city));
         } catch (Exception e) {
-            return getSoapFault("Not Found", "404", "Do not know %s. Try Bonn, London or new York".formatted(city));
+            return getSoapFault("Not Found", "404", "Do not know %s. Try Bonn, London or New York".formatted(city));
         }
     }
 
@@ -184,7 +184,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static Element createCityDetails(String city, Document res) {
-        Element details = res.createElement("cs:cityDetails");
+        Element details = res.createElement("cs:getCityResponse");
         details.appendChild(createCountry(city, res));
         details.appendChild(createPopulation(city, res));
         return details;
