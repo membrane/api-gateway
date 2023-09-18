@@ -1,3 +1,18 @@
+/* Copyright 2023 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
+
 package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -42,10 +57,12 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    @SuppressWarnings("unused")
     public List<AdditionalVariable> getAdditionalPatternList() {
         return additionalVariables;
     }
 
+    @SuppressWarnings("unused")
     @MCChildElement
     public void setAdditionalPatternList(List<AdditionalVariable> additionalVariableList) {
         this.additionalVariables = additionalVariableList;
@@ -63,6 +80,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         this.defaultValue = defaultValue;
     }
 
+    @SuppressWarnings("unused")
     public String getDateTimePattern() {
         return dateTimePattern;
     }
@@ -75,6 +93,7 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         this.dateTimePattern = dateTimePattern;
     }
 
+    @SuppressWarnings("unused")
     public boolean isExcludePayloadSize() {
         return excludePayloadSize;
     }
