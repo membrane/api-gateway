@@ -5,12 +5,20 @@
             <PatternLayout pattern="%d{ABSOLUTE} %5p %c{1}:%L - %m%n" />
         </Console>
         <Console name="ACCESS" target="SYSTEM_OUT">
-            <PatternLayout pattern="%X{ip} &quot;%X{http.method} %X{uri} %X{proto}/%X{http.version}&quot; %X{statusCode} %X{req.payload.size} - %X{res.contentType}%n" />
+            <PatternLayout pattern="%X{ip} &quot;%X{http.method} %X{uri} %X{proto}/%X{http.version}&quot; %X{statusCode} %X{req.payload.size} [%X{res.contentType}]%n" />
         </Console>
+        <RollingFile name="ACCESS_FILE" fileName="access.log" filePattern="access.log.%i">
+            <PatternLayout pattern="%X{ip} &quot;%X{http.method} %X{uri} %X{proto}/%X{http.version}&quot; %X{statusCode} %X{req.payload.size} [%X{res.contentType}]%n" />
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10" />
+        </RollingFile>
     </Appenders>
     <Loggers>
         <Logger name="com.predic8.membrane.core.interceptor.log" level="info" additivity="false">
             <AppenderRef ref="ACCESS" />
+            <AppenderRef ref="ACCESS_FILE" />
         </Logger>
         <Root level="info">
             <AppenderRef ref="STDOUT" />
