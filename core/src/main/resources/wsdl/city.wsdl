@@ -1,39 +1,40 @@
-<wsdl:definitions name="randomcity" targetNamespace="https://predic8.de/randomcity"
-                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="https://predic8.de/randomcity"
+<wsdl:definitions name="cities" targetNamespace="https://predic8.de/cities"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="https://predic8.de/cities"
                   xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
     <wsdl:types>
-        <xsd:schema targetNamespace="https://predic8.de/randomcity">
-            <xsd:element name="getCityDetails">
+        <xsd:schema targetNamespace="https://predic8.de/cities">
+            <xsd:element name="getCity">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="city" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                        <xsd:element name="name" type="xsd:string" maxOccurs="1" minOccurs="1"/>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
-            <xsd:element name="getCityDetailsResponse">
+            <xsd:element name="getCityResponse">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="city" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                        <xsd:element name="country" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+                        <xsd:element name="population" type="xsd:integer" maxOccurs="1" minOccurs="1"/>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
         </xsd:schema>
     </wsdl:types>
     <wsdl:message name="City">
-        <wsdl:part name="getCityDetails" element="tns:getCityDetails"/>
+        <wsdl:part name="getCity" element="tns:getCity"/>
     </wsdl:message>
     <wsdl:message name="CityResponse">
-        <wsdl:part name="getCityDetailsResponse" element="tns:getCityDetailsResponse"/>
+        <wsdl:part name="getCityResponse" element="tns:getCityResponse"/>
     </wsdl:message>
     <wsdl:portType name="CityPort">
-        <wsdl:operation name="getCityDetails">
+        <wsdl:operation name="getCity">
             <wsdl:input message="tns:City"/>
             <wsdl:output message="tns:CityResponse"/>
         </wsdl:operation>
     </wsdl:portType>
     <wsdl:binding name="CitySoapBinding" type="tns:CityPort">
         <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
-        <wsdl:operation name="getCityDetails">
+        <wsdl:operation name="getCity">
             <soap:operation soapAction="http://www.soapui.org/sample/login"/>
             <wsdl:input>
                 <soap:body use="literal" namespace="http://www.soapui.org/sample/"/>
