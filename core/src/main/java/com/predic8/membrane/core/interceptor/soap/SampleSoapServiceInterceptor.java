@@ -61,7 +61,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private Response createWSDLResponse(Exchange exc) throws XMLStreamException {
-        return ok().body(setWsdlServer(getResourceAsStream(this,"city.wsdl"),exc)).build();
+        return ok().body(setWsdlServer(getResourceAsStream(this,"/wsdl/city.wsdl"),exc)).build();
     }
 
 
