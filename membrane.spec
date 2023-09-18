@@ -31,7 +31,7 @@ BuildRequires:    unzip
 
 %prep
 %setup -q -c -T
-wget https://github.com/membrane/api-gateway/releases/download/v%{version}/%{zip_name}.zip
+wget %{url}/releases/download/v%{version}/%{zip_name}.zip
 unzip %{zip_name}.zip
 
 %{__cat} <<EOF > %{name}.service
