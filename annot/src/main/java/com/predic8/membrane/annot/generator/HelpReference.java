@@ -52,7 +52,7 @@ public class HelpReference {
 			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
 			if (path == null)
 				return;
-			path = path.replace("%VERSION%", "5.1");
+			path = path.replace("%VERSION%", "5.2");
 
 			System.out.println("Generating Reference in location: " + path);
 
