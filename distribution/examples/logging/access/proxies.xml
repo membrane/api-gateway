@@ -8,8 +8,7 @@
 
         <api port="2000">
             <accessLog>
-                <additionalVariable name="res.contentLength" expression="response?.headers['content-length']" />
-                <additionalVariable name="res.contentType" expression="response?.headers.contentType" defaultValue="?"/>
+                <additionalVariable name="res.contentType" expression="response?.headers.contentType" />
             </accessLog>
             <target host="api.predic8.de">
                 <ssl />

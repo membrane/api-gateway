@@ -19,6 +19,7 @@ import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.WaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
@@ -30,11 +31,19 @@ public class AccessLogTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void testExample() throws Exception {
+    void testConsole() throws Exception {
         try (var process = startServiceProxyScript()) {
-            var console = new WaitableConsoleEvent(process, p -> p.equals("127.0.0.1 \"GET / HTTP/1.1\" 200 0 - application/json"));
+            var console = new WaitableConsoleEvent(process, p -> p.equals("127.0.0.1 \"GET / HTTP/1.1\" 200 0 [application/json]"));
             getAndAssert200("http://localhost:2000");
             assertTrue(console.occurred());
         }
+    }
+
+    @Test
+    void testRollingFile() throws Exception {
+        try (var ignore = startServiceProxyScript()) {
+            getAndAssert200("http://localhost:2000");
+        }
+        assertContains("127.0.0.1 \"GET / HTTP/1.1\" 200 0 [application/json]", readFile("access.log"));
     }
 }
