@@ -1,25 +1,15 @@
 package com.predic8.membrane.examples.tests;
 
-import com.predic8.membrane.core.util.Pair;
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.Process2;
 import io.restassured.http.ContentType;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.test.AssertUtils.disableHTTPAuthentication;
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import static io.restassured.RestAssured.given;
-import static java.lang.Thread.sleep;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /* Copyright 2023 predic8 GmbH, www.predic8.com
 
