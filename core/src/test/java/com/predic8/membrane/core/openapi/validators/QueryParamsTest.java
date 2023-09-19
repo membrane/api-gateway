@@ -93,4 +93,22 @@ public class QueryParamsTest extends AbstractValidatorTest {
         System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
+
+    @Test
+    public void referencedParamTest() {
+        ValidationErrors errors = validator.validate(Request.get().path("/cities?limit=1&page=10"));
+        System.out.println("errors = " + errors);
+        assertEquals(0,errors.size());
+    }
+
+    @Test
+    public void referencedParamValueTest()  {
+        ValidationErrors errors = validator.validate(Request.get().path("/cities?limit=1&page=-1"));
+        System.out.println("errors = " + errors);
+        assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals("page",e.getContext().getValidatedEntity());
+        assertEquals(QUERY_PARAMETER,e.getContext().getValidatedEntityType());
+        assertEquals("REQUEST/QUERY_PARAMETER/page", e.getContext().getLocationForRequest());
+    }
 }
