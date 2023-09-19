@@ -23,10 +23,11 @@ import io.swagger.v3.oas.models.parameters.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static java.lang.String.format;
-import static java.util.Objects.requireNonNullElseGet;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static java.lang.String.*;
 
 public class QueryParameterValidator {
 
@@ -41,8 +42,6 @@ public class QueryParameterValidator {
     ValidationErrors validateQueryParameters(ValidationContext ctx, Request request, Operation operation)  {
 
         ValidationErrors errors = new ValidationErrors();
-
-//        Map<String, String> qparams = request.getQueryParams();
 
         // TODO
         // Router?
@@ -68,17 +67,25 @@ public class QueryParameterValidator {
         return new HashMap<>();
     }
 
-    private List<Parameter> getAllParameterSchemas(Operation operation) {
-        return concat(pathItem.getParameters(), operation.getParameters());
+    public List<Parameter> getAllParameterSchemas(Operation operation) {
+        return concat(resolveRefs(pathItem.getParameters()), resolveRefs(operation.getParameters()));
     }
 
-    private static List<Parameter> concat(List<Parameter> l1, List<Parameter> l2) {
-        if (l1 == null) {
-            return requireNonNullElseGet(l2, ArrayList::new);
-        }
-        if (l2!=null)
-            l1.addAll(l2);
-        return l1;
+    private List<Parameter> resolveRefs(List<Parameter> parameters) {
+        if (parameters == null)
+            return null;
+
+        return parameters.stream().map(this::resolveParamIfNeeded).toList();
+    }
+
+    private Parameter resolveParamIfNeeded(Parameter p ) {
+        if (p.get$ref() != null)
+           return resolveReferencedParameter(p);
+       return p;
+    }
+
+    public Parameter resolveReferencedParameter(Parameter p) {
+        return api.getComponents().getParameters().get(getComponentLocalNameFromRef(p.get$ref()));
     }
 
     private ValidationErrors validateQueryParameter(ValidationContext ctx, Map<String, String> qparams, Parameter param) {

@@ -4,14 +4,16 @@ info:
   version: '1.0'
 paths:
   /cities:
+    parameters:
+      - in: query
+        name: foo
+        schema:
+          type: integer
+          minimum: 0
+        required: false
+      - $ref: '#/components/parameters/BarParam'
     get:
       parameters:
-        - in: query
-          name: foo
-          schema:
-            type: integer
-            minimum: 0
-          required: false
         - $ref: '#/components/parameters/PageQueryParam'
         - in: query
           name: limit
@@ -43,4 +45,10 @@ components:
       schema:
         type: integer
         minimum: 1
+      required: false
+    BarParam:
+      in: query
+      name: bar
+      schema:
+        type: integer
       required: false

@@ -119,4 +119,8 @@ public class OpenAPIValidator {
                     .entityType(METHOD), format("Method %s is not allowed", req.getMethod()));
         }
     }
+
+    public OpenAPI getApi() {
+        return api;
+    }
 }

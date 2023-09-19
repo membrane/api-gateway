@@ -1,0 +1,1015 @@
+---
+openapi: "3.0.3"
+info:
+  title: "Fruit Shop API"
+  description: "![Logo](https://www.predic8.de/logo6.png)\n\nShowcases REST API design\
+    \ and serves as a public API for\neducational usage. Feel free to use this API\
+    \ even by using the POST, PUT and DELETE methods. You\ncannot do any harm, the\
+    \ API will be reset automatically.\n"
+  contact:
+    name: "Predic8"
+    url: "https://www.predic8.de"
+    email: "info@predic8.de"
+  version: "2.0.0"
+servers:
+- url: "https://api.predic8.de/shop/v2"
+tags:
+- name: "Root"
+- name: "Products"
+- name: "Vendors"
+- name: "Orders"
+- name: "Customers"
+paths:
+  /:
+    get:
+      tags:
+      - "Root"
+      summary: "Get an overview of the api"
+      description: "Shows the paths for Products, Vendors, Orders, Customers and the\
+        \ oas3"
+      responses:
+        "200":
+          description: "Successful response"
+          content:
+            application/json:
+              example:
+                description:
+                  openapi: "/shop/v2/api-docs"
+                  swagger_ui: "/shop/v2/swagger-ui"
+                link:
+                  products_link: "/shop/v2/products"
+                  vendors_link: "/shop/v2/vendors"
+                  orders_link: "/shop/v2/orders"
+                  customer_link: "/shop/v2/customers"
+  /products:
+    get:
+      tags:
+      - "Products"
+      summary: "Get all products"
+      description: "Get a list of all the products available over the Fruitshop API."
+      operationId: "getProducts"
+      parameters:
+      - $ref: "#/components/parameters/Start"
+      - $ref: "#/components/parameters/Limit"
+      - name: "search"
+        in: "query"
+        description: "Search for products containing this String"
+        schema:
+          type: "string"
+      responses:
+        "200":
+          $ref: "#/components/responses/Products"
+    post:
+      tags:
+      - "Products"
+      summary: "Create a product"
+      description: "Create a new product for the store."
+      operationId: "createProduct"
+      requestBody:
+        $ref: "#/components/requestBodies/Product"
+      responses:
+        "201":
+          $ref: "#/components/responses/ProductCreated"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /products/{id}:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - "Products"
+      summary: "Get product by id"
+      description: "Get detailed information about the product."
+      operationId: "getProduct"
+      responses:
+        "200":
+          $ref: "#/components/responses/Product"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+    put:
+      tags:
+      - "Products"
+      summary: "Update a product"
+      description: "Update a product description with new data."
+      operationId: "updateProduct"
+      requestBody:
+        $ref: "#/components/requestBodies/Product"
+      responses:
+        "200":
+          $ref: "#/components/responses/Product"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags:
+      - "Products"
+      summary: "Delete a product"
+      description: "Delete a single product."
+      operationId: "deleteProduct"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+    patch:
+      tags:
+      - "Products"
+      summary: "Update properties of a product"
+      description: "Update one or more properties of a product"
+      operationId: "patchProduct"
+      requestBody:
+        $ref: "#/components/requestBodies/ProductPatch"
+      responses:
+        "200":
+          $ref: "#/components/responses/Product"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /products/{id}/image:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - "Products"
+      summary: "Get image"
+      description: "Get image of the product"
+      operationId: "getProductImage"
+      responses:
+        "200":
+          $ref: "#/components/responses/Image"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /vendors:
+    get:
+      tags:
+      - "Vendors"
+      summary: "Get all vendors"
+      description: "Get a list of all the vendors registered the Fruitshop API."
+      operationId: "getVendors"
+      parameters:
+      - $ref: "#/components/parameters/Start"
+      - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/Vendors"
+    post:
+      tags:
+      - "Vendors"
+      summary: "Create a vendor"
+      description: "Register a new vendor offering products with the **Fruitshop API**."
+      operationId: "createVendor"
+      requestBody:
+        $ref: "#/components/requestBodies/Vendor"
+      responses:
+        "201":
+          $ref: "#/components/responses/VendorCreated"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /vendors/{id}:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - "Vendors"
+      summary: "Get a vendor by id"
+      description: "Get detailed information about the vendor."
+      operationId: "getVendor"
+      responses:
+        "200":
+          $ref: "#/components/responses/Vendor"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+    put:
+      tags:
+      - "Vendors"
+      summary: "Update a vendor"
+      description: "Update a vendor description with new data."
+      operationId: "updateVendor"
+      requestBody:
+        $ref: "#/components/requestBodies/Vendor"
+      responses:
+        "200":
+          $ref: "#/components/responses/Vendor"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /vendors/{id}/products:
+    get:
+      tags:
+      - "Vendors"
+      summary: "Get products"
+      description: "Get the products offered by this vendor"
+      operationId: "getProductsOfVendor"
+      parameters:
+      - $ref: "#/components/parameters/Id"
+      - $ref: "#/components/parameters/Start"
+      - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/Products"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /vendors/{id}/products/{pid}:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    - in: "path"
+      name: "pid"
+      description: "The id of the product to add"
+      schema:
+        $ref: "#/components/schemas/Id"
+      required: true
+      example: 44
+    put:
+      tags:
+      - "Vendors"
+      summary: "Add a product to a vendor"
+      description: "Extend the list of products a vendor sells with the **Fruitshop\
+        \ API**."
+      operationId: "addProductToVendor"
+      responses:
+        "200":
+          $ref: "#/components/responses/Success"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /orders:
+    get:
+      tags:
+      - "Orders"
+      summary: "Get all orders"
+      description: "Get a list of all the orders the **Fruitshop API** processed."
+      operationId: "getOrders"
+      parameters:
+      - $ref: "#/components/parameters/Start"
+      - $ref: "#/components/parameters/Limit"
+      - $ref: "#/components/parameters/State"
+      responses:
+        "200":
+          $ref: "#/components/responses/Orders"
+  /orders/{id}:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - "Orders"
+      summary: "Get an order by id"
+      description: "Get detailed information about the order."
+      operationId: "getOrder"
+      responses:
+        "200":
+          $ref: "#/components/responses/Order"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /orders/{id}/items:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - "Orders"
+      summary: "Get the items"
+      description: "Get the items of an order"
+      operationId: "getItems"
+      responses:
+        "200":
+          $ref: "#/components/responses/Items"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /orders/{id}/actions/purchase:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    put:
+      tags:
+      - "Orders"
+      summary: "Purchase an order"
+      description: "Purchase an order that was in the created state."
+      operationId: "purchaseOrder"
+      responses:
+        "200":
+          $ref: "#/components/responses/OrderPurchase"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /orders/{id}/actions/cancel:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    put:
+      tags:
+      - "Orders"
+      summary: "Cancel"
+      description: "Cancel an order"
+      operationId: "cancelOrder"
+      responses:
+        "200":
+          $ref: "#/components/responses/OrderCancel"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /customers:
+    get:
+      tags:
+      - "Customers"
+      summary: "Get all customers"
+      description: "Get a list of all the customers doing commerce with the Fruitshop\
+        \ API."
+      operationId: "getCustomers"
+      parameters:
+      - $ref: "#/components/parameters/Start"
+      - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/Customers"
+  /customers/{id}:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - "Customers"
+      summary: "Get a customer by id"
+      description: "Get detailed information about the customer."
+      operationId: "getCustomer"
+      responses:
+        "200":
+          $ref: "#/components/responses/Customer"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+  /customers/{id}/orders:
+    parameters:
+    - $ref: "#/components/parameters/Id"
+    get:
+      tags:
+      - "Customers"
+      summary: "Get the orders"
+      description: "Get the orders of a customer"
+      operationId: "getOrdersOfCustomer"
+      parameters:
+      - $ref: "#/components/parameters/Start"
+      - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          $ref: "#/components/responses/Orders"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags:
+      - "Customers"
+      summary: "Create an order for a customer"
+      description: "Create a new order for the customer."
+      operationId: "createOrderForCustomer"
+      requestBody:
+        $ref: "#/components/requestBodies/Order"
+      responses:
+        "201":
+          $ref: "#/components/responses/OrderCreated"
+        "4XX":
+          $ref: "#/components/responses/NotFound"
+        "5XX":
+          $ref: "#/components/responses/ServerError"
+components:
+  parameters:
+    Id:
+      name: "id"
+      in: "path"
+      description: "Id of the object"
+      required: true
+      schema:
+        $ref: "#/components/schemas/Id"
+    Start:
+      name: "start"
+      in: "query"
+      description: "Starting entry of the result list"
+      schema:
+        type: "number"
+        minimum: 1
+        default: 1
+        example: 7
+    Limit:
+      name: "limit"
+      in: "query"
+      description: "Limits the number of result entries"
+      schema:
+        minimum: 1
+        type: "number"
+        default: 10
+        example: 100
+    State:
+      name: "state"
+      in: "query"
+      description: "State of an order"
+      schema:
+        $ref: "#/components/schemas/State"
+  requestBodies:
+    Product:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Product"
+          example:
+            name: "Mangos,"
+            price: 2.79
+    ProductPatch:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProductPatch"
+    Vendor:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Vendor"
+    Image:
+      content:
+        image/jpeg:
+          schema:
+            $ref: "#/components/schemas/Image"
+    Order:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OrderInput"
+  responses:
+    ServerError:
+      description: "Server Error"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://api.predic8.de/shop/v2/validation"
+            title: "Server Error"
+            status: 500
+            detail: "Internal Server Error"
+    NotFound:
+      description: "Client Error"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: "https://api.predic8.de/shop/v2/validation"
+            title: "Not Found"
+            status: 404
+            detail: "An entry with this id does not exist"
+    OrderCreated:
+      description: "Created"
+      headers:
+        location:
+          schema:
+            type: "string"
+            format: "uri"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Order"
+    Order:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Order"
+    OrderPurchase:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Order"
+          example:
+            id: 8
+            state: "ORDERED"
+            actions:
+              cancel:
+                link: "/shop/v2/orders/8/actions/cancel"
+                method: "PUT"
+            customer: 2
+            customer_link: "/shop/v2/customer/2"
+            items_link: "/shop/v2/orders/8/items"
+            total: 45.78
+            createdAt: "2023-02-26T16:44:36+02:00"
+            updatedAt: "2023-02-26T18:14:22+02:00"
+    OrderCancel:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Order"
+          example:
+            id: 8
+            state: "CANCELED"
+            actions: {}
+            customer: 2
+            customer_link: "/shop/v2/customer/2"
+            items_link: "/shop/v2/orders/8/items"
+            total: 45.78
+            createdAt: "2023-02-26T16:44:36+02:00"
+            updatedAt: "2023-02-26T18:14:22+02:00"
+    Orders:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              meta:
+                $ref: "#/components/schemas/Meta"
+              orders:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/Id"
+                    state:
+                      $ref: "#/components/schemas/State"
+                    self_link:
+                      $ref: "#/components/schemas/SelfLink"
+          example:
+            meta:
+              count: 14
+              start: 1
+              limit: 10
+              next_link: "/shop/v2/orders/?start=11&limit=10"
+            orders:
+            - id: 22
+              state: "ORDERED"
+              self_link: "/shop/v2/orders/22"
+    Items:
+      description: "List of items"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Items"
+    VendorCreated:
+      description: "Created"
+      headers:
+        location:
+          schema:
+            type: "string"
+            format: "uri"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Vendor"
+          example:
+            id: 4
+            name: "Fresh Fruits from France Ltd."
+            self_link: "/shop/v2/vendors/4"
+    Vendor:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Vendor"
+          example:
+            id: 8
+            name: "Fresh Fruits from France Ltd."
+    Vendors:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              meta:
+                $ref: "#/components/schemas/Meta"
+              vendors:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/Id"
+                    name:
+                      type: "string"
+                      description: "Name of the vendor"
+                      example: "Exotic Fruits LLC"
+                    self_link:
+                      $ref: "#/components/schemas/SelfLink"
+            example:
+              meta:
+                count: 22
+                start: 11
+                limit: 10
+                previous_link: "/shop/v2/vendors/?start=1&limit=10"
+                next_link: "/shop/v2/vendors/?start=21&limit=10"
+              vendors:
+              - id: 42
+                name: "Exotic Fruits LLC"
+                self_link: "/shop/v2/vendors/42"
+    Product:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Product"
+          example:
+            id: 8
+            name: "Mangos,"
+            price: 2.79
+    ProductCreated:
+      description: "Created"
+      headers:
+        location:
+          schema:
+            type: "string"
+            format: "uri"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Product"
+          example:
+            id: 8
+            name: "Mangos,"
+            price: 2.79
+            self_link: "/shop/v2/products/8"
+    Products:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              meta:
+                $ref: "#/components/schemas/Meta"
+              products:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    id:
+                      $ref: "#/components/schemas/Id"
+                    name:
+                      type: "string"
+                      description: "Name of the product"
+                      example: "Cherries"
+                    self_link:
+                      $ref: "#/components/schemas/SelfLink"
+                  example:
+                    id: 1
+                    name: "Banana"
+                    self_link: "/shop/v2/products/1"
+    Image:
+      description: "OK"
+      content:
+        image/jpeg:
+          schema:
+            $ref: "#/components/schemas/Image"
+    Customer:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Customer"
+    Customers:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              meta:
+                $ref: "#/components/schemas/Meta"
+              customers:
+                type: "array"
+                items:
+                  type: "object"
+                  properties:
+                    id:
+                      type: "integer"
+                    name:
+                      type: "string"
+                      description: "First- and lastname"
+                      example: "Victor Hugo"
+                    self_link:
+                      $ref: "#/components/schemas/SelfLink"
+            example:
+              meta:
+                count: 4
+                start: 1
+                limit: 10
+              customers:
+              - id: 2
+                name: "Max Mustermann"
+                self_link: "/shop/v2/customers/2"
+    Success:
+      description: "OK"
+      content:
+        application/json:
+          schema:
+            type: "object"
+            properties:
+              success:
+                type: "string"
+                example: "added"
+  schemas:
+    Id:
+      type: "integer"
+      description: "Id of an object"
+      example: 8
+      minimum: 1
+      readOnly: true
+    SelfLink:
+      type: "string"
+      format: "url"
+      readOnly: true
+      example: "/shop/v2/..."
+      description: "Link to the resource itself"
+    Meta:
+      required:
+      - "count"
+      type: "object"
+      properties:
+        count:
+          type: "integer"
+          description: "Number of resources"
+          example: 22
+        start:
+          type: "integer"
+          description: "Starting entry of the result list"
+          example: 11
+        limit:
+          type: "integer"
+          description: "How many entries are delivered in one response"
+          example: 10
+        previous_link:
+          type: "string"
+          description: "URL to the previous page of results"
+          example: "/shop/v2/products/?start=1&limit=10"
+        next_link:
+          type: "string"
+          description: "URL to the next page of results"
+          example: "/shop/v2/products/?start=21&limit=10"
+      description: "Metadata about a collection of resources."
+    State:
+      type: "string"
+      description: "Current state of an order"
+      example: "CREATED"
+      enum:
+      - "CREATED"
+      - "ORDERED"
+      - "DELIVERED"
+      - "CANCELED"
+    Customer:
+      required:
+      - "firstname"
+      - "lastname"
+      type: "object"
+      properties:
+        firstname:
+          type: "string"
+          example: "Fred"
+        lastname:
+          type: "string"
+          example: "Meyers"
+        orders_url:
+          type: "string"
+          description: "Link to the orders of the customer"
+        customer_url:
+          type: "string"
+          description: "Link to the customer resource"
+      description: "Customer details"
+      example:
+        firstname: "Freddy"
+        lastname: "Meyers"
+    ActionDescription:
+      type: "object"
+      properties:
+        link:
+          type: "string"
+          example: "/shop/v2/orders/8/actions/purchase"
+        method:
+          type: "string"
+          enum:
+          - "PUT"
+      description: "Description of a possible action on the resource"
+    Actions:
+      type: "object"
+      properties:
+        purchase:
+          $ref: "#/components/schemas/ActionDescription"
+        cancel:
+          $ref: "#/components/schemas/ActionDescription"
+      description: "Actions that the order supports"
+      example:
+        purchase:
+          url: "/shop/v2/orders/8/actions/purchase"
+          method: "PUT"
+        cancel:
+          url: "/shop/v2/orders/8/actions/cancel"
+          method: "PUT"
+    OrderInput:
+      type: "object"
+      description: "Order structure for input"
+      properties:
+        items:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Item"
+      example:
+        items:
+        - product: 44
+          quantity: 5
+        - product: 60
+          quantity: 1
+        - product: 72
+          quantity: 3
+    Order:
+      type: "object"
+      description: "Order details"
+      required:
+      - "actions"
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        state:
+          $ref: "#/components/schemas/State"
+        actions:
+          $ref: "#/components/schemas/Actions"
+        customer:
+          $ref: "#/components/schemas/Id"
+        customer_link:
+          type: "string"
+          example: "/shop/v2/customers/342"
+        items_link:
+          type: "string"
+          example: "/shop/v2/orders/3142/items"
+        total:
+          type: "number"
+          description: "Total price of the order"
+          example: 45.78
+        createdAt:
+          type: "string"
+          format: "datetime"
+          example: "2023-02-26T16:44:36+02:00"
+        updatedAt:
+          type: "string"
+          format: "datetime"
+          example: "2023-02-26T18:14:22+02:00"
+    Product:
+      type: "object"
+      description: "Description of a product"
+      required:
+      - "name"
+      - "price"
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: "string"
+          description: "Name of a product"
+          example: "Berries"
+          maxLength: 30
+        price:
+          type: "number"
+          description: "Price of a good"
+          example: 4.5
+          minimum: 0
+          maximum: 1000
+        vendors:
+          type: "array"
+          readOnly: true
+          items:
+            type: "object"
+            properties:
+              id:
+                $ref: "#/components/schemas/Id"
+              name:
+                type: "string"
+                description: "Name of the vendor"
+                example: "Exotic Fruits LLC"
+                maxLength: 30
+              self_link:
+                $ref: "#/components/schemas/SelfLink"
+        image_link:
+          type: "string"
+          readOnly: true
+        self_link:
+          $ref: "#/components/schemas/SelfLink"
+      example:
+        name: "Wildberries"
+        price: 4.99
+    ProductPatch:
+      type: "object"
+      description: "Structure to patch a product. All the properties are optional."
+      properties:
+        name:
+          type: "string"
+          description: "Name of a product"
+          example: "Berries"
+          maxLength: 30
+        price:
+          type: "number"
+          description: "Price of a good"
+          example: 4.5
+          minimum: 0
+          maximum: 1000
+        vendor:
+          $ref: "#/components/schemas/Id"
+      example:
+        price: 2.79
+    Vendor:
+      required:
+      - "name"
+      type: "object"
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          type: "string"
+          description: "Name of the vendor"
+          example: "foo"
+          maxLength: 30
+        products_link:
+          type: "string"
+          description: "URL to the products of this vendor"
+          readOnly: true
+        self_link:
+          type: "string"
+          description: "URL of the vendor"
+      description: "Vendor of products"
+      example:
+        name: "Fresh Fruits from France Ltd."
+    Item:
+      description: "Item details"
+      required:
+      - "quantity"
+      - "product"
+      type: "object"
+      properties:
+        quantity:
+          type: "number"
+          example: 5
+          minimum: 0
+          maximum: 1000
+        price:
+          type: "number"
+          description: "Price of a good"
+          example: 4.5
+          minimum: 0
+          maximum: 1000
+        product:
+          $ref: "#/components/schemas/Id"
+        product_link:
+          type: "string"
+          readOnly: true
+      example:
+        quantity: 5
+        price: 0.9
+        product: 3
+        product_link: "/shop/v2/products/3"
+    ItemList:
+      type: "array"
+      description: "Collection of items"
+      items:
+        $ref: "#/components/schemas/Item"
+    Items:
+      required:
+      - "items"
+      type: "object"
+      properties:
+        order_link:
+          type: "string"
+          example: "/shop/v2/orders/1432"
+        items:
+          $ref: "#/components/schemas/ItemList"
+      description: "Collection of items"
+    Image:
+      type: "string"
+      format: "binary"
+      description: "Image as binary"
+    ProblemDetails:
+      type: "object"
+      properties:
+        type:
+          type: "string"
+          format: "url"
+        title:
+          type: "string"
+        status:
+          type: "integer"
+          minimum: 200
+        detail:
+          type: "string"
+          maxLength: 500
