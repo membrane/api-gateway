@@ -4,15 +4,15 @@ info:
   version: '1.0'
 paths:
   /cities:
-    parameters:
-      - in: query
-        name: foo
-        required: false
-        schema:
-          type: integer
-          minimum: 0
     get:
       parameters:
+        - in: query
+          name: foo
+          schema:
+            type: integer
+            minimum: 0
+          required: false
+        - $ref: '#/components/parameters/PageQueryParam'
         - in: query
           name: limit
           schema:
@@ -30,6 +30,17 @@ paths:
           schema:
             type: string
             maxLength: 10
+
       responses:
         '200':
           description: OK
+
+components:
+  parameters:
+    PageQueryParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+      required: false
