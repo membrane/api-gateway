@@ -29,6 +29,10 @@ public class ValidationErrors {
 
     private final static ObjectMapper om = new ObjectMapper();
 
+    public static final String OPENAPI_VALIDATION_ERROR = "OpenAPI Validation Error";
+
+    public static final String MEMBRANE_VALIDATION_ERROR = "https://www.membrane-soa.org/validation-error";
+
     private final List<ValidationError> errors = new ArrayList<>();
 
     public enum Direction { REQUEST, RESPONSE }
@@ -95,6 +99,8 @@ public class ValidationErrors {
         Map<String, Object> wrapper = new LinkedHashMap<>();
 
         ValidationContext ctx = errors.get(0).getContext();
+        setFieldIfNotNull(wrapper, "type", MEMBRANE_VALIDATION_ERROR);
+        setFieldIfNotNull(wrapper, "title", OPENAPI_VALIDATION_ERROR);
         setFieldIfNotNull(wrapper, "method", ctx.getMethod());
         setFieldIfNotNull(wrapper, "uriTemplate", ctx.getUriTemplate());
         setFieldIfNotNull(wrapper, "path", ctx.getPath());

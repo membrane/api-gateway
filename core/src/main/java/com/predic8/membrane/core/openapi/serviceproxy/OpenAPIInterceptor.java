@@ -55,6 +55,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         // No matching API found
         if (basePath == null) {
             Map<String,Object> m = new HashMap<>();
+            m.put("type", "https://www.membrane-soa.org/invalid-request");
+            m.put("title", "Invalid Path");
             m.put("message","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
             m.put("path",basePath);
             exc.setResponse(createProblemDetails(404, "/not-found", "No matching API found!",m));

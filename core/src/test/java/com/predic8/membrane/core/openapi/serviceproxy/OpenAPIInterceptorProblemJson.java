@@ -11,7 +11,10 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.MEMBRANE_VALIDATION_ERROR;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.OPENAPI_VALIDATION_ERROR;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,7 +35,7 @@ public class OpenAPIInterceptorProblemJson {
 
         spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/specs/customers.yml";
-        spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
+        spec.setValidateRequests(YES);
 
         exc.setRequest(new Request.Builder().method("GET").build());
 
@@ -57,6 +60,8 @@ public class OpenAPIInterceptorProblemJson {
         String contentType = exc.getResponse().getHeader().getContentType();
         System.out.println("contentType = " + contentType);
         assertTrue(ct.match(contentType));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains(OPENAPI_VALIDATION_ERROR));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains(MEMBRANE_VALIDATION_ERROR));
 
         System.out.println("exc = " + exc.getResponse().getBodyAsStringDecoded());
     }
