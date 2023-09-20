@@ -26,6 +26,7 @@ public class Request extends Message<Request> {
     private String path;
     private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
+    private Map<String,String> Headers;
 
     public Request(String method) {
         this.method = method;
@@ -58,6 +59,14 @@ public class Request extends Message<Request> {
     public Request path(String path) {
         this.path = path;
         return this;
+    }
+
+    public Map<String, String> getHeaders() {
+        return Headers;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        Headers = headers;
     }
 
     public String getMethod() {

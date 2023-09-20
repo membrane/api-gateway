@@ -48,6 +48,7 @@ public class OperationValidator {
             validatePathParameters(ctx, req, operation.getParameters());
 
             errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
+            errors.add(new HeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
 
             return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
         } else {
