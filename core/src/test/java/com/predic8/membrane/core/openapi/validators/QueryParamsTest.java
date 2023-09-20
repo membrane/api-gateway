@@ -110,6 +110,7 @@ public class QueryParamsTest extends AbstractValidatorTest {
         assertEquals("page",e.getContext().getValidatedEntity());
         assertEquals(QUERY_PARAMETER,e.getContext().getValidatedEntityType());
         assertEquals("REQUEST/QUERY_PARAMETER/page", e.getContext().getLocationForRequest());
+        assertEquals(400,e.getContext().getStatusCode());
     }
 
 
