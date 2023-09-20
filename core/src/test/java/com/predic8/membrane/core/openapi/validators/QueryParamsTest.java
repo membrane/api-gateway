@@ -16,9 +16,17 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.*;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -111,4 +119,18 @@ public class QueryParamsTest extends AbstractValidatorTest {
         assertEquals(QUERY_PARAMETER,e.getContext().getValidatedEntityType());
         assertEquals("REQUEST/QUERY_PARAMETER/page", e.getContext().getLocationForRequest());
     }
+
+    @Test
+    public void headerParamTest() throws Exception {
+        Header header = new Header();
+        header.setValue("X-Token", "asdsadsadsa");
+        header.setValue("X-Padding", "V0hQCMkJV4mKigp");
+        com.predic8.membrane.core.http.Request request = com.predic8.membrane.core.http.Request.get("/cities?limit=1").header(header).build();
+        Exchange exc = new Exchange(null);
+        exc.setRequest(request);
+        ValidationErrors errors = validator.validate(getOpenapiValidatorRequest(exc));
+//        System.out.println("errors = " + errors);
+        assertEquals(0,errors.size());
+    }
+
 }

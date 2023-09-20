@@ -53,7 +53,7 @@ public class QueryParameterValidator {
                 return;
             }
             errors.add(validateQueryParameter(ctx.entity(param.getName()).entityType(QUERY_PARAMETER), qparams, param));
-            qparams.remove(param.getName()); // Delete param so there should't be any parameter left
+            qparams.remove(param.getName()); // Delete param so there shouldn't be any parameter left
         });
 
         errors.add(checkForAdditionalQueryParameters(ctx, qparams));
@@ -105,7 +105,7 @@ public class QueryParameterValidator {
     }
 
     private ValidationError checkForAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams) {
-        if (qparams.size() > 0) {
+        if (!qparams.isEmpty()) {
             return new ValidationError(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
         }
         return null;
