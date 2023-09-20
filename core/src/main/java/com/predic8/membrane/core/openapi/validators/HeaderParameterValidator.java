@@ -1,20 +1,16 @@
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.Request;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.parameters.HeaderParameter;
-import io.swagger.v3.oas.models.parameters.Parameter;
+import com.predic8.membrane.core.openapi.model.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.parameters.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.HEADER_PARAMETER;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
-import static com.predic8.membrane.core.util.CollectionsUtil.concat;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static java.lang.String.*;
 
 public class HeaderParameterValidator {
 
@@ -27,22 +23,28 @@ public class HeaderParameterValidator {
     }
 
     ValidationErrors validateHeaderParameters(ValidationContext ctx, Request request, Operation operation)  {
+        return getHeaderParameters(operation)
+                .map(param -> getValidateHeaderParameter(ctx, request, param))
+                .reduce(ValidationErrors::add)
+                .orElse(new ValidationErrors());
+    }
 
-        ValidationErrors errors = new ValidationErrors();
+    private Stream<Parameter> getHeaderParameters(Operation operation) {
+        return getAllParameterSchemas(operation).stream().filter(this::isHeader);
+    }
 
-        // TODO
-        // Router?
+    private ValidationErrors getValidateHeaderParameter(ValidationContext ctx, Request request, Parameter param) {
+        return validateHeaderParameter(getCtx(ctx, param), request.getHeaders(), param);
+    }
 
-        Map<String, String> headers = request.getHeaders();
+    private boolean isHeader(Parameter p) {
+        return p instanceof HeaderParameter;
+    }
 
-        getAllParameterSchemas(operation).forEach(param -> {
-            if (!(param instanceof HeaderParameter)) {
-                return;
-            }
-            errors.add(validateHeaderParameter(ctx.entity(param.getName()).entityType(QUERY_PARAMETER), headers, param));
-            headers.remove(param.getName()); // Delete param so there shouldn't be any parameter left
-        });
-        return errors;
+    private static ValidationContext getCtx(ValidationContext ctx, Parameter param) {
+        return ctx.entity(param.getName())
+                  .entityType(HEADER_PARAMETER)
+                  .statusCode(400);
     }
 
     public List<Parameter> getAllParameterSchemas(Operation operation) {
@@ -56,6 +58,7 @@ public class HeaderParameterValidator {
         return parameters.stream().map(this::resolveParamIfNeeded).toList();
     }
 
+    // Move into AbstractParameterValidator
     private Parameter resolveParamIfNeeded(Parameter p ) {
         if (p.get$ref() != null)
             return resolveReferencedParameter(p);
@@ -81,5 +84,4 @@ public class HeaderParameterValidator {
         }
         return errors;
     }
-
 }

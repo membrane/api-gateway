@@ -39,6 +39,10 @@ public class ValidationErrors {
         return ve;
     }
 
+    public List<ValidationError> getErrors() {
+        return errors;
+    }
+
     public ValidationErrors add(ValidationError error) {
         if (error != null)
             errors.add(error);
@@ -74,16 +78,6 @@ public class ValidationErrors {
 
     public Stream<ValidationError> stream() {
         return errors.stream();
-    }
-
-    /**
-     * Call with 400 or 500. Returns a more specifiy status code if there is any.
-     */
-    public int getConsolidatedStatusCode(int defaultValue) {
-        return errors.stream().map(e -> e.getContext().getStatusCode()).reduce((code, acc) -> {
-            if (acc == defaultValue) return code;
-            return acc;
-        }).orElse(defaultValue);
     }
 
     public byte[] getErrorMessage(Direction direction) {

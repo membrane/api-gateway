@@ -31,12 +31,11 @@ public abstract class Message<T> {
     protected Body body = new NoBody();
     protected ContentType mediaType;
 
+    protected Message() {
+    }
 
     protected Message(String mediaType) throws ParseException {
         this.mediaType = new ContentType(mediaType);
-    }
-
-    protected Message() {
     }
 
     public Body getBody() {
@@ -101,6 +100,4 @@ public abstract class Message<T> {
     public ContentType getMediaType() {
         return mediaType;
     }
-
-
 }

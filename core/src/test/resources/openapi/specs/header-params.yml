@@ -14,6 +14,10 @@ paths:
           schema:
             type: string
           required: false
+        - in: query  # Should be ignored by the HeaderParameterValidator
+          name: 'ignore-me'
+          schema:
+            type: integer
       responses:
         '200':
           description: OK
