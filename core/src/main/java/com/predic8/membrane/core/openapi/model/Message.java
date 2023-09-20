@@ -21,6 +21,7 @@ import jakarta.mail.internet.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_CONTENT_TYPE;
 
@@ -30,8 +31,17 @@ public abstract class Message<T> {
 
     protected Body body = new NoBody();
     protected ContentType mediaType;
+    private Map<String,String> headers;
 
     protected Message() {
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
     }
 
     protected Message(String mediaType) throws ParseException {

@@ -16,92 +16,50 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.QueryParameter;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 
-public class QueryParameterValidator {
-
-    OpenAPI api;
-    PathItem pathItem;
+public class QueryParameterValidator extends AbstractParameterValidator{
 
     public QueryParameterValidator(OpenAPI api, PathItem pathItem) {
-        this.api = api;
-        this.pathItem = pathItem;
+        super(api, pathItem);
     }
 
     ValidationErrors validateQueryParameters(ValidationContext ctx, Request request, Operation operation)  {
+        Map<String, String> queryParams = getQueryParams(getQueryString(request));
+        return getParametersOfType(operation, QueryParameter.class)
+                .map(param -> getErrorsAndRemoveParam(ctx, queryParams, param))
+                .reduce(ValidationErrors::add)
+                .orElse(new ValidationErrors())
+                .add(checkForAdditionalQueryParameters(ctx, queryParams));
+    }
 
-        ValidationErrors errors = new ValidationErrors();
+    private ValidationErrors getErrorsAndRemoveParam(ValidationContext ctx, Map<String, String> queryParams, Parameter param) {
+        ValidationErrors err = getValidationErrors(ctx, queryParams, param, QUERY_PARAMETER);
+        queryParams.remove(param.getName());
+        return err;
+    }
 
-        // TODO
-        // Router?
-        String query = (new URIFactory().createWithoutException(request.getPath())).getQuery();
-        Map<String, String> qparams = getQueryParams(query);
-
-        getAllParameterSchemas(operation).forEach(param -> {
-            if (!(param instanceof QueryParameter)) {
-                return;
-            }
-            errors.add(validateQueryParameter(ctx.entity(param.getName()).entityType(QUERY_PARAMETER), qparams, param));
-            qparams.remove(param.getName()); // Delete param so there shouldn't be any parameter left
-        });
-
-        errors.add(checkForAdditionalQueryParameters(ctx, qparams));
-
-        return errors;
+    private static String getQueryString(Request request) {
+        return (new URIFactory().createWithoutException(request.getPath())).getQuery();
     }
 
     private Map<String, String> getQueryParams(String query) {
         if (query != null)
             return URLParamUtil.parseQueryString(query, ERROR);
         return new HashMap<>();
-    }
-
-    public List<Parameter> getAllParameterSchemas(Operation operation) {
-        return concat(resolveRefs(pathItem.getParameters()), resolveRefs(operation.getParameters()));
-    }
-
-    private List<Parameter> resolveRefs(List<Parameter> parameters) {
-        if (parameters == null)
-            return null;
-
-        return parameters.stream().map(this::resolveParamIfNeeded).toList();
-    }
-
-    private Parameter resolveParamIfNeeded(Parameter p ) {
-        if (p.get$ref() != null)
-           return resolveReferencedParameter(p);
-       return p;
-    }
-
-    public Parameter resolveReferencedParameter(Parameter p) {
-        return api.getComponents().getParameters().get(getComponentLocalNameFromRef(p.get$ref()));
-    }
-
-    private ValidationErrors validateQueryParameter(ValidationContext ctx, Map<String, String> qparams, Parameter param) {
-        ValidationErrors errors = new ValidationErrors();
-        String value = qparams.get(param.getName());
-
-        if (value != null) {
-            errors.add(new SchemaValidator(api, param.getSchema()).validate(ctx
-                            .statusCode(400)
-                            .entity(param.getName())
-                            .entityType(QUERY_PARAMETER)
-                    , value));
-        } else if (param.getRequired()) {
-            errors.add(ctx, format("Missing required query parameter %s.", param.getName()));
-        }
-        return errors;
     }
 
     private ValidationError checkForAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams) {

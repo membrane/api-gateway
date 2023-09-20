@@ -1,87 +1,39 @@
+/*
+ *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.parameters.HeaderParameter;
 
-import java.util.*;
-import java.util.stream.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.HEADER_PARAMETER;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static java.lang.String.*;
-
-public class HeaderParameterValidator {
-
-    OpenAPI api;
-    PathItem pathItem;
+public class HeaderParameterValidator extends AbstractParameterValidator{
 
     public HeaderParameterValidator(OpenAPI api, PathItem pathItem) {
-        this.api = api;
-        this.pathItem = pathItem;
+        super(api, pathItem);
     }
 
     ValidationErrors validateHeaderParameters(ValidationContext ctx, Request request, Operation operation)  {
-        return getHeaderParameters(operation)
-                .map(param -> getValidateHeaderParameter(ctx, request, param))
+        return getParametersOfType(operation, HeaderParameter.class)
+                .map(param -> getValidationErrors(ctx, request.getHeaders(), param, HEADER_PARAMETER))
                 .reduce(ValidationErrors::add)
                 .orElse(new ValidationErrors());
-    }
-
-    private Stream<Parameter> getHeaderParameters(Operation operation) {
-        return getAllParameterSchemas(operation).stream().filter(this::isHeader);
-    }
-
-    private ValidationErrors getValidateHeaderParameter(ValidationContext ctx, Request request, Parameter param) {
-        return validateHeaderParameter(getCtx(ctx, param), request.getHeaders(), param);
-    }
-
-    private boolean isHeader(Parameter p) {
-        return p instanceof HeaderParameter;
-    }
-
-    private static ValidationContext getCtx(ValidationContext ctx, Parameter param) {
-        return ctx.entity(param.getName())
-                  .entityType(HEADER_PARAMETER)
-                  .statusCode(400);
-    }
-
-    public List<Parameter> getAllParameterSchemas(Operation operation) {
-        return concat(resolveRefs(pathItem.getParameters()), resolveRefs(operation.getParameters()));
-    }
-
-    private List<Parameter> resolveRefs(List<Parameter> parameters) {
-        if (parameters == null)
-            return null;
-
-        return parameters.stream().map(this::resolveParamIfNeeded).toList();
-    }
-
-    // Move into AbstractParameterValidator
-    private Parameter resolveParamIfNeeded(Parameter p ) {
-        if (p.get$ref() != null)
-            return resolveReferencedParameter(p);
-        return p;
-    }
-
-    public Parameter resolveReferencedParameter(Parameter p) {
-        return api.getComponents().getParameters().get(getComponentLocalNameFromRef(p.get$ref()));
-    }
-
-    private ValidationErrors validateHeaderParameter(ValidationContext ctx, Map<String, String> hparams, Parameter param) {
-        ValidationErrors errors = new ValidationErrors();
-        String value = hparams.get(param.getName());
-
-        if (value != null) {
-            errors.add(new SchemaValidator(api, param.getSchema()).validate(ctx
-                            .statusCode(400)
-                            .entity(param.getName())
-                            .entityType(HEADER_PARAMETER)
-                    , value));
-        } else if (param.getRequired()) {
-            errors.add(ctx, format("Missing required header parameter %s.", param.getName()));
-        }
-        return errors;
     }
 }
