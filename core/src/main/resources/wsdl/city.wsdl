@@ -1,6 +1,9 @@
-<wsdl:definitions name="cities" targetNamespace="https://predic8.de/cities"
-                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="https://predic8.de/cities"
-                  xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="https://predic8.de/cities"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://predic8.de/cities" name="cities">
     <wsdl:types>
         <xsd:schema targetNamespace="https://predic8.de/cities">
             <xsd:element name="getCity">
@@ -35,18 +38,18 @@
     <wsdl:binding name="CitySoapBinding" type="tns:CityPort">
         <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
         <wsdl:operation name="getCity">
-            <soap:operation soapAction="http://www.soapui.org/sample/login"/>
+            <soap:operation soapAction="https://predic8.de/cities"/>
             <wsdl:input>
-                <soap:body use="literal" namespace="http://www.soapui.org/sample/"/>
+                <soap:body use="literal" namespace="https://predic8.de/cities"/>
             </wsdl:input>
             <wsdl:output>
-                <soap:body use="literal" namespace="http://www.soapui.org/sample/"/>
+                <soap:body use="literal" namespace="https://predic8.de/cities"/>
             </wsdl:output>
         </wsdl:operation>
     </wsdl:binding>
     <wsdl:service name="CityService">
         <wsdl:port name="CityPort" binding="tns:CitySoapBinding">
-            <soap:address location="http://www.soapui.org/sample"/>
+            <soap:address location="http://localhost:2000/cities"/>
         </wsdl:port>
     </wsdl:service>
 </wsdl:definitions>
