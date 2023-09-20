@@ -32,7 +32,11 @@ public class HeaderParamsTest extends AbstractValidatorTest {
                 }}, 1),
                 arguments(new Header() {{
                     setValue("X-Padding", "V0hQCMkJV4mKigp");
-                }}, 1)
+                }}, 1),
+                arguments(new Header() {{
+                    setValue("X-Token", "1222");
+                    setValue("X-Test", "V0hQCMkJV4mKigp");
+                }}, 0)
         );
     }
 
