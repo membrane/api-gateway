@@ -109,7 +109,7 @@ public class ValidationContext {
             sb.append("HEADER/Content-Type");
         } else {
             sb.append(validatedEntityType.name());
-            if (jsonPointer.length() > 0) {
+            if (!jsonPointer.isEmpty()) {
                 sb.append("#");
                 sb.append(getJSONpointer());
             }
@@ -192,7 +192,7 @@ public class ValidationContext {
     }
 
     public enum ValidatedEntityType {
-        PATH, METHOD, PATH_PARAMETER, QUERY_PARAMETER, BODY, FIELD, PROPERTY, MEDIA_TYPE
+        PATH, METHOD, PATH_PARAMETER, QUERY_PARAMETER, HEADER_PARAMETER, BODY, FIELD, PROPERTY, MEDIA_TYPE
     }
 
     @Override

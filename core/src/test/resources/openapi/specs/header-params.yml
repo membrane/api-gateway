@@ -1,0 +1,28 @@
+openapi: '3.0.2'
+info:
+  title: Header Params Test API
+  version: '1.0'
+paths:
+  /cities:
+    parameters:
+      - $ref: '#/components/parameters/X-Token'
+
+    get:
+      parameters:
+        - in: header
+          name: X-Padding
+          schema:
+            type: string
+          required: false
+      responses:
+        '200':
+          description: OK
+
+components:
+  parameters:
+    X-Token:
+      in: header
+      name: X-Token
+      schema:
+        type: integer
+      required: true

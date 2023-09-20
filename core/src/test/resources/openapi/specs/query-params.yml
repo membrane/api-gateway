@@ -12,7 +12,6 @@ paths:
           minimum: 0
         required: false
       - $ref: '#/components/parameters/BarParam'
-      - $ref: '#/components/parameters/X-Token'
     get:
       parameters:
         - $ref: '#/components/parameters/PageQueryParam'
@@ -33,11 +32,6 @@ paths:
           schema:
             type: string
             maxLength: 10
-        - in: header
-          name: X-Padding
-          schema:
-            type: string
-          required: false
 
       responses:
         '200':
@@ -57,10 +51,4 @@ components:
       name: bar
       schema:
         type: integer
-      required: false
-    X-Token:
-      in: header
-      name: X-Token
-      schema:
-        type: string
       required: false
