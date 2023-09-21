@@ -205,7 +205,6 @@ public class SimpleXPathParser {
 		}
 		if (sb2.length() > 0) {
 			result.add(new UnparsedStringNode(sb2.toString()));
-			sb2 = new StringBuilder();
 		}
 		return new ContainerNode(result.toArray(new Node[0]));
 	}

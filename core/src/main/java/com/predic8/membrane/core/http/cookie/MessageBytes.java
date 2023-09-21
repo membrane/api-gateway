@@ -66,8 +66,17 @@ public final class MessageBytes  {
 		return new String(bytes, offset, length, ISO_8859_1);
 	}
 
+	/*
+	first finding: hashCode is missing? probably not needed for this class
+	*/
 	@Override
 	public boolean equals(Object obj) {
+		/* considered best practice because it's not symmetric and transitive
+		 symmetric a = b <> b = a
+		 transitive a = b ^ b = c => a = c
+
+		 because "".equals(messageBytes) will never be true
+		*/
 		if (obj instanceof String str)
 			return toString().equals(str);
 		if (obj instanceof MessageBytes mb)

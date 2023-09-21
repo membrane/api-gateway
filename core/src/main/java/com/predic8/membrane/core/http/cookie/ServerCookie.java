@@ -43,6 +43,8 @@ import static com.predic8.membrane.core.http.cookie.CookieSupport.*;
  */
 public class ServerCookie implements Serializable {
 
+	// Deserialisation not guaranteed because MessageBytes is not transient, Serializable
+
 	@Serial
 	private static final long serialVersionUID = 1L;
 

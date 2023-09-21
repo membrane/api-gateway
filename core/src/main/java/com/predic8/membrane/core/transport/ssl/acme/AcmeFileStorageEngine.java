@@ -19,7 +19,6 @@ import com.predic8.membrane.core.config.security.acme.FileStorage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +28,8 @@ import java.util.stream.Collectors;
 
 public class AcmeFileStorageEngine implements AcmeSynchronizedStorageEngine {
 
+    private static final Random random = new Random();
+    private final String id = UUID.randomUUID().toString();
     private final File base;
 
     public AcmeFileStorageEngine(FileStorage fileStorage) {
@@ -272,7 +273,6 @@ public class AcmeFileStorageEngine implements AcmeSynchronizedStorageEngine {
                 throw new RuntimeException("Could not rename file " + file1.getAbsolutePath() + " to " + file2.getAbsolutePath() + " .");
     }
 
-    private String id = UUID.randomUUID().toString();
 
     @Override
     public boolean acquireLease(long durationMillis) {
@@ -282,7 +282,7 @@ public class AcmeFileStorageEngine implements AcmeSynchronizedStorageEngine {
                 List<String> lines = Files.readAllLines(f.toPath());
                 if (lines.size() != 2) {
                     try {
-                        Thread.sleep(new Random().nextInt(1000));
+                        Thread.sleep(random.nextInt(1000));
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
@@ -339,7 +339,7 @@ public class AcmeFileStorageEngine implements AcmeSynchronizedStorageEngine {
             if (!lines.get(0).equals(id))
                 return;
             Files.delete(f.toPath());
-        } catch (IOException e) {
+        } catch (IOException ignored) {
         }
     }
 }
