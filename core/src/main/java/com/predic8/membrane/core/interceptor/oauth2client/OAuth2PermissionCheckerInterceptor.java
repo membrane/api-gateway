@@ -116,7 +116,7 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
         };
     }
 
-    public class ExpressionContext {
+    public static class ExpressionContext {
         private final List list;
 
         public ExpressionContext(List list) {

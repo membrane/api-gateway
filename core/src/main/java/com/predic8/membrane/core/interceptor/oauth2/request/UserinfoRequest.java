@@ -79,14 +79,18 @@ public class UserinfoRequest extends ParameterizedRequest {
         }
 
         synchronized (jsonGen) {
-            JsonGenerator gen = jsonGen.resetAndGet();
-            gen.writeStartObject();
+            try (var gen = jsonGen.resetAndGet()) {
 
-            for (String property : claims.keySet())
-                gen.writeObjectField(property, claims.get(property));
+                gen.writeStartObject();
 
-            gen.writeEndObject();
-            return jsonGen.getJson();
+                for (var e : claims.entrySet()) {
+                    gen.writeStringField(e.getKey(), e.getValue());
+                }
+
+                gen.writeEndObject();
+
+                return jsonGen.getJson();
+            }
         }
     }
 

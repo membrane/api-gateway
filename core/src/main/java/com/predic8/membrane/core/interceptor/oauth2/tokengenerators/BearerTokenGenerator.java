@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @MCElement(name="bearerToken")
 public class BearerTokenGenerator implements TokenGenerator {
 
-    public class User{
+    public static class User{
         private String username;
         private String clientId;
         private String clientSecret;
@@ -59,8 +59,8 @@ public class BearerTokenGenerator implements TokenGenerator {
         }
     }
 
-    private SecureRandom random = new SecureRandom();
-    private ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<>();
+    private final SecureRandom random = new SecureRandom();
+    private final ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<>();
 
     @Override
     public String getTokenType() {
@@ -70,7 +70,7 @@ public class BearerTokenGenerator implements TokenGenerator {
     @Override
     public String getToken(String username, String clientId, String clientSecret) {
         String token = new BigInteger(130, random).toString(32);
-        tokenToUser.put(token,new User(username,clientId,clientSecret));
+        tokenToUser.put(token, new User(username, clientId, clientSecret));
         return token;
     }
 
