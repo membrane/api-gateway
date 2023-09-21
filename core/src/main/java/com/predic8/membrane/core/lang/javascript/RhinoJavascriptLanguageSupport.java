@@ -45,8 +45,7 @@ public class RhinoJavascriptLanguageSupport extends LanguageSupport {
 
         @Override
         protected Object invoke(ScriptEngine script, Map<String, Object> parameters) {
-            for(String name : parameters.keySet())
-                script.put(name,parameters.get(name));
+            parameters.forEach(script::put);
             try {
                 return script.eval(javascriptCode);
             } catch (ScriptException e) {

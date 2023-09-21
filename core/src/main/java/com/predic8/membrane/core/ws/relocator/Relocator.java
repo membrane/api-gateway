@@ -132,21 +132,6 @@ public class Relocator {
 		if (!event.isStartElement())
 			return event;
 
-		/*
-		 * if (isAddressElement(event)) { return replace(event, "location"); }
-		 * else if (getElementName(event).equals(INCLUDE)) { return
-		 * replace(event, "schemaLocation"); } else if
-		 * (getElementName(event).equals(IMPORT)) { return replace(event,
-		 * "schemaLocation"); } else if
-		 * (getElementName(event).equals(WADL_RESOURCES)) { return
-		 * replace(event, "base"); } else if
-		 * (getElementName(event).equals(WADL_INCLUDE)) { return replace(event,
-		 * "href"); } else if (getElementName(event).getNamespaceURI().equals(
-		 * Constants.WSDL_SOAP11_NS) ||
-		 * getElementName(event).getNamespaceURI().equals(
-		 * Constants.WSDL_SOAP12_NS)) { wsdlFound = true; }
-		 */
-
 		if (getElementName(event).getNamespaceURI().equals(
 				Constants.WSDL_SOAP11_NS)
 				|| getElementName(event).getNamespaceURI().equals(
@@ -154,13 +139,11 @@ public class Relocator {
 			wsdlFound = true;
 		}
 
-		for (QName qn : relocatingAttributes.keySet()) {
-			if (getElementName(event).equals(qn)) {
-				return replace(event, relocatingAttributes.get(qn));
-			}
-		}
-
-		return event;
+		return relocatingAttributes.entrySet().stream()
+				.filter(e -> getElementName(event).equals(e.getKey()))
+				.findFirst()
+				.map(e -> replace(event, e.getValue()))
+				.orElse(event);
 	}
 
 	private QName getElementName(XMLEvent event) {

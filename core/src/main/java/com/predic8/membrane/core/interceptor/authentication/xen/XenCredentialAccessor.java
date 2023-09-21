@@ -20,12 +20,12 @@ import javax.xml.xpath.*;
 
 public class XenCredentialAccessor implements CredentialAccessor<XenCredentialAccessor.XenLoginData>  {
 
-    public class XenLoginData {
+    public static class XenLoginData {
         String username;
         String password;
     }
 
-    private XPathFactory xPathFactory = XPathFactory.newInstance();
+    private final XPathFactory xPathFactory = XPathFactory.newInstance();
 
     @Override
     public XenLoginData getLogin(Exchange exchange) {

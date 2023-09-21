@@ -67,15 +67,11 @@ public class ConsentPageFile {
     }
 
     private void parseClaims() {
-        Map<String,Object> claims = (Map<String, Object>) json.get(CLAIMS);
-        for(String claim : claims.keySet())
-            claimsToDescriptions.put(claim, (String) claims.get(claim));
+        claimsToDescriptions.putAll((Map<String, String>) json.get(CLAIMS));
     }
 
     private void parseScopes() {
-        Map<String,Object> scopes = (Map<String, Object>) json.get(SCOPES);
-        for(String scope : scopes.keySet())
-            scopesToDescriptions.put(scope, (String) scopes.get(scope));
+        scopesToDescriptions.putAll((Map<String, String>) json.get(SCOPES));
     }
 
     private String getFromUrl(String url) throws IOException {

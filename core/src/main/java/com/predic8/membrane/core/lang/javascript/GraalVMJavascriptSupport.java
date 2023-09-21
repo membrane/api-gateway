@@ -47,9 +47,7 @@ public class GraalVMJavascriptSupport extends LanguageSupport {
         protected Object invoke(Source source, Map<String, Object> parameters) {
             try {
                 synchronized (context) {
-                    for (String name : parameters.keySet()) {
-                        context.getBindings("js").putMember(name, parameters.get(name));
-                    }
+                    parameters.forEach((key, value) -> context.getBindings("js").putMember(key, value));
 
                     // Eval caches the compiled script internally. No need to call parse and try to
                     // cache it in Membrane.
