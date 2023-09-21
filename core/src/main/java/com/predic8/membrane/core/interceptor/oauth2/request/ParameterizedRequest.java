@@ -79,13 +79,7 @@ public abstract class ParameterizedRequest {
     }
 
     protected void removeEmptyParams(Map<String, String> params) {
-        ArrayList<String> toRemove = new ArrayList<>();
-        for (String paramName : params.keySet()) {
-            if (params.get(paramName).isEmpty())
-                toRemove.add(paramName);
-        }
-        for(String paramName : toRemove)
-            params.remove(paramName);
+        params.entrySet().removeIf(e -> e.getValue().isEmpty());
     }
 
     protected Response createParameterizedFormUrlencodedRedirect(Exchange exc, String state, String url) {
