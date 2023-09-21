@@ -14,11 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.registration;
 
-import com.google.api.client.util.Base64;
+import com.google.common.io.BaseEncoding;
 import org.apache.commons.codec.digest.Crypt;
 
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.regex.Pattern;
 
@@ -26,17 +24,20 @@ import java.util.regex.Pattern;
  * Created by Martin Dünkelmann(duenkelmann@predic8.de) on 20.10.17.
  */
 public class SecurityUtils {
+
+    private static final SecureRandom secureRandom = new SecureRandom();
+
     public static boolean isHashedPassword(String postDataPassword) {
         // TODO do a better check here
         String[] split = postDataPassword.split(Pattern.quote("$"));
         return split.length == 4 && split[0].isEmpty() && split[3].length() >= 20;
     }
 
-    static String createPasswdCompatibleHash(String password) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+    static String createPasswdCompatibleHash(String password) {
         byte[] salt = new byte[128];
-        new SecureRandom().nextBytes(salt);
+        secureRandom.nextBytes(salt);
 
-        String saltString = Base64.encodeBase64String(salt);
+        String saltString = BaseEncoding.base64().encode(salt);
         if (saltString.length() > 16) saltString = saltString.substring(0, 16);
 
         return createPasswdCompatibleHash(password, saltString);

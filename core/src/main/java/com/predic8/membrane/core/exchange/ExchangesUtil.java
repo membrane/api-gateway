@@ -14,13 +14,14 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.text.*;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 import static com.predic8.membrane.core.Constants.*;
 
 public class ExchangesUtil {
 
-	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
 	public static String getStatusCode(AbstractExchange exc) {
 		if (exc.getResponse() == null)
@@ -31,9 +32,9 @@ public class ExchangesUtil {
 	public static String getTime(AbstractExchange exc) {
 		if (exc.getTime() == null)
 			return UNKNOWN;
-		synchronized(DATE_FORMATTER) {
-			return DATE_FORMATTER.format(exc.getTime().getTime());
-		}
+		return DATE_FORMATTER
+				.withZone(ZoneId.systemDefault())
+				.format(exc.getTime().getTime().toInstant());
 	}
 
 	public static String getRequestContentLength(AbstractExchange exc) {

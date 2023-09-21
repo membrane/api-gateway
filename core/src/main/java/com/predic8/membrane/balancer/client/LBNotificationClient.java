@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.nio.charset.*;
 import java.security.SecureRandom;
 import java.util.Properties;
 
@@ -26,7 +25,6 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.cli.*;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,9 +43,10 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 public class LBNotificationClient {
 
-	private static Logger log = LoggerFactory.getLogger(LBNotificationClient.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(LBNotificationClient.class.getName());
+	private static final SecureRandom secureRandom = new SecureRandom();
 
-	private String propertiesFile = "client.properties";
+	private final String propertiesFile = "client.properties";
 	private String cmd;
 	private String host;
 	private String port;
@@ -80,13 +79,14 @@ public class LBNotificationClient {
 	}
 
 	private Response notifiyClusterManager() throws Exception {
-		HttpClient client = new HttpClient();
-		Exchange exc = new Exchange(null);
-		Request r = MessageUtil.getPostRequest(getRequestURL());
-		r.setBodyContent(new byte[0]);
-		exc.setRequest(r);
-		exc.getDestinations().add(getRequestURL());
-		return client.call(exc).getResponse();
+		try (HttpClient client = new HttpClient()) {
+			Exchange exc = new Exchange(null);
+			Request r = MessageUtil.getPostRequest(getRequestURL());
+			r.setBodyContent(new byte[0]);
+			exc.setRequest(r);
+			exc.getDestinations().add(getRequestURL());
+			return client.call(exc).getResponse();
+		}
 	}
 
 	private void parseArguments(CommandLine cl) throws Exception {
@@ -136,7 +136,7 @@ public class LBNotificationClient {
 	private String getQueryString() {
 		String time = String.valueOf(System.currentTimeMillis());
 		return "balancer=" + balancer + "&cluster=" + cluster + "&host=" + host + "&port=" + port
-				+ "&time=" + time + "&nonce=" + new SecureRandom().nextLong();
+				+ "&time=" + time + "&nonce=" + secureRandom.nextLong();
 	}
 
 	private String getRequestURL() throws Exception {
@@ -149,6 +149,7 @@ public class LBNotificationClient {
 	}
 
 	private String getEncryptedQueryString() throws Exception {
+		// two issues here not sure
 		Cipher cipher = Cipher.getInstance("AES");
 
 		cipher.init(ENCRYPT_MODE, skeySpec);

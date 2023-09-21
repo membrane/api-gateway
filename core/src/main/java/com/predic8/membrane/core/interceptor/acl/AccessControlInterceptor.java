@@ -13,12 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.io.IOException;
-
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
@@ -71,7 +69,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private void setResponseToAccessDenied(Exchange exc) throws IOException {
+	private void setResponseToAccessDenied(Exchange exc) {
 		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
 	}
 
@@ -102,7 +100,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
 			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(router.getResolverMap()
-					.resolve(ResolverMap.combine(router == null ? null : router.getBaseLocation(), fileName))));
+					.resolve(ResolverMap.combine(router.getBaseLocation(), fileName))));
 			AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
 			res.init(router);
 			return res;
