@@ -40,13 +40,13 @@ public class QueryParameterValidator extends AbstractParameterValidator{
     ValidationErrors validateQueryParameters(ValidationContext ctx, Request request, Operation operation)  {
         Map<String, String> queryParams = getQueryParams(getQueryString(request));
         return getParametersOfType(operation, QueryParameter.class)
-                .map(param -> getErrorsAndRemoveParam(ctx, queryParams, param))
+                .map(param -> getErrors(ctx, queryParams, param))
                 .reduce(ValidationErrors::add)
                 .orElse(new ValidationErrors())
                 .add(checkForAdditionalQueryParameters(ctx, queryParams));
     }
 
-    private ValidationErrors getErrorsAndRemoveParam(ValidationContext ctx, Map<String, String> queryParams, Parameter param) {
+    private ValidationErrors getErrors(ValidationContext ctx, Map<String, String> queryParams, Parameter param) {
         ValidationErrors err = getValidationErrors(ctx, queryParams, param, QUERY_PARAMETER);
         queryParams.remove(param.getName());
         return err;
