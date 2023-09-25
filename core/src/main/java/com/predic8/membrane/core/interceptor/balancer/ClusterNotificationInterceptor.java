@@ -110,7 +110,6 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getDecryptedParams(String data) throws Exception {
-		// two issues, here not sure
 		Cipher cipher = Cipher.getInstance("AES");
 		SecretKeySpec skeySpec = new SecretKeySpec(Hex.decodeHex(keyHex.toCharArray()), "AES");
 		cipher.init(Cipher.DECRYPT_MODE, skeySpec);
