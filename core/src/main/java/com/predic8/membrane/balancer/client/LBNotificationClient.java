@@ -149,7 +149,6 @@ public class LBNotificationClient {
 	}
 
 	private String getEncryptedQueryString() throws Exception {
-		// two issues here not sure
 		Cipher cipher = Cipher.getInstance("AES");
 
 		cipher.init(ENCRYPT_MODE, skeySpec);
