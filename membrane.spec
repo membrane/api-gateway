@@ -8,7 +8,7 @@ Version:          5.2.0
 Release:          1%{?dist}
 URL:              https://github.com/membrane/api-gateway
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
-License:          Apache-2.0
+License:          Membrane
 Group:            System
 Packager:         predic8 GmbH
 BuildRoot:        %{_tmppath}/build-%{name}-%{version}
@@ -19,6 +19,7 @@ Requires(preun):  systemd
 Requires(postun): systemd
 BuildRequires:    wget
 BuildRequires:    unzip
+BuildRequires:    systemd
 %{?systemd_requires}
 
 %define zip_name membrane-api-gateway-%{version}
