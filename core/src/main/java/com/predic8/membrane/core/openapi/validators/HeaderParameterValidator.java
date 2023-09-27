@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -32,6 +33,12 @@ public class HeaderParameterValidator extends AbstractParameterValidator{
     }
 
     ValidationErrors validateHeaderParameters(ValidationContext ctx, Message message, Operation operation)  {
+
+        if (message instanceof Response) {
+            // TODO WIP!
+            pathItem.getGet().getResponses().get(200).getHeaders();
+        }
+
         return getParametersOfType(operation, HeaderParameter.class)
                 .map(param -> getValidationErrors(ctx, message.getHeaders(), param, HEADER_PARAMETER))
                 .reduce(ValidationErrors::add)

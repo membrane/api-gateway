@@ -94,12 +94,10 @@ public class OpenAPIValidator {
     }
 
     private ValidationErrors validateMethodsAndParametersIfPathMatches(Request req, Response response, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
-
         // Throws exception if path or parameters do not match
         req.parsePathParameters(normalizeUri(basePath + uriTemplate));
 
         ValidationContext ctx = ValidationContext.fromRequest(req);
-
         ValidationErrors errors = validateMethods(ctx.uriTemplate(uriTemplate), req, response, pathItem);
 
         // If there is no response it is a request by logic, so we validate the request parameters

@@ -3,15 +3,18 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.http.Response;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.net.*;
+import java.net.URISyntaxException;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -19,6 +22,7 @@ public class HeaderParameterTest extends AbstractValidatorTest {
 
     Exchange exc = new Exchange(null);
     Request request;
+    Response response;
 
     @Override
     String getOpenAPIFileName() {
@@ -33,6 +37,8 @@ public class HeaderParameterTest extends AbstractValidatorTest {
             throw new RuntimeException(e);
         }
         exc.setOriginalRequestUri("/cities");
+        response = new Response();
+        response.setStatusCode(200);
         super.setUp();
     }
 
@@ -60,18 +66,24 @@ public class HeaderParameterTest extends AbstractValidatorTest {
     @MethodSource("headerDataProvider")
     public void headerParamTest(Header header, int expected) throws Exception {
         request.setHeader(header);
+        response.setHeader(header);
+        response.getHeader().setValue(Header.CONTENT_TYPE, APPLICATION_JSON);
+
         exc.setRequest(request);
 
-        ValidationErrors errors = validator.validate(getOpenapiValidatorRequest(exc));
+        ValidationErrors reqErrors = validator.validate(getOpenapiValidatorRequest(exc));
 
-        assertEquals(expected, errors.size());
+        assertEquals(expected, reqErrors.size());
 
-        if (errors.isEmpty())
+        exc.setResponse(response);
+        ValidationErrors resErrors = validator.validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
+        System.out.println(resErrors.toString());
+        assertEquals(expected, resErrors.size());
+        if (reqErrors.isEmpty())
             return;
 
-        ValidationError ve = errors.get(0);
+        ValidationError ve = reqErrors.get(0);
         assertEquals(400,ve.getContext().getStatusCode());
     }
-
 
 }

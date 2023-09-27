@@ -25,6 +25,7 @@ paths:
             X-Token:
               schema:
                 type: string
+              required: true
 
 components:
   parameters:
@@ -35,6 +36,6 @@ components:
         type: integer
       required: true
   headers:
-    X-Test:
+    X-Padding:
       schema:
         type: integer

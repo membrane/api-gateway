@@ -153,7 +153,11 @@ public class Utils {
 
     public static Response getOpenapiValidatorResponse(Exchange exc) throws ParseException, IOException {
         Response response = Response.statusCode(exc.getResponse().getStatusCode()).mediaType(exc.getResponse().getHeader().getContentType());
-
+        Map<String, String> headers = new HashMap<>();
+        for (HeaderField header : exc.getResponse().getHeader().getAllHeaderFields()) {
+            headers.put(header.getHeaderName().toString(), header.getValue());
+        }
+        response.setHeaders(headers);
         if (!exc.getResponse().isBodyEmpty()) {
             response.body(exc.getResponse().getBodyAsStreamDecoded());
         }
