@@ -499,15 +499,13 @@ public class Header {
 	private int getBrowserVersion(String userAgent, String browserID) {
 		int p = userAgent.indexOf(browserID);
 		p += browserID.length();
-
-		if (userAgent.length() == p)
+		if (p >= userAgent.length())
 			return -1;
 		char c = userAgent.charAt(p++);
 		if (c != ' ' && c != '/' && c != '_')
 			return -1;
-
 		int version = 0;
-		while (userAgent.length() != p) {
+		while (p < userAgent.length()) {
 			c = userAgent.charAt(p++);
 			if (c < '0' || c > '9')
 				break;
@@ -515,4 +513,5 @@ public class Header {
 		}
 		return version;
 	}
+
 }
