@@ -66,6 +66,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private List<String> allowedMethods = Lists.newArrayList("GET", "POST");
     private int maxRecursion = 3;
     private int maxDepth = 7;
+    private int maxMutations = 5;
 
     public GraphQLProtectionInterceptor() {
         name = "GraphQL protection";
@@ -334,6 +335,15 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setMaxDepth(int maxDepth) {
         this.maxDepth = maxDepth;
+    }
+
+    public int getMaxMutations() {
+        return maxMutations;
+    }
+
+    @MCAttribute
+    public void setMaxMutations(int maxMutations) {
+        this.maxMutations = maxMutations;
     }
 
     @Override
