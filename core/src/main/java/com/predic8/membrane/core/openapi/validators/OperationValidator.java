@@ -52,6 +52,7 @@ public class OperationValidator {
 
             return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
         } else {
+            errors.add(new HeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, response, operation));
             return errors.add(new ResponseBodyValidator(api).validateResponseBody(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
         }
     }

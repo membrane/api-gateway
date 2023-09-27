@@ -21,6 +21,10 @@ paths:
       responses:
         '200':
           description: OK
+          headers:
+            X-Token:
+              schema:
+                type: string
 
 components:
   parameters:
@@ -30,3 +34,7 @@ components:
       schema:
         type: integer
       required: true
+  headers:
+    X-Test:
+      schema:
+        type: integer
