@@ -160,15 +160,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
         ExecutableDocument ed = graphQLParser.parseRequest(new ByteArrayInputStream(((String) query).getBytes(UTF_8)));
 
-        int mutationCount = 0;
-        for (ExecutableDefinition definition : ed.getExecutableDefinitions()) {
-            if (definition instanceof OperationDefinition)
-                if (((OperationDefinition) definition).getOperationType() != null
-                        && ((OperationDefinition) definition).getOperationType().getOperation().equals("mutation"))
-                    mutationCount++;
-        }
-
-        if (mutationCount > maxMutations)
+        if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
             error(exc, 400, "Too many mutations defined in document.");
 
         // so far, this ensures uniqueness of global names
@@ -211,6 +203,15 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
             return error(exc, depthOrRecursionError);
 
         return Outcome.CONTINUE;
+    }
+
+    public int countMutations(List<ExecutableDefinition> definitions) {
+        return (int) definitions.stream()
+                .filter(definition -> definition instanceof OperationDefinition)
+                .map(definition -> (OperationDefinition) definition)
+                .filter(operation -> operation.getOperationType() != null)
+                .filter(operation -> operation.getOperationType().getOperation().equals("mutation"))
+                .count();
     }
 
     private String getDepthOrRecursionError(ExecutableDocument ed, OperationDefinition od) {
