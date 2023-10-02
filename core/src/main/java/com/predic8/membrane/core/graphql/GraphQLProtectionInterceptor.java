@@ -66,6 +66,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private List<String> allowedMethods = Lists.newArrayList("GET", "POST");
     private int maxRecursion = 3;
     private int maxDepth = 7;
+    private int maxMutations = 5;
 
     public GraphQLProtectionInterceptor() {
         name = "GraphQL protection";
@@ -158,6 +159,17 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         }
 
         ExecutableDocument ed = graphQLParser.parseRequest(new ByteArrayInputStream(((String) query).getBytes(UTF_8)));
+
+        int mutationCount = 0;
+        for (ExecutableDefinition definition : ed.getExecutableDefinitions()) {
+            if (definition instanceof OperationDefinition)
+                if (((OperationDefinition) definition).getOperationType() != null
+                        && ((OperationDefinition) definition).getOperationType().getOperation().equals("mutation"))
+                    mutationCount++;
+        }
+
+        if (mutationCount > maxMutations)
+            error(exc, 405, "Too many mutations defined in document query.");
 
         // so far, this ensures uniqueness of global names
         List<String> e1 = new GraphQLValidator().validate(ed);
@@ -290,6 +302,20 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
     public boolean isAllowExtensions() {
         return allowExtensions;
+    }
+
+    /**
+     * Limit how many mutations can be defined in a document query.
+     * @default 5
+     * @example 2
+     */
+    @MCAttribute
+    public void setMaxMutations(int maxMutations) {
+        this.maxMutations = maxMutations;
+    }
+
+    public int getMaxMutations() {
+        return maxMutations;
     }
 
     /**

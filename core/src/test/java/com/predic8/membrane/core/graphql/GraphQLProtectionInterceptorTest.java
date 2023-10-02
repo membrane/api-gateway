@@ -340,6 +340,26 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
+    public void mutationsCountNotOK() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{} mutation abcdefgh{}",
+                        "operationName": ""}""",
+                Outcome.RETURN);
+    }
+
+    @Test
+    public void mutationsCountOK() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{}",
+                        "operationName": ""}""",
+                Outcome.RETURN);
+    }
+
+    @Test
     public void invalidMethod() throws Exception {
         Exchange e = new Request.Builder().put("/").contentType(APPLICATION_JSON).body("{}").buildExchange();
 
