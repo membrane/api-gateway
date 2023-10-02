@@ -203,8 +203,6 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                     .map(exd -> (OperationDefinition) exd).toList();
             if (ods.size() == 0)
                 return error(exc, "Could not find an OperationDefinition in the GraphQL document.");
-            if (ods.size() > 1)
-                return error(exc, "Multiple OperationDefinitions with the same name in the GraphQL document.");
             operationToExecute = ods.get(0);
         }
 

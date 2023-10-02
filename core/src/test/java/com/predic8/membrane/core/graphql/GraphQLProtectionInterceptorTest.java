@@ -356,7 +356,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{}",
                         "operationName": ""}""",
-                Outcome.RETURN);
+                Outcome.CONTINUE);
     }
 
     @Test
