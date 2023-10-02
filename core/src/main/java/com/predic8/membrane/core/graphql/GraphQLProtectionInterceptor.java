@@ -169,7 +169,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         }
 
         if (mutationCount > maxMutations)
-            error(exc, 405, "Too many mutations defined in document.");
+            error(exc, 400, "Too many mutations defined in document.");
 
         // so far, this ensures uniqueness of global names
         List<String> e1 = new GraphQLValidator().validate(ed);
