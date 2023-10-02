@@ -161,7 +161,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         ExecutableDocument ed = graphQLParser.parseRequest(new ByteArrayInputStream(((String) query).getBytes(UTF_8)));
 
         if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
-            error(exc, 400, "Too many mutations defined in document.");
+            return error(exc, 400, "Too many mutations defined in document.");
 
         // so far, this ensures uniqueness of global names
         List<String> e1 = new GraphQLValidator().validate(ed);
