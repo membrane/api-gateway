@@ -129,8 +129,6 @@ public class APIProxy extends ServiceProxy {
                     apis.add(rec);
                     return apis;
                 });
-
-                System.out.println("paths = " + paths);
             }
         });
     }
