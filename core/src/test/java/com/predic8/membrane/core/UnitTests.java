@@ -132,7 +132,8 @@ import org.junit.platform.suite.api.*;
 		JsonProtectionInterceptorTest.class,
 		BeautifierInterceptorTest.class,
 		ExchangeEvaluationContextTest.class,
-		PaddingHeaderInterceptorTest.class
+		PaddingHeaderInterceptorTest.class,
+		CollectionsUtilTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

@@ -35,10 +35,10 @@ public class PaddingHeaderTest extends AbstractSampleMembraneStartStopTestcase {
     @RepeatedTest(10)
     public void testHeader() throws Exception {
         given()
-                .when()
-                .get("http://localhost:2000/")
-                .then()
-                .header("X-Padding", matchesPattern(PATTERN))
-                .statusCode(200);
+            .when()
+            .get("http://localhost:2000/")
+            .then()
+            .header("X-Padding", matchesPattern(PATTERN))
+            .statusCode(200);
     }
 }

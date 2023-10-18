@@ -27,6 +27,7 @@ public class Request extends Message<Request> {
     private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
 
+
     public Request(String method) {
         this.method = method;
     }
@@ -85,5 +86,4 @@ public class Request extends Message<Request> {
                 ", pathParameters=" + pathParameters +
                 '}';
     }
-
 }

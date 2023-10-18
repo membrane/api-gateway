@@ -189,7 +189,6 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
         if(u == null){
             log.error("Url malformed: " + getUrl());
         }
-        // if u is null then etcdUrl is malformed. is etcd going to stay in membrane?
         etcdUrlForAmc = "etcd://" + u.getHost() + ":" + u.getPort();
         amc = new ApiManagementConfiguration(workingDir,etcdUrlForAmc,membraneId);
     }

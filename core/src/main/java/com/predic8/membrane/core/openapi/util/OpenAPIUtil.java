@@ -23,8 +23,8 @@ import org.slf4j.*;
 
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_ID;
-import static com.predic8.membrane.core.openapi.util.Utils.normalizeForId;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
 
 public class OpenAPIUtil {
 
