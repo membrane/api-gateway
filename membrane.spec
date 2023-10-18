@@ -4,11 +4,11 @@
 %global logdir %{_var}/log/%{name}
 
 Name:             membrane
-Version:          5.1.20-SNAPSHOT
+Version:          5.2.0
 Release:          1%{?dist}
-URL:              https://github.com/membrane/service-proxy
+URL:              https://github.com/membrane/api-gateway
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
-License:          Apache-2.0
+License:          Membrane
 Group:            System
 Packager:         predic8 GmbH
 BuildRoot:        %{_tmppath}/build-%{name}-%{version}
@@ -19,6 +19,7 @@ Requires(preun):  systemd
 Requires(postun): systemd
 BuildRequires:    wget
 BuildRequires:    unzip
+BuildRequires:    systemd
 %{?systemd_requires}
 
 %define zip_name membrane-api-gateway-%{version}
@@ -31,7 +32,7 @@ BuildRequires:    unzip
 
 %prep
 %setup -q -c -T
-wget https://github.com/membrane/service-proxy/releases/download/v%{version}/%{zip_name}.zip
+wget %{url}/releases/download/v%{version}/%{zip_name}.zip
 unzip %{zip_name}.zip
 
 %{__cat} <<EOF > %{name}.service
@@ -163,5 +164,7 @@ sed -i 's#CLASSPATH="$MEMBRANE_HOME/conf"#CLASSPATH="/etc/membrane"#' %{buildroo
 %{homedir}
 
 %changelog
+* Mon Sep 18 2023 predic8 <info@predic8.de>
+- Updated Membrane version to 5.2.0
 * Thu Mar 16 2023 predic8 <info@predic8.de>
 - initial example

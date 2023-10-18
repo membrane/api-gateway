@@ -27,11 +27,15 @@ public class SpeLHeader implements SPeLablePropertyAware {
 
     @Override
     public boolean canRead(EvaluationContext context, Object target, String name) {
-        return header.contains(name);
+        return header.contains(name) || header.contains(camelToKebab(name));
     }
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
-        return new TypedValue(header.getFirstValue(name));
+        var value = header.getFirstValue(name);
+        if (value == null) {
+            value = header.getFirstValue(camelToKebab(name));
+        }
+        return new TypedValue(value);
     }
 }

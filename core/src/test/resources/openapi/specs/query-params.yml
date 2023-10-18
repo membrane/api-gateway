@@ -7,12 +7,14 @@ paths:
     parameters:
       - in: query
         name: foo
-        required: false
         schema:
           type: integer
           minimum: 0
+        required: false
+      - $ref: '#/components/parameters/BarParam'
     get:
       parameters:
+        - $ref: '#/components/parameters/PageQueryParam'
         - in: query
           name: limit
           schema:
@@ -30,6 +32,23 @@ paths:
           schema:
             type: string
             maxLength: 10
+
       responses:
         '200':
           description: OK
+
+components:
+  parameters:
+    PageQueryParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+      required: false
+    BarParam:
+      in: query
+      name: bar
+      schema:
+        type: integer
+      required: false

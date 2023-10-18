@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
@@ -202,10 +205,16 @@ public class UtilsTest {
     @Test
     void getOpenapiValidatorRequestFromExchange() throws IOException, ParseException {
         Exchange exc = new Exchange(null);
+        Header header = new Header();
+        header.setValue("X-Padding", "V0hQCMkJV4mKigp");
         exc.setOriginalRequestUri("/foo");
-        exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().method("POST").build());
+        exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().method("POST").header(header).build());
         Request request = Utils.getOpenapiValidatorRequest(exc);
         assertEquals("/foo",request.getPath());
         assertEquals("POST", request.getMethod());
+        Map<String, String> expectedHeaders = new HashMap<>();
+        expectedHeaders.put("X-Padding", "V0hQCMkJV4mKigp");
+        assertEquals(request.getHeaders(), expectedHeaders);
     }
+
 }

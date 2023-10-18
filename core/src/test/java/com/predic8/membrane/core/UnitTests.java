@@ -40,6 +40,7 @@ import com.predic8.membrane.core.interceptor.schemavalidation.JSONSchemaValidati
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPUtilTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
+import com.predic8.membrane.core.interceptor.security.*;
 import com.predic8.membrane.core.interceptor.soap.SoapOperationExtractorTest;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptorTest;
 import com.predic8.membrane.core.interceptor.xml.Json2XmlInterceptorTest;
@@ -130,7 +131,9 @@ import org.junit.platform.suite.api.*;
 		AbstractExchangeStoreTest.class,
 		JsonProtectionInterceptorTest.class,
 		BeautifierInterceptorTest.class,
-		ExchangeEvaluationContextTest.class
+		ExchangeEvaluationContextTest.class,
+		PaddingHeaderInterceptorTest.class,
+		CollectionsUtilTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

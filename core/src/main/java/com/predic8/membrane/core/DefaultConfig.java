@@ -90,8 +90,8 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 		return new BeanDefinitionBuilder();
 	}
 
-	private class BeanDefinitionBuilder {
-		private AbstractBeanDefinition cbd;
+	private static class BeanDefinitionBuilder {
+		private final AbstractBeanDefinition cbd;
 
 		public BeanDefinitionBuilder() {
 			cbd = new RootBeanDefinition();

@@ -100,16 +100,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 		return Crypt.crypt(password, "$" + algo + "$" + salt);
 	}
 
-	private String createPasswdCompatibleHash(String algo, String password) throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		byte[] salt = new byte[saltByteSize];
-		random.nextBytes(salt);
-		String saltString = Base64.encodeBase64String(salt);
-		if(saltString.length() > 8)
-			saltString = saltString.substring(0, 8);
-		saltString.replaceAll(Pattern.quote("+"),Pattern.quote("."));
-		return createPasswdCompatibleHash(algo,password,saltString);
-	}
-
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
 		Map<String, String> attributes = new HashMap<>();

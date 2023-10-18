@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import jakarta.mail.internet.*;
@@ -136,6 +137,11 @@ public class Utils {
 
     public static Request getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
         Request request = new Request(exc.getRequest().getMethod()).path(exc.getRequestURI());
+        Map<String, String> headers = new HashMap<>();
+        for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
+            headers.put(header.getHeaderName().toString(), header.getValue());
+        }
+        request.setHeaders(headers);
         if (exc.getRequest().getHeader().getContentType() != null) {
             request.mediaType(exc.getRequest().getHeader().getContentType());
         }

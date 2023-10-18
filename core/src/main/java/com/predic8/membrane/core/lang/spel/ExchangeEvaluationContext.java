@@ -17,10 +17,7 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.spel.spelable.SPeLProperties;
-import com.predic8.membrane.core.lang.spel.spelable.SPeLablePropertyAware;
-import com.predic8.membrane.core.lang.spel.spelable.SPeLMap;
-import com.predic8.membrane.core.lang.spel.spelable.SpeLHeader;
+import com.predic8.membrane.core.lang.spel.spelable.*;
 import org.springframework.expression.spel.support.*;
 
 import java.io.*;
@@ -37,17 +34,27 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private final String path;
     private final String method;
 
-    public ExchangeEvaluationContext(Exchange exchange, Message message) {
+    private final SPelMessageWrapper request;
+    private final SPelMessageWrapper response;
+
+    public ExchangeEvaluationContext(Exchange exc) {
+        this(exc, exc.getRequest());
+    }
+
+    public ExchangeEvaluationContext(Exchange exc, Message message) {
         super();
 
-        this.exchange = exchange;
+        this.exchange = exc;
         this.message = message;
-        this.properties = new SPeLProperties(exchange.getProperties());
+        this.properties = new SPeLProperties(exc.getProperties());
         this.headers = new SpeLHeader(message.getHeader());
 
-        Request request = exchange.getRequest();
+        Request request = exc.getRequest();
         path = request.getUri();
         method = request.getMethod();
+
+        this.request = new SPelMessageWrapper(exc.getRequest());
+        this.response = new SPelMessageWrapper(exc.getResponse());
 
         setRootObject(this);
         addPropertyAccessor(new AwareExchangePropertyAccessor());
@@ -76,6 +83,14 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     public String getMethod() {
         return method;
+    }
+
+    public SPelMessageWrapper getRequest() {
+        return request;
+    }
+
+    public SPelMessageWrapper getResponse() {
+        return response;
     }
 
     public SPeLMap<String, Object> getJson() throws IOException {

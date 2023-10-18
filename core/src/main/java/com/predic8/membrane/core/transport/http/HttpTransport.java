@@ -178,11 +178,13 @@ public class HttpTransport extends Transport {
 	@Override
 	public String getOpenBackendConnections(int port) {
 		Map<IpPort, HttpEndpointListener> pl = portListenerMapping.get(port);
-		if (pl != null)
-			for (IpPort ipPort : pl.keySet())
-				if (ipPort.port() == port)
-					return Integer.toString(pl.get(ipPort).getNumberOfOpenConnections());
-		return "N/A";
+		if (pl == null) return "N/A";
+
+		return pl.entrySet().stream()
+				.filter(e -> e.getKey().port() == port)
+				.findFirst()
+				.map(e -> Integer.toString(e.getValue().getNumberOfOpenConnections()))
+				.orElseThrow();
 	}
 
 	private static String createDiffInterfacesErrorMsg(IpPort p, Map<IpPort, HttpEndpointListener> mih) {

@@ -238,16 +238,13 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private void buildStatuscodeLines(Context ctx, Rule rule) {
-        Map<Integer, StatisticCollector> stats = rule.getStatisticCollector().getStatisticsByStatusCodes();
-
-        for (Integer code : stats.keySet()) {
-            buildLine(ctx.s1, rule.getName(), stats.get(code).getCount(), "code", code, "count");
-            buildLine(ctx.s2, rule.getName(), stats.get(code).getGoodCount(), "code", code, "good_count");
-            buildLine(ctx.s3, rule.getName(), stats.get(code).getGoodTotalTime(), "code", code, "good_time");
-            buildLine(ctx.s4, rule.getName(), stats.get(code).getGoodTotalBytesSent(), "code", code, "good_bytes_req_body");
-            buildLine(ctx.s5, rule.getName(), stats.get(code).getGoodTotalBytesReceived(), "code", code, "good_bytes_res_body");
-        }
-
+        rule.getStatisticCollector().getStatisticsByStatusCodes().forEach((key, value) -> {
+            buildLine(ctx.s1, rule.getName(), value.getCount(), "code", key, "count");
+            buildLine(ctx.s2, rule.getName(), value.getGoodCount(), "code", key, "good_count");
+            buildLine(ctx.s3, rule.getName(), value.getGoodTotalTime(), "code", key, "good_time");
+            buildLine(ctx.s4, rule.getName(), value.getGoodTotalBytesSent(), "code", key, "good_bytes_req_body");
+            buildLine(ctx.s5, rule.getName(), value.getGoodTotalBytesReceived(), "code", key, "good_bytes_res_body");
+        });
     }
 
     private void buildLine(StringBuilder sb, String label, long value) {
