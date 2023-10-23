@@ -44,7 +44,7 @@ public abstract class Store {
 	}
 
 	/**
-	 * @description A file/resource containing the Java Key Store (JKS).
+	 * @description A file/resource containing the Public-Key Cryptography Standards number 12 key store (PKCS#12).
 	 * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
 	 */
 	@MCAttribute
