@@ -26,8 +26,8 @@
 		<api name="Console" port="9000">
 			<ssl>
 				<!-- Replace keystore for production! -->
-				<keystore location="membrane.jks" password="secret" keyPassword="secret" />
-				<truststore location="membrane.jks" password="secret" />
+				<keystore location="membrane.p12" password="secret" keyPassword="secret" />
+				<truststore location="membrane.p12" password="secret" />
 			</ssl>
 			<basicAuthentication>
 				<!--		

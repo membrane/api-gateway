@@ -217,7 +217,7 @@ public class AcmeSSLContext extends SSLContext {
         long validFrom, validUntil;
 
         try {
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, "".toCharArray());
 
             List<Certificate> certs = new ArrayList<>(PEMSupport.getInstance().parseCertificates(certsS));

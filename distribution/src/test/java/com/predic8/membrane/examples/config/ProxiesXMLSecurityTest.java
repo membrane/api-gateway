@@ -78,7 +78,7 @@ public class ProxiesXMLSecurityTest extends AbstractSampleMembraneStartStopTestc
     }
 
     private TrustManagerFactory getTrustManagerFactory() throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
-        InputStream trustStoreStream = Files.newInputStream(Paths.get(new File(baseDir, "conf/client.jks").getAbsolutePath()), READ);
+        InputStream trustStoreStream = Files.newInputStream(Paths.get(new File(baseDir, "conf/client.p12").getAbsolutePath()), READ);
         TrustManagerFactory trustManagerFactory = getTrustManagerFactory(getTrustStore(trustStoreStream));
         trustStoreStream.close();
         return trustManagerFactory;
