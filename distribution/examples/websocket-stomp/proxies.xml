@@ -8,8 +8,8 @@
 
 		<serviceProxy port="4443">
 			<ssl>
-				<keystore location="../../conf/membrane.jks" password="secret" keyPassword="secret" />
-				<truststore location="../../conf/membrane.jks" password="secret" />
+				<keystore location="../../conf/membrane.p12" password="secret" keyPassword="secret" />
+				<truststore location="../../conf/membrane.p12" password="secret" />
 			</ssl>
 
 			<log />
