@@ -14,16 +14,23 @@
 
 package com.predic8.membrane.core.graphql;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.graphql.model.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static java.net.URLEncoder.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.junit.jupiter.api.Assertions.*;
+import javax.security.auth.login.Configuration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class GraphQLProtectionInterceptorTest {
 
@@ -337,6 +344,42 @@ public class GraphQLProtectionInterceptorTest {
                         {"query":"{ a { a { a { a { a { a } } } } } }",
                         "operationName": ""}""",
                 Outcome.RETURN);
+    }
+
+    @Test
+    public void mutationsCountNotOK() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{} mutation abcdefgh{}",
+                        "operationName": ""}""",
+                Outcome.RETURN);
+    }
+
+    @Test
+    public void mutationsCountOK() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{}",
+                        "operationName": ""}""",
+                Outcome.CONTINUE);
+    }
+
+    @Test
+    public void countThreeMutations() {
+        List<ExecutableDefinition> definitions = Arrays.asList(
+                opDefOfType("mutation"),
+                opDefOfType("mutation"),
+                opDefOfType("mutation"),
+                opDefOfType("query")
+        );
+
+        assertEquals(3, i.countMutations(definitions));
+    }
+
+    private OperationDefinition opDefOfType(String type) {
+        return new OperationDefinition(new OperationType(type), "", new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     @Test

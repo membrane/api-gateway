@@ -9,49 +9,49 @@ Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/
 
 This page serves as a reference for the functions and configuration. See also the examples:
 
-- [openAPIProxy, UI and Swagger UI](openapi-proxy)
+- [api, UI and Swagger UI](openapi-proxy)
 - [OpenAPI validation](validation-simple)
 - [OpenAPI validation extended sample](validation)
 
-The **openAPIProxy** is featured in Membrane version 5 and newer and supports OpenAPI from version 2.
+The __api__ is featured in Membrane version 5 and newer and supports OpenAPI version 2 and up.
 
 
 
 # Configuration
 
-An _openAPIProxy_ can be added to the _proxies.xml_ configuration file. See the example in the [openapi-proxy/](openapi-proxy/) folder.
+An _api_ can be added to the _proxies.xml_ configuration file. See the example in the [openapi-proxy/](openapi-proxy) folder.
 
 ```xml
 <router>
-    <openAPIProxy port="2000">
+    <api port="2000">
         <openapi location="fruitshop-api.yml"/>
         <openapi dir="openapi"/>
         <openapi location="https://developer.lufthansa.com/swagger/export/21516"/>
         <openapi location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
         <openapi location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
-    </openAPIProxy>
+    </api>
 </router>
 ```
 
 The _spec_ element adds OpenAPI documents to the configuration. You can add _*.json_, _*.yml_ and _*.yaml_ files in a folder using the _dir_ attribute or single local or remote files using the _location_ attribute. 
 
-The addresses of the backend servers and the basepaths are taken from the OpenAPI specification. Suppose an OpenAPI document contains the _servers_ field below. The proxy will match requests against the basepath ```/shop``` and in case of a match it will forward the request to the backend server ```api.predic8.de``` using TLS.
+The addresses of the backend servers and the base-paths are taken from the OpenAPI specification. Suppose an OpenAPI document contains the _servers_ field below. The proxy will match requests against the base-path ```/shop/v2``` and in case of a match it will forward the request to the backend server ```api.predic8.de``` using TLS.
 
 ```yaml
 servers:
-  - url: https://api.predic8.de/shop
+  - url: https://api.predic8.de/shop/v2
 ```
 
 If the basepath does not match, the next API is checked. 
 
-It is also possible to configure the backend address using a [target](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
+It is also possible to configure the backend address using a [target](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
 
 ```xml
 <serviceProxy>
-    <openAPIProxy port="2000">
+    <api port="2000">
         <openapi dir="openapi"/>
         <target host="api.predic8.de" port="8080"/>
-    </openAPIProxy>
+    </api>
 </serviceProxy>
 ```
 
@@ -85,14 +85,14 @@ x-membrane-validation:
 
 # Overview and Swagger UI
 
-The __openAPIProxy__ has a UI that can be reached on its port e.g. [http://localhost:2000/api-doc](http://localhost:2000/api-doc). Follow the links on the left to access the Swagger UI or the link on the right to download the OpenAPI document.
+The __api__ has a UI that can be reached on its port e.g. [http://localhost:2000/api-docs](http://localhost:2000/api-docs). Follow the links on the left to access the Swagger UI or the link on the right to download the OpenAPI document.
 
 ![Overview UI](openapi-proxy/api-overview.png)
 
-To get a JSON description of the deployed OpenAPI documents call the same <a href="curl http://localhost:2000/api-doc">URL</a> outside the browser e.g. in curl or Postman:
+To get a JSON description of the deployed OpenAPI documents call the same `<a href="curl http://localhost:2000/api-docs">URL</a>` outside the browser e.g. in curl or Postman:
 
 ```
-curl http://localhost:2000/api-doc
+curl http://localhost:2000/api-docs
 ```
 
 
@@ -100,42 +100,42 @@ curl http://localhost:2000/api-doc
 
 When an API is published on a gateway the OpenAPI must point to the gateway instead of pointing to the backend server. Rewriting changes the backend addresses of an OpenAPI document to the address of the gateway.
 
-The _openAPIProxy_ exposes the OpenAPI specifications in the UI and over an endpoint:
+The _api_ exposes the OpenAPI specifications in the UI and over an endpoint:
 
 ```
-/api_docs/<<id of the api>>
+/api-docs/<<id of the api>>
 ```
 
 The addresses in the OpenAPI's _/servers_ field are rewritten to the address the endpoint is called on the gateway. Suppose the OpenAPI has the following servers field:
 
 ```yaml
 servers:
-- url: "http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop"
+- url: "http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop/v2"
 ```
 
 And you send a request to Membrane like this:
 
 ```http request
-GET /api-doc/fruit-shop-api-v1-0
+GET /api-docs/fruit-shop-api-v1-0
 Host: api.predic8.de:443
 ```
 
-Then the rewriter of the _openAPIProxy_ will turn the _servers_ field into:
+Then the rewriter of the _api_ will turn the _servers_ field into:
 
 ```yaml
 servers:
-- url: "https://api.predic8.de:443/shop"
+- url: "https://api.predic8.de:443/shop/v2"
 ```
 
-If you use the rewritten OpenAPI-document for your client, then requests will be sent to Membrane at _https://api.predic8.de:443/shop_ and then forwarded to the destination _http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop_.
+If you use the rewritten OpenAPI-document for your client, then requests will be sent to Membrane at _https://api.predic8.de:443/shop/v2_ and then forwarded to the destination _http://fruit-shop.api-demos.svc.ack.predic8.de:8080/shop/v2_.
 
 
 # SSL/TLS
 
-TLS for incoming and outgoing connections can be configured in the same way as for the _serviceProxy_. See the documentation for the [ssl](https://www.membrane-soa.org/service-proxy-doc/4.8/configuration/reference/ssl.htm) element.
+TLS for incoming and outgoing connections can be configured in the same way as for the _serviceProxy_. See the documentation for the [ssl](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/ssl.htm) element.
 
 ```xml
-<openAPIProxy port="2000">
+<api port="2000">
     <openapi dir="openapi"/>
     <ssl>
         <keystore location="..."/>
@@ -147,13 +147,13 @@ TLS for incoming and outgoing connections can be configured in the same way as f
             <truststore location="..."/>
         </ssl>
     </target>
-</openAPIProxy>
+</api>
 ```
 
 
 # Plugins / Interceptors
 
-The behaviour of the _openAPIProxy_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-soa.org/service-proxy-doc/4.8/configuration/reference/).
+The behaviour of the _api_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-soa.org/api-gateway-doc/current/configuration/reference/).
 
 ```xml
 <api port="2000">
@@ -170,7 +170,7 @@ Membrane needs unique ids for each OpenAPI document to provide a Swagger UI and 
 ```yaml
 info:
   title: "Fruit Shop API"
-  version: "1.0"
+  version: "2.0"
 ```
 
 To give an API a custom id the _x-membrane-id_ field can be used.
@@ -178,7 +178,7 @@ To give an API a custom id the _x-membrane-id_ field can be used.
 ```yaml
 info:
   title: Fruit Shop API
-  version: '1.0'
+  version: '2.0'
   x-membrane-id: fruitshop
 ```
 

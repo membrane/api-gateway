@@ -66,6 +66,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private List<String> allowedMethods = Lists.newArrayList("GET", "POST");
     private int maxRecursion = 3;
     private int maxDepth = 7;
+    private int maxMutations = 5;
 
     public GraphQLProtectionInterceptor() {
         name = "GraphQL protection";
@@ -159,6 +160,9 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
         ExecutableDocument ed = graphQLParser.parseRequest(new ByteArrayInputStream(((String) query).getBytes(UTF_8)));
 
+        if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
+            return error(exc, 400, "Too many mutations defined in document.");
+
         // so far, this ensures uniqueness of global names
         List<String> e1 = new GraphQLValidator().validate(ed);
         if (e1 != null && e1.size() > 0)
@@ -191,8 +195,6 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                     .map(exd -> (OperationDefinition) exd).toList();
             if (ods.size() == 0)
                 return error(exc, "Could not find an OperationDefinition in the GraphQL document.");
-            if (ods.size() > 1)
-                return error(exc, "Multiple OperationDefinitions with the same name in the GraphQL document.");
             operationToExecute = ods.get(0);
         }
 
@@ -201,6 +203,15 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
             return error(exc, depthOrRecursionError);
 
         return Outcome.CONTINUE;
+    }
+
+    public int countMutations(List<ExecutableDefinition> definitions) {
+        return (int) definitions.stream()
+                .filter(definition -> definition instanceof OperationDefinition)
+                .map(definition -> (OperationDefinition) definition)
+                .filter(operation -> operation.getOperationType() != null)
+                .filter(operation -> operation.getOperationType().getOperation().equals("mutation"))
+                .count();
     }
 
     private String getDepthOrRecursionError(ExecutableDocument ed, OperationDefinition od) {
@@ -290,6 +301,20 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
     public boolean isAllowExtensions() {
         return allowExtensions;
+    }
+
+    /**
+     * Limit how many mutations can be defined in a document query.
+     * @default 5
+     * @example 2
+     */
+    @MCAttribute
+    public void setMaxMutations(int maxMutations) {
+        this.maxMutations = maxMutations;
+    }
+
+    public int getMaxMutations() {
+        return maxMutations;
     }
 
     /**
