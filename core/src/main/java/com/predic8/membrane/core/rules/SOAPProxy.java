@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,6 +136,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 					if(location.startsWith("https")){
 						SSLParser sslOutboundParser = new SSLParser();
 						target.setSslParser(sslOutboundParser);
+						setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
 					}
 					((ServiceProxyKey)key).setMethod("*");
 				} catch (MalformedURLException e) {
