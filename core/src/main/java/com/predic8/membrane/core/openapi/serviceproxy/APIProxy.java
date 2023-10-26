@@ -91,6 +91,7 @@ public class APIProxy extends ServiceProxy {
         basePaths = getOpenAPIMap();
         configureBasePaths();
 
+        interceptors.add(new JSONAPIPublisherInterceptor(apiRecords));
         interceptors.add(new OpenAPIPublisherInterceptor(apiRecords));
         interceptors.add(new OpenAPIInterceptor(this));
     }

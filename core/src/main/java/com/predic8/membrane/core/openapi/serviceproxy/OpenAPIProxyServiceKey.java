@@ -30,6 +30,9 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
     public OpenAPIProxyServiceKey(String ip, String host, int port) {
         super(host, "*", null, port, ip);
 
+        // Add basePaths of JSONAPIPublisherInterceptor to accept them also
+        basePaths.add(JSONAPIPublisherInterceptor.PATH);
+
         // Add basePaths of OpenAPIPublisherInterceptor to accept them also
         basePaths.add(OpenAPIPublisherInterceptor.PATH);    // new path
         basePaths.add(OpenAPIPublisherInterceptor.PATH_UI); // "

@@ -8,6 +8,7 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 **OpenAPI:**
 * API [Deployment from OpenAPI](https://membrane-api.io/openapi/)
 * [Message validation](distribution/examples/openapi/validation-simple) against OpenAPI and JSON Schema
+* Delivering a JSON:API compatible list of APIs via an endpoint
 
 **API Security:**
 * [JSON Web Tokens](#json-web-tokens)

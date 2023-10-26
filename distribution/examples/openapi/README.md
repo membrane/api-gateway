@@ -5,7 +5,8 @@ Membrane's **openAPIProxy** offers support for [OpenAPI](https://github.com/OAI/
 - Configuration from OpenAPI
 - Request and response validation against OpenAPI, including paths, parameters and JSON bodies.
 - Rewriting of addresses
-- Swagger UI integration 
+- Swagger UI integration
+- Generating and providing a JSON:API compatible list of APIs
 
 This page serves as a reference for the functions and configuration. See also the examples:
 
@@ -150,6 +151,64 @@ TLS for incoming and outgoing connections can be configured in the same way as f
 </api>
 ```
 
+# JSON:API endpoint
+
+Calling the `/apis.json` endpoint will provide a JSON:API compatible list of APIs.  
+
+As example using
+```xml
+<api port="2000">
+  <openapi location="fruitshop-api.yml"/>
+  <openapi dir="openapi"/> 
+  <openapi location="https://developer.lufthansa.com/swagger/export/21516"/>
+  <openapi location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
+  <openapi location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
+</api> 
+```
+Will create the endpoint `localhost:2000/apis.json`.  
+
+Calling it will give you a document following the JSON:API standard:
+
+```json
+{
+  "attributes": {
+    "timestamps": {
+      "created": "2020-07-21T12:09:00Z",
+      "modified": "2020-07-30T10:19:01Z"
+    },
+    "title": "Membrane API List"
+  },
+  "data": [
+    {
+      "attributes": {
+        "baseURL": "http://localhost:2000/shop/v2",
+        "paths": [
+          {
+            "type": "GET",
+            "url": "/products"
+          },
+          {
+            "type": "POST",
+            "url": "/products"
+          },
+          {
+            "type": "GET",
+            "url": "/products/{pid}"
+          }
+        ],
+        "title": "Fruit Shop API",
+        "version": "2.0"
+      },
+      "type": "apis"
+    },
+    ...
+  ],
+  "links": {
+    "self": "http://localhost:2000/apis.json"
+  },
+  "version": "1.1"
+}
+```
 
 # Plugins / Interceptors
 
