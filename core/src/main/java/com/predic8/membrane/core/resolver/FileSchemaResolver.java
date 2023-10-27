@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -127,10 +128,8 @@ public class FileSchemaResolver implements SchemaResolver {
 		String[] children = new File(normalize(url)).list();
 		if (children == null)
 			return null;
-		ArrayList<String> res = new ArrayList<>(children.length);
-		for (String child : children)
-			res.add(child);
-		return res;
+
+		return Arrays.asList(children);
 	}
 
 	@Override

@@ -121,11 +121,7 @@ public class ClaimsParameter {
     }
 
     private HashSet<String> getClaimsFromJsonObject(String objectName){
-        HashSet<String> claims = new HashSet<>();
-        for(String claimName : getObject(objectName).keySet())
-            claims.add(claimName);
-
-        return claims;
+        return new HashSet<>(getObject(objectName).keySet());
     }
 
     public HashSet<String> getUserinfoClaims(){

@@ -192,12 +192,9 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 			shutdownRunningClusterNode(node);
 		}
 
-		HashSet<String> modules = new HashSet<>();
-		for (String module : runningNodesForModule.keySet()) {
-			modules.add(module);
-		}
+        HashSet<String> modules = new HashSet<>(runningNodesForModule.keySet());
 		for (String module : modules) {
-			if (runningNodesForModule.get(module).size() == 0) {
+			if (runningNodesForModule.get(module).isEmpty()) {
 				runningNodesForModule.remove(module);
 				shutDownRunningModuleServiceProxy(module);
 			}
