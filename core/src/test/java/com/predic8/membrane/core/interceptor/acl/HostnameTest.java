@@ -36,10 +36,10 @@ public class HostnameTest {
 		router = new Router();
 
 		h1 = new Hostname(router);
-		h1.setPattern("localhost");
+		h1.setSchema("localhost");
 
 		ip = new Ip(router);
-		ip.setPattern("127.0.0.1");
+		ip.setSchema("127.0.0.1");
 	}
 
 	@Test

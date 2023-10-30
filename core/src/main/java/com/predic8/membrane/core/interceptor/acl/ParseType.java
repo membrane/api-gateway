@@ -5,6 +5,7 @@ import com.predic8.membrane.core.interceptor.acl.matchers.GlobMatcher;
 import com.predic8.membrane.core.interceptor.acl.matchers.RegexMatcher;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 public enum ParseType {
     GLOB("glob", new GlobMatcher()),
@@ -20,10 +21,14 @@ public enum ParseType {
     }
 
     public static ParseType getByOrDefault(String string) {
-        return Arrays.stream(values())
-                .filter(v -> v.value.equals(string.toLowerCase()))
-                .findFirst()
-                .orElse(ParseType.GLOB);
+        if (string != null) {
+            for (ParseType v : values()) {
+                if (string.equalsIgnoreCase(v.value)) {
+                    return v;
+                }
+            }
+        }
+        return ParseType.GLOB;
     }
 
     @Override
