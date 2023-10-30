@@ -1,0 +1,101 @@
+{
+	"info": {
+		"_postman_id": "27c65ce6-2e99-49ee-8f2c-8b501b476058",
+		"name": "oauth2 example requests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30827720"
+	},
+	"item": [
+		{
+			"name": "http://localhost:7007/oauth2/token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();\r",
+							"pm.environment.set(\"accessToken\", jsonData.access_token);\r",
+							"pm.environment.set(\"tokenType\", jsonData.token_type);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "password",
+							"type": "text"
+						},
+						{
+							"key": "username",
+							"value": "john",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "password",
+							"type": "text"
+						},
+						{
+							"key": "client_id",
+							"value": "abc",
+							"type": "text"
+						},
+						{
+							"key": "client_secret",
+							"value": "def",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:7007/oauth2/token",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7007",
+					"path": [
+						"oauth2",
+						"token"
+					]
+				},
+				"description": "1.) Requesting Token"
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:2000",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{accessToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:2000",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "2000"
+				},
+				"description": "2.) Calling API"
+			},
+			"response": []
+		}
+	]
+}
