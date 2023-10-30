@@ -42,7 +42,7 @@ public class Ip extends AbstractClientAddress {
 
 	@Override
 	public boolean matches(String hostname, String ip) {
-		return pattern.matcher(ip).matches();
+		return type.getMatcher().matches(ip, schema);
 	}
 
 }
