@@ -15,12 +15,24 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.core.Router;
 
+import javax.xml.stream.XMLStreamReader;
+
+import static com.predic8.membrane.core.interceptor.acl.ParseType.GLOB;
+
 public class Ip extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "ip";
 
+	private ParseType type = GLOB;
+
 	public Ip(Router router) {
 		super(router);
+	}
+
+	@Override
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
+		var type = token.getAttributeValue(null, "type");
+		this.type = ParseType.getByOrDefault(type);
 	}
 
 	@Override
