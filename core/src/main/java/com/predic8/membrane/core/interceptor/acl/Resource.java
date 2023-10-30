@@ -63,6 +63,7 @@ public class Resource extends AbstractXmlElement {
 		}
 	}
 
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
 		pattern = Pattern.compile(TextUtil.globToRegExp(token.getAttributeValue(null, "uri")));
