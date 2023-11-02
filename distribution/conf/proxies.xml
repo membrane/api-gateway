@@ -5,9 +5,12 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-
         <api port="2000">
-            <target host="api.predic8.de"/>
+            <otelInterceptor
+            jaegerPort="4317"
+            jaegerHost="localhost"
+            />
+            <target host="localhost" port="8081"/>
         </api>
 
     </router>
