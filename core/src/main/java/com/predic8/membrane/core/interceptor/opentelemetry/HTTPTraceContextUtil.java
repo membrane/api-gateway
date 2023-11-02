@@ -25,12 +25,11 @@ public class HTTPTraceContextUtil {
         };
     }
 
-    public static TextMapSetter<Exchange> setContextInHeader(boolean isRequest) {
+    public static TextMapSetter<Exchange> setContextInHeader() {
         return new TextMapSetter<Exchange>() {
             @Override
             public void set(Exchange carrier, String key, String value) {
-                if (isRequest) carrier.getRequest().getHeader().add(key, value);
-                else carrier.getResponse().getHeader().add(key, value);
+                carrier.getRequest().getHeader().add(key, value);
             }
         };
     }

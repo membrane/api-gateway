@@ -15,7 +15,6 @@ import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceConte
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
 import static io.opentelemetry.context.Context.current;
-import static java.lang.String.format;
 
 
 @MCElement(name = "opentelemetry")
@@ -23,9 +22,6 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String jaegerHost = "localhost";
     private String jaegerPort = "4317";
     private double sampleRate = 1.0;
-
-    private static final String REQUEST = "REQUEST";
-    private static final String RESPONSE = "RESPONSE";
 
     OpenTelemetry openTelemetryInstance;
     Tracer tracer;
@@ -38,23 +34,35 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        startMembraneScope(exc, getExtractContext(exc), true);
+        startMembraneScope(exc, getExtractContext(exc));
         return super.handleRequest(exc);
     }
 
-    private void startMembraneScope(Exchange exc, Context receivedContext, boolean isRequest) {
+    @Override
+    public Outcome handleResponse(Exchange exc) throws Exception {
+        endMembraneScope(exc);
+        return super.handleResponse(exc);
+    }
+
+    private void startMembraneScope(Exchange exc, Context receivedContext) {
         try(Scope ignore = receivedContext.makeCurrent()) {
-            Span membraneSpan = getMembraneSpan(format("HANDLE-%s-SPAN", getRequestOrResponseString(isRequest)), format("MEMBRANE-INTERCEPTED-%s", getRequestOrResponseString(isRequest)));
+            Span membraneSpan = getMembraneSpan("MEMBRANE-REQUEST", "MEMBRANE-START");
 
             try(Scope ignored = membraneSpan.makeCurrent()) {
-                membraneSpan.addEvent(format("STARTING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
-                membraneSpan.addEvent(format("ENDING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
-
-                setExchangeHeader(exc, isRequest);
-            }finally {
-                membraneSpan.end();
+                setExchangeHeader(exc);
+                setSpanInExchangeProperties(exc, membraneSpan);
             }
         }
+    }
+
+    private void endMembraneScope(Exchange exc) {
+        Span membraneSpan = (Span) exc.getProperty("span");
+        membraneSpan.addEvent("MEMBRANE-RESPONSE");
+        membraneSpan.end();
+    }
+
+    private void setSpanInExchangeProperties(Exchange exc, Span span) {
+        exc.setProperty("span", span);
     }
 
     private Span getMembraneSpan(String spanName, String eventName) {
@@ -64,21 +72,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 .addEvent(eventName);
     }
 
-    private String getRequestOrResponseString(boolean isRequest) {
-        if (isRequest) return REQUEST;
-        return RESPONSE;
-    }
-
-    @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        startMembraneScope(exc, getExtractContext(exc), false);
-        return super.handleResponse(exc);
-    }
-
-    private void setExchangeHeader(Exchange exc, boolean isRequest) {
+    private void setExchangeHeader(Exchange exc) {
         openTelemetryInstance.getPropagators().getTextMapPropagator().inject(current(),
                 exc,
-                setContextInHeader(isRequest));
+                setContextInHeader());
     }
 
     private Context getExtractContext(Exchange exc) {
