@@ -14,21 +14,22 @@
 
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
-import io.opentelemetry.api.*;
-import io.opentelemetry.api.baggage.propagation.*;
-import io.opentelemetry.context.propagation.*;
-import io.opentelemetry.exporter.otlp.trace.*;
-import io.opentelemetry.sdk.*;
-import io.opentelemetry.sdk.resources.*;
-import io.opentelemetry.sdk.trace.*;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
+import io.opentelemetry.context.propagation.TextMapPropagator;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
 
-import static com.predic8.membrane.core.Constants.*;
-import static io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator.*;
-import static io.opentelemetry.context.propagation.ContextPropagators.*;
-import static io.opentelemetry.sdk.trace.export.BatchSpanProcessor.*;
-import static io.opentelemetry.sdk.trace.samplers.Sampler.*;
-import static io.opentelemetry.semconv.ResourceAttributes.*;
-import static java.util.concurrent.TimeUnit.*;
+import static com.predic8.membrane.core.Constants.VERSION;
+import static io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator.getInstance;
+import static io.opentelemetry.context.propagation.ContextPropagators.create;
+import static io.opentelemetry.sdk.trace.export.BatchSpanProcessor.builder;
+import static io.opentelemetry.sdk.trace.samplers.Sampler.traceIdRatioBased;
+import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_NAME;
+import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_VERSION;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class OpenTelemetryConfigurator {
     public static OpenTelemetry openTelemetry(String endpoint, double sampleRate) {
@@ -44,7 +45,7 @@ public class OpenTelemetryConfigurator {
         return OpenTelemetrySdk.builder()
                 .setTracerProvider(sdkTracerProvider)
                 .setPropagators(create(TextMapPropagator.composite(getInstance(), W3CBaggagePropagator.getInstance())))
-                .buildAndRegisterGlobal();
+                .build();
     }
 
     private static SdkTracerProvider getSdkTracerProvider(String endpoint, double sampleRate) {

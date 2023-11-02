@@ -5,15 +5,27 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
+        <api port="3000" method="GET">
+            <opentelemetry
+                    jaegerPort="4317"
+                    jaegerHost="localhost"
+                    sampleRate="1.0"
+            />
+            <request>
+                <template contentType="application/json" pretty="yes">
+                    { "hello": ${params.name}! }
+                </template>
+            </request>
+            <return statusCode="200"/>
+        </api>
         <api port="2000">
             <opentelemetry
-            jaegerPort="4317"
-            jaegerHost="localhost"
-            sampleRate="1.0"
+                    jaegerPort="4317"
+                    jaegerHost="localhost"
+                    sampleRate="1.0"
             />
-            <target host="localhost" port="8081"/>
+            <target host="localhost" port="3000"/>
         </api>
-
     </router>
 
 </spring:beans>
