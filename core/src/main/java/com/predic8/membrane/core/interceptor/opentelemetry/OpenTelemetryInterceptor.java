@@ -15,6 +15,7 @@ import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceConte
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
 import static io.opentelemetry.context.Context.current;
+import static java.lang.String.format;
 
 
 @MCElement(name = "opentelemetry")
@@ -43,11 +44,11 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     private void startMembraneScope(Exchange exc, Context receivedContext, boolean isRequest) {
         try(Scope ignore = receivedContext.makeCurrent()) {
-            Span membraneSpan = getMembraneSpan(String.format("HANDLE-%s-SPAN", getRequestOrResponseString(isRequest)), String.format("MEMBRANE-INTERCEPTED-%s", getRequestOrResponseString(isRequest)));
+            Span membraneSpan = getMembraneSpan(format("HANDLE-%s-SPAN", getRequestOrResponseString(isRequest)), format("MEMBRANE-INTERCEPTED-%s", getRequestOrResponseString(isRequest)));
 
             try(Scope ignored = membraneSpan.makeCurrent()) {
-                membraneSpan.addEvent(String.format("STARTING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
-                membraneSpan.addEvent(String.format("ENDING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
+                membraneSpan.addEvent(format("STARTING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
+                membraneSpan.addEvent(format("ENDING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
 
                 setExchangeHeader(exc, isRequest);
             }finally {
