@@ -198,8 +198,7 @@ public class SimpleXPathAnalyzer {
 			if (n instanceof UnparsedStringNode) {
 				List<String> parts = new ArrayList<>();
 				for (String part : splitOnOperand(((UnparsedStringNode)n).s, "|"))
-					for (String part2 : splitOnOperand(part, "union"))
-						parts.add(part2);
+					parts.addAll(splitOnOperand(part, "union"));
 				for (int i = 0; i < parts.size(); i++) {
 					if (i >= 1) {
 						// next IntersectExceptExpr

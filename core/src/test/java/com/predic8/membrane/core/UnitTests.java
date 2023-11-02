@@ -18,6 +18,7 @@ import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
 import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.graphql.GraphQLProtectionInterceptorTest;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -130,6 +131,7 @@ import org.junit.platform.suite.api.*;
 		XMLProtectorTest.class,
 		AbstractExchangeStoreTest.class,
 		JsonProtectionInterceptorTest.class,
+		GraphQLProtectionInterceptorTest.class,
 		BeautifierInterceptorTest.class,
 		ExchangeEvaluationContextTest.class,
 		PaddingHeaderInterceptorTest.class,
