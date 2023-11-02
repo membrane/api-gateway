@@ -6,27 +6,30 @@
 API Gateway for REST, WebSockets and legacy Web Services written in Java. Featuring:
 
 **OpenAPI:**
+
 * API [Deployment from OpenAPI](https://membrane-api.io/openapi/)
 * [Message validation](distribution/examples/openapi/validation-simple) against OpenAPI and JSON Schema
 
 **API Security:**
+
 * [JSON Web Tokens](#json-web-tokens)
-* [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm) and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm) 
-* [OAuth2 authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html) 
+* [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm)
+  and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm)
+* [OAuth2 authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html)
 * [Rate limiting](#rate-limiting)
 * GraphQL-, JSON- and XML protection
 
 **Legacy Web Services:**
+
 * [SOAP message routing](#soap-web-services)
 * WSDL configuration, [message validation](#message-validation-against-wsdl-and-xsd) and rewriting
 
 **Other:**
+
 * Admin Web console
 * [Load balancing](#load-balancing)
 * [Message Transformation](#message-transformation)
 * Embeddable reverse proxy HTTP framework for own API gateways
-
-
 
 # Getting Started
 
@@ -40,7 +43,6 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 4. Open http://localhost:2000 to access https://api.predic8.de over the gateway.
 
 5. Change the configuration in `conf/proxies.xml`
-
 
 ## Docker
 
@@ -59,9 +61,9 @@ This should yield the same response as calling https://api.predic8.de does.
 More about setting up [Membrane for Docker](https://membrane-api.io/deployment/#docker).
 
 ## Next Steps
- 
-See the snippets below, run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/) or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial or have a look at the [documentation](https://www.membrane-soa.org/service-proxy-doc/).
 
+See the snippets below, run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/)
+or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial or have a look at the [documentation](https://www.membrane-soa.org/service-proxy-doc/).
 
 # Configuration
 
@@ -69,10 +71,13 @@ Try the following snippets by copying them into the `conf/proxies.xml` file.
 
 ## Using OpenAPI for Configuration & Validation
 
-Configures APIs from OpenAPI  and validates messages against the definitions. Needed data like backend addresses are taken from the OpenAPI description. [See the example](distribution/examples/openapi)
+Configures APIs from OpenAPI and validates messages against the definitions. Needed data like backend addresses are taken from the OpenAPI
+description. [See the example](distribution/examples/openapi)
 
 This configuration is all you need to deploy from OpenAPI:
+
 ```xml
+
 <api port="2000">
     <openapi location="fruitshop-api.yml" validateRequests="yes"/>
 </api>
@@ -88,9 +93,10 @@ Click on the API title to get the Swagger UI.
 
 ## REST and HTTP APIs
 
-Routing requests from port `2000` to `api.predic8.de` when the path starts with `/shop/v2/`. 
+Routing requests from port `2000` to `api.predic8.de` when the path starts with `/shop/v2/`.
 
 ```xml
+
 <api port="2000">
     <path>/shop/v2/</path>
     <target url="https://api.predic8.de"/>
@@ -99,12 +105,12 @@ Routing requests from port `2000` to `api.predic8.de` when the path starts with 
 
 Call the API by opening `http://localhost:2000/shop/v2/` in the browser.
 
-
 # Message Transformation
 
 ## Create JSON from Query Parameters
 
 ```xml
+
 <api port="2000" method="GET">
     <request>
         <template contentType="application/json" pretty="yes">
@@ -117,7 +123,6 @@ Call the API by opening `http://localhost:2000/shop/v2/` in the browser.
 
 Call this API with `http://localhost:2000?answer=42` . Replace `<return.../>` with your `<target url="backend-server"/>`.
 
-
 ## Transform JSON into TEXT, JSON or XML with Templates
 
 Call the following APIs with this request:
@@ -129,6 +134,7 @@ curl -d '{"city":"Berlin"}' -H "Content-Type: application/json" "http://localhos
 This template will transform the JSON input into plain text:
 
 ```xml
+
 <api port="2000" method="POST">
     <request>
         <template contentType="text/plain">
@@ -142,9 +148,10 @@ This template will transform the JSON input into plain text:
 ...into JSON:
 
 ```xml
+
 <template contentType="application/json" pretty="true">
     {
-        "destination": "${json.city}"
+    "destination": "${json.city}"
     }
 </template>
 ```
@@ -152,6 +159,7 @@ This template will transform the JSON input into plain text:
 ...and into XML:
 
 ```xml
+
 <template contentType="application/xml">
     <![CDATA[
     <places>
@@ -163,9 +171,11 @@ This template will transform the JSON input into plain text:
 
 ### Transform XML into Text or JSON
 
-Using the `xpathExtractor` you can extract values from XML request or response bodies and store it in properties. The properties are then available as variables in the `template` plugin.
+Using the `xpathExtractor` you can extract values from XML request or response bodies and store it in properties. The properties are then available as variables in the `template`
+plugin.
 
 ```xml
+
 <api port="2000">
     <request>
         <xpathExtractor>
@@ -184,6 +194,7 @@ See: [message-transformation examples](./distribution/examples/message-transform
 Use the Javascript or Groovy plugin for more powerful yet simple transformations.
 
 ```xml
+
 <api port="2000">
     <request>
         <javascript>
@@ -205,25 +216,26 @@ curl -d '{"city":"Berlin"}' -H "Content-Type: application/json" "http://localhos
 This script transforms the input and adds some calculations.
 
 ```xml
+
 <api port="2000">
     <request>
         <javascript>
 
-        function convertDate(d) {
+            function convertDate(d) {
             return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
-        }
+            }
 
-        ({
+            ({
             id: json.id,
             date: convertDate(new Date(json.date)),
             client: json.customer,
             total: json.items.map(i => i.quantity * i.price).reduce((a,b) => a+b),
             positions: json.items.map(i => ({
-                pieces: i.quantity,
-                price: i.price,
-                article: i.description
+            pieces: i.quantity,
+            price: i.price,
+            article: i.description
             }))
-        })
+            })
         </javascript>
     </request>
     <return/>
@@ -233,23 +245,29 @@ This script transforms the input and adds some calculations.
 See [examples/javascript](distribution/examples/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/groovy)
 
 ## Beautifier
-You can beautify a JSON or XML using the `<beautifier/>` plugin.  
+
+You can beautify a JSON or XML using the `<beautifier/>` plugin.
+
 ```xml
+
 <api port="2000">
     <template contentType="application/xml"><![CDATA[
         <foo><bar>baz</bar></foo>
     ]]></template>
-    
+
     <beautifier/>
-    
-    <return statusCode="200" />
+
+    <return statusCode="200"/>
 </api>
 ```  
+
 Returns:
+
 ```xml
-    <foo>
-      <bar>baz</bar>
-    </foo>
+
+<foo>
+    <bar>baz</bar>
+</foo>
 ```
 
 # Writing Extensions with Groovy or Javascript
@@ -257,6 +275,7 @@ Returns:
 Dynamically manipulate and monitor messages with Groovy:
 
 ```xml
+
 <api port="2000">
     <response>
         <groovy>
@@ -272,12 +291,13 @@ Dynamically manipulate and monitor messages with Groovy:
 Create a response with Javascript:
 
 ```xml
+
 <api port="2000">
     <response>
         <javascript>
             var body = JSON.stringify({
-                foo: 7,
-                bar: 42
+            foo: 7,
+            bar: 42
             });
 
             Response.ok(body).contentType("application/json").build();
@@ -291,28 +311,30 @@ Also try the [Groovy](distribution/examples/groovy) and [Javascript example](dis
 
 # Security
 
-Membrane offers lots of security features to protect backend servers. 
+Membrane offers lots of security features to protect backend servers.
 
 ## JSON Web Tokens
 
 The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT validator for other identity providers.
 
 ```xml
+
 <api port="8080">
     <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
-        <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys" />
+        <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
     </jwtAuth>
     <target url="https://your-backend"/>
 </api>
 ```
 
-## OAuth2 
+## OAuth2
 
 ### Secure an API with OAuth2
 
 Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak or Membrane authentication servers.
 
 ```xml
+
 <api port="2001">
     <oauth2Resource>
         <membrane src="https://accounts.google.com"
@@ -322,66 +344,75 @@ Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak
                   subject="sub"/>
     </oauth2Resource>
     <groovy>
-        // Get email from OAuth2 and forward it to the backend 
-        def oauth2 = exc.properties.oauth2 
-        header.setValue('X-EMAIL',oauth2.userinfo.email) 
+        // Get email from OAuth2 and forward it to the backend
+        def oauth2 = exc.properties.oauth2
+        header.setValue('X-EMAIL',oauth2.userinfo.email)
         CONTINUE
     </groovy>
     <target url="https://backend"/>
 </api>
 ```
+
 Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.org/api-gateway-doc/current/oauth2-openid.html)
 
 ### Membrane as Authorization Server
 
 Operate your own identity provider:
+
 ```xml
+
 <api port="2000">
-  <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
-    <staticUserDataProvider>
-      <user username="john" password="password" email="john@predic8.de" />
-    </staticUserDataProvider>
-    <staticClientList>
-      <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
-    </staticClientList>
-    <bearerToken/>
-    <claims value="aud email iss sub username">
-      <scope id="username" claims="username"/>
-      <scope id="profile" claims="username email password"/>
-    </claims>
-  </oauth2authserver>
+    <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
+        <staticUserDataProvider>
+            <user username="john" password="password" email="john@predic8.de"/>
+        </staticUserDataProvider>
+        <staticClientList>
+            <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback"/>
+        </staticClientList>
+        <bearerToken/>
+        <claims value="aud email iss sub username">
+            <scope id="username" claims="username"/>
+            <scope id="profile" claims="username email password"/>
+        </claims>
+    </oauth2authserver>
 </api>
 ```
+
 See the [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.html) example.
 
 ## Basic Authentication
 
 ```xml
+
 <api port="2000">
     <basicAuthentication>
-        <user name="bob" password="secret" />
+        <user name="bob" password="secret"/>
     </basicAuthentication>
-    <target host="localhost" port="8080" />
+    <target host="localhost" port="8080"/>
 </api>
 ```
 
 ## SSL/TLS
 
 Route to SSL/TLS secured endpoints:
+
 ```xml
+
 <api port="8080">
-  <target url="https://api.predic8.de"/>
+    <target url="https://api.predic8.de"/>
 </api>
 ```
 
 Secure endpoints with SSL/TLS:
+
 ```xml
+
 <api port="443">
-  <ssl>
-    <keystore location="membrane.jks" password="secret" keyPassword="secret" />
-    <truststore location="membrane.jks" password="secret" />
-  </ssl>
-  <target host="localhost" port="8080"  />
+    <ssl>
+        <keystore location="membrane.jks" password="secret" keyPassword="secret"/>
+        <truststore location="membrane.jks" password="secret"/>
+    </ssl>
+    <target host="localhost" port="8080"/>
 </api>
 ```
 
@@ -390,35 +421,39 @@ Secure endpoints with SSL/TLS:
 Limit the number of incoming requests:
 
 ```xml
+
 <api port="2000">
-  <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-  <target host="localhost" port="8080" />
+    <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+    <target host="localhost" port="8080"/>
 </api>
 ```
 
 # Load balancing
 
 Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
+
 ```xml
+
 <api port="8080">
-  <balancer name="balancer">
-    <clusters>
-      <cluster name="Default">
-        <node host="my.backend-1" port="4000"/>
-        <node host="my.backend-2" port="4000"/>
-        <node host="my.backend-3" port="4000"/>
-      </cluster>
-    </clusters>
-  </balancer>
+    <balancer name="balancer">
+        <clusters>
+            <cluster name="Default">
+                <node host="my.backend-1" port="4000"/>
+                <node host="my.backend-2" port="4000"/>
+                <node host="my.backend-3" port="4000"/>
+            </cluster>
+        </clusters>
+    </balancer>
 </api>
 ```
 
 # Rewrite URLs
 
 ```xml
+
 <api port="2000">
     <rewriter>
-    	<map from="^/good-looking-path/(.*)" to="/backend-path/$1" />
+        <map from="^/good-looking-path/(.*)" to="/backend-path/$1"/>
     </rewriter>
     <target host="my.backend.server"/>
 </api>
@@ -426,13 +461,15 @@ Distribute workload to multiple backend nodes. [See the example](distribution/ex
 
 # Log HTTP
 
-Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv) or [JSON](distribution/examples/logging/json) file.
+Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv)
+or [JSON](distribution/examples/logging/json) file.
 
 ```xml
+
 <api port="2000">
-  <log/> <!-- Logs to the console -->
-  <statisticsCSV file="./log.csv" /> <!-- Logs fine-grained CSV --> 
-  <target url="https://api.predic8.de"/>
+    <log/> <!-- Logs to the console -->
+    <statisticsCSV file="./log.csv"/> <!-- Logs fine-grained CSV -->
+    <target url="https://api.predic8.de"/>
 </api>
 ```
 
@@ -441,25 +478,27 @@ Log data about requests and responses to a file or [database](distribution/examp
 Route and intercept WebSocket traffic:
 
 ```xml
+
 <api port="2000">
-  <webSocket url="http://my.websocket.server:1234">
-    <wsLog/>
-  </webSocket>
-  <target port="8080" host="localhost"/>
+    <webSocket url="http://my.websocket.server:1234">
+        <wsLog/>
+    </webSocket>
+    <target port="8080" host="localhost"/>
 </api>
 ```
-See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.html)
 
+See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.html)
 
 # SOAP Web Services
 
-Integrate legacy services.  
+Integrate legacy services.
 
 ## API configuration from WSDL
 
 SOAP proxies configure themselves by analysing WSDL:
 
 ```xml
+
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl"/>
 ```
 
@@ -468,8 +507,9 @@ SOAP proxies configure themselves by analysing WSDL:
 The _validator_ checks SOAP messages against a WSDL document including referenced XSD schemas.
 
 ```xml
+
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
-  <validator />
+    <validator/>
 </soapProxy>
 ```
 
