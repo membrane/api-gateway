@@ -15,14 +15,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-@MCElement(name = "otelInterceptor")
+@MCElement(name = "opentelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String jaegerHost = "localhost";
     private String jaegerPort = "4317";
+    private double sampleRate = 1.0;
 
     private  final Logger log = LoggerFactory.getLogger(OpenTelemetryInterceptor.class);
-    OpenTelemetry openTelemetryInstance = OpenTelemetryConfigurator.openTelemetry("http://" + getJaegerHost() + ":" + getJaegerPort());
-    Tracer tracer = openTelemetryInstance.getTracer("MEMBRANE-TRACER");
+    OpenTelemetry openTelemetryInstance;
+    Tracer tracer;
+
+    @Override
+    public void init() throws Exception {
+        openTelemetryInstance = OpenTelemetryConfigurator.openTelemetry("http://" + getJaegerHost() + ":" + getJaegerPort(), getSampleRate());
+        tracer = openTelemetryInstance.getTracer("MEMBRANE-TRACER");
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -32,15 +39,13 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 getTextMapPropagator()
                 .extract(Context.current(),exc,HTTPTraceContextUtil.remoteContextGetter());
 
-        try(Scope membraneScope = receivedContext.makeCurrent()) {
+        try(Scope ignore = receivedContext.makeCurrent()) {
             Span membraneSpan = tracer.spanBuilder("HANDLE-REQUEST-SPAN")
                     .setSpanKind(SpanKind.INTERNAL)
-                    .setParent(receivedContext)
                     .startSpan()
                     .addEvent("MEMBRANE-INTERCEPTED-REQUEST");
-            receivedContext.with(membraneSpan);
 
-            try(Scope membraneInternalScope = membraneSpan.makeCurrent()) {
+            try(Scope ignored = membraneSpan.makeCurrent()) {
                 membraneSpan.addEvent("STARTING-MEMBRANE-CONTEXT-SPAN");
                 // ... do something here???
                 membraneSpan.addEvent("ENDING-MEMBRANE-CONTEXT-SPAN");
@@ -70,11 +75,20 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         this.jaegerPort = jaegerPort;
     }
 
+    @MCAttribute
+    public void setSampleRate(double sampleRate) {
+        this.sampleRate = sampleRate;
+    }
+
     public String getJaegerHost() {
         return jaegerHost;
     }
 
     public String getJaegerPort() {
         return jaegerPort;
+    }
+
+    public double getSampleRate() {
+        return sampleRate;
     }
 }

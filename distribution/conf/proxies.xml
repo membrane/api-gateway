@@ -6,9 +6,10 @@
 
     <router>
         <api port="2000">
-            <otelInterceptor
+            <opentelemetry
             jaegerPort="4317"
             jaegerHost="localhost"
+            sampleRate="1.0"
             />
             <target host="localhost" port="8081"/>
         </api>
