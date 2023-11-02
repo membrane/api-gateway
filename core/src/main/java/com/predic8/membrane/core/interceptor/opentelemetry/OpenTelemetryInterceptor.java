@@ -23,8 +23,8 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String jaegerPort = "4317";
     private double sampleRate = 1.0;
 
-    private final String REQUEST = "REQUEST";
-    private final String RESPONSE = "RESPONSE";
+    private static final String REQUEST = "REQUEST";
+    private static final String RESPONSE = "RESPONSE";
 
     OpenTelemetry openTelemetryInstance;
     Tracer tracer;
