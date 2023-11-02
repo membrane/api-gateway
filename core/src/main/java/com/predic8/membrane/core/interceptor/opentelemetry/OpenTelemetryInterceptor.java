@@ -7,12 +7,15 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
+import static io.opentelemetry.api.trace.SpanKind.*;
+import static io.opentelemetry.context.Context.*;
 
 
 @MCElement(name = "opentelemetry")
@@ -38,7 +41,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
         try(Scope ignore = receivedContext.makeCurrent()) {
             Span membraneSpan = tracer.spanBuilder("HANDLE-REQUEST-SPAN")
-                    .setSpanKind(SpanKind.INTERNAL)
+                    .setSpanKind(INTERNAL)
                     .startSpan()
                     .addEvent("MEMBRANE-INTERCEPTED-REQUEST");
 
@@ -56,16 +59,16 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private void setExchangeHeader(Exchange exc) {
-        openTelemetryInstance.getPropagators().getTextMapPropagator().inject(Context.current(),
+        openTelemetryInstance.getPropagators().getTextMapPropagator().inject(current(),
                 exc,
-                HTTPTraceContextUtil.remoteContextSetter());
+                remoteContextSetter());
     }
 
     private Context getExtractContext(Exchange exc) {
         return openTelemetryInstance
                 .getPropagators().
                 getTextMapPropagator()
-                .extract(Context.current(), exc, HTTPTraceContextUtil.remoteContextGetter());
+                .extract(current(), exc, remoteContextGetter());
     }
 
     @Override
