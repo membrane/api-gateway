@@ -10,8 +10,6 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
 import static io.opentelemetry.api.trace.SpanKind.*;
@@ -24,7 +22,6 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String jaegerPort = "4317";
     private double sampleRate = 1.0;
 
-    private  final Logger log = LoggerFactory.getLogger(OpenTelemetryInterceptor.class);
     OpenTelemetry openTelemetryInstance;
     Tracer tracer;
 
@@ -69,11 +66,6 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 .getPropagators().
                 getTextMapPropagator()
                 .extract(current(), exc, remoteContextGetter());
-    }
-
-    @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return super.handleResponse(exc);
     }
 
     @MCAttribute
