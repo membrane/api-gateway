@@ -34,10 +34,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         // extract context from header
-        Context receivedContext = openTelemetryInstance
-                .getPropagators().
-                getTextMapPropagator()
-                .extract(Context.current(),exc,HTTPTraceContextUtil.remoteContextGetter());
+        Context receivedContext = getExtractContext(exc);
 
         try(Scope ignore = receivedContext.makeCurrent()) {
             Span membraneSpan = tracer.spanBuilder("HANDLE-REQUEST-SPAN")
@@ -50,14 +47,25 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 // ... do something here???
                 membraneSpan.addEvent("ENDING-MEMBRANE-CONTEXT-SPAN");
                 //inject context into header
-                openTelemetryInstance.getPropagators().getTextMapPropagator().inject(Context.current(),
-                        exc,
-                        HTTPTraceContextUtil.remoteContextSetter());
+                setExchangeHeader(exc);
             }finally {
                 membraneSpan.end();
             }
         }
         return super.handleRequest(exc);
+    }
+
+    private void setExchangeHeader(Exchange exc) {
+        openTelemetryInstance.getPropagators().getTextMapPropagator().inject(Context.current(),
+                exc,
+                HTTPTraceContextUtil.remoteContextSetter());
+    }
+
+    private Context getExtractContext(Exchange exc) {
+        return openTelemetryInstance
+                .getPropagators().
+                getTextMapPropagator()
+                .extract(Context.current(), exc, HTTPTraceContextUtil.remoteContextGetter());
     }
 
     @Override
