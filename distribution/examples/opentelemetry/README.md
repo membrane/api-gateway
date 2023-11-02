@@ -1,23 +1,26 @@
-# Using Opentelemetry with Membrane
+# Tracing with OpenTelemetry
 
-Membrane offers support for tracing with [OpenTelemetry](https://opentelemetry.io/).
+Membrane offers support for tracing with the [OpenTelemetry](https://opentelemetry.io/) specification. 
 
-Using the `opentelemetry` element you can enrich the header of incoming HTTP requests and responses
-with trace data.
+The usage of APIs can be observed with the OTel plugin. Membrane collects data about processes flowing through it and sends it to an OTEL collector like jaeger.
+
+To instrument an API add the `opentelemetry` plugin to it.
 
 ## Run the Example
 
-1. Setup jaeger with:
+1. Start jaeger with:
 ```dockerfile
 docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 jaegertracing/all-in-one:latest
 ```
 
 2. Run `service-proxy.bat` or `./service-proxy.sh` in this folder.
 
-3. Run a request `curl http://localhost:2000?name=membrane`.
+3. Call an API hosted by Membrane:
 
-4. You should see `{ "hello": membrane! }` in your terminal and a trace,
-   created by Membrane should be visible in the [jaeger frontend](http://localhost:16686).
+   `curl http://localhost:2000`.
+
+4. You should see `{ "success": true }` in your terminal and a trace,
+   created by Membrane should be visible in the [jaeger frontend](http://localhost:16686). Open `localhost:16686` in the browser.
 
 5. Take a look into the `proxies.xml
 ```xml
