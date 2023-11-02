@@ -6,12 +6,7 @@
 
     <router>
         <api port="2000">
-            <opentelemetry
-            jaegerPort="4317"
-            jaegerHost="localhost"
-            sampleRate="1.0"
-            />
-            <target host="localhost" port="8081"/>
+            <target host="api.predic8.de"/>
         </api>
 
     </router>
