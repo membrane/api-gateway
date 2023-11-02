@@ -1,3 +1,17 @@
+/* Copyright 2023 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -11,6 +25,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
@@ -23,8 +38,8 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String jaegerPort = "4317";
     private double sampleRate = 1.0;
 
-    OpenTelemetry openTelemetryInstance;
-    Tracer tracer;
+    private OpenTelemetry openTelemetryInstance;
+    private Tracer tracer;
 
     @Override
     public void init() throws Exception {
@@ -35,13 +50,13 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         startMembraneScope(exc, getExtractContext(exc));
-        return super.handleRequest(exc);
+        return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        endMembraneScope(exc);
-        return super.handleResponse(exc);
+        ((Span) exc.getProperty("span")).addEvent("MEMBRANE-RESPONSE").end();
+        return CONTINUE;
     }
 
     private void startMembraneScope(Exchange exc, Context receivedContext) {
@@ -50,19 +65,9 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
             try(Scope ignored = membraneSpan.makeCurrent()) {
                 setExchangeHeader(exc);
-                setSpanInExchangeProperties(exc, membraneSpan);
+                exc.setProperty("span", membraneSpan);
             }
         }
-    }
-
-    private void endMembraneScope(Exchange exc) {
-        Span membraneSpan = (Span) exc.getProperty("span");
-        membraneSpan.addEvent("MEMBRANE-RESPONSE");
-        membraneSpan.end();
-    }
-
-    private void setSpanInExchangeProperties(Exchange exc, Span span) {
-        exc.setProperty("span", span);
     }
 
     private Span getMembraneSpan(String spanName, String eventName) {
