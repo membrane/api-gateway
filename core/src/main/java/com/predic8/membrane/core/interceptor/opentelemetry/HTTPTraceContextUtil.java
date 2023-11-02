@@ -1,15 +1,15 @@
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapSetter;
-import com.predic8.membrane.core.exchange.Exchange;
 
 import java.util.Arrays;
 
 public class HTTPTraceContextUtil {
 
-    public static TextMapGetter<Exchange> remoteContextGetter() {
+    public static TextMapGetter<Exchange> getContextFromRequestHeader() {
         return new TextMapGetter<>() {
             @Override
             public String get(Exchange carrier, String key) {
@@ -25,11 +25,12 @@ public class HTTPTraceContextUtil {
         };
     }
 
-    public static TextMapSetter<Exchange> remoteContextSetter() {
+    public static TextMapSetter<Exchange> setContextInHeader(boolean isRequest) {
         return new TextMapSetter<Exchange>() {
             @Override
             public void set(Exchange carrier, String key, String value) {
-                carrier.getRequest().getHeader().add(key,value);
+                if (isRequest) carrier.getRequest().getHeader().add(key, value);
+                else carrier.getResponse().getHeader().add(key, value);
             }
         };
     }

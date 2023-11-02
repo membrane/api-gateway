@@ -11,9 +11,10 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 
-import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.*;
-import static io.opentelemetry.api.trace.SpanKind.*;
-import static io.opentelemetry.context.Context.*;
+import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
+import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
+import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
+import static io.opentelemetry.context.Context.current;
 
 
 @MCElement(name = "opentelemetry")
@@ -21,6 +22,9 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String jaegerHost = "localhost";
     private String jaegerPort = "4317";
     private double sampleRate = 1.0;
+
+    private final String REQUEST = "REQUEST";
+    private final String RESPONSE = "RESPONSE";
 
     OpenTelemetry openTelemetryInstance;
     Tracer tracer;
@@ -33,39 +37,54 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        // extract context from header
-        Context receivedContext = getExtractContext(exc);
+        startMembraneScope(exc, getExtractContext(exc), true);
+        return super.handleRequest(exc);
+    }
 
+    private void startMembraneScope(Exchange exc, Context receivedContext, boolean isRequest) {
         try(Scope ignore = receivedContext.makeCurrent()) {
-            Span membraneSpan = tracer.spanBuilder("HANDLE-REQUEST-SPAN")
-                    .setSpanKind(INTERNAL)
-                    .startSpan()
-                    .addEvent("MEMBRANE-INTERCEPTED-REQUEST");
+            Span membraneSpan = getMembraneSpan(String.format("HANDLE-%s-SPAN", getRequestOrResponseString(isRequest)), String.format("MEMBRANE-INTERCEPTED-%s", getRequestOrResponseString(isRequest)));
 
             try(Scope ignored = membraneSpan.makeCurrent()) {
-                membraneSpan.addEvent("STARTING-MEMBRANE-CONTEXT-SPAN");
-                // ... do something here???
-                membraneSpan.addEvent("ENDING-MEMBRANE-CONTEXT-SPAN");
-                //inject context into header
-                setExchangeHeader(exc);
+                membraneSpan.addEvent(String.format("STARTING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
+                membraneSpan.addEvent(String.format("ENDING-MEMBRANE-%s-CONTEXT-SPAN", getRequestOrResponseString(isRequest)));
+
+                setExchangeHeader(exc, isRequest);
             }finally {
                 membraneSpan.end();
             }
         }
-        return super.handleRequest(exc);
     }
 
-    private void setExchangeHeader(Exchange exc) {
+    private Span getMembraneSpan(String spanName, String eventName) {
+        return tracer.spanBuilder(spanName)
+                .setSpanKind(INTERNAL)
+                .startSpan()
+                .addEvent(eventName);
+    }
+
+    private String getRequestOrResponseString(boolean isRequest) {
+        if (isRequest) return REQUEST;
+        return RESPONSE;
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) throws Exception {
+        startMembraneScope(exc, getExtractContext(exc), false);
+        return super.handleResponse(exc);
+    }
+
+    private void setExchangeHeader(Exchange exc, boolean isRequest) {
         openTelemetryInstance.getPropagators().getTextMapPropagator().inject(current(),
                 exc,
-                remoteContextSetter());
+                setContextInHeader(isRequest));
     }
 
     private Context getExtractContext(Exchange exc) {
         return openTelemetryInstance
                 .getPropagators().
                 getTextMapPropagator()
-                .extract(current(), exc, remoteContextGetter());
+                .extract(current(), exc, getContextFromRequestHeader());
     }
 
     @MCAttribute
