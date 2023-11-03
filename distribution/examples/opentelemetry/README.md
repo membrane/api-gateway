@@ -20,7 +20,7 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
 
    `curl http://localhost:2000`.
 
-4. You should see the headers in your terminal which include `traceparent` and a trace,
+4. You should see `{ "success": true }` in your terminal and a trace,
    created by Membrane should be visible in the [jaeger frontend](http://localhost:16686). Open `localhost:16686` in the browser.
 
 5. Take a look into the `proxies.xml
@@ -36,22 +36,26 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
         <target host="localhost" port="3000"/>
     </api>
 
-    <api port="3000" method="GET">
-        <opentelemetry
-                jaegerPort="4317"
-                jaegerHost="localhost"
-                sampleRate="1.0"
-        />
-        <request>
-           <template contentType="text/plain" pretty="yes"><![CDATA[
-                Header:
-                <% for(h in header.allHeaderFields) { %>
-                   <%= h.headerName %> : <%= h.value %>
-                <% } %>
-            ]]></template>
-        </request>
-        <return statusCode="200"/>
-    </api>
+   <api port="3000" method="GET">
+      <opentelemetry
+              jaegerPort="4317"
+              jaegerHost="localhost"
+              sampleRate="1.0"
+      />
+      <request>
+         <groovy>
+            println "Request headers:"
+            header.allHeaderFields.each {
+            print it
+            }
+            CONTINUE
+         </groovy>
+         <template contentType="application/json" pretty="yes">
+            { success: true }
+         </template>
+      </request>
+      <return statusCode="200"/>
+   </api>
 </router>
 
 ```
