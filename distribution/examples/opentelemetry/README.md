@@ -44,7 +44,7 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
         />
         <request>
             <template contentType="application/json" pretty="yes">
-                { "hello": ${params.name}! }
+               { success: true }
             </template>
         </request>
         <return statusCode="200"/>

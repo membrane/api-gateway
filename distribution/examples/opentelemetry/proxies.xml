@@ -13,11 +13,12 @@
             />
             <request>
                 <template contentType="application/json" pretty="yes">
-                    { "hello": ${params.name}! }
+                    { success: true }
                 </template>
             </request>
             <return statusCode="200"/>
         </api>
+
         <api port="2000">
             <opentelemetry
                     jaegerPort="4317"
