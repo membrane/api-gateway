@@ -2,7 +2,6 @@ package com.predic8.membrane.examples.tests.opentelemetry;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 
 import static java.util.regex.Pattern.compile;
@@ -28,11 +27,6 @@ public class RegexMatcherTest {
 
         Matcher m = compile("traceparent: (.*)-(.*)-(.*)-(.*)").matcher(HEADER);
 
-        ArrayList<String> traces = new ArrayList<>();
-        while (m.find()) {
-            traces.add(m.group(2));
-        }
-        assertEquals(2, traces.size());
-        assertEquals(traces.get(0), traces.get(1));
+        if (m.find()) assertEquals("7b048dbe35a1cd06f55e037fb7ac095f", m.group(2));
     }
 }
