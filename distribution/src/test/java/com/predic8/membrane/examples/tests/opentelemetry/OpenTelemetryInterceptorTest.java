@@ -1,4 +1,4 @@
-package com.predic8.membrane.examples.tests;
+package com.predic8.membrane.examples.tests.opentelemetry;
 
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
@@ -28,12 +28,10 @@ public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartSto
     void startMembrane() throws IOException, InterruptedException {
         logger = new BufferLogger();
         process = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitForMembrane().start();
-
     }
 
-
     @Test
-    public void getResult() throws Exception {
+    public void getTraceIds() {
         // @formatter:off
         given()
                 .get("http://localhost:2000")
@@ -41,16 +39,15 @@ public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartSto
                 .statusCode(200);
         // @formatter:on
 
-        // Test
-        Matcher m = compile("traceparent:\\s+(\\S+)").matcher(logger.toString());
+
+        Matcher m = compile("traceparent: (.*)-(.*)-(.*)-(.*)").matcher(logger.toString());
 
         ArrayList<String> traces = new ArrayList<>();
         while (m.find()) {
-            // split string at - and get traceId
-            traces.add(m.group(0).trim().split("-")[1]);
+            traces.add(m.group(2));
         }
 
-        // check if traceparent appears twice in the header
+        // check if there are two traceparents in the header:
         assertEquals(2, traces.size());
 
         // check if traceId matches:
