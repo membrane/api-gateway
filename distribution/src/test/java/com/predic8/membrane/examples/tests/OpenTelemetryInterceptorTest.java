@@ -34,12 +34,16 @@ public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartSto
 
     @Test
     public void getResult() throws Exception {
+        // @formatter:off
         given()
                 .get("http://localhost:2000")
-                .then().assertThat()
+        .then().assertThat()
                 .statusCode(200);
+        // @formatter:on
 
-        Matcher m = compile("traceparent:\\s+\\S+").matcher(logger.toString());
+        // Test
+        Matcher m = compile("traceparent:\\s+(\\S+)").matcher(logger.toString());
+
         ArrayList<String> traces = new ArrayList<>();
         while (m.find()) {
             // split string at - and get traceId
