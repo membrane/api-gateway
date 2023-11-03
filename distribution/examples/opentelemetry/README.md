@@ -1,8 +1,9 @@
 # Tracing with OpenTelemetry
 
-Membrane offers support for tracing with the [OpenTelemetry](https://opentelemetry.io/) specification. 
+Membrane offers support for tracing according to the [OpenTelemetry](https://opentelemetry.io/) specification.
 
-The usage of APIs can be observed with the OTel plugin. Membrane collects data about processes flowing through it and sends it to an OTEL collector like jaeger.
+The usage of APIs can be observed with the OpenTelemetry plugin. Membrane collects data about the processes flowing
+through it and sends it to an OTLP endpoint, in this case, a jaeger backend.
 
 To instrument an API add the `opentelemetry` plugin to it.
 
