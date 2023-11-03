@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
@@ -29,6 +30,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
+import static io.opentelemetry.api.trace.StatusCode.ERROR;
+import static io.opentelemetry.api.trace.StatusCode.OK;
 import static io.opentelemetry.context.Context.current;
 
 
@@ -55,8 +58,19 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        ((Span) exc.getProperty("span")).addEvent("MEMBRANE-RESPONSE").end();
+        Span span = ((Span) exc.getProperty("span"));
+        span.setStatus(getStatusCode(exc));
+        setSpanEvent(span, exc);
         return CONTINUE;
+    }
+
+    private StatusCode getStatusCode(Exchange exc) {
+        return exc.getResponse().getStatusCode() >= 500 ? ERROR : OK;
+    }
+
+    private void setSpanEvent(Span span, Exchange exc) {
+        if (getStatusCode(exc) == ERROR) span.recordException(new Throwable(exc.getErrorMessage()));
+        span.addEvent("MEMBRANE-END").end();
     }
 
     private void startMembraneScope(Exchange exc, Context receivedContext) {
