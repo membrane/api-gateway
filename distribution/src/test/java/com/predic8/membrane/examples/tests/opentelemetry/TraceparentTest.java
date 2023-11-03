@@ -1,10 +1,11 @@
-package com.predic8.membrane.core.interceptor.opentelemetry;
+package com.predic8.membrane.examples.tests.opentelemetry;
 
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.opentelemetry.Traceparent;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TraceparentTest {
 

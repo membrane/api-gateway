@@ -8,11 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static java.util.regex.Pattern.compile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
@@ -39,19 +37,8 @@ public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartSto
                 .statusCode(200);
         // @formatter:on
 
-
-        Matcher m = compile("traceparent: (.*)-(.*)-(.*)-(.*)").matcher(logger.toString());
-
-        ArrayList<String> traces = new ArrayList<>();
-        while (m.find()) {
-            traces.add(m.group(2));
-        }
-
-        // check if there are two traceparents in the header:
-        assertEquals(2, traces.size());
-
-        // check if traceId matches:
-        assertEquals(traces.get(0), traces.get(1));
-
+        List<Traceparent> traceparents = Traceparent.parse(logger.toString());
+        assertEquals(2, traceparents.size());
+        assertEquals(traceparents.get(0).traceId, traceparents.get(1).traceId);
     }
 }
