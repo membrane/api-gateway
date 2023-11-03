@@ -12,9 +12,12 @@
                     sampleRate="1.0"
             />
             <request>
-                <template contentType="application/json" pretty="yes">
-                    { success: true }
-                </template>
+                <template contentType="text/plain" pretty="yes"><![CDATA[
+                Header:
+                <% for(h in header.allHeaderFields) { %>
+                   <%= h.headerName %> : <%= h.value %>
+                <% } %>
+            ]]></template>
             </request>
             <return statusCode="200"/>
         </api>
