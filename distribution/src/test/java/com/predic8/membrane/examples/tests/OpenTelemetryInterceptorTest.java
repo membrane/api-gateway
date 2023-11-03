@@ -18,7 +18,7 @@ public class OpenTelemetryInterceptorTest extends DistributionExtractingTestcase
         try (Process2 ignore = startServiceProxyScript()) {
 
             given()
-                    .get("http://localhost:3000")
+                    .get("http://localhost:2000")
                     .then()
                     .log()
                     .body().statusCode(200);
