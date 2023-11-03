@@ -312,5 +312,4 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	public String getShortDescription() {
 		return "Transforms REST requests into SOAP and responses vice versa.";
 	}
-
 }
