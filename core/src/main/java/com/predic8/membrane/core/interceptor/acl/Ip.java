@@ -31,8 +31,7 @@ public class Ip extends AbstractClientAddress {
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		var type = token.getAttributeValue(null, "type");
-		this.type = ParseType.getByOrDefault(type);
+		this.type = ParseType.getByOrDefault(token.getAttributeValue(null, "type"));
 	}
 
 	@Override

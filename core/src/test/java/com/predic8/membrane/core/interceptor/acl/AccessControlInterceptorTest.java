@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Test;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert;
 import static org.junit.jupiter.api.Assertions.*;
 
+
+// @TODO Rewrite without HTTP Request. Test interceptor in isolation.
 @Disabled
 public class AccessControlInterceptorTest {
 

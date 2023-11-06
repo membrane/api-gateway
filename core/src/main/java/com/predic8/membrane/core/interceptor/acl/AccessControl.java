@@ -25,8 +25,8 @@ public class AccessControl extends AbstractXmlElement {
 
 	public static final String ELEMENT_NAME = "accessControl";
 
-	private Router router;
-	private List<Resource> resources = new ArrayList<>();
+	private final Router router;
+	private final List<Resource> resources = new ArrayList<>();
 
 	public AccessControl(Router router) {
 		this.router = router;
@@ -48,7 +48,7 @@ public class AccessControl extends AbstractXmlElement {
 		return resources;
 	}
 
-	public Resource getResourceFor(String uri) throws Exception {
+	public Resource getResourceFor(String uri) {
 		if (uri == null)
 			throw new IllegalArgumentException("Resource URI can not be null.");
 

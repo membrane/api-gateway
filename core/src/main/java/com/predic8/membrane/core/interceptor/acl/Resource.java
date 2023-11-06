@@ -32,12 +32,12 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class Resource extends AbstractXmlElement {
 
-	private static Logger log = LoggerFactory.getLogger(Resource.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Resource.class.getName());
 
 	public static final String ELEMENT_NAME = "resource";
 
-	private Router router;
-	private List<AbstractClientAddress> clientAddresses = new ArrayList<>();
+	private final Router router;
+	private final List<AbstractClientAddress> clientAddresses = new ArrayList<>();
 
 	protected Pattern pattern;
 
@@ -80,12 +80,7 @@ public class Resource extends AbstractXmlElement {
 			}
 		}
 
-		for (AbstractClientAddress cAdd : clientAddresses) {
-			if (cAdd.matches(hostname, ip))
-				return true;
-		}
-
-		return false;
+		return  clientAddresses.stream().anyMatch(address -> address.matches(hostname,ip));
 	}
 
 	public boolean matches(String str) {

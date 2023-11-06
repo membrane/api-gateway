@@ -11,6 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+
 package com.predic8.membrane.core.interceptor.acl;
 
 import javax.xml.stream.XMLInputFactory;
@@ -31,6 +32,10 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 /**
  * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
  *              requested resource.
@@ -47,7 +52,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	public AccessControlInterceptor() {
 		setDisplayName("Access Control");
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
@@ -58,17 +63,20 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		} catch (Exception e) {
 			log.error("",e);
 			setResponseToAccessDenied(exc);
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		if (!resource.checkAccess(exc.getRemoteAddr(), exc.getRemoteAddrIp())) {
 			setResponseToAccessDenied(exc);
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
+	/**
+	 * @TODO Problem JSON predic8.de/authorization/denied
+	 */
 	private void setResponseToAccessDenied(Exchange exc) {
 		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
 	}
