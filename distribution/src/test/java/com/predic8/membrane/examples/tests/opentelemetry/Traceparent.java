@@ -32,4 +32,8 @@ public class Traceparent {
 
         return l;
     }
+
+    public boolean sameTraceId(Traceparent t) {
+        return traceId.equals(t.traceId);
+    }
 }

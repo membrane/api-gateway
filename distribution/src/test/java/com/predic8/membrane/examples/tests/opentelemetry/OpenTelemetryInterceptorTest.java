@@ -10,8 +10,10 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
 
+import static com.predic8.membrane.examples.tests.opentelemetry.Traceparent.parse;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -37,8 +39,8 @@ public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartSto
                 .statusCode(200);
         // @formatter:on
 
-        List<Traceparent> traceparents = Traceparent.parse(logger.toString());
+        List<Traceparent> traceparents = parse(logger.toString());
         assertEquals(2, traceparents.size());
-        assertEquals(traceparents.get(0).traceId, traceparents.get(1).traceId);
+        assertTrue(traceparents.get(0).sameTraceId(traceparents.get(1)));
     }
 }
