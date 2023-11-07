@@ -24,24 +24,40 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ParseTypeTest {
 
-    static Router router;
+    static ParseType pt;
 
-    static Hostname h1;
+    static final String blobSchema = "192.168.0.*";
+    static final String regexSchema = "192.168.0.(7|8)";
+    static final String cidrSchema = "192.168.0.0/20";
 
-    @BeforeAll
-    public static void setUp() throws Exception {
-        router = new Router();
-
-        h1 = new Hostname(router);
-        h1.setSchema("localhost");
+    @Test
+    public void matchesBlobSchema() throws UnknownHostException{
+        assertEquals(true, pt.GLOB.getMatcher().matches("192.168.0.1", blobSchema));
     }
 
     @Test
-    public void test_localhost_matches_localhost_pattern() throws UnknownHostException{
-        check("localhost", true);
+    public void notMatchesBlobSchema() throws UnknownHostException{
+        assertEquals(false, pt.GLOB.getMatcher().matches("192.168.1.1", blobSchema));
     }
 
-    private void check(String address, boolean b) throws UnknownHostException {
-        assertEquals(b, h1.matches(address, address));
+    @Test
+    public void matchesRegexSchema() throws UnknownHostException{
+        assertEquals(true, pt.REGEX.getMatcher().matches("192.168.0.8", regexSchema));
     }
+
+    @Test
+    public void notMatchesRegexSchema() throws UnknownHostException{
+        assertEquals(false, pt.REGEX.getMatcher().matches("192.168.0.9", regexSchema));
+    }
+
+    @Test
+    public void matchesCidrSchema() throws UnknownHostException{
+        assertEquals(true, pt.CIDR.getMatcher().matches("192.168.15.254", cidrSchema));
+    }
+
+    @Test
+    public void notMatchesCidrSchema() throws UnknownHostException{
+        assertEquals(false, pt.CIDR.getMatcher().matches("192.168.16.254", cidrSchema));
+    }
+
 }

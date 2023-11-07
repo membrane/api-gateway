@@ -24,7 +24,6 @@ import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
 import com.predic8.membrane.core.interceptor.acl.HostnameTest;
-import com.predic8.membrane.core.interceptor.acl.IpTest;
 import com.predic8.membrane.core.interceptor.acl.ParseTypeTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptorTest;
@@ -85,7 +84,7 @@ import org.junit.platform.suite.api.*;
 		ResponseBuilderTest.class,
 
         MagicTest.class, WSDLInterceptorTest.class,
-        AccessControlParserTest.class, HostnameTest.class, IpTest.class, ParseTypeTest.class,
+        AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class,
         DispatchingInterceptorTest.class,
         HostColonPortTest.class,
         HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
