@@ -14,24 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
-
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import org.apache.commons.text.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
+
+import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -74,11 +73,8 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return CONTINUE;
 	}
 
-	/**
-	 * @TODO Problem JSON predic8.de/authorization/denied
-	 */
 	private void setResponseToAccessDenied(Exchange exc) {
-		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
+		exc.setResponse(createProblemDetails(401, "predic8.de/authorization/denied", "Access Denied"));
 	}
 
 	/**
