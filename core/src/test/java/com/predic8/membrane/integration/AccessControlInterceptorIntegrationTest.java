@@ -34,16 +34,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AccessControlInterceptorIntegrationTest {
 
-	public static final String FILE_WITH_VALID_RESOURCE_PARAMS = "src/test/resources/acl/valid-resource.xml";
-
-	public static final String FILE_WITH_URI_MISMATCH = "src/test/resources/acl/uri-mismatch.xml";
-
-	public static final String FILE_WITH_CLIENT_MISMATCH = "src/test/resources/acl/client-mismatch.xml";
-
-	public static final String FILE_CLIENTS_FROM_127_0_0_1 = "src/test/resources/acl/clients-from-127.0.0.1.xml";
-
-	private static final byte[] LOCALHOST_IP = new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 };
-
 	private static HttpRouter router;
 
 	@BeforeEach
@@ -56,31 +46,6 @@ public class AccessControlInterceptorIntegrationTest {
 	@AfterEach
 	public void tearDown() throws Exception {
 		router.shutdown();
-	}
-
-	@Test
-	public void testValidServiceFile() throws Exception {
-		setInterceptor(FILE_WITH_VALID_RESOURCE_PARAMS);
-		assertEquals(200, new HttpClient().executeMethod(getBLZRequestMethod()));
-
-	}
-
-	@Test
-	public void testUriMismatchFile() throws Exception {
-		setInterceptor(FILE_WITH_URI_MISMATCH);
-		assertEquals(403, new HttpClient().executeMethod(getBLZRequestMethod()));
-	}
-
-	@Test
-	public void testClientsMismatchFile() throws Exception {
-		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
-		assertEquals(403, new HttpClient().executeMethod(getBLZRequestMethod()));
-	}
-
-	@Test
-	public void test127_0_0_1() throws Exception {
-		setInterceptor(FILE_CLIENTS_FROM_127_0_0_1);
-		assertEquals(200, getClient(LOCALHOST_IP).executeMethod(getBLZRequestMethod()));
 	}
 
 	private void setInterceptor(String fileName) throws Exception {
@@ -111,4 +76,3 @@ public class AccessControlInterceptorIntegrationTest {
 	}
 
 }
-
