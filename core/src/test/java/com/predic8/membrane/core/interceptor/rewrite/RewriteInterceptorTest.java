@@ -14,11 +14,13 @@
 package com.predic8.membrane.core.interceptor.rewrite;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -77,11 +79,27 @@ public class RewriteInterceptorTest {
 	}
 
 	@Test
-	void  storeSample() throws Exception {
+	void storeSample() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("https://api.predic8.de/store/products/"));
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("https://api.predic8.de/shop/v2/products/", exc.getDestinations().get(0));
 	}
 
+	@Test
+	void invalidURI() throws Exception {
+		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/%"));
+		exc.setRule(sp);
+
+		assertEquals(CONTINUE, di.handleRequest(exc));
+		assertEquals(RETURN, rewriter.handleRequest(exc));
+		assertEquals(
+			"""
+				{
+				  "type" : "http://membrane-api.io/error/uri-parser",
+				  "title" : "This URL does not follow the URI specification. Confirm the validity of the provided URL."
+				}""",
+				exc.getResponse().getBodyAsStringDecoded()
+		);
+	}
 }
