@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import static java.util.regex.Pattern.compile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessControlInterceptorIntegrationTest {
 
