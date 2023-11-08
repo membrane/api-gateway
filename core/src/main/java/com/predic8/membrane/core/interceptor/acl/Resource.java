@@ -83,6 +83,8 @@ public class Resource extends AbstractXmlElement {
 		return  clientAddresses.stream().anyMatch(address -> address.matches(hostname,ip));
 	}
 
+	public void addAddress(AbstractClientAddress addr) { clientAddresses.add(addr); }
+
 	public boolean matches(String str) {
 		return pattern.matcher(str).matches();
 	}

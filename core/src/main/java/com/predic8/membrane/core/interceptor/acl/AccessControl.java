@@ -48,6 +48,8 @@ public class AccessControl extends AbstractXmlElement {
 		return resources;
 	}
 
+	public void addResource(Resource r) { resources.add(r); }
+
 	public Resource getResourceFor(String uri) {
 		if (uri == null)
 			throw new IllegalArgumentException("Resource URI can not be null.");
