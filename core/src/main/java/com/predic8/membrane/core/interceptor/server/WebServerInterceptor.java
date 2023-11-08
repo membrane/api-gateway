@@ -88,14 +88,12 @@ public class WebServerInterceptor extends AbstractInterceptor {
         log.debug("request: " + uri);
 
         if (escapesPath(uri) || escapesPath(router.getUriFactory().create(uri).getPath())) {
-
             exc.setResponse(Response.badRequest().body("").build());
             return Outcome.ABORT;
         }
 
         if (uri.startsWith("/"))
             uri = uri.substring(1);
-
 
         try {
             exc.setTimeReqSent(System.currentTimeMillis());
@@ -113,8 +111,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     exc.setReceived();
                     exc.setTimeResReceived(System.currentTimeMillis());
                     return Outcome.RETURN;
-                } catch (ResourceRetrievalException e2) {
-                }
+                } catch (ResourceRetrievalException ignored) {}
             }
             String uri2 = uri + "/";
             for (String i : index) {
@@ -124,19 +121,21 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     exc.setReceived();
                     exc.setTimeResReceived(System.currentTimeMillis());
                     return Outcome.RETURN;
-                } catch (ResourceRetrievalException e2) {
-                }
+                } catch (ResourceRetrievalException ignored) {}
             }
         }
 
-        Outcome outcome = generateHtmlResponseFromChildren(exc, uri);
-        if (outcome != null) {
-            return outcome;
+        if (generateIndex) {
+            Outcome outcome = generateHtmlResponseFromChildren(exc, uri);
+            if (outcome != null) {
+                return outcome;
+            }
         }
 
         exc.setResponse(Response.notFound().build());
         return Outcome.ABORT;
     }
+
 
     private Outcome generateHtmlResponseFromChildren(Exchange exc, String uri) throws FileNotFoundException {
         List<String> children = router.getResolverMap().getChildren(ResolverMap.combine(router.getBaseLocation(), docBase, uri));
