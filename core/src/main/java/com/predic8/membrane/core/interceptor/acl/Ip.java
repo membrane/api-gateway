@@ -34,6 +34,8 @@ public class Ip extends AbstractClientAddress {
 		this.type = ParseType.getByOrDefault(token.getAttributeValue(null, "type"));
 	}
 
+	public void setParseType(ParseType pt) { type = pt; }
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;

@@ -96,6 +96,8 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		accessControl = parse(file, router);
 	}
 
+	public void setAccessControl(AccessControl ac) { accessControl = ac; }
+
 	public AccessControl getAccessControl() {
 		return accessControl;
 	}

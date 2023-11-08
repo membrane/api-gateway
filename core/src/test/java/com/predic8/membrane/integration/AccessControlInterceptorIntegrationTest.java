@@ -1,44 +1,39 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License. */
 package com.predic8.membrane.integration;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
+import com.predic8.membrane.core.interceptor.acl.*;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static java.util.regex.Pattern.compile;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessControlInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
+	private static final GetMethod GET = new GetMethod("http://localhost:5005");
+
 	@BeforeEach
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3008), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 5005), "www.google.de", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 	}
@@ -48,31 +43,83 @@ public class AccessControlInterceptorIntegrationTest {
 		router.shutdown();
 	}
 
-	private void setInterceptor(String fileName) throws Exception {
-		AccessControlInterceptor interceptor = new AccessControlInterceptor();
-		interceptor.setFile(fileName);
-		router.addUserFeatureInterceptor(interceptor);
+	@Test
+	public void matchesHostname() throws Exception {
+		initRouter(getHostnameResource("localhost"));
+		assertEquals(200, getClient().executeMethod(GET));
+	}
+
+	@Test
+	public void notMatchesHostname() {
+	}
+
+	@Test
+	public void matchesBlobIp() throws Exception {
+		initRouter(getIpResource("127.0.0.*", ParseType.GLOB));
+		assertEquals(200, getClient().executeMethod(GET));
+	}
+
+	@Test
+	public void notMatchesBlobIp() {
+	}
+
+	@Test
+	public void matchesRegexIp() {
+	}
+
+	@Test
+	public void notMatchesRegexIp() {
+	}
+
+	@Test
+	public void matchesCidrIp() {
+	}
+
+	@Test
+	public void notMatchesCidrIp() {
+	}
+
+	private void initRouter(Resource r) throws Exception {
+		router.addUserFeatureInterceptor(buildAci(r));
 		router.init();
 	}
 
-	private PostMethod getBLZRequestMethod() {
-		PostMethod post = new PostMethod("http://localhost:3008/axis2/services/BLZService");
-		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
-
-		assert stream != null;
-		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
-		post.setRequestEntity(entity);
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
-		return post;
+	private AccessControlInterceptor buildAci(Resource r) {
+		return new AccessControlInterceptorManualProxy(){{
+			setAccessControl(
+					new AccessControl(router) {{
+						addResource(r);
+					}}
+			);
+			setFile("src/test/resources/acl/acl.xml");
+		}};
 	}
 
-	private HttpClient getClient(byte[] ip) throws UnknownHostException {
+	private Resource getIpResource(String scheme, ParseType ptype) {
+		return getResource(new Ip(router) {{
+			setParseType(ptype);
+			setSchema(scheme);
+		}});
+	}
+
+	private Resource getHostnameResource(String scheme) {
+		return getResource(new Hostname(router) {{
+			setSchema(scheme);
+		}});
+	}
+
+	private Resource getResource(AbstractClientAddress addr) {
+		return new Resource(router) {{
+			addAddress(addr);
+			setUriPattern(compile(".*"));
+		}};
+	}
+
+	private HttpClient getClient() throws UnknownHostException {
 		HttpClient client = new HttpClient();
 		HostConfiguration config = new HostConfiguration();
-		config.setLocalAddress(InetAddress.getByAddress(ip));
+		config.setLocalAddress(InetAddress.getByAddress(new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 }));
 		client.setHostConfiguration(config);
 		return client;
 	}
-
 }
