@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.core.interceptor.acl.matchers.*;
+import com.predic8.membrane.core.interceptor.acl.matchers.Cidr.CidrMatcher;
 
 public enum ParseType {
     GLOB("glob", new GlobMatcher()),
