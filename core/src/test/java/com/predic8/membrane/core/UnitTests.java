@@ -17,22 +17,26 @@ import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
-import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
+import com.predic8.membrane.core.exchangestore.AbstractExchangeStoreTest;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
 import com.predic8.membrane.core.graphql.GraphQLProtectionInterceptorTest;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.cookie.*;
+import com.predic8.membrane.core.http.cookie.MessageBytesTest;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
 import com.predic8.membrane.core.interceptor.acl.HostnameTest;
 import com.predic8.membrane.core.interceptor.acl.ParseTypeTest;
+import com.predic8.membrane.core.interceptor.acl.matchers.Cidr.IpRangeTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptorTest;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
-import com.predic8.membrane.core.interceptor.javascript.*;
-import com.predic8.membrane.core.interceptor.json.*;
-import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.javascript.JavascriptInterceptor;
+import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
+import com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptorTest;
+import com.predic8.membrane.core.interceptor.misc.ReturnInterceptorTest;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
@@ -42,7 +46,7 @@ import com.predic8.membrane.core.interceptor.schemavalidation.JSONSchemaValidati
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPUtilTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
-import com.predic8.membrane.core.interceptor.security.*;
+import com.predic8.membrane.core.interceptor.security.PaddingHeaderInterceptorTest;
 import com.predic8.membrane.core.interceptor.soap.SoapOperationExtractorTest;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptorTest;
 import com.predic8.membrane.core.interceptor.xml.Json2XmlInterceptorTest;
@@ -52,10 +56,10 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathAnalyze
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLElementFinderTest;
-import com.predic8.membrane.core.interceptor.xmlprotection.*;
+import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectorTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientTest;
-import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContextTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
 import com.predic8.membrane.core.resolver.SingleResolverTest;
@@ -63,9 +67,9 @@ import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
 import com.predic8.membrane.core.transport.ExchangeTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
-import com.predic8.membrane.core.transport.http2.Http2ClientServerTest;
 import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
 import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
+import com.predic8.membrane.core.transport.http2.Http2ClientServerTest;
 import com.predic8.membrane.core.transport.ssl.SSLContextTest;
 import com.predic8.membrane.core.transport.ssl.SessionResumptionTest;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeRenewTest;
@@ -74,7 +78,9 @@ import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorWADLTest;
 import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
-import org.junit.platform.suite.api.*;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.SelectPackages;
+import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
@@ -84,7 +90,7 @@ import org.junit.platform.suite.api.*;
 		ResponseBuilderTest.class,
 
         MagicTest.class, WSDLInterceptorTest.class,
-        AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class,
+        AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class, IpRangeTest.class,
         DispatchingInterceptorTest.class,
         HostColonPortTest.class,
         HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
