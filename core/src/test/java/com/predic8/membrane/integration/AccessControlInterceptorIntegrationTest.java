@@ -1,8 +1,6 @@
 package com.predic8.membrane.integration;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.acl.*;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -10,20 +8,15 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.interceptor.acl.ParseType.*;
 import static java.util.regex.Pattern.compile;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessControlInterceptorIntegrationTest {
@@ -46,38 +39,50 @@ public class AccessControlInterceptorIntegrationTest {
 
 	@Test
 	public void matchesHostname() throws Exception {
-		initRouter(getHostnameResource("localhost"));
+		initRouter(getHostnameResource("local.*"));
 		assertEquals(200, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void notMatchesHostname() {
+	public void notMatchesHostname() throws Exception {
+		initRouter(getHostnameResource("hostlocal"));
+		assertEquals(401, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void matchesBlobIp() throws Exception {
-		initRouter(getIpResource("127.0.0.*", ParseType.GLOB));
+	public void matchesGlobIp() throws Exception {
+		initRouter(getIpResource("127.0.0.*", GLOB));
 		assertEquals(200, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void notMatchesBlobIp() {
+	public void notMatchesGlobIp() throws Exception {
+		initRouter(getIpResource("127.0.1.*", GLOB));
+		assertEquals(401, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void matchesRegexIp() {
+	public void matchesRegexIp() throws Exception {
+		initRouter(getIpResource("127.0.0.(2|1)", REGEX));
+		assertEquals(200, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void notMatchesRegexIp() {
+	public void notMatchesRegexIp() throws Exception {
+		initRouter(getIpResource("127.0.0.\\s", REGEX));
+		assertEquals(401, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void matchesCidrIp() {
+	public void matchesCidrIp() throws Exception {
+		initRouter(getIpResource("127.0.0.0/20", CIDR));
+		assertEquals(200, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void notMatchesCidrIp() {
+	public void notMatchesCidrIp() throws Exception {
+		initRouter(getIpResource("127.0.0.0/32", CIDR));
+		assertEquals(401, getClient().executeMethod(GET));
 	}
 
 	private void initRouter(Resource r) throws Exception {
@@ -92,7 +97,6 @@ public class AccessControlInterceptorIntegrationTest {
 						addResource(r);
 					}}
 			);
-			setFile("src/test/resources/acl/acl.xml");
 		}};
 	}
 

@@ -1,4 +1,24 @@
 <accessControl>
-	<resource uri="*">
+	<resource uri="/axis2/*">
+		<clients>
+			<ip>192.168.23.131</ip>
+			<hostname>predic8.de</hostname>
+			<hostname>sami</hostname>
+			<ip>127.0.0.1</ip>
+		</clients>
+	</resource>
+	<resource uri="/crm/*">
+		<clients>
+			<ip>192.168.23.*</ip>
+			<hostname>pc1.predic8.de</hostname>
+			<ip>192.168.11.2</ip>
+			<hostname>pc1.predic8.com</hostname>
+			<hostname>pc1.xy.com</hostname>
+		</clients>
+	</resource>
+	<resource uri="/abc/*">
+		<clients>
+			<any/>
+		</clients>
 	</resource>
 </accessControl>
