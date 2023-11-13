@@ -169,8 +169,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		 */
 		@MCOtherAttributes
 		public void setAttributes(Map<String, String> attributes) {
-			for (Map.Entry<String, String> e : attributes.entrySet())
-				this.attributes.put(e.getKey(), e.getValue());
+			this.attributes.putAll(attributes);
 		}
 	}
 
