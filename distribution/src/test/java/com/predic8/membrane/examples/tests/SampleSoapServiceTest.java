@@ -1,19 +1,15 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestcase {
@@ -23,11 +19,11 @@ public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestca
         return "soap/sampleSoapService";
     }
 
+    private final String soapWsdl = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/";
+
     private final HashMap<String, String> methodGETmap = new HashMap<>() {{
-        put("/foo?wsdl", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" xmlns:tns=\"https://predic8.de/cities\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\" targetNamespace=\"https://predic8.de/cities\" name=\"cities\">\n" +
-                "    <wsdl:types>");
-        put("/foo/bar?wSdL", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" xmlns:tns=\"https://predic8.de/cities\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\" targetNamespace=\"https://predic8.de/cities\" name=\"cities\">\n" +
-                "    <wsdl:types>");
+        put("/foo?wsdl", soapWsdl);
+        put("/foo/bar?wSdL", soapWsdl);
         put("/foo", "<faultstring>Method Not Allowed</faultstring>");
 
     }};
@@ -47,34 +43,27 @@ public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestca
 
     }
 
-    @Test
-    public void testPostBonn() throws IOException {
+
+    private final HashMap<String, String> cityMap = new HashMap<>() {{
+        put("Bonn", "<population>327000</population>");
+        put("London", "<population>8980000</population>");
+        put("Berlin", "<errorcode>404</errorcode>");
+
+    }};
+
+    final List<String> cityMap() {
+        return cityMap.keySet().stream().toList();
+    }
+
+    @ParameterizedTest
+    @MethodSource("cityMap")
+    public void testCity(String city) throws Exception {
         given()
-            .body(readFileFromBaseDir("request.xml"))
+            .body(readFileFromBaseDir("request.xml").replace("Bonn", city))
         .when()
             .post("http://localhost:2000/")
         .then()
-            .body(containsString("<population>327000</population>"));
-    }
+            .body(containsString(cityMap.get(city)));
 
-    @Test
-    public void testPostLondon() throws IOException {
-        given()
-            .body(readFileFromBaseDir("request.xml").replace("Bonn", "London"))
-        .when()
-            .post("http://localhost:2000/")
-        .then()
-            .body(containsString("<population>8980000</population>"));
     }
-
-    @Test
-    public void testNotFound() throws IOException {
-        given()
-                .body(readFileFromBaseDir("request.xml").replace("Bonn", "Berlin"))
-                .when()
-                .post("http://localhost:2000/")
-                .then()
-                .body(containsString("<errorcode>404</errorcode>"));
-    }
-
 }
