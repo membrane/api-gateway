@@ -19,11 +19,10 @@ public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestca
         return "soap/sampleSoapService";
     }
 
-    private final String soapWsdl = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/";
-
     private final HashMap<String, String> methodGETmap = new HashMap<>() {{
-        put("/foo?wsdl", soapWsdl);
-        put("/foo/bar?wSdL", soapWsdl);
+        String soapWsdlSubStr = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/";
+        put("/foo?wsdl", soapWsdlSubStr);
+        put("/foo/bar?wSdL", soapWsdlSubStr);
         put("/foo", "<faultstring>Method Not Allowed</faultstring>");
 
     }};
@@ -34,7 +33,7 @@ public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestca
 
     @ParameterizedTest
     @MethodSource("parameters")
-    public void testMethod(String query) throws Exception {
+    public void testMethod(String query) {
         given()
         .when()
             .get("http://localhost:2000/" + query)
