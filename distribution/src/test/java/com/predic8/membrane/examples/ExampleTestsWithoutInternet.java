@@ -50,6 +50,7 @@ import org.junit.platform.suite.api.Suite;
 
         JSONSchemaValidationTest.class,
         XMLValidationTest.class,
+        SampleSoapServiceTest.class,
 
         // Transformatiom
         Xml2JsonTest.class,
