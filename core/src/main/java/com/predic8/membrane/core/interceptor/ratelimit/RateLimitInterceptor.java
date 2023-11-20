@@ -105,6 +105,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
         Map<String,Object> details = new HashMap<>();
         details.put("message","The quota of the ratelimiter is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())));
+        log.info(getKey(exc) + " limit: " + getRequestLimit() + " duration: " + getRequestLimitDuration() + " is exceeded. (clientIp: " + exc.getRemoteAddrIp()+")");
         exc.setResponse(createProblemDetails(429, "/ratelimiter/exceeded", "Rate limit is exceeded", details));
         setHeaderRateLimitFieldsOnResponse(exc);
 
