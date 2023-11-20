@@ -15,3 +15,4 @@ the `AccessLogInterceptor` and some additional variables to extend the default b
 1. Run `examples/logging/access/service-proxy.sh`
 2. Open your browser or curl http://localhost:2000
 3. Check if membrane logged something like `127.0.0.1 [20/11/2023:16:12:46 +0100] "GET /shop/v2/products/1 HTTP/1.1" 200 0 - [application/json]`
+4. Take a look at the `access.log`
