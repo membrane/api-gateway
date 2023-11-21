@@ -1,4 +1,6 @@
-# Membrane API Gateway
+![Membrane Logo](distribution/media/membrane-logo-m-text.png)
+
+# API Gateway
 
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
