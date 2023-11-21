@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.server;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -57,6 +58,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     public WebServerInterceptor() {
         name = "Web Server";
+    }
+
+    public WebServerInterceptor(Router r) {
+        name = "Web Server";
+        this.router = r;
     }
 
     @Override
