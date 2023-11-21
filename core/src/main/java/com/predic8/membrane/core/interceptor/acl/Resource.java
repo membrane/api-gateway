@@ -32,14 +32,14 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class Resource extends AbstractXmlElement {
 
-	private static Logger log = LoggerFactory.getLogger(Resource.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Resource.class.getName());
 
 	public static final String ELEMENT_NAME = "resource";
 
-	private Router router;
-	private List<AbstractClientAddress> clientAddresses = new ArrayList<>();
+	private final Router router;
+	private final List<AbstractClientAddress> clientAddresses = new ArrayList<>();
 
-	protected Pattern pattern;
+	protected Pattern uriPattern;
 
 	public Resource(Router router) {
 		this.router = router;
@@ -63,9 +63,10 @@ public class Resource extends AbstractXmlElement {
 		}
 	}
 
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(TextUtil.globToRegExp(token.getAttributeValue(null, "uri")));
+		uriPattern = Pattern.compile(TextUtil.globToRegExp(token.getAttributeValue(null, "uri")));
 	}
 
 	public boolean checkAccess(String hostname, String ip) {
@@ -79,20 +80,21 @@ public class Resource extends AbstractXmlElement {
 			}
 		}
 
-		for (AbstractClientAddress cAdd : clientAddresses) {
-			if (cAdd.matches(hostname, ip))
-				return true;
-		}
-
-		return false;
+		return  clientAddresses.stream().anyMatch(address -> address.matches(hostname,ip));
 	}
+
+	public void addAddress(AbstractClientAddress addr) { clientAddresses.add(addr); }
 
 	public boolean matches(String str) {
-		return pattern.matcher(str).matches();
+		return uriPattern.matcher(str).matches();
 	}
 
-	public String getPattern() {
-		return pattern.pattern();
+	public void setUriPattern(Pattern uriPattern) {
+		this.uriPattern = uriPattern;
+	}
+
+	public String getUriPattern() {
+		return uriPattern.pattern();
 	}
 
 	public void init(Router router) {

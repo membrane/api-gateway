@@ -6,10 +6,10 @@
 					    
 	<router>
 
-		<serviceProxy name="predic8.com" port="2000">
+		<api port="2000">
 			<accessControl file="./acl.xml" />
-			<target host="predic8.com" port="80" />
-		</serviceProxy>
+			<target url="https://predic8.com"/>
+		</api>
 	
 	</router>
 	
