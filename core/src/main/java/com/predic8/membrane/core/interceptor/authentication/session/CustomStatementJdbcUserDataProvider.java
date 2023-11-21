@@ -28,7 +28,7 @@ import java.util.NoSuchElementException;
 
 @MCElement(name="customStatementJdbcUserDataProvider")
 public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {
-    private static Logger log = LoggerFactory.getLogger(CustomStatementJdbcUserDataProvider.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(CustomStatementJdbcUserDataProvider.class.getName());
 
     private Router router;
 
@@ -76,8 +76,8 @@ public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {
         if (password == null)
             throw new NoSuchElementException();
 
-        Connection con = null;
-        PreparedStatement preparedStatement = null;
+        Connection con;
+        PreparedStatement preparedStatement;
         try{
             con = datasource.getConnection();
             preparedStatement = con.prepareStatement(checkPasswordSql);

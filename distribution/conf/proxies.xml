@@ -5,7 +5,6 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-
         <api port="2000">
             <target host="api.predic8.de"/>
         </api>
