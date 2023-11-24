@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,10 +69,10 @@ public class Hostname extends AbstractClientAddress {
 	@Override
 	public boolean matches(String hostname, String ip) {
 		try {
-			if (pattern.toString().equals("^localhost$")) {
+			if (schema.toString().equals("^localhost$")) {
 				InetAddress ia = InetAddress.getByName(ip);
 				if (ia.equals(localhostIp4) || ia.equals(localhostIp6)) {
-					log.debug("Address to be matched : " + ia + " is being matched to :" + pattern.toString());
+					log.debug("Address to be matched : " + ia + " is being matched to :" + schema.toString());
 					return true;
 				}
 			}
@@ -84,7 +85,7 @@ public class Hostname extends AbstractClientAddress {
 			}
 			String canonicalHostName = router.getDnsCache().getCanonicalHostName(InetAddress.getByName(ip));
 			log.debug("CanonicalHostname for " + hostname + " / " + ip + " is "  + canonicalHostName);
-			return pattern.matcher(canonicalHostName).matches();
+			return Pattern.compile(schema).matcher(canonicalHostName).matches();
 		} catch (UnknownHostException e) {
 			log.warn("Could not reverse lookup canonical hostname for " + hostname + " " + ip + ".", e);
 			return false;
