@@ -41,12 +41,12 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase  {
         String andAssert = getAndAssert(200, LOCALHOST_2000 + "/api-docs");
         JSONAssert.assertEquals("""
                 {
-                  "fruitshop-v1-0" : {
+                  "fruitshop-v2-0" : {
                     "openapi" : "3.0.2",
                     "title" : "Fruit Shop API",
-                    "version" : "1.0",
-                    "openapi_link" : "/api-docs/fruitshop-v1-0",
-                    "ui_link" : "/api-docs/ui/fruitshop-v1-0"
+                    "version" : "2.0",
+                    "openapi_link" : "/api-docs/fruitshop-v2-0",
+                    "ui_link" : "/api-docs/ui/fruitshop-v2-0"
                   }
                 }
                 """, andAssert, true);
@@ -64,10 +64,10 @@ public class APIProxyTest extends AbstractSampleMembraneStartStopTestcase  {
 
     @Test
     void swaggerUi() throws IOException {
-        String body = getAndAssert(200, LOCALHOST_2000 + "/api-docs/ui/fruitshop-v1-0", ACCEPT_HTML_HEADER);
+        String body = getAndAssert(200, LOCALHOST_2000 + "/api-docs/ui/fruitshop-v2-0", ACCEPT_HTML_HEADER);
         assertContains("""
                 content="SwaggerUI""", body);
-        assertContains("/api-docs/fruitshop-v1-0", body);
+        assertContains("/api-docs/fruitshop-v2-0", body);
     }
 
     @Test

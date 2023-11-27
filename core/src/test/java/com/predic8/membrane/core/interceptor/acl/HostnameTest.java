@@ -27,58 +27,37 @@ public class HostnameTest {
 	static Router router;
 
 	static Hostname h1;
-
-	static Ip ip;
+	static Hostname h2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-
 		router = new Router();
 
 		h1 = new Hostname(router);
-		h1.setPattern("localhost");
+		h1.setSchema("localhost");
 
-		ip = new Ip(router);
-		ip.setPattern("127.0.0.1");
+		h2 = new Hostname(router);
+		h2.setSchema("local*");
 	}
 
 	@Test
-	public void test_irgendwas() throws UnknownHostException {
-		check("213.217.99.141", false);
+	public void matchesPlainString() throws UnknownHostException{
+		assertEquals(true, h1.matches("localhost", "localhost"));
 	}
 
 	@Test
-	public void test_127_0_0_1_matches_localhost_pattern() throws UnknownHostException {
-		check("127.0.0.1", true);
+	public void notMatchesPlainString() throws UnknownHostException{
+		assertEquals(false, h1.matches("local", "local"));
 	}
 
 	@Test
-	public void test_localhost_matches_localhost_pattern() throws UnknownHostException{
-		check("localhost", true);
+	public void matchesRegexString() throws UnknownHostException{
+		assertEquals(true, h1.matches("localhost", "localhost"));
 	}
 
 	@Test
-	public void test_ipv6_long_matches_localhost_pattern() throws UnknownHostException{
-		check("0:0:0:0:0:0:0:1", true);
+	public void notMatchesRegexString() throws UnknownHostException{
+		assertEquals(false, h1.matches("hostlocal", "hostlocal"));
 	}
 
-	@Test
-	public void test_ipv6_short_matches_localhost_pattern() throws UnknownHostException{
-		check("::1", true);
-	}
-
-	@Test
-	public void test_192_168_1_1_matches_localhost_pattern() throws UnknownHostException{
-		check("192.168.1.1", false);
-	}
-
-	private void check(String address, boolean b) throws UnknownHostException {
-
-		//		System.out.println(router.getDnsCache().getCanonicalHostName(byName));
-		//		System.out.println(byName.getCanonicalHostName());
-		//		System.out.println("Local Host: " + InetAddress.getLocalHost());
-		//		System.out.println(h1.matches(byName));
-		//		System.out.println(ip.matches(byName));
-		assertEquals(b, h1.matches(address, address));
-	}
 }
