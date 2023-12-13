@@ -3,6 +3,11 @@ package com.predic8.membrane.core.interceptor.httpcache;
 import com.predic8.membrane.core.http.Header;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toCollection;
 
 public class CacheControlHeader {
     private final LinkedList<Directive> directives;
@@ -25,31 +30,37 @@ public class CacheControlHeader {
         return directives;
     }
 
-    static Map<Directives, Directive> parseDirectives(String directives) {
-        // TODO | Uses parseHttpElement
-        // TODO | Uses Directive.parse()
-        return null;
-    }
-
-    public static CacheControlHeader parseRaw(String header) {
-        //CacheControlHeader cch = new CacheControlHeader();
-        // TODO Parse header string | Uses ParseHeader
-        return null;
+    static LinkedList<Directive> parseDirectives(String directives) {
+        return httpElementToList(directives).stream()
+                .map(Directive::parse)
+                .collect(toCollection(LinkedList::new));
     }
 
     public static CacheControlHeader parseHeader(Header header) {
-        //CacheControlHeader cch = new CacheControlHeader();
-        // TODO Parse Header object | Uses
+        return new CacheControlHeader(parseDirectives(header.getCacheControl()));
+    }
+
+    <R> R onDirective(Directives directive, Function<Directive, R> function) {
+        for (Directive dir : directives) {
+            if (dir.getName().equals(directive)) {
+                return function.apply(dir);
+            }
+        }
         return null;
     }
 
-    // TODO
-    public boolean hasDirective(Directives directive) {
-        return true;
+    public boolean hasDirective(Directives dir) {
+        return onDirective(dir, d -> true) != null;
     }
 
-    //TODO
-    //public Optional<DirectiveArgument<?>> getDirectiveArgument(Directives directiveName) {
-    //     return directives.containsKey(directiveName) ? directives.get(directiveName).getArgument() : Optional.empty();
-    //}
+    public boolean directiveHasArgument(Directives dir) {
+        return onDirective(dir, d -> d.getArgument().isPresent());
+    }
+
+    public Optional<DirectiveArgument<?>> getDirectiveArgument(Directives dir) {
+        if (hasDirective(dir) && directiveHasArgument(dir)) {
+            return onDirective(dir, Directive::getArgument);
+        }
+        return Optional.empty();
+    }
 }

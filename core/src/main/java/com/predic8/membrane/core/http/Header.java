@@ -365,6 +365,10 @@ public class Header {
 		return getFirstValue(CONTENT_ENCODING);
 	}
 
+	public String getCacheControl() {
+		return getFirstValue(CACHE_CONTROL);
+	}
+
 	public String getCharset() {
 		if (getContentType() == null)
 			return UTF_8.name();
