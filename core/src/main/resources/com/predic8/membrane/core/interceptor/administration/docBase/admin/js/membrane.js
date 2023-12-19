@@ -3,17 +3,20 @@ var membrane = function() {
 	runningDataLoadCall = null;
 
 	function getIEVersion() {
-		let rv = -1; // Return value assumes failure.
+		let version = -1;
 
-		if (navigator.appName === 'Microsoft Internet Explorer')
-		{
+		if (navigator.appName === 'Microsoft Internet Explorer') {
 			const ua = navigator.userAgent;
 			const re = new RegExp("MSIE ([0-9]+[\.0-9]*)");
 			if (re.exec(ua) != null)
-				rv = parseFloat( RegExp.$1 );
+				version = parseFloat( RegExp.$1 );
 		}
 
-		return rv;
+		return version;
+	}
+
+	function isIE() {
+		return (/msie|trident/i).test(navigator.userAgent);
 	}
 
 	function createLink(href, content, params) {
@@ -106,7 +109,7 @@ var membrane = function() {
 
 		function loadText(selector, url) {			
 			$.get(url, function(resp) {
-				if ((/msie|trident/i).test(navigator.userAgent)  && getIEVersion()) {
+				if (isIE()  && getIEVersion()) {
 					document.getElementById(selector.substring(1)).innerText = resp;
 				} else {
 					$(selector).text(resp);
@@ -115,7 +118,7 @@ var membrane = function() {
 		}
 		
 		function setHTML(selector, html) {
-				if ((/msie|trident/i).test(navigator.userAgent)  && getIEVersion()) {
+				if (isIE()  && getIEVersion()) {
 					document.getElementById(selector.substring(1)).innerHTML = html.replace(/> /g, ">&nbsp;");
 				} else {
 			$(selector).html(html);
