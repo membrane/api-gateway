@@ -3,6 +3,7 @@ package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -16,6 +17,7 @@ import java.util.Map;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
+@MCElement(name = "ApiKeyInterceptor")
 public class ApiKeysInterceptor extends AbstractInterceptor {
 
     private static final String SCOPES = "scopes";
@@ -33,7 +35,6 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         final String key = apiKey.extract(exc);
-
         if (key == null && requireKey)
             return RETURN;
 
@@ -49,12 +50,12 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         this.requireKey = requireKey;
     }
 
-    @MCChildElement
+    @MCChildElement(allowForeign = true, order = 0)
     void setApiKeyStores(List<ApiKeyStore> apiKeyStores) {
         this.apiKeyStores = apiKeyStores;
     }
 
-    @MCChildElement
+    @MCChildElement(allowForeign = true, order = 1)
     void setApiKey(ApiKeyExtractor apiKey) {
         this.apiKey = apiKey;
     }

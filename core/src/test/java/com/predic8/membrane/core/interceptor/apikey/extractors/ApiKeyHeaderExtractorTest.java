@@ -2,12 +2,12 @@ package com.predic8.membrane.core.interceptor.apikey.extractors;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.HttpResendHandler;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ApiKeyHeaderExtractorTest {
 
@@ -15,7 +15,6 @@ class ApiKeyHeaderExtractorTest {
     static final String apiKey = "123456789";
 
     static ApiKeyHeaderExtractor ahe;
-    static HttpResendHandler hrh;
     static Exchange exc;
 
     @Test
