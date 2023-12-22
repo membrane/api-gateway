@@ -26,18 +26,18 @@ class ApiKeyFileStoreTest {
 
     @Test
     void getScopesTest() {
-        assertEquals("finance", f.getScopes("5XF27").get(0));
-        assertEquals("internal", f.getScopes("5XF27").get(1));
+        assertEquals("finance", f.getScopes().get("5XF27").get(0));
+        assertEquals("internal", f.getScopes().get("5XF27").get(1));
     }
 
     @Test
     void getScopesTestWithWhiteSpaces() {
-        assertEquals("accounting", f.getScopes("73D29").get(0));
-        assertEquals("management", f.getScopes("73D29").get(1));
+        assertEquals("accounting", f.getScopes().get("73D29").get(0));
+        assertEquals("management", f.getScopes().get("73D29").get(1));
     }
 
     @Test
     void getScopesTestWithTrailingComma() {
-        assertEquals("internal", f.getScopes("89D5C").get(0));
+        assertEquals("internal", f.getScopes().get("89D5C").get(0));
     }
 }
