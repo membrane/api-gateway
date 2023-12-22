@@ -1,6 +1,8 @@
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.HttpResendHandler;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,19 +15,19 @@ class ApiKeyHeaderExtractorTest {
     static final String apiKey = "123456789";
 
     static ApiKeyHeaderExtractor ahe;
+    static HttpResendHandler hrh;
     static Exchange exc;
 
     @Test
     void noHeaderToExtract() {
-        exc.getRequest().getHeader().setValue("api-key", apiKey);
+        exc = new Request.Builder().header("api-key", apiKey).buildExchange();
 
         assertNull(ahe.extract(exc));
     }
 
     @Test
     void extractHeader() {
-        final String apiKey = "123456789";
-        exc.getRequest().getHeader().setValue(keyHeader, apiKey);
+        exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
 
         assertEquals(apiKey, ahe.extract(exc));
     }
@@ -39,6 +41,5 @@ class ApiKeyHeaderExtractorTest {
     static void setup() throws Exception {
         ahe = new ApiKeyHeaderExtractor();
         ahe.setHeaderName(keyHeader);
-        exc = new Exchange(null);
     }
 }
