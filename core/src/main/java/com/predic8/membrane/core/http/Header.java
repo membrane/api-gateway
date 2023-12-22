@@ -177,7 +177,7 @@ public class Header {
 		return res;
 	}
 
-	public String getFirstValue(String name) {
+	private String getFirstValueObj(Object name) {
 		for (HeaderField field : fields) {
 			if (field.getHeaderName().equals(name))
 				return field.getValue();
@@ -185,13 +185,29 @@ public class Header {
 		return null;
 	}
 
+	public String getFirstValue(String name) {
+		return getFirstValueObj(name);
+	}
+
+	public String getFirstValue(HeaderName name) {
+		return getFirstValueObj(name);
+	}
+
 	public HeaderField[] getAllHeaderFields() {
 		return fields.toArray(new HeaderField[0]);
 	}
 
-	public boolean contains(String header) {
+	private boolean containsObj(Object header) {
 		return fields.stream()
 				.anyMatch(headerField -> headerField.getHeaderName().equals(header));
+	}
+
+	public boolean contains(String header) {
+		return containsObj(header);
+	}
+
+	public boolean contains(HeaderName header) {
+		return containsObj(header);
 	}
 
 	/**
