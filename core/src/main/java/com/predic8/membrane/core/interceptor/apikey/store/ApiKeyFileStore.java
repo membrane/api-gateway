@@ -1,26 +1,33 @@
-package com.predic8.membrane.core.interceptor.apikey.apikeystore;
+package com.predic8.membrane.core.interceptor.apikey.store;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import org.springframework.context.*;
+import org.springframework.context.event.*;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 
 @MCElement(name = "keyFileStore", topLevel = false)
-public class ApiKeyFileStore implements ApiKeyStore {
+public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<ContextStartedEvent> {
 
     private String location;
 
+    private Map<String, List<String>> scopes;
+
     @Override
-    public Map<String, List<String>> getScopes() {
+    public void onApplicationEvent(@SuppressWarnings("NullableProblems") ContextStartedEvent ignored) {
+        init();
+    }
+
+    public void init() {
         try {
-            return readFile().stream()
+            scopes = readFile().stream()
                     .map(line -> line.split(":"))
                     .collect(Collectors.toMap(
                             parts -> parts[0],
@@ -31,7 +38,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
     }
 
     public List<String> getScopes(String key) {
-        return getScopes().get(key);
+        return scopes.get(key);
     }
 
     public String getLocation() {
@@ -43,10 +50,13 @@ public class ApiKeyFileStore implements ApiKeyStore {
         this.location = location;
     }
 
-    public List<String> readFile() throws IOException {
+    private List<String> readFile() throws IOException {
         try (FileInputStream fis = new FileInputStream(location)) {
             return stream(new String(fis.readAllBytes(), UTF_8).split("\n")).toList();
         }
     }
+
+
+
 }
 
