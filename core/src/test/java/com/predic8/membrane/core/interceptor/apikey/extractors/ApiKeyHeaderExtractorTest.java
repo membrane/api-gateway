@@ -9,36 +9,30 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+
+/**
+ * TODO: Test also different casing
+ */
 class ApiKeyHeaderExtractorTest {
 
     static final String keyHeader = "X-api-key";
     static final String apiKey = "123456789";
-
     static ApiKeyHeaderExtractor ahe;
-    static Exchange exc;
-
-    @Test
-    void noHeaderToExtract() {
-        exc = new Request.Builder().header("api-key", apiKey).buildExchange();
-
-        assertNull(ahe.extract(exc));
-    }
-
-    @Test
-    void extractHeader() {
-        exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
-
-        assertEquals(apiKey, ahe.extract(exc));
-    }
-
-    @BeforeEach
-    void init() {
-        exc = new Exchange(null);
-    }
 
     @BeforeAll
     static void setup() throws Exception {
         ahe = new ApiKeyHeaderExtractor();
         ahe.setHeaderName(keyHeader);
     }
+
+    @Test
+    void noHeaderToExtract() throws Exception {
+        assertNull(ahe.extract(new Request.Builder().header("api-key", apiKey).buildExchange()));
+    }
+
+    @Test
+    void extractHeader() throws Exception {
+        assertEquals(apiKey, ahe.extract(new Request.Builder().header(keyHeader, apiKey).buildExchange()));
+    }
+
 }

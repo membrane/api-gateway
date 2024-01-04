@@ -12,34 +12,34 @@ import java.util.Objects;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ApiKeysInterceptorTest {
 
-    static final String SCOPES = "scopes";
     static final String keyHeader = "X-api-key";
     static final String apiKey = "73D29";
     static ApiKeysInterceptor akiWithProp;
     static ApiKeysInterceptor akiWithoutProp;
-    static ApiKeyFileStore apiKeyFileStore;
+    static ApiKeyFileStore store;
     static ApiKeyHeaderExtractor ahe;
     Exchange exc;
 
     @BeforeAll
     static void setup() {
-        apiKeyFileStore = new ApiKeyFileStore();
+        store = new ApiKeyFileStore();
         ahe = new ApiKeyHeaderExtractor();
         akiWithProp = new ApiKeysInterceptor();
         akiWithoutProp = new ApiKeysInterceptor();
         ahe.setHeaderName(keyHeader);
-        apiKeyFileStore.setLocation(Objects.requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/testFileStore.txt")).getPath());
-        akiWithProp.setApiKey(ahe);
-        akiWithProp.setRequireKey(true);
-        akiWithProp.setApiKeyStores(of(apiKeyFileStore));
-        akiWithoutProp.setApiKey(ahe);
-        akiWithoutProp.setApiKeyStores(of(apiKeyFileStore));
+        store.setLocation(Objects.requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/testFileStore.txt")).getPath());
+        akiWithProp.setExtractor(ahe);
+        akiWithProp.setRequire(true);
+        akiWithProp.setStores(of(store));
+        akiWithoutProp.setExtractor(ahe);
+        akiWithoutProp.setStores(of(store));
         akiWithProp.init();
         akiWithoutProp.init();
     }

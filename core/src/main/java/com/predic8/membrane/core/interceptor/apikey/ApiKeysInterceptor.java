@@ -17,47 +17,54 @@ import java.util.Map;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
-@MCElement(name = "ApiKeyInterceptor")
+@MCElement(name = "ApiKeyInterceptor") // @TODO rename to <apiKey>
 public class ApiKeysInterceptor extends AbstractInterceptor {
 
-    private static final String SCOPES = "scopes";
-    private List<ApiKeyStore> apiKeyStores;
-    private ApiKeyExtractor apiKey;
+    public static final String SCOPES = "membrane-scopes";
+    private List<ApiKeyStore> stores;
+    private ApiKeyExtractor extractor;
     private Map<String, List<String>> scopes = new HashMap<>();
-    private boolean requireKey = false;
+    private boolean require = false;
 
 
     @Override
     public void init() {
-        apiKeyStores.stream().map(ApiKeyStore::getScopes).forEach(scopes::putAll);
+        stores.stream().map(ApiKeyStore::getScopes).forEach(scopes::putAll);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        final String key = apiKey.extract(exc);
-        if (key == null && requireKey)
-            return RETURN;
 
-        if (scopes.containsKey(key)) {
-            exc.setProperty(SCOPES, scopes.get(key));
+        var key = extractor.extract(exc);
+
+        if (key.isEmpty()) {
+            if (require) {
+                // @TODO set ProblemJSON 401
+                return RETURN;
+            }
+            return CONTINUE;
+        }
+
+        if (scopes.containsKey(key.get())) {
+            exc.setProperty(SCOPES, scopes.get(key.get()));
         }
 
         return CONTINUE;
     }
 
     @MCAttribute
-    void setRequireKey(boolean requireKey) {
-        this.requireKey = requireKey;
+    void setRequire(boolean require) {
+        this.require = require;
     }
 
     @MCChildElement(allowForeign = true, order = 0)
-    void setApiKeyStores(List<ApiKeyStore> apiKeyStores) {
-        this.apiKeyStores = apiKeyStores;
+    void setStores(List<ApiKeyStore> stores) {
+        this.stores = stores;
     }
 
     @MCChildElement(allowForeign = true, order = 1)
-    void setApiKey(ApiKeyExtractor apiKey) {
-        this.apiKey = apiKey;
+    void setExtractor(ApiKeyExtractor extractor) {
+        this.extractor = extractor;
     }
 
 }

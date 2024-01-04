@@ -6,17 +6,19 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderName;
 
+import java.util.*;
+
 @MCElement(name="headerExtractor")
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
 
     private HeaderName headerName;
 
     @Override
-    public String extract(Exchange exc) {
+    public Optional<String> extract(Exchange exc) {
         Header header = exc.getRequest().getHeader();
 
         if (header.contains(headerName)) {
-            return header.getFirstValue(headerName);
+            return Optional.of(header.getFirstValue(headerName));
         }
 
         return null;
