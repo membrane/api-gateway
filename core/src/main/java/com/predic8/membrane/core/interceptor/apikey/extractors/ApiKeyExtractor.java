@@ -5,8 +5,5 @@ import com.predic8.membrane.core.exchange.Exchange;
 import java.util.*;
 
 public interface ApiKeyExtractor {
-
-    // @TODO Exception
-    public Optional<String> extract(Exchange exc);
-
+    Optional<String> extract(Exchange exc);
 }

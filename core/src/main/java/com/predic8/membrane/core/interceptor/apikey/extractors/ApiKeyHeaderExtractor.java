@@ -21,7 +21,7 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
             return Optional.of(header.getFirstValue(headerName));
         }
 
-        return null;
+        return Optional.empty();
     }
 
     @MCAttribute(attributeName = "name")

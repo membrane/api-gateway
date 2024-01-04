@@ -16,7 +16,7 @@ class ApiKeyFileStoreTest {
     @BeforeEach
     void setup() {
         f = new ApiKeyFileStore();
-        f.setLocation(Objects.requireNonNull(getClass().getClassLoader().getResource("apikeys/testFileStore.txt")).getPath());
+        f.setLocation(Objects.requireNonNull(getClass().getClassLoader().getResource("apikeys/keys.txt")).getPath());
     }
 
     @Test
@@ -26,6 +26,9 @@ class ApiKeyFileStoreTest {
 
     @Test
     void getScopesTest() {
+        assertEquals("finance", f.getScopes("5XF27").get(0));
+        assertEquals("internal", f.getScopes("5XF27").get(1));
+
         assertEquals("finance", f.getScopes().get("5XF27").get(0));
         assertEquals("internal", f.getScopes().get("5XF27").get(1));
     }

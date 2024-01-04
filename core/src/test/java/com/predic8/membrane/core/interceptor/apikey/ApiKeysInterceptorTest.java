@@ -34,7 +34,7 @@ class ApiKeysInterceptorTest {
         akiWithProp = new ApiKeysInterceptor();
         akiWithoutProp = new ApiKeysInterceptor();
         ahe.setHeaderName(keyHeader);
-        store.setLocation(Objects.requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/testFileStore.txt")).getPath());
+        store.setLocation(Objects.requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/keys.txt")).getPath());
         akiWithProp.setExtractor(ahe);
         akiWithProp.setRequire(true);
         akiWithProp.setStores(of(store));
@@ -48,7 +48,6 @@ class ApiKeysInterceptorTest {
     void init() {
         exc = new Exchange(null);
     }
-
 
     @Test
     void handleRequestWithKeyRequiredWithApiKey() throws Exception {

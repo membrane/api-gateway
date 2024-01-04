@@ -5,30 +5,34 @@ import com.predic8.membrane.annot.MCElement;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.*;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import static groovyjarjarantlr4.v4.runtime.misc.Utils.readFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 
-@MCElement(name = "ApiKeyFileStore", topLevel = false)
+@MCElement(name = "keyFileStore", topLevel = false)
 public class ApiKeyFileStore implements ApiKeyStore {
 
     private String location;
 
     @Override
-        public Map<String, List<String>> getScopes() {
-            try {
-                return readFile().stream()
-                        .map(line -> line.split(":"))
-                        .collect(Collectors.toMap(
-                                parts -> parts[0],
-                                parts -> stream(parts[1].split(",")).map(String::trim).toList()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    public Map<String, List<String>> getScopes() {
+        try {
+            return readFile().stream()
+                    .map(line -> line.split(":"))
+                    .collect(Collectors.toMap(
+                            parts -> parts[0],
+                            parts -> stream(parts[1].split(",")).map(String::trim).toList()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    public List<String> getScopes(String key) {
+        return getScopes().get(key);
+    }
 
     public String getLocation() {
         return this.location;

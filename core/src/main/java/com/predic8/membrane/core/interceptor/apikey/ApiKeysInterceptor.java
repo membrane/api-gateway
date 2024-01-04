@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -9,23 +8,26 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apikey.apikeystore.ApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
-@MCElement(name = "ApiKeyInterceptor") // @TODO rename to <apiKey>
+@MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
+    private final Logger log = LoggerFactory.getLogger(ApiKeysInterceptor.class);
 
     public static final String SCOPES = "membrane-scopes";
     private List<ApiKeyStore> stores;
     private ApiKeyExtractor extractor;
-    private Map<String, List<String>> scopes = new HashMap<>();
+    private final Map<String, List<String>> scopes = new HashMap<>();
     private boolean require = false;
-
 
     @Override
     public void init() {
@@ -34,12 +36,12 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-
         var key = extractor.extract(exc);
 
         if (key.isEmpty()) {
             if (require) {
-                // @TODO set ProblemJSON 401
+                log.warn("Tried to access apiKey protected resource without key.");
+                exc.setResponse(createProblemDetails(401, "predic8.de/authorization/denied", "Access Denied"));
                 return RETURN;
             }
             return CONTINUE;
