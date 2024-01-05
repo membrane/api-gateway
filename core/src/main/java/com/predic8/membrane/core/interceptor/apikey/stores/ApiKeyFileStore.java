@@ -56,8 +56,12 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
                 .collect(toList());
     }
 
-    public Optional<List<String>> getScopes(String key) {
-        return scopes.get(key);
+    public Optional<List<String>> getScopes(String key) throws UnauthorizedKeyException {
+        if (scopes.containsKey(key)) {
+            return scopes.get(key);
+        } else {
+            throw new UnauthorizedKeyException();
+        }
     }
 
     public String getLocation() {

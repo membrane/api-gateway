@@ -4,5 +4,5 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ApiKeyStore {
-    Optional<List<String>> getScopes(String apiKey);
+    Optional<List<String>> getScopes(String apiKey) throws UnauthorizedKeyException;
 }

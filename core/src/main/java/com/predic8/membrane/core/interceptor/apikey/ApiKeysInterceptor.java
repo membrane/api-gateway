@@ -8,6 +8,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
+import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +73,13 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     public List<List<String>> getScopes(String key) {
         return stores.stream()
-                     .flatMap(store -> store.getScopes(key).stream())
+                     .flatMap(store -> {
+                         try {
+                             return store.getScopes(key).stream();
+                         } catch (UnauthorizedKeyException e) {
+                             throw new RuntimeException(e);
+                         }
+                     })
                      .collect(toList());
     }
 
