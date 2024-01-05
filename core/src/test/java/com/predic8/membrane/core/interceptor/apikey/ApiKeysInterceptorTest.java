@@ -35,10 +35,10 @@ class ApiKeysInterceptorTest {
         akiWithoutProp = new ApiKeysInterceptor();
         ahe.setHeaderName(keyHeader);
         store.setLocation(Objects.requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/keys.txt")).getPath());
-        akiWithProp.setExtractor(ahe);
+        akiWithProp.setExtractors(ahe);
         akiWithProp.setRequire(true);
         akiWithProp.setStores(of(store));
-        akiWithoutProp.setExtractor(ahe);
+        akiWithoutProp.setExtractors(ahe);
         akiWithoutProp.setStores(of(store));
         akiWithProp.init();
         akiWithoutProp.init();

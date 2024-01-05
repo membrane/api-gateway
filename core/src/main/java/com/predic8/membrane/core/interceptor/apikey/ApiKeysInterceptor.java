@@ -11,47 +11,76 @@ import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.util.Map.of;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.ofNullable;
 
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
     private final Logger log = LoggerFactory.getLogger(ApiKeysInterceptor.class);
 
     public static final String SCOPES = "membrane-scopes";
-    private List<ApiKeyStore> stores;
-    private ApiKeyExtractor extractor;
-    private final Map<String, List<String>> scopes = new HashMap<>();
+    public static final String TYPE_4XX = "predic8.de/authorization/denied";
+    public static final String TITLE_4XX = "Access Denied";
+    private final List<ApiKeyStore> stores = new ArrayList<>();
+    private final List<ApiKeyExtractor> extractors = new ArrayList<>();
     private boolean require = false;
 
     @Override
     public void init() {
-        stores.stream().map(ApiKeyStore::getScopes).forEach(scopes::putAll);
+        stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        var key = extractor.extract(exc);
+        var key = getKey(exc);
 
-        if (key.isEmpty()) {
-            if (require) {
-                log.warn("Tried to access apiKey protected resource without key.");
-                exc.setResponse(createProblemDetails(401, "predic8.de/authorization/denied", "Access Denied"));
-                return RETURN;
-            }
-            return CONTINUE;
+        if (require && key.isEmpty()) {
+            return logErrorAndReturn(exc, 401, TYPE_4XX, TITLE_4XX, "Tried to access apiKey protected resource without key.");
         }
 
-        if (scopes.containsKey(key.get())) {
-            exc.setProperty(SCOPES, scopes.get(key.get()));
+        if (key.isPresent()) {
+            var scopes = getScopes(key.get());
+
+            if (scopes.isEmpty()) {
+                return logErrorAndReturn(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid or has no associated scopes.");
+            }
+
+            addScopes(exc, scopes);
         }
 
         return CONTINUE;
+    }
+
+    public void addScopes(Exchange exc, List<String> scopes) {
+        exc.setProperty(SCOPES, scopes);
+    }
+
+    public Outcome logErrorAndReturn(Exchange exc, int statusCode, String type, String title, String info) {
+        log.warn(info);
+        exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
+        return RETURN;
+    }
+
+    public List<String> getScopes(String key) {
+        return stores.stream()
+                     .flatMap(store -> store.getScopes(key).stream())
+                     .collect(toList());
+    }
+
+    public Optional<String> getKey(Exchange exc) {
+        return extractors.stream()
+                         .flatMap(ext -> ofNullable(
+                                 ext.extract(exc).orElse(null)
+                         ))
+                         .findFirst();
     }
 
     @MCAttribute
@@ -59,14 +88,12 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         this.require = require;
     }
 
-    @MCChildElement(allowForeign = true, order = 0)
-    void setStores(List<ApiKeyStore> stores) {
-        this.stores = stores;
+    @MCChildElement(allowForeign = true)
+    void setExtractors(List<ApiKeyExtractor> extractors) {
+        this.extractors.addAll(extractors);
     }
 
-    @MCChildElement(allowForeign = true, order = 1)
-    void setExtractor(ApiKeyExtractor extractor) {
-        this.extractor = extractor;
+    public List<ApiKeyExtractor> getExtractors() {
+        return extractors;
     }
-
 }

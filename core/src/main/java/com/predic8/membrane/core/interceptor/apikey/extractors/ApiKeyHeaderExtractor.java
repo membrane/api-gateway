@@ -8,10 +8,10 @@ import com.predic8.membrane.core.http.HeaderName;
 
 import java.util.*;
 
-@MCElement(name="headerExtractor")
+@MCElement(name="headerExtractor", topLevel = false)
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
 
-    private HeaderName headerName;
+    private HeaderName headerName = new HeaderName("X-Api-Key");
 
     @Override
     public Optional<String> extract(Exchange exc) {

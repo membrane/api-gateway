@@ -4,5 +4,5 @@ import java.util.List;
 import java.util.Map;
 
 public interface ApiKeyStore {
-    Map<String, List<String>> getScopes();
+    List<String> getScopes(String apiKey);
 }
