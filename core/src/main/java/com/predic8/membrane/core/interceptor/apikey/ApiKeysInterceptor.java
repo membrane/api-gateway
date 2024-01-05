@@ -12,15 +12,16 @@ import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedKeyExcept
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.util.Map.of;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.empty;
 import static java.util.stream.Stream.ofNullable;
 
 @MCElement(name = "apiKey")
@@ -62,7 +63,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    public void addScopes(Exchange exc, List<List<String>> scopes) {
+    public void addScopes(Exchange exc, List<String> scopes) {
         exc.setProperty(SCOPES, scopes);
     }
 
@@ -71,16 +72,23 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
     }
 
-    public List<List<String>> getScopes(String key) {
-        return stores.stream()
-                     .flatMap(store -> {
-                         try {
-                             return store.getScopes(key).stream();
-                         } catch (UnauthorizedKeyException e) {
-                             throw new RuntimeException(e);
-                         }
-                     })
-                     .collect(toList());
+    public List<String> getScopes(String key) throws UnauthorizedKeyException {
+        Set<String> combinedScopes = new LinkedHashSet<>();
+        boolean keyFound = false;
+
+        for (ApiKeyStore store : stores) {
+            try {
+                Optional<List<String>> optionalScopes = store.getScopes(key);
+                optionalScopes.ifPresent(combinedScopes::addAll);
+                keyFound = true;
+            } catch (Exception e) {}
+        }
+
+        if (!keyFound) {
+            throw new UnauthorizedKeyException();
+        }
+
+        return combinedScopes.stream().toList();
     }
 
     public Optional<String> getKey(Exchange exc) {
