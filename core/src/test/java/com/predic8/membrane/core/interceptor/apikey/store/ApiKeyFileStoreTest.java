@@ -5,10 +5,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Objects;
+import java.util.ArrayList;
 
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ApiKeyFileStoreTest {
 
@@ -33,11 +33,16 @@ class ApiKeyFileStoreTest {
     }
 
     @Test
+    void getMissingScopes() {
+        assertEquals(new ArrayList<String>(), f.getScopes("ABCDE"));
+    }
+
+    @Test
     void getScopesWithRefreshTest() {
         f.setLocation(requireNonNull(getClass().getClassLoader().getResource("apikeys/keys2.txt")).getPath());
         assertEquals("finance", f.getScopes("5XF27").get(0));
         f.setRefresh(true);
-        assertNull(f.getScopes("5XF27"));
+        assertEquals(new ArrayList<String>(), f.getScopes("5XF27"));
         assertEquals("administrator", f.getScopes("78AB5").get(0));
     }
 

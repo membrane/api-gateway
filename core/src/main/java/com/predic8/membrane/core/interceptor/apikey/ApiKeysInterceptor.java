@@ -98,4 +98,6 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public List<ApiKeyExtractor> getExtractors() {
         return extractors;
     }
+
+    void setStores(List<ApiKeyStore> stores) {this.stores.addAll(stores);}
 }

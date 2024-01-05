@@ -7,6 +7,7 @@ import org.springframework.context.event.ContextStartedEvent;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
         if (refresh) {
             scopes = readKeyData();
         }
-        return scopes.get(key);
+        return scopes.getOrDefault(key, new ArrayList<>());
     }
 
     public String getLocation() {
