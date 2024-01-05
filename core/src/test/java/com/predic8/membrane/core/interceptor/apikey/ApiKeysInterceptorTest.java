@@ -36,7 +36,10 @@ class ApiKeysInterceptorTest {
         akiWithProp.setRequire(true);
         ahe.setHeaderName(keyHeader);
         store.setLocation(requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/keys.txt")).getPath());
+
+        //noinspection DataFlowIssue
         store.onApplicationEvent(null);
+
         akiWithoutProp.setExtractors(of(ahe));
         akiWithProp.setStores(of(store));
         akiWithoutProp.setStores(of(store));
@@ -59,6 +62,7 @@ class ApiKeysInterceptorTest {
         exc = new Request.Builder().header(keyHeader, "foo").buildExchange();
         assertEquals(RETURN, akiWithProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
+        assertEquals(403, exc.getResponse().getStatusCode());
     }
 
     @Test

@@ -5,8 +5,7 @@ import com.predic8.membrane.annot.MCElement;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextStartedEvent;
 
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,31 +18,27 @@ import static java.util.stream.Collectors.toMap;
 public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<ContextStartedEvent> {
 
     private String location;
-    private boolean refresh = false;
     private Map<String, List<String>> scopes;
 
     @SuppressWarnings("NullableProblems")
     @Override
     public void onApplicationEvent(ContextStartedEvent ignored) {
-        scopes = readKeyData();
-    }
-
-    public Map<String, List<String>> readKeyData() {
         try {
-            return readFile().stream()
-                    .map(line -> line.split(":"))
-                    .collect(toMap(
-                            parts -> parts[0],
-                            parts -> stream(parts[1].split(",")).map(String::trim).toList()));
+            scopes = readKeyData(readFile());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public Map<String, List<String>> readKeyData(List<String> lines) {
+            return lines.stream()
+                    .map(line -> line.split(":"))
+                    .collect(toMap(
+                            parts -> parts[0],
+                            parts -> stream(parts[1].split(",")).map(String::trim).toList()));
+    }
+
     public List<String> getScopes(String key) {
-        if (refresh) {
-            scopes = readKeyData();
-        }
         return scopes.getOrDefault(key, new ArrayList<>());
     }
 
@@ -56,12 +51,8 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
         this.location = location;
     }
 
-    @MCAttribute
-    public void setRefresh(boolean refresh) {
-        this.refresh = refresh;
-    }
-
     public List<String> readFile() throws IOException {
+        // Read per line split, store See: BufferedInputStream
         try (FileInputStream fis = new FileInputStream(location)) {
             return stream(new String(fis.readAllBytes(), UTF_8).split("\n")).toList();
         }

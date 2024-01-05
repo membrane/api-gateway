@@ -43,14 +43,16 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         var key = getKey(exc);
 
         if (require && key.isEmpty()) {
-            return logErrorAndReturn(exc, 401, TYPE_4XX, TITLE_4XX, "Tried to access apiKey protected resource without key.");
+            problemJsonResponse(exc, 401, TYPE_4XX, TITLE_4XX, "Tried to access apiKey protected resource without key.");
+            return RETURN;
         }
 
         if (key.isPresent()) {
             var scopes = getScopes(key.get());
 
             if (scopes.isEmpty()) {
-                return logErrorAndReturn(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid or has no associated scopes.");
+                 problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid or has no associated scopes.");
+                 return RETURN;
             }
 
             addScopes(exc, scopes);
@@ -63,10 +65,9 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         exc.setProperty(SCOPES, scopes);
     }
 
-    public Outcome logErrorAndReturn(Exchange exc, int statusCode, String type, String title, String info) {
+    public void problemJsonResponse(Exchange exc, int statusCode, String type, String title, String info) {
         log.warn(info);
         exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
-        return RETURN;
     }
 
     public List<String> getScopes(String key) {

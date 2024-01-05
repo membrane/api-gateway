@@ -3,9 +3,10 @@ package com.predic8.membrane.core.interceptor.apikey.store;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,6 +19,8 @@ class ApiKeyFileStoreTest {
     void setup() {
         f = new ApiKeyFileStore();
         f.setLocation(requireNonNull(getClass().getClassLoader().getResource("apikeys/keys.txt")).getPath());
+
+        //noinspection DataFlowIssue
         f.onApplicationEvent(null);
     }
 
@@ -28,22 +31,12 @@ class ApiKeyFileStoreTest {
 
     @Test
     void getScopesTest() {
-        assertEquals("finance", f.getScopes("5XF27").get(0));
-        assertEquals("internal", f.getScopes("5XF27").get(1));
+        assertEquals(List.of("finance","internal"), f.getScopes("5XF27"));
     }
 
     @Test
     void getMissingScopes() {
         assertEquals(new ArrayList<String>(), f.getScopes("ABCDE"));
-    }
-
-    @Test
-    void getScopesWithRefreshTest() {
-        f.setLocation(requireNonNull(getClass().getClassLoader().getResource("apikeys/keys2.txt")).getPath());
-        assertEquals("finance", f.getScopes("5XF27").get(0));
-        f.setRefresh(true);
-        assertEquals(new ArrayList<String>(), f.getScopes("5XF27"));
-        assertEquals("administrator", f.getScopes("78AB5").get(0));
     }
 
     @Test
