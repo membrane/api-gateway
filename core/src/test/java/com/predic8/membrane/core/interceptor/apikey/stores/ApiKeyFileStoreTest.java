@@ -15,7 +15,7 @@ import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ApiKeyFileStoreTest {
+public class ApiKeyFileStoreTest {
 
     static ApiKeyFileStore f;
 

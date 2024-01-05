@@ -18,7 +18,7 @@ import static java.util.List.of;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ApiKeysInterceptorTest {
+public class ApiKeysInterceptorTest {
 
     static final String keyHeader = "X-api-key";
     static final String apiKey = "73D29";

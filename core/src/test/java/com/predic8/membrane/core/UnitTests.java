@@ -28,6 +28,9 @@ import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
 import com.predic8.membrane.core.interceptor.acl.HostnameTest;
 import com.predic8.membrane.core.interceptor.acl.ParseTypeTest;
 import com.predic8.membrane.core.interceptor.acl.matchers.Cidr.IpRangeTest;
+import com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptorTest;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractorTest;
+import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStoreTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptorTest;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
@@ -142,7 +145,10 @@ import org.junit.platform.suite.api.Suite;
 		BeautifierInterceptorTest.class,
 		ExchangeEvaluationContextTest.class,
 		PaddingHeaderInterceptorTest.class,
-		CollectionsUtilTest.class
+		CollectionsUtilTest.class,
+		ApiKeysInterceptorTest.class,
+		ApiKeyFileStoreTest.class,
+		ApiKeyHeaderExtractorTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

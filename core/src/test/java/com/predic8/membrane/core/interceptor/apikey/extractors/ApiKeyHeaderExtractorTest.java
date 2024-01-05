@@ -9,7 +9,7 @@ import java.util.Optional;
 import static java.util.Optional.empty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ApiKeyHeaderExtractorTest {
+public class ApiKeyHeaderExtractorTest {
 
     static final String API_KEY = "123456789";
     static ApiKeyHeaderExtractor ahe;
