@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.interceptor.apikey.apikeystore;
+package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -9,7 +9,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;

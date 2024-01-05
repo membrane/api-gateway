@@ -6,14 +6,14 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.apikey.apikeystore.ApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
+import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -83,6 +83,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                          .findFirst();
     }
 
+    @SuppressWarnings("SameParameterValue")
     @MCAttribute
     void setRequire(boolean require) {
         this.require = require;
@@ -93,6 +94,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         this.extractors.addAll(extractors);
     }
 
+    @SuppressWarnings("unused")
     public List<ApiKeyExtractor> getExtractors() {
         return extractors;
     }

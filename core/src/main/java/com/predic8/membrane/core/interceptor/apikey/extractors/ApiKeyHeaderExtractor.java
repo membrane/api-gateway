@@ -6,7 +6,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderName;
 
-import java.util.*;
+import java.util.Optional;
 
 @MCElement(name="headerExtractor", topLevel = false)
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{

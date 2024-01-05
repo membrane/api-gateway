@@ -2,7 +2,7 @@ package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.apikey.apikeystore.ApiKeyFileStore;
+import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
