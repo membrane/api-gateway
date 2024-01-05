@@ -58,14 +58,14 @@ class ApiKeysInterceptorTest {
     }
 
     @Test
-    void handleRequestWithKeyRequiredWithApiKey() throws Exception {
+    void handleRequestWithKeyRequiredWithApiKey() {
         exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
         assertEquals(CONTINUE, akiWithProp.handleRequest(exc));
         assertEquals(of("accounting", "management"), exc.getProperty(SCOPES));
     }
 
     @Test
-    void handleRequestWithKeyRequiredWithInvalidApiKey() throws Exception {
+    void handleRequestWithKeyRequiredWithInvalidApiKey() {
         exc = new Request.Builder().header(keyHeader, "foo").buildExchange();
         assertEquals(RETURN, akiWithProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
@@ -73,28 +73,28 @@ class ApiKeysInterceptorTest {
     }
 
     @Test
-    void handleRequestWithKeyRequiredWithoutApiKey() throws Exception {
+    void handleRequestWithKeyRequiredWithoutApiKey() {
         exc = new Request.Builder().buildExchange();
         assertEquals(RETURN, akiWithProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
     }
 
     @Test
-    void handleRequestWithoutKeyRequiredWithApiKey() throws Exception {
+    void handleRequestWithoutKeyRequiredWithApiKey() {
         exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
         assertEquals(CONTINUE, akiWithoutProp.handleRequest(exc));
         assertEquals(of("accounting", "management"), exc.getProperty(SCOPES));
     }
 
     @Test
-    void handleRequestWithoutKeyRequiredWithInvalidApiKey() throws Exception {
+    void handleRequestWithoutKeyRequiredWithInvalidApiKey() {
         exc = new Request.Builder().header(keyHeader, "foo").buildExchange();
         assertEquals(RETURN, akiWithoutProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
     }
 
     @Test
-    void handleRequestWithoutKeyRequiredWithoutApiKey() throws Exception {
+    void handleRequestWithoutKeyRequiredWithoutApiKey() {
         exc = new Request.Builder().buildExchange();
         assertEquals(CONTINUE, akiWithoutProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
