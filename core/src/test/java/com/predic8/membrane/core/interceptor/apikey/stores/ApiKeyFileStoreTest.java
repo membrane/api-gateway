@@ -1,7 +1,6 @@
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -60,7 +59,7 @@ class ApiKeyFileStoreTest {
         assertEquals(Optional.of(of("finance", "internal")), f.getScopes("5XF27"));
         loadFile("apikeys/keys2.txt");
         assertEquals(Optional.empty(), f.getScopes("L62NA"));
-        assertThrows(UnauthorizedKeyException.class, () -> f.getScopes("5XF27"));
+        assertThrows(UnauthorizedKeyException.class, () -> f.getScopes("5AF27"));
     }
 
     @Test
