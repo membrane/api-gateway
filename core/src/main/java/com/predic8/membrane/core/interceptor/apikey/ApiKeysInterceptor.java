@@ -61,7 +61,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    public void addScopes(Exchange exc, List<String> scopes) {
+    public void addScopes(Exchange exc, List<List<String>> scopes) {
         exc.setProperty(SCOPES, scopes);
     }
 
@@ -70,7 +70,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
     }
 
-    public List<String> getScopes(String key) {
+    public List<List<String>> getScopes(String key) {
         return stores.stream()
                      .flatMap(store -> store.getScopes(key).stream())
                      .collect(toList());

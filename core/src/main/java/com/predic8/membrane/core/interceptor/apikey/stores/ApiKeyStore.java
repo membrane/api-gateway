@@ -1,7 +1,8 @@
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ApiKeyStore {
-    List<String> getScopes(String apiKey);
+    Optional<List<String>> getScopes(String apiKey);
 }
