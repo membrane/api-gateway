@@ -13,15 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.util.Map.of;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Stream.empty;
 import static java.util.stream.Stream.ofNullable;
 
 @MCElement(name = "apiKey")
@@ -41,7 +37,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         var key = getKey(exc);
 
         if (require && key.isEmpty()) {
@@ -50,16 +46,14 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         }
 
         if (key.isPresent()) {
-            var scopes = getScopes(key.get());
-
-            if (scopes.isEmpty()) {
-                 problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid or has no associated scopes.");
-                 return RETURN;
+            try {
+                addScopes(exc, getScopes(key.get()));
+            } catch (UnauthorizedKeyException e) {
+                if (!require) {return CONTINUE;}
+                problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid or has no associated scopes.");
+                return RETURN;
             }
-
-            addScopes(exc, scopes);
         }
-
         return CONTINUE;
     }
 
@@ -77,6 +71,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         boolean keyFound = false;
 
         for (ApiKeyStore store : stores) {
+            //noinspection CatchMayIgnoreException
             try {
                 Optional<List<String>> optionalScopes = store.getScopes(key);
                 optionalScopes.ifPresent(combinedScopes::addAll);
