@@ -89,7 +89,7 @@ class ApiKeysInterceptorTest {
     @Test
     void handleRequestWithoutKeyRequiredWithInvalidApiKey() {
         exc = new Request.Builder().header(keyHeader, "foo").buildExchange();
-        assertEquals(RETURN, akiWithoutProp.handleRequest(exc));
+        assertEquals(CONTINUE, akiWithoutProp.handleRequest(exc));
         assertNull(exc.getProperty(SCOPES));
     }
 
