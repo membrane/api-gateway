@@ -3,6 +3,7 @@ package com.predic8.membrane.core.interceptor.apikey;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,41 +21,43 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 public class ApiKeysInterceptorTest {
-
-    static final String keyHeader = "X-api-key";
+    static final String keyHeader = "X-Api-Key";
     static final String apiKey = "73D29";
+    static ApiKeyFileStore store;
+    static ApiKeyFileStore mergeStore;
+    static ApiKeyHeaderExtractor ahe;
+    static ApiKeyQueryParamExtractor aqe;
     static ApiKeysInterceptor akiWithProp;
     static ApiKeysInterceptor akiWithoutProp;
-    static ApiKeyFileStore store;
-    static ApiKeyFileStore store2;
-    static ApiKeyHeaderExtractor ahe;
+    static ApiKeysInterceptor akiWithTwoStores;
     Exchange exc;
 
     @BeforeAll
     static void setup() {
-
-        // TODO erst einer dann der andere
-        // Test mit zwei KeyStores
-
         store = new ApiKeyFileStore();
-        store2 = new ApiKeyFileStore();
-        ahe = new ApiKeyHeaderExtractor();
-        akiWithProp = new ApiKeysInterceptor();
-        akiWithoutProp = new ApiKeysInterceptor();
-        akiWithProp.setExtractors(of(ahe));
-        akiWithProp.setRequire(true);
-        ahe.setHeaderName(keyHeader);
         store.setLocation(requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/keys.txt")).getPath());
-        store2.setLocation(requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/keys2.txt")).getPath());
-
         //noinspection DataFlowIssue
         store.onApplicationEvent(null);
-        //noinspection DataFlowIssue
-        store2.onApplicationEvent(null);
 
+        mergeStore = new ApiKeyFileStore();
+        mergeStore.setLocation(requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/merge-keys.txt")).getPath());
+        //noinspection DataFlowIssue
+        mergeStore.onApplicationEvent(null);
+
+        ahe = new ApiKeyHeaderExtractor();
+        aqe = new ApiKeyQueryParamExtractor();
+
+        akiWithProp = new ApiKeysInterceptor();
+        akiWithProp.setExtractors(of(ahe));
+        akiWithProp.setRequire(true);
+        akiWithProp.setStores(of(store));
+
+        akiWithoutProp = new ApiKeysInterceptor();
         akiWithoutProp.setExtractors(of(ahe));
-        akiWithProp.setStores(of(store, store2));
         akiWithoutProp.setStores(of(store));
+
+        akiWithTwoStores = new ApiKeysInterceptor();
+        akiWithTwoStores.setStores(of(store, mergeStore));
     }
 
     @BeforeEach
@@ -107,9 +110,26 @@ public class ApiKeysInterceptorTest {
 
 
     @Test
-    void getScopes() throws UnauthorizedApiKeyException {
-        assertEquals(asList("finance", "internal", "account"), akiWithProp.getScopes("5XF27"));
-        assertEquals(emptyList(), akiWithProp.getScopes("L62NA"));
+    void handleRequestWithTwoStores() throws UnauthorizedApiKeyException {
+        assertEquals(asList("finance", "internal", "account"), akiWithTwoStores.getScopes("5XF27"));
+        }
+
+    @Test
+    void handleRequestWithKeyWithoutScopes() throws UnauthorizedApiKeyException {
+        assertEquals(emptyList(), akiWithProp.getScopes("L63NC"));
+    }
+
+    @Test
+    void handleUnauthorizedKey() {
         assertThrows(UnauthorizedApiKeyException.class, () -> akiWithoutProp.getScopes("751B2"));
+
+    }
+
+    @Test
+    void handleDuplicateApiKeys() {
+        var dupeStore = new ApiKeyFileStore();
+        dupeStore.setLocation(requireNonNull(ApiKeysInterceptorTest.class.getClassLoader().getResource("apikeys/duplicate-api-keys.txt")).getPath());
+        //noinspection DataFlowIssue
+        assertThrows(RuntimeException.class, () -> dupeStore.onApplicationEvent(null));
     }
 }

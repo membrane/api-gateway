@@ -37,8 +37,6 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
         return empty();
     }
 
-
-
     @MCAttribute(attributeName = "name")
     public void setParamName(String paramName) {
         this.paramName = paramName;

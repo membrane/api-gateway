@@ -1,9 +1,8 @@
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.List;
@@ -19,17 +18,10 @@ public class ApiKeyFileStoreTest {
 
     static ApiKeyFileStore store;
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         store = new ApiKeyFileStore();
         loadFromFile(store,"apikeys/keys.txt");
-    }
-
-    @Test
-    void readFile() throws IOException {
-        List<String> lines = store.readFile().toList();
-        assertEquals(3, lines.size());
-        assertEquals("5XF27:finance,internal", lines.get(0));
     }
 
     @Test
@@ -44,8 +36,7 @@ public class ApiKeyFileStoreTest {
 
     @Test
     void keyWithoutScopes() throws UnauthorizedApiKeyException {
-        loadFromFile(store, "apikeys/keys2.txt");
-        assertEquals(Optional.empty(), store.getScopes("L62NA"));
+        assertEquals(Optional.empty(), store.getScopes("L63NC"));
     }
 
     @Test

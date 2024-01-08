@@ -50,7 +50,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                 addScopes(exc, getScopes(key.get()));
             } catch (UnauthorizedApiKeyException e) {
                 if (!require) {return CONTINUE;}
-                problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid or has no associated scopes.");
+                problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid.");
                 return RETURN;
             }
         }

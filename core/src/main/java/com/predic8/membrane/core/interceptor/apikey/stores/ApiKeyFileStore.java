@@ -6,12 +6,13 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextStartedEvent;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.readFile;
 import static java.util.Arrays.stream;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -28,7 +29,7 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
     @Override
     public void onApplicationEvent(ContextStartedEvent ignored) {
         try {
-            scopes = readKeyData(readFile());
+            scopes = readKeyData(readFile(location));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -84,9 +85,4 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
         this.location = location;
     }
 
-    // TODO => Utils
-    public Stream<String> readFile() throws IOException {
-        return Files.lines(Path.of(location));
-    }
 }
-

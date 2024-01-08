@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -22,17 +23,21 @@ public class ApiKeyHeaderExtractorTest {
 
     @Test
     void noHeaderToExtract() {
-        assertEquals(empty(), ahe.extract(new Request.Builder().header("api-key", API_KEY).buildExchange()));
+        assertEquals(empty(), ahe.extract(getExchange("api-key")));
     }
 
     @Test
     void extractHeader() {
-        assertEquals(Optional.of(API_KEY), ahe.extract(new Request.Builder().header("X-api-key", API_KEY).buildExchange()));
+        assertEquals(Optional.of(API_KEY), ahe.extract(getExchange("X-api-key")));
     }
 
     @Test
     void extractHeaderRandomCase() {
-        assertEquals(Optional.of(API_KEY), ahe.extract(new Request.Builder().header("x-APi-kEY", API_KEY).buildExchange()));
+        assertEquals(Optional.of(API_KEY), ahe.extract(getExchange("X-aPi-KeY")));
+    }
+
+    private static Exchange getExchange(String headerName) {
+        return new Request.Builder().header(headerName, API_KEY).buildExchange();
     }
 
 }
