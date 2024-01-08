@@ -8,17 +8,15 @@ import org.springframework.context.event.ContextStartedEvent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.stream;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @MCElement(name = "keyFileStore", topLevel = false)
 public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<ContextStartedEvent> {
@@ -37,17 +35,30 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
     }
 
     public static Map<String, Optional<List<String>>> readKeyData(Stream<String> lines) throws IOException {
-        return lines
-                .map(ApiKeyFileStore::parseLine).distinct()
-                .collect(Collectors.toMap(
-                        SimpleEntry::getKey,
-                        SimpleEntry::getValue));
+        Map<String, Optional<List<String>>> collect;
+        try {
+            collect = lines
+                    .map(ApiKeyFileStore::parseLine)
+                    .collect(toMap(
+                            SimpleEntry::getKey,
+                            SimpleEntry::getValue));
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot read file with API keys. Please make sure that there are no multiple entries with the same key! " + e);
+        }
+        return collect;
     }
 
     static SimpleEntry<String, Optional<List<String>>> parseLine(String line) {
-        String[] parts = line.split(":", 2);
-        Optional<List<String>> value = (parts.length > 1 && !parts[1].trim().isEmpty()) ? of(parseValues(parts[1])) : empty();
-        return new SimpleEntry<>(parts[0].trim(), value);
+        List<String> parts = getParts(line);
+        return new SimpleEntry<>(parts.get(0), getValue(parts));
+    }
+
+    private static List<String> getParts(String line) {
+        return stream(line.split(":", 2)).map(String::trim).toList();
+    }
+
+    private static Optional<List<String>> getValue(List<String> parts) {
+        return (parts.size() > 1 && !parts.get(1).isEmpty()) ? of(parseValues(parts.get(1))) : empty();
     }
 
     static List<String> parseValues(String valuesPart) {
@@ -56,11 +67,11 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
                 .collect(toList());
     }
 
-    public Optional<List<String>> getScopes(String key) throws UnauthorizedKeyException {
+    public Optional<List<String>> getScopes(String key) throws UnauthorizedApiKeyException {
         if (scopes.containsKey(key)) {
             return scopes.get(key);
         } else {
-            throw new UnauthorizedKeyException();
+            throw new UnauthorizedApiKeyException();
         }
     }
 
@@ -73,6 +84,7 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
         this.location = location;
     }
 
+    // TODO => Utils
     public Stream<String> readFile() throws IOException {
         return Files.lines(Path.of(location));
     }

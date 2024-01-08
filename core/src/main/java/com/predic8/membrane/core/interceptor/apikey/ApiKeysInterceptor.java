@@ -8,7 +8,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
-import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedKeyException;
+import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         if (key.isPresent()) {
             try {
                 addScopes(exc, getScopes(key.get()));
-            } catch (UnauthorizedKeyException e) {
+            } catch (UnauthorizedApiKeyException e) {
                 if (!require) {return CONTINUE;}
                 problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid or has no associated scopes.");
                 return RETURN;
@@ -66,7 +66,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
     }
 
-    public List<String> getScopes(String key) throws UnauthorizedKeyException {
+    public List<String> getScopes(String key) throws UnauthorizedApiKeyException {
         Set<String> combinedScopes = new LinkedHashSet<>();
         boolean keyFound = false;
 
@@ -80,7 +80,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         }
 
         if (!keyFound) {
-            throw new UnauthorizedKeyException();
+            throw new UnauthorizedApiKeyException();
         }
 
         return combinedScopes.stream().toList();

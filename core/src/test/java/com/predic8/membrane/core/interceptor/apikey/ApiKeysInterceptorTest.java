@@ -4,7 +4,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
-import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedKeyException;
+import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +17,7 @@ import static java.util.Collections.emptyList;
 import static java.util.List.of;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
+
 
 public class ApiKeysInterceptorTest {
 
@@ -31,6 +32,10 @@ public class ApiKeysInterceptorTest {
 
     @BeforeAll
     static void setup() {
+
+        // TODO erst einer dann der andere
+        // Test mit zwei KeyStores
+
         store = new ApiKeyFileStore();
         store2 = new ApiKeyFileStore();
         ahe = new ApiKeyHeaderExtractor();
@@ -102,9 +107,9 @@ public class ApiKeysInterceptorTest {
 
 
     @Test
-    void getScopes() throws UnauthorizedKeyException {
+    void getScopes() throws UnauthorizedApiKeyException {
         assertEquals(asList("finance", "internal", "account"), akiWithProp.getScopes("5XF27"));
         assertEquals(emptyList(), akiWithProp.getScopes("L62NA"));
-        assertThrows(UnauthorizedKeyException.class, () -> akiWithoutProp.getScopes("751B2"));
+        assertThrows(UnauthorizedApiKeyException.class, () -> akiWithoutProp.getScopes("751B2"));
     }
 }

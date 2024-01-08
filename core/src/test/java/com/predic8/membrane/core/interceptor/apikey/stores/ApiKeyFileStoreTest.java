@@ -17,37 +17,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ApiKeyFileStoreTest {
 
-    static ApiKeyFileStore f;
+    static ApiKeyFileStore store;
 
     @BeforeAll
     public static void setUp() {
-        f = new ApiKeyFileStore();
-        loadFile("apikeys/keys.txt");
+        store = new ApiKeyFileStore();
+        loadFromFile(store,"apikeys/keys.txt");
     }
 
     @Test
     void readFile() throws IOException {
-        //noinspection OptionalGetWithoutIsPresent
-        var firstLine = f.readFile().findFirst().get();
-
-        assertEquals("5XF27:finance,internal", firstLine);
+        List<String> lines = store.readFile().toList();
+        assertEquals(3, lines.size());
+        assertEquals("5XF27:finance,internal", lines.get(0));
     }
-
-    private static final HashMap<String, Optional<List<String>>> API_KEYS = new HashMap<>() {{
-            put("5XF27", Optional.of(List.of("finance", "internal")));
-            put("73D29", Optional.of(List.of("accounting", "management")));
-            put("89D5C", Optional.of(List.of("internal")));
-            put("L62NA", Optional.empty());
-            put("G62NB", Optional.empty());
-    }};
-    private static final Stream<String> LINES = Stream.of(
-     "5XF27:finance,internal",
-            "73D29: accounting, management",
-            "89D5C: internal,",
-            "L62NA",
-            "L62NA",
-            "G62NB:"
-    );
 
     @Test
     public void readKeyData() throws Exception {
@@ -55,11 +38,24 @@ public class ApiKeyFileStoreTest {
     }
 
     @Test
-    void getScopes() throws UnauthorizedKeyException {
-        assertEquals(Optional.of(of("finance", "internal")), f.getScopes("5XF27"));
-        loadFile("apikeys/keys2.txt");
-        assertEquals(Optional.empty(), f.getScopes("L62NA"));
-        assertThrows(UnauthorizedKeyException.class, () -> f.getScopes("5AF27"));
+    void getScope() throws UnauthorizedApiKeyException {
+        assertEquals(Optional.of(of("finance", "internal")), store.getScopes("5XF27"));
+    }
+
+    @Test
+    void keyWithoutScopes() throws UnauthorizedApiKeyException {
+        loadFromFile(store, "apikeys/keys2.txt");
+        assertEquals(Optional.empty(), store.getScopes("L62NA"));
+    }
+
+    @Test
+    void duplicateKey() {
+        assertThrows(Exception.class, () -> loadFromFile(store,"apikeys/duplicate-api-keys.txt"));
+    }
+
+    @Test
+    void keyNotFound() {
+        assertThrows(UnauthorizedApiKeyException.class, () -> store.getScopes("5AF27"));
     }
 
     @Test
@@ -77,9 +73,24 @@ public class ApiKeyFileStoreTest {
         assertEquals(of("foo", "bar"), ApiKeyFileStore.parseValues(" foo, bar ,"));
     }
 
-    private static void loadFile(String path) {
-        f.setLocation(requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource(path)).getPath());
+    private static void loadFromFile(ApiKeyFileStore store, String path) {
+        store.setLocation(requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource(path)).getPath());
         //noinspection DataFlowIssue
-        f.onApplicationEvent(null);
+        store.onApplicationEvent(null);
     }
+
+    private static final HashMap<String, Optional<List<String>>> API_KEYS = new HashMap<>() {{
+        put("5XF27", Optional.of(List.of("finance", "internal")));
+        put("73D29", Optional.of(List.of("accounting", "management")));
+        put("89D5C", Optional.of(List.of("internal")));
+        put("L62NA", Optional.empty());
+        put("G62NB", Optional.empty());
+    }};
+    private static final Stream<String> LINES = Stream.of(
+            "5XF27:finance,internal",
+            "73D29: accounting, management",
+            "89D5C: internal,",
+            "L62NA",
+            "G62NB:"
+    );
 }
