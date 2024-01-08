@@ -34,4 +34,5 @@ public class ApiKeyHeaderExtractorTest {
     void extractHeaderRandomCase() {
         assertEquals(Optional.of(API_KEY), ahe.extract(new Request.Builder().header("x-APi-kEY", API_KEY).buildExchange()));
     }
+
 }
