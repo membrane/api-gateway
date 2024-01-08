@@ -96,12 +96,21 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     @SuppressWarnings("SameParameterValue")
     @MCAttribute
-    void setRequire(boolean require) {
+    public void setRequire(boolean require) {
         this.require = require;
     }
 
     @MCChildElement(allowForeign = true)
-    void setExtractors(List<ApiKeyExtractor> extractors) {
+    public void setStores(List<ApiKeyStore> stores) {
+        this.stores.addAll(stores);
+    }
+
+    public List<ApiKeyStore> getStores() {
+        return stores;
+    }
+
+    @MCChildElement(allowForeign = true, order = 1)
+    public void setExtractors(List<ApiKeyExtractor> extractors) {
         this.extractors.addAll(extractors);
     }
 
@@ -109,6 +118,4 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public List<ApiKeyExtractor> getExtractors() {
         return extractors;
     }
-
-    void setStores(List<ApiKeyStore> stores) {this.stores.addAll(stores);}
 }
