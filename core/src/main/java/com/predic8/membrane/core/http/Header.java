@@ -162,7 +162,7 @@ public class Header {
 	public void removeFields(String name) {
 		List<HeaderField> deleteValues = new ArrayList<>();
 		for (HeaderField field : fields) {
-			if (field.getHeaderName().equalsString(name))
+			if (field.getHeaderName().hasName(name))
 				deleteValues.add(field);
 		}
 		fields.removeAll(deleteValues);
@@ -179,7 +179,7 @@ public class Header {
 
 	public String getFirstValue(String name) {
 		for (HeaderField field : fields) {
-			if (field.getHeaderName().equalsString(name))
+			if (field.getHeaderName().hasName(name))
 				return field.getValue();
 		}
 		return null;
@@ -191,7 +191,7 @@ public class Header {
 
 	public boolean contains(String header) {
 		return fields.stream()
-				.anyMatch(headerField -> headerField.getHeaderName().equalsString(header));
+				.anyMatch(headerField -> headerField.getHeaderName().hasName(header));
 	}
 
 	/**
@@ -212,7 +212,7 @@ public class Header {
 	public void setValue(String name, String value) {
 		boolean found = false;
 		for (int i = 0; i < fields.size(); i++) {
-			if (fields.get(i).getHeaderName().equalsString(name)) {
+			if (fields.get(i).getHeaderName().hasName(name)) {
 				if (found) {
 					fields.set(i, fields.get(fields.size()-1));
 					fields.remove(fields.size()-1);
@@ -404,7 +404,7 @@ public class Header {
 	public int getNumberOf(String headerName) {
 		int res = 0;
 		for (HeaderField headerField : fields)
-			if (headerField.getHeaderName().equalsString(headerName))
+			if (headerField.getHeaderName().hasName(headerName))
 				res++;
 		return res;
 	}
@@ -451,7 +451,7 @@ public class Header {
 	public String getNormalizedValue(String headerName) {
 		StringBuilder sb = new StringBuilder();
 		for (HeaderField headerField : fields) {
-			if (headerField.getHeaderName().equalsString(headerName)) {
+			if (headerField.getHeaderName().hasName(headerName)) {
 				if (!sb.isEmpty())
 					sb.append(",");
 				sb.append(headerField.getValue());
