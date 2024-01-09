@@ -31,6 +31,10 @@ public class HeaderName {
 
 	@Override
 	public boolean equals(Object obj) {
+
+		if (obj instanceof String)
+			throw new RuntimeException("Ihhh!");
+
 		return (this == obj) || (obj instanceof HeaderName hn) && (name.equalsIgnoreCase((hn.name)));
 	}
 

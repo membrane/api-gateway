@@ -35,6 +35,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.Header.COOKIE;
+
+@SuppressWarnings("unused")
 public abstract class SessionManager {
 
     public static final String SESSION_VALUE_SEPARATOR = ",";
@@ -79,17 +82,11 @@ public abstract class SessionManager {
 
     /**
      * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isValidCookieForThisSessionManager was called beforehand
-     *
-     * @param cookie
-     * @return
      */
     protected abstract Map<String, Object> cookieValueToAttributes(String cookie);
 
     /**
      * Get the String identifier of the sessions to be used as cookie value.
-     *
-     * @param session
-     * @return
      */
     protected abstract Map<Session, String> getCookieValues(Session... session);
 
@@ -97,17 +94,17 @@ public abstract class SessionManager {
      * Get all cookies String representations from the request that are not valid anymore, e.g. because the cookie is a self contained value and has changed or expired (e.g. jwt).
      * Should return cookie values in the form of key=value.
      *
-     * @param exc
      * @param validCookie is the cookie value representation of the currently active session. Is key=value
-     * @return
      */
     public abstract List<String> getInvalidCookies(Exchange exc, String validCookie);
+
+    public static List<HeaderField> getCookieHeaderFields(Exchange exc) {
+        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE));
+    }
 
     /**
      * Gets called for every cookie value. Returns if the cookie value is valid and managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt, if it has the correct issuer, if it is not expired and if the signature is valid.
      * Cookie is in format key=value
-     * @param cookie
-     * @return
      */
     protected abstract boolean isValidCookieForThisSessionManager(String cookie);
 
@@ -193,7 +190,7 @@ public abstract class SessionManager {
         synchronized (cookieExpireCache) {
             setCookieHeaders.entrySet().stream().toList().stream() // copy so that map is modifiable
                     .filter(e -> cookieExpireCache.getIfPresent(e.getKey() + "=true") != null)
-                    .forEach(e -> e.getValue().stream().forEach(cookieEntry -> {
+                    .forEach(e -> e.getValue().forEach(cookieEntry -> {
                         String cookie = cookieExpireCache.getIfPresent(e.getKey() + "=true");
                         if (cookieEntry.equals(cookie)) {
                             setCookieHeaders.get(e.getKey()).remove(e.getValue());
@@ -278,7 +275,7 @@ public abstract class SessionManager {
         return validCookiesAsListOfMaps
                 .stream()
                 .flatMap(map -> map.entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1 != null && e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
     }
 
     private Map<String,Map<String, Object>> convertValidCookiesToAttributes(Exchange exc) {
@@ -339,7 +336,7 @@ public abstract class SessionManager {
 
 
     protected Stream<String> getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim);
+        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim);
     }
 
 
