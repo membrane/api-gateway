@@ -26,21 +26,21 @@ public class HeaderName {
 	private final String name;
 
 	public HeaderName(String name) {
-		this.name = name.toLowerCase();
+		this.name = name;
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		return (this == obj) || (obj instanceof HeaderName) && (name.equals((((HeaderName) obj).name)));
+		return (this == obj) || (obj instanceof HeaderName hn) && (name.equalsIgnoreCase((hn.name)));
 	}
 
-	public boolean equalsString(String str) {
+	public boolean hasName(String str) {
 		return name.equalsIgnoreCase(str);
 	}
 
 	@Override
 	public int hashCode() {
-		return hash(name);
+		return hash(name.toLowerCase());
 	}
 
 	@Override
