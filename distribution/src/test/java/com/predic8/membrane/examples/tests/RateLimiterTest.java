@@ -18,6 +18,7 @@ import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.AssertUtils.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RateLimiterTest extends DistributionExtractingTestcase {
 
@@ -28,11 +29,13 @@ public class RateLimiterTest extends DistributionExtractingTestcase {
 
 	@Test
 	void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
+		BufferLogger logger = new BufferLogger();
+		try(Process2 ignored = startServiceProxyScript(logger)) {
 			getAndAssert200(LOCALHOST_2000);
 			getAndAssert200(LOCALHOST_2000);
 			getAndAssert200(LOCALHOST_2000);
 			getAndAssert(429, LOCALHOST_2000);
+			assertTrue(logger.contains("INFO RateLimitInterceptor:108 - 127.0.0.1 limit: 3 duration: PT30S is exceeded. (clientIp: 127.0.0.1)"));
 		}
 	}
 }
