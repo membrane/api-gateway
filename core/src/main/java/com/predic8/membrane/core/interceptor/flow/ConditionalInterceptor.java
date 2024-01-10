@@ -95,7 +95,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
                     put("Outcome", Outcome.class);
                     put("RETURN", RETURN);
                     put("CONTINUE", CONTINUE);
-                    put("ABORT", Outcome.ABORT);
+                    put("ABORT", ABORT);
                     put("spring", router.getBeanFactory());
                     put("exc", exc);
                     putAll(createParameterBindings(router.getUriFactory(), exc, msg, flow, false));

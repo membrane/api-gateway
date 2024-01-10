@@ -31,6 +31,8 @@ import com.predic8.membrane.core.interceptor.acl.matchers.Cidr.IpRangeTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptorTest;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
+import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorGroovyTest;
+import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorSpELTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.JavascriptInterceptor;
@@ -142,7 +144,8 @@ import org.junit.platform.suite.api.Suite;
 		BeautifierInterceptorTest.class,
 		ExchangeEvaluationContextTest.class,
 		PaddingHeaderInterceptorTest.class,
-		CollectionsUtilTest.class
+		CollectionsUtilTest.class,
+		ConditionalInterceptorGroovyTest.class, ConditionalInterceptorSpELTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {
