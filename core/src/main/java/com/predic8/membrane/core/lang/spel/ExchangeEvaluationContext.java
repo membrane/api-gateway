@@ -31,11 +31,11 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private final Message message;
     private final SPeLablePropertyAware headers;
     private final SPeLablePropertyAware properties;
-    private final String path;
-    private final String method;
+    private String path;
+    private String method;
 
-    private final SPelMessageWrapper request;
-    private final SPelMessageWrapper response;
+    private SPelMessageWrapper request;
+    private SPelMessageWrapper response;
 
     public ExchangeEvaluationContext(Exchange exc) {
         this(exc, exc.getRequest());
@@ -44,17 +44,22 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     public ExchangeEvaluationContext(Exchange exc, Message message) {
         super();
 
-        this.exchange = exc;
         this.message = message;
-        this.properties = new SPeLProperties(exc.getProperties());
-        this.headers = new SpeLHeader(message.getHeader());
+        exchange = exc;
+        properties = new SPeLProperties(exc.getProperties());
+        headers = new SpeLHeader(message.getHeader());
 
         Request request = exc.getRequest();
-        path = request.getUri();
-        method = request.getMethod();
+        if (request != null) {
+            path = request.getUri();
+            method = request.getMethod();
+            this.request = new SPelMessageWrapper(exc.getRequest());
+        }
 
-        this.request = new SPelMessageWrapper(exc.getRequest());
-        this.response = new SPelMessageWrapper(exc.getResponse());
+        Response response = exc.getResponse();
+        if (response != null) {
+            this.response = new SPelMessageWrapper(exc.getResponse());
+        }
 
         setRootObject(this);
         addPropertyAccessor(new AwareExchangePropertyAccessor());

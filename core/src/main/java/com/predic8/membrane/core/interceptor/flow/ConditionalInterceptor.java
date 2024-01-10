@@ -40,7 +40,7 @@ import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindi
  * </p>
  *
  * <p>
- * Note that this is a draft implementation only: Design decissions are still pending.
+ * Note that this is a draft implementation only: Design decisions are still pending.
  * </p>
  * <ul>
  * <li>'evaluate condition only once': Should the condition be reevaluated once response handling has begun?</li>
