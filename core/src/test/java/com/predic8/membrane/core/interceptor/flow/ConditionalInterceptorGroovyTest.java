@@ -1,13 +1,10 @@
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request.Builder;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import com.predic8.membrane.core.http.Request.*;
+import com.predic8.membrane.core.http.Response.*;
+import org.codehaus.groovy.control.*;
 import org.junit.jupiter.api.*;
 
-import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestContext {
@@ -15,6 +12,11 @@ public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestC
     @Test
     void simpleRequestTrue() throws Exception {
         assertTrue(evalGroovy("true", new Builder()));
+    }
+
+    @Test
+    void simpleRequestFalse() throws Exception {
+        assertFalse(evalGroovy("false", new Builder()));
     }
 
     @Test

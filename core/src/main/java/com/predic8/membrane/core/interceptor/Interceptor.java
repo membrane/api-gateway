@@ -35,6 +35,10 @@ public interface Interceptor {
 			public static final EnumSet<Flow> RESPONSE = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
 			public static final EnumSet<Flow> REQUEST_RESPONSE = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
 		}
+
+		public boolean isRequest() {
+			return this.equals(REQUEST);
+		}
 	}
 
 	Outcome handleRequest(Exchange exc) throws Exception;

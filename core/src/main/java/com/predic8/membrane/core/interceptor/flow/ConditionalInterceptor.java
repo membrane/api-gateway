@@ -91,16 +91,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 
         switch (language) {
             case GROOVY -> {
-                HashMap<String, Object> parameters = new HashMap<>() {{
-                    put("Outcome", Outcome.class);
-                    put("RETURN", RETURN);
-                    put("CONTINUE", CONTINUE);
-                    put("ABORT", ABORT);
-                    put("spring", router.getBeanFactory());
-                    put("exc", exc);
-                    putAll(createParameterBindings(router.getUriFactory(), exc, msg, flow, false));
-                }};
-                return condition.apply(parameters);
+                return condition.apply(getParametersForGroovy(exc, msg, flow));
             }
             case SPEL -> {
                 Boolean result = spelExpr.getValue(new ExchangeEvaluationContext(exc, msg), Boolean.class);
@@ -111,6 +102,18 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
         log.error("Should not happen!");
 
         return false;
+    }
+
+    private HashMap<String, Object> getParametersForGroovy(Exchange exc, Message msg, Flow flow) {
+        return  new HashMap<>() {{
+            put("Outcome", Outcome.class);
+            put("RETURN", RETURN);
+            put("CONTINUE", CONTINUE);
+            put("ABORT", ABORT);
+            put("spring", router.getBeanFactory());
+            put("exc", exc);
+            putAll(createParameterBindings(router.getUriFactory(), exc, msg, flow, false));
+        }};
     }
 
     @Override

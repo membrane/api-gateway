@@ -63,6 +63,9 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
         setRootObject(this);
         addPropertyAccessor(new AwareExchangePropertyAccessor());
+
+        setMethodResolvers(List.of(new BuildinFunctionResolver()));
+
     }
 
 
