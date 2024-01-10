@@ -14,15 +14,7 @@ import static java.util.List.of;
 
 class ConditionalEvaluationTestContext {
 
-    static boolean evalSpEL(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, SPEL);
-    }
-
-    static boolean evalGroovy(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, GROOVY);
-    }
-
-    private static boolean performEval(String condition, Object builder, LanguageType lang) throws Exception {
+    static boolean performEval(String condition, Object builder, LanguageType lang) throws Exception {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var condInt = new ConditionalInterceptor();
@@ -38,6 +30,7 @@ class ConditionalEvaluationTestContext {
                 condInt.handleRequest(exc);
             }
             case ResponseBuilder b ->  {
+                exc.pushInterceptorToStack(mockInt);
                 exc.setResponse(b.build());
                 condInt.handleResponse(exc);
             }
@@ -52,7 +45,13 @@ class ConditionalEvaluationTestContext {
         boolean handleRequestCalled;
 
         @Override
-        public Outcome handleRequest(Exchange exc) throws Exception {
+        public Outcome handleRequest(Exchange exc) {
+            handleRequestCalled = true;
+            return CONTINUE;
+        }
+
+        @Override
+        public Outcome handleResponse(Exchange exc) {
             handleRequestCalled = true;
             return CONTINUE;
         }

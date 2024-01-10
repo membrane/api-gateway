@@ -39,6 +39,14 @@ public interface Interceptor {
 		public boolean isRequest() {
 			return this.equals(REQUEST);
 		}
+
+		public boolean isResponse() {
+			return this.equals(RESPONSE);
+		}
+
+		public boolean isAbort() {
+			return this.equals(ABORT);
+		}
 	}
 
 	Outcome handleRequest(Exchange exc) throws Exception;

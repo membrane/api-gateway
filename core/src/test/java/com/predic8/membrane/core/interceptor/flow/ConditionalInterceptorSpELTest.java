@@ -44,5 +44,9 @@ public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestCon
     void isResponse() throws Exception {
         assertTrue(evalSpEL("response != null", new ResponseBuilder()));
     }
+
+    private static boolean evalSpEL(String condition, Object builder) throws Exception {
+        return performEval(condition, builder, SPEL);
+    }
 }
 

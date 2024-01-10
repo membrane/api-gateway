@@ -5,6 +5,7 @@ import com.predic8.membrane.core.http.Response.*;
 import org.codehaus.groovy.control.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.GROOVY;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestContext {
@@ -37,6 +38,10 @@ public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestC
 
     @Test
     void isFlowResponse() throws Exception {
-        assertTrue(evalGroovy("flow.toString().equals(\"RESPONSE\")", new ResponseBuilder()));
+        assertTrue(evalGroovy("flow.isResponse()", new ResponseBuilder()));
+    }
+
+    private static boolean evalGroovy(String condition, Object builder) throws Exception {
+        return performEval(condition, builder, GROOVY);
     }
 }

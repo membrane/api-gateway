@@ -133,7 +133,12 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
             log.debug("Expression evaluated to " + result);
 
         if (result)
-            return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
+            switch (flow) {
+                case REQUEST -> {
+                    return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
+                }
+                case RESPONSE -> interceptorFlowController.invokeResponseHandlers(exchange);
+            }
 
         return CONTINUE;
     }
