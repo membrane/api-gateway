@@ -9,12 +9,28 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore.parseLine;
 import static java.util.List.of;
 import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ApiKeyFileStoreTest {
+
+    private static final HashMap<String, Optional<List<String>>> EXPECTED_API_KEYS = new HashMap<>() {{
+        put("5XF27", Optional.of(List.of("finance", "internal")));
+        put("73D29", Optional.of(List.of("accounting", "management")));
+        put("89D5C", Optional.of(List.of("internal")));
+        put("L62NA", Optional.empty());
+        put("G62NB", Optional.empty());
+    }};
+    private static final Stream<String> LINES = Stream.of(
+            "5XF27:finance,internal",
+            "73D29: accounting, management",
+            "89D5C: internal,",
+            "L62NA",
+            "G62NB:"
+    );
 
     static ApiKeyFileStore store;
 
@@ -26,7 +42,7 @@ public class ApiKeyFileStoreTest {
 
     @Test
     public void readKeyData() throws Exception {
-        assertEquals(API_KEYS, ApiKeyFileStore.readKeyData(LINES));
+        assertEquals(EXPECTED_API_KEYS, ApiKeyFileStore.readKeyData(LINES));
     }
 
     @Test
@@ -50,11 +66,11 @@ public class ApiKeyFileStoreTest {
     }
 
     @Test
-    void parseLine() {
-        assertEquals(new SimpleEntry<>("5XF27", Optional.of(of("finance", "internal"))), ApiKeyFileStore.parseLine("5XF27: finance , internal "));
-        assertEquals(new SimpleEntry<>("89D5C", Optional.of(of("internal"))), ApiKeyFileStore.parseLine("89D5C: internal,"));
-        assertEquals(new SimpleEntry<>("L62NA", Optional.empty()), ApiKeyFileStore.parseLine("L62NA"));
-        assertEquals(new SimpleEntry<>("L62NA", Optional.empty()), ApiKeyFileStore.parseLine("L62NA: "));
+    void parseLineTest() {
+        assertEquals(new SimpleEntry<>("5XF27", Optional.of(of("finance", "internal"))), parseLine("5XF27: finance , internal "));
+        assertEquals(new SimpleEntry<>("89D5C", Optional.of(of("internal"))), parseLine("89D5C: internal,"));
+        assertEquals(new SimpleEntry<>("L62NA", Optional.empty()), parseLine("L62NA"));
+        assertEquals(new SimpleEntry<>("L62NA", Optional.empty()), parseLine("L62NA: "));
     }
 
     @Test
@@ -69,19 +85,4 @@ public class ApiKeyFileStoreTest {
         //noinspection DataFlowIssue
         store.onApplicationEvent(null);
     }
-
-    private static final HashMap<String, Optional<List<String>>> API_KEYS = new HashMap<>() {{
-        put("5XF27", Optional.of(List.of("finance", "internal")));
-        put("73D29", Optional.of(List.of("accounting", "management")));
-        put("89D5C", Optional.of(List.of("internal")));
-        put("L62NA", Optional.empty());
-        put("G62NB", Optional.empty());
-    }};
-    private static final Stream<String> LINES = Stream.of(
-            "5XF27:finance,internal",
-            "73D29: accounting, management",
-            "89D5C: internal,",
-            "L62NA",
-            "G62NB:"
-    );
 }

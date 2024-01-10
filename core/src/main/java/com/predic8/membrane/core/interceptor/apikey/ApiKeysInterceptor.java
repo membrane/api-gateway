@@ -71,12 +71,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         boolean keyFound = false;
 
         for (ApiKeyStore store : stores) {
-            //noinspection CatchMayIgnoreException
             try {
-                Optional<List<String>> optionalScopes = store.getScopes(key);
-                optionalScopes.ifPresent(combinedScopes::addAll);
+                store.getScopes(key).ifPresent(combinedScopes::addAll);
                 keyFound = true;
-            } catch (Exception e) {}
+            } catch (Exception ignored) {}
         }
 
         if (!keyFound) {

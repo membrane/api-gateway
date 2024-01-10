@@ -1,23 +1,19 @@
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextStartedEvent;
+import com.predic8.membrane.annot.*;
+import org.springframework.context.*;
+import org.springframework.context.event.*;
 
-import java.io.IOException;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
+import java.io.*;
+import java.util.AbstractMap.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.readFile;
-import static java.util.Arrays.stream;
-import static java.util.Optional.empty;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.*;
+import static java.util.Arrays.*;
 import static java.util.Optional.of;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
+import static java.util.Optional.*;
+import static java.util.stream.Collectors.*;
 
 @MCElement(name = "keyFileStore", topLevel = false)
 public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<ContextStartedEvent> {
@@ -65,7 +61,7 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
     static List<String> parseValues(String valuesPart) {
         return stream(valuesPart.split(","))
                 .map(String::trim)
-                .collect(toList());
+                .toList();
     }
 
     public Optional<List<String>> getScopes(String key) throws UnauthorizedApiKeyException {
