@@ -24,17 +24,15 @@ class ConditionalEvaluationTestContext {
         condInt.setTest(condition);
         condInt.init(new HttpRouter());
 
-        switch (builder) {
-            case Builder b -> {
-                exc.setRequest(b.build());
-                condInt.handleRequest(exc);
-            }
-            case ResponseBuilder b ->  {
-                exc.pushInterceptorToStack(mockInt);
-                exc.setResponse(b.build());
-                condInt.handleResponse(exc);
-            }
-            default -> throw new IllegalStateException("Unexpected value: " + builder);
+        if (builder instanceof Builder b) {
+            exc.setRequest(b.build());
+            condInt.handleRequest(exc);
+        } else if (builder instanceof ResponseBuilder b) {
+            exc.pushInterceptorToStack(mockInt);
+            exc.setResponse(b.build());
+            condInt.handleResponse(exc);
+        } else {
+            throw new IllegalStateException("Unexpected value: " + builder);
         }
 
         return mockInt.isCalled();
