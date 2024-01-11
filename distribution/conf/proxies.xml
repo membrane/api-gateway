@@ -5,9 +5,14 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-
         <api port="2000">
-            <target host="api.predic8.de"/>
+            <apiKey require="true">
+                <keyFileStore location="/home/christian/IdeaProjects/api-gateway/keys.txt"/>
+                <headerExtractor name="api"/>
+                <queryParamExtractor name="api"/>
+            </apiKey>
+            <template>bla</template>
+            <return/>
         </api>
 
     </router>

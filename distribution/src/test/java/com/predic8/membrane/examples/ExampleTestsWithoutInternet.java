@@ -15,19 +15,26 @@
 package com.predic8.membrane.examples;
 
 import com.predic8.membrane.errorhandling.OpenAPIConfigErrorTest;
-import com.predic8.membrane.examples.config.*;
+import com.predic8.membrane.examples.config.ProxiesXMLOfflineTest;
+import com.predic8.membrane.examples.config.ProxiesXMLSecurityTest;
 import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
-import com.predic8.membrane.examples.tests.*;
+import com.predic8.membrane.examples.tests.CBRTest;
+import com.predic8.membrane.examples.tests.GroovyTest;
+import com.predic8.membrane.examples.tests.JavascriptTest;
+import com.predic8.membrane.examples.tests.JsonProtectionTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleTest;
-import com.predic8.membrane.examples.tests.message_transformation.*;
+import com.predic8.membrane.examples.tests.message_transformation.Json2XmlTest;
+import com.predic8.membrane.examples.tests.message_transformation.TransformationUsingJavascriptTest;
+import com.predic8.membrane.examples.tests.message_transformation.Xml2JsonTest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2APITest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2CredentialsTest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationTest;
+import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryInterceptorTest;
 import com.predic8.membrane.examples.tests.template.json.JsonTemplateTest;
 import com.predic8.membrane.examples.tests.template.text.TextTemplateTest;
 import com.predic8.membrane.examples.tests.template.xml.XMLTemplateTest;
@@ -63,6 +70,7 @@ import org.junit.platform.suite.api.Suite;
 
         OpenAPIValidationSimpleTest.class,
         OpenAPIValidationTest.class,
+        OpenTelemetryInterceptorTest.class,
 
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,

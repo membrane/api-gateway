@@ -25,7 +25,7 @@ import com.predic8.membrane.core.util.TextUtil;
 public abstract class AbstractClientAddress extends AbstractXmlElement {
 
 	protected Router router;
-	protected Pattern pattern;
+	protected String schema;
 
 	public AbstractClientAddress(Router router) {
 		super();
@@ -36,16 +36,16 @@ public abstract class AbstractClientAddress extends AbstractXmlElement {
 
 	@Override
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		setPattern(TextUtil.globToRegExp(token.getText()));
+		setSchema(token.getText());
 	}
 
 	@Override
 	public String toString() {
-		return pattern.pattern();
+		return schema;
 	}
 
-	public void setPattern(String pattern) {
-		this.pattern = Pattern.compile(pattern);
+	public void setSchema(String schema) {
+		this.schema = schema;
 	}
 
 	public void init(Router router) {

@@ -1,61 +1,33 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License. */
 package com.predic8.membrane.integration;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
+import com.predic8.membrane.core.interceptor.acl.*;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.jupiter.api.*;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.interceptor.acl.ParseType.*;
+import static java.util.regex.Pattern.compile;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessControlInterceptorIntegrationTest {
 
-	public static final String FILE_WITH_VALID_RESOURCE_PARAMS = "src/test/resources/acl/valid-resource.xml";
-
-	public static final String FILE_WITH_URI_MISMATCH = "src/test/resources/acl/uri-mismatch.xml";
-
-	public static final String FILE_WITH_CLIENT_MISMATCH = "src/test/resources/acl/client-mismatch.xml";
-
-	public static final String FILE_CLIENTS_FROM_PREDIC8 = "src/test/resources/acl/clients-from-predic8.de.xml";
-
-	public static final String FILE_CLIENTS_FROM_127_0_0_1 = "src/test/resources/acl/clients-from-127.0.0.1.xml";
-
-	public static final String FILE_CLIENTS_FROM_LOCALHOST = "src/test/resources/acl/clients-from-localhost.xml";
-
-	public static final String FILE_CLIENTS_FROM_192_168_2_STAR = "src/test/resources/acl/clients-from-192.168.2.star.xml";
-
-
-	private static final byte[] LOCALHOST_IP = new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 };
-
 	private static HttpRouter router;
+
+	private static final GetMethod GET = new GetMethod("http://localhost:5005");
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3008), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 5005), "www.google.de", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 	}
@@ -66,89 +38,93 @@ public class AccessControlInterceptorIntegrationTest {
 	}
 
 	@Test
-	public void testValidServiceFile() throws Exception {
-		setInterceptor(FILE_WITH_VALID_RESOURCE_PARAMS);
-		assertEquals(200, new HttpClient().executeMethod(getBLZRequestMethod()));
-
+	public void matchesHostname() throws Exception {
+		initRouter(getHostnameResource("local.*"));
+		assertEquals(200, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void testUriMismatchFile() throws Exception {
-		setInterceptor(FILE_WITH_URI_MISMATCH);
-		assertEquals(403, new HttpClient().executeMethod(getBLZRequestMethod()));
+	public void notMatchesHostname() throws Exception {
+		initRouter(getHostnameResource("hostlocal"));
+		assertEquals(401, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void testClientsMismatchFile() throws Exception {
-		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
-		assertEquals(403, new HttpClient().executeMethod(getBLZRequestMethod()));
+	public void matchesGlobIp() throws Exception {
+		initRouter(getIpResource("127.0.0.*", GLOB));
+		assertEquals(200, getClient().executeMethod(GET));
 	}
-
-
-	/*
-	 * This test can only by run on a specific machine.
-	 */
-	/*@Test
-	public void testGlobPattern() throws Exception {
-		setInterceptor(FILE_CLIENTS_FROM_PREDIC8);
-		assertEquals(200, getClient(FIXED_IP).executeMethod(getBLZRequestMethod()));
-	}*/
 
 	@Test
-	public void test127_0_0_1() throws Exception {
-		setInterceptor(FILE_CLIENTS_FROM_127_0_0_1);
-		assertEquals(200, getClient(LOCALHOST_IP).executeMethod(getBLZRequestMethod()));
+	public void notMatchesGlobIp() throws Exception {
+		initRouter(getIpResource("127.0.1.*", GLOB));
+		assertEquals(401, getClient().executeMethod(GET));
 	}
 
-	/*
-	 * This test can only by run on a specific machine.
-	 */
-	/*@Test
-	public void testLocalhost() throws Exception {
-		setInterceptor(FILE_CLIENTS_FROM_LOCALHOST);
+	@Test
+	public void matchesRegexIp() throws Exception {
+		initRouter(getIpResource("127.0.0.(2|1)", REGEX));
+		assertEquals(200, getClient().executeMethod(GET));
+	}
 
-		HttpClient client = new HttpClient();
-		HostConfiguration config = new HostConfiguration();
-		config.setLocalAddress(InetAddress.getByName("localhost"));
-		client.setHostConfiguration(config);
+	@Test
+	public void notMatchesRegexIp() throws Exception {
+		initRouter(getIpResource("127.0.0.\\s", REGEX));
+		assertEquals(401, getClient().executeMethod(GET));
+	}
 
-		assertEquals(200, client.executeMethod(getBLZRequestMethod()));
-	}*/
+	@Test
+	public void matchesCidrIp() throws Exception {
+		initRouter(getIpResource("127.0.0.0/20", CIDR));
+		assertEquals(200, getClient().executeMethod(GET));
+	}
 
-	/*
-	 * This test can only by run on a specific machine.
-	 */
-	/*@Test
-	public void test192_168_2_Star() throws Exception {
-		setInterceptor(FILE_CLIENTS_FROM_192_168_2_STAR);
-		assertEquals(200, getClient(FIXED_IP).executeMethod(getBLZRequestMethod()));
-	}*/
+	@Test
+	public void notMatchesCidrIp() throws Exception {
+		initRouter(getIpResource("127.0.0.0/32", CIDR));
+		assertEquals(401, getClient().executeMethod(GET));
+	}
 
-	private void setInterceptor(String fileName) throws Exception {
-		AccessControlInterceptor interceptor = new AccessControlInterceptor();
-		interceptor.setFile(fileName);
-		router.addUserFeatureInterceptor(interceptor);
+	private void initRouter(Resource r) throws Exception {
+		router.addUserFeatureInterceptor(buildAci(r));
 		router.init();
 	}
 
-	private PostMethod getBLZRequestMethod() {
-		PostMethod post = new PostMethod("http://localhost:3008/axis2/services/BLZService");
-		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
-
-		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
-		post.setRequestEntity(entity);
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
-		return post;
+	private AccessControlInterceptor buildAci(Resource r) {
+		return new AccessControlInterceptorManualProxy(){{
+			setAccessControl(
+					new AccessControl(router) {{
+						addResource(r);
+					}}
+			);
+		}};
 	}
 
-	private HttpClient getClient(byte[] ip) throws UnknownHostException {
+	private Resource getIpResource(String scheme, ParseType ptype) {
+		return getResource(new Ip(router) {{
+			setParseType(ptype);
+			setSchema(scheme);
+		}});
+	}
+
+	private Resource getHostnameResource(String scheme) {
+		return getResource(new Hostname(router) {{
+			setSchema(scheme);
+		}});
+	}
+
+	private Resource getResource(AbstractClientAddress addr) {
+		return new Resource(router) {{
+			addAddress(addr);
+			setUriPattern(compile(".*"));
+		}};
+	}
+
+	private HttpClient getClient() throws UnknownHostException {
 		HttpClient client = new HttpClient();
 		HostConfiguration config = new HostConfiguration();
-		config.setLocalAddress(InetAddress.getByAddress(ip));
+		config.setLocalAddress(InetAddress.getByAddress(new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 }));
 		client.setHostConfiguration(config);
 		return client;
 	}
-
 }
-

@@ -107,13 +107,10 @@ public abstract class AbstractHttpHandler  {
 	}
 
 	private static String getMessage(Exception e, boolean printStackTrace) {
-		String msg;
 		if (printStackTrace) {
-			msg = getStracktraceAsString(e);
-		} else {
-			msg = e.toString();
+			return getStracktraceAsString(e);
 		}
-		return msg;
+		return e.toString();
 	}
 
 	private static String getStracktraceAsString(Exception e) {

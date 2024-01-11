@@ -30,15 +30,7 @@ public class HeaderName {
 	public HeaderName(HeaderName headerName) {
 		name = headerName.name;
 	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if(!(obj instanceof HeaderName))
-			return false;
-
-		return name.equalsIgnoreCase(obj.toString());
-	}
-
+	
 	public boolean equals(HeaderName other) {
 		return name.equalsIgnoreCase(other.name);
 	}
