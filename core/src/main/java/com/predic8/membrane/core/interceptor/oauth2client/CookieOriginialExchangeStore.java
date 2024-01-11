@@ -13,32 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.interceptor.session.Session;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.time.Duration;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.io.*;
+import java.net.*;
+import java.time.*;
+import java.time.format.*;
+import java.util.*;
+import java.util.stream.*;
+
+import static com.predic8.membrane.core.http.Header.*;
+import static java.nio.charset.StandardCharsets.*;
 
 @MCElement(name = "cookieOriginalExchangeStore")
 public class CookieOriginialExchangeStore extends OriginalExchangeStore {
@@ -104,23 +97,15 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     }
 
     private String escapeForCookie(String value) {
-        try {
-            return URLEncoder.encode(value, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return URLEncoder.encode(value, UTF_8);
     }
 
     private String unescapeForCookie(String value) {
-        try {
-            return URLDecoder.decode(value, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
-        }
+        return URLDecoder.decode(value, UTF_8);
     }
 
     protected Stream<String> getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream);
+        return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream);
     }
 
     @Override
@@ -162,8 +147,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
         getStatesToRemove(exchange).forEach(state -> {
             String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=";
             expireCookies(ImmutableList.of(currentSessionCookieValue))
-                .forEach(cookie -> exchange.getResponse().getHeader().add(Header.SET_COOKIE, cookie));;
+                .forEach(cookie -> exchange.getResponse().getHeader().add(Header.SET_COOKIE, cookie));
         });
-
     }
 }

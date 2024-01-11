@@ -11,16 +11,33 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.acl.matchers;
+package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.interceptor.acl.TypeMatcher;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.util.TextUtil.globToRegExp;
-import static java.util.regex.Pattern.compile;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class GlobMatcher implements TypeMatcher {
-    @Override
-    public boolean matches(String value, String schema) {
-        return compile(globToRegExp(schema)).matcher(value).matches();
+class HeaderNameTest {
+
+    HeaderName hn = new HeaderName("Test-Header");
+
+    @Test
+    void testEquals() {
+        assertEquals(hn, new HeaderName("TEST-HEADER"));
+    }
+
+    @Test
+    void hasName() {
+        assertTrue(hn.hasName("test-header"));
+    }
+
+    @Test
+    void testHashCode() {
+        assertEquals(hn.hashCode(), new HeaderName("test-Header").hashCode());
+    }
+
+    @Test
+    void testToString() {
+        assertEquals("Test-Header", hn.toString());
     }
 }

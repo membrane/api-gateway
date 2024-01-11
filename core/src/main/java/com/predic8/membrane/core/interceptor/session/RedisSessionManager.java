@@ -14,27 +14,26 @@
 
 package com.predic8.membrane.core.interceptor.session;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.util.RedisConnector;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisCluster;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+import redis.clients.jedis.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
 @MCElement(name = "redisSessionManager")
 public class RedisSessionManager extends SessionManager{
 
+    private static final Logger log = LoggerFactory.getLogger(RedisSessionManager.class);
+
     protected String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
-    private ObjectMapper objMapper;
+    private final ObjectMapper objMapper;
     private RedisConnector connector;
     static final String ID_NAME = "_in_memory_session_id";
 
@@ -57,7 +56,7 @@ public class RedisSessionManager extends SessionManager{
                         jsonStringtoSession(jedis.getEx(cookie.split("=true")[0], connector.getParams())).get() : new Session(usernameKeyName, new HashMap<>()).get();
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            log.debug("Cannot parse JSON in Cookie.",e);
         }
         return Collections.emptyMap();
     }
@@ -82,7 +81,7 @@ public class RedisSessionManager extends SessionManager{
                     jedis.setex(s.get(ID_NAME), getExpiresAfterSeconds(), sessionToJsonString(s));
                 }
             } catch (JsonProcessingException e) {
-                e.printStackTrace();
+                log.debug("Cannot process JSON.",e);
             }
         });
     }
@@ -107,8 +106,7 @@ public class RedisSessionManager extends SessionManager{
 
     @Override
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
-        List<HeaderField> values = exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE));
-        return values.stream()
+        return getCookieHeaderFields(exc).stream()
                 .map(HeaderField::getValue)
                 .filter(value -> value.startsWith(cookieNamePrefix)).filter(value -> !value.contains(validCookie))
                 .collect(Collectors.toList());
@@ -128,6 +126,7 @@ public class RedisSessionManager extends SessionManager{
         }
     }
 
+    @SuppressWarnings("unused")
     public RedisConnector getConnector() {
         return connector;
     }
