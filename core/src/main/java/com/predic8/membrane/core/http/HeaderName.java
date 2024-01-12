@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.http;
 
+import static java.util.Objects.hash;
+
 /**
  * This class is used by {@link Header} a key for header fields.
  * The {@link #hashCode()} method is overridden so the keys are
@@ -27,21 +29,19 @@ public class HeaderName {
 		this.name = name;
 	}
 
-	public HeaderName(HeaderName headerName) {
-		name = headerName.name;
-	}
-	
-	public boolean equals(HeaderName other) {
-		return name.equalsIgnoreCase(other.name);
+	@Override
+	public boolean equals(Object obj) {
+		return (this == obj) || (obj instanceof HeaderName hn) && (name.equalsIgnoreCase((hn.name)));
+
 	}
 
-	public boolean equals(String s) {
-		return name.equalsIgnoreCase(s);
+	public boolean hasName(String str) {
+		return name.equalsIgnoreCase(str);
 	}
 
 	@Override
 	public int hashCode() {
-		return name.toLowerCase().hashCode();
+		return hash(name.toLowerCase());
 	}
 
 	@Override
