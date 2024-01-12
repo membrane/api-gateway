@@ -83,7 +83,7 @@ public class StaticSSLContext extends SSLContext {
                 algorihm = sslParser.getAlgorithm();
 
             KeyManagerFactory kmf = null;
-            String keyStoreType = "JKS";
+            String keyStoreType = "PKCS12";
             if (sslParser.getKeyStore() != null) {
                 if (sslParser.getKeyStore().getKeyAlias() != null)
                     throw new InvalidParameterException("keyAlias is not yet supported.");
@@ -93,7 +93,7 @@ public class StaticSSLContext extends SSLContext {
 
                 if (sslParser.getKeyStore().getType() != null)
                     keyStoreType = sslParser.getKeyStore().getType();
-                KeyStore ks = openKeyStore(sslParser.getKeyStore(), "JKS", keyPass, resourceResolver, baseLocation);
+                KeyStore ks = openKeyStore(sslParser.getKeyStore(), "PKCS12", keyPass, resourceResolver, baseLocation);
                 kmf = KeyManagerFactory.getInstance(algorihm);
                 kmf.init(ks, keyPass);
 
