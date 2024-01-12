@@ -25,8 +25,10 @@ import org.slf4j.*;
 import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.*;
+import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
 
 /**
  * @description <p>
@@ -69,8 +71,15 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     }
 
     private boolean testCondition(Exchange exc) {
-        HashMap<String, Object> parameters = new HashMap<>();
-        parameters.put("exc", exc);
+        HashMap<String, Object> parameters = new HashMap<>() {{
+            put("Outcome", Outcome.class);
+            put("RETURN", RETURN);
+            put("CONTINUE", CONTINUE);
+            put("ABORT", Outcome.ABORT);
+            put("spring", router.getBeanFactory());
+            put("exc", exc);
+            putAll(createParameterBindings(router.getUriFactory(), exc, exc.getRequest(), REQUEST, false));
+        }};
         return condition.apply(parameters);
     }
 

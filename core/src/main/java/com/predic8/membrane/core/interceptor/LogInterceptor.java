@@ -57,6 +57,18 @@ public class LogInterceptor extends AbstractInterceptor {
 		return CONTINUE;
 	}
 
+	@Override
+	public void handleAbort(Exchange exc) {
+		try {
+			log("==== Request(Exchange aborted) ===");
+			logMessage(exc.getRequest());
+			log("==== Response(Exchange aborted) ===");
+			logMessage(exc.getResponse());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public boolean isHeaderOnly() {
 		return headerOnly;
 	}

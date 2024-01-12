@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.server;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -59,6 +60,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
         name = "Web Server";
     }
 
+    public WebServerInterceptor(Router r) {
+        name = "Web Server";
+        this.router = r;
+    }
+
     @Override
     public void init() throws Exception {
         super.init();
@@ -88,14 +94,12 @@ public class WebServerInterceptor extends AbstractInterceptor {
         log.debug("request: " + uri);
 
         if (escapesPath(uri) || escapesPath(router.getUriFactory().create(uri).getPath())) {
-
             exc.setResponse(Response.badRequest().body("").build());
             return Outcome.ABORT;
         }
 
         if (uri.startsWith("/"))
             uri = uri.substring(1);
-
 
         try {
             exc.setTimeReqSent(System.currentTimeMillis());
@@ -113,8 +117,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     exc.setReceived();
                     exc.setTimeResReceived(System.currentTimeMillis());
                     return Outcome.RETURN;
-                } catch (ResourceRetrievalException e2) {
-                }
+                } catch (ResourceRetrievalException ignored) {}
             }
             String uri2 = uri + "/";
             for (String i : index) {
@@ -124,39 +127,58 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     exc.setReceived();
                     exc.setTimeResReceived(System.currentTimeMillis());
                     return Outcome.RETURN;
-                } catch (ResourceRetrievalException e2) {
-                }
+                } catch (ResourceRetrievalException ignored) {}
             }
         }
 
         if (generateIndex) {
-            List<String> children = router.getResolverMap().getChildren(ResolverMap.combine(router.getBaseLocation(), docBase, uri));
-            if (children != null) {
-                Collections.sort(children);
-                StringBuilder sb = new StringBuilder();
-                sb.append("<html><body><tt>");
-                String base = uri;
-                if (base.endsWith("/"))
-                    base = "";
-                else {
-                    base = exc.getRequestURI();
-                    int p = base.lastIndexOf('/');
-                    if (p != -1)
-                        base = base.substring(p + 1);
-                    if (base.length() == 0)
-                        base = ".";
-                    base = base + "/";
-                }
-                for (String child : children)
-                    sb.append("<a href=\"" + base + child + "\">" + child + "</a><br/>");
-                sb.append("</tt></body></html>");
-                exc.setResponse(Response.ok().contentType("text/html").body(sb.toString()).build());
-                return Outcome.RETURN;
+            Outcome outcome = generateHtmlResponseFromChildren(exc, uri);
+            if (outcome != null) {
+                return outcome;
             }
         }
 
         exc.setResponse(Response.notFound().build());
         return Outcome.ABORT;
+    }
+
+
+    private Outcome generateHtmlResponseFromChildren(Exchange exc, String uri) throws FileNotFoundException {
+        List<String> children = router.getResolverMap().getChildren(ResolverMap.combine(router.getBaseLocation(), docBase, uri));
+        if (children == null) {
+            return null;
+        }
+
+        Collections.sort(children);
+
+        String baseUri = determineBaseUri(exc, uri);
+        String htmlContent = generateHtmlContent(children, baseUri);
+
+        exc.setResponse(Response.ok().contentType("text/html").body(htmlContent).build());
+        return Outcome.RETURN;
+    }
+
+    private String determineBaseUri(Exchange exc, String uri) {
+        if (uri.endsWith("/")) {
+            return "";
+        }
+
+        String base = exc.getRequestURI();
+        int lastSlashPos = base.lastIndexOf('/');
+        if (lastSlashPos != -1) {
+            base = base.substring(lastSlashPos + 1);
+        }
+        return (base.isEmpty() ? "." : base) + "/";
+    }
+
+    private String generateHtmlContent(List<String> children, String baseUri) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><body><tt>");
+        for (String child : children) {
+            sb.append(String.format("<a href=\"%s%s\">%s</a><br/>", baseUri, child, child));
+        }
+        sb.append("</tt></body></html>");
+        return sb.toString();
     }
 
     private boolean escapesPath(String uri) {

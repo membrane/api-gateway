@@ -126,7 +126,7 @@ public class Header {
 	public Header(InputStream in) throws IOException, EndOfStreamException {
 		String line;
 
-		while ((line = readLine(in)).length() > 0) {
+		while (!(line = readLine(in)).isEmpty()) {
 			try {
 				add(new HeaderField(line));
 			} catch (StringIndexOutOfBoundsException sie) {
@@ -137,7 +137,7 @@ public class Header {
 
 	public Header(String header) throws IOException, EndOfStreamException {
 		for (String line : header.split("\r?\n"))
-			if (line.length() > 0)
+			if (!line.isEmpty())
 				add(new HeaderField(line));
 	}
 
@@ -162,7 +162,7 @@ public class Header {
 	public void removeFields(String name) {
 		List<HeaderField> deleteValues = new ArrayList<>();
 		for (HeaderField field : fields) {
-			if (field.getHeaderName().equals(name))
+			if (field.getHeaderName().hasName(name))
 				deleteValues.add(field);
 		}
 		fields.removeAll(deleteValues);
@@ -179,10 +179,14 @@ public class Header {
 
 	public String getFirstValue(String name) {
 		for (HeaderField field : fields) {
-			if (field.getHeaderName().equals(name))
+			if (field.getHeaderName().hasName(name))
 				return field.getValue();
 		}
 		return null;
+	}
+
+	public String getFirstValue(HeaderName name) {
+		return getFirstValue(name.toString());
 	}
 
 	public HeaderField[] getAllHeaderFields() {
@@ -191,7 +195,11 @@ public class Header {
 
 	public boolean contains(String header) {
 		return fields.stream()
-				.anyMatch(headerField -> headerField.getHeaderName().equals(header));
+				.anyMatch(headerField -> headerField.getHeaderName().hasName(header));
+	}
+
+	public boolean contains(HeaderName header) {
+		return contains(header.toString());
 	}
 
 	/**
@@ -212,7 +220,7 @@ public class Header {
 	public void setValue(String name, String value) {
 		boolean found = false;
 		for (int i = 0; i < fields.size(); i++) {
-			if (fields.get(i).getHeaderName().equals(name)) {
+			if (fields.get(i).getHeaderName().hasName(name)) {
 				if (found) {
 					fields.set(i, fields.get(fields.size()-1));
 					fields.remove(fields.size()-1);
@@ -404,7 +412,7 @@ public class Header {
 	public int getNumberOf(String headerName) {
 		int res = 0;
 		for (HeaderField headerField : fields)
-			if (headerField.getHeaderName().equals(headerName))
+			if (headerField.getHeaderName().hasName(headerName))
 				res++;
 		return res;
 	}
@@ -451,13 +459,13 @@ public class Header {
 	public String getNormalizedValue(String headerName) {
 		StringBuilder sb = new StringBuilder();
 		for (HeaderField headerField : fields) {
-			if (headerField.getHeaderName().equals(headerName)) {
-				if (sb.length() > 0)
+			if (headerField.getHeaderName().hasName(headerName)) {
+				if (!sb.isEmpty())
 					sb.append(",");
 				sb.append(headerField.getValue());
 			}
 		}
-		return sb.length() == 0 ? null : sb.toString();
+		return sb.isEmpty() ? null : sb.toString();
 	}
 
 	public boolean isBinaryContentType() {
@@ -499,15 +507,13 @@ public class Header {
 	private int getBrowserVersion(String userAgent, String browserID) {
 		int p = userAgent.indexOf(browserID);
 		p += browserID.length();
-
-		if (userAgent.length() == p)
+		if (p >= userAgent.length())
 			return -1;
 		char c = userAgent.charAt(p++);
 		if (c != ' ' && c != '/' && c != '_')
 			return -1;
-
 		int version = 0;
-		while (userAgent.length() != p) {
+		while (p < userAgent.length()) {
 			c = userAgent.charAt(p++);
 			if (c < '0' || c > '9')
 				break;
@@ -515,4 +521,5 @@ public class Header {
 		}
 		return version;
 	}
+
 }

@@ -15,13 +15,26 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.core.Router;
 
+import javax.xml.stream.XMLStreamReader;
+
+import static com.predic8.membrane.core.interceptor.acl.ParseType.GLOB;
+
 public class Ip extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "ip";
 
+	private ParseType type = GLOB;
+
 	public Ip(Router router) {
 		super(router);
 	}
+
+	@Override
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
+		this.type = ParseType.getByOrDefault(token.getAttributeValue(null, "type"));
+	}
+
+	public void setParseType(ParseType pt) { type = pt; }
 
 	@Override
 	protected String getElementName() {
@@ -30,7 +43,7 @@ public class Ip extends AbstractClientAddress {
 
 	@Override
 	public boolean matches(String hostname, String ip) {
-		return pattern.matcher(ip).matches();
+		return type.getMatcher().matches(ip, schema);
 	}
 
 }

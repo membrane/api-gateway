@@ -23,9 +23,11 @@ import org.apache.commons.lang3.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
@@ -147,8 +149,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		ListIterator<String>  it = exc.getDestinations().listIterator();
 		while ( it.hasNext() ) {
 			String dest = it.next();
+			String pathQuery = getPathQueryOrSetError(router.getUriFactory(), dest, exc);
+			if (pathQuery == null)
+				return RETURN;
 
-			String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), dest);
 			int pathBegin = -1;
 			int authorityBegin = dest.indexOf("//");
 			if (authorityBegin != -1)
@@ -187,12 +191,30 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		if (mapping != null && mapping.do_ == REWRITE) {
 			String newDest = replace(exc.getRequest().getUri(), mapping);
 			if (newDest.contains("://")) {
-				newDest = URLUtil.getPathQuery(router.getUriFactory(), newDest);
+				newDest = getPathQueryOrSetError(router.getUriFactory(), newDest, exc);
+				if (newDest == null)
+					return RETURN;
 			}
 			exc.getRequest().setUri(newDest);
 		}
 
 		return CONTINUE;
+	}
+
+	private String getPathQueryOrSetError(URIFactory factory, String destination, Exchange exc) throws URISyntaxException {
+		String pathQuery;
+		try {
+			pathQuery = URLUtil.getPathQuery(factory, destination);
+		} catch(URISyntaxException ignore) {
+			exc.setResponse(
+					createProblemDetails(
+							400,
+							"/uri-parser",
+							"This URL does not follow the URI specification. Confirm the validity of the provided URL.")
+			);
+			return null;
+		}
+		return pathQuery;
 	}
 
 	private void logMappings() {

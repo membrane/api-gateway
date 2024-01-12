@@ -2,6 +2,23 @@ var membrane = function() {
 
 	runningDataLoadCall = null;
 
+	function getIEVersion() {
+		let version = -1;
+
+		if (navigator.appName === 'Microsoft Internet Explorer') {
+			const ua = navigator.userAgent;
+			const re = new RegExp("MSIE ([0-9]+[\.0-9]*)");
+			if (re.exec(ua) != null)
+				version = parseFloat( RegExp.$1 );
+		}
+
+		return version;
+	}
+
+	function isIE() {
+		return (/msie|trident/i).test(navigator.userAgent);
+	}
+
 	function createLink(href, content, params) {
 		var i,
 		    url = encodeURI(href);
@@ -92,7 +109,7 @@ var membrane = function() {
 
 		function loadText(selector, url) {			
 			$.get(url, function(resp) {
-				if ($.browser.msie  && parseInt($.browser.version, 10) <= 8) {
+				if (isIE()  && getIEVersion()) {
 					document.getElementById(selector.substring(1)).innerText = resp;
 				} else {
 					$(selector).text(resp);
@@ -101,7 +118,7 @@ var membrane = function() {
 		}
 		
 		function setHTML(selector, html) {
-				if ($.browser.msie  && parseInt($.browser.version, 10) <= 8) {
+				if (isIE()  && getIEVersion()) {
 					document.getElementById(selector.substring(1)).innerHTML = html.replace(/> /g, ">&nbsp;");
 				} else {
 			$(selector).html(html);

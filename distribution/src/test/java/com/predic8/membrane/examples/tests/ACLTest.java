@@ -34,7 +34,7 @@ public class ACLTest extends DistributionExtractingTestcase {
 			// this request succeeds through membrane, but fails on the backend with 404
 			getAndAssert(404, "http://localhost:2000/contacts/");
 
-			getAndAssert(403, "http://localhost:2000/open-source/");
+			getAndAssert(401, "http://localhost:2000/open-source/");
 		}
 	}
 }

@@ -32,6 +32,8 @@ import java.util.*;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -52,6 +54,7 @@ import static java.nio.charset.StandardCharsets.*;
  * 'query', 'mutation', 'subscription' and 'fragment's.
  * </p>
  */
+@SuppressWarnings("unused")
 @MCElement(name = "graphQLProtection")
 public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
@@ -66,6 +69,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private List<String> allowedMethods = Lists.newArrayList("GET", "POST");
     private int maxRecursion = 3;
     private int maxDepth = 7;
+    private int maxMutations = 5;
 
     public GraphQLProtectionInterceptor() {
         name = "GraphQL protection";
@@ -98,8 +102,8 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                         return error(exc, "'" + key + "' is not allowed as query parameter while using POST.");
             }
 
-            List<HeaderField> contentType = exc.getRequest().getHeader().getValues(new HeaderName(Header.CONTENT_TYPE));
-            if (contentType.size() == 0)
+            List<HeaderField> contentType = exc.getRequest().getHeader().getValues(new HeaderName(CONTENT_TYPE));
+            if (contentType.isEmpty())
                 return error(exc, "No 'Content-Type' found.");
             if (contentType.size() > 1)
                 return error(exc, "Found multiple 'Content-Type' headers.");
@@ -127,7 +131,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
             }
         } else {
             exc.setResponse(Response.methodNotAllowed().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         Object query = data.get("query");
@@ -159,9 +163,12 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
         ExecutableDocument ed = graphQLParser.parseRequest(new ByteArrayInputStream(((String) query).getBytes(UTF_8)));
 
+        if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
+            return error(exc, 400, "Too many mutations defined in document.");
+
         // so far, this ensures uniqueness of global names
         List<String> e1 = new GraphQLValidator().validate(ed);
-        if (e1 != null && e1.size() > 0)
+        if (e1 != null && !e1.isEmpty())
             return error(exc, e1.get(0));
 
         if ("GET".equals(exc.getRequest().getMethod())) {
@@ -173,14 +180,14 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                 return error(exc, 405, "'GET' may only be used for GraphQL 'query's.");
         }
 
-        OperationDefinition operationToExecute = null;
+        OperationDefinition operationToExecute;
 
         if (operationName != null && !operationName.equals("")) {
             List<OperationDefinition> ods = ed.getExecutableDefinitions().stream()
                     .filter(exd -> exd instanceof OperationDefinition)
                     .map(exd -> (OperationDefinition) exd)
                     .filter(od -> operationName.equals(od.getName())).toList();
-            if (ods.size() == 0)
+            if (ods.isEmpty())
                 return error(exc, "The operation named by 'operationName' could not be found.");
             if (ods.size() > 1)
                 return error(exc, "Multiple OperationDefinitions with the same name in the GraphQL document.");
@@ -189,10 +196,8 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
             List<OperationDefinition> ods = ed.getExecutableDefinitions().stream()
                     .filter(exd -> exd instanceof OperationDefinition)
                     .map(exd -> (OperationDefinition) exd).toList();
-            if (ods.size() == 0)
+            if (ods.isEmpty())
                 return error(exc, "Could not find an OperationDefinition in the GraphQL document.");
-            if (ods.size() > 1)
-                return error(exc, "Multiple OperationDefinitions with the same name in the GraphQL document.");
             operationToExecute = ods.get(0);
         }
 
@@ -200,14 +205,20 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         if (depthOrRecursionError != null)
             return error(exc, depthOrRecursionError);
 
-        return Outcome.CONTINUE;
+        return CONTINUE;
+    }
+
+    public int countMutations(List<ExecutableDefinition> definitions) {
+        return (int) definitions.stream()
+                .filter(definition -> definition instanceof OperationDefinition)
+                .map(definition -> (OperationDefinition) definition)
+                .filter(operation -> operation.getOperationType() != null)
+                .filter(operation -> operation.getOperationType().getOperation().equals("mutation"))
+                .count();
     }
 
     private String getDepthOrRecursionError(ExecutableDocument ed, OperationDefinition od) {
-        String err = checkSelections(ed, od, od.getSelections(), new ArrayList<>(), new HashSet<>());
-        if (err != null)
-            return err;
-        return null;
+        return checkSelections(ed, od, od.getSelections(), new ArrayList<>(), new HashSet<>());
     }
 
     private String checkSelections(ExecutableDocument ed, OperationDefinition od, List<Selection> selections, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
@@ -220,14 +231,14 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
             }
             String err;
             if (selection instanceof Field) {
-                err = checkField((Field) selection, ed, od, selections, fieldStack, fragmentNamesVisited);
+                err = checkField((Field) selection, ed, od, fieldStack, fragmentNamesVisited);
             } else if (selection instanceof FragmentSpread) {
-                err = checkFragmentSpread((FragmentSpread) selection, ed, od, selections, fieldStack, fragmentNamesVisited);
+                err = checkFragmentSpread((FragmentSpread) selection, ed, od, fieldStack, fragmentNamesVisited);
             } else if (selection instanceof InlineFragment) {
                 err = checkSelections(ed, od, ((InlineFragment) selection).getSelections(), fieldStack, fragmentNamesVisited);
             } else {
                 err = checkUnhandled(selection);
-            };
+            }
             if (err != null)
                 return err;
         }
@@ -239,7 +250,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         return "See server log.";
     }
 
-    private String checkFragmentSpread(FragmentSpread fragmentSpread, ExecutableDocument ed, OperationDefinition od, List<Selection> selections, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
+    private String checkFragmentSpread(FragmentSpread fragmentSpread, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
         String fragmentName = fragmentSpread.getFragmentName();
 
         Optional<FragmentDefinition> fragment = ed.getExecutableDefinitions().stream()
@@ -260,7 +271,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         return null;
     }
 
-    private String checkField(Field field, ExecutableDocument ed, OperationDefinition od, List<Selection> selections, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
+    private String checkField(Field field, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
         String fieldName = field.getName();
         fieldStack.add(fieldName);
         if (fieldStack.size() > maxDepth)
@@ -278,18 +289,31 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     private Outcome error(Exchange exc, String message) {
         LOG.warn(message);
         exc.setResponse(Response.badRequest().build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private Outcome error(Exchange exc, int code, String message) {
         LOG.warn(message);
         exc.setResponse(Response.badRequest().status(code).build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 
 
-    public boolean isAllowExtensions() {
-        return allowExtensions;
+
+
+    /**
+     * Limit how many mutations can be defined in a document query.
+     * @default 5
+     * @example 2
+     */
+    @MCAttribute
+    public void setMaxMutations(int maxMutations) {
+        this.maxMutations = maxMutations;
+    }
+
+    @SuppressWarnings("unused")
+    public int getMaxMutations() {
+        return maxMutations;
     }
 
     /**
@@ -300,6 +324,11 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setAllowExtensions(boolean allowExtensions) {
         this.allowExtensions = allowExtensions;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean isAllowExtensions() {
+        return allowExtensions;
     }
 
     public String getAllowedMethods() {

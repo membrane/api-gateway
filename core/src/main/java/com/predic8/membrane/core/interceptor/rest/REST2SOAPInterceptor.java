@@ -280,9 +280,16 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	}
 
 	private String getNewDestination(AbstractExchange exc) {
-		return "http://" + ((AbstractServiceProxy) exc.getRule()).getTargetHost() + ":"
+		return getProtocol(exc) + "://" + ((AbstractServiceProxy) exc.getRule()).getTargetHost() + ":"
 				+ ((AbstractServiceProxy) exc.getRule()).getTargetPort()
 				+ exc.getRequest().getUri();
+	}
+
+	private String getProtocol(AbstractExchange exc) {
+		if(exc.getRule().getSslOutboundContext() != null) {
+			return "https";
+		}
+		return "http";
 	}
 
 	private String getURI(AbstractExchange exc) {
@@ -305,5 +312,4 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	public String getShortDescription() {
 		return "Transforms REST requests into SOAP and responses vice versa.";
 	}
-
 }
