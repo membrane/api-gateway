@@ -37,6 +37,17 @@ public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestCon
         assertTrue(eval("response != null", new ResponseBuilder()));
     }
 
+    @Test
+    void testHasScopes() throws Exception {
+        assertTrue(eval("hasScopes()", new Builder()));
+    }
+
+    // TODO FIX
+  /*  @Test
+    void testHasScopesWithArgs() throws Exception {
+        assertTrue(eval("hasScopes(#list('test'))", new Builder()));
+    }*/
+
     private static boolean eval(String condition, Object builder) throws Exception {
         return performEval(condition, builder, SPEL);
     }

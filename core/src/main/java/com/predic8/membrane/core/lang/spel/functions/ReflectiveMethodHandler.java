@@ -5,6 +5,7 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.AbstractMap.SimpleEntry;
@@ -47,7 +48,8 @@ public class ReflectiveMethodHandler {
      * Calls a previously stored method, utilizing the SimpleEntry object as key.
      */
     public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException {
-        return new TypedValue(getFunction(func, getParameterTypeDescriptors(types)).invoke(null, (getParameters(ctx, args)).toArray()));
+        System.out.println("types = " + types.toString());
+        return new TypedValue(getFunction(func, getParameterTypeDescriptors(types)).invoke(null, (getParameters(ctx, args))));
     }
 
     private static ArrayList<TypeDescriptor> getParameterTypeDescriptors(List<TypeDescriptor> types) {
@@ -56,11 +58,10 @@ public class ReflectiveMethodHandler {
         }};
     }
 
-    // TODO return array
-    private static ArrayList<Object> getParameters(EvaluationContext ctx, Object[] args) {
+    private static Object[] getParameters(EvaluationContext ctx, Object[] args) {
         return new ArrayList<>(List.of(args)) {{
             add(ctx);
-        }};
+        }}.toArray();
     }
 
     private Method getFunction(String func, List<TypeDescriptor> t) {

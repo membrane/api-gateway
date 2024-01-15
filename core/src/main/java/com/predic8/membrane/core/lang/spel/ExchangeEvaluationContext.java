@@ -20,7 +20,6 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.spel.functions.BuildInFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import org.springframework.expression.spel.support.*;
-
 import java.io.*;
 import java.util.*;
 
@@ -44,6 +43,8 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     public ExchangeEvaluationContext(Exchange exc, Message message) {
         super();
+
+        setVariable("list", List.of());
 
         this.message = message;
         exchange = exc;

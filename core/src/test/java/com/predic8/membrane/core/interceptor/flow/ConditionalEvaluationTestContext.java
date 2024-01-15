@@ -7,6 +7,9 @@ import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType;
+
+import java.util.List;
+
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.GROOVY;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
@@ -18,6 +21,8 @@ class ConditionalEvaluationTestContext {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var condInt = new ConditionalInterceptor();
+
+        exc.setProperty("scopes", List.of("test", "main"));
 
         condInt.setLanguage(lang);
         condInt.setInterceptors(of(mockInt));
