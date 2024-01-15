@@ -12,8 +12,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore.parseLine;
 import static java.util.List.of;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ApiKeyFileStoreTest {
 
@@ -67,6 +66,9 @@ public class ApiKeyFileStoreTest {
     void keyNotFound() {
         assertThrows(UnauthorizedApiKeyException.class, () -> store.getScopes("5AF27"));
     }
+
+    @Test
+    void inlineComment() throws UnauthorizedApiKeyException {assertFalse(store.getScopes("NMB3B").get().contains("This is an inline comment."));}
 
     @Test
     void parseLineTest() {
