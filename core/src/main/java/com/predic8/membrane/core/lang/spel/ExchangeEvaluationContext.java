@@ -17,6 +17,7 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.spel.functions.BuildinFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import org.springframework.expression.spel.support.*;
 
