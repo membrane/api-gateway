@@ -21,13 +21,16 @@ public class ApiKeyFileStoreTest {
         put("5XF27", Optional.of(List.of("finance", "internal")));
         put("73D29", Optional.of(List.of("accounting", "management")));
         put("89D5C", Optional.of(List.of("internal")));
+        put("NMB3B", Optional.of(List.of("demo", "test")));
         put("L62NA", Optional.empty());
         put("G62NB", Optional.empty());
     }};
     private static final Stream<String> LINES = Stream.of(
+            "# These are demo-keys.",
             "5XF27:finance,internal",
             "73D29: accounting, management",
             "89D5C: internal,",
+            "NMB3B: demo, test # This is an inline comment.",
             "L62NA",
             "G62NB:"
     );
