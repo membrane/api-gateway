@@ -20,6 +20,7 @@ public class BuildinFunctionResolver implements MethodResolver {
 
     @Override
     public MethodExecutor resolve(EvaluationContext context, Object targetObject, String name, List<TypeDescriptor> argumentTypes) throws AccessException {
+        System.out.println("context = " + context + ", targetObject = " + targetObject + ", name = " + name + ", argumentTypes = " + argumentTypes);
        return (ctx, target, arguments) -> {
            try {
                return functions.invokeFunction(ctx, name, argumentTypes, arguments);
