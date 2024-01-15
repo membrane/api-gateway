@@ -47,13 +47,9 @@ public class ReflectiveMethodHandler {
      * Calls a previously stored method, utilizing the SimpleEntry object as key.
      */
     public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException {
-        List<TypeDescriptor> t = new ArrayList<>(types) {{
-            add(getTypeDescriptor(ExchangeEvaluationContext.class));
-        }};
+        List<TypeDescriptor> t = new ArrayList<>(types) {{add(getTypeDescriptor(ExchangeEvaluationContext.class));}};
         Method function = storedMethods.get(new SimpleEntry<>(func, t));
-        List<Object> a = new ArrayList<>(List.of(args)) {{
-           add(ctx);
-        }};
+        List<Object> a = new ArrayList<>(List.of(args)) {{add(ctx);}};
         return new TypedValue(function.invoke(null, a.toArray()));
     }
 }
