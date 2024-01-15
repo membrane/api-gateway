@@ -9,18 +9,17 @@ import org.springframework.expression.MethodResolver;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-public class BuildinFunctionResolver implements MethodResolver {
+public class BuildInFunctionResolver implements MethodResolver {
 
     private final ReflectiveMethodHandler functions;
 
-    public BuildinFunctionResolver() {
+    public BuildInFunctionResolver() {
         super();
         functions = new ReflectiveMethodHandler(BuiltInFunctions.class);
     }
 
     @Override
     public MethodExecutor resolve(EvaluationContext context, Object targetObject, String name, List<TypeDescriptor> argumentTypes) throws AccessException {
-        System.out.println("context = " + context + ", targetObject = " + targetObject + ", name = " + name + ", argumentTypes = " + argumentTypes);
        return (ctx, target, arguments) -> {
            try {
                return functions.invokeFunction(ctx, name, argumentTypes, arguments);
