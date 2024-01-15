@@ -66,6 +66,8 @@ import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectorTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientTest;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContextTest;
+import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionsTest;
+import com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandlerTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
 import com.predic8.membrane.core.resolver.SingleResolverTest;
@@ -150,10 +152,13 @@ import org.junit.platform.suite.api.Suite;
 		PaddingHeaderInterceptorTest.class,
 		CollectionsUtilTest.class,
 		ConditionalInterceptorGroovyTest.class, ConditionalInterceptorSpELTest.class,
-    ApiKeysInterceptorTest.class,
+		ApiKeysInterceptorTest.class,
 		ApiKeyFileStoreTest.class,
 		ApiKeyHeaderExtractorTest.class,
-		ApiKeyUtils.class
+		ApiKeyUtils.class,
+		ReflectiveMethodHandlerTest.class,
+		BuiltInFunctionsTest.class
+
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

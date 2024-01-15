@@ -17,7 +17,7 @@ import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHand
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ReflectiveMethodHandlerTest {
+public class ReflectiveMethodHandlerTest {
 
     static final TypeDescriptor INT_TYPE_DESC = getTypeDescriptor(Integer.class);
     static final TypeDescriptor FLOAT_TYPE_DESC = getTypeDescriptor(Float.class);
@@ -78,19 +78,19 @@ class ReflectiveMethodHandlerTest {
 
     private static class TestFunctions{
 
-        public static String test(ExchangeEvaluationContext ctx) {
+        public static String test(ExchangeEvaluationContext ignored) {
             return "Hello World!";
         }
 
-        public static String hello(String name, ExchangeEvaluationContext ctx) {
+        public static String hello(String name, ExchangeEvaluationContext ignored) {
             return "Hello " + name;
         }
 
-        public static Integer add(Integer a, Integer b, ExchangeEvaluationContext ctx) {
+        public static Integer add(Integer a, Integer b, ExchangeEvaluationContext ignored) {
             return a + b;
         }
 
-        public static Integer add(Float a, Float b, ExchangeEvaluationContext ctx) {
+        public static Integer add(Float a, Float b, ExchangeEvaluationContext ignored) {
             return (int) (a + b);
         }
 
