@@ -21,7 +21,7 @@ public class ReflectiveMethodHandler {
 
     /**
      *
-     * */
+     */
     public ReflectiveMethodHandler(Class<?> clazz) {
         storedMethods = stream(clazz.getMethods())
                 .filter(mth -> isPublic(mth.getModifiers()))
@@ -30,8 +30,12 @@ public class ReflectiveMethodHandler {
 
     static SimpleEntry<String, List<TypeDescriptor>> getMethodKey(Method m) {
         return new SimpleEntry<>(m.getName(), stream(m.getParameterTypes())
-                .map(type -> new TypeDescriptor(forClass(type), type, null))
+                .map(ReflectiveMethodHandler::getTypeDescriptor)
                 .toList());
+    }
+
+    static TypeDescriptor getTypeDescriptor(Class<?> type) {
+        return new TypeDescriptor(forClass(type), type, null);
     }
 
     public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException {
