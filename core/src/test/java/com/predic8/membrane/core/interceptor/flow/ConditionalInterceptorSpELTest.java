@@ -42,6 +42,17 @@ public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestCon
         assertTrue(eval("test() == 'Hello World!'", new Builder()));
     }
 
+    @Test
+    void testMethodArgs() throws Exception {
+        assertTrue(eval("hello(\"World\") == 'Hello World'", new Builder()));
+    }
+
+    @Test
+    void testMultipleMethodArgs() throws Exception {
+        assertTrue(eval("add(2, 5) == 7", new Builder()));
+    }
+
+
     private static boolean eval(String condition, Object builder) throws Exception {
         return performEval(condition, builder, SPEL);
     }
