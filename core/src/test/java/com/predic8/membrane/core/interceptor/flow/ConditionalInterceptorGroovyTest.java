@@ -12,36 +12,36 @@ public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestC
 
     @Test
     void simpleRequestTrue() throws Exception {
-        assertTrue(evalGroovy("true", new Builder()));
+        assertTrue(eval("true", new Builder()));
     }
 
     @Test
     void simpleRequestFalse() throws Exception {
-        assertFalse(evalGroovy("false", new Builder()));
+        assertFalse(eval("false", new Builder()));
     }
 
     @Test
     void simpleResponseTrue() throws Exception {
-        assertTrue(evalGroovy("true", new ResponseBuilder()));
+        assertTrue(eval("true", new ResponseBuilder()));
     }
 
     @Test
     void invalidGroovy() {
-        assertThrows(MultipleCompilationErrorsException.class, () -> evalGroovy("foobar;()", new Builder()));
-        assertThrows(MultipleCompilationErrorsException.class, () -> evalGroovy("foobar;()", new ResponseBuilder()));
+        assertThrows(MultipleCompilationErrorsException.class, () -> eval("foobar;()", new Builder()));
+        assertThrows(MultipleCompilationErrorsException.class, () -> eval("foobar;()", new ResponseBuilder()));
     }
 
     @Test
     void hasHeader() throws Exception {
-        assertTrue(evalGroovy("header.getFirstValue(\"X-Foo-Bar\").equals(\"Baz\")", new Builder().header("X-Foo-Bar", "Baz")));
+        assertTrue(eval("header.getFirstValue(\"X-Foo-Bar\").equals(\"Baz\")", new Builder().header("X-Foo-Bar", "Baz")));
     }
 
     @Test
     void isFlowResponse() throws Exception {
-        assertTrue(evalGroovy("flow.isResponse()", new ResponseBuilder()));
+        assertTrue(eval("flow.isResponse()", new ResponseBuilder()));
     }
 
-    private static boolean evalGroovy(String condition, Object builder) throws Exception {
+    private static boolean eval(String condition, Object builder) throws Exception {
         return performEval(condition, builder, GROOVY);
     }
 }

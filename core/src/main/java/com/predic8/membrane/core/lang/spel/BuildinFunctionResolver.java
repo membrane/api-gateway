@@ -13,17 +13,10 @@ public class BuildinFunctionResolver implements MethodResolver {
     }
 
     static class BuildinMethodExecutor implements MethodExecutor {
-
-        String aField;
-
         @Override
         public TypedValue execute(EvaluationContext context, Object target, Object... arguments) throws AccessException {
             System.out.println("context = " + context + ", target = " + target + ", arguments = " + arguments);
-            try {
-                return new TypedValue("foo", new TypeDescriptor(this.getClass().getField("aField")));
-            } catch (NoSuchFieldException e) {
-                throw new RuntimeException(e);
-            }
+            return new TypedValue(new String());
         }
     }
 }
