@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.expression.spel.SpelParseException;
 
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
-import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,7 +39,7 @@ public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestCon
 
     @Test
     void testMethodResolver() throws Exception {
-        assertTrue(eval("tes()", new Builder()));
+        assertTrue(eval("test() == 'Hello World!'", new Builder()));
     }
 
     private static boolean eval(String condition, Object builder) throws Exception {
