@@ -33,7 +33,7 @@ public class MimeHeaders {
 		while (true) {
 			if (pos >= header.length)
 				return -1;
-			if (header[pos].getHeaderName().equals(string))
+			if (header[pos].getHeaderName().hasName(string))
 				return pos;
 			pos++;
 		}

@@ -13,29 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ntlm;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.Connection;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.apache.http.impl.auth.NTLMEngineException;
-import org.apache.http.impl.auth.NTLMEngineTrampoline;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.apache.http.impl.auth.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name = "ntlm")
 public class NtlmInterceptor extends AbstractInterceptor {
@@ -69,8 +62,8 @@ public class NtlmInterceptor extends AbstractInterceptor {
         if(exc.getResponse().getHeader().getWwwAuthenticate() == null)
             return CONTINUE;
 
-        List<HeaderField> wwwAuthenticate = exc.getResponse().getHeader().getValues(new HeaderName(Header.WWW_AUTHENTICATE));
-        if(wwwAuthenticate.stream().filter(h -> h.getValue().equalsIgnoreCase("ntlm")).count() == 0)
+        List<HeaderField> wwwAuthenticate = exc.getResponse().getHeader().getValues(new HeaderName(WWW_AUTHENTICATE));
+        if(wwwAuthenticate.stream().noneMatch(h -> h.getValue().equalsIgnoreCase("ntlm")))
             return CONTINUE;
 
         prepareStreamByEmptyingIt(exc);
@@ -79,7 +72,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
         String pass = getNTLMRetriever().fetchPassword(exc);
 
         if(user == null || pass == null){
-            exc.setResponse(Response.unauthorized().header(Header.WWW_AUTHENTICATE,"Realm=ntlm").build());
+            exc.setResponse(Response.unauthorized().header(WWW_AUTHENTICATE,"Realm=ntlm").build());
             return RETURN;
         }
 
@@ -137,6 +130,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
         return NTLMRetriever;
     }
 
+    @SuppressWarnings("unused")
     public String getUserHeaderName() {
         return userHeaderName;
     }
@@ -146,6 +140,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
         this.userHeaderName = userHeaderName;
     }
 
+    @SuppressWarnings("unused")
     public String getPasswordHeaderName() {
         return passwordHeaderName;
     }
@@ -155,6 +150,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
         this.passwordHeaderName = passwordHeaderName;
     }
 
+    @SuppressWarnings("unused")
     public String getDomainHeaderName() {
         return domainHeaderName;
     }
@@ -164,6 +160,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
         this.domainHeaderName = domainHeaderName;
     }
 
+    @SuppressWarnings("unused")
     public String getWorkstationHeaderName() {
         return workstationHeaderName;
     }
