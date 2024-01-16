@@ -17,9 +17,9 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.spel.functions.BuildInFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import org.springframework.expression.spel.support.*;
-
 import java.io.*;
 import java.util.*;
 
@@ -31,11 +31,11 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private final Message message;
     private final SPeLablePropertyAware headers;
     private final SPeLablePropertyAware properties;
-    private final String path;
-    private final String method;
+    private String path;
+    private String method;
 
-    private final SPelMessageWrapper request;
-    private final SPelMessageWrapper response;
+    private SPelMessageWrapper request;
+    private SPelMessageWrapper response;
 
     public ExchangeEvaluationContext(Exchange exc) {
         this(exc, exc.getRequest());
@@ -44,20 +44,28 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     public ExchangeEvaluationContext(Exchange exc, Message message) {
         super();
 
-        this.exchange = exc;
         this.message = message;
-        this.properties = new SPeLProperties(exc.getProperties());
-        this.headers = new SpeLHeader(message.getHeader());
+        exchange = exc;
+        properties = new SPeLProperties(exc.getProperties());
+        headers = new SpeLHeader(message.getHeader());
 
         Request request = exc.getRequest();
-        path = request.getUri();
-        method = request.getMethod();
+        if (request != null) {
+            path = request.getUri();
+            method = request.getMethod();
+            this.request = new SPelMessageWrapper(exc.getRequest());
+        }
 
-        this.request = new SPelMessageWrapper(exc.getRequest());
-        this.response = new SPelMessageWrapper(exc.getResponse());
+        Response response = exc.getResponse();
+        if (response != null) {
+            this.response = new SPelMessageWrapper(exc.getResponse());
+        }
 
         setRootObject(this);
         addPropertyAccessor(new AwareExchangePropertyAccessor());
+
+        // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
+        setMethodResolvers(List.of(new BuildInFunctionResolver()));
     }
 
 
