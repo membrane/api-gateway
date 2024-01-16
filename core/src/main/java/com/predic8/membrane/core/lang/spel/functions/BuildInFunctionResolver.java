@@ -23,7 +23,7 @@ public class BuildInFunctionResolver implements MethodResolver {
        return (ctx, target, arguments) -> {
            try {
                return functions.invokeFunction(ctx, name, argumentTypes, arguments);
-           } catch (InvocationTargetException | IllegalAccessException e) {
+           } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
                throw new RuntimeException(e);
            }
        };

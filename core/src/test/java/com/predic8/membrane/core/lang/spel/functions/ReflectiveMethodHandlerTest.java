@@ -10,17 +10,18 @@ import org.springframework.expression.TypedValue;
 
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
-import java.util.AbstractMap.SimpleEntry;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandler.getMethodKey;
 import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandler.getTypeDescriptor;
 import static java.util.List.of;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReflectiveMethodHandlerTest {
 
     static final TypeDescriptor INT_TYPE_DESC = getTypeDescriptor(Integer.class);
     static final TypeDescriptor FLOAT_TYPE_DESC = getTypeDescriptor(Float.class);
+    static final TypeDescriptor CONTEXT_DESC = getTypeDescriptor(ExchangeEvaluationContext.class);
     static ReflectiveMethodHandler rmh;
     static ExchangeEvaluationContext ctx;
 
@@ -28,12 +29,6 @@ public class ReflectiveMethodHandlerTest {
     static void init() throws URISyntaxException {
         rmh = new ReflectiveMethodHandler(TestFunctions.class);
         ctx = new ExchangeEvaluationContext(Request.get("foo").buildExchange());
-    }
-
-    @Test
-    public void testMethodKey() throws NoSuchMethodException {
-        assertEquals(getMethodKey(getMethod("test", ExchangeEvaluationContext.class)),
-                new SimpleEntry<>("test", of(getTypeDescriptor(ExchangeEvaluationContext.class))));
     }
 
     @Test
@@ -76,6 +71,41 @@ public class ReflectiveMethodHandlerTest {
                );
     }
 
+    @Test
+    void testGetExistingFunction() throws NoSuchMethodException {
+        assertEquals(
+                getMethod("add", Float.class, Float.class, ExchangeEvaluationContext.class),
+                rmh.getFunction("add", of(FLOAT_TYPE_DESC, FLOAT_TYPE_DESC, CONTEXT_DESC))
+        );
+    }
+
+    @Test
+    void testGetMissingFunction() {
+        assertThrows(
+                NoSuchMethodException.class, () ->
+                rmh.getFunction("subtract", of(FLOAT_TYPE_DESC, FLOAT_TYPE_DESC, CONTEXT_DESC))
+        );
+    }
+
+    @Test
+    void validateTypeSignatures() {
+        assertTrue(rmh.validateTypeSignature(of(getTypeDescriptor(String.class)),
+                of(getTypeDescriptor(String.class)))
+        );
+    }
+
+    @Test
+    void validateNonMatchingTypeSignatures() {
+        assertFalse(rmh.validateTypeSignature(of(getTypeDescriptor(String.class), getTypeDescriptor(Integer.class)),
+                of(getTypeDescriptor(String.class)))
+        );
+    }
+
+    @Test
+    void validateSubtypeTypeSignatures() {
+        assertTrue(rmh.validateTypeSignature(of(getTypeDescriptor(Map.class)), of(getTypeDescriptor(HashMap.class))));
+    }
+
     private static class TestFunctions{
 
         public static String test(ExchangeEvaluationContext ignored) {
@@ -101,7 +131,7 @@ public class ReflectiveMethodHandlerTest {
     }
 
     @NotNull
-    private static Method getMethod(String name, Class<?> clazz) throws NoSuchMethodException {
+    private static Method getMethod(String name, Class<?>... clazz) throws NoSuchMethodException {
         if (clazz == null) return TestFunctions.class.getMethod(name);
         return TestFunctions.class.getMethod(name, clazz);
     }

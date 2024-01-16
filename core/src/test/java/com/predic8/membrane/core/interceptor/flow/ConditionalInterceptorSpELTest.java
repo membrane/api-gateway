@@ -38,15 +38,20 @@ public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestCon
     }
 
     @Test
-    void testHasScopes() throws Exception {
+    void testBuiltInMethod() throws Exception {
+        assertTrue(eval("hasScope('test')", new Builder()));
+    }
+
+    @Test
+    void testBuiltInMethodOverload() throws Exception {
         assertTrue(eval("hasScopes()", new Builder()));
     }
 
-    // TODO FIX
-  /*  @Test
-    void testHasScopesWithArgs() throws Exception {
-        assertTrue(eval("hasScopes(#list('test'))", new Builder()));
-    }*/
+    @Test
+    void testBuiltInMethodTypeHierarchy() throws Exception {
+        //Inline List initializer in SpEL produces a RandomAccessList which should be assignable to List.
+        assertTrue(eval("hasScopes({'test'})", new Builder()));
+    }
 
     private static boolean eval(String condition, Object builder) throws Exception {
         return performEval(condition, builder, SPEL);

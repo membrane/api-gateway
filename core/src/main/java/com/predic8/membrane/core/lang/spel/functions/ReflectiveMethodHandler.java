@@ -5,22 +5,21 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.IntStream;
 
 import static java.lang.reflect.Modifier.isPublic;
 import static java.util.Arrays.stream;
+import static java.util.List.of;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.springframework.core.ResolvableType.forClass;
 
 public class ReflectiveMethodHandler {
 
-    private final Map<SimpleEntry<String, List<TypeDescriptor>>, Method> storedMethods;
+    private final List<Method> storedMethods;
 
     /**
      * Initializes the ReflectiveMethodHandler with all public methods from the given class.
@@ -28,16 +27,7 @@ public class ReflectiveMethodHandler {
     public ReflectiveMethodHandler(Class<?> clazz) {
         storedMethods = stream(clazz.getMethods())
                 .filter(mth -> isPublic(mth.getModifiers()))
-                .collect(toMap(ReflectiveMethodHandler::getMethodKey, m -> m));
-    }
-
-    /**
-     * Generates a SimpleEntry object representing the method signature of the given method.
-     */
-    static SimpleEntry<String, List<TypeDescriptor>> getMethodKey(Method m) {
-        return new SimpleEntry<>(m.getName(), stream(m.getParameterTypes())
-                .map(ReflectiveMethodHandler::getTypeDescriptor)
-                .toList());
+                .toList();
     }
 
     static TypeDescriptor getTypeDescriptor(Class<?> type) {
@@ -45,9 +35,9 @@ public class ReflectiveMethodHandler {
     }
 
     /**
-     * Calls a previously stored method, utilizing the SimpleEntry object as key.
+     * Calls a previously stored method.
      */
-    public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException {
+    public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         System.out.println("types = " + types.toString());
         return new TypedValue(getFunction(func, getParameterTypeDescriptors(types)).invoke(null, (getParameters(ctx, args))));
     }
@@ -59,12 +49,32 @@ public class ReflectiveMethodHandler {
     }
 
     private static Object[] getParameters(EvaluationContext ctx, Object[] args) {
-        return new ArrayList<>(List.of(args)) {{
+        return new ArrayList<>(of(args)) {{
             add(ctx);
         }}.toArray();
     }
 
-    private Method getFunction(String func, List<TypeDescriptor> t) {
-        return storedMethods.get(new SimpleEntry<>(func, t));
+    Method getFunction(String func, List<TypeDescriptor> t) throws NoSuchMethodException {
+        return storedMethods.stream()
+                .filter(m ->
+                        m.getName().equals(func) &&
+                                validateTypeSignature(getTypeDescriptors(m), t)
+                ).findFirst().orElseThrow(NoSuchMethodException::new);
+    }
+
+    static List<TypeDescriptor> getTypeDescriptors(Method m) {
+        return stream(m.getParameterTypes())
+                .map(ReflectiveMethodHandler::getTypeDescriptor)
+                .toList();
+    }
+
+    /**
+     * Verifies that all TypeDescriptors match.
+     * Takes into account that a 'provided' TypeDescriptor should match a supertype 'template' TypeDescriptor.
+     */
+    boolean validateTypeSignature(List<TypeDescriptor> template, List<TypeDescriptor> provided) {
+        return template.size() == provided.size() &&
+                IntStream.range(0, template.size())
+                        .allMatch(i -> provided.get(i).isAssignableTo(template.get(i)));
     }
 }

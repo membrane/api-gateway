@@ -23,6 +23,11 @@ public class BuiltInFunctionsTest {
     }
 
     @Test
+    public void testHasScope() {
+        assertTrue(BuiltInFunctions.hasScope("test", ctx));
+    }
+
+    @Test
     public void testHasScopes() {
         assertTrue(BuiltInFunctions.hasScopes(ctx));
     }

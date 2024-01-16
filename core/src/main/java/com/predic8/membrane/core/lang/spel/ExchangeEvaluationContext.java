@@ -44,8 +44,6 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     public ExchangeEvaluationContext(Exchange exc, Message message) {
         super();
 
-        setVariable("list", List.of());
-
         this.message = message;
         exchange = exc;
         properties = new SPeLProperties(exc.getProperties());
@@ -68,7 +66,6 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
         setMethodResolvers(List.of(new BuildInFunctionResolver()));
-
     }
 
 
