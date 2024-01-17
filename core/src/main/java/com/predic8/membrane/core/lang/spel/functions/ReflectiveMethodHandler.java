@@ -20,14 +20,13 @@ import org.springframework.expression.TypedValue;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.IntStream;
 
 import static java.lang.reflect.Modifier.isPublic;
 import static java.util.Arrays.stream;
 import static java.util.List.of;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toMap;
 import static org.springframework.core.ResolvableType.forClass;
 
 public class ReflectiveMethodHandler {
