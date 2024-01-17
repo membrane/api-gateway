@@ -48,7 +48,7 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
         Map<String, Optional<List<String>>> collect;
         try {
             collect = lines
-                    .filter(it -> it.trim().charAt(0) != '#')
+                    .filter(it -> !it.isEmpty() && it.trim().charAt(0) != '#')
                     .map(ApiKeyFileStore::parseLine)
                     .collect(toMap(
                             SimpleEntry::getKey,
