@@ -51,7 +51,6 @@ public class ReflectiveMethodHandler {
      * Calls a previously stored method.
      */
     public TypedValue invokeFunction(EvaluationContext ctx, String func, List<TypeDescriptor> types, Object... args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        System.out.println("types = " + types.toString());
         return new TypedValue(getFunction(func, getParameterTypeDescriptors(types)).invoke(null, (getParameters(ctx, args))));
     }
 
