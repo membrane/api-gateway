@@ -1,1 +1,2 @@
+# These are demo-keys.
 5XF27:account,internal

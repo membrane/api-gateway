@@ -9,8 +9,8 @@
 		<serviceProxy port="443">
 			<ssl>
 				<!-- Please replace keystore for production! -->
-				<keystore location="../../../conf/membrane.jks" password="secret" keyPassword="secret" />
-				<truststore location="../../../conf/membrane.jks" password="secret" />
+				<keystore location="../../../conf/membrane.p12" password="secret" keyPassword="secret" />
+				<truststore location="../../../conf/membrane.p12" password="secret" />
 			</ssl>
 			<target host="localhost" port="2000"/><!-- Route here to your target -->
 		</serviceProxy>

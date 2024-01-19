@@ -1,5 +1,8 @@
+# These are demo-keys.
 5XF27: finance,internal
 73D29: accounting, management
+# This is a demo comment
 89D5C: internal,
+NMB3B: demo, test # This is an inline comment.
 L63NC
 AB6DE:

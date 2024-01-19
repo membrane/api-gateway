@@ -11,15 +11,18 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.apikey;
+package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.stream.Stream;
+import org.junit.jupiter.api.*;
 
-public class ApiKeyUtils {
-    public static Stream<String> readFile(String location) throws IOException {
-        return Files.lines(Path.of(location));
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+class InterceptorTest {
+
+    @Test
+    void flow() {
+         assertTrue(REQUEST.isRequest());
     }
+
 }
