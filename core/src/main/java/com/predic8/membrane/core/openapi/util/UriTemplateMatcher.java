@@ -21,9 +21,12 @@ import java.net.*;
 import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 
 public class UriTemplateMatcher {
 
@@ -53,7 +56,14 @@ public class UriTemplateMatcher {
     }
 
     public String prepareRegex(String uriTemplate) {
-        return uriTemplate.replaceAll("\\{(.*?)}","(.*)");
+        if ("/".equals(uriTemplate)) {
+            return "^/?$";
+        }
+
+        return stream(uriTemplate.split("/"))
+                .filter(segment -> !segment.isEmpty())
+                .map(segment -> segment.replaceAll("\\{(.*?)}", "(.*)"))
+                .collect(joining("/", "/", "/?"));
     }
 
     public String escapeSlash(String s) {

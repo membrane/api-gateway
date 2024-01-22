@@ -59,6 +59,36 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
+    public void matchTrailingSlash() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo/", "/foo").size());
+    }
+
+    @Test
+    public void matchTrailingSlashWithParams() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo/", "/foo?demo-test=3141").size());
+    }
+
+    @Test
+    public void matchSingleSlash() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/", "/").size());
+    }
+
+    @Test
+    public void matchSingleSlashWithParams() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/", "/?demo-test=3141").size());
+    }
+
+    @Test
+    public void matchEmptyPath() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/", "").size());
+    }
+
+    @Test
+    public void matchEmptyPathWithParams() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/", "?demo-test=3141").size());
+    }
+
+    @Test
     public void simpleNoneMatch() {
         try {
             matcher.match("/foo", "/bar");

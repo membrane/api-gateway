@@ -74,6 +74,12 @@ public class OpenAPIInterceptorTest {
     }
 
     @Test
+    public void getMatchingBasePathOneServerTrailingSlash() {
+        exc.getRequest().setUri("/base/v2/foo/");
+        assertEquals("/base/v2", interceptor1Server.getMatchingBasePath(exc));
+    }
+
+    @Test
     public void getMatchingBasePathMultipleServers() {
         exc.getRequest().setUri("/foo/boo");
         assertEquals("/foo", interceptor3Server.getMatchingBasePath(exc));
