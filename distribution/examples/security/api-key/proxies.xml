@@ -4,21 +4,31 @@
               xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
+    <!--
+    API key stores are designed to retrieve key and scope data from various data sources.
+    In this instance, we utilize an `ApiKeyFileStore`, which fetches API keys from a specified file.
+    For global access across all API key interceptors, declare the stores as shown here.
+    If an interceptor specific store is needed, embed the store directly within the interceptor,
+    using the syntax: <keyFileStore location="<xyz>" />.
+    -->
     <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
         <spring:property name="location" value="./demo-keys.txt" />
     </spring:bean>
 
     <router>
 
+        <!--API key authentication, providing key is mandatory.-->
         <api port="2000">
             <apiKey require="true">
                 <headerExtractor />
+                <queryParamExtractor />
             </apiKey>
 
             <template>Secret Area!</template>
             <return/>
         </api>
 
+        <!--API key authorization, providing key is optional. Certain scopes allow for additional access rights.-->
         <api port="3000">
             <apiKey>
                 <headerExtractor name="X-Key" />
