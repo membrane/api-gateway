@@ -105,4 +105,10 @@ public class ApiKeyFileStoreTest {
         //noinspection DataFlowIssue
         store.onApplicationEvent(null);
     }
+
+    @Test
+    void extractKeyBeforeHash() {
+        assertEquals("Test", ApiKeyFileStore.extractKeyBeforeHash("Test# Demo # Test2"));
+        assertEquals("", ApiKeyFileStore.extractKeyBeforeHash("# Full Line Comment"));
+    }
 }
