@@ -52,7 +52,7 @@ File stores maintain API keys and their corresponding scopes through various met
 ```xml
 <apiKey>
     ...
-    <keyFileStore location="./demo-keys" />
+    <keyFileStore location="./demo-keys.txt" />
 </apiKey>
 ```
 
