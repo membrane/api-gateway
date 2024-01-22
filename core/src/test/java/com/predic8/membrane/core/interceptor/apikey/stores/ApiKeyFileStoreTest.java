@@ -82,6 +82,7 @@ public class ApiKeyFileStoreTest {
         assertThrows(UnauthorizedApiKeyException.class, () -> store.getScopes("5AF27"));
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void inlineComment() throws UnauthorizedApiKeyException {assertFalse(store.getScopes("NMB3B").get().contains("This is an inline comment."));}
 

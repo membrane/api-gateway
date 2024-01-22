@@ -31,21 +31,20 @@ import static java.util.Optional.ofNullable;
  */
 public class BuiltInFunctions {
 
-    @SuppressWarnings("unchecked")
     public static boolean hasScope(String scope, ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.contains(scope));
     }
 
-    @SuppressWarnings("unchecked")
     public static boolean hasScopes(ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> !it.isEmpty());
     }
 
-    @SuppressWarnings({"SlowListContainsAll", "unchecked"})
+    @SuppressWarnings({"SlowListContainsAll"})
     public static boolean hasScopes(List<String> scopes, ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
     }
 
+    @SuppressWarnings("unchecked")
     private static Boolean scopesContainsByPredicate(ExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
         return ofNullable((List<String>) ctx.getExchange().getProperties().get(SCOPES))
                 .map(predicate::test)
