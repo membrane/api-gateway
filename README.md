@@ -272,6 +272,34 @@ Returns:
 </foo>
 ```
 
+# Branching and Conditionals
+
+Conditionally modify response:
+```xml
+
+<api port="2000">
+  <if test="header.contains('X-Demo')">
+    <response>
+      <groovy>
+        exc.getResponse().setBodyContent("Example".getBytes())
+      </groovy>
+    </response>
+  </if>
+  <return/>
+</api>
+```
+
+Check if certain scopes/roles are provided:
+```xml
+
+<api port="2000">
+    <if test="hasScopes({'admin', 'webmaster'})" language="SpEL">
+      <target url="https://localhost:2000/admin" />
+    </if>
+    <target host="localhost" port="1001" />
+</api>
+```
+
 # Writing Extensions with Groovy or Javascript
 
 Dynamically manipulate and monitor messages with Groovy:
