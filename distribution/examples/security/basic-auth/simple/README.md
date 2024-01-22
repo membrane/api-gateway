@@ -21,7 +21,7 @@ This example explains how to protect an API or a Web application using __HTTP Ba
 
 ## How it is done
 
-First take a look at the `proxies.xml` file.
+First take a look at the `proxies.xml` fil
 
 ```
 <router>
