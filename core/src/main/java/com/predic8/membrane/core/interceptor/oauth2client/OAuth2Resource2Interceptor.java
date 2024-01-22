@@ -32,12 +32,14 @@ import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
 import org.apache.commons.codec.binary.Base64;
+import org.checkerframework.checker.units.qual.N;
 import org.jose4j.jws.*;
 import org.jose4j.jwt.*;
 import org.jose4j.lang.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
+import javax.validation.constraints.NotNull;
 import java.io.*;
 import java.math.*;
 import java.security.*;
@@ -218,11 +220,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             }
         }
 
+        // kann raus
         if (session == null) {
             log.debug("session is null, redirecting.");
             return respondWithRedirect(exc);
         }
-
 
         if (session.get(OAUTH2_ANSWER) != null && tokenNeedsRevalidation(session.get(ParamNames.ACCESS_TOKEN))) {
             if (revalidateToken(OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER))) == null)
@@ -282,6 +284,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private int getIndexOfTopLevelComma(String answer) {
+        Stack<String> foo =new Stack<>();
         int curlyBraceLevel = 0;
         boolean inString = false;
         boolean escapeNext = false;
