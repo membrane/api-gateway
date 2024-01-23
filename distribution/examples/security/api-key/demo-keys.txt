@@ -1,0 +1,7 @@
+# API KEYS FOR DEMONSTRATION PURPOSES ONLY.
+
+P8MBR # Simple Key
+
+# Keys Associated with Roles/Scopes
+key_321_abc: admin
+123456789: tier0, tier1

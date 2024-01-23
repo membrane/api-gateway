@@ -24,8 +24,7 @@ import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.Languag
 import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.GROOVY;
-import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static java.util.List.of;
 
 class ConditionalEvaluationTestContext {
@@ -35,7 +34,7 @@ class ConditionalEvaluationTestContext {
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var condInt = new ConditionalInterceptor();
 
-        exc.setProperty("scopes", List.of("test", "main"));
+        exc.setProperty(SCOPES, List.of("test", "main"));
 
         condInt.setLanguage(lang);
         condInt.setInterceptors(of(mockInt));

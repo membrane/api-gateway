@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,7 +32,7 @@ public class BuiltInFunctionsTest {
     @BeforeAll
     static void init() throws URISyntaxException {
         var exc = Request.get("foo").buildExchange();
-        exc.setProperty("scopes", List.of("demo", "test"));
+        exc.setProperty(SCOPES, List.of("demo", "test"));
         ctx = new ExchangeEvaluationContext(exc);
     }
 

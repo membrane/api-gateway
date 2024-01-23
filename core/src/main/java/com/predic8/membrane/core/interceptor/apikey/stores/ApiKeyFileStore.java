@@ -48,7 +48,8 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
         Map<String, Optional<List<String>>> collect;
         try {
             collect = lines
-                    .filter(it -> it.trim().charAt(0) != '#')
+                    .map(ApiKeyFileStore::extractKeyBeforeHash)
+                    .filter(line -> !line.isEmpty())
                     .map(ApiKeyFileStore::parseLine)
                     .collect(toMap(
                             SimpleEntry::getKey,
@@ -59,13 +60,17 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
         return collect;
     }
 
+    static String extractKeyBeforeHash(String line) {
+        return line.split("#", 2)[0];
+    }
+
     static SimpleEntry<String, Optional<List<String>>> parseLine(String line) {
         List<String> parts = getParts(line);
         return new SimpleEntry<>(parts.get(0), getValue(parts));
     }
 
     private static List<String> getParts(String line) {
-        return stream(line.split("#")[0].split(":", 2)).map(String::trim).toList();
+        return stream(line.split(":", 2)).map(String::trim).toList();
     }
 
     private static Optional<List<String>> getValue(List<String> parts) {
