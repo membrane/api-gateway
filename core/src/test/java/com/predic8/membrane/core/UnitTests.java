@@ -35,6 +35,8 @@ import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStoreTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptorTest;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
+import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorGroovyTest;
+import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorSpELTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.JavascriptInterceptor;
@@ -64,6 +66,8 @@ import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectorTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientTest;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContextTest;
+import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionsTest;
+import com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandlerTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
 import com.predic8.membrane.core.resolver.SingleResolverTest;
@@ -147,10 +151,14 @@ import org.junit.platform.suite.api.Suite;
 		ExchangeEvaluationContextTest.class,
 		PaddingHeaderInterceptorTest.class,
 		CollectionsUtilTest.class,
+		ConditionalInterceptorGroovyTest.class, ConditionalInterceptorSpELTest.class,
 		ApiKeysInterceptorTest.class,
 		ApiKeyFileStoreTest.class,
 		ApiKeyHeaderExtractorTest.class,
-		ApiKeyUtils.class
+		ApiKeyUtils.class,
+		ReflectiveMethodHandlerTest.class,
+		BuiltInFunctionsTest.class
+
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

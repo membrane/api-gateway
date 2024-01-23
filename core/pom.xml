@@ -332,7 +332,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
 					<source>${javac.source}</source>
-					<target>${javac.target}</target>
+					<target>${javac.source}</target>
 					<annotationProcessors>
 						<annotationProcessor>com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor</annotationProcessor>
 					</annotationProcessors>

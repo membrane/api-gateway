@@ -71,7 +71,7 @@ public class GeneratingSSLContext extends SSLContext {
     public GeneratingSSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
         this.sslParser = sslParser;
         try {
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, "".toCharArray());
 
             List<Certificate> certs = new ArrayList<>();
@@ -194,7 +194,7 @@ public class GeneratingSSLContext extends SSLContext {
                     sign(xn.toString(), caPublic, caPrivate, kp.getPublic())
             };
 
-            KeyStore ks = KeyStore.getInstance("JKS");
+            KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, null);
             ks.setKeyEntry("alias", kp.getPrivate(), new char[0], chain);
 

@@ -130,4 +130,46 @@ public class HeaderTest {
         h.add("Foo", "3");
         assertEquals("1,2,3", h.getNormalizedValue("Foo"));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:88.0) Gecko/20100101 Firefox/88.0",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36 Edg/90.0.818.49",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.85 Safari/537.36 OPR/75.0.3969.149 SNI/hostname.example.com",
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 14_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Brave/1.23.1 Chrome/89.0.4389.105",
+            "Mozilla/5.0 (X11; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Safari/605.1.15 SNI/hostname.example.com"
+    })
+    void isUserAgentSupportsSNITrue(String userAgent) {
+        Header h = new Header();
+        h.add(USER_AGENT, userAgent);
+        assertTrue(h.isUserAgentSupportsSNI());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+            "Mozilla/5.0 (Linux; Android 10; SM-A205U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.105 Mobile Safari/537.36",
+            "Mozilla/5.0 (SMART-TV; Linux; Tizen 5.0) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/2.2 Chrome/56.0.2924.0 TV Safari/537.36",
+    })
+    void isUserAgentSupportsSNIFalse(String userAgent) {
+        Header h = new Header();
+        h.add(USER_AGENT, userAgent);
+        assertFalse(h.isUserAgentSupportsSNI());
+    }
+
+    @Test
+    void isUserAgentSupportsSNIMinimalUserAgent() {
+        Header h = new Header();
+        h.add(USER_AGENT, "curl/7.64.1");
+        assertFalse(h.isUserAgentSupportsSNI());
+    }
+
+    @Test
+    void isUserAgentSupportsSNIEmptyUserAgent() {
+        Header h = new Header();
+        h.add(USER_AGENT, "");
+        assertFalse(h.isUserAgentSupportsSNI());
+    }
 }

@@ -17,15 +17,19 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.groovy.*;
+import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
+import org.springframework.expression.*;
+import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
@@ -36,7 +40,7 @@ import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindi
  * </p>
  *
  * <p>
- * Note that this is a draft implementation only: Design decissions are still pending.
+ * Note that this is a draft implementation only: Design decisions are still pending.
  * </p>
  * <ul>
  * <li>'evaluate condition only once': Should the condition be reevaluated once response handling has begun?</li>
@@ -52,12 +56,19 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     private String test;
     private LanguageType language = GROOVY;
 
+
+    /**
+     * Spring Expression Language
+     */
+    private Expression spelExpr;
+
     // state
     private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
     private Function<Map<String, Object>, Boolean> condition;
 
     public enum LanguageType {
         GROOVY,
+        SPEL
     }
 
     public ConditionalInterceptor() {
@@ -67,34 +78,72 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-        condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, test);
+
+        switch (language) {
+            case GROOVY ->
+                    condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, test);
+            case SPEL -> spelExpr = new SpelExpressionParser().parseExpression(test);
+
+        }
     }
 
-    private boolean testCondition(Exchange exc) {
-        HashMap<String, Object> parameters = new HashMap<>() {{
+    private boolean testCondition(Exchange exc, Message msg, Flow flow) {
+
+        switch (language) {
+            case GROOVY -> {
+                return condition.apply(getParametersForGroovy(exc, msg, flow));
+            }
+            case SPEL -> {
+                Boolean result = spelExpr.getValue(new ExchangeEvaluationContext(exc, msg), Boolean.class);
+                return result != null && result;
+            }
+        }
+
+        log.error("Should not happen!");
+
+        return false;
+    }
+
+    private HashMap<String, Object> getParametersForGroovy(Exchange exc, Message msg, Flow flow) {
+        return  new HashMap<>() {{
             put("Outcome", Outcome.class);
             put("RETURN", RETURN);
             put("CONTINUE", CONTINUE);
-            put("ABORT", Outcome.ABORT);
+            put("ABORT", ABORT);
             put("spring", router.getBeanFactory());
             put("exc", exc);
-            putAll(createParameterBindings(router.getUriFactory(), exc, exc.getRequest(), REQUEST, false));
+            putAll(createParameterBindings(router.getUriFactory(), exc, msg, flow, false));
         }};
-        return condition.apply(parameters);
     }
 
     @Override
-    public Outcome handleRequest(Exchange exchange) throws Exception {
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        return handleInternal(exc, exc.getRequest(), REQUEST);
+    }
 
-        boolean handleRequest = testCondition(exchange);
+    @Override
+    public Outcome handleResponse(Exchange exc) throws Exception {
+        return handleInternal(exc, exc.getResponse(), RESPONSE);
+    }
+
+    private Outcome handleInternal(Exchange exchange, Message msg, Flow flow) throws Exception {
+
+        boolean result = testCondition(exchange, msg, flow);
         if (log.isDebugEnabled())
-            log.debug("Expression evaluated to " + handleRequest);
+            log.debug("Expression evaluated to " + result);
 
-        if (handleRequest)
-            return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
+        if (result)
+            switch (flow) {
+                case REQUEST -> {
+                    return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
+                }
+                case RESPONSE -> interceptorFlowController.invokeResponseHandlers(exchange);
+            }
 
         return CONTINUE;
     }
+
+
 
     public LanguageType getLanguage() {
         return language;

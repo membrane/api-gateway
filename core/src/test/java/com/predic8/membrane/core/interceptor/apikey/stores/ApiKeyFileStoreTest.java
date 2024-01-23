@@ -1,3 +1,16 @@
+/* Copyright 2024 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,8 +25,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore.parseLine;
 import static java.util.List.of;
 import static java.util.Objects.requireNonNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ApiKeyFileStoreTest {
 
@@ -21,13 +33,16 @@ public class ApiKeyFileStoreTest {
         put("5XF27", Optional.of(List.of("finance", "internal")));
         put("73D29", Optional.of(List.of("accounting", "management")));
         put("89D5C", Optional.of(List.of("internal")));
+        put("NMB3B", Optional.of(List.of("demo", "test")));
         put("L62NA", Optional.empty());
         put("G62NB", Optional.empty());
     }};
     private static final Stream<String> LINES = Stream.of(
+            "# These are demo-keys.",
             "5XF27:finance,internal",
             "73D29: accounting, management",
             "89D5C: internal,",
+            "NMB3B: demo, test # This is an inline comment.",
             "L62NA",
             "G62NB:"
     );
@@ -64,6 +79,9 @@ public class ApiKeyFileStoreTest {
     void keyNotFound() {
         assertThrows(UnauthorizedApiKeyException.class, () -> store.getScopes("5AF27"));
     }
+
+    @Test
+    void inlineComment() throws UnauthorizedApiKeyException {assertFalse(store.getScopes("NMB3B").get().contains("This is an inline comment."));}
 
     @Test
     void parseLineTest() {
