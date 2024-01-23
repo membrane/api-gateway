@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -12,6 +14,7 @@ import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 
+@MCElement(name = "publicURL")
 public class PublicUrlStuff {
     @GuardedBy("publicURLs")
     private final List<String> publicURLs = new ArrayList<>();
@@ -38,6 +41,7 @@ public class PublicUrlStuff {
         }
     }
 
+    @MCAttribute
     public void setPublicURL(String publicURL) {
         synchronized (publicURLs) {
             publicURLs.clear();
@@ -45,33 +49,29 @@ public class PublicUrlStuff {
         }
     }
 
-    private String normalizePublicURL(String url) {
+    public String normalizePublicURL(String url) {
         if(!url.endsWith("/"))
             url += "/";
         return url;
     }
 
-    public String getPublicURL(Exchange exc, AuthorizationService auth) throws Exception {
+    public String getPublicURL(Exchange exc, AuthorizationService auth, String callbackPath) throws Exception {
         String xForwardedProto = exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
         boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
         String publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
         RuleKey key = exc.getRule().getKey();
-        if (!key.isPathRegExp() && key.getPath() != null)
-            publicURL += key.getPath();
+        if (!key.isPathRegExp() && key.getPath() != null) publicURL += key.getPath();
         publicURL = normalizePublicURL(publicURL);
 
         synchronized (publicURLs) {
-            if (publicURLs.contains(publicURL))
-                return publicURL;
-            if (!initPublicURLsOnTheFly)
-                return publicURLs.get(0);
+            if (publicURLs.contains(publicURL)) return publicURL;
+            if (!initPublicURLsOnTheFly) return publicURLs.get(0);
         }
 
         String newURL = null;
-        if(initPublicURLsOnTheFly)
-            newURL = addPublicURL(publicURL);
+        if (initPublicURLsOnTheFly) newURL = addPublicURL(publicURL);
 
-        if(firstInitWhenDynamicAuthorizationService && newURL != null)
+        if (firstInitWhenDynamicAuthorizationService && newURL != null)
             auth.dynamicRegistration(getPublicURLs().stream().map(url -> url + callbackPath).collect(Collectors.toList()));
 
         return publicURL;
@@ -82,16 +82,16 @@ public class PublicUrlStuff {
      */
     private String addPublicURL(String publicURL) {
         synchronized (publicURLs) {
-            if (publicURLs.contains(publicURL))
-                return null;
+            if (publicURLs.contains(publicURL)) return null;
             publicURLs.add(publicURL);
         }
         return publicURL;
     }
 
     private List<String> getPublicURLs() {
-        synchronized(publicURLs) {
+        synchronized (publicURLs) {
             return new ArrayList<>(publicURLs);
         }
     }
+
 }

@@ -1,13 +1,15 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants;
 import com.predic8.membrane.core.interceptor.session.Session;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
 
-public class OAuthAnswerStuff {
+import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT;
 
-    public static final String OAUTH2_ANSWER = "oauth2Answer";
+public class OAuthAnswerStuff {
 
     /**
      * Tries to avoid very long cookies by dropping all OAUTH2_ANSWERS except the first one.
@@ -16,7 +18,7 @@ public class OAuthAnswerStuff {
      */
     public static void simplifyMultipleOAuth2Answers(@Nullable Session session) {
         Optional.ofNullable(session)
-                .map(sess -> sess.get(OAUTH2_ANSWER).toString())
+                .map(sess -> sess.get(OAuth2Constants.OAUTH2_ANSWER).toString())
                 .ifPresent(answer -> keepOnlyFirstOAuthAnswer(session, answer));
     }
 
@@ -27,7 +29,7 @@ public class OAuthAnswerStuff {
             return;
         }
 
-        session.put(OAUTH2_ANSWER, answer.substring(0, indexOfTopLevelComma));
+        session.put(OAuth2Constants.OAUTH2_ANSWER, answer.substring(0, indexOfTopLevelComma));
     }
 
     private static int getIndexOfTopLevelComma(String answer) {
@@ -60,5 +62,9 @@ public class OAuthAnswerStuff {
         }
 
         return -1;
+    }
+
+    public static boolean isOAuth2RedirectRequest(Exchange exc) {
+        return exc.getOriginalRequestUri().contains(OA2REDIRECT);
     }
 }

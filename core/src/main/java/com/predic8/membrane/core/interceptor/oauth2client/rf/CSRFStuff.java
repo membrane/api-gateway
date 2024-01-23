@@ -13,7 +13,7 @@ import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSI
 // * 2. alles, was CSRF macht
 public class CSRFStuff {
 
-    private String getSecurityTokenFromState(String state2) {
+    public static String getSecurityTokenFromState(String state2) {
         if (state2 == null)
             throw new RuntimeException("No CSRF token.");
 
@@ -25,7 +25,7 @@ public class CSRFStuff {
         return param.get("security_token");
     }
 
-    private boolean csrfTokenMatches(Session session, String state2) {
+    public static boolean csrfTokenMatches(Session session, String state2) {
         return Optional.ofNullable(session.get(ParamNames.STATE))
                 .filter(o -> Arrays.stream(o.toString().split(SESSION_VALUE_SEPARATOR))
                         .filter(s -> s.equals(state2))

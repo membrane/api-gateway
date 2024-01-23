@@ -36,4 +36,12 @@ public class JwtKeyCertHandler {
 
         return jws.getCompactSerialization();
     }
- }
+
+    public Key getKey() {
+        return key;
+    }
+
+    public X509Certificate getCertificate() {
+        return certificate;
+    }
+}

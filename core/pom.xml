@@ -322,6 +322,11 @@
 			<artifactId>opentelemetry-resources</artifactId>
 			<version>1.31.0-alpha</version>
 		</dependency>
+		<dependency>
+			<groupId>org.jetbrains</groupId>
+			<artifactId>annotations</artifactId>
+			<scope>compile</scope>
+		</dependency>
     </dependencies>
 
 	<build>

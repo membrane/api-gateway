@@ -1,6 +1,8 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -9,11 +11,6 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.Authori
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils;
 import com.predic8.membrane.core.interceptor.session.Session;
-import org.apache.commons.codec.binary.Base64;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.NumericDate;
-import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,10 +18,12 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.Constants.USERAGENT;
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Header.ACCEPT;
+import static com.predic8.membrane.core.http.Header.USER_AGENT;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 
@@ -38,6 +37,8 @@ public class AccessTokenHandler {
     private final AuthorizationService auth;
     private final OAuth2AnswerParameters params;
     private final ObjectMapper om = new ObjectMapper();
+    private final Cache<String, Object> synchronizers = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build();
+
 
     public AccessTokenHandler(Session session, AuthorizationService auth) {
         this.session = session;
@@ -54,7 +55,7 @@ public class AccessTokenHandler {
         if (!refreshingOfAccessTokenIsNeeded(session))
             return;
 
-        Exchange refreshTokenExchange = applyAuth(new Request.Builder()
+        Exchange refreshTokenExchange = auth.applyAuth(new Request.Builder()
                         .post(auth.getTokenEndpoint())
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
@@ -81,7 +82,7 @@ public class AccessTokenHandler {
 
         params.setAccessToken((String) json.get("access_token"));
         params.setRefreshToken((String) json.get("refresh_token"));
-        params.setExpiration(numberToString(json.get("expires_in")));
+        params.setExpiration(JsonUtils.numberToString(json.get("expires_in")));
         LocalDateTime now = LocalDateTime.now();
         params.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
         if (json.containsKey("id_token")) {
@@ -92,20 +93,6 @@ public class AccessTokenHandler {
         }
 
         session.put(OAUTH2_ANSWER, params.serialize());
-    }
-
-    private String numberToString(Object number) {
-        return switch (number) {
-            case null -> null;
-            case Integer ignored -> number.toString();
-            case Long ignored -> number.toString();
-            case Double ignored -> number.toString();
-            case String s -> s;
-            default -> {
-                log.warn("Unhandled number type " + number.getClass().getName());
-                yield null;
-            }
-        };
     }
 
     private boolean refreshingOfAccessTokenIsNeeded(Session session) throws IOException {
@@ -138,46 +125,19 @@ public class AccessTokenHandler {
         }
     }
 
-    private Request.Builder applyAuth(Request.Builder requestBuilder, String body) {
-
-        if (auth.isUseJWTForClientAuth()) {
-            body += "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" +
-                    "&client_assertion=" + createClientToken();
-        }
-
-        String clientSecret = auth.getClientSecret();
-
-        if (clientSecret != null) {
-            requestBuilder
-                    .header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + clientSecret).getBytes())))
-                    .body(body);
-        } else {
-            requestBuilder.body(body + "&client_id" + auth.getClientId());
-        }
-
-        return requestBuilder;
-    }
-
-    private String createClientToken() {
+    public Object getTokenSynchronizer(Session session) {
+        OAuth2AnswerParameters oauth2Params;
         try {
-            String jwtSub = auth.getClientId();
-            String jwtAud = auth.getTokenEndpoint();
+            oauth2Params = OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        String rt = oauth2Params.getRefreshToken();
+        if (rt == null) return new Object();
 
-            NumericDate expiration = NumericDate.now();
-            expiration.addSeconds(300);
-
-            // see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
-            JwtClaims jwtClaims = new JwtClaims();
-            jwtClaims.setSubject(jwtSub);
-            jwtClaims.setAudience(jwtAud);
-            jwtClaims.setIssuer(jwtClaims.getSubject());
-            jwtClaims.setJwtId(UUID.randomUUID().toString());
-            jwtClaims.setIssuedAtToNow();
-            jwtClaims.setExpirationTime(expiration);
-            jwtClaims.setNotBeforeMinutesInThePast(2f);
-
-            return jwtKeyCertHandler.generateSignedJWS(jwtClaims);
-        } catch (JoseException | MalformedClaimException e) {
+        try {
+            return synchronizers.get(rt, Object::new);
+        } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
