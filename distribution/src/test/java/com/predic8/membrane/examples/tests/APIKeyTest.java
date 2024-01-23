@@ -68,7 +68,7 @@ public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
     @Test
     public void normalScope() {
         given()
-            .header("X-Api", "123456789")
+            .header("X-Key", "123456789")
         .when()
             .get("http://localhost:3000")
         .then().assertThat()
@@ -79,7 +79,7 @@ public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
     @Test
     public void conditionalScope() {
         given()
-            .header("X-Api", "key_321_abc")
+            .header("X-Key", "key_321_abc")
         .when()
             .get("http://localhost:3000")
         .then().assertThat()
