@@ -20,7 +20,7 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
 
    `curl http://localhost:2000`.
 
-4. You should see `{ "success": true }` in your terminal and a trace,
+4. You should see `{ "success": "true" }` in your terminal and a trace,
    created by Membrane should be visible in the [jaeger frontend](http://localhost:16686). Open `localhost:16686` in the browser.
 
 5. Take a look into the `proxies.xml
@@ -51,7 +51,7 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
             CONTINUE
          </groovy>
          <template contentType="application/json" pretty="yes">
-            { success: true }
+            { "success": "true" }
          </template>
       </request>
       <return statusCode="200"/>
