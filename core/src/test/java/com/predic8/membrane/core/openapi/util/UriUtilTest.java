@@ -44,6 +44,21 @@ public class UriUtilTest {
     }
 
     @Test
+    public void trailingSlash() {
+        assertEquals("/foo/bar", trimTrailingSlash("/foo/bar/"));
+    }
+
+    @Test
+    public void trailingSlashWhenSingleSlash() {
+        assertEquals("", trimTrailingSlash("/"));
+    }
+
+    @Test
+    public void trailingSlashWhenNoSlash() {
+        assertEquals("", trimTrailingSlash(""));
+    }
+
+    @Test
     public void stringWithoutParams() {
         assertEquals(0,parseQueryString("foo").size());
     }

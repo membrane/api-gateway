@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
+import static com.predic8.membrane.core.openapi.util.UriUtil.trimTrailingSlash;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class UriTemplateMatcher {
@@ -34,7 +35,7 @@ public class UriTemplateMatcher {
      * @return Map of Parameters. If the path does not match null is returned.
      */
     public Map<String,String> match(String template, String uri) throws PathDoesNotMatchException {
-        final Matcher matcher = Pattern.compile(escapeSlash(prepareRegex(template))).matcher(trimQueryString(uri));
+        final Matcher matcher = Pattern.compile(escapeSlash(prepareRegex(trimTrailingSlash(template)))).matcher(trimTrailingSlash(trimQueryString(uri)));
 
         final List<String> parameterNames = getPathParameterNames(template);
 
