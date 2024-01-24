@@ -39,7 +39,7 @@ import static java.nio.charset.StandardCharsets.*;
  *                  package updates will be stuck in the past until the cache (on disk) is cleared manually. -
  *                  This is - simply put - the only use case, where using this class makes any sense.
  *              </p>
- * @topic 4. Interceptors/Features
+ * @topic 4. Interceptors/Feature	s
  */
 @MCElement(name="cache")
 public class CacheInterceptor extends AbstractInterceptor {
