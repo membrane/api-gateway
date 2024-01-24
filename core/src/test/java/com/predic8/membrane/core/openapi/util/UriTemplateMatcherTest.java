@@ -77,6 +77,36 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
+    public void matchNoSlashAtEnd() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo/").size());
+    }
+
+    @Test
+    public void m1() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo/?x=1").size());
+    }
+
+    @Test
+    public void m2() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo?x=1").size());
+    }
+
+    @Test
+    public void m3() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo/", "/foo").size());
+    }
+
+    @Test
+    public void m4() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo/", "/foo/").size());
+    }
+
+    @Test
+    public void m5() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/", "/").size());
+    }
+
+    @Test
     public void match() throws PathDoesNotMatchException {
         assertEquals(Map.of("fid", "7"), matcher.match("/foo/{fid}", "/foo/7"));
         assertEquals(Map.ofEntries(entry("cid","42"), entry("coid","abc")), matcher.match("/customer/{cid}/contracts/{coid}", "/customer/42/contracts/abc"));
