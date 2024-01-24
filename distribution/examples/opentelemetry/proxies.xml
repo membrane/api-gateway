@@ -20,7 +20,7 @@
                     CONTINUE
                 </groovy>
                 <template contentType="application/json" pretty="yes">
-                    { "success": "true" }
+                    { "success": true }
                 </template>
             </request>
             <return statusCode="200"/>
