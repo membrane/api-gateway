@@ -222,8 +222,6 @@ public abstract class AuthorizationService {
         try {
             String jwtSub = this.getClientId();
             String jwtAud = this.getTokenEndpoint();
-            Object pemObject = "";
-            String pemBlock = "";
 
             // see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
             JwtClaims jwtClaims = new JwtClaims();
