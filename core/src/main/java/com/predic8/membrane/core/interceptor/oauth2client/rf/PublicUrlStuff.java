@@ -20,19 +20,21 @@ public class PublicUrlStuff {
     private final List<String> publicURLs = new ArrayList<>();
     private boolean initPublicURLsOnTheFly = false;
     private boolean firstInitWhenDynamicAuthorizationService;
-    private String callbackPath = "oauth2callback";
 
     // TODO remove init stuff
     public void init(AuthorizationService auth) {
         synchronized (publicURLs) {
-            if (publicURLs.isEmpty())
+            if (publicURLs.isEmpty()) {
                 initPublicURLsOnTheFly = true;
-            else publicURLs.replaceAll(this::normalizePublicURL);
+            } else {
+                publicURLs.replaceAll(this::normalizePublicURL);
+            }
         }
 
         firstInitWhenDynamicAuthorizationService = auth.supportsDynamicRegistration();
-        if(!auth.supportsDynamicRegistration())
+        if (!auth.supportsDynamicRegistration()) {
             firstInitWhenDynamicAuthorizationService = false;
+        }
     }
 
     public String getPublicURL() {
@@ -50,7 +52,7 @@ public class PublicUrlStuff {
     }
 
     public String normalizePublicURL(String url) {
-        if(!url.endsWith("/"))
+        if (!url.endsWith("/"))
             url += "/";
         return url;
     }

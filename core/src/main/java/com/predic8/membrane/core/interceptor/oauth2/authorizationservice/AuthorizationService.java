@@ -20,6 +20,8 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JwtKeyCertHandler;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -37,10 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.Constants.USERAGENT;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 public abstract class AuthorizationService {
     protected Logger log;
@@ -216,6 +222,35 @@ public abstract class AuthorizationService {
             requestBuilder.header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body);
         else requestBuilder.body(body + "&client_id" + getClientId());
         return requestBuilder;
+    }
+
+    public Response refreshTokenRequest(OAuth2AnswerParameters params) throws Exception {
+        return doRequest(applyAuth(
+                new Request.Builder().post(getTokenEndpoint())
+                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(USER_AGENT, USERAGENT),
+                "grant_type=refresh_token" + "&refresh_token=" + params.getRefreshToken())
+                .buildExchange());
+    }
+
+    public Response requestUserEndpoint(OAuth2AnswerParameters params) throws Exception {
+        return doRequest(new Request.Builder()
+                .get(getUserInfoEndpoint())
+                .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .buildExchange());
+    }
+
+    public boolean idTokenIsValid(String idToken) {
+        //TODO maybe change this to return claims and also save them in the oauth2AnswerParameters
+        try {
+            JwtGenerator.getClaimsFromSignedIdToken(idToken, getIssuer(), getClientId(), getJwksEndpoint(), this);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private String createClientToken() {

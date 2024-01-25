@@ -1,72 +1,131 @@
 package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.session.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.Constants.USERAGENT;
-import static com.predic8.membrane.core.http.Header.ACCEPT;
-import static com.predic8.membrane.core.http.Header.USER_AGENT;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.numberToString;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenManager.idTokenIsValid;
-import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OAUTH2_ANSWER;
 
 public class AccessTokenRefresher {
+    private static final Logger log = LoggerFactory.getLogger(AccessTokenRefresher.class);
 
-    public static boolean refreshingOfAccessTokenIsNeeded(Session session) throws IOException {
-        if (session.get(OAUTH2_ANSWER) == null)
-            return false;
+    private final Cache<String, Object> synchronizers = CacheBuilder.newBuilder()
+            .expireAfterAccess(1, TimeUnit.MINUTES)
+            .build();
 
-        OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER));
-        if (oauth2Params.getRefreshToken() == null || oauth2Params.getRefreshToken().isEmpty() || oauth2Params.getExpiration() == null || oauth2Params.getExpiration().isEmpty())
-            return false;
+    private AuthorizationService auth;
 
-        return LocalDateTime.now().isAfter(oauth2Params.getReceivedAt().plusSeconds(Long.parseLong(oauth2Params.getExpiration())).minusSeconds(5)); // refresh token 5 seconds before expiration
+    public void init(AuthorizationService auth) {
+        this.auth = auth;
     }
 
-    public static void refreshAccessToken(Session session, AuthorizationService auth) throws Exception {
-
-        if (!refreshingOfAccessTokenIsNeeded(session)) return;
-
-        OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER));
-        Exchange refreshTokenExchange = auth.applyAuth(new Request.Builder().post(auth.getTokenEndpoint()).contentType(APPLICATION_X_WWW_FORM_URLENCODED).header(ACCEPT, APPLICATION_JSON).header(USER_AGENT, USERAGENT), "grant_type=refresh_token" + "&refresh_token=" + oauth2Params.getRefreshToken()).buildExchange();
-
-        Response refreshTokenResponse = auth.doRequest(refreshTokenExchange);
-        if (!refreshTokenResponse.isOk()) {
-            refreshTokenResponse.getBody().read();
-            throw new RuntimeException("Statuscode from authorization server for refresh token request: " + refreshTokenResponse.getStatusCode());
+    public void refreshIfNeeded(Session session, Exchange exc) {
+        if (!refreshingOfAccessTokenIsNeeded(session)) {
+            return;
         }
-        if (!isJson(refreshTokenResponse)) throw new RuntimeException("Refresh Token response is no JSON.");
 
-        @SuppressWarnings("unchecked") Map<String, Object> json = new ObjectMapper().readValue(refreshTokenResponse.getBodyAsStreamDecoded(), Map.class);
-
-        if (json.get("access_token") == null || json.get("refresh_token") == null) {
-            refreshTokenResponse.getBody().read();
-            throw new RuntimeException("Statuscode was ok but no access_token and refresh_token was received: " + refreshTokenResponse.getStatusCode());
+        synchronized (getTokenSynchronizer(session)) {
+            try {
+                refreshAccessToken(session);
+                exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
+            } catch (Exception e) {
+                log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
+                session.clearAuthentication();
+            }
         }
-        oauth2Params.setAccessToken((String) json.get("access_token"));
-        oauth2Params.setRefreshToken((String) json.get("refresh_token"));
-        oauth2Params.setExpiration(numberToString(json.get("expires_in")));
+    }
+
+    private void refreshAccessToken(Session session) throws Exception {
+        var params = session.getOAuth2AnswerParameters();
+        var response = auth.refreshTokenRequest(params);
+
+        if (!response.isOk()) {
+            response.getBody().read();
+            throw new RuntimeException("Statuscode from authorization server for refresh token request: " + response.getStatusCode());
+        }
+
+        if (!isJson(response)) {
+            throw new RuntimeException("Refresh Token response is no JSON.");
+        }
+
+        var json = new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<Map<String, Object>>() {});
+
+        if (isMissingOneToken(json)) {
+            response.getBody().read();
+            throw new RuntimeException("Statuscode was ok but no access_token and refresh_token was received: " + response.getStatusCode());
+        }
+
+        updateSessionTokens(session, json, params);
+    }
+
+    private boolean refreshingOfAccessTokenIsNeeded(Session session) {
+        if (session.getOAuth2Answer() == null) {
+            return false;
+        }
+
+        var params = session.getOAuth2AnswerParameters();
+        var expiration = params.getExpiration();
+
+        if (isNullOrEmpty(params.getRefreshToken(), expiration)) {
+            return false;
+        }
+
+        var expirationTime = params.getReceivedAt().plusSeconds(Long.parseLong(expiration)).minusSeconds(5);
+
+        return LocalDateTime.now().isAfter(expirationTime);
+    }
+
+    private boolean isNullOrEmpty(String... values) {
+        return Arrays.stream(values).anyMatch(value -> value == null || value.isEmpty());
+    }
+
+    private void updateSessionTokens(Session session, Map<String, Object> json, OAuth2AnswerParameters params) throws UnsupportedEncodingException, JsonProcessingException {
+        params.setAccessToken((String) json.get("access_token"));
+        params.setRefreshToken((String) json.get("refresh_token"));
+        params.setExpiration(numberToString(json.get("expires_in")));
         LocalDateTime now = LocalDateTime.now();
-        oauth2Params.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
+        params.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
+
         if (json.containsKey("id_token")) {
-            if (idTokenIsValid((String) json.get("id_token"), auth))
-                oauth2Params.setIdToken((String) json.get("id_token"));
-            else oauth2Params.setIdToken("INVALID");
+            if (auth.idTokenIsValid((String) json.get("id_token"))) {
+                params.setIdToken((String) json.get("id_token"));
+            } else {
+                params.setIdToken("INVALID");
+            }
         }
 
-        session.put(OAUTH2_ANSWER, oauth2Params.serialize());
+        session.setOAuth2Answer(params.serialize());
+    }
 
+    private boolean isMissingOneToken(Map<String, Object> json) {
+        return json.get("access_token") == null || json.get("refresh_token") == null;
+    }
+
+    private Object getTokenSynchronizer(Session session) {
+        var refreshToken = session.getOAuth2AnswerParameters().getRefreshToken();
+
+        try {
+            return refreshToken == null
+                    ? new Object()
+                    : synchronizers.get(refreshToken, Object::new);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
