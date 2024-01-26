@@ -8,8 +8,9 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT;
+import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT_PREFIX;
 
-public class OAuthAnswerStuff {
+public class OAuthUtilsStuff {
 
     /**
      * Tries to avoid very long cookies by dropping all OAUTH2_ANSWERS except the first one.
@@ -66,5 +67,9 @@ public class OAuthAnswerStuff {
 
     public static boolean isOAuth2RedirectRequest(Exchange exc) {
         return exc.getOriginalRequestUri().contains(OA2REDIRECT);
+    }
+
+    public static String oa2redictKeyNameInSession(String oa2redirect) {
+        return OA2REDIRECT_PREFIX + oa2redirect;
     }
 }

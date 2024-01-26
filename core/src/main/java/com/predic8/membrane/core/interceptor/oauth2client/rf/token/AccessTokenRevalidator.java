@@ -11,7 +11,6 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils;
 import com.predic8.membrane.core.interceptor.session.Session;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class AccessTokenRevalidator {
@@ -33,25 +32,25 @@ public class AccessTokenRevalidator {
             return;
         }
 
-        revalidate(session).ifPresentOrElse(
-                valid -> statistics.accessTokenValid(),
-                () -> {
-                    statistics.accessTokenInvalid();
-                    session.clear();
-                }
-        );
+        if (revalidate(session, statistics) == null) {
+            session.clear();
+        }
     }
 
-    public Optional<Map<String, Object>> revalidate(Session session) throws Exception {
+    public Map<String, Object> revalidate(Session session, OAuth2Statistics statistics) throws Exception {
         Response response = auth.requestUserEndpoint(session.getOAuth2AnswerParameters());
 
         if (response.getStatusCode() != 200) {
-            return Optional.empty();
+            statistics.accessTokenValid();
+            return null;
         } else {
-            if (!JsonUtils.isJson(response))
+            statistics.accessTokenValid();
+
+            if (!JsonUtils.isJson(response)) {
                 throw new RuntimeException("Response is no JSON.");
-            return Optional.ofNullable(new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<>() {
-            }));
+            }
+
+            return new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<>() {});
         }
     }
 

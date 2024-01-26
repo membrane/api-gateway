@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 
-// * 2. alles, was CSRF macht
 public class CSRFStuff {
 
     public static String getSecurityTokenFromState(String state2) {
