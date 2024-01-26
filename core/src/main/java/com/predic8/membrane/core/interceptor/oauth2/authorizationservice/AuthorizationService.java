@@ -22,15 +22,13 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JwtKeyCertHandler;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.apache.commons.codec.binary.Base64;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.NumericDate;
@@ -60,7 +58,7 @@ public abstract class AuthorizationService {
     private String clientId;
     @GuardedBy("lock")
     private String clientSecret;
-    private JwtKeyCertHandler jwtKeyCertHandler;
+    private JWSSigner JWSSigner;
     protected String scope;
     private SSLParser sslParser;
     private SSLContext sslContext;
@@ -77,7 +75,7 @@ public abstract class AuthorizationService {
         log = LoggerFactory.getLogger(this.getClass().getName());
 
         if (isUseJWTForClientAuth()) {
-            jwtKeyCertHandler = new JwtKeyCertHandler(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getBaseLocation())),
+            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getBaseLocation())),
                     getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getBaseLocation()));
         }
 
@@ -207,8 +205,8 @@ public abstract class AuthorizationService {
         this.useJWTForClientAuth = useJWTForClientAuth;
     }
 
-    public JwtKeyCertHandler getJwtKeyCertHandler() {
-        return jwtKeyCertHandler;
+    public JWSSigner getJwtKeyCertHandler() {
+        return JWSSigner;
     }
 
     public Request.Builder applyAuth(Request.Builder requestBuilder, String body) {

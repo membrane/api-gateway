@@ -11,11 +11,11 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 
-public class JwtKeyCertHandler {
+public class JWSSigner {
     private final Key key;
     private final X509Certificate certificate;
 
-    public JwtKeyCertHandler(Object pemObj, String pemBlock) throws IOException {
+    public JWSSigner(Object pemObj, String pemBlock) throws IOException {
         this.key = switch (pemObj) {
             case Key k -> k;
             case KeyPair kp -> kp.getPrivate();
@@ -37,11 +37,14 @@ public class JwtKeyCertHandler {
         return jws.getCompactSerialization();
     }
 
-    public Key getKey() {
-        return key;
-    }
+    public String signToCompactSerialization(String payload) throws JoseException {
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(payload);
+        jws.setKey(key);
+        jws.setX509CertSha1ThumbprintHeaderValue(certificate);
+        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+        jws.setHeader("typ", "JWT");
 
-    public X509Certificate getCertificate() {
-        return certificate;
+        return jws.getCompactSerialization();
     }
 }

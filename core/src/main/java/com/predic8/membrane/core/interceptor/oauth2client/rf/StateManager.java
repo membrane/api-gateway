@@ -3,14 +3,24 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.util.URLParamUtil;
+import org.jetbrains.annotations.NotNull;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 
-public class CSRFStuff {
+public class StateManager {
+
+    private static final SecureRandom sr = new SecureRandom();
+
+    @NotNull
+    public static String generateNewState() {
+        return new BigInteger(130, sr).toString(32);
+    }
 
     public static String getSecurityTokenFromState(String state2) {
         if (state2 == null)

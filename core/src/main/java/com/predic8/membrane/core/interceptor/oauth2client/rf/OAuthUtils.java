@@ -10,7 +10,7 @@ import java.util.Optional;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OA2REDIRECT_PREFIX;
 
-public class OAuthUtilsStuff {
+public class OAuthUtils {
 
     /**
      * Tries to avoid very long cookies by dropping all OAUTH2_ANSWERS except the first one.

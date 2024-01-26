@@ -89,7 +89,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         statistics = new OAuth2Statistics();
         uriFactory = router.getUriFactory();
 
-        publicUrlStuff.init(auth);
+        publicUrlManager.init(auth, callbackPath);
         accessTokenRevalidator.init(auth, statistics);
         accessTokenRefresher.init(auth);
         userInfoHandler.init(auth, router);
@@ -183,7 +183,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private Outcome respondWithRedirect(Exchange exc) throws Exception {
         String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlStuff.getPublicURL(exc, getAuthService(), callbackPath), exc.getRequestURI()), false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc), exc.getRequestURI()), false).build());
 
         readBodyFromStreamIntoMemory(exc);
 

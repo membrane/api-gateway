@@ -39,7 +39,6 @@ public class KommtSchonMitJWTFall {
 
                 if (logUserInfoIsNull(userinfo)) {
                     return true;
-//                    return respondWithRedirect(exc);
                 }
 
                 oauth2Answer.setUserinfo(userinfo);

@@ -21,8 +21,13 @@ public class PublicUrlStuff {
     private boolean initPublicURLsOnTheFly = false;
     private boolean firstInitWhenDynamicAuthorizationService;
 
-    // TODO remove init stuff
-    public void init(AuthorizationService auth) {
+    private AuthorizationService auth;
+    private String callbackPath;
+
+    public void init(AuthorizationService auth, String callbackPath) {
+        this.auth = auth;
+        this.callbackPath = callbackPath;
+
         synchronized (publicURLs) {
             if (publicURLs.isEmpty()) {
                 initPublicURLsOnTheFly = true;
@@ -57,7 +62,7 @@ public class PublicUrlStuff {
         return url;
     }
 
-    public String getPublicURL(Exchange exc, AuthorizationService auth, String callbackPath) throws Exception {
+    public String getPublicURL(Exchange exc) throws Exception {
         String xForwardedProto = exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
         boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
         String publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();

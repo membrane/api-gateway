@@ -33,9 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static sun.security.provider.X509Factory.BEGIN_CERT;
 import static sun.security.provider.X509Factory.END_CERT;
 
-class JwtKeyCertHandlerTest {
+class JWSSignerTest {
 
-    JwtKeyCertHandler jwtKeyCertHandler;
+    JWSSigner JWSSigner;
     JwtClaims jwtClaims;
     KeyPairGenerator keyPairGenerator;
     KeyPair keyPair;
@@ -45,23 +45,23 @@ class JwtKeyCertHandlerTest {
     void setup() throws IOException, NoSuchAlgorithmException, OperatorCreationException {
         keyPair = generateKeyPair();
         pemBlock = String.format("%s\n%s\n%s", BEGIN_CERT, printBase64Binary(generateX509Certificate().getEncoded()), END_CERT);
-        jwtKeyCertHandler = new JwtKeyCertHandler(keyPair, pemBlock);
+        JWSSigner = new JWSSigner(keyPair, pemBlock);
         generateJwtClaims();
     }
 
     @Test
     void generateSignedJWSTestNotNull() throws JoseException {
-        assertNotNull(jwtKeyCertHandler.generateSignedJWS(jwtClaims));
+        assertNotNull(JWSSigner.generateSignedJWS(jwtClaims));
     }
 
     @Test
     void headerContainsFingerPrint() throws JoseException, IOException {
-        assertTrue(decodeJWTChunks(getJWTChunks(jwtKeyCertHandler.generateSignedJWS(jwtClaims))).get("header").containsKey("x5t"));
+        assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims))).get("header").containsKey("x5t"));
     }
 
     @Test
     void headerContainsSub() throws JoseException, IOException {
-        assertTrue(decodeJWTChunks(getJWTChunks(jwtKeyCertHandler.generateSignedJWS(jwtClaims))).get("payload").containsKey("sub"));
+        assertTrue(decodeJWTChunks(getJWTChunks(JWSSigner.generateSignedJWS(jwtClaims))).get("payload").containsKey("sub"));
     }
 
     private void generateJwtClaims() {
