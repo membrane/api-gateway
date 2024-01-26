@@ -37,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
@@ -268,14 +267,7 @@ public abstract class AuthorizationService {
             jwtClaims.setExpirationTime(expiration);
             jwtClaims.setNotBeforeMinutesInThePast(2f);
 
-            JsonWebSignature jws = new JsonWebSignature();
-            jws.setPayload(jwtClaims.toJson());
-            jws.setKey(jwtKeyCertHandler.getKey());
-            jws.setX509CertSha1ThumbprintHeaderValue(jwtKeyCertHandler.getCertificate());
-            jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
-            jws.setHeader("typ", "JWT");
-
-            return jws.getCompactSerialization();
+            return JWSSigner.signToCompactSerialization(jwtClaims.toJson());
         } catch (JoseException | MalformedClaimException e) {
             throw new RuntimeException(e);
         }

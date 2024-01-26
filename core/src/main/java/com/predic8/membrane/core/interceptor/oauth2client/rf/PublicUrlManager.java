@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 
 @MCElement(name = "publicURL")
-public class PublicUrlStuff {
+public class PublicUrlManager {
     @GuardedBy("publicURLs")
     private final List<String> publicURLs = new ArrayList<>();
     private boolean initPublicURLsOnTheFly = false;

@@ -14,18 +14,30 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 
-public class KommtSchonMitJWTFall {
-    private static final Logger log = LoggerFactory.getLogger(KommtSchonMitJWTFall.class);
+public class TokenAuthenticator {
+    private static final Logger log = LoggerFactory.getLogger(TokenAuthenticator.class);
+    private SessionAuthorizer sessionAuthorizer;
+    private OAuth2Statistics statistics;
+    private AccessTokenRevalidator accessTokenRevalidator;
+    private AuthorizationService authService;
 
-    public static boolean userInfoIsNullAndShouldRedirect(
-            UserInfoHandler userInfoHandler,
-            Session session,
-            Exchange exc,
+    public void init(
+            SessionAuthorizer sessionAuthorizer,
             OAuth2Statistics statistics,
             AccessTokenRevalidator accessTokenRevalidator,
             AuthorizationService authService
+    ) {
+        this.sessionAuthorizer = sessionAuthorizer;
+        this.statistics = statistics;
+        this.accessTokenRevalidator = accessTokenRevalidator;
+        this.authService = authService;
+    }
+
+    public boolean userInfoIsNullAndShouldRedirect(
+            Session session,
+            Exchange exc
     ) throws Exception {
-        if (!userInfoHandler.isSkip() && !session.isVerified()) {
+        if (!sessionAuthorizer.isSkipUserInfo() && !session.isVerified()) {
             String auth = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
             if (auth != null && isBearer(auth)) {
                 session.put(ParamNames.ACCESS_TOKEN, auth.substring(7));
@@ -44,7 +56,7 @@ public class KommtSchonMitJWTFall {
                 oauth2Answer.setUserinfo(userinfo);
 
                 session.setOAuth2Answer(oauth2Answer.serialize());
-                userInfoHandler.processUserInfo(userinfo, session, authService);
+                sessionAuthorizer.authorizeSession(userinfo, session, authService);
             }
         }
         return false;

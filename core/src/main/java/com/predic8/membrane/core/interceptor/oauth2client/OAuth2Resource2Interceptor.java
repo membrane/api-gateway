@@ -38,13 +38,12 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_HOST;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtilsStuff.isOAuth2RedirectRequest;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 
@@ -66,8 +65,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private final AccessTokenRevalidator accessTokenRevalidator = new AccessTokenRevalidator();
     private final AccessTokenRefresher accessTokenRefresher = new AccessTokenRefresher();
-    private PublicUrlStuff publicUrlStuff = new PublicUrlStuff();
-    private final UserInfoHandler userInfoHandler = new UserInfoHandler();
+    private PublicUrlManager publicUrlManager = new PublicUrlManager();
+    private final SessionAuthorizer sessionAuthorizer = new SessionAuthorizer();
+    private OAuth2CallbackRequestHandler oAuth2CallbackRequestHandler = new OAuth2CallbackRequestHandler();
+    private TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
+    private String customHeaderUserPropertyPrefix;
 
     @Override
     public void init() throws Exception {
@@ -92,7 +94,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         publicUrlManager.init(auth, callbackPath);
         accessTokenRevalidator.init(auth, statistics);
         accessTokenRefresher.init(auth);
-        userInfoHandler.init(auth, router);
+        sessionAuthorizer.init(auth, router, statistics);
+        oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator, sessionAuthorizer, publicUrlManager, callbackPath);
+        tokenAuthenticator.init(sessionAuthorizer, statistics, accessTokenRevalidator, auth);
     }
 
     @Override
@@ -108,14 +112,13 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
 
         Session session = getSessionManager().getSession(exc);
-        OAuthUtilsStuff.simplifyMultipleOAuth2Answers(session);
+        OAuthUtils.simplifyMultipleOAuth2Answers(session);
 
         if (isOAuth2RedirectRequest(exc)) {
             handleOriginalRequest(exc);
         }
 
-        // TODO: eigene klasse, soll austauschbar sein (MCchild element)
-        if (KommtSchonMitJWTFall.userInfoIsNullAndShouldRedirect(userInfoHandler, session, exc, statistics, accessTokenRevalidator, auth)) {
+        if (tokenAuthenticator.userInfoIsNullAndShouldRedirect(session, exc)) {
             return respondWithRedirect(exc);
         }
 
@@ -133,7 +136,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return Outcome.CONTINUE;
         }
 
-        if (handleRequest(exc, publicUrlStuff.getPublicURL(exc, getAuthService(), callbackPath), session)) {
+        if (handleRequest(exc, session)) {
             if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
                 exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
                 return Outcome.CONTINUE;
@@ -157,10 +160,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Session session = getSessionManager().getSession(exc);
 
         AbstractExchange originalExchange = new ObjectMapper().readValue(
-                        session.get(OAuthUtilsStuff.oa2redictKeyNameInSession(oa2redirect)).toString(),
+                        session.get(OAuthUtils.oa2redictKeyNameInSession(oa2redirect)).toString(),
                         AbstractExchangeSnapshot.class)
                 .toAbstractExchange();
-        session.remove(OAuthUtilsStuff.oa2redictKeyNameInSession(oa2redirect));
+        session.remove(OAuthUtils.oa2redictKeyNameInSession(oa2redirect));
 
         doOriginalRequest(exc, originalExchange);
     }
@@ -170,18 +173,20 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private void applyBackendAuthorization(Exchange exc, Session s) {
+        if (customHeaderUserPropertyPrefix == null)
+            return;
         Header h = exc.getRequest().getHeader();
-        for (Map.Entry<String, Object> e : s.get().entrySet())
-            if (e.getKey().startsWith("header")) {
-                String headerName = e.getKey().substring(6);
+        for (Map.Entry<String, Object> e : s.get().entrySet()) {
+            if (e.getKey().startsWith(customHeaderUserPropertyPrefix)) {
+                String headerName = e.getKey().substring(customHeaderUserPropertyPrefix.length());
                 h.removeFields(headerName);
                 h.add(headerName, e.getValue().toString());
             }
-
+        }
     }
 
     private Outcome respondWithRedirect(Exchange exc) throws Exception {
-        String state = new BigInteger(130, new SecureRandom()).toString(32);
+        String state = generateNewState();
 
         exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc), exc.getRequestURI()), false).build());
 
@@ -202,7 +207,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         exc.getRequest().getBodyAsStringDecoded();
     }
 
-    private boolean handleRequest(Exchange exc, String publicURL, Session session) throws Exception {
+    private boolean handleRequest(Exchange exc, Session session) throws Exception {
         String path = uriFactory.create(exc.getDestinations().getFirst()).getPath();
 
         if (path == null) {
@@ -210,10 +215,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
 
         if (path.endsWith("/" + callbackPath)) {
-            return OAuth2CallbackRequestHandler.machMal(
-                    uriFactory, exc, session, auth, originalExchangeStore, publicURL, callbackPath,
-                    accessTokenRevalidator, statistics, userInfoHandler
-            );
+            return oAuth2CallbackRequestHandler.handleRequest(exc, session);
         }
 
         return false;
@@ -248,21 +250,21 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     public boolean isSkipUserInfo() {
-        return userInfoHandler.isSkip();
+        return sessionAuthorizer.isSkipUserInfo();
     }
 
     @MCAttribute
     public void setSkipUserInfo(boolean skipUserInfo) {
-        userInfoHandler.setSkip(skipUserInfo);
+        sessionAuthorizer.setSkipUserInfo(skipUserInfo);
     }
 
     @MCChildElement
-    public void setPublicUrlStuff(PublicUrlStuff publicUrlStuff) {
-        this.publicUrlStuff = publicUrlStuff;
+    public void setPublicUrlManager(PublicUrlManager publicUrlManager) {
+        this.publicUrlManager = publicUrlManager;
     }
 
-    public PublicUrlStuff getPublicUrlStuff() {
-        return publicUrlStuff;
+    public PublicUrlManager getPublicUrlManager() {
+        return publicUrlManager;
     }
 
     public AuthorizationService getAuthService() {
@@ -299,5 +301,20 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setCallbackPath(String callbackPath) {
         this.callbackPath = callbackPath;
+    }
+
+    public String getCustomHeaderUserPropertyPrefix() {
+        return customHeaderUserPropertyPrefix;
+    }
+
+    /**
+     * @description A user property prefix (e.g. "header"), which can be used to make the interceptor emit custom per-user headers.
+     * For example, if you have a user property "headerX: Y" on a user U, and the user U logs in, all requests belonging to this
+     * user will have an additional HTTP header "X: Y". If null, this feature is disabled.
+     * @default null
+     */
+    @MCAttribute
+    public void setCustomHeaderUserPropertyPrefix(String customHeaderUserPropertyPrefix) {
+        this.customHeaderUserPropertyPrefix = customHeaderUserPropertyPrefix;
     }
 }

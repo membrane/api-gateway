@@ -49,8 +49,4 @@ public class AuthEndpointProcessor extends EndpointProcessor {
         exc.setResponse(new AuthWithoutSessionRequest(authServer, exc).validateRequest());
         return Outcome.RETURN;
     }
-
-    private String getState(Exchange exc) throws Exception {
-        return URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc, ERROR).get(ParamNames.STATE);
-    }
 }
