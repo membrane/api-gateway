@@ -35,6 +35,7 @@ BuildRequires:    systemd
 wget %{url}/releases/download/v%{version}/%{zip_name}.zip
 unzip %{zip_name}.zip
 
+
 %{__cat} <<EOF > %{name}.service
 [Unit]
 Description=Membrane - API Gateway
