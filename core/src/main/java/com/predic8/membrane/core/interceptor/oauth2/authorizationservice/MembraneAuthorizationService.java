@@ -54,6 +54,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private DynamicRegistration dynamicRegistration;
 
+    protected boolean encodedScope;
+
     public static boolean isValidURI(String uri)
     {
         try
@@ -136,10 +138,19 @@ public class MembraneAuthorizationService extends AuthorizationService {
             claimsParameter = null;
     }
 
+    @Override
+    public void setScope(String scope) {
+        super.setScope(scope);
+        encodedScope = false;
+    }
+
     private void adjustScope() throws UnsupportedEncodingException {
         if(scope == null)
             scope = "profile";
-        scope = OAuth2Util.urlencode(scope);
+        if (!encodedScope) {
+            scope = OAuth2Util.urlencode(scope);
+            encodedScope = true;
+        }
     }
 
     private void parseSrc(InputStream resolve) throws IOException {
