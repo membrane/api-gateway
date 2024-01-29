@@ -49,7 +49,7 @@ public class QueryParamsTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void unkownQueryParam() {
+    public void unknownQueryParam() {
         ValidationErrors errors = validator.validate(Request.get().path("/cities?unknown=3&limit=10"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
