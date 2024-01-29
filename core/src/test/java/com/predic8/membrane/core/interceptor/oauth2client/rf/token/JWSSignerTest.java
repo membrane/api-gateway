@@ -30,10 +30,11 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static sun.security.provider.X509Factory.BEGIN_CERT;
-import static sun.security.provider.X509Factory.END_CERT;
 
 class JWSSignerTest {
+
+    public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+    public static final String END_CERT = "-----END CERTIFICATE-----";
 
     JWSSigner JWSSigner;
     JwtClaims jwtClaims;

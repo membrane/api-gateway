@@ -258,7 +258,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         sessionAuthorizer.setSkipUserInfo(skipUserInfo);
     }
 
-    @MCChildElement
+    @MCChildElement(order = 5)
     public void setPublicUrlManager(PublicUrlManager publicUrlManager) {
         this.publicUrlManager = publicUrlManager;
     }
