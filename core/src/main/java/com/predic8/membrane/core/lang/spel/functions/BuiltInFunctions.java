@@ -35,12 +35,12 @@ public class BuiltInFunctions {
         return scopesContainsByPredicate(ctx, it -> it.contains(scope));
     }
 
-    public static boolean hasScopes(ExchangeEvaluationContext ctx) {
+    public static boolean hasScope(ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> !it.isEmpty());
     }
 
     @SuppressWarnings({"SlowListContainsAll"})
-    public static boolean hasScopes(List<String> scopes, ExchangeEvaluationContext ctx) {
+    public static boolean hasScope(List<String> scopes, ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
     }
 

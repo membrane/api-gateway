@@ -29,7 +29,7 @@ Secure endpoints using API keys combined with role-based access control (RBAC).
       ```
       curl http://localhost:3000 -H "X-Key: 123456789" -v
       ```
-    - Use an admin scope key for full access:
+    - Use an admin scope key for admin access:
       ```
       curl http://localhost:3000 -H "X-Key: key_321_abc" -v
       ```
@@ -62,11 +62,11 @@ On successful authentication we simply return with the message "Secret Area!". H
 
 ```xml
 <api port="2000">
-    <apiKey require="true">
+    <apiKey>
         <headerExtractor />
         <queryParamExtractor />
     </apiKey>
-    <template>Secret Area!</template>
+    <template>Hidden API</template>
     <return/>
 </api>
 ```
@@ -76,16 +76,21 @@ By using the conditional "if" plugin, we can check and validate provided scopes 
 
 ```xml
 <api port="3000">
-    <apiKey>
+    <apiKey required="false">
         <headerExtractor name="X-Key" />
     </apiKey>
 
-    <if test="hasScope('admin')" language="SpEL">
-        <template>Secret Area!</template>
-        <return />
-    </if>
+   <if test="hasScope('admin')" language="SpEL">
+      <template>Only for admins!</template>
+      <return />
+   </if>
 
-    <template>Normal Area</template>
+   <if test="hasScope({'finance','accounting'})" language="SpEL">
+      <template>Only for finance or accounting!</template>
+      <return />
+   </if>
+
+    <template>Normal API</template>
     <return />
 </api>
 ```

@@ -30,3 +30,7 @@ X-Key: 123456789
 GET / HTTP/1.1
 Host: localhost:3000
 X-Key: key_321_abc
+###
+
+GET / HTTP/1.1
+Host: localhost:3000

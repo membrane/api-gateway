@@ -27,7 +27,7 @@
             <!-- Use target instead of template and return to route to the backend
                 <target url="http://your-backend.local"/> 
             -->
-            <template>Secret Area!</template>
+            <template>Hidden API</template>
             <return/>
         </api>
 
@@ -36,6 +36,12 @@
             <apiKey required="false">
                 <headerExtractor name="X-Key" />
             </apiKey>
+
+            <if test="hasScope('admin')" language="SpEL">
+                <!-- Use target, see above -->
+                <template>Only for admins!</template>
+                <return />
+            </if>
 
             <if test="hasScope({'finance','accounting'})" language="SpEL">
                 <!-- Use target, see above -->

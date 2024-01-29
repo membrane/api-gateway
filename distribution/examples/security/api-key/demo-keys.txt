@@ -3,7 +3,7 @@
 
 # Format:
 #
-# <<API-Key>: <<Comma separated List of scopes>>
+# <API-Key>: <Comma separated List of scopes>
 
 P8MBR # Simple key without any scope
 
