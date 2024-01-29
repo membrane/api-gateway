@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,7 +32,7 @@ public class BuiltInFunctionsTest {
     @BeforeAll
     static void init() throws URISyntaxException {
         var exc = Request.get("foo").buildExchange();
-        exc.setProperty("scopes", List.of("demo", "test"));
+        exc.setProperty(SCOPES, List.of("demo", "test"));
         ctx = new ExchangeEvaluationContext(exc);
     }
 
@@ -42,24 +43,24 @@ public class BuiltInFunctionsTest {
 
     @Test
     public void testHasScopes() {
-        assertTrue(BuiltInFunctions.hasScopes(ctx));
+        assertTrue(BuiltInFunctions.hasScope(ctx));
     }
 
     @Test
     public void testContainsScopes() {
-        assertTrue(BuiltInFunctions.hasScopes(List.of("demo", "test"), ctx));
+        assertTrue(BuiltInFunctions.hasScope(List.of("demo", "test"), ctx));
     }
 
     @Test
     public void testNotContainsScopes() {
-        assertFalse(BuiltInFunctions.hasScopes(List.of("foo"), ctx));
+        assertFalse(BuiltInFunctions.hasScope(List.of("foo"), ctx));
     }
 
     @Test
     public void testNullScopes() throws URISyntaxException {
         var exc2 = Request.get("foo").buildExchange();
         ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
-        assertFalse(BuiltInFunctions.hasScopes(ctxWithoutScopes));
-        assertFalse(BuiltInFunctions.hasScopes(List.of("foo"), ctxWithoutScopes));
+        assertFalse(BuiltInFunctions.hasScope(ctxWithoutScopes));
+        assertFalse(BuiltInFunctions.hasScope(List.of("foo"), ctxWithoutScopes));
     }
 }

@@ -16,7 +16,9 @@ package com.predic8.membrane.core.lang.spel.functions;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
 
 import java.util.List;
+import java.util.function.Predicate;
 
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -29,24 +31,23 @@ import static java.util.Optional.ofNullable;
  */
 public class BuiltInFunctions {
 
-    @SuppressWarnings("unchecked")
     public static boolean hasScope(String scope, ExchangeEvaluationContext ctx) {
-        return ofNullable((List<String>) ctx.getExchange().getProperties().get("scopes"))
-                .map(scopesList -> scopesList.contains(scope))
-                .orElse(false);
+        return scopesContainsByPredicate(ctx, it -> it.contains(scope));
+    }
+
+    public static boolean hasScope(ExchangeEvaluationContext ctx) {
+        return scopesContainsByPredicate(ctx, it -> !it.isEmpty());
+    }
+
+    @SuppressWarnings({"SlowListContainsAll"})
+    public static boolean hasScope(List<String> scopes, ExchangeEvaluationContext ctx) {
+        return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
     }
 
     @SuppressWarnings("unchecked")
-    public static boolean hasScopes(ExchangeEvaluationContext ctx) {
-        return ofNullable((List<String>) ctx.getExchange().getProperties().get("scopes"))
-                .map(scopes -> !scopes.isEmpty())
-                .orElse(false);
-    }
-
-    @SuppressWarnings({"SlowListContainsAll", "unchecked"})
-    public static boolean hasScopes(List<String> scopes, ExchangeEvaluationContext ctx) {
-        return ofNullable((List<String>) ctx.getExchange().getProperties().get("scopes"))
-                .map(scopesList -> scopesList.containsAll(scopes))
+    private static Boolean scopesContainsByPredicate(ExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
+        return ofNullable((List<String>) ctx.getExchange().getProperties().get(SCOPES))
+                .map(predicate::test)
                 .orElse(false);
     }
 }

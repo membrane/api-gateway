@@ -34,6 +34,19 @@ public class UriUtil {
         return path.substring(0, path.indexOf('?'));
     }
 
+    public static String trimTrailingSlash(String path) {
+        if (path == null || path.isEmpty()) {
+            return path;
+        }
+
+        if (path.endsWith("/")) {
+            return path.substring(0, path.length() - 1);
+        }
+
+        return path;
+    }
+
+
     // TODO migrate to core
     public static Map<String, String> parseQueryString(String url) {
 

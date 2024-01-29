@@ -6,8 +6,8 @@
 
     <router>
         <api port="2000">
-            <apiKey require="true">
-                <keyFileStore location="/home/christian/IdeaProjects/api-gateway/keys.txt"/>
+            <apiKey>
+                <keyFileStore location="../../keys.txt"/>
                 <headerExtractor name="api"/>
                 <queryParamExtractor name="api"/>
             </apiKey>

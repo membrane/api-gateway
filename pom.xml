@@ -78,7 +78,7 @@
 		<javac.source>17</javac.source>
 		<javac.target>17</javac.target>
 		<jackson.version>2.15.2</jackson.version>
-		<spring.version>6.0.11</spring.version>
+		<spring.version>6.0.16</spring.version>
 		<slf4j.version>2.0.7</slf4j.version>
 		<log4j.version>2.20.0</log4j.version>
 		<junit.version>5.10.0</junit.version>
