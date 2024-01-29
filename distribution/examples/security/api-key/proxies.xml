@@ -19,27 +19,38 @@
 
         <!--API key authentication, providing key is mandatory.-->
         <api port="2000">
-            <apiKey require="true">
+            <apiKey>
                 <headerExtractor />
                 <queryParamExtractor />
             </apiKey>
 
-            <template>Secret Area!</template>
+            <!-- Use target instead of template and return to route to the backend
+                <target url="http://your-backend.local"/> 
+            -->
+            <template>Hidden API</template>
             <return/>
         </api>
 
         <!--API key authorization, providing key is optional. Certain scopes allow for additional access rights.-->
         <api port="3000">
-            <apiKey>
+            <apiKey required="false">
                 <headerExtractor name="X-Key" />
             </apiKey>
 
             <if test="hasScope('admin')" language="SpEL">
-                <template>Secret Area!</template>
+                <!-- Use target, see above -->
+                <template>Only for admins!</template>
                 <return />
             </if>
 
-            <template>Normal Area</template>
+            <if test="hasScope({'finance','accounting'})" language="SpEL">
+                <!-- Use target, see above -->
+                <template>Only for finance or accounting!</template>
+                <return />
+            </if>
+
+            <!-- Use target, see above -->
+            <template>Normal API</template>
             <return />
         </api>
 

@@ -1,7 +1,14 @@
-# API KEYS FOR DEMONSTRATION PURPOSES ONLY.
+# API KEYS ARE FOR DEMONSTRATION PURPOSES ONLY!
+# Replace them with secure production values like UUIDs
 
-P8MBR # Simple Key
+# Format:
+#
+# <API-Key>: <Comma separated List of scopes>
 
-# Keys Associated with Roles/Scopes
+P8MBR # Simple key without any scope
+
+# Keys associated with roles/scopes
 key_321_abc: admin
-123456789: tier0, tier1
+3141: finance
+123456789: finance, accounting
+7a26cae9-ed29-40b3-bc99-5b1914bb8498: read, write

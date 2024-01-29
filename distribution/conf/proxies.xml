@@ -6,7 +6,7 @@
 
     <router>
         <api port="2000">
-            <apiKey require="true">
+            <apiKey>
                 <keyFileStore location="../../keys.txt"/>
                 <headerExtractor name="api"/>
                 <queryParamExtractor name="api"/>
