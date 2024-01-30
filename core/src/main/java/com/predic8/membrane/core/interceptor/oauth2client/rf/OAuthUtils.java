@@ -19,6 +19,7 @@ public class OAuthUtils {
      */
     public static void simplifyMultipleOAuth2Answers(@Nullable Session session) {
         Optional.ofNullable(session)
+                .filter(sess -> sess.get(OAuth2Constants.OAUTH2_ANSWER) != null)
                 .map(sess -> sess.get(OAuth2Constants.OAUTH2_ANSWER).toString())
                 .ifPresent(answer -> keepOnlyFirstOAuthAnswer(session, answer));
     }
