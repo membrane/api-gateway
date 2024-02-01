@@ -24,7 +24,7 @@ public class MemcachedSessionManager extends SessionManager {
     protected String cookiePrefix = UUID.randomUUID().toString().substring(0,8);
     private static final String ID_NAME = "_in_memory_session_id";
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void init(Router router) throws Exception {

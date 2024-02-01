@@ -18,7 +18,7 @@ public class MemcachedOriginalExchangeStore extends OriginalExchangeStore {
 
     private int maxBodySize = 100000;
     private MemcachedConnector connector;
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
