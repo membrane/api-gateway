@@ -45,6 +45,7 @@ import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
+import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
 
 /**
@@ -70,6 +71,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private OAuth2CallbackRequestHandler oAuth2CallbackRequestHandler = new OAuth2CallbackRequestHandler();
     private TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
     private String customHeaderUserPropertyPrefix;
+    private String logoutUrl;
 
     @Override
     public void init() throws Exception {
@@ -106,12 +108,23 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     @Override
     public final Outcome handleRequestInternal(Exchange exc) throws Exception {
+
+        Session session = getSessionManager().getSession(exc);
+
+        if (isLogoutRequest(exc)) {
+            exc.setProperty(SESSION, null);
+
+            exc.setResponse(new Response());
+            exc.getResponse().getHeader().add("Set-Cookie", "id=; expires=Thu, 01 Jan 1970 00:00:00 GMT;");
+
+            return Outcome.CONTINUE;
+        }
+
         if (isFaviconRequest(exc)) {
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
         }
 
-        Session session = getSessionManager().getSession(exc);
         OAuthUtils.simplifyMultipleOAuth2Answers(session);
 
         if (isOAuth2RedirectRequest(exc)) {
@@ -166,6 +179,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         session.remove(OAuthUtils.oa2redictKeyNameInSession(oa2redirect));
 
         doOriginalRequest(exc, originalExchange);
+    }
+
+    private boolean isLogoutRequest(Exchange exc) {
+        return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl);
     }
 
     private boolean isFaviconRequest(Exchange exc) {
@@ -316,5 +333,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setCustomHeaderUserPropertyPrefix(String customHeaderUserPropertyPrefix) {
         this.customHeaderUserPropertyPrefix = customHeaderUserPropertyPrefix;
+    }
+
+    public String getLogoutUrl() {
+        return logoutUrl;
+    }
+
+    @MCAttribute
+    public void setLogoutUrl(String logoutUrl) {
+        this.logoutUrl = logoutUrl;
     }
 }
