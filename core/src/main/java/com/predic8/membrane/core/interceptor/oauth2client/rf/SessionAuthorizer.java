@@ -41,6 +41,14 @@ public class SessionAuthorizer {
         this.auth = auth;
         this.router = router;
         this.statistics = statistics;
+
+        if (skip) {
+            try {
+                this.jwtAuthInterceptor = createJwtAuthInterceptor();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public boolean isSkipUserInfo() {
@@ -49,15 +57,6 @@ public class SessionAuthorizer {
 
     public void setSkipUserInfo(boolean skip) {
         this.skip = skip;
-        if (skip) {
-            try {
-                this.jwtAuthInterceptor = createJwtAuthInterceptor();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            this.jwtAuthInterceptor = null;
-        }
     }
 
     public void authorizeSession(Map<String, Object> userInfo, Session session, AuthorizationService auth) {

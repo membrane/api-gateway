@@ -30,4 +30,19 @@ public class ParamNames {
     public static final String PASSWORD = "password";
     public static final String REFRESH_TOKEN = "refresh_token";
     public static final String ACCESS_TOKEN = "access_token";
+
+    /**
+     * Holds username/e-mail information to streamline the login process
+     */
+    public static final String LOGIN_HINT = "login_hint";
+
+    /**
+     * Hints the social identity provider that should be used for sign-in
+     */
+    public static final String DOMAIN_HINT = "domain_hint";
+
+    /**
+     * ID token as a hint for the auth server
+     */
+    public static final String ID_TOKEN_HINT = "id_token_hint";
 }

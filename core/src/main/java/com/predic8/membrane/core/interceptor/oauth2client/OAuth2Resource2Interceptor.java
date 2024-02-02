@@ -117,6 +117,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             exc.setResponse(new Response());
             exc.getResponse().getHeader().add("Set-Cookie", "id=; expires=Thu, 01 Jan 1970 00:00:00 GMT;");
 
+            // TODO redirect
+
             return Outcome.CONTINUE;
         }
 
