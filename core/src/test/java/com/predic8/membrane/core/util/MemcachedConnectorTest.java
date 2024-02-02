@@ -19,7 +19,7 @@ class MemcachedConnectorTest {
     }
 
     @Test
-    void doesSomething() {
+    void returnValIfNotExisting() {
         try {
             assertNull(connector.getClient().get("gibts_nicht"));
         } catch (TimeoutException | InterruptedException | MemcachedException e) {
