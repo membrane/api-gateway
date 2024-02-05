@@ -18,16 +18,32 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.ssl.PEMSupport;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import org.apache.commons.codec.binary.Base64;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.NumericDate;
+import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.util.List;
+import java.util.UUID;
+
+import static com.predic8.membrane.core.Constants.USERAGENT;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 
 public abstract class AuthorizationService {
     protected Logger log;
@@ -41,6 +57,7 @@ public abstract class AuthorizationService {
     private String clientId;
     @GuardedBy("lock")
     private String clientSecret;
+    private JWSSigner JWSSigner;
     protected String scope;
     private SSLParser sslParser;
     private SSLContext sslContext;
@@ -48,7 +65,7 @@ public abstract class AuthorizationService {
 
     protected boolean supportsDynamicRegistration = false;
 
-    public boolean supportsDynamicRegistration(){
+    public boolean supportsDynamicRegistration() {
         return supportsDynamicRegistration;
     }
 
@@ -56,12 +73,17 @@ public abstract class AuthorizationService {
     public void init(Router router) throws Exception {
         log = LoggerFactory.getLogger(this.getClass().getName());
 
+        if (isUseJWTForClientAuth()) {
+            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getBaseLocation())),
+                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getBaseLocation()));
+        }
+
         setHttpClient(router.getHttpClientFactory().createClient(getHttpClientConfiguration()));
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         this.router = router;
         init();
-        if(!supportsDynamicRegistration())
+        if (!supportsDynamicRegistration())
             checkForClientIdAndSecret();
     }
 
@@ -85,11 +107,11 @@ public abstract class AuthorizationService {
     }
 
     public void dynamicRegistration(List<String> callbackURLs) throws Exception {
-        if(supportsDynamicRegistration())
+        if (supportsDynamicRegistration())
             doDynamicRegistration(callbackURLs);
     }
 
-    protected void checkForClientIdAndSecret(){
+    protected void checkForClientIdAndSecret() {
         synchronized (lock) {
             if (clientId == null)
                 throw new RuntimeException(this.getClass().getSimpleName() + " cannot work without specified clientId");
@@ -141,7 +163,6 @@ public abstract class AuthorizationService {
         }
     }
 
-
     public String getScope() {
         return scope;
     }
@@ -169,7 +190,7 @@ public abstract class AuthorizationService {
         return sslParser;
     }
 
-    @MCChildElement(order=20, allowForeign = true)
+    @MCChildElement(order = 20, allowForeign = true)
     public void setSslParser(SSLParser sslParser) {
         this.sslParser = sslParser;
     }
@@ -182,4 +203,74 @@ public abstract class AuthorizationService {
     public void setUseJWTForClientAuth(boolean useJWTForClientAuth) {
         this.useJWTForClientAuth = useJWTForClientAuth;
     }
+
+    public JWSSigner getJwtKeyCertHandler() {
+        return JWSSigner;
+    }
+
+    public Request.Builder applyAuth(Request.Builder requestBuilder, String body) {
+
+        if (isUseJWTForClientAuth()) {
+            body += "&client_assertion_type=urn:ietf:params:oauth:client-assertion-type:jwt-bearer" + "&client_assertion=" + createClientToken();
+        }
+
+        String clientSecret = getClientSecret();
+        if (clientSecret != null)
+            requestBuilder.header(AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((getClientId() + ":" + clientSecret).getBytes()))).body(body);
+        else requestBuilder.body(body + "&client_id" + getClientId());
+        return requestBuilder;
+    }
+
+    public Response refreshTokenRequest(OAuth2AnswerParameters params) throws Exception {
+        return doRequest(applyAuth(
+                new Request.Builder().post(getTokenEndpoint())
+                        .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
+                        .header(ACCEPT, APPLICATION_JSON)
+                        .header(USER_AGENT, USERAGENT),
+                "grant_type=refresh_token" + "&refresh_token=" + params.getRefreshToken())
+                .buildExchange());
+    }
+
+    public Response requestUserEndpoint(OAuth2AnswerParameters params) throws Exception {
+        return doRequest(new Request.Builder()
+                .get(getUserInfoEndpoint())
+                .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .buildExchange());
+    }
+
+    public boolean idTokenIsValid(String idToken) {
+        //TODO maybe change this to return claims and also save them in the oauth2AnswerParameters
+        try {
+            JwtGenerator.getClaimsFromSignedIdToken(idToken, getIssuer(), getClientId(), getJwksEndpoint(), this);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String createClientToken() {
+        try {
+            String jwtSub = this.getClientId();
+            String jwtAud = this.getTokenEndpoint();
+
+            // see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-certificate-credentials
+            JwtClaims jwtClaims = new JwtClaims();
+            jwtClaims.setSubject(jwtSub);
+            jwtClaims.setAudience(jwtAud);
+            jwtClaims.setIssuer(jwtClaims.getSubject());
+            jwtClaims.setJwtId(UUID.randomUUID().toString());
+            jwtClaims.setIssuedAtToNow();
+            NumericDate expiration = NumericDate.now();
+            expiration.addSeconds(300);
+            jwtClaims.setExpirationTime(expiration);
+            jwtClaims.setNotBeforeMinutesInThePast(2f);
+
+            return JWSSigner.signToCompactSerialization(jwtClaims.toJson());
+        } catch (JoseException | MalformedClaimException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }
