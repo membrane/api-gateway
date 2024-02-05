@@ -104,6 +104,8 @@ public class MemcachedSessionManager extends SessionManager {
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
         return getCookieHeaderFields(exc).stream()
                 .map(HeaderField::getValue)
+                .flatMap(s -> Arrays.stream(s.split(";")))
+                .map(String::trim)
                 .filter(value -> isInvalidCookie(value, validCookie))
                 .toList();
     }
@@ -117,6 +119,19 @@ public class MemcachedSessionManager extends SessionManager {
     protected boolean cookieRenewalNeeded(String originalCookie) {
         return getCachedSession(originalCookie).isPresent();
     }
+
+    @Override
+    public void removeSession(Exchange exc) {
+        getInvalidCookies(exc, UUID.randomUUID().toString()).forEach(key -> {
+            try {
+                client.delete(key);
+            } catch (TimeoutException | InterruptedException | MemcachedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        super.removeSession(exc);
+    }
+
 
     private boolean isInvalidCookie(String cookie, String validCookie) {
         return isOwnedBySessionManager(cookie) && !cookie.contains(validCookie);

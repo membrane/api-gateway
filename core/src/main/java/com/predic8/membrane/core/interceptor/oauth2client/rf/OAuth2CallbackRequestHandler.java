@@ -145,12 +145,12 @@ public class OAuth2CallbackRequestHandler {
 
         Response response = auth.doRequest(e);
 
+        logHelper.handleResponse(e);
+
         if (response.getStatusCode() != 200) {
             response.getBody().read();
             throw new RuntimeException("Authorization server returned " + response.getStatusCode() + ".");
         }
-
-        logHelper.handleResponse(e);
 
         if (!isJson(response)) {
             throw new RuntimeException("Token response is no JSON.");

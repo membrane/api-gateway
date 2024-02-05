@@ -341,6 +341,11 @@ public abstract class SessionManager {
         return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim);
     }
 
+    public void removeSession(Exchange exc) {
+        expireCookies(exc, getInvalidCookies(exc, UUID.randomUUID().toString()))
+                .forEach(cookie -> exc.getResponse().getHeader().add(Header.SET_COOKIE, cookie));
+    }
+
 
     public long getExpiresAfterSeconds() {
         return expiresAfterSeconds;

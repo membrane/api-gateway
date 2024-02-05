@@ -72,6 +72,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
     private String customHeaderUserPropertyPrefix;
     private String logoutUrl;
+    private String afterLogoutUrl;
 
     @Override
     public void init() throws Exception {
@@ -112,14 +113,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Session session = getSessionManager().getSession(exc);
 
         if (isLogoutRequest(exc)) {
+
+            exc.setResponse(Response.redirect(afterLogoutUrl, false).build());
+
+            session.clear();
+            getSessionManager().removeSession(exc);
             exc.setProperty(SESSION, null);
 
-            exc.setResponse(new Response());
-            exc.getResponse().getHeader().add("Set-Cookie", "id=; expires=Thu, 01 Jan 1970 00:00:00 GMT;");
-
-            // TODO redirect
-
-            return Outcome.CONTINUE;
+            return Outcome.RETURN;
         }
 
         if (isFaviconRequest(exc)) {
@@ -344,5 +345,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setLogoutUrl(String logoutUrl) {
         this.logoutUrl = logoutUrl;
+    }
+
+    public String getAfterLogoutUrl() {
+        return afterLogoutUrl;
+    }
+
+    @MCAttribute
+    public void setAfterLogoutUrl(String afterLogoutUrl) {
+        this.afterLogoutUrl = afterLogoutUrl;
     }
 }
