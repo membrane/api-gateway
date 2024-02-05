@@ -207,7 +207,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private Outcome respondWithRedirect(Exchange exc) throws Exception {
         String state = generateNewState();
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc), exc.getRequestURI()), false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()), false).build());
 
         readBodyFromStreamIntoMemory(exc);
 
