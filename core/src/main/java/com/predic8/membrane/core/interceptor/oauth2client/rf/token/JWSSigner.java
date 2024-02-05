@@ -16,13 +16,14 @@ public class JWSSigner {
     private final X509Certificate certificate;
 
     public JWSSigner(Object pemObj, String pemBlock) throws IOException {
-        this.key = switch (pemObj) {
-            case Key k -> k;
-            case KeyPair kp -> kp.getPrivate();
-            default -> throw new IllegalArgumentException("Unsupported PEM type " + pemObj.getClass());
-        };
-
+        this.key = convertKey(pemObj);
         this.certificate = PEMSupport.getInstance().parseCertificate(pemBlock);
+    }
+
+    private Key convertKey(Object pemObj) {
+        if (pemObj instanceof Key k) return k;
+        if (pemObj instanceof KeyPair kp) return kp.getPrivate();
+        throw new IllegalArgumentException("Unsupported PEM type " + pemObj.getClass());
     }
 
     public String generateSignedJWS(JwtClaims claims) throws JoseException {
