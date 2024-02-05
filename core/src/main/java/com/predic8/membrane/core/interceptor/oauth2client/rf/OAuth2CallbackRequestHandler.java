@@ -90,8 +90,13 @@ public class OAuth2CallbackRequestHandler {
                 log.debug("CSRF token match.");
             }
 
+            String tokenEndpoint = auth.getTokenEndpoint();
+            if (session.get("defaultFlow") != null) {
+                tokenEndpoint = tokenEndpoint.replaceAll(session.get("defaultFlow"), session.get("triggerFlow"));
+                session.remove("defaultFlow", "triggerFlow");
+            }
             Map<String, Object> json = exchangeCodeForToken(
-                    publicUrlManager.getPublicURL(exc), params);
+                    tokenEndpoint, publicUrlManager.getPublicURL(exc), params);
 
             if (!json.containsKey("access_token")) {
                 throw new RuntimeException("No access_token received.");
@@ -124,7 +129,7 @@ public class OAuth2CallbackRequestHandler {
         }
     }
 
-    private Map<String, Object> exchangeCodeForToken(String publicUrl, Map<String, String> params) throws Exception {
+    private Map<String, Object> exchangeCodeForToken(String tokenEndpoint, String publicUrl, Map<String, String> params) throws Exception {
 
         String code = params.get("code");
         if (code == null) {
@@ -132,7 +137,7 @@ public class OAuth2CallbackRequestHandler {
         }
 
         Exchange e = auth.applyAuth(new Request.Builder()
-                                .post(auth.getTokenEndpoint())
+                                .post(tokenEndpoint)
                                 .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                                 .header(ACCEPT, APPLICATION_JSON)
                                 .header(USER_AGENT, USERAGENT),

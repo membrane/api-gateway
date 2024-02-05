@@ -45,8 +45,7 @@ import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
-import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION;
-import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION_VALUE_SEPARATOR;
+import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -113,12 +112,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Session session = getSessionManager().getSession(exc);
 
         if (isLogoutRequest(exc)) {
-
             exc.setResponse(Response.redirect(afterLogoutUrl, false).build());
 
-            session.clear();
-            getSessionManager().removeSession(exc);
-            exc.setProperty(SESSION, null);
+            logOutSession(exc);
 
             return Outcome.RETURN;
         }
@@ -188,6 +184,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl);
     }
 
+    public void logOutSession(Exchange exc) {
+        Session session = getSessionManager().getSession(exc);
+
+        session.clear();
+        getSessionManager().removeSession(exc);
+        exc.getProperties().remove(SESSION);
+        exc.getProperties().remove(SESSION_COOKIE_ORIGINAL);
+    }
+
     private boolean isFaviconRequest(Exchange exc) {
         return exc.getRequestURI().startsWith("/favicon.ico");
     }
@@ -205,7 +210,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
     }
 
-    private Outcome respondWithRedirect(Exchange exc) throws Exception {
+    public Outcome respondWithRedirect(Exchange exc) throws Exception {
         String state = generateNewState();
 
         exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()), false).build());
