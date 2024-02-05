@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
+import com.bornium.http.util.UriUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -38,6 +39,9 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_HOST;
@@ -72,6 +76,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private String customHeaderUserPropertyPrefix;
     private String logoutUrl;
     private String afterLogoutUrl;
+    private List<LoginParameter> loginParameters = new ArrayList<>();
 
     @Override
     public void init() throws Exception {
@@ -213,7 +218,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public Outcome respondWithRedirect(Exchange exc) throws Exception {
         String state = generateNewState();
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()), false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()) + copyLoginParameters(exc), false).build());
 
         readBodyFromStreamIntoMemory(exc);
 
@@ -226,6 +231,35 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         session.put(ParamNames.STATE, state);
 
         return Outcome.RETURN;
+    }
+
+    private String copyLoginParameters(Exchange exc) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        if (loginParameters.size() == 0)
+            return sb.toString();
+
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        loginParameters.forEach(lp -> {
+            try {
+                if (lp.getValue() != null) {
+                    sb.append("&");
+                    sb.append(lp.getName());
+                    sb.append("=");
+                    sb.append(UriUtil.encode(lp.getValue()));
+                } else {
+                    if (params.containsKey(lp.getName())) {
+                        String encoded = UriUtil.encode(params.get(lp.getName()));
+                        sb.append("&");
+                        sb.append(lp.getName());
+                        sb.append("=");
+                        sb.append(encoded);
+                    }
+                }
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return sb.toString();
     }
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
@@ -359,5 +393,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setAfterLogoutUrl(String afterLogoutUrl) {
         this.afterLogoutUrl = afterLogoutUrl;
+    }
+
+    public List<LoginParameter> getLoginParameters() {
+        return loginParameters;
+    }
+
+    @MCChildElement(order = 25)
+    public void setLoginParameters(List<LoginParameter> loginParameters) {
+        this.loginParameters = loginParameters;
     }
 }
