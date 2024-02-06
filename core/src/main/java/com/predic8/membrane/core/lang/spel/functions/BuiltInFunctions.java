@@ -41,7 +41,8 @@ public class BuiltInFunctions {
 
     public static boolean isLoggedIn(String beanName, ExchangeEvaluationContext ctx) {
         try {
-            return ((AbstractInterceptorWithSession) requireNonNull(ctx.getBeanResolver()).resolve(ctx, beanName))
+
+            return ((AbstractInterceptorWithSession) requireNonNull(ctx.getExchange().getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
                     .getSessionManager().getSession(ctx.getExchange()).isVerified();
         } catch (Exception e) {
             log.info("Failed to resolve bean with name '" + beanName + "'");
