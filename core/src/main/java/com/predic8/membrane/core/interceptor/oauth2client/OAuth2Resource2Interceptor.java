@@ -27,6 +27,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
@@ -44,8 +45,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_HOST;
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
+import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
@@ -77,6 +78,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private String logoutUrl;
     private String afterLogoutUrl;
     private List<LoginParameter> loginParameters = new ArrayList<>();
+    private boolean appendAccessTokenToRequest;
 
     @Override
     public void init() throws Exception {
@@ -150,12 +152,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         if (session.isVerified()) {
             applyBackendAuthorization(exc, session);
             statistics.successfulRequest();
+            appendAccessTokenToRequest(exc);
             return Outcome.CONTINUE;
         }
 
         if (handleRequest(exc, session)) {
             if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
                 exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
+                appendAccessTokenToRequest(exc);
                 return Outcome.CONTINUE;
             }
 
@@ -267,7 +271,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private boolean handleRequest(Exchange exc, Session session) throws Exception {
-        String path = uriFactory.create(exc.getDestinations().getFirst()).getPath();
+        String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
 
         if (path == null) {
             return false;
@@ -292,6 +296,17 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         exc.setOriginalRequestUri(originalRequestUri);
         exc.setOriginalHostHeader(xForwardedHost);
+    }
+
+    private void appendAccessTokenToRequest(Exchange exc) {
+        if (!appendAccessTokenToRequest)
+            return;
+        if (exc.getProperty(OAUTH2) == null)
+            return;
+        OAuth2AnswerParameters params = (OAuth2AnswerParameters) exc.getProperty(OAUTH2);
+        if (params.getAccessToken() == null)
+            return;
+        exc.getRequest().getHeader().setValue(AUTHORIZATION, "Bearer " + params.getAccessToken());
     }
 
     @Override
@@ -402,5 +417,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCChildElement(order = 25)
     public void setLoginParameters(List<LoginParameter> loginParameters) {
         this.loginParameters = loginParameters;
+    }
+
+    public boolean isAppendAccessTokenToRequest() {
+        return appendAccessTokenToRequest;
+    }
+
+    @MCAttribute
+    public void setAppendAccessTokenToRequest(boolean appendAccessTokenToRequest) {
+        this.appendAccessTokenToRequest = appendAccessTokenToRequest;
     }
 }
