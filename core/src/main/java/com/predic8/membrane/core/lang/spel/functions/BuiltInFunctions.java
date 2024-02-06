@@ -13,11 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import org.apache.http.auth.AUTH;
 
 import java.util.List;
 import java.util.function.Predicate;
 
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static java.util.Optional.ofNullable;
 
@@ -30,6 +33,11 @@ import static java.util.Optional.ofNullable;
  * The ExchangeEvaluationContext provides a specialized Membrane SpEL context, enabling access to the Exchange and other relevant data.
  */
 public class BuiltInFunctions {
+
+    public static boolean isBearerAuthorization(ExchangeEvaluationContext ctx) {
+        return ctx.getExchange().getRequest().getHeader().contains(AUTHORIZATION)
+                && ctx.getExchange().getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
+    }
 
     public static boolean hasScope(String scope, ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.contains(scope));
