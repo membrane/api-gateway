@@ -13,10 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
-import org.apache.http.auth.AUTH;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +39,6 @@ public class BuiltInFunctions {
 
     public static boolean isLoggedIn(String beanName, ExchangeEvaluationContext ctx) {
         try {
-
             return ((AbstractInterceptorWithSession) requireNonNull(ctx.getExchange().getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
                     .getSessionManager().getSession(ctx.getExchange()).isVerified();
         } catch (Exception e) {
