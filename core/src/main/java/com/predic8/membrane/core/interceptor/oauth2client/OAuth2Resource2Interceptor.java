@@ -72,8 +72,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private final AccessTokenRefresher accessTokenRefresher = new AccessTokenRefresher();
     private PublicUrlManager publicUrlManager = new PublicUrlManager();
     private final SessionAuthorizer sessionAuthorizer = new SessionAuthorizer();
-    private OAuth2CallbackRequestHandler oAuth2CallbackRequestHandler = new OAuth2CallbackRequestHandler();
-    private TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
+    private final OAuth2CallbackRequestHandler oAuth2CallbackRequestHandler = new OAuth2CallbackRequestHandler();
+    private final TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
     private String customHeaderUserPropertyPrefix;
     private String logoutUrl;
     private String afterLogoutUrl;
@@ -239,7 +239,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private String copyLoginParameters(Exchange exc) throws Exception {
         StringBuilder sb = new StringBuilder();
-        if (loginParameters.size() == 0)
+        if (loginParameters.isEmpty())
             return sb.toString();
 
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
