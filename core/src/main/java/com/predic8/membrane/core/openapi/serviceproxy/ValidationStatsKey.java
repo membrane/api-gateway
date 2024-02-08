@@ -36,9 +36,9 @@ public class ValidationStatsKey {
     ValidationStatsKey(ValidationContext vc) {
         method = vc.getMethod();
         path = vc.getPath();
-        uriTemplate = vc.getUriTemplate();
-        schemaType = vc.getSchemaType();
-        complexType = vc.getComplexType();
+        uriTemplate = valueOrEmptyString(vc.getUriTemplate());
+        schemaType = valueOrEmptyString(vc.getSchemaType());
+        complexType = valueOrEmptyString(vc.getComplexType());
         validatedEntityType = vc.getValidatedEntityType().name();
         validatedEntity = vc.getValidatedEntity();
         jsonpointer = vc.getJSONpointer();
@@ -52,6 +52,10 @@ public class ValidationStatsKey {
             .put("entity", validatedEntity)
             .put("jsonpointer", jsonpointer)
             .build();
+    }
+
+    private static String valueOrEmptyString(String v) {
+        return v == null ? "" : v;
     }
 
 
