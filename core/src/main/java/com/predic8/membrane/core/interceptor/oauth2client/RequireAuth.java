@@ -9,7 +9,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.jwt.Jwks;
 import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
-import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctions;
 
 import static com.predic8.membrane.core.http.Header.*;
 
@@ -36,7 +35,10 @@ public class RequireAuth extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (!isBearer(exc.getRequest().getHeader())) {
-            oauth2.handleRequest(exc);
+            var outcome = oauth2.handleRequest(exc);
+            if (outcome != Outcome.CONTINUE) {
+                return outcome;
+            }
         }
 
         return jwtAuth.handleRequest(exc);
