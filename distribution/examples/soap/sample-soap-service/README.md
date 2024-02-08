@@ -1,24 +1,25 @@
-# Sample Soap Service
+# Sample Soap Service: CitiesService
 
-This guide demonstrates how to use the Sample SOAP Service.
+This plugin offers a sample SOAP service that can be used in tutorials and for testing purposes.
 
-## Running the Sample 
+## Starting the Service
 
-1. Go to the `examples/soap/sampleSoapService` directory.
-2. Run `service-proxy.sh` or `service-proxy.bat to start the API Gateway.
-3. You can now access the service at http://localhost:2000.
+1. Go to the `examples/soap/sample-soap-service` directory.
+2. Run `service-proxy.sh` or `service-proxy.bat` to start the API Gateway.
 
 ## Using the Service 
 ### Get the WSDL
-To obtain the Web Service Description Language (WSDL) file for this service, use the following command:
-`curl --request GET 'http://localhost:2000?wsdl'`
+
+Unter `http://localhost:2000?wsdl` you can retrieve the Web Service Description Language (WSDL).
+
+`curl http://localhost:2000?wsdl`
 
 ### Get City Information
-You can retrieve information about a city by making a POST request to the service. Use the following curl command as an example:
+You can retrieve information about a city using the following curl:
 ```
-curl --location --request POST 'http://localhost:2000' \
---header 'Content-Type: application/xml' \
---data-raw '
+curl http://localhost:2000 \
+-H 'Content-Type: text/xml' \
+-d '
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/city-service">
   <s:Body>
     <cs:getCity>
