@@ -16,20 +16,21 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.openapi.validators.*;
 
 import java.util.*;
 
 public class ValidationStatsKey {
 
-    public String method;
-    public String path;
-    public String uriTemplate;
-    public String schemaType;
-    public String complexType;
-    public String validatedEntityType;
-    public String validatedEntity;
-    public String jsonpointer;
+    private final String method;
+    private final String path;
+    private final String uriTemplate;
+    private final String schemaType;
+    private final String complexType;
+    private final String validatedEntityType;
+    private final String validatedEntity;
+    private final String jsonpointer;
     private final Map<String, String> labels;
 
     ValidationStatsKey(ValidationContext vc) {
@@ -41,18 +42,16 @@ public class ValidationStatsKey {
         validatedEntityType = vc.getValidatedEntityType().name();
         validatedEntity = vc.getValidatedEntity();
         jsonpointer = vc.getJSONpointer();
-
-        // TODO
-        Map<String,String> labels = new HashMap<>();
-        labels.put("method",method);
-        labels.put("path",path);
-        labels.put("uritemplate",uriTemplate);
-        labels.put("schematype",schemaType);
-        labels.put("complextype",complexType);
-        labels.put("entitytype",validatedEntityType);
-        labels.put("entity",validatedEntity);
-        labels.put("jsonpointer",jsonpointer);
-        this.labels = Collections.unmodifiableMap(labels);
+        labels = new ImmutableMap.Builder<String, String>()
+            .put("method", method)
+            .put("path", path)
+            .put("uritemplate", uriTemplate)
+            .put("schematype", schemaType)
+            .put("complextype", complexType)
+            .put("entitytype", validatedEntityType)
+            .put("entity", validatedEntity)
+            .put("jsonpointer", jsonpointer)
+            .build();
     }
 
 
@@ -72,7 +71,7 @@ public class ValidationStatsKey {
         if (!Objects.equals(uriTemplate, that.uriTemplate)) return false;
         if (!Objects.equals(schemaType, that.schemaType)) return false;
         if (!Objects.equals(complexType, that.complexType)) return false;
-        if (!validatedEntityType.equals(that.validatedEntityType)) return false;
+        if (!Objects.equals(validatedEntityType, that.validatedEntityType)) return false;
         if (!Objects.equals(validatedEntity, that.validatedEntity))
             return false;
         return Objects.equals(jsonpointer, that.jsonpointer);
@@ -85,7 +84,7 @@ public class ValidationStatsKey {
         result = 31 * result + (uriTemplate != null ? uriTemplate.hashCode() : 0);
         result = 31 * result + (schemaType != null ? schemaType.hashCode() : 0);
         result = 31 * result + (complexType != null ? complexType.hashCode() : 0);
-        result = 31 * result + validatedEntityType.hashCode();
+        result = 31 * result + (validatedEntityType != null ? validatedEntityType.hashCode() : 0);
         result = 31 * result + (validatedEntity != null ? validatedEntity.hashCode() : 0);
         result = 31 * result + (jsonpointer != null ? jsonpointer.hashCode() : 0);
         return result;

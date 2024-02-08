@@ -41,16 +41,12 @@ public class AuthEndpointProcessor extends EndpointProcessor {
 
         SessionManager.Session s = authServer.getSessionManager().getSession(exc); // TODO: replace with getOrCreateSession() and collapse AuthWithSession and AuthWithoutSession
 
-        if(s != null){
-            exc.setResponse(new AuthWithSessionRequest(authServer,exc).validateRequest());
+        if (s != null) {
+            exc.setResponse(new AuthWithSessionRequest(authServer, exc).validateRequest());
             return Outcome.RETURN;
         }
         //if(s == null || (!s.isPreAuthorized() && !s.isAuthorized())) {
-        exc.setResponse(new AuthWithoutSessionRequest(authServer,exc).validateRequest());
+        exc.setResponse(new AuthWithoutSessionRequest(authServer, exc).validateRequest());
         return Outcome.RETURN;
-    }
-
-    private String getState(Exchange exc) throws Exception {
-        return URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc, ERROR).get(ParamNames.STATE);
     }
 }

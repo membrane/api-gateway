@@ -1,0 +1,36 @@
+# 1. Access denied. Not Authenticated. No API key was provided on a resource that requires it.
+GET / HTTP/1.1
+Host: localhost:2000
+###
+
+# 2. Access denied. Not Authorized. The API key provided was invalid.
+GET / HTTP/1.1
+Host: localhost:2000
+X-Api-Key: 98765
+###
+
+# 3. Access granted. A valid API key was provided, we can access this endpoint.
+GET / HTTP/1.1
+Host: localhost:2000
+X-Api-Key: P8MBR
+###
+
+# 4. We can provide the key through query parameters as well.
+GET /?api-key=P8MBR HTTP/1.1
+Host: localhost:2000
+###
+
+# 5. Branch depending on scopes
+#    See demo-keys.txt
+GET / HTTP/1.1
+Host: localhost:3000
+X-Key: 123456789
+###
+
+GET / HTTP/1.1
+Host: localhost:3000
+X-Key: key_321_abc
+###
+
+GET / HTTP/1.1
+Host: localhost:3000

@@ -19,10 +19,7 @@ import com.predic8.membrane.examples.config.ProxiesXMLOfflineTest;
 import com.predic8.membrane.examples.config.ProxiesXMLSecurityTest;
 import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
-import com.predic8.membrane.examples.tests.CBRTest;
-import com.predic8.membrane.examples.tests.GroovyTest;
-import com.predic8.membrane.examples.tests.JavascriptTest;
-import com.predic8.membrane.examples.tests.JsonProtectionTest;
+import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleTest;
@@ -84,6 +81,8 @@ import org.junit.platform.suite.api.Suite;
         XMLTemplateTest.class,
 
         JsonProtectionTest.class,
+
+        APIKeyTest.class
 
         //DefaultConfigAdminConsoleTest.class
 })

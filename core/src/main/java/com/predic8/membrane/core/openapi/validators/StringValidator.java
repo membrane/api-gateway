@@ -99,7 +99,7 @@ public class StringValidator implements IJSONSchemaValidator {
                     }
                 }
                 default:
-                    log.warn("Unkown string format of {}.", schema.getFormat());
+                    log.warn("Unknown string format of {}.", schema.getFormat());
             }
         }
 

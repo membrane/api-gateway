@@ -39,10 +39,12 @@ public class ApiKeyFileStoreTest {
     }};
     private static final Stream<String> LINES = Stream.of(
             "# These are demo-keys.",
+            "",
             "5XF27:finance,internal",
             "73D29: accounting, management",
             "89D5C: internal,",
             "NMB3B: demo, test # This is an inline comment.",
+            "",
             "L62NA",
             "G62NB:"
     );
@@ -80,6 +82,7 @@ public class ApiKeyFileStoreTest {
         assertThrows(UnauthorizedApiKeyException.class, () -> store.getScopes("5AF27"));
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void inlineComment() throws UnauthorizedApiKeyException {assertFalse(store.getScopes("NMB3B").get().contains("This is an inline comment."));}
 
@@ -102,5 +105,11 @@ public class ApiKeyFileStoreTest {
         store.setLocation(requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource(path)).getPath());
         //noinspection DataFlowIssue
         store.onApplicationEvent(null);
+    }
+
+    @Test
+    void extractKeyBeforeHash() {
+        assertEquals("Test", ApiKeyFileStore.extractKeyBeforeHash("Test# Demo # Test2"));
+        assertEquals("", ApiKeyFileStore.extractKeyBeforeHash("# Full Line Comment"));
     }
 }

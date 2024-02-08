@@ -14,10 +14,14 @@
 package com.predic8.membrane.core.interceptor.session;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.ACCESS_TOKEN;
+import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OAUTH2_ANSWER;
 
 public class Session {
 
@@ -119,6 +123,30 @@ public class Session {
             setAuthorization(AuthorizationLevel.ANONYMOUS);
             return AuthorizationLevel.ANONYMOUS;
         }
+    }
+
+    public Object getOAuth2Answer() {
+        return get(OAUTH2_ANSWER);
+    }
+
+    public void setOAuth2Answer(String answer) {
+        put(OAUTH2_ANSWER, answer);
+    }
+
+    public OAuth2AnswerParameters getOAuth2AnswerParameters() {
+        try {
+            return OAuth2AnswerParameters.deserialize(get(OAUTH2_ANSWER));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean hasOAuth2Answer() {
+        return getOAuth2Answer() != null;
+    }
+
+    public String getAccessToken() {
+        return get(ACCESS_TOKEN);
     }
 
     @JsonIgnore

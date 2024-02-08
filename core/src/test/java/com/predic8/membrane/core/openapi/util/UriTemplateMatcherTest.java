@@ -77,6 +77,51 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
+    public void matchNoSlashAtEnd() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo/").size());
+    }
+
+    @Test
+    public void matchUriTrailingSlashWithParams() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo/?x=1").size());
+    }
+
+    @Test
+    public void matchNoTrailingSlashesWithParams() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo?x=1").size());
+    }
+
+    @Test
+    public void matchTemplateTrailingSlash() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo/", "/foo").size());
+    }
+
+    @Test
+    public void matchUriAndTemplateTrailingSlash() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo/", "/foo/").size());
+    }
+
+    @Test
+    public void matchSingleSlashes() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/", "/").size());
+    }
+
+    @Test
+    public void matchSingleTemplateSlash() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/", "").size());
+    }
+
+    @Test
+    public void matchSingleUriSlash() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("", "/").size());
+    }
+
+    @Test
+    public void matchNoSlashes() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("", "").size());
+    }
+
+    @Test
     public void match() throws PathDoesNotMatchException {
         assertEquals(Map.of("fid", "7"), matcher.match("/foo/{fid}", "/foo/7"));
         assertEquals(Map.ofEntries(entry("cid","42"), entry("coid","abc")), matcher.match("/customer/{cid}/contracts/{coid}", "/customer/42/contracts/abc"));

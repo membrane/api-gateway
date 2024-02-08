@@ -27,6 +27,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import org.jose4j.jwt.JwtClaims;
@@ -75,7 +77,7 @@ public class OAuth2ResourceTest {
         return "http://"+serverHost + ":" + clientPort;
     }
 
-    private final int limit = 1000;
+    private final int limit = 500;
     private ObjectMapper om = new ObjectMapper();
 
     Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = handleRedirect(cookieManager(httpClient()));
@@ -83,12 +85,16 @@ public class OAuth2ResourceTest {
     @BeforeEach
     public void init() throws IOException {
         mockAuthServer = new HttpRouter();
+        mockAuthServer.getTransport().setBacklog(10000);
+        mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
         mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy());
         mockAuthServer.start();
 
         oauth2Resource = new HttpRouter();
+        oauth2Resource.getTransport().setBacklog(10000);
+        oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.setHotDeploy(false);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
         oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
@@ -451,8 +457,12 @@ public class OAuth2ResourceTest {
     }
 
     private Function<Exchange, Exchange> httpClient() {
+        HttpClientConfiguration configuration = new HttpClientConfiguration();
+        ConnectionConfiguration connection = new ConnectionConfiguration();
+        connection.setTimeout(10000);
+        configuration.setConnection(connection);
         return new Function<>() {
-            HttpClient httpClient = new HttpClient();
+            HttpClient httpClient = new HttpClient(configuration);
 
             @Override
             public Exchange apply(Exchange exchange) {

@@ -32,6 +32,8 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import java.util.List;
 import java.util.function.Function;
 
+import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
+
 @MCElement(name = "oauth2PermissionChecker")
 public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
 
@@ -95,7 +97,7 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
 
         @Override
         public Object evaluate(Exchange exc) {
-            Object oauth2prop = exc.getProperty("oauth2");
+            Object oauth2prop = exc.getProperty(OAUTH2);
             if (oauth2prop == null)
                 return null;
             return ((OAuth2AnswerParameters)oauth2prop).getUserinfo().get("groups");
