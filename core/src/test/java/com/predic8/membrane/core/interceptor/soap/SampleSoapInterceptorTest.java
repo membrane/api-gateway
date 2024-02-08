@@ -23,7 +23,6 @@ import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -47,7 +46,7 @@ public class SampleSoapInterceptorTest {
     @Test
     public void notFoundTest() throws Exception {
         exc.setRequest(new Request.Builder().contentType(MimeType.TEXT_XML).post("/foo")
-                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrongRequest.xml")))).build());
+                .body(IOUtils.toByteArray(Objects.requireNonNull(this.getClass().getResourceAsStream("/soap-sample/wrong-request.xml")))).build());
         service.handleRequest(exc);
         assertEquals(SampleSoapServiceInterceptor.getSoapFault("Resource Not Found", "404", "Cannot parse SOAP message. Request should contain e.g. <name>Bonn</name>"), exc.getResponse().getBody().toString());
         // System.out.println(exc.getResponse().getBody().toString());
@@ -108,17 +107,17 @@ public class SampleSoapInterceptorTest {
 
     @Test
     public void validRequest1Test() throws Exception {
-        testValidRequest("soapRequest-Bonn.xml", "Germany", "327000");
+        testValidRequest("soap-request-bonn.xml", "Germany", "327000");
     }
 
     @Test
     public void validRequest2Test() throws Exception {
-        testValidRequest("soapRequest-London.xml", "England", "8980000");
+        testValidRequest("soap-request-london.xml", "England", "8980000");
     }
 
     @Test
     public void validRequest3Test() throws Exception {
-        testValidRequest("soapRequest-NewYork.xml", "USA", "8460000");
+        testValidRequest("soap-request-new-york.xml", "USA", "8460000");
     }
 
     private boolean compareXmlStrings(String xml, String country, String population) {
