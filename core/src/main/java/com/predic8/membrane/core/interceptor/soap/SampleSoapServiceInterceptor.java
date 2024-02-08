@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -61,7 +62,10 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private Response createWSDLResponse(Exchange exc) throws XMLStreamException {
-        return ok().body(setWsdlServer(getResourceAsStream(this,"/wsdl/city.wsdl"),exc)).build();
+        return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
+                   .body(setWsdlServer(
+                           getResourceAsStream(this,"/wsdl/city.wsdl"),exc)
+                   ).build();
     }
 
 
