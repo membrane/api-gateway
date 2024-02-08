@@ -25,6 +25,7 @@ import org.slf4j.*;
 import javax.annotation.*;
 import java.io.*;
 import java.lang.ref.*;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -48,6 +49,7 @@ public class HttpTransport extends Transport {
 	private int socketTimeout = 30000;
 	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
+	private int backlog = 50;
 
 	private final Map<Integer, Map<IpPort, HttpEndpointListener>> portListenerMapping = new HashMap<>();
 	private final List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<>();
@@ -279,4 +281,17 @@ public class HttpTransport extends Transport {
 		this.forceSocketCloseOnHotDeployAfter = forceSocketCloseOnHotDeployAfter;
 	}
 
+	public int getBacklog() {
+		return backlog;
+	}
+
+	/**
+	 * @description The backlog value passed to {@link java.net.ServerSocket#ServerSocket(int, int, InetAddress)}. The
+	 * maximum length of the queue of incoming connections.
+	 * @default 50
+	 */
+	@MCAttribute
+	public void setBacklog(int backlog) {
+		this.backlog = backlog;
+	}
 }

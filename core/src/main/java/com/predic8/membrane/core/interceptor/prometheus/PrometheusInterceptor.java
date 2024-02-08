@@ -230,10 +230,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
                 if (le.equals("SUM") || le.equals("COUNT"))
                     return;
 
-                buildBucketLine(sb, rule.getName(), le, count, name);
+                buildBucketLine(sb, rule.getName(), code, le, count, name);
             });
-            buildBucketLine(sb, rule.getName(), name + "_sum", tt.get("SUM"));
-            buildBucketLine(sb, rule.getName(), name + "_count", tt.get("COUNT"));
+            buildBucketLine(sb, rule.getName(), code, name + "_sum", tt.get("SUM"));
+            buildBucketLine(sb, rule.getName(), code,name + "_count", tt.get("COUNT"));
         }));
     }
 
@@ -267,7 +267,20 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         sb.append("\n");
     }
 
-    private void buildBucketLine(StringBuilder sb, String ruleName, String le, long valueCount, String infix) {
+    private void buildBucketLine(StringBuilder sb, String ruleName, int code, String label, long value) {
+        String prometheusName = prometheusCompatibleName("membrane_" + label);
+
+        sb.append(prometheusName);
+        sb.append("{rule=\"");
+        sb.append(prometheusCompatibleName(ruleName));
+        sb.append("\",code=\"");
+        sb.append(code);
+        sb.append("\"} ");
+        sb.append(value);
+        sb.append("\n");
+    }
+
+    private void buildBucketLine(StringBuilder sb, String ruleName, int code, String le, long valueCount, String infix) {
         String prometheusName = prometheusCompatibleName("membrane_" + infix + "_bucket");
         if (sb.length() == 0) {
             sb.append("# TYPE ");
@@ -278,6 +291,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         sb.append(prometheusName);
         sb.append("{rule=\"");
         sb.append(prometheusCompatibleName(ruleName));
+        sb.append("\",code=\"");
+        sb.append(code);
         sb.append("\",le=\"");
         sb.append(le);
         sb.append("\"} ");

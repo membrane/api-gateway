@@ -57,11 +57,11 @@ public class ApiKeysInterceptorTest {
 
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));
-        akiWithProp.setRequire(true);
         akiWithProp.setStores(of(store));
 
         akiWithoutProp = new ApiKeysInterceptor();
         akiWithoutProp.setExtractors(of(ahe));
+        akiWithoutProp.setRequired(false);
         akiWithoutProp.setStores(of(store));
 
         akiWithTwoStores = new ApiKeysInterceptor();

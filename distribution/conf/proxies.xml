@@ -6,7 +6,13 @@
 
     <router>
         <api port="2000">
-            <sampleSoapService />
+            <apiKey>
+                <keyFileStore location="../../keys.txt"/>
+                <headerExtractor name="api"/>
+                <queryParamExtractor name="api"/>
+            </apiKey>
+            <template>bla</template>
+            <return/>
         </api>
 
     </router>

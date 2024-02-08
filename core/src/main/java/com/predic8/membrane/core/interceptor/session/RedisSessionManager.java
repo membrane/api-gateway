@@ -108,8 +108,10 @@ public class RedisSessionManager extends SessionManager{
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
         return getCookieHeaderFields(exc).stream()
                 .map(HeaderField::getValue)
+                .flatMap(s -> Arrays.stream(s.split(";")))
+                .map(String::trim)
                 .filter(value -> value.startsWith(cookieNamePrefix)).filter(value -> !value.contains(validCookie))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -124,6 +126,16 @@ public class RedisSessionManager extends SessionManager{
         try (Jedis jedis = connector.getJedisWithDb()) {
             return !jedis.get(originalCookie).equals("nil");
         }
+    }
+
+    @Override
+    public void removeSession(Exchange exc) {
+        getInvalidCookies(exc, UUID.randomUUID().toString()).forEach(key -> {
+            try (Jedis jedis = connector.getJedisWithDb()) {
+                jedis.del(key);
+            }
+        });
+        super.removeSession(exc);
     }
 
     @SuppressWarnings("unused")
