@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *  Copyright 2024 predic8 GmbH, www.predic8.com
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,61 +16,46 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import java.io.*;
-import java.net.*;
-import java.nio.charset.*;
-import java.util.*;
-import java.util.regex.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
 
-import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
-import static com.predic8.membrane.core.openapi.util.UriUtil.trimTrailingSlash;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.regex.Pattern.compile;
 
 public class UriTemplateMatcher {
 
-    private  static final Pattern pathParameterNamePattern = Pattern.compile("\\{(.*?)}");
+    public static final String TEMPLATE_PARAM_MATCH = "\\{()}";
+    public static final String TEMPLATE_PARAM_MATCH = "\\{([^/]+)}";
+    public static final String URI_PARAM_MATCH = "(?<$1>[^/]+)";
 
     /**
-     *
      * @return Map of Parameters. If the path does not match null is returned.
      */
-    public Map<String,String> match(String template, String uri) throws PathDoesNotMatchException {
-        final Matcher matcher = Pattern.compile(escapeSlash(prepareRegex(trimTrailingSlash(template)))).matcher(trimTrailingSlash(trimQueryString(uri)));
+    public Map<String, String> match(String template, String uri) throws PathDoesNotMatchException {
+        Map<String, String> params = new HashMap<>();
+        String normalizedTemplate = normalizePath(template);
+        Matcher matcher = compile(prepareTemplate(normalizedTemplate)).matcher(normalizePath(uri));
 
-        final List<String> parameterNames = getPathParameterNames(template);
-
-        Map<String,String> pathParameters = new HashMap<>();
-
-        while (matcher.find()) {
-            for (int i = 1; i <= matcher.groupCount(); i++) {
-                pathParameters.put(parameterNames.get(i-1), matcher.group(i));
-            }
-        }
-
-        if (!matcher.matches())
+        if (!matcher.find()) {
             throw new PathDoesNotMatchException();
-
-        return pathParameters;
-    }
-
-    public String prepareRegex(String uriTemplate) {
-        return uriTemplate.replaceAll("\\{(.*?)}","(.*)");
-    }
-
-    public String escapeSlash(String s) {
-        return s.replaceAll("/","\\\\/");
-    }
-
-
-    public List<String> getPathParameterNames(String uriTemplate) {
-        final Matcher matcher = pathParameterNamePattern.matcher(uriTemplate);
-
-        List<String> variables = new ArrayList<>();
-        while (matcher.find()) {
-            for (int i = 1; i <= matcher.groupCount(); i++) {
-                variables.add(matcher.group(i));
-            }
         }
-        return variables;
+
+        for (int i = 1; i <= matcher.groupCount(); i++) {
+            System.out.println("matcher = " + matcher.group(i));
+            String key = ""+i;
+            String value = matcher.group(i);
+            params.put(key, value);
+        }
+
+        return params;
+    }
+
+    static String prepareTemplate(String template) {
+        return template.replaceAll(TEMPLATE_PARAM_MATCH, URI_PARAM_MATCH);
+    }
+
+    static String normalizePath(String path) {
+        String normalizedPath = path.split("\\?")[0];
+        return normalizedPath.endsWith("/") ? normalizedPath : normalizedPath + "/";
     }
 }

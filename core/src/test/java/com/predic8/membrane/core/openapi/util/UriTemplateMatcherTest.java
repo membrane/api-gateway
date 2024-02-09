@@ -19,9 +19,9 @@ package com.predic8.membrane.core.openapi.util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.prepareTemplate;
 import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,26 +35,14 @@ public class UriTemplateMatcherTest {
         matcher = new UriTemplateMatcher();
     }
 
-
-    @Test
-    public void escapeSlash() {
-        assertEquals("a\\/b\\/c", matcher.escapeSlash("a/b/c"));
-        assertEquals("a\\/\\/b", matcher.escapeSlash("a//b"));
-    }
-
-    @Test
-    public void getVariables() {
-        assertEquals(List.of("fid","bid"),matcher.getPathParameterNames("foo{fid}bar{bid}"));
-    }
-
-    @Test
-    public void prepareRegex() {
-        assertEquals("foo(.*)bar(.*)", matcher.prepareRegex("foo{fid}bar{bid}"));
-    }
-
     @Test
     public void simpleMatch() throws PathDoesNotMatchException {
         assertEquals(0,matcher.match("/foo", "/foo").size());
+    }
+
+    @Test
+    public void prepareRegexTest() {
+        assertEquals("/foo/(?<id1>[^/]+)/(?<id2>[^/]+)", prepareTemplate("/foo/{id1}/{id2}"));
     }
 
     @Test
@@ -101,16 +89,40 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
-    public void matchUriWithTwoParamsAgainstOneParam() throws PathDoesNotMatchException {
+    public void matchUriAndTemplateWithFourParams() throws PathDoesNotMatchException {
+        assertEquals(4,matcher.match("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d").size());
+    }
+
+    @Test
+    public void matchUriAndTemplateWithFourParamsWithTrailingSlash() throws PathDoesNotMatchException {
+        assertEquals(4,matcher.match("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d/").size());
+    }
+
+    @Test
+    public void matchUriWithTwoParamsAgainstOneParam() {
         assertThrows(PathDoesNotMatchException.class, () -> {
             matcher.match("/foo/{id1}/{id2}", "/foo/a");
         });
     }
 
     @Test
-    public void matchUriWithOneParamsAgainstTwoParam() throws PathDoesNotMatchException {
+    public void matchUriWithThreeParamsAgainstOneParam() {
+        assertThrows(PathDoesNotMatchException.class, () -> {
+            matcher.match("/foo/{id1}/{id2}/{id3}", "/foo/a");
+        });
+    }
+
+    @Test
+    public void matchUriWithOneParamsAgainstTwoParam() {
         assertThrows(PathDoesNotMatchException.class, () -> {
             matcher.match("/foo/{id1}", "/foo/a/b");
+        });
+    }
+
+    @Test
+    public void matchUriWithOneParamsAgainstThreeParam() {
+        assertThrows(PathDoesNotMatchException.class, () -> {
+            matcher.match("/foo/{id1}", "/foo/a/b/c");
         });
     }
 
