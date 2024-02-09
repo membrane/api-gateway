@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.prepareTemplate;
 import static java.util.Map.entry;
@@ -36,46 +37,37 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
-    public void simpleMatch() throws PathDoesNotMatchException {
+    public void simple() throws PathDoesNotMatchException {
         assertEquals(0,matcher.match("/foo", "/foo").size());
     }
 
     @Test
-    public void prepareRegexTest() {
+    public void prepareRegex() {
         assertEquals("/foo/(?<id1>[^/]+)/(?<id2>[^/]+)", prepareTemplate("/foo/{id1}/{id2}"));
     }
 
     @Test
     public void simpleNoneMatch() {
-        try {
+        assertThrows(PathDoesNotMatchException.class, () -> {
             matcher.match("/foo", "/bar");
-            fail();
-        } catch (PathDoesNotMatchException e) {
-        }
+        });
     }
 
     @Test
     public void noneMatch() {
-        try {
+        assertThrows(PathDoesNotMatchException.class, () -> {
             matcher.match("/foo/{fid}", "/bar/7");
-            fail();
-        } catch (PathDoesNotMatchException e) {
-        }
+        });
+    }
+
+    @Test
+    public void simpleOneParam() throws PathDoesNotMatchException {
+        assertEquals(1,matcher.match("/foo/{id}", "/foo/7").size());
     }
 
     @Test
     public void matchNoSlashAtEnd() throws PathDoesNotMatchException {
         assertEquals(0,matcher.match("/foo", "/foo/").size());
-    }
-
-    @Test
-    public void matchUriTrailingSlashWithParams() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo", "/foo/?x=1").size());
-    }
-
-    @Test
-    public void matchNoTrailingSlashesWithParams() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo", "/foo?x=1").size());
     }
 
     @Test
@@ -89,13 +81,23 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
-    public void matchUriTrailingSlashAndNoTemplateSlash() throws PathDoesNotMatchException {
-        assertEquals(0,matcher.match("/foo", "/foo/").size());
+    public void matchUriTrailingSlashWithParams() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo/?x=1").size());
+    }
+
+    @Test
+    public void matchNoTrailingSlashesWithParams() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo?x=1").size());
     }
 
     @Test
     public void matchUriAndTemplateWithFourParams() throws PathDoesNotMatchException {
-        assertEquals(4,matcher.match("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d").size());
+        Map<String, String> match = matcher.match("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d");
+        assertEquals(4, match.size());
+        assertEquals("a", match.get("id1"));
+        assertEquals("b", match.get("id2"));
+        assertEquals("c", match.get("id3"));
+        assertEquals("d", match.get("id4"));
     }
 
     @Test
@@ -164,4 +166,33 @@ public class UriTemplateMatcherTest {
         assertEquals(Map.of("fid", "7"), matcher.match("/foo/{fid}", "/foo/7"));
         assertEquals(Map.ofEntries(entry("cid","42"), entry("coid","abc")), matcher.match("/customer/{cid}/contracts/{coid}", "/customer/42/contracts/abc"));
     }
+
+    @Test
+    void getNameMatcher() {
+        Matcher m = UriTemplateMatcher.getNameMatcher("/foo/{id}/");
+        assertTrue(m.find());
+        assertEquals("id",m.group(1));
+    }
+
+    @Test
+    void getNameMatcherTwoParameters() {
+        Matcher m = UriTemplateMatcher.getNameMatcher("/foo/{id1}/{id2}");
+        assertTrue(m.find());
+        assertEquals("id1",m.group(1));
+        assertTrue(m.find());
+        assertEquals("id2",m.group(1));
+        assertFalse(m.find());
+    }
+
+    @Test
+    public void exoticParameterNames() throws PathDoesNotMatchException {
+        assertEquals(4,matcher.match("/foo/{id1}/{Id2}/{i_d3}/{id4}", "/foo/1/2/3/4/").size());
+    }
+
+    @Test
+    public void compile() {
+        Pattern p = Pattern.compile("/foo/(?<id1>[^/]+)/(?<Id2>[^/]+)/(?<id3>[^/]+)/(?<id4>[^/]+)/");
+        System.out.println("p = " + p);
+    }
+
 }

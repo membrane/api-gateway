@@ -13,45 +13,63 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.util;
 
+import org.jetbrains.annotations.*;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
+import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
 
 public class UriTemplateMatcher {
 
-    public static final String PARAM_NAME_REGEX = "\\{(\\w+)}";
-    public static final String TEMPLATE_PARAM_MATCH = "\\{([^/]+)}";
+    public static final String PARAM_NAME_REGEX = "\\{([\\w_]+?)}";
     public static final String URI_PARAM_MATCH = "(?<$1>[^/]+)";
+    private static final Pattern PARAM_NAME_REGEX_PATTERN = compile(PARAM_NAME_REGEX);
 
     /**
+     * Problem:
+     *  - How to handle parameter names containing _, -, ...
+     *
      * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
     public Map<String, String> match(String template, String uri) throws PathDoesNotMatchException {
-        Map<String, String> params = new HashMap<>();
-        String normalizedTemplate = normalizePath(template);
-        Matcher nameMatcher = compile(PARAM_NAME_REGEX).matcher(normalizedTemplate);
-        Matcher paramMatcher = compile(prepareTemplate(normalizedTemplate)).matcher(normalizePath(uri));
 
+        String normalizedTemplate = normalizePath(template);
+
+        // Is needed to get the parameter names
+        Matcher nameMatcher = getNameMatcher(normalizedTemplate);
+        String preparedTemplate = prepareTemplate(normalizedTemplate);
+
+        // Is needed to get the parameters by name
+        Matcher paramMatcher = compile(preparedTemplate).matcher(normalizePath(uri));
+
+        // Checks with URI matches template
         if (!paramMatcher.matches()) {
             throw new PathDoesNotMatchException();
         }
 
+        Map<String, String> params = new HashMap<>();
         while (nameMatcher.find()) {
-            String paramName = nameMatcher.group(1);
+            String paramName = nameMatcher.group(1); // Get next name like 'id'
             params.put(paramName, paramMatcher.group(paramName));
         }
 
         return params;
     }
 
+    @NotNull
+    public static Matcher getNameMatcher(String normalizedTemplate) {
+        return PARAM_NAME_REGEX_PATTERN.matcher(normalizedTemplate);
+    }
+
     static String prepareTemplate(String template) {
-        return template.replaceAll(TEMPLATE_PARAM_MATCH, URI_PARAM_MATCH);
+        return template.replaceAll(PARAM_NAME_REGEX, URI_PARAM_MATCH);
     }
 
     static String normalizePath(String path) {
         String normalizedPath = path.split("\\?")[0];
+//        normalizedPath = normalizedPath.replace("_","\\_");
         return normalizedPath.endsWith("/") ? normalizedPath : normalizedPath + "/";
     }
 }
