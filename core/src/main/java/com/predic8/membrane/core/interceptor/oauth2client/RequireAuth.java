@@ -3,12 +3,15 @@ package com.predic8.membrane.core.interceptor.oauth2client;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.jwt.Jwks;
 import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
+
+import java.util.ArrayList;
 
 import static com.predic8.membrane.core.http.Header.*;
 
@@ -21,15 +24,18 @@ public class RequireAuth extends AbstractInterceptor {
     private JwtAuthInterceptor jwtAuth;
 
     @Override
-    public void init() throws Exception {
-        super.init();
+    public void init(Router router) throws Exception {
+        super.init(router);
 
         var jwks = new Jwks();
+        jwks.setJwks(new ArrayList<>());
         jwks.setJwksUris(oauth2.getAuthService().getJwksEndpoint());
 
         jwtAuth = new JwtAuthInterceptor();
-        jwtAuth.setExpectedAud(expectedAud);
         jwtAuth.setJwks(jwks);
+        jwtAuth.setExpectedAud(expectedAud);
+
+        jwtAuth.init(router);
     }
 
     @Override
