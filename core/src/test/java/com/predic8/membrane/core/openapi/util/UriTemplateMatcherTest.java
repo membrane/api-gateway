@@ -23,8 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Map.entry;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("CatchMayIgnoreException")
 public class UriTemplateMatcherTest {
@@ -99,6 +98,28 @@ public class UriTemplateMatcherTest {
     @Test
     public void matchUriAndTemplateTrailingSlash() throws PathDoesNotMatchException {
         assertEquals(0,matcher.match("/foo/", "/foo/").size());
+    }
+
+    @Test
+    public void matchUriWithTwoParamsAgainstOneParam() throws PathDoesNotMatchException {
+        assertThrows(PathDoesNotMatchException.class, () -> {
+            matcher.match("/foo/{id1}/{id2}", "/foo/a");
+        });
+    }
+
+    @Test
+    public void matchUriWithOneParamsAgainstTwoParam() throws PathDoesNotMatchException {
+        assertThrows(PathDoesNotMatchException.class, () -> {
+            matcher.match("/foo/{id1}", "/foo/a/b");
+        });
+    }
+
+    @Test
+    public void matchUriWithTwoParams() throws PathDoesNotMatchException {
+        Map<String, String> match = matcher.match("/foo/{id1}/{id2}", "/foo/a/b");
+        assertEquals(2, match.size());
+        assertTrue(match.containsKey("id1"));
+        assertTrue(match.containsKey("id2"));
     }
 
     @Test
