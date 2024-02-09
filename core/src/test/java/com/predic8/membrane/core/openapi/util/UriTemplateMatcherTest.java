@@ -89,6 +89,11 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
+    public void matchUriTrailingSlashAndNoTemplateSlash() throws PathDoesNotMatchException {
+        assertEquals(0,matcher.match("/foo", "/foo/").size());
+    }
+
+    @Test
     public void matchUriAndTemplateWithFourParams() throws PathDoesNotMatchException {
         assertEquals(4,matcher.match("/foo/{id1}/{id2}/{id3}/{id4}", "/foo/a/b/c/d").size());
     }
