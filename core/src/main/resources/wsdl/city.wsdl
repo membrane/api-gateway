@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="https://predic8.de/cities"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://predic8.de/cities" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://predic8.de/cities">
+            <xsd:element name="getCity">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="country" type="xsd:string" />
+                        <xsd:element name="population" type="xsd:integer" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="City">
+        <wsdl:part name="getCity" element="tns:getCity"/>
+    </wsdl:message>
+    <wsdl:message name="CityResponse">
+        <wsdl:part name="getCityResponse" element="tns:getCityResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="CityPort">
+        <wsdl:operation name="getCity">
+            <wsdl:input message="tns:City"/>
+            <wsdl:output message="tns:CityResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CitySoapBinding" type="tns:CityPort">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getCity">
+            <soap:operation soapAction="https://predic8.de/cities"/>
+            <wsdl:input>
+                <soap:body use="literal" namespace="https://predic8.de/cities"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" namespace="https://predic8.de/cities"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="CityService">
+        <wsdl:port name="CityPort" binding="tns:CitySoapBinding">
+            <soap:address location="http://localhost:2000/cities"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
