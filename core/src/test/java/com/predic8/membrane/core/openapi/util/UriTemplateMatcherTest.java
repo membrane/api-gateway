@@ -43,7 +43,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void prepareRegex() {
-        assertEquals("/foo/(?<id1>[^/]+)/(?<id2>[^/]+)", prepareTemplate("/foo/{id1}/{id2}"));
+        assertEquals("/foo/([^/]+)/([^/]+)", prepareTemplate("/foo/{id1}/{id2}"));
     }
 
     @Test
@@ -185,12 +185,6 @@ public class UriTemplateMatcherTest {
     @Test
     public void exoticParameterNames() throws PathDoesNotMatchException {
         assertEquals(4,matcher.match("/foo/{i_d1}/{Id-2}/{id%3}/{id<>4}", "/foo/1/2/3/4/").size());
-    }
-
-    @Test
-    public void compile() {
-        Pattern p = Pattern.compile("/foo/(?<id1>[^/]+)/(?<Id2>[^/]+)/(?<id3>[^/]+)/(?<id4>[^/]+)/");
-        System.out.println("p = " + p);
     }
 
     @Test
