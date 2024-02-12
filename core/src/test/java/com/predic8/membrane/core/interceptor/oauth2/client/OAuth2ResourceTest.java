@@ -11,26 +11,32 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
+import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
+import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
+import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
+import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctions;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
+import org.intellij.lang.annotations.Language;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -58,29 +64,29 @@ import java.util.function.Function;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled
-public class OAuth2ResourceTest {
+public abstract class OAuth2ResourceTest {
 
     Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
 
     int serverPort = 1337;
     private String serverHost = "localhost";
     private int clientPort = 31337;
-    private HttpRouter mockAuthServer;
+    protected HttpRouter mockAuthServer;
     private HttpRouter oauth2Resource;
 
     private String getServerAddress(){
         return "http://"+serverHost + ":" + serverPort;
     }
 
-    private String getClientAddress(){
+    protected String getClientAddress(){
         return "http://"+serverHost + ":" + clientPort;
     }
 
     private final int limit = 500;
-    private ObjectMapper om = new ObjectMapper();
+    protected ObjectMapper om = new ObjectMapper();
 
-    Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = handleRedirect(cookieManager(httpClient()));
+    Function<Exchange, Exchange> cookieHandlingHttpClient = cookieManager(httpClient());
+    Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = handleRedirect(cookieHandlingHttpClient);
 
     @BeforeEach
     public void init() throws IOException {
@@ -176,91 +182,6 @@ public class OAuth2ResourceTest {
         }
     }
 
-    @Test
-    public void testStateMerge() throws Exception {
-        int limit = 2;
-        CountDownLatch cdl = new CountDownLatch(limit);
-
-        AtomicInteger goodTests = new AtomicInteger();
-
-        mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                cdl.countDown();
-                cdl.await();
-
-                return super.handleRequest(exc);
-            }
-        });
-
-        List<Thread> threadList = new ArrayList<>();
-        for(int i = 0; i < limit; i++) {
-            int j = i;
-            Thread thread = new Thread(() -> {
-                try {
-
-                    Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-                    LOG.debug("getting " + excCallResource.getDestinations().get(0));
-                    excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
-                    Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-                    assertEquals("/init" + j, body2.get("path"));
-
-                    goodTests.incrementAndGet();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-            thread.setName("init getter " + i);
-            thread.start();
-            threadList.add(thread);
-        }
-
-        for (Thread thread : threadList)
-            thread.join();
-
-        LOG.debug("joined");
-
-        LOG.debug("cookie count = " + countCookies());
-
-        int j = limit+1;
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-        LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-        assertEquals("/init" + j, body2.get("path"));
-
-        assertEquals(limit, goodTests.get());
-
-        assertEquals(1, countCookies());
-    }
-
-    @Test
-    public void testConsecutiveCalls() throws Exception {
-        AtomicInteger authCounter = new AtomicInteger(0);
-
-        mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                if (exc.getRequest().getUri().startsWith("/auth"))
-                    authCounter.incrementAndGet();
-
-                return Outcome.CONTINUE;
-            }
-        });
-
-        for (int j = 0; j < 2; j++) {
-            Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-            LOG.debug("getting " + excCallResource.getDestinations().get(0));
-            excCallResource = cookieHandlingRedirectingHttpClient.apply(excCallResource);
-            Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
-            assertEquals("/init" + j, body2.get("path"));
-        }
-
-        // expect the auth server to be hit exactly once, second call should have had a cookie
-        assertEquals(1, authCounter.get());
-
-        assertEquals(1, countCookies());
-    }
 
     @Test
     public void testStateAttack() throws Exception {
@@ -329,32 +250,51 @@ public class OAuth2ResourceTest {
         assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("/init1"));
     }
 
-    private int countCookies() {
-        JwtConsumer jwtc = new JwtConsumerBuilder()
-                .setSkipSignatureVerification()
-                .setExpectedIssuer("http://localhost:31337/")
-                .build();
+    @Test
+    public void logout() throws Exception {
+        cookieHandlingRedirectingHttpClient.apply(new Request.Builder()
+                .get(getClientAddress() + "/init").buildExchange());
 
-        int count = 0;
+        var ili = cookieHandlingRedirectingHttpClient.apply(new Request.Builder().get(getClientAddress() + "/is-logged-in").buildExchange());
 
-        for (Map.Entry<String, Map<String, String>> c : cookie.entrySet()) {
-            for (Map.Entry<String, String> d : c.getValue().entrySet()) {
-                LOG.debug(c.getKey() + " " + d.getKey() + " " + d.getValue());
-                try {
-                    JwtClaims jwtClaims = jwtc.processToClaims(d.getKey());
-                    for (Map.Entry<String, Object> entry : jwtClaims.getClaimsMap().entrySet()) {
-                        LOG.debug(" " + entry.getKey() + ": " + entry.getValue());
-                    }
-                    LOG.debug("mine");
-                    count++;
-                } catch (InvalidJwtException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
 
-        return count;
+        // call to /logout uses cookieHandlingHttpClient: *NOT* following the redirect (which would auto-login again)
+        cookieHandlingHttpClient.apply(new Request.Builder()
+                .get(getClientAddress() + "/logout").buildExchange());
+
+        ili = cookieHandlingRedirectingHttpClient.apply(new Request.Builder().get(getClientAddress() + "/is-logged-in").buildExchange());
+
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
     }
+
+//    @Test
+//    public void requestAuth() throws Exception {
+//        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+//        cookieHandlingRedirectingHttpClient.apply(exc);
+//
+//        System.out.println();
+//    }
+
+    @Test
+    public void loginParams() throws Exception {
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/init?login_hint=def&illegal=true").buildExchange();
+        cookieHandlingHttpClient.apply(exc);
+
+        String location = exc.getResponse().getHeader().getFirstValue("Location");
+
+        URI jUri = new URIFactory().create(location);
+        String q = jUri.getRawQuery();
+
+        var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+
+        assertTrue(params.containsKey("foo"));
+        assertEquals("bar", params.get("foo"));
+        assertTrue(params.containsKey("login_hint"));
+        assertEquals("def", params.get("login_hint"));
+        assertFalse(params.containsKey("illegal"));
+    }
+
 
     Map<String, Map<String, String>> cookie = new HashMap<>();
 
@@ -538,6 +478,7 @@ public class OAuth2ResourceTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort),null,99999);
 
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
+        configureSessionManager(oAuth2ResourceInterceptor);
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(getServerAddress());
         auth.setClientId("2343243242");
@@ -545,7 +486,37 @@ public class OAuth2ResourceTest {
         auth.setScope("openid profile");
         oAuth2ResourceInterceptor.setAuthService(auth);
 
+        oAuth2ResourceInterceptor.setLogoutUrl("/logout");
 
+        var withOutValue = new LoginParameter();
+        withOutValue.setName("login_hint");
+
+        var withValue = new LoginParameter();
+        withValue.setName("foo");
+        withValue.setValue("bar");
+
+        oAuth2ResourceInterceptor.setLoginParameters(List.of(
+                withOutValue,
+                withValue
+        ));
+
+        var aud = new RequireAuth();
+        aud.setExpectedAud("asdf");
+        aud.setOauth2(oAuth2ResourceInterceptor);
+
+
+        sp.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                if (!exc.getRequest().getUri().contains("is-logged-in"))
+                    return Outcome.CONTINUE;
+
+                boolean isLoggedIn = oAuth2ResourceInterceptor.getSessionManager().getSession(exc).isVerified();
+
+                exc.setResponse(Response.ok("{\"success\":"+isLoggedIn+"}").header(Header.CONTENT_TYPE, APPLICATION_JSON).build());
+                return Outcome.RETURN;
+            }
+        });
         sp.getInterceptors().add(oAuth2ResourceInterceptor);
         sp.getInterceptors().add(new AbstractInterceptor(){
             @Override
@@ -565,4 +536,6 @@ public class OAuth2ResourceTest {
         });
         return sp;
     }
+
+    protected abstract void configureSessionManager(OAuth2Resource2Interceptor oauth2);
 }

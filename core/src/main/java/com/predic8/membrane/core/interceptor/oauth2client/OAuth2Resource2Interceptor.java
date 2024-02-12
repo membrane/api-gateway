@@ -76,7 +76,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private final TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
     private String customHeaderUserPropertyPrefix;
     private String logoutUrl;
-    private String afterLogoutUrl;
+    private String afterLogoutUrl = "/";
     private List<LoginParameter> loginParameters = new ArrayList<>();
     private boolean appendAccessTokenToRequest;
 
