@@ -57,6 +57,13 @@ public class UriTemplateMatcherTest {
     }
 
     @Test
+    void bad() throws PathDoesNotMatchException {
+        Map<String, String> match = matcher.match("aaa{id}bbb", "aaa7bbb");
+        assertEquals(1, match.size());
+        assertEquals("7", match.get("id"));
+    }
+
+    @Test
     public void simpleOneParam() throws PathDoesNotMatchException {
         Map<String, String> match = matcher.match("/foo/{id}", "/foo/7");
         assertEquals(1, match.size());
@@ -105,30 +112,22 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void matchUriWithTwoParamsAgainstOneParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> {
-            matcher.match("/foo/{id1}/{id2}", "/foo/a");
-        });
+        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}/{id2}", "/foo/a"));
     }
 
     @Test
     public void matchUriWithThreeParamsAgainstOneParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> {
-            matcher.match("/foo/{id1}/{id2}/{id3}", "/foo/a");
-        });
+        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}/{id2}/{id3}", "/foo/a"));
     }
 
     @Test
     public void matchUriWithOneParamsAgainstTwoParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> {
-            matcher.match("/foo/{id1}", "/foo/a/b");
-        });
+        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}", "/foo/a/b"));
     }
 
     @Test
     public void matchUriWithOneParamsAgainstThreeParam() {
-        assertThrows(PathDoesNotMatchException.class, () -> {
-            matcher.match("/foo/{id1}", "/foo/a/b/c");
-        });
+        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{id1}", "/foo/a/b/c"));
     }
 
     @Test

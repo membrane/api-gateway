@@ -17,11 +17,10 @@ import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.regex.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.stream.*;
 
-import static java.util.regex.Pattern.compile;
-import static java.util.stream.Collectors.toMap;
+import static java.util.regex.Pattern.*;
+import static java.util.stream.Collectors.*;
 
 public class UriTemplateMatcher {
 
@@ -36,12 +35,13 @@ public class UriTemplateMatcher {
      * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
     public Map<String, String> match(String template, String uri) throws PathDoesNotMatchException {
-        List<String> names = getParameterNames(template);
         Matcher parameters = getTemplateMatcher(template, uri);
 
         if (!parameters.matches()) {
             throw new PathDoesNotMatchException();
         }
+
+        List<String> names = getParameterNames(template);
 
         return IntStream.range(0, names.size())
                 .boxed()
@@ -52,16 +52,16 @@ public class UriTemplateMatcher {
     }
 
     static List<String> getParameterNames(String uriTemplate) {
-        return getNameMatcher(normalizePath(uriTemplate)).results().map(matchResult -> matchResult.group(1)).toList();
+        return getNameMatcher(normalizePath(uriTemplate)).results().map(r -> r.group(1)).toList();
     }
 
     @NotNull
-    public static Matcher getTemplateMatcher(String template, String path) {
+    private static Matcher getTemplateMatcher(String template, String path) {
         return compile(prepareTemplate(normalizePath(template))).matcher(normalizePath(path));
     }
 
     @NotNull
-    public static Matcher getNameMatcher(String normalizedTemplate) {
+    static Matcher getNameMatcher(String normalizedTemplate) {
         return PARAM_NAME_REGEX_PATTERN.matcher(normalizedTemplate);
     }
 
