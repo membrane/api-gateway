@@ -69,7 +69,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
                          }
                         """)
         .when()
-                .post(LOCALHOST_2000 + "/shop/v2/products/")
+                .post(LOCALHOST_2000 + "/shop/v2/products")
         .then().assertThat()
                 .statusCode(201)
                 .contentType(APPLICATION_JSON)

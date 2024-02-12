@@ -111,6 +111,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         this.required = required;
     }
 
+    public boolean isRequired() {
+        return required;
+    }
+
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
         this.stores.addAll(stores);
