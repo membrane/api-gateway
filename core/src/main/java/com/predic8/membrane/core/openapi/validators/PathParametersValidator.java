@@ -41,7 +41,7 @@ public class PathParametersValidator {
         schemaParameters.stream().filter(this::isPathParameter).forEach(parameter -> {
             String value = req.getPathParameters().get(parameter.getName());
             if (value == null) {
-                throw new RuntimeException("Should not happen!");
+                throw new RuntimeException("Should not happen! No null for parameter " + parameter);
             }
             errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
                     .entity(parameter.getName())

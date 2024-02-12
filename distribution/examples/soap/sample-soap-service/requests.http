@@ -1,0 +1,14 @@
+GET http://localhost:2000?WSDL
+
+###
+
+POST  http://localhost:2000
+Content-Type: text/xml
+
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/city-service">
+  <s:Body>
+    <cs:getCity>
+      <name>London</name>
+    </cs:getCity>
+  </s:Body>
+</s:Envelope>

@@ -21,7 +21,9 @@ import org.junit.jupiter.api.Test;
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
+import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,7 +34,7 @@ public class BuiltInFunctionsTest {
     @BeforeAll
     static void init() throws URISyntaxException {
         var exc = Request.get("foo").buildExchange();
-        exc.setProperty(SCOPES, List.of("demo", "test"));
+        exc.setProperty(SCOPES, of("demo", "test"));
         ctx = new ExchangeEvaluationContext(exc);
     }
 
@@ -43,24 +45,45 @@ public class BuiltInFunctionsTest {
 
     @Test
     public void testHasScopes() {
-        assertTrue(BuiltInFunctions.hasScopes(ctx));
+        assertTrue(BuiltInFunctions.hasScope(ctx));
     }
 
     @Test
     public void testContainsScopes() {
-        assertTrue(BuiltInFunctions.hasScopes(List.of("demo", "test"), ctx));
+        assertTrue(BuiltInFunctions.hasScope(of("demo", "test"), ctx));
     }
 
     @Test
     public void testNotContainsScopes() {
-        assertFalse(BuiltInFunctions.hasScopes(List.of("foo"), ctx));
+        assertFalse(BuiltInFunctions.hasScope(of("foo"), ctx));
     }
 
     @Test
     public void testNullScopes() throws URISyntaxException {
         var exc2 = Request.get("foo").buildExchange();
         ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
-        assertFalse(BuiltInFunctions.hasScopes(ctxWithoutScopes));
-        assertFalse(BuiltInFunctions.hasScopes(List.of("foo"), ctxWithoutScopes));
+        assertFalse(BuiltInFunctions.hasScope(ctxWithoutScopes));
+        assertFalse(BuiltInFunctions.hasScope(of("foo"), ctxWithoutScopes));
+    }
+
+    @Test
+    public void testHasBearerAuth() throws URISyntaxException {
+        var exc2 = Request.get("foo").header(AUTHORIZATION, "Bearer 8w458934pj5u9843").buildExchange();
+        ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
+        assertTrue(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
+    }
+
+    @Test
+    public void testHasOtherAuth() throws URISyntaxException {
+        var exc2 = Request.get("foo").header(AUTHORIZATION, "Other 8w458934pj5u9843").buildExchange();
+        ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
+        assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
+    }
+
+    @Test
+    public void testHasNoAuth() throws URISyntaxException {
+        var exc2 = Request.get("foo").buildExchange();
+        ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
+        assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
     }
 }

@@ -20,7 +20,8 @@ GET /?api-key=P8MBR HTTP/1.1
 Host: localhost:2000
 ###
 
-# 5. Using non required keys, we can branch requests depending on which scopes were provided.
+# 5. Branch depending on scopes
+#    See demo-keys.txt
 GET / HTTP/1.1
 Host: localhost:3000
 X-Key: 123456789
@@ -29,3 +30,7 @@ X-Key: 123456789
 GET / HTTP/1.1
 Host: localhost:3000
 X-Key: key_321_abc
+###
+
+GET / HTTP/1.1
+Host: localhost:3000

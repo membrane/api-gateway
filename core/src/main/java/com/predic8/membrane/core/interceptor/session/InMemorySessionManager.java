@@ -86,6 +86,8 @@ public class InMemorySessionManager extends SessionManager {
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
         return getCookieHeaderFields(exc).stream()
                 .map(HeaderField::getValue)
+                .flatMap(s -> Arrays.stream(s.split(";")))
+                .map(String::trim)
                 .filter(value -> value.startsWith(cookieNamePrefix)).filter(value -> !value.contains(validCookie))
                 .toList();
     }
@@ -103,4 +105,11 @@ public class InMemorySessionManager extends SessionManager {
             return sessions.getIfPresent(originalCookie) != null;
         }
     }
+
+    @Override
+    public void removeSession(Exchange exc) {
+        getInvalidCookies(exc, UUID.randomUUID().toString()).forEach(key -> sessions.invalidate(key));
+        super.removeSession(exc);
+    }
+
 }

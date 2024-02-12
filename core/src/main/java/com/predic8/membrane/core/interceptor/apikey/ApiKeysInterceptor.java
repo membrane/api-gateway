@@ -42,7 +42,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public static final String TITLE_4XX = "Access Denied";
     private final List<ApiKeyStore> stores = new ArrayList<>();
     private final List<ApiKeyExtractor> extractors = new ArrayList<>();
-    private boolean require = false;
+    private boolean required = true;
 
     @Override
     public void init() {
@@ -53,7 +53,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         var key = getKey(exc);
 
-        if (require && key.isEmpty()) {
+        if (required && key.isEmpty()) {
             problemJsonResponse(exc, 401, TYPE_4XX, TITLE_4XX, "Tried to access apiKey protected resource without key.");
             return RETURN;
         }
@@ -62,7 +62,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
             try {
                 addScopes(exc, getScopes(key.get()));
             } catch (UnauthorizedApiKeyException e) {
-                if (!require) {return CONTINUE;}
+                if (!required) {return CONTINUE;}
                 problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid.");
                 return RETURN;
             }
@@ -107,8 +107,12 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     @SuppressWarnings("SameParameterValue")
     @MCAttribute
-    public void setRequire(boolean require) {
-        this.require = require;
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
+    public boolean isRequired() {
+        return required;
     }
 
     @MCChildElement(allowForeign = true)

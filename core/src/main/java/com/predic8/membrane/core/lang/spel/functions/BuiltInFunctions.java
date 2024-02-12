@@ -13,12 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import org.apache.http.auth.AUTH;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.Predicate;
 
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -30,17 +37,34 @@ import static java.util.Optional.ofNullable;
  * The ExchangeEvaluationContext provides a specialized Membrane SpEL context, enabling access to the Exchange and other relevant data.
  */
 public class BuiltInFunctions {
+    private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class.getName());
+
+    public static boolean isLoggedIn(String beanName, ExchangeEvaluationContext ctx) {
+        try {
+
+            return ((AbstractInterceptorWithSession) requireNonNull(ctx.getExchange().getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
+                    .getSessionManager().getSession(ctx.getExchange()).isVerified();
+        } catch (Exception e) {
+            log.info("Failed to resolve bean with name '" + beanName + "'");
+            return false;
+        }
+    }
+
+    public static boolean isBearerAuthorization(ExchangeEvaluationContext ctx) {
+        return ctx.getExchange().getRequest().getHeader().contains(AUTHORIZATION)
+                && ctx.getExchange().getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
+    }
 
     public static boolean hasScope(String scope, ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.contains(scope));
     }
 
-    public static boolean hasScopes(ExchangeEvaluationContext ctx) {
+    public static boolean hasScope(ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> !it.isEmpty());
     }
 
     @SuppressWarnings({"SlowListContainsAll"})
-    public static boolean hasScopes(List<String> scopes, ExchangeEvaluationContext ctx) {
+    public static boolean hasScope(List<String> scopes, ExchangeEvaluationContext ctx) {
         return scopesContainsByPredicate(ctx, it -> it.containsAll(scopes));
     }
 

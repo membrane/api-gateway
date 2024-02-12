@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.RuleKey;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -284,6 +285,7 @@ public abstract class SessionManager {
                 .collect(Collectors.toMap(cookie -> cookie, this::cookieValueToAttributes, (c1, c2) -> c1));
     }
 
+    @NotNull
     public Session getSession(Exchange exc) {
         Optional<Session> sessionFromExchange = getSessionFromExchange(exc);
         if(sessionFromExchange.isPresent()) // have to do it like this and not with .orElse because getSessionFromManager would be called unnecessarily (overwriting session property)
@@ -337,6 +339,11 @@ public abstract class SessionManager {
 
     protected Stream<String> getCookies(Exchange exc) {
         return exc.getRequest().getHeader().getValues(new HeaderName(COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream).map(String::trim);
+    }
+
+    public void removeSession(Exchange exc) {
+        expireCookies(exc, getInvalidCookies(exc, UUID.randomUUID().toString()))
+                .forEach(cookie -> exc.getResponse().getHeader().add(Header.SET_COOKIE, cookie));
     }
 
 

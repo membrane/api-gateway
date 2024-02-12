@@ -33,6 +33,7 @@ import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.xml.transform.OutputKeys.*;
 
 
 /**
@@ -92,10 +93,10 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
             tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             Transformer transformer = tf.newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-            transformer.setOutputProperty(OutputKeys.INDENT, "no");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty(OMIT_XML_DECLARATION, "no");
+            transformer.setOutputProperty(METHOD, "xml");
+            transformer.setOutputProperty(INDENT, "no");
+            transformer.setOutputProperty(ENCODING, "UTF-8");
             transformer.transform(new DOMSource(doc), new StreamResult(sw));
             return sw.toString();
         } catch (Exception ex) {

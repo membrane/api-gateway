@@ -73,7 +73,7 @@ public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
             .get("http://localhost:3000")
         .then().assertThat()
             .statusCode(200)
-            .body(equalTo("Normal Area"));
+            .body(equalTo("Only for finance or accounting!"));
     }
 
     @Test
@@ -84,6 +84,6 @@ public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
             .get("http://localhost:3000")
         .then().assertThat()
             .statusCode(200)
-            .body(equalTo("Secret Area!"));
+            .body(equalTo("Only for admins!"));
     }
 }

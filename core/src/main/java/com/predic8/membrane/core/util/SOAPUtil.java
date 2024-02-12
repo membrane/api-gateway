@@ -94,17 +94,12 @@ public class SOAPUtil {
 
 					String expected;
 					switch (state) {
-					case 0:
-						expected = "Envelope";
-						break;
-					case 1:
-						expected = "Body";
-						break;
-					case 2:
-						expected = "Fault";
-						break;
-					default:
-						return false;
+						case 0 -> expected = "Envelope";
+						case 1 -> expected = "Body";
+						case 2 -> expected = "Fault";
+						default -> {
+							return false;
+						}
 					}
 					if (expected.equals(name.getLocalPart())) {
 						if (state == 2)
