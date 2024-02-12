@@ -15,8 +15,7 @@ package com.predic8.membrane.core.openapi.util;
 
 import org.jetbrains.annotations.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.*;
 
 import static java.util.regex.Pattern.compile;
@@ -58,6 +57,10 @@ public class UriTemplateMatcher {
         return params;
     }
 
+    static List<String> getParameterNames(String uriTemplate) {
+        return null;
+    }
+
     @NotNull
     public static Matcher getNameMatcher(String normalizedTemplate) {
         return PARAM_NAME_REGEX_PATTERN.matcher(normalizedTemplate);
@@ -69,7 +72,6 @@ public class UriTemplateMatcher {
 
     static String normalizePath(String path) {
         String normalizedPath = path.split("\\?")[0];
-//        normalizedPath = normalizedPath.replace("_","\\_");
         return normalizedPath.endsWith("/") ? normalizedPath : normalizedPath + "/";
     }
 }

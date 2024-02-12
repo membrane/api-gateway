@@ -19,14 +19,13 @@ package com.predic8.membrane.core.openapi.util;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
+import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.prepareTemplate;
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
 import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("CatchMayIgnoreException")
 public class UriTemplateMatcherTest {
 
     UriTemplateMatcher matcher;
@@ -48,21 +47,19 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void simpleNoneMatch() {
-        assertThrows(PathDoesNotMatchException.class, () -> {
-            matcher.match("/foo", "/bar");
-        });
+        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo", "/bar"));
     }
 
     @Test
     public void noneMatch() {
-        assertThrows(PathDoesNotMatchException.class, () -> {
-            matcher.match("/foo/{fid}", "/bar/7");
-        });
+        assertThrows(PathDoesNotMatchException.class, () -> matcher.match("/foo/{fid}", "/bar/7"));
     }
 
     @Test
     public void simpleOneParam() throws PathDoesNotMatchException {
-        assertEquals(1,matcher.match("/foo/{id}", "/foo/7").size());
+        Map<String, String> match = matcher.match("/foo/{id}", "/foo/7");
+        assertEquals(1, match.size());
+        assertEquals("7", match.get("id"));
     }
 
     @Test
@@ -186,7 +183,7 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void exoticParameterNames() throws PathDoesNotMatchException {
-        assertEquals(4,matcher.match("/foo/{id1}/{Id2}/{i_d3}/{id4}", "/foo/1/2/3/4/").size());
+        assertEquals(4,matcher.match("/foo/{id1}/{Id2}/{id3}/{id4}", "/foo/1/2/3/4/").size());
     }
 
     @Test
@@ -195,4 +192,28 @@ public class UriTemplateMatcherTest {
         System.out.println("p = " + p);
     }
 
+    @Test
+    void normalizePathEmpty() {
+       assertEquals("/",   normalizePath(""));
+    }
+
+    @Test
+    void normalizePathSlash() {
+        assertEquals("/",   normalizePath("/"));
+    }
+
+    @Test
+    void normalizePathSimple() {
+        assertEquals("/foo/",   normalizePath("/foo"));
+    }
+
+    @Test
+    void getParameterNamesSimple() {
+        assertEquals(List.of("id"),   getParameterNames("/foo/{id}"));
+    }
+
+    @Test
+    void getParameterNamesThree() {
+        assertEquals(List.of("foo","baz","boo"),   getParameterNames("/foo/{foo}/baz/{baz}/boo{boo}"));
+    }
 }
