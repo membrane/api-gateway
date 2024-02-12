@@ -25,7 +25,7 @@ class PathParametersTest extends AbstractValidatorTest {
     @Test
     public void twoPathParams() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/two-path-params/1/true"));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -47,14 +47,14 @@ class PathParametersTest extends AbstractValidatorTest {
     @Test
     public void twoUUIDPathParams() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/two-path-uuid-params/7555dd94-1799-4678-b0e0-50ac42748710/409268c1-cc60-4255-ab94-8b5e973fd0a2"));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void twoUUIDPathParamsErrors() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/two-path-uuid-params/a/b"));
-        System.out.println("errors = " + errors);
+//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
         ValidationContext vc1 = errors.get(0).getContext();
