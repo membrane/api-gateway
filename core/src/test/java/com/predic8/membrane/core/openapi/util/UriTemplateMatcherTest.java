@@ -184,7 +184,12 @@ public class UriTemplateMatcherTest {
 
     @Test
     public void exoticParameterNames() throws PathDoesNotMatchException {
-        assertEquals(4,matcher.match("/foo/{i_d1}/{Id-2}/{id%3}/{id<>4}", "/foo/1/2/3/4/").size());
+        var matches = matcher.match("/foo/{i_d1}/{Id-2}/{id%3}/{id<>4}", "/foo/1/2/3/4/");
+        assertEquals(4,matches.size());
+        assertEquals("1", matches.get("i_d1"));
+        assertEquals("2", matches.get("Id-2"));
+        assertEquals("3", matches.get("id%3"));
+        assertEquals("4", matches.get("id<>4"));
     }
 
     @Test
