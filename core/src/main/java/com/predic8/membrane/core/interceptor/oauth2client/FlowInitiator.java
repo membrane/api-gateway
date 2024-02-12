@@ -25,10 +25,8 @@ import com.predic8.membrane.core.interceptor.session.Session;
 
 import java.util.List;
 
-import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION;
-
 @MCElement(name = "flowInitiator")
-public class UserFlow extends AbstractInterceptor {
+public class FlowInitiator extends AbstractInterceptor {
     private String triggerFlow;
     private String defaultFlow;
     private String afterLoginUrl;

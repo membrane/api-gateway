@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -25,8 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.Membran
 import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
-import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
-import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctions;
+import com.predic8.membrane.core.interceptor.oauth2client.FlowInitiator;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
@@ -36,14 +34,12 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
-import org.intellij.lang.annotations.Language;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +69,7 @@ public abstract class OAuth2ResourceTest {
     private int clientPort = 31337;
     protected HttpRouter mockAuthServer;
     private HttpRouter oauth2Resource;
+    private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
 
     private String getServerAddress(){
         return "http://"+serverHost + ":" + serverPort;
@@ -274,6 +271,22 @@ public abstract class OAuth2ResourceTest {
 //        cookieHandlingRedirectingHttpClient.apply(exc);
 //
 //        System.out.println();
+//    }
+
+//    @Test
+//    public void userFlowTest() throws Exception {
+//        var flowInitiator = new FlowInitiator();
+//        flowInitiator.setDefaultFlow("");
+//        flowInitiator.setTriggerFlow("");
+//        flowInitiator.setAfterLoginUrl("/");
+//        flowInitiator.setOauth2(oAuth2Resource2Interceptor);
+//
+//        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+//        cookieHandlingHttpClient.apply(exc);
+//
+//        System.out.println();
+//
+//
 //    }
 
     @Test
@@ -478,6 +491,7 @@ public abstract class OAuth2ResourceTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort),null,99999);
 
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
+        this.oAuth2Resource2Interceptor = oAuth2ResourceInterceptor;
         configureSessionManager(oAuth2ResourceInterceptor);
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(getServerAddress());
