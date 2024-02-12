@@ -17,8 +17,11 @@ import org.jetbrains.annotations.*;
 
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.regex.Pattern.compile;
+import static java.util.stream.Collectors.toMap;
 
 public class UriTemplateMatcher {
 
@@ -33,32 +36,28 @@ public class UriTemplateMatcher {
      * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
     public Map<String, String> match(String template, String uri) throws PathDoesNotMatchException {
+        List<String> names = getParameterNames(template);
+        Matcher parameters = getTemplateMatcher(template, uri);
 
-        String normalizedTemplate = normalizePath(template);
-
-        // Is needed to get the parameter names
-        Matcher nameMatcher = getNameMatcher(normalizedTemplate);
-        String preparedTemplate = prepareTemplate(normalizedTemplate);
-
-        // Is needed to get the parameters by name
-        Matcher paramMatcher = compile(preparedTemplate).matcher(normalizePath(uri));
-
-        // Checks with URI matches template
-        if (!paramMatcher.matches()) {
+        if (!parameters.matches()) {
             throw new PathDoesNotMatchException();
         }
 
-        Map<String, String> params = new HashMap<>();
-        while (nameMatcher.find()) {
-            String paramName = nameMatcher.group(1); // Get next name like 'id'
-            params.put(paramName, paramMatcher.group(paramName));
-        }
-
-        return params;
+        return IntStream.range(0, names.size())
+                .boxed()
+                .collect(toMap(
+                        names::get,
+                        i -> parameters.group(i + 1)
+                ));
     }
 
     static List<String> getParameterNames(String uriTemplate) {
-        return getNameMatcher(uriTemplate).results().map(matchResult -> matchResult.group(1)).toList();
+        return getNameMatcher(normalizePath(uriTemplate)).results().map(matchResult -> matchResult.group(1)).toList();
+    }
+
+    @NotNull
+    public static Matcher getTemplateMatcher(String template, String path) {
+        return compile(prepareTemplate(normalizePath(template))).matcher(normalizePath(path));
     }
 
     @NotNull
