@@ -58,7 +58,7 @@ public class UriTemplateMatcher {
     }
 
     static List<String> getParameterNames(String uriTemplate) {
-        return null;
+        return getNameMatcher(uriTemplate).results().map(matchResult -> matchResult.group(1)).toList();
     }
 
     @NotNull

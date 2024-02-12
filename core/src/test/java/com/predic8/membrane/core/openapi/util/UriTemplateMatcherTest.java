@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
+import static java.util.List.of;
 import static java.util.Map.entry;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -194,26 +195,31 @@ public class UriTemplateMatcherTest {
 
     @Test
     void normalizePathEmpty() {
-       assertEquals("/",   normalizePath(""));
+       assertEquals("/", normalizePath(""));
     }
 
     @Test
     void normalizePathSlash() {
-        assertEquals("/",   normalizePath("/"));
+        assertEquals("/", normalizePath("/"));
     }
 
     @Test
     void normalizePathSimple() {
-        assertEquals("/foo/",   normalizePath("/foo"));
+        assertEquals("/foo/", normalizePath("/foo"));
     }
 
     @Test
     void getParameterNamesSimple() {
-        assertEquals(List.of("id"),   getParameterNames("/foo/{id}"));
+        assertEquals(of("id"), getParameterNames("/foo/{id}"));
     }
 
     @Test
     void getParameterNamesThree() {
-        assertEquals(List.of("foo","baz","boo"),   getParameterNames("/foo/{foo}/baz/{baz}/boo{boo}"));
+        assertEquals(of("foo","baz","boo"), getParameterNames("/foo/{foo}/baz/{baz}/boo{boo}"));
+    }
+
+    @Test
+    void getNoParameterNames() {
+        assertEquals(of(), getParameterNames("/foo/baz/"));
     }
 }
