@@ -1,76 +1,76 @@
-/*
- *  Copyright 2022 predic8 GmbH, www.predic8.com
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+/* Copyright 2024 predic8 GmbH, www.predic8.com
 
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.openapi.util;
 
-import java.io.*;
-import java.net.*;
-import java.nio.charset.*;
+import org.jetbrains.annotations.*;
+
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.util.UriUtil.trimQueryString;
-import static com.predic8.membrane.core.openapi.util.UriUtil.trimTrailingSlash;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.regex.Pattern.*;
+import static java.util.stream.Collectors.*;
 
 public class UriTemplateMatcher {
 
-    private  static final Pattern pathParameterNamePattern = Pattern.compile("\\{(.*?)}");
+    public static final String PARAM_NAME_REGEX = "\\{([^/]+?)}";
+    public static final String URI_PARAM_MATCH = "([^/]+)";
+    private static final Pattern PARAM_NAME_REGEX_PATTERN = compile(PARAM_NAME_REGEX);
 
     /**
+     * Problem:
+     *  - How to handle parameter names containing _, -, ...
      *
-     * @return Map of Parameters. If the path does not match null is returned.
+     * @return Map of Parameters. If the path does not match PathDoesNotMatchException is thrown.
      */
-    public Map<String,String> match(String template, String uri) throws PathDoesNotMatchException {
-        final Matcher matcher = Pattern.compile(escapeSlash(prepareRegex(trimTrailingSlash(template)))).matcher(trimTrailingSlash(trimQueryString(uri)));
+    public Map<String, String> match(String template, String uri) throws PathDoesNotMatchException {
+        Matcher parameters = getTemplateMatcher(template, uri);
 
-        final List<String> parameterNames = getPathParameterNames(template);
-
-        Map<String,String> pathParameters = new HashMap<>();
-
-        while (matcher.find()) {
-            for (int i = 1; i <= matcher.groupCount(); i++) {
-                pathParameters.put(parameterNames.get(i-1), matcher.group(i));
-            }
-        }
-
-        if (!matcher.matches())
+        if (!parameters.matches()) {
             throw new PathDoesNotMatchException();
-
-        return pathParameters;
-    }
-
-    public String prepareRegex(String uriTemplate) {
-        return uriTemplate.replaceAll("\\{(.*?)}","(.*)");
-    }
-
-    public String escapeSlash(String s) {
-        return s.replaceAll("/","\\\\/");
-    }
-
-
-    public List<String> getPathParameterNames(String uriTemplate) {
-        final Matcher matcher = pathParameterNamePattern.matcher(uriTemplate);
-
-        List<String> variables = new ArrayList<>();
-        while (matcher.find()) {
-            for (int i = 1; i <= matcher.groupCount(); i++) {
-                variables.add(matcher.group(i));
-            }
         }
-        return variables;
+
+        List<String> names = getParameterNames(template);
+
+        return IntStream.range(0, names.size())
+                .boxed()
+                .collect(toMap(
+                        names::get,
+                        i -> parameters.group(i + 1)
+                ));
+    }
+
+    static List<String> getParameterNames(String uriTemplate) {
+        return getNameMatcher(normalizePath(uriTemplate)).results().map(r -> r.group(1)).toList();
+    }
+
+    @NotNull
+    private static Matcher getTemplateMatcher(String template, String path) {
+        return compile(prepareTemplate(normalizePath(template))).matcher(normalizePath(path));
+    }
+
+    @NotNull
+    static Matcher getNameMatcher(String normalizedTemplate) {
+        return PARAM_NAME_REGEX_PATTERN.matcher(normalizedTemplate);
+    }
+
+    static String prepareTemplate(String template) {
+        return template.replaceAll(PARAM_NAME_REGEX, URI_PARAM_MATCH);
+    }
+
+    static String normalizePath(String path) {
+        String normalizedPath = path.split("\\?")[0];
+        return normalizedPath.endsWith("/") ? normalizedPath : normalizedPath + "/";
     }
 }

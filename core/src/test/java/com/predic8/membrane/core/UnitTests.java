@@ -158,7 +158,6 @@ import org.junit.platform.suite.api.Suite;
 		ApiKeyUtils.class,
 		ReflectiveMethodHandlerTest.class,
 		BuiltInFunctionsTest.class
-
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

@@ -1,0 +1,65 @@
+openapi: '3.0.2'
+info:
+  title: Path Parameters API
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de/v1
+paths:
+  /uuid-parameter/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      responses:
+        '200':
+          description: OK
+  /two-path-params/{p1}/{p2}:
+    parameters:
+      - name: p1
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: p2
+        in: path
+        required: true
+        schema:
+          type: boolean
+    get:
+      responses:
+        '200':
+          description: OK
+  /two-path-uuid-params/{id1}: # To trick the validator. Test if the correct path is selected
+    parameters:
+      - name: id1
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      responses:
+        '200':
+          description: OK
+  /two-path-uuid-params/{id1}/{id2}:
+    parameters:
+      - name: id1
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: id2
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      responses:
+        '200':
+          description: OK
