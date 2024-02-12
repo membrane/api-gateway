@@ -14,21 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.InputStreamReader;
-
-import com.predic8.membrane.core.resolver.ResolverMap;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.MessageUtil;
-import com.predic8.membrane.core.util.TextUtil;
 
 
 public class SOAPMessageValidatorInterceptorTest {
@@ -63,7 +61,7 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidBLZMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
 	}
 
 	@Test
@@ -73,7 +71,7 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
 	}
 
 	@Test
@@ -83,23 +81,23 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
-	@Disabled(value="This is a problem in the soa-model dependency.")
+//	@Disabled(value="This is a problem in the soa-model dependency.")
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
 	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {
@@ -109,7 +107,7 @@ public class SOAPMessageValidatorInterceptorTest {
 	}
 
 	private String getContent(String fileName) {
-		return TextUtil.formatXML(new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
+		return TextUtil.formatXML(new InputStreamReader(requireNonNull(this.getClass().getResourceAsStream(fileName))));
 	}
 
 	private ValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {

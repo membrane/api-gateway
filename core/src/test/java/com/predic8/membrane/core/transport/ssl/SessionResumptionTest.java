@@ -13,34 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.config.security.Key;
-import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.StreamPump;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.junit.jupiter.api.*;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.*;
+import java.net.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * This test provokes a failing TLS 1.3 Session Resumption by transmitting a "pre_shared_key (41)" extension in the
@@ -84,12 +71,13 @@ public class SessionResumptionTest {
     @Disabled
     @Test
     public void doit() throws Exception {
-        HttpClient hc = new HttpClient();
-        for (int i = 0; i < 2; i++) {
-            // the tcp forwarder will forward the first connection to 3042, the second to 3043
-            Exchange exc = new Request.Builder().get("https://localhost:3044").buildExchange();
-            exc.setProperty(Exchange.SSL_CONTEXT, clientTLSContext);
-            hc.call(exc);
+        try(HttpClient hc = new HttpClient()) {
+            for (int i = 0; i < 2; i++) {
+                // the tcp forwarder will forward the first connection to 3042, the second to 3043
+                Exchange exc = new Request.Builder().get("https://localhost:3044").buildExchange();
+                exc.setProperty(Exchange.SSL_CONTEXT, clientTLSContext);
+                hc.call(exc);
+            }
         }
     }
 
@@ -121,33 +109,35 @@ public class SessionResumptionTest {
         AtomicInteger counter = new AtomicInteger();
         StreamPump.StreamPumpStats sps = new StreamPump.StreamPumpStats();
         ServiceProxy mock = new ServiceProxy();
-        ServerSocket ss = new ServerSocket(port);
-        Thread t = new Thread(() -> {
-            try {
-                while(true) {
-                    Socket inbound;
-                    try {
-                        inbound = ss.accept();
-                    } catch (Exception e) {
-                        if (e.getMessage().contains("Socket closed"))
-                            return;
-                        throw e;
+
+        try(ServerSocket ss = new ServerSocket(port)) {
+            Thread t = new Thread(() -> {
+                try {
+                    while (true) {
+                        Socket inbound;
+                        try {
+                            inbound = ss.accept();
+                        } catch (Exception e) {
+                            if (e.getMessage().contains("Socket closed"))
+                                return;
+                            throw e;
+                        }
+                        int port1 = 3042 + counter.incrementAndGet() % 2;
+
+                        try(Socket outbound = new Socket("localhost", port1)) {
+                            new Thread(new StreamPump(inbound.getInputStream(), outbound.getOutputStream(), sps, "a", mock)).start();
+                            new Thread(new StreamPump(outbound.getInputStream(), inbound.getOutputStream(), sps, "b", mock)).start();
+                        }
                     }
-                    int port1 = 3042 + counter.incrementAndGet() % 2;
-                    Socket outbout = new Socket("localhost", port1);
-                    Thread s = new Thread(new StreamPump(inbound.getInputStream(), outbout.getOutputStream(), sps, "a", mock));
-                    s.start();
-                    Thread s2 = new Thread(new StreamPump(outbout.getInputStream(), inbound.getOutputStream(), sps, "b", mock));
-                    s2.start();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-        t.start();
-        return () -> {
-            ss.close();
-            t.interrupt();
-        };
+            });
+            t.start();
+            return () -> {
+                ss.close();
+                t.interrupt();
+            };
+        }
     }
 }
