@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.toMap;
 public class UriTemplateMatcher {
 
     public static final String PARAM_NAME_REGEX = "\\{([\\w_]+?)}";
-    public static final String URI_PARAM_MATCH = "(?<$1>[^/]+)";
+    public static final String URI_PARAM_MATCH = "([^/]+)";
     private static final Pattern PARAM_NAME_REGEX_PATTERN = compile(PARAM_NAME_REGEX);
 
     /**
