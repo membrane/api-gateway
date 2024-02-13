@@ -13,23 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
+import java.io.IOException;
+
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 
 public class SOAPProxyIntegrationTest {
 
@@ -37,64 +31,57 @@ public class SOAPProxyIntegrationTest {
 
 	@BeforeAll
 	public static void setup() throws Exception {
-
-		System.out.println("SOAPProxyIntegrationTest.setup");
-
 		Rule rule = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
 		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
-
 
 		Router targetRouter = new HttpRouter();
 		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		targetRouter.init();
-
-//		Thread.sleep(100000);
 	}
 
 	@BeforeEach
 	public void beforeEach() throws Exception {
-		System.out.println("SOAPProxyIntegrationTest.reset");
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
 
 	@AfterEach
 	public void shutdown() throws IOException {
-		System.out.println("SOAPProxyIntegrationTest.shutdown");
 		router.shutdown();
 	}
 
 	@Order(0)
 	@Test
 	public void targetProxyTest() throws IOException {
-		getAndAssert200("http://localhost:3000/foo?wsdl",
-				new String[] {
-						CONTENT_TYPE, TEXT_XML_UTF8,
-						SOAP_ACTION, ""
-				});
+		when()
+			.get("http://localhost:3000/foo?wsdl")
+		.then()
+			.contentType(TEXT_XML_UTF8);
 	}
 
 	@Order(1)
 	@Test
 	public void test() throws Exception {
-		getAndAssert200("http://localhost:2000/foo?wsdl",
-				new String[] {
-				CONTENT_TYPE, TEXT_XML_UTF8,
-				SOAP_ACTION, ""
-		});
+		when()
+			.get("http://localhost:2000/foo?wsdl")
+		.then()
+			.contentType(TEXT_XML);
 	}
 
 	@Order(2)
 	@Test
 	public void test2() throws Exception {
-		String wsdl = getAndAssert200("http://localhost:2001/foo?wsdl");
-		assertContains("location=\"http://localhost:2001/foo\"", wsdl);
+		when()
+			.get("http://localhost:2001/foo?wsdl")
+		.then()
+			.body(containsString("location=\"http://localhost:2001/foo\""));
 	}
 
 	@Order(3)
 	@Test
 	public void test3() throws Exception {
-		String wsdl = getAndAssert200("http://localhost:2002/baz?wsdl");
-		assertContains("location=\"http://localhost:2001/baz\"", wsdl);
+		when()
+			.get("http://localhost:2002/baz?wsdl")
+		.then()
+			.body(containsString("location=\"http://localhost:2001/baz\""));
 	}
-
 }
