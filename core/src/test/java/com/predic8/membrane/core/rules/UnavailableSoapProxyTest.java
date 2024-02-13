@@ -31,6 +31,8 @@ public class UnavailableSoapProxyTest {
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
+
+
 	@BeforeEach
 	public void setup() {
 		r = new Router();
@@ -51,15 +53,12 @@ public class UnavailableSoapProxyTest {
 		v.setWsdl("http://localhost:2001?wsdl");
 		sp3.getInterceptors().add(v);
 
-
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
-		sp2.setWsdl("http://localhost:2001?wsdl?wsdl");
+		sp2.setWsdl("http://localhost:2001?wsdl");
 		r2 = new Router();
 		r2.setHotDeploy(false);
 		r2.getRules().add(sp2);
-		// r2 will be started during the test
-
 	}
 
 	private void test() {
