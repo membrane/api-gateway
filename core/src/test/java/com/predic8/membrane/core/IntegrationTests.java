@@ -13,29 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreIntegrationTest;
-import com.predic8.membrane.core.http.LargeBodyTest;
-import com.predic8.membrane.core.rules.ProxySSLTest;
-import com.predic8.membrane.integration.*;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-
-import com.predic8.membrane.core.config.SpringReferencesTest;
-import com.predic8.membrane.core.http.MethodTest;
-import com.predic8.membrane.core.interceptor.AdjustContentLengthIntegrationTest;
-import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
-import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
-import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorIntegrationTest;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
-import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
-import com.predic8.membrane.core.resolver.ResolverTest;
-import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
-import com.predic8.membrane.core.rules.UnavailableSoapProxyTest;
-import com.predic8.membrane.core.transport.ExceptionHandlingTest;
-import com.predic8.membrane.core.transport.http.BoundConnectionTest;
-import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
-import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
-import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 
 @Suite
