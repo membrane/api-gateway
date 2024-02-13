@@ -41,22 +41,22 @@ public class HostnameTest {
 	}
 
 	@Test
-	public void matchesPlainString() throws UnknownHostException{
+	public void matchesPlainString() {
 		assertEquals(true, h1.matches("localhost", "localhost"));
 	}
 
 	@Test
-	public void notMatchesPlainString() throws UnknownHostException{
+	public void notMatchesPlainString() {
 		assertEquals(false, h1.matches("local", "local"));
 	}
 
 	@Test
-	public void matchesRegexString() throws UnknownHostException{
+	public void matchesRegexString() {
 		assertEquals(true, h1.matches("localhost", "localhost"));
 	}
 
 	@Test
-	public void notMatchesRegexString() throws UnknownHostException{
+	public void notMatchesRegexString() {
 		assertEquals(false, h1.matches("hostlocal", "hostlocal"));
 	}
 
