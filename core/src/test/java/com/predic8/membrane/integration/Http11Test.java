@@ -46,7 +46,7 @@ public class Http11Test {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 5000), "thomas-bayer.com", 80);
+		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 5000), null, 0);
 		rule2.getInterceptors().add(new SampleSoapServiceInterceptor());
 		HttpRouter router2 = new HttpRouter();
 		router2.getRuleManager().addProxyAndOpenPortIfNew(rule2);
