@@ -6,13 +6,7 @@
 					    
 	<router>
 
-		<serviceProxy port="3000">
-			<sampleSoapService />
-			<target url="http://www.thomas-bayer.com" />
-		</serviceProxy>
-
-		<soapProxy port="2000" wsdl="http://localhost:3000?wsdl">
-		</soapProxy>
+		<soapProxy port="2000" wsdl="http://localhost:3000?wsdl"/>
 
 		<soapProxy port="2001" wsdl="http://localhost:3000?wsdl">
 			<path>/foo</path>

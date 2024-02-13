@@ -33,12 +33,19 @@ public class SOAPProxyIntegrationTest {
 	private static Router router;
 
 	@BeforeAll
-	public static void init() throws MalformedURLException {
+	public static void setup() throws MalformedURLException {
+
+		// Start targetRouter
+
+//				<serviceProxy port="3000">
+//			<sampleSoapService />
+//		</serviceProxy>
+
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
 
 	@AfterAll
-	public static void uninit() throws IOException {
+	public static void shutdown() throws IOException {
 		router.shutdown();
 	}
 
@@ -62,7 +69,5 @@ public class SOAPProxyIntegrationTest {
 		String wsdl = getAndAssert200("http://localhost:2002/baz?wsdl");
 		assertContains("location=\"http://localhost:2001/foo\"", wsdl);
 	}
-
-
 
 }
