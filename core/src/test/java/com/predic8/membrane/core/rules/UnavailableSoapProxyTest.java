@@ -42,19 +42,19 @@ public class UnavailableSoapProxyTest {
 
 		sp = new SOAPProxy();
 		sp.setPort(2000);
-		sp.setWsdl("http://localhost:2001/axis2/services/BLZService?wsdl");
+		sp.setWsdl("http://localhost:2001?wsdl");
 
 		sp3 = new ServiceProxy();
 		sp3.setPort(2000);
 		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
 		ValidatorInterceptor v = new ValidatorInterceptor();
-		v.setWsdl("http://localhost:2001/axis2/services/BLZService?wsdl");
+		v.setWsdl("http://localhost:2001?wsdl");
 		sp3.getInterceptors().add(v);
 
 
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
-		sp2.setWsdl("http://www.thomas-bayer.com/axis2/services/BLZService?wsdl");
+		sp2.setWsdl("http://localhost:2001?wsdl?wsdl");
 		r2 = new Router();
 		r2.setHotDeploy(false);
 		r2.getRules().add(sp2);
