@@ -85,6 +85,7 @@ public abstract class OAuth2ResourceB2CTest {
     private String idp = "https://demo.predic8.de/api";
     private String sub = UUID.randomUUID().toString();
     private String clientId = UUID.randomUUID().toString();
+    private String clientSecret = "3423233123123";
     private volatile int expiresIn;
 
     private String getServerAddress() {
@@ -424,6 +425,22 @@ public abstract class OAuth2ResourceB2CTest {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
                 } else if (exc.getRequestURI().contains("/token")) {
+                    Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                    String grantType = params.get("grant_type");
+                    if (grantType.equals("authorization_code")) {
+                        assertEquals("1234", params.get("code"));
+                        assertEquals("http://localhost:31337/oauth2callback", params.get("redirect_uri"));
+                    } else if (grantType.equals("refresh_token")) {
+                        String refreshToken = params.get("refresh_token");
+                        assertTrue(refreshToken.length() > 10);
+                        assertTrue(refreshToken.length() < 50);
+                    } else {
+                        throw new RuntimeException("Illegal grant_type: " + grantType);
+                    }
+                    String secret = clientId + ":" + clientSecret;
+
+                    assertEquals("Basic " + Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8)) , exc.getRequest().getHeader().getFirstValue("Authorization"));
+
                     ObjectMapper om = new ObjectMapper();
                     Map<String, Object> res = new HashMap<>();
 
@@ -473,7 +490,7 @@ public abstract class OAuth2ResourceB2CTest {
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(baseServerAddr + "/b2c_1_susi/v2.0");
         auth.setClientId(clientId);
-        auth.setClientSecret("3423233123123");
+        auth.setClientSecret(clientSecret);
         auth.setScope("openid profile offline_access https://localhost/" + api1Id + "/Read");
         auth.setSubject("sub");
         oAuth2ResourceInterceptor.setAuthService(auth);
