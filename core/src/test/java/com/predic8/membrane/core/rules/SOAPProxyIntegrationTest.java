@@ -13,16 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 
 import com.predic8.membrane.core.HttpRouter;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
+import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Header;
@@ -33,14 +36,16 @@ public class SOAPProxyIntegrationTest {
 	private static Router router;
 
 	@BeforeAll
-	public static void setup() throws MalformedURLException {
+	public static void setup() throws Exception {
+		Rule rule = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
+		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+		Router targetRouter = new HttpRouter();
+		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		targetRouter.init();
+	}
 
-		// Start targetRouter
-
-//				<serviceProxy port="3000">
-//			<sampleSoapService />
-//		</serviceProxy>
-
+	@BeforeEach
+	public void reset() throws Exception {
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
 
@@ -49,21 +54,34 @@ public class SOAPProxyIntegrationTest {
 		router.shutdown();
 	}
 
+	@Order(0)
+	@Test
+	public void targetProxyTest() throws IOException {
+		getAndAssert200("http://localhost:3000?wsdl",
+				new String[] {
+						CONTENT_TYPE, TEXT_XML_UTF8,
+						SOAP_ACTION, ""
+				});
+	}
+
+	@Order(1)
 	@Test
 	public void test() throws Exception {
 		getAndAssert200("http://localhost:2000/foo?wsdl",
 				new String[] {
-				Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8,
-				Header.SOAP_ACTION, ""
+				CONTENT_TYPE, TEXT_XML_UTF8,
+				SOAP_ACTION, ""
 		});
 	}
 
+	@Order(2)
 	@Test
 	public void test2() throws Exception {
 		String wsdl = getAndAssert200("http://localhost:2001/baz?wsdl");
 		assertContains("location=\"http://localhost:2001/foo\"", wsdl);
 	}
 
+	@Order(3)
 	@Test
 	public void test3() throws Exception {
 		String wsdl = getAndAssert200("http://localhost:2002/baz?wsdl");
