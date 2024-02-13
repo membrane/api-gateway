@@ -159,4 +159,8 @@ public class BrowserMock implements Function<Exchange, Exchange> {
     public void clearCookies() {
         cookie.clear();
     }
+
+    public int getCookieCount() {
+        return cookie.values().stream().map(Map::size).reduce(0, Integer::sum);
+    }
 }

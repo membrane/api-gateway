@@ -14,8 +14,11 @@
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -27,6 +30,7 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2.client.BrowserMock;
+import com.predic8.membrane.core.interceptor.oauth2client.FlowInitiator;
 import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
@@ -42,6 +46,8 @@ import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.NumericDate;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,35 +71,31 @@ public abstract class OAuth2ResourceB2CTest {
 
     private final int limit = 500;
     protected HttpRouter mockAuthServer;
-    protected HttpRouter mockAuthServer2;
     protected ObjectMapper om = new ObjectMapper();
     Logger LOG = LoggerFactory.getLogger(OAuth2ResourceB2CTest.class);
     int serverPort = 1337;
-    int serverPort2 = 1338;
     UUID tenantId = UUID.randomUUID();
     BrowserMock browser = new BrowserMock();
-    private String serverHost = "localhost";
-    private int clientPort = 31337;
+    private final String serverHost = "localhost";
+    private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
     private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
-    private String api1Id = "7d85b8ea-8efe-4353-b53b-a905043a2862";
+    private final String api1Id = UUID.randomUUID().toString();
     private String baseServerAddr;
     private String issuer;
-    private String userFullName = "Mem Brane";
-    private String idp = "https://demo.predic8.de/api";
-    private String sub = UUID.randomUUID().toString();
-    private String clientId = UUID.randomUUID().toString();
-    private String clientSecret = "3423233123123";
+    private final String userFullName = "Mem Brane";
+    private final String idp = "https://demo.predic8.de/api";
+    private final String sub = UUID.randomUUID().toString();
+    private final String clientId = UUID.randomUUID().toString();
+    private final String clientSecret = "3423233123123";
+    private final String susiFlowId = "b2c_1_susi";
+    private final String peFlowId = "b2c_1_profile_editing";
     private volatile int expiresIn;
 
     private String getServerAddress() {
         return "http://" + serverHost + ":" + serverPort + "/" + tenantId.toString();
-    }
-
-    private String getServerAddress2() {
-        return "http://" + serverHost + ":" + serverPort2 + "/" + tenantId.toString();
     }
 
     protected String getClientAddress() {
@@ -104,7 +106,7 @@ public abstract class OAuth2ResourceB2CTest {
     public void init() throws IOException, JoseException {
         expiresIn = 60;
         baseServerAddr = getServerAddress();
-        issuer = baseServerAddr + "/v2.0";
+        issuer = baseServerAddr + "/v2.0/";
 
         createKey();
 
@@ -113,34 +115,26 @@ public abstract class OAuth2ResourceB2CTest {
         mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy(serverPort, "b2c_1_susi"));
+        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, susiFlowId), RuleManager.RuleDefinitionSource.MANUAL);
+        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, peFlowId), RuleManager.RuleDefinitionSource.MANUAL);
         mockAuthServer.start();
-
-        mockAuthServer2 = new HttpRouter();
-        mockAuthServer2.getTransport().setBacklog(10000);
-        mockAuthServer2.getTransport().setSocketTimeout(10000);
-        mockAuthServer2.setHotDeploy(false);
-        mockAuthServer2.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        mockAuthServer2.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy(serverPort2, "b2c_1_profile_editing"));
-        mockAuthServer2.start();
 
         oauth2Resource = new HttpRouter();
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.setHotDeploy(false);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
+        ServiceProxy sp1 = getConfiguredOAuth2Resource();
+        ServiceProxy sp2 = getFlowInitiatorServiceProxy();
+        oauth2Resource.getRuleManager().addProxy(sp2, RuleManager.RuleDefinitionSource.MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp1, RuleManager.RuleDefinitionSource.MANUAL);
         oauth2Resource.start();
-
-
     }
 
     @AfterEach
     public void done() {
         if (mockAuthServer != null)
             mockAuthServer.stop();
-        if (mockAuthServer2 != null)
-            mockAuthServer2.stop();
         if (oauth2Resource != null)
             oauth2Resource.stop();
     }
@@ -266,6 +260,8 @@ public abstract class OAuth2ResourceB2CTest {
         ili = browser.apply(new Request.Builder().get(getClientAddress() + "/is-logged-in").buildExchange());
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+
+        assertEquals(0, browser.getCookieCount());
     }
 
 //    @Test
@@ -276,21 +272,30 @@ public abstract class OAuth2ResourceB2CTest {
 //        System.out.println();
 //    }
 
-//    @Test
-//    public void userFlowTest() throws Exception {
-//        var flowInitiator = new FlowInitiator();
-//        flowInitiator.setDefaultFlow("");
-//        flowInitiator.setTriggerFlow("");
-//        flowInitiator.setAfterLoginUrl("/");
-//        flowInitiator.setOauth2(oAuth2Resource2Interceptor);
-//
-//        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
-//        cookieHandlingHttpClient.apply(exc);
-//
-//        System.out.println();
-//
-//
-//    }
+    @Test
+    public void userFlowTest() throws Exception {
+        JwtConsumer jc = new JwtConsumerBuilder()
+                .setRequireExpirationTime()
+                .setAllowedClockSkewInSeconds(30)
+                .setRequireSubject()
+                .setVerificationKey(rsaJsonWebKey.getRsaPublicKey())
+                .setExpectedAudience(true, api1Id).build();
+
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        String a1 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        JwtClaims c1 = jc.processToClaims(a1);
+        assertEquals(c1.getClaimsMap().size(), 12);
+
+        exc = new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange();
+        exc = browser.apply(exc);
+
+        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        JwtClaims c2 = jc.processToClaims(a2);
+        assertEquals(c2.getClaimsMap().size(), 11);
+        // weirdly the 'name' payload is missing here, see accessToken()
+    }
 
     @Test
     public void loginParams() throws Exception {
@@ -320,40 +325,38 @@ public abstract class OAuth2ResourceB2CTest {
         rsaJsonWebKey.setUse("sig");
         this.rsaJsonWebKey = rsaJsonWebKey;
 
-        String jwksResponse = rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
-        this.jwksResponse = jwksResponse;
+        this.jwksResponse = rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
     }
 
-    JwtClaims accessToken() {
+    JwtClaims accessToken(String flowId) {
         JwtClaims jwtClaims = createBaseClaims();
 
-        jwtClaims.setClaim("iss", baseServerAddr + "/v2.0/");
+        jwtClaims.setClaim("iss", issuer);
         jwtClaims.setClaim("idp", idp);
-        jwtClaims.setClaim("name", userFullName);
+        if (flowId.equals(susiFlowId))
+            jwtClaims.setClaim("name", userFullName);
         jwtClaims.setClaim("sub", sub);
-        jwtClaims.setClaim("tfp", "B2C_1_susi");
+        jwtClaims.setClaim("tfp", flowId);
         jwtClaims.setClaim("scp", "Read");
-        jwtClaims.setClaim("azp", UUID.randomUUID().toString());
+        jwtClaims.setClaim("azp", clientId);
         jwtClaims.setClaim("ver", "1.0");
         jwtClaims.setClaim("aud", api1Id);
         return jwtClaims;
     }
 
-    JwtClaims idToken() {
+    JwtClaims idToken(String flowId) {
         JwtClaims jwtClaims = createBaseClaims();
 
         jwtClaims.setClaim("iss", issuer);
         jwtClaims.setClaim("idp", idp);
         jwtClaims.setClaim("name", userFullName);
         jwtClaims.setClaim("sub", sub);
-        jwtClaims.setClaim("tfp", "B2C_1_susi");
+        jwtClaims.setClaim("tfp", flowId);
         jwtClaims.setClaim("ver", "1.0");
         jwtClaims.setClaim("aud", clientId);
         jwtClaims.setClaim("auth_time", jwtClaims.getClaimValue("iat"));
         return jwtClaims;
-        /*
-        "at_hash":"2VqmD1_Hz-y1MLUYF7AG_g",
-         */
+        /* not included in this test: "at_hash":"2VqmD1_Hz-y1MLUYF7AG_g" */
     }
 
     @NotNull
@@ -375,10 +378,10 @@ public abstract class OAuth2ResourceB2CTest {
         jws.setKey(rsaJsonWebKey.getPrivateKey());
         jws.setKeyIdHeaderValue("k1");
         jws.setHeader("typ", "JWT");
+        jws.setHeader("random", UUID.randomUUID().toString()); // this is not actually present, but required for the testUseRefreshTokenExpiration() to make tokens unique
         jws.setAlgorithmHeaderValue("RS256");
 
-        String token = jws.getCompactSerialization();
-        return token;
+        return jws.getCompactSerialization();
     }
 
     private ServiceProxy getMockAuthServiceProxy(int port, String flowId) throws IOException {
@@ -410,9 +413,9 @@ public abstract class OAuth2ResourceB2CTest {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
 
-            SecureRandom rand = new SecureRandom();
+            final SecureRandom rand = new SecureRandom();
 
-            String baseUri = "/" + tenantId + "/" + flowId;
+            final String baseUri = "/" + tenantId + "/" + flowId;
 
             @Override
             public synchronized Outcome handleRequest(Exchange exc) throws Exception {
@@ -444,7 +447,7 @@ public abstract class OAuth2ResourceB2CTest {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, Object> res = new HashMap<>();
 
-                    res.put("access_token", createToken(accessToken()));
+                    res.put("access_token", createToken(accessToken(flowId)));
                     res.put("token_type", "Bearer");
                     res.put("expires_in", expiresIn);
 
@@ -459,10 +462,18 @@ public abstract class OAuth2ResourceB2CTest {
                     res.put("refresh_token", new BigInteger(130, rand).toString(32));
                     res.put("refresh_token_expires_in", 1209600);
 
-                    res.put("id_token", createToken(idToken()));
+                    res.put("id_token", createToken(idToken(flowId)));
                     res.put("id_token_expires_in", expiresIn);
 
-                    String profileInfo = "{\"ver\":\"1.0\",\"tid\":\""+tenantId+"\",\"sub\":null,\"name\":\""+userFullName+"\",\"preferred_username\":null,\"idp\":\""+idp+"\"}";
+                    HashMap<String, Object> pi = new HashMap<>();
+                    pi.put("ver", "1.0");
+                    pi.put("tid", tenantId);
+                    pi.put("sub", null);
+                    pi.put("name", userFullName);
+                    pi.put("preferred_username", null);
+                    pi.put("idp", idp);
+                    String profileInfo = om.writeValueAsString(pi);
+
                     res.put("profile_info", Base64.getUrlEncoder().encodeToString(profileInfo.getBytes(StandardCharsets.UTF_8)));
 
                     res.put("resource", api1Id);
@@ -480,6 +491,27 @@ public abstract class OAuth2ResourceB2CTest {
         return sp;
     }
 
+    private ServiceProxy getFlowInitiatorServiceProxy() {
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
+        Path path = new Path();
+        path.setValue("/pe/");
+        sp.setPath(path);
+
+        var flowInitiator = new FlowInitiator();
+
+        flowInitiator.setDefaultFlow(susiFlowId);
+        flowInitiator.setTriggerFlow(peFlowId);
+
+        flowInitiator.setAfterLoginUrl("/");
+
+        flowInitiator.setOauth2(oAuth2Resource2Interceptor);
+
+        sp.getInterceptors().add(flowInitiator);
+        sp.getInterceptors().add(createTestResponseInterceptor());
+
+        return sp;
+    }
+
     private ServiceProxy getConfiguredOAuth2Resource() {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
@@ -488,7 +520,7 @@ public abstract class OAuth2ResourceB2CTest {
         this.oAuth2Resource2Interceptor = oAuth2ResourceInterceptor;
         configureSessionManager(oAuth2ResourceInterceptor);
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
-        auth.setSrc(baseServerAddr + "/b2c_1_susi/v2.0");
+        auth.setSrc(baseServerAddr + "/" + susiFlowId + "/v2.0");
         auth.setClientId(clientId);
         auth.setClientSecret(clientSecret);
         auth.setScope("openid profile offline_access https://localhost/" + api1Id + "/Read");
@@ -528,7 +560,13 @@ public abstract class OAuth2ResourceB2CTest {
             }
         });
         sp.getInterceptors().add(oAuth2ResourceInterceptor);
-        sp.getInterceptors().add(new AbstractInterceptor() {
+        sp.getInterceptors().add(createTestResponseInterceptor());
+        return sp;
+    }
+
+    @NotNull
+    private AbstractInterceptor createTestResponseInterceptor() {
+        return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
@@ -543,8 +581,7 @@ public abstract class OAuth2ResourceB2CTest {
                 exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
                 return Outcome.RETURN;
             }
-        });
-        return sp;
+        };
     }
 
     protected abstract void configureSessionManager(OAuth2Resource2Interceptor oauth2);

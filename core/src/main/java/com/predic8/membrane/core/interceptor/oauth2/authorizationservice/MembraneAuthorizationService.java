@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 public class MembraneAuthorizationService extends AuthorizationService {
     private String src; // url to OpenID-Provider data
 
+    private String issuer;
     private String tokenEndpoint;
     private String userInfoEndpoint;
     private String subject = ClaimRenamer.convert("sub");
@@ -105,13 +106,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     @Override
     public String getIssuer() {
-        int p = src.indexOf(' ');
-        if (p != -1) {
-            String[] urls = src.split(Pattern.quote(" "),2);
-            p = urls[1].indexOf('/');
-            return urls[0] + (p == -1 ? "" : urls[1].substring(p));
-        }
-        return src;
+        return issuer;
     }
 
     @Override
@@ -165,6 +160,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         revocationEndpoint = (String) json.get("revocation_endpoint");
         registrationEndpoint = (String) json.get("registration_endpoint");
         jwksEndpoint = (String) json.get("jwks_uri");
+        issuer = (String) json.get("issuer");
 
     }
 
