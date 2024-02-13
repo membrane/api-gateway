@@ -20,6 +20,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class WellknownFile {
 
@@ -235,7 +237,7 @@ public class WellknownFile {
         return supportedResponseTypes;
     }
 
-    public void setSupportedResponseTypes(HashSet<String> supportedResponseTypes) throws UnsupportedEncodingException {
+    public void setSupportedResponseTypes(Set<String> supportedResponseTypes) throws UnsupportedEncodingException {
         StringBuilder builder = new StringBuilder();
         for(String resp : supportedResponseTypes)
             builder.append(" ").append(OAuth2Util.urlencode(resp));
@@ -284,6 +286,13 @@ public class WellknownFile {
 
     public void setSupportedClaims(String supportedClaims) {
         this.supportedClaims = supportedClaims;
+    }
+
+    public void setSupportedClaims(Set<String> supportedClaims) {
+        setSupportedClaims(supportedClaims.stream()
+                .map(OAuth2Util::urlencode)
+                .collect(Collectors.joining(" "))
+        );
     }
 
     public String getWellknown() {

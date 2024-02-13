@@ -11,10 +11,12 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2.client;
+package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
@@ -24,6 +26,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2.client.BrowserMock;
 import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
@@ -32,6 +35,14 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jose4j.jwk.JsonWebKey;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.NumericDate;
+import org.jose4j.lang.JoseException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,31 +51,48 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
-public abstract class OAuth2ResourceTest {
+public abstract class OAuth2ResourceB2CTest {
 
-    protected final BrowserMock browser = new BrowserMock();
     private final int limit = 500;
     protected HttpRouter mockAuthServer;
+    protected HttpRouter mockAuthServer2;
     protected ObjectMapper om = new ObjectMapper();
-    Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
+    Logger LOG = LoggerFactory.getLogger(OAuth2ResourceB2CTest.class);
     int serverPort = 1337;
+    int serverPort2 = 1338;
+    UUID tenantId = UUID.randomUUID();
+    BrowserMock browser = new BrowserMock();
     private String serverHost = "localhost";
     private int clientPort = 31337;
     private HttpRouter oauth2Resource;
     private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
+    private RsaJsonWebKey rsaJsonWebKey;
+    private String jwksResponse;
+    private String api1Id = "7d85b8ea-8efe-4353-b53b-a905043a2862";
+    private String baseServerAddr;
+    private String issuer;
+    private String userFullName = "Mem Brane";
+    private String idp = "https://demo.predic8.de/api";
+    private String sub = UUID.randomUUID().toString();
+    private String clientId = UUID.randomUUID().toString();
+    private volatile int expiresIn;
 
     private String getServerAddress() {
-        return "http://" + serverHost + ":" + serverPort;
+        return "http://" + serverHost + ":" + serverPort + "/" + tenantId.toString();
+    }
+
+    private String getServerAddress2() {
+        return "http://" + serverHost + ":" + serverPort2 + "/" + tenantId.toString();
     }
 
     protected String getClientAddress() {
@@ -72,14 +100,28 @@ public abstract class OAuth2ResourceTest {
     }
 
     @BeforeEach
-    public void init() throws IOException {
+    public void init() throws IOException, JoseException {
+        expiresIn = 60;
+        baseServerAddr = getServerAddress();
+        issuer = baseServerAddr + "/v2.0";
+
+        createKey();
+
         mockAuthServer = new HttpRouter();
         mockAuthServer.getTransport().setBacklog(10000);
         mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy());
+        mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy(serverPort, "b2c_1_susi"));
         mockAuthServer.start();
+
+        mockAuthServer2 = new HttpRouter();
+        mockAuthServer2.getTransport().setBacklog(10000);
+        mockAuthServer2.getTransport().setSocketTimeout(10000);
+        mockAuthServer2.setHotDeploy(false);
+        mockAuthServer2.getTransport().setConcurrentConnectionLimitPerIp(limit);
+        mockAuthServer2.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy(serverPort2, "b2c_1_profile_editing"));
+        mockAuthServer2.start();
 
         oauth2Resource = new HttpRouter();
         oauth2Resource.getTransport().setBacklog(10000);
@@ -88,12 +130,16 @@ public abstract class OAuth2ResourceTest {
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
         oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
         oauth2Resource.start();
+
+
     }
 
     @AfterEach
     public void done() {
         if (mockAuthServer != null)
             mockAuthServer.stop();
+        if (mockAuthServer2 != null)
+            mockAuthServer2.stop();
         if (oauth2Resource != null)
             oauth2Resource.stop();
     }
@@ -123,6 +169,8 @@ public abstract class OAuth2ResourceTest {
     // this test also implicitly tests concurrency on oauth2resource
     @Test
     public void testUseRefreshTokenOnTokenExpiration() throws Exception {
+        expiresIn = 1;
+
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
@@ -202,38 +250,6 @@ public abstract class OAuth2ResourceTest {
     }
 
     @Test
-    public void testCSRFProblem() throws Exception {
-        AtomicBoolean blocked = new AtomicBoolean(true);
-        mockAuthServer.getTransport().getInterceptors().add(2, new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                if (blocked.get()) {
-                    exc.setResponse(Response.ok("Login aborted").build());
-                    return Outcome.RETURN;
-                }
-                return Outcome.CONTINUE;
-            }
-        });
-
-        // hit the client, do not continue at AS with login
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 0).buildExchange();
-        excCallResource = browser.apply(excCallResource);
-
-        assertEquals(200, excCallResource.getResponse().getStatusCode());
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("Login aborted"));
-
-        blocked.set(false);
-
-        // hit client again, login
-        excCallResource = new Request.Builder().get(getClientAddress() + "/init" + 1).buildExchange();
-        excCallResource = browser.apply(excCallResource);
-
-        // works
-        assertEquals(200, excCallResource.getResponse().getStatusCode());
-        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("/init1"));
-    }
-
-    @Test
     public void logout() throws Exception {
         browser.apply(new Request.Builder()
                 .get(getClientAddress() + "/init").buildExchange());
@@ -250,6 +266,30 @@ public abstract class OAuth2ResourceTest {
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
     }
+
+//    @Test
+//    public void requestAuth() throws Exception {
+//        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+//        browser.apply(exc);
+//
+//        System.out.println();
+//    }
+
+//    @Test
+//    public void userFlowTest() throws Exception {
+//        var flowInitiator = new FlowInitiator();
+//        flowInitiator.setDefaultFlow("");
+//        flowInitiator.setTriggerFlow("");
+//        flowInitiator.setAfterLoginUrl("/");
+//        flowInitiator.setOauth2(oAuth2Resource2Interceptor);
+//
+//        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+//        cookieHandlingHttpClient.apply(exc);
+//
+//        System.out.println();
+//
+//
+//    }
 
     @Test
     public void loginParams() throws Exception {
@@ -271,51 +311,146 @@ public abstract class OAuth2ResourceTest {
     }
 
 
-    private ServiceProxy getMockAuthServiceProxy() throws IOException {
+    void createKey() throws JoseException {
+        String serial = "1";
+        RsaJsonWebKey rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048);
+        rsaJsonWebKey.setKeyId("k" + serial);
+        rsaJsonWebKey.setAlgorithm("RS256");
+        rsaJsonWebKey.setUse("sig");
+        this.rsaJsonWebKey = rsaJsonWebKey;
 
-        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(serverPort), null, 99999);
+        String jwksResponse = rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
+        this.jwksResponse = jwksResponse;
+    }
 
+    JwtClaims accessToken() {
+        JwtClaims jwtClaims = createBaseClaims();
+
+        jwtClaims.setClaim("iss", baseServerAddr + "/v2.0/");
+        jwtClaims.setClaim("idp", idp);
+        jwtClaims.setClaim("name", userFullName);
+        jwtClaims.setClaim("sub", sub);
+        jwtClaims.setClaim("tfp", "B2C_1_susi");
+        jwtClaims.setClaim("scp", "Read");
+        jwtClaims.setClaim("azp", UUID.randomUUID().toString());
+        jwtClaims.setClaim("ver", "1.0");
+        jwtClaims.setClaim("aud", api1Id);
+        return jwtClaims;
+    }
+
+    JwtClaims idToken() {
+        JwtClaims jwtClaims = createBaseClaims();
+
+        jwtClaims.setClaim("iss", issuer);
+        jwtClaims.setClaim("idp", idp);
+        jwtClaims.setClaim("name", userFullName);
+        jwtClaims.setClaim("sub", sub);
+        jwtClaims.setClaim("tfp", "B2C_1_susi");
+        jwtClaims.setClaim("ver", "1.0");
+        jwtClaims.setClaim("aud", clientId);
+        jwtClaims.setClaim("auth_time", jwtClaims.getClaimValue("iat"));
+        return jwtClaims;
+        /*
+        "at_hash":"2VqmD1_Hz-y1MLUYF7AG_g",
+         */
+    }
+
+    @NotNull
+    private JwtClaims createBaseClaims() {
+        JwtClaims jwtClaims = new JwtClaims();
+
+        jwtClaims.setIssuedAtToNow();
+        jwtClaims.setNotBeforeMinutesInThePast(3);
+
+        NumericDate expiration = NumericDate.now();
+        expiration.addSeconds(expiresIn);
+        jwtClaims.setExpirationTime(expiration);
+        return jwtClaims;
+    }
+
+    String createToken(JwtClaims claims) throws JoseException {
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(claims.toJson());
+        jws.setKey(rsaJsonWebKey.getPrivateKey());
+        jws.setKeyIdHeaderValue("k1");
+        jws.setHeader("typ", "JWT");
+        jws.setAlgorithmHeaderValue("RS256");
+
+        String token = jws.getCompactSerialization();
+        return token;
+    }
+
+    private ServiceProxy getMockAuthServiceProxy(int port, String flowId) throws IOException {
+
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(port), null, 99999);
+
+        Path path = new Path();
+        path.setValue("/" + tenantId + "/" + flowId);
+        sp.setPath(path);
 
         WellknownFile wkf = new WellknownFile();
 
-        wkf.setIssuer(getServerAddress());
-        wkf.setAuthorizationEndpoint(getServerAddress() + "/auth");
-        wkf.setTokenEndpoint(getServerAddress() + "/token");
-        wkf.setUserinfoEndpoint(getServerAddress() + "/userinfo");
-        wkf.setRevocationEndpoint(getServerAddress() + "/revoke");
-        wkf.setJwksUri(getServerAddress() + "/certs");
-        wkf.setSupportedResponseTypes("code token");
-        wkf.setSupportedSubjectType("public");
+        String oaPrefix = "/" + flowId + "/oauth2/v2.0";
+
+        wkf.setIssuer(issuer);
+        wkf.setAuthorizationEndpoint(baseServerAddr + oaPrefix + "/authorize");
+        wkf.setTokenEndpoint(baseServerAddr + oaPrefix + "/token");
+        //wkf.setEndSessionEndpoint(baseServerAddr + oaPrefix + "/logout");
+        wkf.setJwksUri(baseServerAddr + "/" + flowId + "/discovery/v2.0/keys");
+
+        wkf.setSupportedResponseTypes(ImmutableSet.of("code", "code id_token", "code token", "code id_token token", "id_token", "id_token token", "token", "token id_token"));
+        wkf.setSupportedSubjectType("pairwise");
         wkf.setSupportedIdTokenSigningAlgValues("RS256");
-        wkf.setSupportedScopes("openid email profile");
+        wkf.setSupportedScopes("openid");
         wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
-        wkf.setSupportedClaims("sub email username");
+        wkf.setSupportedClaims(ImmutableSet.of("name", "sub", "idp", "tfp", "iss", "iat", "exp", "aud", "acr", "nonce", "auth_time"));
+
         wkf.init(new HttpRouter());
 
         sp.getInterceptors().add(new AbstractInterceptor() {
 
             SecureRandom rand = new SecureRandom();
 
+            String baseUri = "/" + tenantId + "/" + flowId;
+
             @Override
             public synchronized Outcome handleRequest(Exchange exc) throws Exception {
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
-                } else if (exc.getRequestURI().startsWith("/auth?")) {
+                } else if (exc.getRequestURI().equalsIgnoreCase(baseUri + "/discovery/v2.0/keys")) {
+                    String payload = "{ \"keys\":  [" + jwksResponse + "]}";
+                    exc.setResponse(Response.ok(payload).contentType(APPLICATION_JSON).build());
+                } else if (exc.getRequestURI().contains("/authorize?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
-                } else if (exc.getRequestURI().startsWith("/token")) {
+                } else if (exc.getRequestURI().contains("/token")) {
                     ObjectMapper om = new ObjectMapper();
-                    Map<String, String> res = new HashMap<>();
-                    res.put("access_token", new BigInteger(130, rand).toString(32));
-                    res.put("token_type", "bearer");
-                    res.put("expires_in", "1");
-                    res.put("refresh_token", new BigInteger(130, rand).toString(32));
-                    exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
+                    Map<String, Object> res = new HashMap<>();
 
-                } else if (exc.getRequestURI().startsWith("/userinfo")) {
-                    ObjectMapper om = new ObjectMapper();
-                    Map<String, String> res = new HashMap<>();
-                    res.put("username", "dummy");
+                    res.put("access_token", createToken(accessToken()));
+                    res.put("token_type", "Bearer");
+                    res.put("expires_in", expiresIn);
+
+                    var expires = NumericDate.now();
+                    expires.addSeconds(expiresIn);
+                    res.put("expires_on", expires.getValueInMillis());
+
+                    var nbf = NumericDate.now();
+                    nbf.setValue(nbf.getValue() - 60);
+                    res.put("not_before", nbf);
+
+                    res.put("refresh_token", new BigInteger(130, rand).toString(32));
+                    res.put("refresh_token_expires_in", 1209600);
+
+                    res.put("id_token", createToken(idToken()));
+                    res.put("id_token_expires_in", expiresIn);
+
+                    String profileInfo = "{\"ver\":\"1.0\",\"tid\":\""+tenantId+"\",\"sub\":null,\"name\":\""+userFullName+"\",\"preferred_username\":null,\"idp\":\""+idp+"\"}";
+                    res.put("profile_info", Base64.getUrlEncoder().encodeToString(profileInfo.getBytes(StandardCharsets.UTF_8)));
+
+                    res.put("resource", api1Id);
+                    res.put("scope", "offline_access openid https://localhost/" + api1Id + "/Read");
+
                     exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
                 }
 
@@ -336,13 +471,15 @@ public abstract class OAuth2ResourceTest {
         this.oAuth2Resource2Interceptor = oAuth2ResourceInterceptor;
         configureSessionManager(oAuth2ResourceInterceptor);
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
-        auth.setSrc(getServerAddress());
-        auth.setClientId("2343243242");
+        auth.setSrc(baseServerAddr + "/b2c_1_susi/v2.0");
+        auth.setClientId(clientId);
         auth.setClientSecret("3423233123123");
-        auth.setScope("openid profile");
+        auth.setScope("openid profile offline_access https://localhost/" + api1Id + "/Read");
+        auth.setSubject("sub");
         oAuth2ResourceInterceptor.setAuthService(auth);
 
         oAuth2ResourceInterceptor.setLogoutUrl("/logout");
+        oAuth2ResourceInterceptor.setSkipUserInfo(true);
 
         var withOutValue = new LoginParameter();
         withOutValue.setName("login_hint");
