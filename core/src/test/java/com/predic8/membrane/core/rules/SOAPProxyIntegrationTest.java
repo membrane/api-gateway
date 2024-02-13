@@ -59,8 +59,8 @@ public class SOAPProxyIntegrationTest {
 
 	@Test
 	public void test3() throws Exception {
-		String wsdl = getAndAssert200("http://localhost:2002/myBLZService?wsdl");
-		assertContains("location=\"http://localhost:2001/myBLZService\"", wsdl);
+		String wsdl = getAndAssert200("http://localhost:2002/baz?wsdl");
+		assertContains("location=\"http://localhost:2001/foo\"", wsdl);
 	}
 
 
