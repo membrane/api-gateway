@@ -17,8 +17,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.IOException;
 import java.util.List;
 
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import org.junit.jupiter.api.*;
 
 import com.predic8.membrane.core.Router;
@@ -31,10 +35,17 @@ public class UnavailableSoapProxyTest {
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
-
+	@BeforeAll
+	public static void setup() throws Exception {
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
+		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+		Router router = new HttpRouter();
+		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.init();
+	}
 
 	@BeforeEach
-	public void setup() {
+	public void beforeEach() {
 		r = new Router();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.setMaxRetries(1);
@@ -55,7 +66,7 @@ public class UnavailableSoapProxyTest {
 
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
-		sp2.setWsdl("http://localhost:2001?wsdl");
+		sp2.setWsdl("http://localhost:4000?wsdl");
 		r2 = new Router();
 		r2.setHotDeploy(false);
 		r2.getRules().add(sp2);
