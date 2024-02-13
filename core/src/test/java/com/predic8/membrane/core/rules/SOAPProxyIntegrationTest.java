@@ -37,27 +37,36 @@ public class SOAPProxyIntegrationTest {
 
 	@BeforeAll
 	public static void setup() throws Exception {
+
+		System.out.println("SOAPProxyIntegrationTest.setup");
+
 		Rule rule = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
 		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+
+
 		Router targetRouter = new HttpRouter();
 		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		targetRouter.init();
+
+//		Thread.sleep(100000);
 	}
 
 	@BeforeEach
-	public void reset() throws Exception {
+	public void beforeEach() throws Exception {
+		System.out.println("SOAPProxyIntegrationTest.reset");
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
 
-	@AfterAll
-	public static void shutdown() throws IOException {
+	@AfterEach
+	public void shutdown() throws IOException {
+		System.out.println("SOAPProxyIntegrationTest.shutdown");
 		router.shutdown();
 	}
 
 	@Order(0)
 	@Test
 	public void targetProxyTest() throws IOException {
-		getAndAssert200("http://localhost:3000?wsdl",
+		getAndAssert200("http://localhost:3000/foo?wsdl",
 				new String[] {
 						CONTENT_TYPE, TEXT_XML_UTF8,
 						SOAP_ACTION, ""
@@ -77,7 +86,7 @@ public class SOAPProxyIntegrationTest {
 	@Order(2)
 	@Test
 	public void test2() throws Exception {
-		String wsdl = getAndAssert200("http://localhost:2001/baz?wsdl");
+		String wsdl = getAndAssert200("http://localhost:2001/foo?wsdl");
 		assertContains("location=\"http://localhost:2001/foo\"", wsdl);
 	}
 
@@ -85,7 +94,7 @@ public class SOAPProxyIntegrationTest {
 	@Test
 	public void test3() throws Exception {
 		String wsdl = getAndAssert200("http://localhost:2002/baz?wsdl");
-		assertContains("location=\"http://localhost:2001/foo\"", wsdl);
+		assertContains("location=\"http://localhost:2001/baz\"", wsdl);
 	}
 
 }
