@@ -32,6 +32,7 @@ import com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils;
 import com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptorTest;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractorTest;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStoreTest;
+import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.beautifier.BeautifierInterceptorTest;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
@@ -92,11 +93,11 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
-        HttpUtilTest.class, RequestTest.class,
-
+        HttpUtilTest.class,
+		RequestTest.class,
 		ResponseTest.class,
 		ResponseBuilderTest.class,
-
+		BasicAuthenticationInterceptorTest.class,
         MagicTest.class, WSDLInterceptorTest.class,
         AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class, IpRangeTest.class,
         DispatchingInterceptorTest.class,
