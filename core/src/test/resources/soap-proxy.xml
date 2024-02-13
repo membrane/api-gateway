@@ -6,15 +6,19 @@
 					    
 	<router>
 
-		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+		<serviceProxy port="3000">
+			<sampleSoapService />
+		</serviceProxy>
+
+		<soapProxy port="2000" wsdl="http://localhost:3000?wsdl">
 		</soapProxy>
 
-		<soapProxy port="2001" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-			<path>/myBLZService</path>
+		<soapProxy port="2001" wsdl="http://localhost:3000?wsdl">
+			<path>/foo</path>
 		</soapProxy>
 
-		<soapProxy port="2002" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-			<path>/myBLZService</path>
+		<soapProxy port="2002" wsdl="http://localhost:3000?wsdl">
+			<path>/baz</path>
 			<wsdlRewriter host="localhost" port="2001"/>
 			<wsdlPublisher />
 		</soapProxy>

@@ -19,6 +19,7 @@ import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import com.predic8.membrane.core.HttpRouter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ public class SOAPProxyIntegrationTest {
 
 	@Test
 	public void test() throws Exception {
-		getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl",
+		getAndAssert200("http://localhost:2000/foo?wsdl",
 				new String[] {
 				Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8,
 				Header.SOAP_ACTION, ""
@@ -52,8 +53,8 @@ public class SOAPProxyIntegrationTest {
 
 	@Test
 	public void test2() throws Exception {
-		String wsdl = getAndAssert200("http://localhost:2001/myBLZService?wsdl");
-		assertContains("location=\"http://localhost:2001/myBLZService\"", wsdl);
+		String wsdl = getAndAssert200("http://localhost:2001/baz?wsdl");
+		assertContains("location=\"http://localhost:2001/foo\"", wsdl);
 	}
 
 	@Test
