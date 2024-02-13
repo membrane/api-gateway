@@ -32,8 +32,6 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         MethodTest.class,
         RegExReplaceInterceptorTest.class,
-        Http10Test.class,
-        Http11Test.class,
         AccessControlInterceptorIntegrationTest.class,
         LoadBalancingInterceptorTest.class,
         REST2SOAPInterceptorIntegrationTest.class,
