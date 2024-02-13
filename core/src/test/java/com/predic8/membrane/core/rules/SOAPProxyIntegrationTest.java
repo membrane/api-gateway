@@ -51,7 +51,7 @@ public class SOAPProxyIntegrationTest {
 
 	@Order(0)
 	@Test
-	public void targetProxyTest() throws IOException {
+	public void targetProxyTest() {
 		when()
 			.get("http://localhost:3000/foo?wsdl")
 		.then()
@@ -69,7 +69,7 @@ public class SOAPProxyIntegrationTest {
 
 	@Order(2)
 	@Test
-	public void test2() throws Exception {
+	public void test2() {
 		when()
 			.get("http://localhost:2001/foo?wsdl")
 		.then()
@@ -78,7 +78,7 @@ public class SOAPProxyIntegrationTest {
 
 	@Order(3)
 	@Test
-	public void test3() throws Exception {
+	public void test3() {
 		when()
 			.get("http://localhost:2002/baz?wsdl")
 		.then()

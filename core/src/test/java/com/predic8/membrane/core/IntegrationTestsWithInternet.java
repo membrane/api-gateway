@@ -41,7 +41,6 @@ import org.junit.platform.suite.api.Suite;
         ProxySSLConnectionMethodTest.class,
         AdjustContentLengthIntegrationTest.class,
         LimitedMemoryExchangeStoreIntegrationTest.class,
-        SOAPProxyIntegrationTest.class,
         UnavailableSoapProxyTest.class,
         LargeBodyTest.class,
         SoapAndInternalProxyTest.class
