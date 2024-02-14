@@ -88,6 +88,15 @@ public class Http11Test {
 
 		int status = client.executeMethod(post); // also see comment on initExpect100ContinueWithFastFail()
 		assertEquals(200, status);
+		assertEquals("""
+				<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/city-service">
+				  <s:Body>
+				    <cs:getCityResponse>
+				      <country>Germany</country>
+				      <population>327000</population>
+				    </cs:getCityResponse>
+				  </s:Body>
+				</s:Envelope>""", post.getResponseBodyAsString().trim());
 		assertNotNull(post.getResponseBodyAsString());
 		assertFalse(isNullOrEmpty(post.getResponseBodyAsString()));
 	}

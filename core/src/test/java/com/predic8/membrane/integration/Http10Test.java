@@ -75,6 +75,15 @@ public class Http10Test {
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 		int status = client.executeMethod(post);
+		assertEquals("""
+				<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/city-service">
+				  <s:Body>
+				    <cs:getCityResponse>
+				      <country>Germany</country>
+				      <population>327000</population>
+				    </cs:getCityResponse>
+				  </s:Body>
+				</s:Envelope>""", post.getResponseBodyAsString().trim());
 		assertEquals(200, status);
 		assertEquals("HTTP/1.1", post.getStatusLine().getHttpVersion());
 
@@ -101,6 +110,15 @@ public class Http10Test {
 
 		for (int i = 0; i < 100; i ++) {
 			int status = client.executeMethod(post);
+			assertEquals("""
+				<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/city-service">
+				  <s:Body>
+				    <cs:getCityResponse>
+				      <country>Germany</country>
+				      <population>327000</population>
+				    </cs:getCityResponse>
+				  </s:Body>
+				</s:Envelope>""", post.getResponseBodyAsString().trim());
 			assertEquals(200, status);
 			String response = post.getResponseBodyAsString();
 			assertNotNull(response);
