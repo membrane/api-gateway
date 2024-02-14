@@ -334,6 +334,12 @@
 			<artifactId>annotations</artifactId>
 			<scope>compile</scope>
 		</dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>5.3.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 	<build>

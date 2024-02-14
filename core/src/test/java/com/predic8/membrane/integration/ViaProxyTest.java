@@ -13,26 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.InputStream;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class ViaProxyTest {
@@ -50,24 +46,19 @@ public class ViaProxyTest {
 		proxyRouter.getRuleManager().addProxy(new ProxyRule(new ProxyRuleKey(3128)), RuleDefinitionSource.MANUAL);
 		proxyRouter.init();
 
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 4000), "api.predic8.de", 443);
+		rule.getTarget().setSslParser(new SSLParser());
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
+		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
 	}
 
 	@Test
-	public void testPost() throws Exception {
-		HttpClient client = new HttpClient();
-		PostMethod post = new PostMethod("http://localhost:4000/axis2/services/BLZService");
-		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
-
-
-		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
-		post.setRequestEntity(entity);
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "");
-
-		assertEquals(200, client.executeMethod(post));
+	public void testPost() {
+		when()
+			.get("http://localhost:4000/shop/v2/products")
+		.then()
+			.statusCode(200);
 	}
 
 	@AfterAll
