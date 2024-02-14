@@ -49,7 +49,6 @@ public class SOAPProxyIntegrationTest {
 		router.shutdown();
 	}
 
-	@Order(0)
 	@Test
 	public void targetProxyTest() {
 		when()
@@ -58,27 +57,24 @@ public class SOAPProxyIntegrationTest {
 			.contentType(TEXT_XML_UTF8);
 	}
 
-	@Order(1)
 	@Test
-	public void test() throws Exception {
+	public void rewriteSimpleTest() throws Exception {
 		when()
 			.get("http://localhost:2000/foo?wsdl")
 		.then()
 			.contentType(TEXT_XML);
 	}
 
-	@Order(2)
 	@Test
-	public void test2() {
+	public void rewriteLocationTest() {
 		when()
 			.get("http://localhost:2001/foo?wsdl")
 		.then()
 			.body(containsString("location=\"http://localhost:2001/foo\""));
 	}
 
-	@Order(3)
 	@Test
-	public void test3() {
+	public void rewriteHostInLocationTest() {
 		when()
 			.get("http://localhost:2002/baz?wsdl")
 		.then()
