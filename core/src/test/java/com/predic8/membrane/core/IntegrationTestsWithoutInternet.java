@@ -25,12 +25,16 @@ import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
 import com.predic8.membrane.core.transport.ExceptionHandlingTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
 import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
+import com.predic8.membrane.integration.Http10Test;
+import com.predic8.membrane.integration.Http11Test;
 import com.predic8.membrane.integration.SessionManager;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
+        Http10Test.class,
+        Http11Test.class,
         RegExReplaceInterceptorTest.class,
         BoundConnectionTest.class,
         ExceptionHandlingTest.class,

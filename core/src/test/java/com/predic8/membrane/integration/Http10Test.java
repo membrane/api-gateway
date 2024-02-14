@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.InputStream;
 
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
@@ -36,12 +37,18 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 
 
+@SuppressWarnings("deprecation")
 public class Http10Test {
-	private static HttpRouter router;
+    private static HttpRouter router;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80);
+		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
+		rule2.getInterceptors().add(new SampleSoapServiceInterceptor());
+        HttpRouter router2 = new HttpRouter();
+		router2.getRuleManager().addProxyAndOpenPortIfNew(rule2);
+		router2.init();
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "localhost", 2000);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
@@ -56,48 +63,50 @@ public class Http10Test {
 	public void testPost() throws Exception {
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION  , HttpVersion.HTTP_1_0);
+		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_0);
 
-		PostMethod post = new PostMethod("http://localhost:3000/axis2/services/BLZService");
-		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
+		PostMethod post = new PostMethod("http://localhost:3000/");
+		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
 
 
-		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
+        assert stream != null;
+        InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity);
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 		int status = client.executeMethod(post);
+		assertTrue(post.getResponseBodyAsString().contains("population"));
 		assertEquals(200, status);
 		assertEquals("HTTP/1.1", post.getStatusLine().getHttpVersion());
 
 		String response = post.getResponseBodyAsString();
 		assertNotNull(response);
-		assertTrue(response.length() > 0);
+        assertFalse(response.isEmpty());
 	}
 
 
 	@Test
 	public void testMultiplePost() throws Exception {
-
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION  , HttpVersion.HTTP_1_0);
+		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_0);
 
-		PostMethod post = new PostMethod("http://localhost:3000/axis2/services/BLZService");
-		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
+		PostMethod post = new PostMethod("http://localhost:3000/");
+		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
 
 
-		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
+        assert stream != null;
+        InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity);
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 
 		for (int i = 0; i < 100; i ++) {
-			//System.out.println("Iteration: " + i);
 			int status = client.executeMethod(post);
+			assertTrue(post.getResponseBodyAsString().contains("population"));
 			assertEquals(200, status);
 			String response = post.getResponseBodyAsString();
 			assertNotNull(response);
-			assertTrue(response.length() > 0);
+            assertFalse(response.isEmpty());
 		}
 
 	}
