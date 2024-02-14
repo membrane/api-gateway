@@ -63,6 +63,9 @@ public class RequireAuth extends AbstractInterceptor {
     @MCAttribute
     public void setExpectedAud(String expectedAud) {
         this.expectedAud = expectedAud;
+        if (jwtAuth != null) {
+            jwtAuth.setExpectedAud(expectedAud);
+        }
     }
 
     public OAuth2Resource2Interceptor getOauth2() {

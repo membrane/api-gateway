@@ -80,6 +80,7 @@ public abstract class OAuth2ResourceB2CTest {
     private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
     private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
+    private RequireAuth requireAuth;
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
     private final String api1Id = UUID.randomUUID().toString();
@@ -103,7 +104,7 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @BeforeEach
-    public void init() throws IOException, JoseException {
+    public void init() throws Exception {
         expiresIn = 60;
         baseServerAddr = getServerAddress();
         issuer = baseServerAddr + "/v2.0/";
@@ -124,8 +125,13 @@ public abstract class OAuth2ResourceB2CTest {
         oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.setHotDeploy(false);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
+
         ServiceProxy sp1 = getConfiguredOAuth2Resource();
         ServiceProxy sp2 = getFlowInitiatorServiceProxy();
+        sp1.init(oauth2Resource); // TODO backfired das sobald es keinen globalen oauth resource interceptor gibt?
+        ServiceProxy sp3 = getRequireAuthServiceProxy();
+
+        oauth2Resource.getRuleManager().addProxy(sp3, RuleManager.RuleDefinitionSource.MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp2, RuleManager.RuleDefinitionSource.MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp1, RuleManager.RuleDefinitionSource.MANUAL);
         oauth2Resource.start();
@@ -264,13 +270,19 @@ public abstract class OAuth2ResourceB2CTest {
         assertEquals(0, browser.getCookieCount());
     }
 
-//    @Test
-//    public void requestAuth() throws Exception {
-//        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
-//        browser.apply(exc);
-//
-//        System.out.println();
-//    }
+    @Test
+    public void requestAuth() throws Exception {
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api/init").buildExchange();
+        exc = browser.apply(exc);
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+
+        requireAuth.setExpectedAud(UUID.randomUUID().toString());
+        Exchange exc2 = new Request.Builder().get(getClientAddress() + "/api/init").buildExchange();
+        exc2 = browser.apply(exc);
+
+        assertTrue(exc2.getResponse().getStatusCode() >= 400);
+    }
 
     @Test
     public void userFlowTest() throws Exception {
@@ -491,6 +503,24 @@ public abstract class OAuth2ResourceB2CTest {
         return sp;
     }
 
+    private ServiceProxy getRequireAuthServiceProxy() {
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
+
+        Path path = new Path();
+        path.setValue("/api/");
+        sp.setPath(path);
+
+        var requireAuth = new RequireAuth();
+        this.requireAuth = requireAuth;
+        requireAuth.setExpectedAud(api1Id);
+        requireAuth.setOauth2(oAuth2Resource2Interceptor);
+
+        sp.getInterceptors().add(requireAuth);
+        sp.getInterceptors().add(createTestResponseInterceptor());
+
+        return sp;
+    }
+
     private ServiceProxy getFlowInitiatorServiceProxy() {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
         Path path = new Path();
@@ -519,16 +549,19 @@ public abstract class OAuth2ResourceB2CTest {
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
         this.oAuth2Resource2Interceptor = oAuth2ResourceInterceptor;
         configureSessionManager(oAuth2ResourceInterceptor);
+
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(baseServerAddr + "/" + susiFlowId + "/v2.0");
         auth.setClientId(clientId);
         auth.setClientSecret(clientSecret);
         auth.setScope("openid profile offline_access https://localhost/" + api1Id + "/Read");
         auth.setSubject("sub");
+
         oAuth2ResourceInterceptor.setAuthService(auth);
 
         oAuth2ResourceInterceptor.setLogoutUrl("/logout");
         oAuth2ResourceInterceptor.setSkipUserInfo(true);
+        oAuth2ResourceInterceptor.setAppendAccessTokenToRequest(true);
 
         var withOutValue = new LoginParameter();
         withOutValue.setName("login_hint");
