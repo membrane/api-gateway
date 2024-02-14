@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodRetryHandler;
@@ -45,7 +46,12 @@ public class Http11Test {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80);
+		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 5000), null, 0);
+		rule2.getInterceptors().add(new SampleSoapServiceInterceptor());
+		HttpRouter router2 = new HttpRouter();
+		router2.getRuleManager().addProxyAndOpenPortIfNew(rule2);
+		router2.init();
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "localhost", 5000);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
@@ -72,19 +78,19 @@ public class Http11Test {
 		HttpClient client = new HttpClient();
 		if (useExpect100Continue)
 			initExpect100ContinueWithFastFail(client);
-		PostMethod post = new PostMethod("http://localhost:4000/axis2/services/BLZService");
-		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
+		PostMethod post = new PostMethod("http://localhost:4000/");
+		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
 
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity);
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 
-		int status = client.executeMethod(post); // also see comment on initExpect100ContinueWithFastFail()
+		int status = client.executeMethod(post);
 		assertEquals(200, status);
+		assertTrue(post.getResponseBodyAsString().contains("population"));
 		assertNotNull(post.getResponseBodyAsString());
 		assertFalse(isNullOrEmpty(post.getResponseBodyAsString()));
-		//System.out.println(post.getResponseBodyAsString());
 	}
 
 	@Test
