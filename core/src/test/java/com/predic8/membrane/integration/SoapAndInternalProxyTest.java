@@ -15,6 +15,7 @@ package com.predic8.membrane.integration;
 
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.Certificate;
 import com.predic8.membrane.core.config.security.Key;
@@ -27,6 +28,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -45,17 +47,18 @@ import org.junit.jupiter.api.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -109,16 +112,17 @@ public class SoapAndInternalProxyTest {
         HttpClient hc = new HttpClient();
         Response r1 = hc.call(new Request.Builder().get("http://localhost:3047/b?wsdl").buildExchange()).getResponse();
         //r1.write(System.out, true);
-        assertTrue(r1.getBodyAsStringDecoded().contains("<soap12:address location=\"https://a.b.local/b\">"));
+        assertTrue(r1.getBodyAsStringDecoded().contains("\"https://a.b.local/b\""));
 
         if (checkTrigger)
             assertTrue(trigger.getAndSet(false));
 
-        String body = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\" xmlns:wsaw=\"http://www.w3.org/2006/05/addressing/wsdl\" xmlns:http=\"http://schemas.xmlsoap.org/wsdl/http/\" xmlns:tns=\"http://thomas-bayer.com/blz/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:mime=\"http://schemas.xmlsoap.org/wsdl/mime/\" xmlns:soap=\"http://schemas.xmlsoap.org/wsdl/soap/\" xmlns:soap12=\"http://schemas.xmlsoap.org/wsdl/soap12/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" ><SOAP-ENV:Body><tns:getBank xmlns:tns=\"http://thomas-bayer.com/blz/\"><tns:blz>38060186</tns:blz></tns:getBank></SOAP-ENV:Body></SOAP-ENV:Envelope> ";
+
+        String body = new String(requireNonNull(this.getClass().getResourceAsStream("/get-city.xml")).readAllBytes(), StandardCharsets.UTF_8);
 
         Response r2 = hc.call(new Request.Builder().post("http://localhost:3047/b").body(body).buildExchange()).getResponse();
         //r2.write(System.out,true);
-        assertTrue(r2.getBodyAsStringDecoded().contains("GENODED1BRS"));
+        assertTrue(r2.getBodyAsStringDecoded().contains("population"));
 
         if (checkTrigger)
             assertTrue(trigger.getAndSet(false));
@@ -166,7 +170,7 @@ public class SoapAndInternalProxyTest {
         key = sw.toString();
     }
 
-    private ServiceProxy createTLSProxy() {
+    private ServiceProxy createTLSProxy() throws Exception {
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3048);
         SSLParser ssl = new SSLParser();
@@ -192,14 +196,20 @@ public class SoapAndInternalProxyTest {
         wsdlInterceptor.setProtocol("https");
         sp.setInterceptors(Lists.newArrayList(triggerInterceptor, wsdlInterceptor));
 
+        ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(9500), null, 0);
+        rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+        Router router = new HttpRouter();
+        router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+        router.init();
+
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
-        target.setHost("www.thomas-bayer.com");
-        target.setPort(80);
+        target.setHost("localhost");
+        target.setPort(9500);
         sp.setTarget(target);
         return sp;
     }
 
-    private Rule createInternalProxy(boolean useTLS) {
+    private Rule createInternalProxy(boolean useTLS) throws Exception {
         InternalProxy internalProxy = new InternalProxy();
         internalProxy.setName("int");
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
@@ -214,8 +224,13 @@ public class SoapAndInternalProxyTest {
             ssl.setTrust(trust);
             target.setSslParser(ssl);
         } else {
-            target.setHost("www.thomas-bayer.com");
-            target.setPort(80);
+            ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(9501), null, 0);
+            rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+            Router router = new HttpRouter();
+            router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+            router.init();
+            target.setHost("localhost");
+            target.setPort(9501);
         }
         internalProxy.setTarget(target);
         return internalProxy;
@@ -224,7 +239,7 @@ public class SoapAndInternalProxyTest {
     private Rule createSoapProxy() {
         SOAPProxy soapProxy = new SOAPProxy();
         soapProxy.setPort(3047);
-        soapProxy.setWsdl("service:int/axis2/services/BLZService?wsdl");
+        soapProxy.setWsdl("service:int/?wsdl");
         Path path = new Path();
         path.setValue("/b");
         soapProxy.setPath(path);
