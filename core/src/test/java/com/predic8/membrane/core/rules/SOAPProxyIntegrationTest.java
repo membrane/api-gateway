@@ -13,55 +13,71 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 
 public class SOAPProxyIntegrationTest {
 
 	private static Router router;
 
 	@BeforeAll
-	public static void init() throws MalformedURLException {
+	public static void setup() throws Exception {
+		Rule rule = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
+		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+
+		Router targetRouter = new HttpRouter();
+		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		targetRouter.init();
+	}
+
+	@BeforeEach
+	public void startRouter() throws Exception {
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
 
-	@AfterAll
-	public static void uninit() throws IOException {
+	@AfterEach
+	public void shutdownRouter() throws IOException {
 		router.shutdown();
 	}
 
 	@Test
-	public void test() throws Exception {
-		getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl",
-				new String[] {
-				Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8,
-				Header.SOAP_ACTION, ""
-		});
+	public void targetProxyTest() {
+		when()
+			.get("http://localhost:3000/foo?wsdl")
+		.then()
+			.contentType(TEXT_XML_UTF8);
 	}
 
 	@Test
-	public void test2() throws Exception {
-		String wsdl = getAndAssert200("http://localhost:2001/myBLZService?wsdl");
-		assertContains("location=\"http://localhost:2001/myBLZService\"", wsdl);
+	public void rewriteSimpleTest() throws Exception {
+		when()
+			.get("http://localhost:2000/foo?wsdl")
+		.then()
+			.contentType(TEXT_XML);
 	}
 
 	@Test
-	public void test3() throws Exception {
-		String wsdl = getAndAssert200("http://localhost:2002/myBLZService?wsdl");
-		assertContains("location=\"http://localhost:2001/myBLZService\"", wsdl);
+	public void rewriteLocationTest() {
+		when()
+			.get("http://localhost:2001/foo?wsdl")
+		.then()
+			.body(containsString("location=\"http://localhost:2001/foo\""));
 	}
 
-
-
+	@Test
+	public void rewriteHostInLocationTest() {
+		when()
+			.get("http://localhost:2002/baz?wsdl")
+		.then()
+			.body(containsString("location=\"http://localhost:2001/baz\""));
+	}
 }
