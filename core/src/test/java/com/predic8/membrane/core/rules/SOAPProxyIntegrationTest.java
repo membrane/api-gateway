@@ -40,12 +40,12 @@ public class SOAPProxyIntegrationTest {
 	}
 
 	@BeforeEach
-	public void beforeEach() throws Exception {
+	public void startRouter() throws Exception {
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
 
 	@AfterEach
-	public void shutdown() throws IOException {
+	public void shutdownRouter() throws IOException {
 		router.shutdown();
 	}
 
