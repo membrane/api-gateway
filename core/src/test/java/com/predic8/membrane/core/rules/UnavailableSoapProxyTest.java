@@ -13,17 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.List;
-
-import org.junit.jupiter.api.*;
-
+import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UnavailableSoapProxyTest {
 
@@ -31,8 +34,17 @@ public class UnavailableSoapProxyTest {
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
+	@BeforeAll
+	public static void setup() throws Exception {
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
+		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+		Router router = new HttpRouter();
+		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.init();
+	}
+
 	@BeforeEach
-	public void setup() {
+	public void startRouter() {
 		r = new Router();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.setMaxRetries(1);
@@ -51,14 +63,18 @@ public class UnavailableSoapProxyTest {
 		v.setWsdl("http://localhost:2001?wsdl");
 		sp3.getInterceptors().add(v);
 
-
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
-		sp2.setWsdl("http://localhost:2001?wsdl");
+		sp2.setWsdl("http://localhost:4000?wsdl");
 		r2 = new Router();
 		r2.setHotDeploy(false);
 		r2.getRules().add(sp2);
+	}
 
+	@AfterEach
+	public void shutdownRouter() throws IOException {
+		r.shutdown();
+		r2.shutdown();
 	}
 
 	private void test() {
@@ -67,13 +83,11 @@ public class UnavailableSoapProxyTest {
 		List<Rule> rules = r.getRuleManager().getRules();
 		assertEquals(1, rules.size());
 		assertFalse(rules.get(0).isActive());
-
 		r.tryReinitialization();
 
 		rules = r.getRuleManager().getRules();
 		assertEquals(1, rules.size());
 		assertFalse(rules.get(0).isActive());
-
 		r2.start();
 		r.tryReinitialization();
 
@@ -103,11 +117,4 @@ public class UnavailableSoapProxyTest {
 
 		test();
 	}
-
-	@AfterEach
-	public void cleanup() {
-		r2.stop();
-		r.stop();
-	}
-
 }
