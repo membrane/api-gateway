@@ -39,7 +39,7 @@ import static javax.xml.stream.XMLStreamConstants.*;
 @MCElement(name = "sampleSoapService")
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
-    public static final Pattern WSDL_PATH_PARAM = Pattern.compile("(?i).+\\?.*wsdl.*");
+    public static final Pattern WSDL_PATH_PARAM = Pattern.compile("(?i).*\\?.*wsdl.*");
     public static final String CITY_SERVICE_NS = "https://predic8.de/city-service";
 
     public SampleSoapServiceInterceptor() {
