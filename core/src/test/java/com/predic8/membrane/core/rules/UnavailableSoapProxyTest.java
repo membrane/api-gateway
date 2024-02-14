@@ -13,21 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
-import org.junit.jupiter.api.*;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UnavailableSoapProxyTest {
 
@@ -45,7 +44,7 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@BeforeEach
-	public void beforeEach() {
+	public void startRouter() {
 		r = new Router();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.setMaxRetries(1);
@@ -72,19 +71,23 @@ public class UnavailableSoapProxyTest {
 		r2.getRules().add(sp2);
 	}
 
+	@AfterEach
+	public void shutdownRouter() throws IOException {
+		r.shutdown();
+		r2.shutdown();
+	}
+
 	private void test() {
 		r.start();
 
 		List<Rule> rules = r.getRuleManager().getRules();
 		assertEquals(1, rules.size());
 		assertFalse(rules.get(0).isActive());
-
 		r.tryReinitialization();
 
 		rules = r.getRuleManager().getRules();
 		assertEquals(1, rules.size());
 		assertFalse(rules.get(0).isActive());
-
 		r2.start();
 		r.tryReinitialization();
 
@@ -114,11 +117,4 @@ public class UnavailableSoapProxyTest {
 
 		test();
 	}
-
-	@AfterEach
-	public void cleanup() {
-		r2.stop();
-		r.stop();
-	}
-
 }
