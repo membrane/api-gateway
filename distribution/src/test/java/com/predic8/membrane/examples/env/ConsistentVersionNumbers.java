@@ -81,7 +81,7 @@ public class ConsistentVersionNumbers {
 				version.set(old);
 			else {
 				try {
-					System.out.println(file);
+//					System.out.println(file);
 					assertTrue(version.get().isEqualTo(old) || removePatchVersion(version.get()).isEqualTo(old));
 				} catch (RuntimeException e) {
 					throw new RuntimeException("in file " + file.getAbsolutePath(), e);
@@ -110,7 +110,7 @@ public class ConsistentVersionNumbers {
 		validateBase(base);
 
 		transformRecursively(base, (file, old) -> {
-			System.out.println(old + " " + file.getAbsolutePath());
+//			System.out.println(old + " " + file.getAbsolutePath());
 			return old;
 		});
 
