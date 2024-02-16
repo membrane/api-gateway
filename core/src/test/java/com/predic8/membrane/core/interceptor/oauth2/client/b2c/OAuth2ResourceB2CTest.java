@@ -14,9 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.config.Path;
@@ -161,7 +159,7 @@ public abstract class OAuth2ResourceB2CTest {
         Exchange excCallResource = new Request.Builder().post(getClientAddress() + "/init").body("demobody").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class); // No
         assertEquals("/init", body2.get("path"));
         assertEquals("demobody", body2.get("body"));
         assertEquals("POST", body2.get("method"));
@@ -321,10 +319,35 @@ public abstract class OAuth2ResourceB2CTest {
 
         var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
 
+        System.out.println(location);
+        System.out.println(params);
+
         assertTrue(params.containsKey("foo"));
         assertEquals("bar", params.get("foo"));
         assertTrue(params.containsKey("login_hint"));
         assertEquals("def", params.get("login_hint"));
+        assertFalse(params.containsKey("illegal"));
+    }
+
+    @Test
+    public void loginParamsPerFlow() throws Exception {
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/pe/init?domain_hint=flow&illegal=true").buildExchange();
+        browser.applyWithoutRedirect(exc);
+
+        String location = exc.getResponse().getHeader().getFirstValue("Location");
+
+        URI jUri = new URIFactory().create(location);
+        String q = jUri.getRawQuery();
+
+        var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+
+        System.out.println(location);
+        System.out.println(params);
+
+        assertTrue(params.containsKey("fooflow"));
+        assertEquals("bar", params.get("foo"));
+        assertTrue(params.containsKey("domain_hint"));
+        assertEquals("def", params.get("domain_hint"));
         assertFalse(params.containsKey("illegal"));
     }
 
@@ -531,6 +554,17 @@ public abstract class OAuth2ResourceB2CTest {
 
         flowInitiator.setDefaultFlow(susiFlowId);
         flowInitiator.setTriggerFlow(peFlowId);
+
+        var lp1 = new LoginParameter();
+        lp1.setName("domain_hint");
+
+        var lp2 = new LoginParameter();
+        lp2.setName("fooflow");
+        lp2.setValue("bar");
+
+        flowInitiator.setLoginParameters(List.of(
+                lp1, lp2
+        ));
 
         flowInitiator.setAfterLoginUrl("/");
 

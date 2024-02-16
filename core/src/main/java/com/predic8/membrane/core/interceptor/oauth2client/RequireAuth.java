@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.oauth2client;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.Router;
@@ -12,6 +13,7 @@ import com.predic8.membrane.core.interceptor.jwt.Jwks;
 import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.*;
 
@@ -20,7 +22,6 @@ public class RequireAuth extends AbstractInterceptor {
 
     private String expectedAud;
     private OAuth2Resource2Interceptor oauth2;
-
     private JwtAuthInterceptor jwtAuth;
 
     @Override
@@ -29,6 +30,7 @@ public class RequireAuth extends AbstractInterceptor {
 
         var jwks = new Jwks();
         jwks.setJwks(new ArrayList<>());
+        // TODO init dependency
         jwks.setJwksUris(oauth2.getAuthService().getJwksEndpoint());
 
         jwtAuth = new JwtAuthInterceptor();

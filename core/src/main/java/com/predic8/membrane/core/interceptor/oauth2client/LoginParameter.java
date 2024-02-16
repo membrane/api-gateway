@@ -13,14 +13,60 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
+import com.bornium.http.util.UriUtil;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
+
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
 
 @MCElement(name = "loginParameter")
 public class LoginParameter {
 
     private String name;
     private String value;
+
+    public LoginParameter() {}
+
+    public LoginParameter(String name, String value) {
+        this.name = name;
+        this.value = value;
+    }
+
+    public static String copyLoginParameters(Exchange exc, List<LoginParameter> loginParameters) throws Exception {
+        StringBuilder sb = new StringBuilder();
+
+        if (loginParameters.isEmpty())
+            return sb.toString();
+
+        Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        loginParameters.forEach(lp -> {
+            try {
+                if (lp.getValue() != null) {
+                    sb.append("&");
+                    sb.append(lp.getName());
+                    sb.append("=");
+                    sb.append(UriUtil.encode(lp.getValue()));
+                } else {
+                    if (params.containsKey(lp.getName())) {
+                        String encoded = UriUtil.encode(params.get(lp.getName()));
+                        sb.append("&");
+                        sb.append(lp.getName());
+                        sb.append("=");
+                        sb.append(encoded);
+                    }
+                }
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        return sb.toString();
+    }
 
     public String getName() {
         return name;
