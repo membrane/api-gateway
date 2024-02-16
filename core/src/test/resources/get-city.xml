@@ -1,0 +1,8 @@
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cit="https://predic8.de/cities">
+  <s:Header/>
+  <s:Body>
+    <cit:getCity>
+      <name>Bonn</name>
+    </cit:getCity>
+  </s:Body>
+</s:Envelope>

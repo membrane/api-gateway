@@ -42,7 +42,7 @@ public class OpenAPIConfigErrorTest extends DistributionExtractingTestcase {
         BufferLogger logger = new BufferLogger();
         writeInputStreamToFile(baseDir + "/conf/proxies.xml", getResourceAsStream("com/predic8/membrane/errorhandling/wrong-url-location-proxies.xml"));
         try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitAfterStartFor("giving up").start()) {
-            System.out.println("logger = " + logger);
+//            System.out.println("logger = " + logger);
             assertTrue(logger.contains("Error accessing OpenAPI"));
             assertTrue(logger.contains(": http://abc"));
         }
