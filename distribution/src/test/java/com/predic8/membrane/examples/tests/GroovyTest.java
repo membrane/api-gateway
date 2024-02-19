@@ -43,7 +43,7 @@ public class GroovyTest extends AbstractSampleMembraneStartStopTestcase {
         process = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitForMembrane().start();
 
         // Dump HTTP
-        filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+        //filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test

@@ -43,14 +43,13 @@ public class JavascriptTest extends AbstractSampleMembraneStartStopTestcase {
         process = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitForMembrane().start();
 
         // Dump HTTP
-        filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+        //filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test
     public void returnJsonAsMap() {
 
         Response r = get("http://localhost:2000");
-        System.out.println("r.getBody().asString() = " + r.getBody().asString());
 
         get("http://localhost:2000").then().assertThat()
                 .body("id",equalTo(7))

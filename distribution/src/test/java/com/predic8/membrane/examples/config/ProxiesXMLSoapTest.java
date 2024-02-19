@@ -34,7 +34,7 @@ public class ProxiesXMLSoapTest extends AbstractSampleMembraneStartStopTestcase 
         process = new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-soap.xml").waitForMembrane().start();
 
         // Dump HTTP
-//         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+        // RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @Test
