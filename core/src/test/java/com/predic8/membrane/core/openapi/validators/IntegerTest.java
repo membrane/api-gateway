@@ -37,7 +37,6 @@ public class IntegerTest extends AbstractValidatorTest {
     @Test
     public void validMinimumInQuery() {
         ValidationErrors errors = validator.validate(Request.get().path("/integer?minimum=3"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(QUERY_PARAMETER, e.getContext().getValidatedEntityType());
@@ -48,28 +47,24 @@ public class IntegerTest extends AbstractValidatorTest {
     @Test
     public void validMaximumInQuery() {
         ValidationErrors errors = validator.validate(Request.get().path("/integer?maximum=13"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
     }
 
     @Test
     public void validMinimumInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("minimum",new BigDecimal(7)))));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void validMinimumInBodyExact() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("minimum",new BigDecimal(5)))));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void invalidMinimumInBodyExactExclusive() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("exclusiveMinimum",new BigDecimal(5)))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().contains("exclusive"));
@@ -78,7 +73,6 @@ public class IntegerTest extends AbstractValidatorTest {
     @Test
     public void invalidMinimumInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("minimum",new BigDecimal(3)))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().contains("minimum"));
@@ -87,21 +81,18 @@ public class IntegerTest extends AbstractValidatorTest {
     @Test
     public void validMaximumInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("maximum",new BigDecimal(3)))));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void validMaximumInBodyExact() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("maximum",new BigDecimal(5)))));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void invalidMaximumInBodyExactExclusive() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("exclusiveMaximum",new BigDecimal(5)))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().contains("exclusive"));
@@ -110,7 +101,6 @@ public class IntegerTest extends AbstractValidatorTest {
     @Test
     public void invalidMaximumInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("maximum",new BigDecimal(13)))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().contains("maximum"));

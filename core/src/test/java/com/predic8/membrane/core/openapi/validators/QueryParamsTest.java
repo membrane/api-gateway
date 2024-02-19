@@ -33,7 +33,6 @@ public class QueryParamsTest extends AbstractValidatorTest {
     @Test
     public void differentTypesOk()  {
         ValidationErrors errors = validator.validate(Request.get().path("/cities?limit=10"));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 

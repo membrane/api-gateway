@@ -41,7 +41,6 @@ public class ReadWriteOnlyTest extends AbstractValidatorTest {
         m.put("name","Jack");
 
         ValidationErrors errors = validator.validate(Request.put().path("/read-only").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -53,7 +52,6 @@ public class ReadWriteOnlyTest extends AbstractValidatorTest {
         m.put("name","Jack");
 
         ValidationErrors errors = validator.validate(Request.put().path("/read-only").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/id",e.getContext().getJSONpointer());
@@ -72,7 +70,6 @@ public class ReadWriteOnlyTest extends AbstractValidatorTest {
         ValidationErrors errors = validator.validateResponse(Request.get().path("/read-only"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(mapToJson(m)));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
-//        System.out.println("errors = " + errors);
         assertEquals("/role",e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("admin"));
         assertEquals("REQUEST/BODY#/role", e.getContext().getLocationForRequest());

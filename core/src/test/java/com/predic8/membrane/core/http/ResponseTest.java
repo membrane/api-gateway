@@ -271,8 +271,6 @@ public class ResponseTest {
         assertEquals("http://localhost:2000/login",res.getHeader().getLocation());
         assertTrue( res.getBodyAsStringDecoded().contains("""
             <meta http-equiv="refresh" content="0;URL='http://localhost:2000/login'"/>"""));
-        System.out.println("res = " + res);
-
     }
 
     @Test

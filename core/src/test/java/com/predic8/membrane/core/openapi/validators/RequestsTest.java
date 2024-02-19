@@ -35,7 +35,6 @@ public class RequestsTest extends AbstractValidatorTest {
     public void wrongMediaTypeRequest() throws ParseException {
 
         ValidationErrors errors = validator.validate(Request.post().path("/customers").mediaType(TEXT_PLAIN).body(getResourceAsStream("/openapi/messages/customer.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationContext ctx = errors.get(0).getContext();
         assertEquals(MEDIA_TYPE,ctx.getValidatedEntityType());
@@ -52,7 +51,6 @@ public class RequestsTest extends AbstractValidatorTest {
     public void noContentInRequestSentPayload() {
 
         ValidationErrors errors = validator.validate(Request.get().path("/customers").json().body(getResourceAsStream("/openapi/messages/customer.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());

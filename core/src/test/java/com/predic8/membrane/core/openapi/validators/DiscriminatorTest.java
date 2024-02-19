@@ -43,7 +43,6 @@ public class DiscriminatorTest extends AbstractValidatorTest {
         publicTransport.put("length","5cm");
 
         ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(publicTransport)));
-//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
         ValidationError numberError = errors.stream().filter(e -> e.getMessage().contains("number")).findFirst().get();
@@ -63,7 +62,6 @@ public class DiscriminatorTest extends AbstractValidatorTest {
         publicTransport.put("seats",45);
 
         ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(publicTransport)));
-//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
 

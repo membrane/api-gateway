@@ -87,11 +87,9 @@ import org.junit.platform.suite.api.Suite;
 
         // Security
         JsonProtectionTest.class,
-
         APIKeyTest.class,
         XMLTemplateTest.class,
-        //DefaultConfigAdminConsoleTest.class
-
+        //DefaultConfigAdminConsoleTest.class*/
 })
 public class ExampleTestsWithoutInternet {
 }
