@@ -50,7 +50,6 @@ public class JavascriptTest extends AbstractSampleMembraneStartStopTestcase {
     public void returnJsonAsMap() {
 
         Response r = get("http://localhost:2000");
-        System.out.println("r.getBody().asString() = " + r.getBody().asString());
 
         get("http://localhost:2000").then().assertThat()
                 .body("id",equalTo(7))
