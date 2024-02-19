@@ -52,7 +52,7 @@ import org.junit.platform.suite.api.Suite;
 
         FormValidationTest.class,
         CustomInterceptorTest.class,
-        //StaxExampleInterceptorTest.class, POM.xml for test is missing
+        StaxExampleInterceptorTest.class,
         AddSoapHeaderTest.class,
         BasicXmlInterceptorTest.class,
 
