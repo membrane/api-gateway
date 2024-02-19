@@ -35,14 +35,12 @@ public class BooleanTest extends AbstractValidatorTest {
     @Test
     public void validInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/boolean").json().body(new JsonBody(getBoolean("good",true))));
-        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void inValidInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/boolean").body(new JsonBody(getStrings("good","abc"))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/good", e.getContext().getJSONpointer());
@@ -54,14 +52,12 @@ public class BooleanTest extends AbstractValidatorTest {
     @Test
     public void validInQuery() {
         ValidationErrors errors = validator.validate(Request.get().path("/boolean?truth=true"));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void inValidInQuery() {
         ValidationErrors errors = validator.validate(Request.get().path("/boolean?truth=abc"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(QUERY_PARAMETER, e.getContext().getValidatedEntityType());

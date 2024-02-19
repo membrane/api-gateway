@@ -49,7 +49,6 @@ public class MimeTypeTest {
     void parameters() throws ParseException {
         ContentType ct = new ContentType("text/xml; charset=utf-8");
         ParameterList pl = ct.getParameterList();
-        System.out.println("pl = " + pl.get("charset").toUpperCase());
     }
 
     @Test
