@@ -23,6 +23,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,12 +82,12 @@ public class FlowInitiator extends AbstractInterceptor {
 
         exc.getRequest().getHeader().removeFields("Cookie");
 
+        var params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        exc.setProperty("loginParameters", LoginParameter.mergeParams(params, loginParameters));
 
         // create new response redirecting user to new flow
         exc.getRequest().setUri(afterLoginUrl);
         exc.setOriginalRequestUri(afterLoginUrl);
-
-        exc.setProperty("loginParameters", loginParameters);
 
         oauth2.respondWithRedirect(exc);
 

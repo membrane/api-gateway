@@ -341,13 +341,10 @@ public abstract class OAuth2ResourceB2CTest {
 
         var params = URLParamUtil.parseQueryString(q, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
 
-        System.out.println(location);
-        System.out.println(params);
-
         assertTrue(params.containsKey("fooflow"));
         assertEquals("bar", params.get("foo"));
         assertTrue(params.containsKey("domain_hint"));
-        assertEquals("def", params.get("domain_hint"));
+        assertEquals("flow", params.get("domain_hint"));
         assertFalse(params.containsKey("illegal"));
     }
 

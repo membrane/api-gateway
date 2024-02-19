@@ -23,6 +23,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @MCElement(name = "loginParameter")
 public class LoginParameter {
@@ -66,6 +67,28 @@ public class LoginParameter {
         });
 
         return sb.toString();
+    }
+
+    public static List<LoginParameter> mergeParams(Map<String, String> params, List<LoginParameter> loginParameters) {
+        var result = params.entrySet().stream()
+                .filter(entry -> loginParameters.stream().anyMatch(lp -> entry.getKey().equals(lp.getName())))
+                .map(entry -> new LoginParameter(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+
+        loginParameters.stream()
+                .filter(lp -> lp.getValue() != null)
+                .forEach(lp -> {
+                    var resultLp = result.stream().filter(rlp -> rlp.getName().equals(lp.getName())).findFirst();
+
+                    if (resultLp.isPresent()) {
+                        resultLp.get().setValue(lp.getValue());
+                        return;
+                    }
+
+                    result.add(lp);
+                });
+
+        return result;
     }
 
     public String getName() {
