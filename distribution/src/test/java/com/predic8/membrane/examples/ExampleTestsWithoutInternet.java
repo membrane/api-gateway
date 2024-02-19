@@ -47,7 +47,6 @@ import org.junit.platform.suite.api.Suite;
         JavaLicenseInfoTest.class,
         OpenAPIConfigErrorTest.class,
 
-
         // Proxy
         CBRTest.class,
         ProxiesXMLOfflineTest.class,
@@ -56,7 +55,6 @@ import org.junit.platform.suite.api.Suite;
        // Scripting
         GroovyTest.class,
         JavascriptTest.class,
-
 
         // Load Balancing
         Loadbalancing1StaticTest.class,
@@ -89,9 +87,11 @@ import org.junit.platform.suite.api.Suite;
 
         // Security
         JsonProtectionTest.class,
+
         APIKeyTest.class,
         XMLTemplateTest.class,
-        //DefaultConfigAdminConsoleTest.class*/
+        //DefaultConfigAdminConsoleTest.class
+
 })
 public class ExampleTestsWithoutInternet {
 }
