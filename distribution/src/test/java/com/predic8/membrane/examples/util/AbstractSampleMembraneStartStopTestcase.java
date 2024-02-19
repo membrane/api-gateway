@@ -29,7 +29,7 @@ public class AbstractSampleMembraneStartStopTestcase extends DistributionExtract
         process = startServiceProxyScript();
 
         // Dump HTTP
-         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+        // RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @AfterEach
