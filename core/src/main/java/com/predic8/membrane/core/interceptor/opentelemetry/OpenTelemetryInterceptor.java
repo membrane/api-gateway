@@ -44,7 +44,7 @@ import static io.opentelemetry.api.trace.StatusCode.OK;
 import static io.opentelemetry.context.Context.current;
 
 
-@MCElement(name = "opentelemetry")
+@MCElement(name = "openTelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private double sampleRate = 1.0;
     private OtelExporter exporter = new OtlpExporter();
