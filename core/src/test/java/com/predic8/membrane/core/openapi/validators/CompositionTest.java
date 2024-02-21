@@ -40,7 +40,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("firstname","Otto");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -51,7 +50,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("firstname","123456");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("axLength")).findAny().get();
@@ -72,7 +70,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("firstname","12");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
         ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("minLength")).findAny().get();
@@ -90,7 +87,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("contact","membrane@predic8.de");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -101,7 +97,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("contact","123");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -112,7 +107,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("contact","Bonn");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/contact", e.getContext().getJSONpointer());
@@ -126,7 +120,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("multiple",7);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/multiple", e.getContext().getJSONpointer());
@@ -140,7 +133,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("multiple",15);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/multiple", e.getContext().getJSONpointer());
@@ -154,7 +146,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("multiple",21);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -165,7 +156,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("factored-out",15);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/factored-out", e.getContext().getJSONpointer());
@@ -180,7 +170,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("factored-out",21);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -191,7 +180,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("not-string",true);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -202,7 +190,6 @@ public class CompositionTest extends AbstractValidatorTest {
         m.put("not-string","abc");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/not-string", e.getContext().getJSONpointer());

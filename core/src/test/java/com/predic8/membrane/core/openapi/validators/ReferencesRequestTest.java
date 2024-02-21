@@ -36,14 +36,12 @@ public class ReferencesRequestTest extends AbstractValidatorTest {
     @Test
     public void refRequestOk()  {
         ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/messages/references-requests-responses-customer.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void refRequestInvalid()  {
         ValidationErrors errors = validator.validate(Request.post().path("/ref-request").json().body(getResourceAsStream("/openapi/messages/references-requests-responses-customer-invalid.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());

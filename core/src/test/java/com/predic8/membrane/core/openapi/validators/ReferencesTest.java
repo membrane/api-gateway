@@ -33,14 +33,12 @@ public class ReferencesTest extends AbstractValidatorTest {
     @Test
     public void pathParamOk()  {
         ValidationErrors errors = validator.validate(Request.get().path("/references/6"));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void pathParamInvalid()  {
         ValidationErrors errors = validator.validate(Request.get().path("/references/foo"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(PATH_PARAMETER,e.getContext().getValidatedEntityType());
@@ -54,14 +52,12 @@ public class ReferencesTest extends AbstractValidatorTest {
     @Test
     public void queryParamOk() {
         ValidationErrors errors = validator.validate(Request.get().path("/references/6?limit=10"));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void queryParamInvalid() {
         ValidationErrors errors = validator.validate(Request.get().path("/references/6?limit=150"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(QUERY_PARAMETER,e.getContext().getValidatedEntityType());
@@ -74,14 +70,12 @@ public class ReferencesTest extends AbstractValidatorTest {
     @Test
     public void bodyAsRefPrimitiveOk() {
         ValidationErrors errors = validator.validate(Request.post().path("/body-as-ref-primitive").json().body("42"));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void bodyAsRefPrimitiveInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/body-as-ref-primitive").json().body("-1"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());
@@ -94,14 +88,12 @@ public class ReferencesTest extends AbstractValidatorTest {
     @Test
     public void objRefsObjOK() {
         ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream("/openapi/messages/references-customer-ok.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void objRefsObjOKInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/obj-ref-obj").json().body(getResourceAsStream("/openapi/messages/references-customer-invalid.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationContext ctx = errors.get(0).getContext();
         assertEquals("REQUEST",ctx.getValidatedEntity());

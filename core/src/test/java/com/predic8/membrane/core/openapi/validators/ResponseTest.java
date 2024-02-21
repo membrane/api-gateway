@@ -38,7 +38,6 @@ public class ResponseTest extends AbstractValidatorTest {
     public void validCustomerResponse() throws ParseException {
 
         ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -47,7 +46,6 @@ public class ResponseTest extends AbstractValidatorTest {
 
         ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/invalid-customer.json")));
 
-//        System.out.println("errors = " + errors);
 
         assertEquals(3,errors.size());
         assertTrue(errors.stream().allMatch(ve -> ve.getContext().getValidatedEntityType().equals(BODY)));
@@ -65,7 +63,6 @@ public class ResponseTest extends AbstractValidatorTest {
         InputStream is = getResourceAsStream("/openapi/messages/customer.json");
 
         ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(404).json().body(is));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());
@@ -80,7 +77,6 @@ public class ResponseTest extends AbstractValidatorTest {
     public void wrongMediaTypeResponse() throws ParseException {
 
         ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_XML).body(getResourceAsStream("/openapi/messages/customer.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(MEDIA_TYPE,e.getContext().getValidatedEntityType());
@@ -96,7 +92,6 @@ public class ResponseTest extends AbstractValidatorTest {
     public void noContentInResponseSendPayload() throws ParseException {
 
         ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(200).mediaType(APPLICATION_JSON).body("{ }"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());
@@ -109,7 +104,6 @@ public class ResponseTest extends AbstractValidatorTest {
     public void statusCodeNotInResponse() throws ParseException {
 
         ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(202).mediaType(APPLICATION_JSON).body("{ }"));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("POST",e.getContext().getMethod());

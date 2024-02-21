@@ -35,14 +35,12 @@ public class StringTest extends AbstractValidatorTest {
     @Test
     public void normal() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("normal","foo"))));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void maxLength() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("maxLength","Müller-Meierddd"))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().contains("axLength"));
@@ -55,7 +53,6 @@ public class StringTest extends AbstractValidatorTest {
     @Test
     public void minLength() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("minLength","a"))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().contains("minLength"));
@@ -128,7 +125,6 @@ public class StringTest extends AbstractValidatorTest {
     @Test
     public void uriValid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("uri","a:b"))));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 

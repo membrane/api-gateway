@@ -39,7 +39,6 @@ public class ObjectTest extends AbstractValidatorTest{
         // Delete new JsonBody
         JsonNode object = getNumbers("object", new BigDecimal(7));
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(new JsonBody(object)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(400,e.getContext().getStatusCode());
@@ -50,7 +49,6 @@ public class ObjectTest extends AbstractValidatorTest{
     @Test
     public void stringAsObject() {
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(new JsonBody(getStrings("object","Hossa"))));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
     }
 
@@ -65,7 +63,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("additionalPropertiesTrue",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -80,7 +77,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("additionalPropertiesFalse",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("REQUEST/BODY#/additionalPropertiesFalse", e.getContext().getLocationForRequest());
@@ -97,7 +93,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("additionalPropertiesString",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -113,7 +108,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("additionalPropertiesString",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/additionalPropertiesString/illegal",e.getContext().getJSONpointer());
@@ -134,7 +128,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("additionalPropertiesComplex",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -154,7 +147,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("additionalPropertiesComplex",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -171,7 +163,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("minMaxProperties",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/minMaxProperties",e.getContext().getJSONpointer());
@@ -194,7 +185,6 @@ public class ObjectTest extends AbstractValidatorTest{
         m.put("minMaxProperties",nm);
 
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/minMaxProperties",e.getContext().getJSONpointer());

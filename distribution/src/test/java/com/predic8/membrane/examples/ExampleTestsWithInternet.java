@@ -32,10 +32,9 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @SelectClasses({
         GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
+        HelpLinkExistenceTest.class,
 
         ExampleTestsWithoutInternet.class,
-
-        HelpLinkExistenceTest.class,
 
         ACLTest.class,
         BasicAuthTest.class,
@@ -52,7 +51,6 @@ import org.junit.platform.suite.api.Suite;
         XSLTTest.class,
 
         FormValidationTest.class,
-
         CustomInterceptorTest.class,
         StaxExampleInterceptorTest.class,
         AddSoapHeaderTest.class,

@@ -42,21 +42,31 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
+        // Not examples
         ConsistentVersionNumbers.class,
         JavaLicenseInfoTest.class,
+        OpenAPIConfigErrorTest.class,
 
+        // Proxy
         CBRTest.class,
+        ProxiesXMLOfflineTest.class,
+        ProxiesXMLSecurityTest.class,
+
+       // Scripting
         GroovyTest.class,
         JavascriptTest.class,
+
+        // Load Balancing
         Loadbalancing1StaticTest.class,
         Loadbalancing3ClientTest.class,
         Loadbalancing5MultipleTest.class,
 
+        // Validation
         JSONSchemaValidationTest.class,
         XMLValidationTest.class,
         SampleSoapServiceTest.class,
 
-        // Transformatiom
+        // Transformation
         Xml2JsonTest.class,
         Json2XmlTest.class,
         TransformationUsingJavascriptTest.class,
@@ -66,25 +76,20 @@ import org.junit.platform.suite.api.Suite;
         OAuth2MembraneTest.class,
         OAuth2CredentialsTest.class,
 
+        // OpenAPI
         OpenAPIValidationSimpleTest.class,
         OpenAPIValidationTest.class,
         OpenTelemetryInterceptorTest.class,
 
-        ProxiesXMLOfflineTest.class,
-        ProxiesXMLSecurityTest.class,
-
-        // Not an example test. Maybe we can find a better location?
-        OpenAPIConfigErrorTest.class,
-
+        // Template
         TextTemplateTest.class,
         JsonTemplateTest.class,
-        XMLTemplateTest.class,
 
+        // Security
         JsonProtectionTest.class,
-
-        APIKeyTest.class
-
-        //DefaultConfigAdminConsoleTest.class
+        APIKeyTest.class,
+        XMLTemplateTest.class,
+        //DefaultConfigAdminConsoleTest.class*/
 })
 public class ExampleTestsWithoutInternet {
 }
