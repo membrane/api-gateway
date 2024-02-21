@@ -5,12 +5,10 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-        <api port="3000" method="GET">
-            <opentelemetry
-                    jaegerPort="4317"
-                    jaegerHost="localhost"
-                    sampleRate="1.0"
-            />
+        <api name="Step 2" port="3000" method="GET">
+            <opentelemetry sampleRate="1.0">
+                <otlpExporter host="localhost" />
+            </opentelemetry>
             <request>
                 <groovy>
                     println "Request headers:"
@@ -20,18 +18,14 @@
                     CONTINUE
                 </groovy>
                 <template contentType="application/json" pretty="yes">
-                    { success: true }
+                    { "Success": true }
                 </template>
             </request>
             <return statusCode="200"/>
         </api>
 
-        <api port="2000">
-            <opentelemetry
-                    jaegerPort="4317"
-                    jaegerHost="localhost"
-                    sampleRate="1.0"
-            />
+        <api name="Step 1" port="2000">
+            <opentelemetry sampleRate="1.0"/>
             <target host="localhost" port="3000"/>
         </api>
     </router>
