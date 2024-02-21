@@ -47,7 +47,6 @@ public class RequiredTest extends AbstractValidatorTest {
         o.put("normal", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(o)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -62,7 +61,6 @@ public class RequiredTest extends AbstractValidatorTest {
         o.put("normal", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(o)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/normal/b", e.getContext().getJSONpointer());
@@ -80,7 +78,6 @@ public class RequiredTest extends AbstractValidatorTest {
         o.put("normal", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(o)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/normal", e.getContext().getJSONpointer());
@@ -99,7 +96,6 @@ public class RequiredTest extends AbstractValidatorTest {
         readOnlyRequest.put("read-only-request", props);
 
         ValidationErrors errors = validator.validate(Request.post().path("/required").body(mapToJson(readOnlyRequest)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -114,7 +110,6 @@ public class RequiredTest extends AbstractValidatorTest {
         writeOnlyResponse.put("write-only-response", props);
 
         ValidationErrors errors = validator.validateResponse(Request.get().path("/required"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(mapToJson(writeOnlyResponse)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 }

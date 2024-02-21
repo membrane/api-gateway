@@ -38,7 +38,7 @@ public class ProxiesXMLOfflineTest extends AbstractSampleMembraneStartStopTestca
         process =  new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-offline.xml").waitForMembrane().start();
 
         // Dump HTTP
-        RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+        //RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
     }
 
     @SuppressWarnings("JsonSchemaCompliance")

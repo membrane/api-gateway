@@ -40,7 +40,6 @@ public class EnumTest extends AbstractValidatorTest {
         m.put("state","amber");
 
         ValidationErrors errors = validator.validate(Request.post().path("/enum").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -51,7 +50,6 @@ public class EnumTest extends AbstractValidatorTest {
         m.put("state","blue");
 
         ValidationErrors errors = validator.validate(Request.post().path("/enum").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY, e.getContext().getValidatedEntityType());
@@ -73,7 +71,6 @@ public class EnumTest extends AbstractValidatorTest {
 //        m.put("state",42);
 //
 //        ValidationErrors errors = validator.validate(Request.post().path("/enum-without-type").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
 //        assertEquals(0,errors.size());
 //    }
 }

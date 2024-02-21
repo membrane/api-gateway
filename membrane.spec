@@ -33,6 +33,10 @@ BuildRequires:    systemd
 %prep
 %setup -q -c -T
 wget %{url}/releases/download/v%{version}/%{zip_name}.zip
+wget %{url}/releases/download/v%{version}/%{zip_name}.zip.asc
+wget https://keys.openpgp.org.... # TODO
+gpg --no-tty --import "KEYFILE"
+gpg --no-tty "%{zip_name}.zip.asc"
 unzip %{zip_name}.zip
 
 %{__cat} <<EOF > %{name}.service

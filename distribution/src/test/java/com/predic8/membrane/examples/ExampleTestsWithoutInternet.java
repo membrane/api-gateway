@@ -52,7 +52,7 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLOfflineTest.class,
         ProxiesXMLSecurityTest.class,
 
-        // Scripting
+       // Scripting
         GroovyTest.class,
         JavascriptTest.class,
 
@@ -84,13 +84,12 @@ import org.junit.platform.suite.api.Suite;
         // Template
         TextTemplateTest.class,
         JsonTemplateTest.class,
-        XMLTemplateTest.class,
 
         // Security
         JsonProtectionTest.class,
-        APIKeyTest.class
-
-        //DefaultConfigAdminConsoleTest.class
+        APIKeyTest.class,
+        XMLTemplateTest.class,
+        //DefaultConfigAdminConsoleTest.class*/
 })
 public class ExampleTestsWithoutInternet {
 }

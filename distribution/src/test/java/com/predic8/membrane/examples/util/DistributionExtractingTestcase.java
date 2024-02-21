@@ -33,7 +33,7 @@ import static org.apache.commons.io.FileUtils.*;
  */
 public abstract class DistributionExtractingTestcase {
 
-    public static final String MEMBRANE_LOG_LEVEL = "debug";
+    public static final String MEMBRANE_LOG_LEVEL = "info";
 
     public static final String BLZ_SERVICE = "http://localhost:2000/bank/services/BLZService";
     public static final String BLZ_SERVICE_WSDL = BLZ_SERVICE + "?wsdl";

@@ -32,14 +32,12 @@ public class NestedObjectArrayTest extends AbstractValidatorTest{
     @Test
     public void nestedOk()  {
         ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/messages/nested-objects-arrays.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     public void nestedInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/nested").json().body(getResourceAsStream("/openapi/messages/nested-objects-arrays-invalid.json")));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/b/2/c/1",e.getContext().getJSONpointer());

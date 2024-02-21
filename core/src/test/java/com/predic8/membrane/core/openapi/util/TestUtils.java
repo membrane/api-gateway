@@ -62,7 +62,6 @@ public class TestUtils {
     @SuppressWarnings("rawtypes")
     public static Map getMapFromResponse(Exchange exc) throws IOException {
         byte[] content = exc.getResponse().getBody().getContent();
-        System.out.println("content = " + new String(content));
         return om.readValue(content, Map.class);
     }
 

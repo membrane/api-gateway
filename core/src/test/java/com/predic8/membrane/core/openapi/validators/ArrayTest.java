@@ -41,7 +41,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("no-type", listWithDifferentTypes());
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -67,7 +66,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("only-numbers", listWithDifferentTypes());
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
     }
 
@@ -80,10 +78,8 @@ public class ArrayTest extends AbstractValidatorTest {
 //        Map m = new HashMap();
 //        m.put("prefixed", l);
 //
-//        System.out.println("m = " + m);
 //
 //        ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
 //        assertEquals(2,errors.size());
 //    }
 
@@ -94,7 +90,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("min-max", Arrays.asList("foo",7));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -105,7 +100,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("min-max", singletonList("foo"));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/min-max",e.getContext().getJSONpointer());
@@ -120,7 +114,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("min-max", Arrays.asList("foo",7,true,8,"bar"));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/min-max",e.getContext().getJSONpointer());
@@ -136,7 +129,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("uniqueItems", Arrays.asList(4,5,2,3,9,1,2,0));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/uniqueItems",e.getContext().getJSONpointer());
@@ -173,7 +165,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("objects", Arrays.asList(o1,o2,o3));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
@@ -195,7 +186,6 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("objects", Arrays.asList(o1,o2,o3));
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/objects/1/b",e.getContext().getJSONpointer());
