@@ -31,7 +31,7 @@ import com.predic8.membrane.examples.tests.oauth2.OAuth2CredentialsTest;
 import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationSimpleTest;
 import com.predic8.membrane.examples.tests.openapi.OpenAPIValidationTest;
-import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryInterceptorTest;
+import com.predic8.membrane.examples.tests.opentelemetry.OpenTelemetryTest;
 import com.predic8.membrane.examples.tests.template.json.JsonTemplateTest;
 import com.predic8.membrane.examples.tests.template.text.TextTemplateTest;
 import com.predic8.membrane.examples.tests.template.xml.XMLTemplateTest;
@@ -79,7 +79,7 @@ import org.junit.platform.suite.api.Suite;
         // OpenAPI
         OpenAPIValidationSimpleTest.class,
         OpenAPIValidationTest.class,
-        OpenTelemetryInterceptorTest.class,
+        OpenTelemetryTest.class,
 
         // Template
         TextTemplateTest.class,

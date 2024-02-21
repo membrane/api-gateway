@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
+import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.context.propagation.TextMapPropagator;
-import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -29,13 +29,11 @@ import static io.opentelemetry.sdk.trace.export.BatchSpanProcessor.builder;
 import static io.opentelemetry.sdk.trace.samplers.Sampler.traceIdRatioBased;
 import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_NAME;
 import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_VERSION;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class OpenTelemetryConfigurator {
-    public static OpenTelemetry openTelemetry(String endpoint, double sampleRate) {
-
-        // can't inline because of the shutdown. otherwise the data won't be flushed and sent to the jaeger backend!
-        SdkTracerProvider sdkTracerProvider = getSdkTracerProvider(endpoint, sampleRate);
+    public static OpenTelemetry openTelemetry(String serviceName, OtelExporter exporter, double sampleRate) {
+        // Can't inline because of the shutdown. Otherwise, the data won't be flushed and sent to the exporter backend!
+        SdkTracerProvider sdkTracerProvider = getSdkTracerProvider(serviceName, exporter, sampleRate);
         OpenTelemetry openTelemetry = getGlobalOpenTelemetry(sdkTracerProvider);
         Runtime.getRuntime().addShutdownHook(new Thread(sdkTracerProvider::close));
         return openTelemetry;
@@ -48,11 +46,11 @@ public class OpenTelemetryConfigurator {
                 .build();
     }
 
-    private static SdkTracerProvider getSdkTracerProvider(String endpoint, double sampleRate) {
+    private static SdkTracerProvider getSdkTracerProvider(String serviceName, OtelExporter exporter, double sampleRate) {
         return SdkTracerProvider.builder()
-                .addSpanProcessor(builder(OtlpGrpcSpanExporter.builder().setEndpoint(endpoint).setTimeout(30, SECONDS).build()).build())
+                .addSpanProcessor(builder(exporter.get()).build())
                 .setSampler(traceIdRatioBased(sampleRate))
-                .setResource(Resource.getDefault().toBuilder().put(SERVICE_NAME, "Membrane").put(SERVICE_VERSION, VERSION ).build())
+                .setResource(Resource.getDefault().toBuilder().put(SERVICE_NAME, serviceName).put(SERVICE_VERSION, VERSION).build())
                 .build();
     }
 }

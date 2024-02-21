@@ -15,16 +15,25 @@
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
+import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
+import com.predic8.membrane.core.rules.AbstractProxy;
+import com.predic8.membrane.core.rules.Rule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+
+import java.util.Collection;
+import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
@@ -37,16 +46,14 @@ import static io.opentelemetry.context.Context.current;
 
 @MCElement(name = "opentelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
-    private String jaegerHost = "localhost";
-    private String jaegerPort = "4317";
     private double sampleRate = 1.0;
-
+    private OtelExporter exporter = new OtlpExporter();
     private OpenTelemetry openTelemetryInstance;
     private Tracer tracer;
 
     @Override
     public void init() throws Exception {
-        openTelemetryInstance = OpenTelemetryConfigurator.openTelemetry("http://" + getJaegerHost() + ":" + getJaegerPort(), getSampleRate());
+        openTelemetryInstance = OpenTelemetryConfigurator.openTelemetry(getServiceName(), exporter, getSampleRate());
         tracer = openTelemetryInstance.getTracer("MEMBRANE-TRACER");
     }
 
@@ -62,6 +69,12 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         span.setStatus(getStatusCode(exc));
         setSpanEvent(span, exc);
         return CONTINUE;
+    }
+
+    private String getServiceName() {
+        return getRule().getName().isEmpty() ?
+                getRule().getKey().getHost() + getRule().getKey().getPort()
+              : getRule().getName();
     }
 
     private StatusCode getStatusCode(Exchange exc) {
@@ -99,32 +112,23 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     private Context getExtractContext(Exchange exc) {
         return openTelemetryInstance
-                .getPropagators().
-                getTextMapPropagator()
+                .getPropagators()
+                .getTextMapPropagator()
                 .extract(current(), exc, getContextFromRequestHeader());
     }
 
-    @MCAttribute
-    public void setJaegerHost(String jaegerHost) {
-        this.jaegerHost = jaegerHost;
+    @MCChildElement
+    public void setExporter(OtelExporter exporter) {
+        this.exporter = exporter;
     }
 
-    @MCAttribute
-    public void setJaegerPort(String jaegerPort) {
-        this.jaegerPort = jaegerPort;
+    public OtelExporter getExporter() {
+        return exporter;
     }
 
     @MCAttribute
     public void setSampleRate(double sampleRate) {
         this.sampleRate = sampleRate;
-    }
-
-    public String getJaegerHost() {
-        return jaegerHost;
-    }
-
-    public String getJaegerPort() {
-        return jaegerPort;
     }
 
     public double getSampleRate() {
