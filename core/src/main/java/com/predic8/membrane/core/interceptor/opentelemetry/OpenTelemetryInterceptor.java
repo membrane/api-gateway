@@ -17,23 +17,17 @@ package com.predic8.membrane.core.interceptor.opentelemetry;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
-import com.predic8.membrane.core.rules.AbstractProxy;
-import com.predic8.membrane.core.rules.Rule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
-
-import java.util.Collection;
-import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
@@ -59,7 +53,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        startMembraneScope(exc, getExtractContext(exc));
+        startMembraneScope(exc, getExtractContext(exc), exc.getRequest().getMethod() + " " + exc.getRequest().getUri());
         return CONTINUE;
     }
 
@@ -74,7 +68,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private String getServiceName() {
         return getRule().getName().isEmpty() ?
                 getRule().getKey().getHost() + getRule().getKey().getPort()
-              : getRule().getName();
+                : getRule().getName();
     }
 
     private StatusCode getStatusCode(Exchange exc) {
@@ -86,9 +80,9 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         span.addEvent("MEMBRANE-END").end();
     }
 
-    private void startMembraneScope(Exchange exc, Context receivedContext) {
+    private void startMembraneScope(Exchange exc, Context receivedContext, String spanName) {
         try(Scope ignore = receivedContext.makeCurrent()) {
-            Span membraneSpan = getMembraneSpan("MEMBRANE-REQUEST", "MEMBRANE-START");
+            Span membraneSpan = getMembraneSpan(spanName, "MEMBRANE-START");
 
             try(Scope ignored = membraneSpan.makeCurrent()) {
                 setExchangeHeader(exc);
