@@ -18,11 +18,15 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
@@ -32,6 +36,7 @@ import io.opentelemetry.context.Scope;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
+import static io.opentelemetry.api.common.AttributeKey.stringKey;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
 import static io.opentelemetry.api.trace.StatusCode.ERROR;
 import static io.opentelemetry.api.trace.StatusCode.OK;
@@ -54,15 +59,53 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         startMembraneScope(exc, getExtractContext(exc), getSpanName(exc));
+        var span = getExchangeSpan(exc);
+        setSpanHttpHeaderTags(exc.getRequest().getHeader(), span);
+
+        span.addEvent("Request", Attributes.of(
+                stringKey("Request Header"), exc.getRequest().getHeader().toString(),
+                stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
+        ));
         return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        Span span = ((Span) exc.getProperty("span"));
-        span.setStatus(getStatusCode(exc));
-        setSpanEvent(span, exc);
+        var span = getExchangeSpan(exc);
+        span.setStatus(getOtelStatusCode(exc));
+        span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
+        setSpanHttpHeaderTags(exc.getResponse().getHeader(), span);
+
+        span.addEvent("Response", Attributes.of(
+                stringKey("Response Header"), exc.getResponse().getHeader().toString(),
+                stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
+        ));
+
+        span.addEvent("Close Exchange").end();
         return CONTINUE;
+    }
+
+    // TODO otel.status_code = Warn? or similar for 400 bad request
+
+    @Override
+    public void handleAbort(Exchange exc) {
+        System.out.println("OpenTelemetryInterceptor.handleAbort");
+        var span = getExchangeSpan(exc);
+        span.setStatus(getOtelStatusCode(exc));
+        span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
+        setSpanHttpHeaderTags(exc.getResponse().getHeader(), span);
+        Exception nodeException = exc.getNodeExceptions()[0];
+        span.recordException(nodeException);
+    }
+
+    private static Span getExchangeSpan(Exchange exc) {
+        return ((Span) exc.getProperty("span"));
+    }
+
+    private static void setSpanHttpHeaderTags(Header header, Span span) {
+        for (HeaderField hf : header.getAllHeaderFields()) {
+            span.setAttribute("http.header." + hf.getHeaderName().toString(), hf.getValue());
+        }
     }
 
     private String getSpanName(Exchange exc) {
@@ -76,18 +119,13 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                : r.getName();
     }
 
-    private StatusCode getStatusCode(Exchange exc) {
+    private StatusCode getOtelStatusCode(Exchange exc) {
         return exc.getResponse().getStatusCode() >= 500 ? ERROR : OK;
-    }
-
-    private void setSpanEvent(Span span, Exchange exc) {
-        if (getStatusCode(exc) == ERROR) span.recordException(new Throwable(exc.getErrorMessage()));
-        span.addEvent("MEMBRANE-END").end();
     }
 
     private void startMembraneScope(Exchange exc, Context receivedContext, String spanName) {
         try(Scope ignore = receivedContext.makeCurrent()) {
-            Span membraneSpan = getMembraneSpan(spanName, "MEMBRANE-START");
+            Span membraneSpan = getMembraneSpan(spanName, "Initialize Exchange");
 
             try(Scope ignored = membraneSpan.makeCurrent()) {
                 setExchangeHeader(exc);

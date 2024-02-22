@@ -15,23 +15,27 @@
             <httpClient />
         </transport>
 
-        <api port="3003" name="Backend">
-            <template>
-                Hello World!
-            </template>
-            <return statusCode="500"/>
-        </api>
-
-        <api port="3002" name="Validation">
-            <target url="http://localhost:3003" />
+        <api port="2000">
+            <target url="http://localhost:3001" />
         </api>
 
         <api port="3001" name="AccessControl">
             <target url="http://localhost:3002" />
         </api>
 
-        <api port="2000">
-            <target url="http://localhost:3001" />
+        <api port="3002" name="Validation">
+            <target url="http://localhost:3003" />
+        </api>
+
+        <api port="3003" name="Backend">
+            <template>
+                Hello World!
+            </template>
+
+            <groovy>
+                ABORT
+            </groovy>
+            <return statusCode="500"/>
         </api>
     </router>
 
