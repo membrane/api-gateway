@@ -47,13 +47,13 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() throws Exception {
-        openTelemetryInstance = OpenTelemetryConfigurator.openTelemetry(getServiceName(), exporter, getSampleRate());
+        openTelemetryInstance = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
         tracer = openTelemetryInstance.getTracer("MEMBRANE-TRACER");
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        startMembraneScope(exc, getExtractContext(exc), exc.getRequest().getMethod() + " " + exc.getRequest().getUri());
+        startMembraneScope(exc, getExtractContext(exc), getSpanName(exc));
         return CONTINUE;
     }
 
@@ -65,10 +65,15 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    private String getServiceName() {
-        return getRule().getName().isEmpty() ?
-                getRule().getKey().getHost() + getRule().getKey().getPort()
-                : getRule().getName();
+    private String getSpanName(Exchange exc) {
+        return getProxyName(exc) + " " + exc.getRequest().getMethod() + " " + exc.getRequest().getUri();
+    }
+
+    private String getProxyName(Exchange exc) {
+        var r = exc.getRule();
+        return r.getName().isEmpty() ?
+               r.getKey().getHost() + r.getKey().getPort()
+               : r.getName();
     }
 
     private StatusCode getStatusCode(Exchange exc) {

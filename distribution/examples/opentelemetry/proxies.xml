@@ -5,29 +5,49 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-        <api name="Step 2" port="3000" method="GET">
-            <openTelemetry sampleRate="1.0">
-                <otlpExporter host="localhost" />
-            </openTelemetry>
-            <request>
-                <groovy>
-                    println "Request headers:"
-                    header.allHeaderFields.each {
-                    print it
-                    }
-                    CONTINUE
-                </groovy>
-                <template contentType="application/json" pretty="yes">
-                    { "Success": true }
-                </template>
-            </request>
-            <return statusCode="200"/>
+        <api port="3003" name="FruitShop">
+            <openTelemetry />
+            <target url="https://api.predic8.de/shop/v2/" />
         </api>
 
-        <api name="Step 1" port="2000">
-            <openTelemetry sampleRate="1.0"/>
-            <target host="localhost" port="3000"/>
+        <api port="3002" name="Validation">
+            <openTelemetry />
+            <target url="http://localhost:3003" />
+        </api>
+
+        <api port="3001" name="AccessControl">
+            <openTelemetry />
+            <target url="http://localhost:3002" />
+        </api>
+
+        <api port="2000">
+            <openTelemetry />
+            <target url="http://localhost:3001" />
         </api>
     </router>
+
+    <!--
+        <router>
+            <internalProxy name="FruitShop">
+                <openTelemetry />
+                <target url="https://api.predic8.de/shop/v2/" />
+            </internalProxy>
+
+            <internalProxy name="Transformation">
+                <openTelemetry />
+                <target url="service:FruitShop" />
+            </internalProxy>
+
+            <internalProxy name="Validation">
+                <openTelemetry />
+                <target url="service:Transformation" />
+            </internalProxy>
+
+            <api name="AccessControl" port="2000">
+                <openTelemetry />
+                <target url="service:Validation" />
+            </api>
+        </router>
+    -->
 
 </spring:beans>
