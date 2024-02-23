@@ -3,6 +3,7 @@ package com.predic8.membrane.core.interceptor.oauth2.client;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -22,13 +23,59 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.joining;
 
 public class BrowserMock implements Function<Exchange, Exchange> {
 
     Logger LOG = LoggerFactory.getLogger(BrowserMock.class);
     Map<String, Map<String, String>> cookie = new HashMap<>();
     Function<Exchange, Exchange> cookieHandlingHttpClient = cookieManager(httpClient());
-    Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = handleRedirect(cookieHandlingHttpClient);
+    Function<Exchange, Exchange> cookieHandlingRedirectingHttpClient = handleFormPost(handleRedirect(cookieHandlingHttpClient));
+
+    private Function<Exchange, Exchange> handleFormPost(Function<Exchange, Exchange> consumer) {
+        return exc -> {
+            while (true) {
+                exc = consumer.apply(exc);
+
+                int statusCode = exc.getResponse().getStatusCode();
+                String response = exc.getResponse().getBodyAsStringDecoded();
+                if (statusCode != 200)
+                    break;
+                if (!response.contains("javascript:document.forms[0].submit()"))
+                    break;
+                System.out.println(response);
+                // this is a self-submitting form
+                Matcher m1 = Pattern.compile("<form method=\"post\" action=\"([a-z:/0-9]*)\"").matcher(response);
+                if (!m1.find()) {
+                    LOG.warn("did not find form action");
+                    break;
+                }
+                String target = m1.group(1);
+                System.out.println("target = " + target);
+                Matcher m2 = Pattern.compile("<input type=\"hidden\" name=\"([a-z0-9]*)\" value=\"([a-z_=0-9&/]*)\"/>").matcher(response);
+                Map<String, String> parameters = new HashMap<>();
+                while (m2.find()) {
+                    parameters.put(m2.group(1), m2.group(2));
+                }
+                System.out.println("parameters = " + parameters);
+
+                try {
+                    exc = new Request.Builder().post(target).contentType(MimeType.APPLICATION_X_WWW_FORM_URLENCODED)
+                            .body(parameters.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(joining("&")))
+                            .buildExchange();
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+
+                LOG.debug("posting form to " + exc.getDestinations().get(0));
+            }
+            return exc;
+        };
+    }
 
     // this implementation does NOT implement a correct cookie manager, but fulfills this test's requirements
     private Function<Exchange, Exchange> cookieManager(Function<Exchange, Exchange> consumer) {

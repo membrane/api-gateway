@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -57,7 +58,7 @@ public abstract class OAuth2ResourceTest {
     protected HttpRouter mockAuthServer;
     protected ObjectMapper om = new ObjectMapper();
     Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
-    int serverPort = 1337;
+    int serverPort = 3062;
     private String serverHost = "localhost";
     private int clientPort = 31337;
     private HttpRouter oauth2Resource;
@@ -290,6 +291,7 @@ public abstract class OAuth2ResourceTest {
         wkf.setSupportedScopes("openid email profile");
         wkf.setSupportedTokenEndpointAuthMethods("client_secret_post");
         wkf.setSupportedClaims("sub email username");
+        wkf.setSupportedResponseModes(Set.of("query", "fragment", "form_post"));
         wkf.init(new HttpRouter());
 
         sp.getInterceptors().add(new AbstractInterceptor() {
@@ -302,7 +304,19 @@ public abstract class OAuth2ResourceTest {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                    exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
+                    exc.setResponse(Response.ok().contentType(TEXT_HTML_UTF8).body("""
+                            <html>
+                              <head><title>Submit This Form</title></head>
+                              <body onload="javascript:document.forms[0].submit()">
+                               <form method="post" action="https://client.example.org/callback">
+                                 <input type="hidden" name="state" value="STATE"/>
+                                 <input type="hidden" name="code" value="CODE"/>
+                               </form>
+                              </body>
+                             </html>""".replace(
+                                     "https://client.example.org/callback",
+                                getClientAddress() + "/oauth2callback"
+                            ).replace("STATE", params.get("state")).replace("CODE", "1234")).build());
                 } else if (exc.getRequestURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, String> res = new HashMap<>();

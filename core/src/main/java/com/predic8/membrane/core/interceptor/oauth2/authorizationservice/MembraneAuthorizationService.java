@@ -52,6 +52,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String claims;
     private String claimsIdt;
     private String claimsParameter;
+    private List<String> responseModesSupported = List.of("query", "fragment");
 
     private DynamicRegistration dynamicRegistration;
 
@@ -161,7 +162,13 @@ public class MembraneAuthorizationService extends AuthorizationService {
         registrationEndpoint = (String) json.get("registration_endpoint");
         jwksEndpoint = (String) json.get("jwks_uri");
         issuer = (String) json.get("issuer");
-
+        if (json.containsKey("response_modes_supported")) {
+            List<?> v = (List<?>) json.get("response_modes_supported");
+            responseModesSupported = v.stream()
+                    .filter(i -> i instanceof String)
+                    .map(i -> (String)i)
+                    .collect(Collectors.<String>toList());
+        }
     }
 
     public String getTokenEndpoint() {
@@ -178,11 +185,13 @@ public class MembraneAuthorizationService extends AuthorizationService {
         String endpoint = publicAuthorizationEndpoint;
         if(endpoint == null)
             endpoint = authorizationEndpoint;
+        boolean formPostSupported = responseModesSupported.contains("form_post");
         return endpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
                 "redirect_uri=" + callbackURL + "&"+
+                (formPostSupported ? "response_mode=form_post&" : "") +
                 "state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(pathQuery) +
                 getClaimsParameter();
     }
@@ -254,5 +263,9 @@ public class MembraneAuthorizationService extends AuthorizationService {
     @MCChildElement(order=10)
     public void setDynamicRegistration(DynamicRegistration dynamicRegistration) {
         this.dynamicRegistration = dynamicRegistration;
+    }
+
+    public List<String> getResponseModesSupported() {
+        return responseModesSupported;
     }
 }

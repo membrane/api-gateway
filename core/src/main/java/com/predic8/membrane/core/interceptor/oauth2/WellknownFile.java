@@ -33,6 +33,7 @@ public class WellknownFile {
     private static final String REVOCATION_ENDPOINT = "revocation_endpoint";
     private static final String JWKS_URI = "jwks_uri";
     private static final String RESPONSE_TYPES_SUPPORTED = "response_types_supported";
+    private static final String RESPONSE_MODES_SUPPORTED = "response_modes_supported";
     private static final String SUBJECT_TYPES_SUPPORTED = "subject_types_supported";
     private static final String ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = "id_token_signing_alg_values_supported";
     private static final String SCOPES_SUPPORTED = "scopes_supported";
@@ -52,6 +53,7 @@ public class WellknownFile {
     private String revocationEndpoint;
     private String jwksUri;
     private String supportedResponseTypes;
+    private String supportedResponseModes;
     private String supportedSubjectType;
     private String supportedIdTokenSigningAlgValues;
     private String supportedScopes;
@@ -90,6 +92,7 @@ public class WellknownFile {
         setRevocationEndpoint(baseOauth2Url() + "revoke");
         setJwksUri(baseOauth2Url() + "certs");
         setSupportedResponseTypes(oasi.getSupportedAuthorizationGrants());
+        setSupportedResponseModes("query fragment");
         setSupportedSubjectType("public");
         setSupportedIdTokenSigningAlgValues("RS256");
         setSupportedScopes(getSupportedOasiScopes());
@@ -116,6 +119,7 @@ public class WellknownFile {
         writeRevocationEndpoint();
         writeJwksUri();
         writeSupportedResponseTypes();
+        writeSupportedResponseModes();
         writeSupportedSubjectTypes();
         writeSupportedIdTokenSigningAlgValues();
         writeSupportedScopes();
@@ -155,6 +159,11 @@ public class WellknownFile {
 
     private void writeSupportedResponseTypes() throws IOException {
         stringEnumToJson(RESPONSE_TYPES_SUPPORTED,getSupportedResponseTypes().split(" "));
+    }
+
+    private void writeSupportedResponseModes() throws IOException {
+        if (supportedResponseModes != null)
+            stringEnumToJson(RESPONSE_MODES_SUPPORTED, getSupportedResponseModes().split(" "));
     }
 
     private void writeJwksUri() throws IOException {
@@ -246,6 +255,21 @@ public class WellknownFile {
 
     public void setSupportedResponseTypes(String supportedResponseTypes) {
         this.supportedResponseTypes = supportedResponseTypes;
+    }
+
+    public String getSupportedResponseModes() {
+        return supportedResponseModes;
+    }
+
+    public void setSupportedResponseModes(Set<String> supportedResponseModes) throws UnsupportedEncodingException {
+        StringBuilder builder = new StringBuilder();
+        for(String resp : supportedResponseModes)
+            builder.append(" ").append(OAuth2Util.urlencode(resp));
+        setSupportedResponseModes(builder.toString().trim());
+    }
+
+    public void setSupportedResponseModes(String supportedResponseModes) {
+        this.supportedResponseModes = supportedResponseModes;
     }
 
     public String getSupportedSubjectType() {
