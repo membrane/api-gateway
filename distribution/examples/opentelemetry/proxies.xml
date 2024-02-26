@@ -5,49 +5,36 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-        <api port="3003" name="FruitShop">
-            <openTelemetry />
-            <target url="https://api.predic8.de/shop/v2/" />
-        </api>
-
-        <api port="3002" name="Validation">
-            <openTelemetry />
-            <target url="http://localhost:3003" />
-        </api>
-
-        <api port="3001" name="AccessControl">
-            <openTelemetry />
-            <target url="http://localhost:3002" />
-        </api>
+        <transport>
+            <ruleMatching />
+            <exchangeStore />
+            <dispatching />
+            <reverseProxying />
+            <openTelemetry /> <!--globally registers OpenTelemetry for every api-->
+            <userFeature />
+            <httpClient />
+        </transport>
 
         <api port="2000">
-            <openTelemetry />
-            <target url="http://localhost:3001" />
+            <target url="http://localhost:2001" />
+        </api>
+
+        <api port="2001" name="AccessControl">
+            <target url="http://localhost:2002" />
+        </api>
+
+        <api port="2002" name="Validation">
+            <target url="http://localhost:3000" />
+        </api>
+
+        <api port="3000" name="Replace with your Backend">
+            <response>
+                <template>
+                    Hello World!
+                </template>
+            </response>
+            <return/>
         </api>
     </router>
-
-    <!--
-        <router>
-            <internalProxy name="FruitShop">
-                <openTelemetry />
-                <target url="https://api.predic8.de/shop/v2/" />
-            </internalProxy>
-
-            <internalProxy name="Transformation">
-                <openTelemetry />
-                <target url="service:FruitShop" />
-            </internalProxy>
-
-            <internalProxy name="Validation">
-                <openTelemetry />
-                <target url="service:Transformation" />
-            </internalProxy>
-
-            <api name="AccessControl" port="2000">
-                <openTelemetry />
-                <target url="service:Validation" />
-            </api>
-        </router>
-    -->
 
 </spring:beans>
