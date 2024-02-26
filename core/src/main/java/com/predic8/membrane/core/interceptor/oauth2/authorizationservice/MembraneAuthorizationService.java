@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import com.predic8.membrane.annot.Required;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
 public class MembraneAuthorizationService extends AuthorizationService {
     private String src; // url to OpenID-Provider data
 
+    private String issuer;
     private String tokenEndpoint;
     private String userInfoEndpoint;
     private String subject = ClaimRenamer.convert("sub");
@@ -51,6 +53,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String claims;
     private String claimsIdt;
     private String claimsParameter;
+    private List<String> responseModesSupported = List.of("query", "fragment");
 
     private DynamicRegistration dynamicRegistration;
 
@@ -81,16 +84,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
             if(urls.length == 1) {
                 String url = urls[0] + (urls[0].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
-                parseSrc(dynamicRegistration != null ?
-                        dynamicRegistration.retrieveOpenIDConfiguration(url) :
-                        router.getResolverMap().resolve(url));
+                parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), url));
             }
             else if(urls.length == 2){
                 String internalUrl = urls[1] + (urls[1].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
-                parseSrc(dynamicRegistration != null ?
-                        dynamicRegistration.retrieveOpenIDConfiguration(internalUrl) :
-                        router.getResolverMap().resolve(internalUrl));
+                parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), internalUrl));
 
                 publicAuthorizationEndpoint = urls[0] + new URI(authorizationEndpoint).getPath();
             }
@@ -103,15 +102,15 @@ public class MembraneAuthorizationService extends AuthorizationService {
         prepareClaimsForLoginUrl();
     }
 
+    public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
+        return dynamicRegistration != null ?
+                dynamicRegistration.retrieveOpenIDConfiguration(url) :
+                super.resolve(rm, baseLocation, url);
+    }
+
     @Override
     public String getIssuer() {
-        int p = src.indexOf(' ');
-        if (p != -1) {
-            String[] urls = src.split(Pattern.quote(" "),2);
-            p = urls[1].indexOf('/');
-            return urls[0] + (p == -1 ? "" : urls[1].substring(p));
-        }
-        return src;
+        return issuer;
     }
 
     @Override
@@ -165,7 +164,14 @@ public class MembraneAuthorizationService extends AuthorizationService {
         revocationEndpoint = (String) json.get("revocation_endpoint");
         registrationEndpoint = (String) json.get("registration_endpoint");
         jwksEndpoint = (String) json.get("jwks_uri");
-
+        issuer = (String) json.get("issuer");
+        if (json.containsKey("response_modes_supported")) {
+            List<?> v = (List<?>) json.get("response_modes_supported");
+            responseModesSupported = v.stream()
+                    .filter(i -> i instanceof String)
+                    .map(i -> (String)i)
+                    .collect(Collectors.<String>toList());
+        }
     }
 
     public String getTokenEndpoint() {
@@ -182,11 +188,13 @@ public class MembraneAuthorizationService extends AuthorizationService {
         String endpoint = publicAuthorizationEndpoint;
         if(endpoint == null)
             endpoint = authorizationEndpoint;
+        boolean formPostSupported = responseModesSupported.contains("form_post");
         return endpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
                 "redirect_uri=" + callbackURL + "&"+
+                (formPostSupported ? "response_mode=form_post&" : "") +
                 "state=security_token%3D" + securityToken + "%26url%3D" + OAuth2Util.urlencode(pathQuery) +
                 getClaimsParameter();
     }
@@ -258,5 +266,9 @@ public class MembraneAuthorizationService extends AuthorizationService {
     @MCChildElement(order=10)
     public void setDynamicRegistration(DynamicRegistration dynamicRegistration) {
         this.dynamicRegistration = dynamicRegistration;
+    }
+
+    public List<String> getResponseModesSupported() {
+        return responseModesSupported;
     }
 }
