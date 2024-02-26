@@ -25,7 +25,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
 import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
@@ -37,6 +36,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
+import static io.opentelemetry.api.common.Attributes.of;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
 import static io.opentelemetry.api.trace.StatusCode.ERROR;
 import static io.opentelemetry.api.trace.StatusCode.OK;
@@ -50,6 +50,8 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private OpenTelemetry openTelemetryInstance;
     private Tracer tracer;
 
+    private boolean logBody = false;
+
     @Override
     public void init() throws Exception {
         openTelemetryInstance = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
@@ -62,10 +64,16 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderTags(exc.getRequest().getHeader(), span);
 
-        span.addEvent("Request", Attributes.of(
-                stringKey("Request Header"), exc.getRequest().getHeader().toString(),
-                stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
+        span.addEvent("Request", of(
+                stringKey("Request Header"), exc.getRequest().getHeader().toString()
         ));
+
+        if (logBody) {
+            span.addEvent("Request", of(
+                    stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
+            ));
+        }
+
         return CONTINUE;
     }
 
@@ -76,27 +84,22 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
         setSpanHttpHeaderTags(exc.getResponse().getHeader(), span);
 
-        span.addEvent("Response", Attributes.of(
-                stringKey("Response Header"), exc.getResponse().getHeader().toString(),
-                stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
+        span.addEvent("Response", of(
+                stringKey("Response Header"), exc.getResponse().getHeader().toString()
         ));
+
+        if (logBody) {
+            span.addEvent("Response", of(
+                    stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
+            ));
+        }
 
         span.addEvent("Close Exchange").end();
         return CONTINUE;
     }
 
     // TODO otel.status_code = Warn? or similar for 400 bad request
-
-    @Override
-    public void handleAbort(Exchange exc) {
-        System.out.println("OpenTelemetryInterceptor.handleAbort");
-        var span = getExchangeSpan(exc);
-        span.setStatus(getOtelStatusCode(exc));
-        span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
-        setSpanHttpHeaderTags(exc.getResponse().getHeader(), span);
-        Exception nodeException = exc.getNodeExceptions()[0];
-        span.recordException(nodeException);
-    }
+    // TODO Add option to show body in trace log
 
     private static Span getExchangeSpan(Exchange exc) {
         return ((Span) exc.getProperty("span"));
@@ -152,6 +155,15 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 .getPropagators()
                 .getTextMapPropagator()
                 .extract(current(), exc, getContextFromRequestHeader());
+    }
+
+    @MCAttribute
+    public void setLogBody(boolean logBody) {
+        this.logBody = logBody;
+    }
+
+    public boolean getLogBody() {
+        return logBody;
     }
 
     @MCChildElement

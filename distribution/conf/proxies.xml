@@ -32,10 +32,7 @@
                 Hello World!
             </template>
 
-            <groovy>
-                ABORT
-            </groovy>
-            <return statusCode="500"/>
+            <return/>
         </api>
     </router>
 
