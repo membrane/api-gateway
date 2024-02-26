@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -90,10 +92,7 @@ public class SecurityTest extends AbstractValidatorTest {
         exc.setProperty("jwt",jwt);
 
         Outcome outcome = interceptor.handleRequest(exc);
-        assertEquals(Outcome.RETURN, outcome);
-        System.out.println("exc = " + exc.getResponse().getStatusCode());
-        // TODO ASSERT validationErrors empty
-        System.out.println("exc = " + exc.getResponse().getBodyAsStringDecoded());
+        assertEquals(CONTINUE, outcome);
     }
 
     @Test
@@ -115,7 +114,7 @@ public class SecurityTest extends AbstractValidatorTest {
         exc.setProperty("jwt",jwt);
 
         Outcome outcome = interceptor.handleRequest(exc);
-        assertEquals(Outcome.RETURN, outcome);
+        assertEquals(RETURN, outcome);
         System.out.println("exc = " + exc.getResponse().getStatusCode());
         System.out.println("exc = " + exc.getResponse().getBodyAsStringDecoded());
     }
