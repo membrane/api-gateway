@@ -16,13 +16,17 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.security.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import org.slf4j.Logger;
+
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class SecurityValidator {
 
-    // TODO Logging
+    private final Logger log = getLogger(SecurityValidator.class);
 
     OpenAPI api;
 
@@ -45,19 +49,18 @@ public class SecurityValidator {
         api.getSecurity().forEach(requirement -> checkSecurityRequirements(ctx, requirement, errors, request));
     }
 
-    private static void checkSecurityRequirements(ValidationContext ctx, SecurityRequirement securityRequirement, ValidationErrors errors, Request request) {
-        System.out.println("securityRequirement = " + securityRequirement);
-        System.out.println("securityRequirement = " + securityRequirement.keySet());
+    private void checkSecurityRequirements(ValidationContext ctx, SecurityRequirement securityRequirement, ValidationErrors errors, Request request) {
+        log.info("securityRequirement = " + securityRequirement);
+        log.info("securityRequirement = " + securityRequirement.keySet());
 
         for (String key : securityRequirement.keySet()) {
-            System.out.println("key = " + key); // Log
+            log.info("key = " + key);
             for (String scope : securityRequirement.get(key)) {
-                System.out.println("v = " + scope); // Log
+                log.info("v = " + scope);
 
              if(request.getScopes()==null || !request.getScopes().contains(scope)) {
                  errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
              }
-
             }
         }
     }
