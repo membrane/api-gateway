@@ -5,35 +5,16 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-        <transport>
-            <ruleMatching />
-            <exchangeStore />
-            <dispatching />
-            <reverseProxying />
-            <openTelemetry />
-            <userFeature />
-            <httpClient />
-        </transport>
-
         <api port="2000">
-            <target url="http://localhost:3001" />
-        </api>
-
-        <api port="3001" name="AccessControl">
-            <target url="http://localhost:3002" />
-        </api>
-
-        <api port="3002" name="Validation">
-            <target url="http://localhost:3003" />
-        </api>
-
-        <api port="3003" name="Backend">
-            <template>
-                Hello World!
-            </template>
-
+            <apiKey>
+                <keyFileStore location="../../keys.txt"/>
+                <headerExtractor name="api"/>
+                <queryParamExtractor name="api"/>
+            </apiKey>
+            <template>bla</template>
             <return/>
         </api>
+
     </router>
 
 </spring:beans>
