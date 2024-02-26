@@ -7,6 +7,9 @@ import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import static io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter.builder;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/*
+ * Otlp Implementation for the OpenTelemetry protocol
+ */
 @MCElement(name = "otlpExporter", topLevel = false)
 public class OtlpExporter implements OtelExporter {
     private String host = "localhost";

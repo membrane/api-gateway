@@ -33,9 +33,9 @@ import static io.opentelemetry.semconv.ResourceAttributes.SERVICE_VERSION;
 public class OpenTelemetryConfigurator {
     public static OpenTelemetry openTelemetry(String serviceName, OtelExporter exporter, double sampleRate) {
         // Can't inline because of the shutdown. Otherwise, the data won't be flushed and sent to the exporter backend!
-        SdkTracerProvider sdkTracerProvider = getSdkTracerProvider(serviceName, exporter, sampleRate);
-        OpenTelemetry openTelemetry = getGlobalOpenTelemetry(sdkTracerProvider);
-        Runtime.getRuntime().addShutdownHook(new Thread(sdkTracerProvider::close));
+        SdkTracerProvider provider = getSdkTracerProvider(serviceName, exporter, sampleRate);
+        OpenTelemetry openTelemetry = getGlobalOpenTelemetry(provider);
+        Runtime.getRuntime().addShutdownHook(new Thread(provider::close));
         return openTelemetry;
     }
 
