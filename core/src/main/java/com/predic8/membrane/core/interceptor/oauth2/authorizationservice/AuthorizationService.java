@@ -23,6 +23,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
@@ -37,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.InputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -273,4 +276,11 @@ public abstract class AuthorizationService {
         }
     }
 
+    public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
+        url = ResolverMap.combine(baseLocation, url);
+        // ask the internal httpClient (might be proxied/authenticated), if HTTP
+        if (url.startsWith("http"))
+            return httpClient.call(Request.get(url).buildExchange()).getResponse().getBodyAsStreamDecoded();
+        return rm.resolve(url);
+    }
 }

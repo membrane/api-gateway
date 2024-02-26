@@ -32,6 +32,8 @@ public class RequireAuth extends AbstractInterceptor {
         jwks.setJwks(new ArrayList<>());
         // TODO init dependency
         jwks.setJwksUris(oauth2.getAuthService().getJwksEndpoint());
+        jwks.setAuthorizationService(oauth2.getAuthService());
+
 
         jwtAuth = new JwtAuthInterceptor();
         jwtAuth.setJwks(jwks);

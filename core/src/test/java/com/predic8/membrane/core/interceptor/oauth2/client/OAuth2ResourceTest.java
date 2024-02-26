@@ -195,7 +195,7 @@ public abstract class OAuth2ResourceTest {
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
 
-        excCallResource = browser.apply(new Request.Builder().get("http://localhost:1337" + ref.get()).buildExchange());
+        excCallResource = browser.apply(new Request.Builder().get("http://localhost:" + serverPort + ref.get()).buildExchange());
 
         assertEquals(400, excCallResource.getResponse().getStatusCode());
 

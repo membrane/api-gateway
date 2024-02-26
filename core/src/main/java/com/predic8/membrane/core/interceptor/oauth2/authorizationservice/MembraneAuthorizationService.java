@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import com.predic8.membrane.annot.Required;
@@ -83,16 +84,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
             if(urls.length == 1) {
                 String url = urls[0] + (urls[0].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
-                parseSrc(dynamicRegistration != null ?
-                        dynamicRegistration.retrieveOpenIDConfiguration(url) :
-                        router.getResolverMap().resolve(url));
+                parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), url));
             }
             else if(urls.length == 2){
                 String internalUrl = urls[1] + (urls[1].endsWith("/") ? "" : "/") + ".well-known/openid-configuration";
 
-                parseSrc(dynamicRegistration != null ?
-                        dynamicRegistration.retrieveOpenIDConfiguration(internalUrl) :
-                        router.getResolverMap().resolve(internalUrl));
+                parseSrc(resolve(router.getResolverMap(), router.getBaseLocation(), internalUrl));
 
                 publicAuthorizationEndpoint = urls[0] + new URI(authorizationEndpoint).getPath();
             }
@@ -103,6 +100,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
         }
         adjustScope();
         prepareClaimsForLoginUrl();
+    }
+
+    public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
+        return dynamicRegistration != null ?
+                dynamicRegistration.retrieveOpenIDConfiguration(url) :
+                super.resolve(rm, baseLocation, url);
     }
 
     @Override
