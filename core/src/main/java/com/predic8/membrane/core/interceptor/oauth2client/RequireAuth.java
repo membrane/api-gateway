@@ -23,6 +23,7 @@ public class RequireAuth extends AbstractInterceptor {
     private String expectedAud;
     private OAuth2Resource2Interceptor oauth2;
     private JwtAuthInterceptor jwtAuth;
+    private boolean required = true;
 
     @Override
     public void init(Router router) throws Exception {
@@ -47,6 +48,8 @@ public class RequireAuth extends AbstractInterceptor {
         if (!isBearer(exc.getRequest().getHeader())) {
             var outcome = oauth2.handleRequest(exc);
             if (outcome != Outcome.CONTINUE) {
+                if (!required)
+                    return Outcome.CONTINUE;
                 return outcome;
             }
         }
@@ -81,4 +84,15 @@ public class RequireAuth extends AbstractInterceptor {
     public void setOauth2(OAuth2Resource2Interceptor oauth2) {
         this.oauth2 = oauth2;
     }
+
+    @SuppressWarnings("SameParameterValue")
+    @MCAttribute
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+
 }
