@@ -16,9 +16,18 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
+import java.util.*;
+
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -30,19 +39,44 @@ public class SecurityTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void simple() {
-        ValidationErrors errors = validator.validate(Request.get().path("/v1/finance"));
+    void simple() {
+        ValidationErrors errors = validator.validate(Request.get().path("/v1/finance").scopes("finance","read"));
         System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void two() {
+    void two() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/finance-and-write"));
         System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
+    @Test
+    void fromInterceptor() throws Exception {
 
+        Router router = new Router();
+        router.setUriFactory(new URIFactory());
+
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.location = "src/test/resources/openapi/specs/security.yml";
+        spec.validateRequests = YES;
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, spec));
+        interceptor.init(router);
+
+        Exchange exc = com.predic8.membrane.core.http.Request.get("/v1/finance").buildExchange();
+        exc.setOriginalRequestUri("/v1/finance");
+
+        Map<String,Object> jwt = new HashMap<>();
+        jwt.put("scp","read write finance");
+
+        exc.setProperty("jwt",jwt);
+
+        Outcome outcome = interceptor.handleRequest(exc);
+        assertEquals(Outcome.RETURN, outcome);
+        System.out.println("exc = " + exc.getResponse().getStatusCode());
+        System.out.println("exc = " + exc.getResponse().getBodyAsStringDecoded());
+    }
 
 }

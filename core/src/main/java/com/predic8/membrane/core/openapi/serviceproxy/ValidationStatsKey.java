@@ -39,8 +39,8 @@ public class ValidationStatsKey {
         uriTemplate = valueOrEmptyString(vc.getUriTemplate());
         schemaType = valueOrEmptyString(vc.getSchemaType());
         complexType = valueOrEmptyString(vc.getComplexType());
-        validatedEntityType = vc.getValidatedEntityType().name();
-        validatedEntity = vc.getValidatedEntity();
+        validatedEntityType = vc.getValidatedEntityType() != null ? vc.getValidatedEntityType().name() : "";
+        validatedEntity = valueOrEmptyString(vc.getValidatedEntity());
         jsonpointer = vc.getJSONpointer();
         labels = new ImmutableMap.Builder<String, String>()
             .put("method", method)

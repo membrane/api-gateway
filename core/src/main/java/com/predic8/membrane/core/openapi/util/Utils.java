@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.interceptor.security.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import jakarta.mail.internet.*;
@@ -33,8 +34,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.regex.Pattern.*;
 
 public class Utils {
-
-    private static final Logger log = LoggerFactory.getLogger(Utils.class.getName());
 
     //noinspection
     final static Pattern componentSchemaPattern = compile("#/components/\\w+/(.*)");
@@ -103,6 +102,7 @@ public class Utils {
 
     public static boolean isValidDate(String s) {
         try {
+            //noinspection ResultOfMethodCallIgnored
             java.time.LocalDate.parse(s, dateFormat);
             return datePattern.matcher(s).matches(); // Because 2022-1-19 is fine with DateFormat
         } catch (Exception e) {
@@ -117,6 +117,7 @@ public class Utils {
 
     public static boolean isValidDateTime(String s) {
         try {
+            //noinspection ResultOfMethodCallIgnored
             LocalDate.parse(s, dateTimeFormat);
             return true;
         } catch (Exception e) {
@@ -132,7 +133,7 @@ public class Utils {
     public static boolean areThereErrors(ValidationErrors ve) {
         if (ve == null)
             return false;
-        return ve.size() > 0;
+        return !ve.isEmpty();
     }
 
     public static Request getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
@@ -148,6 +149,10 @@ public class Utils {
         if (!exc.getRequest().isBodyEmpty()) {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }
+
+        // Security scopes from OAuth2 or API-Keys
+        request.setScopes(ScopeExtractorUtil.getScopes(exc));
+
         return request;
     }
 

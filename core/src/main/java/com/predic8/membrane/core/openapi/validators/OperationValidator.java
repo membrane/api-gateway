@@ -49,7 +49,7 @@ public class OperationValidator {
 
             errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
             errors.add(new HeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
-            errors.add(new SecurityValidator(api).validateSecurity(ctx,operation));
+            errors.add(new SecurityValidator(api).validateSecurity(ctx,req, operation));
 
             return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
         } else {

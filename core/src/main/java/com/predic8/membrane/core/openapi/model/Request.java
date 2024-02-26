@@ -20,6 +20,8 @@ import com.predic8.membrane.core.openapi.util.*;
 
 import java.util.*;
 
+import static java.util.stream.Collectors.*;
+
 public class Request extends Message<Request> {
 
     private final String method;
@@ -27,6 +29,8 @@ public class Request extends Message<Request> {
     private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
 
+    // Security scopes from OAuth2 or API-Keys
+    private Set<String> scopes;
 
     public Request(String method) {
         this.method = method;
@@ -61,12 +65,25 @@ public class Request extends Message<Request> {
         return this;
     }
 
+    public Request scopes(String... scope) {
+        this.scopes = Arrays.stream(scope).collect(toSet());
+        return this;
+    }
+
     public String getMethod() {
         return method;
     }
 
     public String getPath() {
         return path;
+    }
+
+    public Set<String> getScopes() {
+        return scopes;
+    }
+
+    public void setScopes(Set<String> scopes) {
+        this.scopes = scopes;
     }
 
     public Map<String, String> getPathParameters() {

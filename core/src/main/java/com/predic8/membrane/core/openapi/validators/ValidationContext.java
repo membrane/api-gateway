@@ -99,6 +99,9 @@ public class ValidationContext {
         sb.append(message);
         sb.append("/");
 
+        if(validatedEntityType == null)
+            return sb.toString();
+
         if (validatedEntityType.equals(QUERY_PARAMETER)) {
             sb.append(validatedEntityType.name());
             appendValidatedEntity(sb);

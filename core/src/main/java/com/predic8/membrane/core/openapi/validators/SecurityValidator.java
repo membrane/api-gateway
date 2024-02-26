@@ -16,10 +16,13 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.model.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.security.*;
 
 public class SecurityValidator {
+
+    // TODO Logging
 
     OpenAPI api;
 
@@ -27,30 +30,34 @@ public class SecurityValidator {
         this.api = api;
     }
 
-    public ValidationErrors validateSecurity(ValidationContext ctx, Operation operation) {
+    public ValidationErrors validateSecurity(ValidationContext ctx, Request request, Operation operation) {
         ValidationErrors errors = new ValidationErrors();
-        checkGlobalSecurity(ctx, errors);
-        checkOperationSecurity(ctx,errors,operation);
+        checkGlobalSecurity(ctx, errors, request);
+        checkOperationSecurity(ctx,errors,operation, request);
         return errors;
     }
 
-    private void checkOperationSecurity(ValidationContext ctx, ValidationErrors errors, Operation operation) {
-        operation.getSecurity().forEach(requirement -> checkSecurityRequirements(ctx, requirement, errors));
+    private void checkOperationSecurity(ValidationContext ctx, ValidationErrors errors, Operation operation, Request request) {
+        operation.getSecurity().forEach(requirement -> checkSecurityRequirements(ctx, requirement, errors, request));
     }
 
-    private void checkGlobalSecurity(ValidationContext ctx, ValidationErrors errors) {
-        api.getSecurity().forEach(requirement -> checkSecurityRequirements(ctx, requirement, errors));
+    private void checkGlobalSecurity(ValidationContext ctx, ValidationErrors errors, Request request) {
+        api.getSecurity().forEach(requirement -> checkSecurityRequirements(ctx, requirement, errors, request));
     }
 
-    private static void checkSecurityRequirements(ValidationContext ctx, SecurityRequirement securityRequirement, ValidationErrors errors) {
+    private static void checkSecurityRequirements(ValidationContext ctx, SecurityRequirement securityRequirement, ValidationErrors errors, Request request) {
         System.out.println("securityRequirement = " + securityRequirement);
         System.out.println("securityRequirement = " + securityRequirement.keySet());
 
         for (String key : securityRequirement.keySet()) {
-            System.out.println("key = " + key);
-            for (String value : securityRequirement.get(key)) {
-                System.out.println("v = " + value);
-                errors.add(ctx, "Caller ist not in scope %s".formatted(value));
+            System.out.println("key = " + key); // Log
+            for (String scope : securityRequirement.get(key)) {
+                System.out.println("v = " + scope); // Log
+
+             if(request.getScopes()==null || !request.getScopes().contains(scope)) {
+                 errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
+             }
+
             }
         }
     }
