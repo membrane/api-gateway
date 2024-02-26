@@ -26,7 +26,7 @@ public class SecurityTest extends AbstractValidatorTest {
 
     @Override
     String getOpenAPIFileName() {
-        return "/openapi/specs/oauth2.yml";
+        return "/openapi/specs/security.yml";
     }
 
     @Test

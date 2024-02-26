@@ -17,35 +17,41 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.security.*;
 
 public class SecurityValidator {
 
     OpenAPI api;
-    ValidationErrors errors = new ValidationErrors();
 
     public SecurityValidator(OpenAPI api) {
         this.api = api;
     }
 
     public ValidationErrors validateSecurity(ValidationContext ctx, Operation operation) {
-
         ValidationErrors errors = new ValidationErrors();
-
-        operation.getSecurity().forEach(securityRequirement -> {
-            System.out.println("securityRequirement = " + securityRequirement);
-            System.out.println("securityRequirement = " + securityRequirement.keySet());
-
-            for (String key : securityRequirement.keySet()) {
-                System.out.println("key = " + key);
-                for (String value : securityRequirement.get(key)) {
-                    System.out.println("v = " + value);
-                    errors.add(ctx, "Caller ist not in scope %s".formatted(value));
-                }
-            }
-
-
-        });
-
+        checkGlobalSecurity(ctx, errors);
+        checkOperationSecurity(ctx,errors,operation);
         return errors;
+    }
+
+    private void checkOperationSecurity(ValidationContext ctx, ValidationErrors errors, Operation operation) {
+        operation.getSecurity().forEach(requirement -> checkSecurityRequirements(ctx, requirement, errors));
+    }
+
+    private void checkGlobalSecurity(ValidationContext ctx, ValidationErrors errors) {
+        api.getSecurity().forEach(requirement -> checkSecurityRequirements(ctx, requirement, errors));
+    }
+
+    private static void checkSecurityRequirements(ValidationContext ctx, SecurityRequirement securityRequirement, ValidationErrors errors) {
+        System.out.println("securityRequirement = " + securityRequirement);
+        System.out.println("securityRequirement = " + securityRequirement.keySet());
+
+        for (String key : securityRequirement.keySet()) {
+            System.out.println("key = " + key);
+            for (String value : securityRequirement.get(key)) {
+                System.out.println("v = " + value);
+                errors.add(ctx, "Caller ist not in scope %s".formatted(value));
+            }
+        }
     }
 }
