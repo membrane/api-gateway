@@ -1,0 +1,45 @@
+openapi: '3.0.2'
+info:
+  title: API Title
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de/v1
+security:
+  - oauth2:
+    - read
+paths:
+  /finance:
+    get:
+      security:
+        - oauth2:
+            - finance
+      responses:
+        '200':
+          description: OK
+  /finance-and-write:
+    get:
+      security:
+        - oauth2:
+            - finance
+            - write
+      responses:
+        '200':
+          description: OK
+  /no-scope:
+    get:
+      responses:
+        '200':
+          description: OK
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          authorizationUrl: https://api.predic8.de/oauth2/authorize
+          tokenUrl: https://api.predic8.de/token
+          scopes:
+            finance: Users of the finance department
+            write: Write permission
+            read: Read permission
