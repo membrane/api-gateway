@@ -128,7 +128,9 @@ public abstract class OAuth2ResourceB2CTest {
         ServiceProxy sp2 = getFlowInitiatorServiceProxy();
         sp1.init(oauth2Resource); // TODO backfired das sobald es keinen globalen oauth resource interceptor gibt?
         ServiceProxy sp3 = getRequireAuthServiceProxy();
+        ServiceProxy sp4 = getRequireAuthNotRequiredServiceProxy();
 
+        oauth2Resource.getRuleManager().addProxy(sp4, RuleManager.RuleDefinitionSource.MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp3, RuleManager.RuleDefinitionSource.MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp2, RuleManager.RuleDefinitionSource.MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp1, RuleManager.RuleDefinitionSource.MANUAL);
@@ -348,6 +350,28 @@ public abstract class OAuth2ResourceB2CTest {
         assertFalse(params.containsKey("illegal"));
     }
 
+    @Test
+    public void loginNotRequired() throws Exception {
+        // access 1: not authenticated, expecting no token
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api2/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        Map res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        assertEquals("null", res.get("accessToken"));
+
+        browser.apply(new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange());
+
+        // access 2: authenticated, expecting JWT
+        exc = new Request.Builder().get(getClientAddress() + "/api2/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
+    }
+
 
     void createKey() throws JoseException {
         String serial = "1";
@@ -541,6 +565,25 @@ public abstract class OAuth2ResourceB2CTest {
         return sp;
     }
 
+    private ServiceProxy getRequireAuthNotRequiredServiceProxy() {
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
+
+        Path path = new Path();
+        path.setValue("/api2/");
+        sp.setPath(path);
+
+        var requireAuth = new RequireAuth();
+        this.requireAuth = requireAuth;
+        requireAuth.setExpectedAud(api1Id);
+        requireAuth.setOauth2(oAuth2Resource2Interceptor);
+        requireAuth.setRequired(false);
+
+        sp.getInterceptors().add(requireAuth);
+        sp.getInterceptors().add(createTestResponseInterceptor());
+
+        return sp;
+    }
+
     private ServiceProxy getFlowInitiatorServiceProxy() {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
         Path path = new Path();
@@ -634,7 +677,7 @@ public abstract class OAuth2ResourceB2CTest {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
-                String accessToken = answer.getAccessToken();
+                String accessToken = answer == null ? "null" : answer.getAccessToken();
                 Map<String, String> body = Map.of(
                         "accessToken", accessToken,
                         "path", exc.getRequestURI(),

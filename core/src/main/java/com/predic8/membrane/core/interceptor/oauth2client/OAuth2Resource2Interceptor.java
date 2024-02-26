@@ -227,7 +227,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Optional.ofNullable((List<LoginParameter>) exc.getProperty("loginParameters")).orElse(List.of())
                 .forEach(lp -> lps.put(lp.getName(), lp.getValue()));
 
-        var combinedLoginParameters = lps.entrySet().stream().map(e ->
+        var combinedLoginParameters = lps.entrySet().stream()
+                .filter(e -> {
+                    String key = e.getKey();
+                    return !"client_id".equals(key) && !"response_type".equals(key) && !"scope".equals(key)
+                            && !"redirect_uri".equals(key) && !"response_mode".equals(key) && !"state".equals(key)
+                            && !"claims".equals(key);
+                })
+                .map(e ->
             new LoginParameter(e.getKey(), e.getValue())
         ).toList();
 
