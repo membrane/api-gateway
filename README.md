@@ -107,6 +107,25 @@ Routing requests from port `2000` to `api.predic8.de` when the path starts with 
 
 Call the API by opening `http://localhost:2000/shop/v2/` in the browser.
 
+# Instrumentation
+
+## Open Telemetry
+Using the `openTelemetry` plugin and the `W3C` propagation standard, we can integrate Membrane into OpenTelemetry traces.
+![otel_example](distribution/examples/opentelemetry/resources/otel_example.png)
+
+Membrane together with a backend with database connection.
+
+```xml
+    <api port="2000">
+        <openTelemetry sampleRate="1.0">
+            <otlpExporter host="localhost" port="4317"/>
+        </openTelemetry>
+        <target host="localhost" port="3000"/>
+    </api>
+```
+
+See the [opentelemetry example](./distribution/examples/opentelemetry)
+
 # Message Transformation
 
 ## Create JSON from Query Parameters
