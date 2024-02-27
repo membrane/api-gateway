@@ -59,6 +59,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -92,6 +93,7 @@ public abstract class OAuth2ResourceB2CTest {
     private final String susiFlowId = "b2c_1_susi";
     private final String peFlowId = "b2c_1_profile_editing";
     private volatile int expiresIn;
+    private final AtomicBoolean didLogIn = new AtomicBoolean();
 
     private String getServerAddress() {
         return "http://" + serverHost + ":" + serverPort + "/" + tenantId.toString();
@@ -104,6 +106,7 @@ public abstract class OAuth2ResourceB2CTest {
     @BeforeEach
     public void init() throws Exception {
         expiresIn = 60;
+        didLogIn.set(false);
         baseServerAddr = getServerAddress();
         issuer = baseServerAddr + "/v2.0/";
 
@@ -154,6 +157,7 @@ public abstract class OAuth2ResourceB2CTest {
         assertEquals("/init", body2.get("path"));
         assertEquals("", body2.get("body"));
         assertEquals("GET", body2.get("method"));
+        assertTrue(didLogIn.get());
     }
 
     @Test
@@ -481,6 +485,7 @@ public abstract class OAuth2ResourceB2CTest {
                     String payload = "{ \"keys\":  [" + jwksResponse + "]}";
                     exc.setResponse(Response.ok(payload).contentType(APPLICATION_JSON).build());
                 } else if (exc.getRequestURI().contains("/authorize?")) {
+                    didLogIn.set(true);
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
                 } else if (exc.getRequestURI().contains("/token")) {
