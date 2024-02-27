@@ -74,7 +74,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	private void setResponseToAccessDenied(Exchange exc) {
-		exc.setResponse(createProblemDetails(401, "predic8.de/authorization/denied", "Access Denied"));
+		exc.setResponse(createProblemDetails(401, "/authorization-denied", "Access Denied"));
 	}
 
 	/**

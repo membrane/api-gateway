@@ -30,6 +30,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.ERROR_STATUS;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.EXPECTED_AUDIENCE;
 
 @MCElement(name = "requireAuth")
 public class RequireAuth extends AbstractInterceptor {
@@ -63,6 +64,7 @@ public class RequireAuth extends AbstractInterceptor {
         if (!isBearer(exc.getRequest().getHeader())) {
             if (errorStatus != null)
                 exc.setProperty(ERROR_STATUS, errorStatus);
+            exc.setProperty(EXPECTED_AUDIENCE, expectedAud);
             var outcome = oauth2.handleRequest(exc);
             if (outcome != Outcome.CONTINUE) {
                 if (!required)

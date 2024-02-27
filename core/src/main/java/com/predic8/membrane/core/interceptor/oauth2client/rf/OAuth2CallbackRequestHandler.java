@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.http.Request;
@@ -34,9 +35,11 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.predic8.membrane.core.Constants.USERAGENT;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.http.Header.ACCEPT;
 import static com.predic8.membrane.core.http.Header.USER_AGENT;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -134,8 +137,11 @@ public class OAuth2CallbackRequestHandler {
 
             originalExchangeStore.postProcess(exc);
             return true;
+        } catch (OAuth2Exception e) {
+            // TODO: originalExchangeStore.remove(exc, session, state);
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("could not exchange code for token", e);
             exc.setResponse(Response.badRequest().body(e.getMessage()).build());
             originalExchangeStore.postProcess(exc);
             return true;
@@ -146,6 +152,21 @@ public class OAuth2CallbackRequestHandler {
 
         String code = params.get("code");
         if (code == null) {
+            String error = params.get("error");
+            if (error != null) {
+                String errorDescription = params.get("error_description");
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("error",  error);
+                if (errorDescription != null)
+                    details.put("error_description", errorDescription);
+
+                log.info("Error from Authorization Server: error="+error + (errorDescription != null ? " error_description=" + errorDescription.replaceAll("[\r\n]", " ") : ""));
+                throw new OAuth2Exception(
+                    createProblemDetails(500, "/oauth2-error-from-authentication-server",
+                        "OAuth2 Error from Authentication Server", details));
+            }
+
             throw new RuntimeException("No code received.");
         }
 
