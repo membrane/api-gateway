@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.ERROR_STATUS;
 
 @MCElement(name = "requireAuth")
 public class RequireAuth extends AbstractInterceptor {
@@ -24,6 +25,7 @@ public class RequireAuth extends AbstractInterceptor {
     private OAuth2Resource2Interceptor oauth2;
     private JwtAuthInterceptor jwtAuth;
     private boolean required = true;
+    private Integer errorStatus = null;
 
     @Override
     public void init(Router router) throws Exception {
@@ -46,6 +48,8 @@ public class RequireAuth extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (!isBearer(exc.getRequest().getHeader())) {
+            if (errorStatus != null)
+                exc.setProperty(ERROR_STATUS, errorStatus);
             var outcome = oauth2.handleRequest(exc);
             if (outcome != Outcome.CONTINUE) {
                 if (!required)
@@ -95,4 +99,12 @@ public class RequireAuth extends AbstractInterceptor {
         return required;
     }
 
+    public Integer getErrorStatus() {
+        return errorStatus;
+    }
+
+    @MCAttribute
+    public void setErrorStatus(Integer errorStatus) {
+        this.errorStatus = errorStatus;
+    }
 }

@@ -62,7 +62,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -117,8 +119,8 @@ public abstract class OAuth2ResourceB2CTest {
         mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, susiFlowId), RuleManager.RuleDefinitionSource.MANUAL);
-        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, peFlowId), RuleManager.RuleDefinitionSource.MANUAL);
+        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, susiFlowId), MANUAL);
+        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, peFlowId), MANUAL);
         mockAuthServer.start();
 
         oauth2Resource = new HttpRouter();
@@ -130,13 +132,21 @@ public abstract class OAuth2ResourceB2CTest {
         ServiceProxy sp1 = getConfiguredOAuth2Resource();
         ServiceProxy sp2 = getFlowInitiatorServiceProxy();
         sp1.init(oauth2Resource); // TODO backfired das sobald es keinen globalen oauth resource interceptor gibt?
-        ServiceProxy sp3 = getRequireAuthServiceProxy();
-        ServiceProxy sp4 = getRequireAuthNotRequiredServiceProxy();
+        ServiceProxy sp3 = getRequireAuthServiceProxy("/api/", ra -> {
+            requireAuth = ra;
+        });
+        ServiceProxy sp4 = getRequireAuthServiceProxy("/api-no-auth-needed/", ra -> {
+            ra.setRequired(false);
+        });
+        ServiceProxy sp5 = getRequireAuthServiceProxy("/api-no-redirect/", ra -> {
+            ra.setErrorStatus(403);
+        });
 
-        oauth2Resource.getRuleManager().addProxy(sp4, RuleManager.RuleDefinitionSource.MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp3, RuleManager.RuleDefinitionSource.MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp2, RuleManager.RuleDefinitionSource.MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp1, RuleManager.RuleDefinitionSource.MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp5, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp4, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp3, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp2, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp1, MANUAL);
         oauth2Resource.start();
     }
 
@@ -283,7 +293,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         requireAuth.setExpectedAud(UUID.randomUUID().toString());
         Exchange exc2 = new Request.Builder().get(getClientAddress() + "/api/init").buildExchange();
-        exc2 = browser.apply(exc);
+        exc2 = browser.apply(exc2);
 
         assertTrue(exc2.getResponse().getStatusCode() >= 400);
     }
@@ -357,7 +367,7 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void loginNotRequired() throws Exception {
         // access 1: not authenticated, expecting no token
-        Exchange exc = new Request.Builder().get(getClientAddress() + "/api2/").buildExchange();
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api-no-auth-needed/").buildExchange();
         exc = browser.applyWithoutRedirect(exc);
 
         assertEquals(200, exc.getResponse().getStatusCode());
@@ -368,12 +378,42 @@ public abstract class OAuth2ResourceB2CTest {
         browser.apply(new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange());
 
         // access 2: authenticated, expecting JWT
-        exc = new Request.Builder().get(getClientAddress() + "/api2/").buildExchange();
+        exc = new Request.Builder().get(getClientAddress() + "/api-no-auth-needed/").buildExchange();
         exc = browser.applyWithoutRedirect(exc);
         assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals("Ok", exc.getResponse().getStatusMessage());
         res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
         assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
+    }
+
+    @Test
+    public void returning4xx() throws Exception {
+        // access 1: not authenticated, expecting 4xx
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api-no-redirect/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+
+        assertEquals(403, exc.getResponse().getStatusCode());
+        assertEquals("Forbidden", exc.getResponse().getStatusMessage());
+
+        browser.apply(new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange());
+
+        // access 2: authenticated, expecting JWT
+        exc = new Request.Builder().get(getClientAddress() + "/api-no-redirect/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        Map res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
+    }
+
+    @Test
+    public void requireAuthRedirects() throws Exception {
+        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
+
+        excCallResource = browser.applyWithoutRedirect(excCallResource);
+        assertEquals(307, excCallResource.getResponse().getStatusCode());
+        assertTrue(excCallResource.getResponse().getHeader().getFirstValue(Header.LOCATION).contains(":"+serverPort+"/"));
+        assertFalse(didLogIn.get());
     }
 
 
@@ -552,36 +592,17 @@ public abstract class OAuth2ResourceB2CTest {
         return sp;
     }
 
-    private ServiceProxy getRequireAuthServiceProxy() {
+    private ServiceProxy getRequireAuthServiceProxy(String path, Consumer<RequireAuth> requireAuthConfigurer) {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
 
-        Path path = new Path();
-        path.setValue("/api/");
-        sp.setPath(path);
+        Path path2 = new Path();
+        path2.setValue(path);
+        sp.setPath(path2);
 
         var requireAuth = new RequireAuth();
-        this.requireAuth = requireAuth;
         requireAuth.setExpectedAud(api1Id);
         requireAuth.setOauth2(oAuth2Resource2Interceptor);
-
-        sp.getInterceptors().add(requireAuth);
-        sp.getInterceptors().add(createTestResponseInterceptor());
-
-        return sp;
-    }
-
-    private ServiceProxy getRequireAuthNotRequiredServiceProxy() {
-        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
-
-        Path path = new Path();
-        path.setValue("/api2/");
-        sp.setPath(path);
-
-        var requireAuth = new RequireAuth();
-        this.requireAuth = requireAuth;
-        requireAuth.setExpectedAud(api1Id);
-        requireAuth.setOauth2(oAuth2Resource2Interceptor);
-        requireAuth.setRequired(false);
+        requireAuthConfigurer.accept(requireAuth);
 
         sp.getInterceptors().add(requireAuth);
         sp.getInterceptors().add(createTestResponseInterceptor());
