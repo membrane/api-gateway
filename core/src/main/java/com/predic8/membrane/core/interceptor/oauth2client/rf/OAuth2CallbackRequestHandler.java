@@ -162,7 +162,7 @@ public class OAuth2CallbackRequestHandler {
                     details.put("error_description", errorDescription);
 
                 log.info("Error from Authorization Server: error="+error + (errorDescription != null ? " error_description=" + errorDescription.replaceAll("[\r\n]", " ") : ""));
-                throw new OAuth2Exception(
+                throw new OAuth2Exception(error, errorDescription,
                     createProblemDetails(500, "/oauth2-error-from-authentication-server",
                         "OAuth2 Error from Authentication Server", details));
             }

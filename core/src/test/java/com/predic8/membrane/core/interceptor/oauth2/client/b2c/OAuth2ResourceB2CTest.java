@@ -696,11 +696,6 @@ public abstract class OAuth2ResourceB2CTest {
                 withValue
         ));
 
-        var aud = new RequireAuth();
-        aud.setExpectedAud("asdf");
-        aud.setOauth2(oAuth2ResourceInterceptor);
-
-
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {

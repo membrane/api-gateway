@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +29,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.joining;
+import static org.apache.commons.text.StringEscapeUtils.unescapeXml;
 
 public class BrowserMock implements Function<Exchange, Exchange> {
 
@@ -56,16 +61,22 @@ public class BrowserMock implements Function<Exchange, Exchange> {
                 }
                 String target = m1.group(1);
                 System.out.println("target = " + target);
-                Matcher m2 = Pattern.compile("<input type=\"hidden\" name=\"([a-z0-9]*)\" value=\"([a-z_=0-9&/]*)\"/>").matcher(response);
+                if (!target.contains(":")) {
+                    target = ResolverMap.combine(exc.getDestinations().get(0), target);
+                    System.out.println("target = " + target);
+                }
+                // the regex is just good enough for the tests
+                Matcher m2 = Pattern.compile("<input type=\"hidden\" name=\"([-a-zA-Z0-9&;_]*)\" value=\"([-a-zA-Z ._=0-9&/;_]*)\"/>").matcher(response);
                 Map<String, String> parameters = new HashMap<>();
                 while (m2.find()) {
-                    parameters.put(m2.group(1), m2.group(2));
+                    parameters.put(unescapeXml(m2.group(1)), unescapeXml(m2.group(2)));
                 }
                 System.out.println("parameters = " + parameters);
 
                 try {
                     exc = new Request.Builder().post(target).contentType(MimeType.APPLICATION_X_WWW_FORM_URLENCODED)
-                            .body(parameters.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(joining("&")))
+                            .body(parameters.entrySet().stream().map(e ->
+                                    encode(e.getKey(), UTF_8) + "=" + encode(e.getValue(), UTF_8)).collect(joining("&")))
                             .buildExchange();
                 } catch (URISyntaxException e) {
                     throw new RuntimeException(e);
