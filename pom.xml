@@ -17,7 +17,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>5.3.3-SNAPSHOT</version>
+	<version>5.3.4-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
 	<description>Membrane is an open source API Gateway written in Java that features:
 	- OpenAPI support with validation
@@ -77,12 +77,12 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>17</javac.source>
 		<javac.target>17</javac.target>
-		<jackson.version>2.15.2</jackson.version>
-		<spring.version>6.1.3</spring.version>
-		<slf4j.version>2.0.7</slf4j.version>
-		<log4j.version>2.20.0</log4j.version>
+		<jackson.version>2.16.1</jackson.version>
+		<spring.version>6.1.4</spring.version>
+		<slf4j.version>2.0.11</slf4j.version>
+		<log4j.version>2.22.1</log4j.version>
 		<junit.version>5.10.0</junit.version>
-		<groovy.version>4.0.13</groovy.version>
+		<groovy.version>4.0.18</groovy.version>
 	</properties>
 
 
