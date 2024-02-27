@@ -80,6 +80,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private String customHeaderUserPropertyPrefix;
     private String logoutUrl;
     private String afterLogoutUrl = "/";
+    private String afterErrorUrl = null;
     private List<LoginParameter> loginParameters = new ArrayList<>();
     private boolean appendAccessTokenToRequest;
 
@@ -177,7 +178,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             log.debug("session present, but not verified, redirecting.");
             return respondWithRedirect(exc);
         } catch (OAuth2Exception e) {
-            exc.setResponse(e.getResponse());
+            if (afterErrorUrl != null) {
+                FormPostGenerator fpg = new FormPostGenerator(afterErrorUrl).withParameter("error", e.getError());
+                if (e.getErrorDescription() != null)
+                    fpg.withParameter("error_description", e.getErrorDescription());
+                exc.setResponse(fpg.build());
+            } else {
+                exc.setResponse(e.getResponse());
+            }
             return RETURN;
         }
     }
@@ -427,5 +435,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setAppendAccessTokenToRequest(boolean appendAccessTokenToRequest) {
         this.appendAccessTokenToRequest = appendAccessTokenToRequest;
+    }
+
+    public String getAfterErrorUrl() {
+        return afterErrorUrl;
+    }
+
+    @MCAttribute
+    public void setAfterErrorUrl(String afterErrorUrl) {
+        this.afterErrorUrl = afterErrorUrl;
     }
 }
