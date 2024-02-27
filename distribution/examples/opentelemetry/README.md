@@ -26,7 +26,11 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
 A span created by Membrane should be visible in [Jaeger UI](http://localhost:16686).
 ![sample](./resources/otel_sample.png)
 7. Examine the printed header fields on the console. You will see headers called `traceparent`, these denote which spans were involved in the request.
-8. Take a look at the `proxies.xml`.
+
+**HOW IT IS DONE**
+
+Take a look at the `proxies.xml`.
+
 ```xml
 <router>
 
