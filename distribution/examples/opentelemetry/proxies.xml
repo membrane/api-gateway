@@ -28,6 +28,20 @@
         </api>
 
         <api port="3000" name="Replace with your Backend">
+            <request>
+                <!-- Print the request headers.
+                     traceparents will be added to them
+                     showing which spans were involved
+                     in the exchange.                   -->
+                <groovy>
+                    println "Request headers:"
+                    header.allHeaderFields.each {
+                        print it
+                    }
+                    CONTINUE
+                </groovy>
+            </request>
+
             <response>
                 <template>
                     Hello World!

@@ -53,7 +53,7 @@ public class OpenTelemetryTest extends AbstractSampleMembraneStartStopTestcase {
         // @formatter:on
 
         List<Traceparent> traceparents = parse(logger.toString());
-        assertEquals(2, traceparents.size());
+        assertEquals(4, traceparents.size());
         assertTrue(traceparents.get(0).sameTraceId(traceparents.get(1)));
     }
 }
