@@ -27,6 +27,7 @@ public class RequireAuth extends AbstractInterceptor {
     private JwtAuthInterceptor jwtAuth;
     private boolean required = true;
     private Integer errorStatus = null;
+    private String scope = null;
 
     @Override
     public void init(Router router) throws Exception {
@@ -108,5 +109,14 @@ public class RequireAuth extends AbstractInterceptor {
     @MCAttribute
     public void setErrorStatus(Integer errorStatus) {
         this.errorStatus = errorStatus;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    @MCAttribute
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }

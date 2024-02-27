@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.bornium.http.util.UriUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -40,10 +39,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.http.Header.*;
@@ -83,6 +79,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private String afterErrorUrl = null;
     private List<LoginParameter> loginParameters = new ArrayList<>();
     private boolean appendAccessTokenToRequest;
+    private boolean onlyRefreshToken = false;
 
     @Override
     public void init() throws Exception {
@@ -108,7 +105,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         accessTokenRevalidator.init(auth, statistics);
         accessTokenRefresher.init(auth);
         sessionAuthorizer.init(auth, router, statistics);
-        oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator, sessionAuthorizer, publicUrlManager, callbackPath);
+        oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator,
+                sessionAuthorizer, publicUrlManager, callbackPath, onlyRefreshToken);
         tokenAuthenticator.init(sessionAuthorizer, statistics, accessTokenRevalidator, auth);
     }
 
@@ -444,5 +442,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setAfterErrorUrl(String afterErrorUrl) {
         this.afterErrorUrl = afterErrorUrl;
+    }
+
+    public boolean isOnlyRefreshToken() {
+        return onlyRefreshToken;
+    }
+
+    @MCAttribute
+    public void setOnlyRefreshToken(boolean onlyRefreshToken) {
+        this.onlyRefreshToken = onlyRefreshToken;
     }
 }

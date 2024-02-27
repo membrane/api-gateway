@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.http.Request;
@@ -61,6 +60,7 @@ public class OAuth2CallbackRequestHandler {
     private SessionAuthorizer sessionAuthorizer;
     private PublicUrlManager publicUrlManager;
     private String callbackPath;
+    private boolean onlyRefreshToken;
 
     public void init(
             URIFactory uriFactory,
@@ -69,7 +69,8 @@ public class OAuth2CallbackRequestHandler {
             AccessTokenRevalidator accessTokenRevalidator,
             SessionAuthorizer sessionAuthorizer,
             PublicUrlManager publicUrlManager,
-            String callbackPath
+            String callbackPath,
+            boolean onlyRefreshToken
             ) {
         this.uriFactory = uriFactory;
         this.auth = auth;
@@ -78,6 +79,10 @@ public class OAuth2CallbackRequestHandler {
         this.sessionAuthorizer = sessionAuthorizer;
         this.publicUrlManager = publicUrlManager;
         this.callbackPath = callbackPath;
+        this.onlyRefreshToken = onlyRefreshToken;
+
+        if (onlyRefreshToken && !sessionAuthorizer.isSkipUserInfo())
+            throw new RuntimeException("If onlyRefreshToken is set, skipUserInfo also has to be set.");
     }
 
     public boolean handleRequest(Exchange exc, Session session) throws Exception {
@@ -114,23 +119,27 @@ public class OAuth2CallbackRequestHandler {
             Map<String, Object> json = exchangeCodeForToken(
                     tokenEndpoint, publicUrlManager.getPublicURL(exc), params);
 
+            String token = null;
             if (!json.containsKey("access_token")) {
-                throw new RuntimeException("No access_token received.");
-            }
-
-            String token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
-
-            session.put("access_token", token); // saving for logout
-
-            OAuth2AnswerParameters oauth2Answer = initOAuth2AnswerParameters(json, token);
-
-            accessTokenRevalidator.getValidTokens().put(token, true);
-
-            if (!sessionAuthorizer.isSkipUserInfo()) {
-                sessionAuthorizer.retrieveUserInfo(json.get("token_type").toString(), token, oauth2Answer, session);
+                if (!onlyRefreshToken)
+                    throw new RuntimeException("No access_token received.");
+                // todo maybe override from requireAuth via exchange property
+                String idToken = (String) json.get("id_token");
+                OAuth2AnswerParameters oauth2Answer = initOAuth2AnswerParameters(json, null);
+                sessionAuthorizer.verifyJWT(exc, idToken, oauth2Answer, session);
             } else {
-                // assume access token is JWT
-                sessionAuthorizer.verifyJWT(exc, token, oauth2Answer, session);
+                token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
+                if (token == null)
+                    throw new RuntimeException("OAuth2 response with access_token set to null.");
+                session.put("access_token", token); // saving for logout
+                accessTokenRevalidator.getValidTokens().put(token, true);
+                OAuth2AnswerParameters oauth2Answer = initOAuth2AnswerParameters(json, token);
+                if (!sessionAuthorizer.isSkipUserInfo()) {
+                    sessionAuthorizer.retrieveUserInfo(json.get("token_type").toString(), token, oauth2Answer, session);
+                } else {
+                    // assume access token is JWT
+                    sessionAuthorizer.verifyJWT(exc, token, oauth2Answer, session);
+                }
             }
 
             doRedirect(exc, originalRequest, session);
