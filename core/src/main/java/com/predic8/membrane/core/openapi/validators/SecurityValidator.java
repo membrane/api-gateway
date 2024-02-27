@@ -50,15 +50,14 @@ public class SecurityValidator {
     }
 
     private void checkSecurityRequirements(ValidationContext ctx, SecurityRequirement securityRequirement, ValidationErrors errors, Request request) {
-        log.info("securityRequirement = " + securityRequirement);
-        log.info("securityRequirement = " + securityRequirement.keySet());
+        log.debug("Checking request {} {} against definitions from OpenAPI.", ctx.getMethod(), ctx.getPath());
 
-        for (String key : securityRequirement.keySet()) {
-            log.info("key = " + key);
-            for (String scope : securityRequirement.get(key)) {
-                log.info("v = " + scope);
-
+        for (String mechanism : securityRequirement.keySet()) {
+            log.debug("Checking mechanism: " + mechanism);
+            for (String scope : securityRequirement.get(mechanism)) {
+                log.debug("Checking scope: " + scope);
              if(request.getScopes()==null || !request.getScopes().contains(scope)) {
+                 log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
                  errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
              }
             }
