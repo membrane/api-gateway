@@ -5,12 +5,13 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
+
         <transport>
             <ruleMatching />
             <exchangeStore />
             <dispatching />
             <reverseProxying />
-            <openTelemetry /> <!--globally registers OpenTelemetry for every api-->
+            <openTelemetry  /> <!--globally registers OpenTelemetry for every api-->
             <userFeature />
             <httpClient />
         </transport>
@@ -41,11 +42,8 @@
                     CONTINUE
                 </groovy>
             </request>
-
             <response>
-                <template>
-                    Hello World!
-                </template>
+                <template>Hello from a faked backend!</template>
             </response>
             <return/>
         </api>

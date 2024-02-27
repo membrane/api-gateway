@@ -20,8 +20,11 @@ docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 431
 
    `curl http://localhost:2000`.
 
-4. You should see `{ "success": true }` in your terminal and a trace,
-   created by Membrane should be visible in the [jaeger frontend](http://localhost:16686). Open `localhost:16686` in the browser.
+4. You should see `{ "success": true }` in your terminal.
+5. Open `localhost:16686` in the browser to access the Jaeger UI.
+6. XXXX Search/Choose Memebran/Klick ...
+5. and a trace,
+   created by Membrane should be visible in the [jaeger frontend](http://localhost:16686). 
 
 5. Take a look into the `proxies.xml
 ```xml
