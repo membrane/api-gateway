@@ -85,6 +85,7 @@ public abstract class OAuth2ResourceB2CTest {
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
     private final String api1Id = UUID.randomUUID().toString();
+    private final String api2Id = UUID.randomUUID().toString();
     private String baseServerAddr;
     private String issuer;
     private final String userFullName = "Mem Brane";
@@ -96,6 +97,7 @@ public abstract class OAuth2ResourceB2CTest {
     private final String peFlowId = "b2c_1_profile_editing";
     private volatile int expiresIn;
     private final AtomicBoolean didLogIn = new AtomicBoolean();
+    private final AtomicBoolean errorDuringSignIn = new AtomicBoolean();
 
     private String getServerAddress() {
         return "http://" + serverHost + ":" + serverPort + "/" + tenantId.toString();
@@ -109,6 +111,7 @@ public abstract class OAuth2ResourceB2CTest {
     public void init() throws Exception {
         expiresIn = 60;
         didLogIn.set(false);
+        errorDuringSignIn.set(false);
         baseServerAddr = getServerAddress();
         issuer = baseServerAddr + "/v2.0/";
 
@@ -132,16 +135,19 @@ public abstract class OAuth2ResourceB2CTest {
         ServiceProxy sp1 = getConfiguredOAuth2Resource();
         ServiceProxy sp2 = getFlowInitiatorServiceProxy();
         sp1.init(oauth2Resource); // TODO backfired das sobald es keinen globalen oauth resource interceptor gibt?
-        ServiceProxy sp3 = getRequireAuthServiceProxy("/api/", ra -> {
+        ServiceProxy sp3 = getRequireAuthServiceProxy(api1Id, "/api/", ra -> {
             requireAuth = ra;
         });
-        ServiceProxy sp4 = getRequireAuthServiceProxy("/api-no-auth-needed/", ra -> {
+        ServiceProxy sp4 = getRequireAuthServiceProxy(api1Id, "/api-no-auth-needed/", ra -> {
             ra.setRequired(false);
         });
-        ServiceProxy sp5 = getRequireAuthServiceProxy("/api-no-redirect/", ra -> {
+        ServiceProxy sp5 = getRequireAuthServiceProxy(api1Id, "/api-no-redirect/", ra -> {
             ra.setErrorStatus(403);
         });
+        ServiceProxy sp6 = getRequireAuthServiceProxy(api2Id, "/api2/", ra -> {
+        });
 
+        oauth2Resource.getRuleManager().addProxy(sp6, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp5, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp4, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp3, MANUAL);
@@ -416,6 +422,17 @@ public abstract class OAuth2ResourceB2CTest {
         assertFalse(didLogIn.get());
     }
 
+    @Test
+    public void errorDuringSignIn() throws Exception {
+        errorDuringSignIn.set(true);
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
+        exc = browser.apply(exc);
+        Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
+        System.out.println(exc.getResponse().getBodyAsStringDecoded());
+        assertEquals("http://membrane-api.io/error/oauth2-error-from-authentication-server", body.get("type"));
+        assertEquals("DEMO-123", ((Map)body.get("details")).get("error"));
+        assertEquals("This is a demo error.", ((Map)body.get("details")).get("error_description"));
+    }
 
     void createKey() throws JoseException {
         String serial = "1";
@@ -525,9 +542,13 @@ public abstract class OAuth2ResourceB2CTest {
                     String payload = "{ \"keys\":  [" + jwksResponse + "]}";
                     exc.setResponse(Response.ok(payload).contentType(APPLICATION_JSON).build());
                 } else if (exc.getRequestURI().contains("/authorize?")) {
-                    didLogIn.set(true);
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                    exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
+                    if (errorDuringSignIn.get()) {
+                        exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build());
+                    } else {
+                        didLogIn.set(true);
+                        exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
+                    }
                 } else if (exc.getRequestURI().contains("/token")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     String grantType = params.get("grant_type");
@@ -592,7 +613,7 @@ public abstract class OAuth2ResourceB2CTest {
         return sp;
     }
 
-    private ServiceProxy getRequireAuthServiceProxy(String path, Consumer<RequireAuth> requireAuthConfigurer) {
+    private ServiceProxy getRequireAuthServiceProxy(String expectedAudience, String path, Consumer<RequireAuth> requireAuthConfigurer) {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
 
         Path path2 = new Path();
@@ -600,7 +621,7 @@ public abstract class OAuth2ResourceB2CTest {
         sp.setPath(path2);
 
         var requireAuth = new RequireAuth();
-        requireAuth.setExpectedAud(api1Id);
+        requireAuth.setExpectedAud(expectedAudience);
         requireAuth.setOauth2(oAuth2Resource2Interceptor);
         requireAuthConfigurer.accept(requireAuth);
 

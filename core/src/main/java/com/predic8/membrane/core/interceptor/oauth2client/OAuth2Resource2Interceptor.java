@@ -47,6 +47,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
@@ -62,6 +63,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private static final Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
     public static final String ERROR_STATUS = "oauth2-error-status";
+    public static final String EXPECTED_AUDIENCE = "oauth2-expected-audience";
 
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
@@ -124,12 +126,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
             logOutSession(exc);
 
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         if (isFaviconRequest(exc)) {
             exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         OAuthUtils.simplifyMultipleOAuth2Answers(session);
@@ -157,22 +159,27 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return Outcome.CONTINUE;
         }
 
-        if (handleRequest(exc, session)) {
-            if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
-                exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
-                appendAccessTokenToRequest(exc);
-                return Outcome.CONTINUE;
+        try {
+            if (handleRequest(exc, session)) {
+                if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
+                    exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
+                    appendAccessTokenToRequest(exc);
+                    return Outcome.CONTINUE;
+                }
+
+                if (exc.getResponse().getStatusCode() >= 400) {
+                    session.clear();
+                }
+
+                return RETURN;
             }
 
-            if (exc.getResponse().getStatusCode() >= 400) {
-                session.clear();
-            }
-
-            return Outcome.RETURN;
+            log.debug("session present, but not verified, redirecting.");
+            return respondWithRedirect(exc);
+        } catch (OAuth2Exception e) {
+            exc.setResponse(e.getResponse());
+            return RETURN;
         }
-
-        log.debug("session present, but not verified, redirecting.");
-        return respondWithRedirect(exc);
     }
 
     private void handleOriginalRequest(Exchange exc) throws Exception {
@@ -224,7 +231,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Integer errorStatus = (Integer) exc.getProperty(ERROR_STATUS);
         if (errorStatus != null) {
             exc.setResponse(Response.statusCode(errorStatus).build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         String state = generateNewState();
@@ -257,7 +264,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             state = session.get(ParamNames.STATE) + SESSION_VALUE_SEPARATOR + state;
         session.put(ParamNames.STATE, state);
 
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
