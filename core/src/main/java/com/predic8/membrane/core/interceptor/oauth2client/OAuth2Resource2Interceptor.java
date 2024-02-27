@@ -61,6 +61,7 @@ import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
 public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private static final Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
+    public static final String ERROR_STATUS = "oauth2-error-status";
 
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
@@ -220,6 +221,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     public Outcome respondWithRedirect(Exchange exc) throws Exception {
+        Integer errorStatus = (Integer) exc.getProperty(ERROR_STATUS);
+        if (errorStatus != null) {
+            exc.setResponse(Response.statusCode(errorStatus).build());
+            return Outcome.RETURN;
+        }
+
         String state = generateNewState();
 
         Map<String, String> lps = loginParameters.stream()
