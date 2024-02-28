@@ -6,7 +6,7 @@ servers:
   - url: https://api.predic8.de/v1
 security:
   - oauth2:
-    - read
+      - read
 paths:
   /finance:
     get:
@@ -30,6 +30,75 @@ paths:
       responses:
         '200':
           description: OK
+  /exclusive-apikey:
+    get:
+      security:
+        - ApiKeyAuth:
+            - api_admin
+            - api_user
+      responses:
+        '200':
+          description: OK
+  /oauth2-and-apikey:
+    get:
+      security:
+        - oauth2:
+            - oauth_user
+          ApiKeyAuth:
+            - api_user
+      responses:
+        '200':
+          description: OK
+  /oauth2-or-apikey:
+    get:
+      security:
+        - oauth2:
+            - finance
+        - ApiKeyAuth:
+            - admin
+      responses:
+        '200':
+          description: OK
+  /apikey-and-apikey:
+    get:
+      security:
+        - ApiKeyAuth:
+            - api_access
+          AnotherApiKeyAuth:
+            - admin_access
+      responses:
+        '200':
+          description: OK
+  /apikey-or-apikey:
+    get:
+      security:
+        - ApiKeyAuth:
+            - demokey
+        - AnotherApiKeyAuth:
+            - accesskey
+      responses:
+        '200':
+          description: OK
+  /oauth2-and-oauth2:
+    get:
+      security:
+        - oauth2:
+            - elevated
+          AnotherOauth2:
+            - basic
+      responses:
+        '200':
+          description: OK
+  /oauth2-or-oauth2:
+    get:
+      security:
+        - oauth2:
+            - simple
+        - AnotherOauth2:
+            - advanced
+      responses:
+        '200':
+          description: OK
 
 components:
   securitySchemes:
@@ -43,3 +112,20 @@ components:
             finance: Users of the finance department
             write: Write permission
             read: Read permission
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+    AnotherApiKeyAuth:
+      type: apiKey
+      in: query
+      name: api_key
+    AnotherOauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://api.predic8.de/oauth2/authorize
+          tokenUrl: https://api.predic8.de/token
+          scopes:
+            open: Open access
+            secure: Secure access
