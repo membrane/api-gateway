@@ -31,10 +31,10 @@ To monitor APIs using Prometheus and Grafana, follow the steps below:
 
 3. After accessing the endpoints, proceed to Grafana:
 
-  - Access [localhost:3000](http://localhost:3000) in your browser.
+  - Access [localhost:3000](http://localhost:3000) in your browser. 
+  - Log in with the default credentials: username `admin` and password `admin`.
   - Click on "Explore" from the left-hand menu.
   - You can now select different queries to display the collected metrics.
-    (Login credentials if required: username `admin` and password `admin`)
 
    ![Grafana example](prometheus-grafana-example.png)
 
