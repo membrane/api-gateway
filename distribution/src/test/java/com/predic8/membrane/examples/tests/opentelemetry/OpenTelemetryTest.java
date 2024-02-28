@@ -1,4 +1,4 @@
-/* Copyright 2023 predic8 GmbH, www.predic8.com
+/* Copyright 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
+public class OpenTelemetryTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -53,7 +53,7 @@ public class OpenTelemetryInterceptorTest extends AbstractSampleMembraneStartSto
         // @formatter:on
 
         List<Traceparent> traceparents = parse(logger.toString());
-        assertEquals(2, traceparents.size());
+        assertEquals(4, traceparents.size());
         assertTrue(traceparents.get(0).sameTraceId(traceparents.get(1)));
     }
 }
