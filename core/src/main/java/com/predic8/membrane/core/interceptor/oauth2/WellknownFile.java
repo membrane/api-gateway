@@ -20,6 +20,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class WellknownFile {
 
@@ -31,6 +33,7 @@ public class WellknownFile {
     private static final String REVOCATION_ENDPOINT = "revocation_endpoint";
     private static final String JWKS_URI = "jwks_uri";
     private static final String RESPONSE_TYPES_SUPPORTED = "response_types_supported";
+    private static final String RESPONSE_MODES_SUPPORTED = "response_modes_supported";
     private static final String SUBJECT_TYPES_SUPPORTED = "subject_types_supported";
     private static final String ID_TOKEN_SIGNING_ALG_VALUES_SUPPORTED = "id_token_signing_alg_values_supported";
     private static final String SCOPES_SUPPORTED = "scopes_supported";
@@ -50,6 +53,7 @@ public class WellknownFile {
     private String revocationEndpoint;
     private String jwksUri;
     private String supportedResponseTypes;
+    private String supportedResponseModes;
     private String supportedSubjectType;
     private String supportedIdTokenSigningAlgValues;
     private String supportedScopes;
@@ -88,6 +92,7 @@ public class WellknownFile {
         setRevocationEndpoint(baseOauth2Url() + "revoke");
         setJwksUri(baseOauth2Url() + "certs");
         setSupportedResponseTypes(oasi.getSupportedAuthorizationGrants());
+        setSupportedResponseModes("query fragment");
         setSupportedSubjectType("public");
         setSupportedIdTokenSigningAlgValues("RS256");
         setSupportedScopes(getSupportedOasiScopes());
@@ -114,6 +119,7 @@ public class WellknownFile {
         writeRevocationEndpoint();
         writeJwksUri();
         writeSupportedResponseTypes();
+        writeSupportedResponseModes();
         writeSupportedSubjectTypes();
         writeSupportedIdTokenSigningAlgValues();
         writeSupportedScopes();
@@ -155,6 +161,11 @@ public class WellknownFile {
         stringEnumToJson(RESPONSE_TYPES_SUPPORTED,getSupportedResponseTypes().split(" "));
     }
 
+    private void writeSupportedResponseModes() throws IOException {
+        if (supportedResponseModes != null)
+            stringEnumToJson(RESPONSE_MODES_SUPPORTED, getSupportedResponseModes().split(" "));
+    }
+
     private void writeJwksUri() throws IOException {
         writeSingleJsonField(JWKS_URI, getJwksUri());
     }
@@ -183,107 +194,129 @@ public class WellknownFile {
         writeSingleJsonField(ISSUER, getIssuer());
     }
 
-    protected String getAuthorizationEndpoint() {
+    public String getAuthorizationEndpoint() {
         return authorizationEndpoint;
     }
 
-    protected void setAuthorizationEndpoint(String authorizationEndpoint) {
+    public void setAuthorizationEndpoint(String authorizationEndpoint) {
         this.authorizationEndpoint = authorizationEndpoint;
     }
 
-    protected String getIssuer() {
+    public String getIssuer() {
         return issuer;
     }
 
-    protected void setIssuer(String issuer) {
+    public void setIssuer(String issuer) {
         this.issuer = issuer;
     }
 
-    protected String getTokenEndpoint() {
+    public String getTokenEndpoint() {
         return tokenEndpoint;
     }
 
-    protected void setTokenEndpoint(String tokenEndpoint) {
+    public void setTokenEndpoint(String tokenEndpoint) {
         this.tokenEndpoint = tokenEndpoint;
     }
 
-    protected String getUserinfoEndpoint() {
+    public String getUserinfoEndpoint() {
         return userinfoEndpoint;
     }
 
-    protected void setUserinfoEndpoint(String userinfoEndpoint) {
+    public void setUserinfoEndpoint(String userinfoEndpoint) {
         this.userinfoEndpoint = userinfoEndpoint;
     }
 
-    protected String getRevocationEndpoint() {
+    public String getRevocationEndpoint() {
         return revocationEndpoint;
     }
 
-    protected void setRevocationEndpoint(String revocationEndpoint) {
+    public void setRevocationEndpoint(String revocationEndpoint) {
         this.revocationEndpoint = revocationEndpoint;
     }
 
-    protected String getJwksUri() {
+    public String getJwksUri() {
         return jwksUri;
     }
 
-    protected void setJwksUri(String jwksUri) {
+    public void setJwksUri(String jwksUri) {
         this.jwksUri = jwksUri;
     }
 
-    protected String getSupportedResponseTypes() {
+    public String getSupportedResponseTypes() {
         return supportedResponseTypes;
     }
 
-    protected void setSupportedResponseTypes(HashSet<String> supportedResponseTypes) throws UnsupportedEncodingException {
+    public void setSupportedResponseTypes(Set<String> supportedResponseTypes) throws UnsupportedEncodingException {
         StringBuilder builder = new StringBuilder();
         for(String resp : supportedResponseTypes)
             builder.append(" ").append(OAuth2Util.urlencode(resp));
         setSupportedResponseTypes(builder.toString().trim());
     }
 
-    protected void setSupportedResponseTypes(String supportedResponseTypes) {
+    public void setSupportedResponseTypes(String supportedResponseTypes) {
         this.supportedResponseTypes = supportedResponseTypes;
     }
 
-    protected String getSupportedSubjectType() {
+    public String getSupportedResponseModes() {
+        return supportedResponseModes;
+    }
+
+    public void setSupportedResponseModes(Set<String> supportedResponseModes) throws UnsupportedEncodingException {
+        StringBuilder builder = new StringBuilder();
+        for(String resp : supportedResponseModes)
+            builder.append(" ").append(OAuth2Util.urlencode(resp));
+        setSupportedResponseModes(builder.toString().trim());
+    }
+
+    public void setSupportedResponseModes(String supportedResponseModes) {
+        this.supportedResponseModes = supportedResponseModes;
+    }
+
+    public String getSupportedSubjectType() {
         return supportedSubjectType;
     }
 
-    protected void setSupportedSubjectType(String supportedSubjectType) {
+    public void setSupportedSubjectType(String supportedSubjectType) {
         this.supportedSubjectType = supportedSubjectType;
     }
 
-    protected String getSupportedIdTokenSigningAlgValues() {
+    public String getSupportedIdTokenSigningAlgValues() {
         return supportedIdTokenSigningAlgValues;
     }
 
-    protected void setSupportedIdTokenSigningAlgValues(String supportedIdTokenSigningAlgValues) {
+    public void setSupportedIdTokenSigningAlgValues(String supportedIdTokenSigningAlgValues) {
         this.supportedIdTokenSigningAlgValues = supportedIdTokenSigningAlgValues;
     }
 
-    protected String getSupportedScopes() {
+    public String getSupportedScopes() {
         return supportedScopes;
     }
 
-    protected void setSupportedScopes(String supportedScopes) {
+    public void setSupportedScopes(String supportedScopes) {
         this.supportedScopes = supportedScopes;
     }
 
-    protected String getSupportedTokenEndpointAuthMethods() {
+    public String getSupportedTokenEndpointAuthMethods() {
         return supportedTokenEndpointAuthMethods;
     }
 
-    protected void setSupportedTokenEndpointAuthMethods(String supportedTokenEndpointAuthMethods) {
+    public void setSupportedTokenEndpointAuthMethods(String supportedTokenEndpointAuthMethods) {
         this.supportedTokenEndpointAuthMethods = supportedTokenEndpointAuthMethods;
     }
 
-    protected String getSupportedClaims() {
+    public String getSupportedClaims() {
         return supportedClaims;
     }
 
-    protected void setSupportedClaims(String supportedClaims) {
+    public void setSupportedClaims(String supportedClaims) {
         this.supportedClaims = supportedClaims;
+    }
+
+    public void setSupportedClaims(Set<String> supportedClaims) {
+        setSupportedClaims(supportedClaims.stream()
+                .map(OAuth2Util::urlencode)
+                .collect(Collectors.joining(" "))
+        );
     }
 
     public String getWellknown() {

@@ -11,40 +11,35 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.session;
+package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.util.MemcachedConnector;
-import net.rubyeye.xmemcached.MemcachedClient;
-import net.rubyeye.xmemcached.exception.MemcachedException;
+import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.interceptor.session.SessionManager;
 
 import java.util.*;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * For testing, the class FakeSyncSessionStoreManager is used instead.
+ * This class emulates systems like Redis or MemcacheD.
  */
-@MCElement(name = "memcachedSessionManager")
-public class MemcachedSessionManager extends SessionManager {
+public class FakeSyncSessionStoreManager extends SessionManager {
 
-    private MemcachedConnector connector;
-    private MemcachedClient client;
     protected String cookiePrefix = UUID.randomUUID().toString().substring(0,8);
     private static final String ID_NAME = "_in_memory_session_id";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private ConcurrentHashMap<String, String> remoteContent = new ConcurrentHashMap<>();
+
     @Override
     public void init(Router router) throws Exception {
-        this.client = connector.getClient();
     }
 
     @Override
@@ -76,11 +71,7 @@ public class MemcachedSessionManager extends SessionManager {
 
     private void addSessions(Session[] sessions) {
         Arrays.stream(sessions).forEach(s -> {
-            try {
-                client.set(s.get(ID_NAME), Math.toIntExact(getExpiresAfterSeconds()), stringify(s));
-            } catch (TimeoutException | InterruptedException | MemcachedException e) {
-                throw new RuntimeException(e);
-            }
+            remoteContent.put(s.get(ID_NAME), stringify(s));
         });
     }
 
@@ -139,11 +130,7 @@ public class MemcachedSessionManager extends SessionManager {
     @Override
     public void removeSession(Exchange exc) {
         getInvalidCookies(exc, UUID.randomUUID().toString()).forEach(key -> {
-            try {
-                client.delete(key);
-            } catch (TimeoutException | InterruptedException | MemcachedException e) {
-                throw new RuntimeException(e);
-            }
+            remoteContent.remove(key);
         });
         super.removeSession(exc);
     }
@@ -158,19 +145,7 @@ public class MemcachedSessionManager extends SessionManager {
     }
 
     private Optional<String> getCachedSession(String cookie) {
-        try {
-            return Optional.ofNullable(client.get(cookie.split("=true")[0]));
-        } catch (TimeoutException | InterruptedException | MemcachedException e) {
-            throw new RuntimeException(e);
-        }
+        return Optional.ofNullable(remoteContent.get(cookie.split("=true")[0]));
     }
 
-    public MemcachedConnector getConnector() {
-        return connector;
-    }
-
-    @MCAttribute
-    public void setConnector(MemcachedConnector connector) {
-        this.connector = connector;
-    }
 }

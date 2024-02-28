@@ -4,7 +4,7 @@
 %global logdir %{_var}/log/%{name}
 
 Name:             membrane
-Version:          5.3.3-SNAPSHOT
+Version:          5.3.4-SNAPSHOT
 Release:          1%{?dist}
 URL:              https://github.com/membrane/api-gateway
 Summary:          Membrane - Open Source API Gateway written in Java for REST APIs, WebSockets, STOMP and legacy Web Services
@@ -34,8 +34,8 @@ BuildRequires:    systemd
 %setup -q -c -T
 wget %{url}/releases/download/v%{version}/%{zip_name}.zip
 wget %{url}/releases/download/v%{version}/%{zip_name}.zip.asc
-wget https://keys.openpgp.org.... # TODO
-gpg --no-tty --import "KEYFILE"
+wget https://keys.openpgp.org/vks/v1/by-fingerprint/2FB0F3ED57EF0A8A9CE847C18A006E355B8A65F6
+gpg --no-tty --import "2FB0F3ED57EF0A8A9CE847C18A006E355B8A65F6.asc"
 gpg --no-tty "%{zip_name}.zip.asc"
 unzip %{zip_name}.zip
 

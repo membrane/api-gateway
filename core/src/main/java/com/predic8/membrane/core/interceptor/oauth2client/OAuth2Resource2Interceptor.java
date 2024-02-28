@@ -41,9 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.http.Header.*;
@@ -72,11 +72,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private final AccessTokenRefresher accessTokenRefresher = new AccessTokenRefresher();
     private PublicUrlManager publicUrlManager = new PublicUrlManager();
     private final SessionAuthorizer sessionAuthorizer = new SessionAuthorizer();
-    private OAuth2CallbackRequestHandler oAuth2CallbackRequestHandler = new OAuth2CallbackRequestHandler();
-    private TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
+    private final OAuth2CallbackRequestHandler oAuth2CallbackRequestHandler = new OAuth2CallbackRequestHandler();
+    private final TokenAuthenticator tokenAuthenticator = new TokenAuthenticator();
     private String customHeaderUserPropertyPrefix;
     private String logoutUrl;
-    private String afterLogoutUrl;
+    private String afterLogoutUrl = "/";
     private List<LoginParameter> loginParameters = new ArrayList<>();
     private boolean appendAccessTokenToRequest;
 
@@ -222,7 +222,16 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public Outcome respondWithRedirect(Exchange exc) throws Exception {
         String state = generateNewState();
 
-        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()) + copyLoginParameters(exc), false).build());
+        Map<String, String> lps = loginParameters.stream()
+                .collect(HashMap::new, (m, lp) -> m.put(lp.getName(), lp.getValue()), HashMap::putAll);
+        Optional.ofNullable((List<LoginParameter>) exc.getProperty("loginParameters")).orElse(List.of())
+                .forEach(lp -> lps.put(lp.getName(), lp.getValue()));
+
+        var combinedLoginParameters = lps.entrySet().stream().map(e ->
+            new LoginParameter(e.getKey(), e.getValue())
+        ).toList();
+
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), false).build());
 
         readBodyFromStreamIntoMemory(exc);
 
@@ -235,35 +244,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         session.put(ParamNames.STATE, state);
 
         return Outcome.RETURN;
-    }
-
-    private String copyLoginParameters(Exchange exc) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        if (loginParameters.size() == 0)
-            return sb.toString();
-
-        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-        loginParameters.forEach(lp -> {
-            try {
-                if (lp.getValue() != null) {
-                    sb.append("&");
-                    sb.append(lp.getName());
-                    sb.append("=");
-                    sb.append(UriUtil.encode(lp.getValue()));
-                } else {
-                    if (params.containsKey(lp.getName())) {
-                        String encoded = UriUtil.encode(params.get(lp.getName()));
-                        sb.append("&");
-                        sb.append(lp.getName());
-                        sb.append("=");
-                        sb.append(encoded);
-                    }
-                }
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        return sb.toString();
     }
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {

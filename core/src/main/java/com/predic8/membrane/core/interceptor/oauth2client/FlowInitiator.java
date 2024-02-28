@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2client;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
@@ -22,17 +23,19 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import static com.predic8.membrane.core.interceptor.session.SessionManager.SESSION;
-
 @MCElement(name = "flowInitiator")
-public class UserFlow extends AbstractInterceptor {
+public class FlowInitiator extends AbstractInterceptor {
     private String triggerFlow;
     private String defaultFlow;
     private String afterLoginUrl;
     private OAuth2Resource2Interceptor oauth2;
+    private List<LoginParameter> loginParameters = new ArrayList<>();
 
     public String getTriggerFlow() {
         return triggerFlow;
@@ -79,14 +82,19 @@ public class UserFlow extends AbstractInterceptor {
 
         exc.getRequest().getHeader().removeFields("Cookie");
 
+        var params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        exc.setProperty("loginParameters", LoginParameter.mergeParams(params, loginParameters));
 
         // create new response redirecting user to new flow
         exc.getRequest().setUri(afterLoginUrl);
         exc.setOriginalRequestUri(afterLoginUrl);
+
         oauth2.respondWithRedirect(exc);
+
         Session session = oauth2.getSessionManager().getSession(exc);
         session.put("defaultFlow", defaultFlow);
         session.put("triggerFlow", triggerFlow);
+
         oauth2.getSessionManager().postProcess(exc); // required to create a session cookie
         values.forEach(header -> exc.getResponse().getHeader().add(header));
 
@@ -98,5 +106,12 @@ public class UserFlow extends AbstractInterceptor {
         return Outcome.RETURN;
     }
 
+    public List<LoginParameter> getLoginParameters() {
+        return loginParameters;
+    }
 
+    @MCChildElement
+    public void setLoginParameters(List<LoginParameter> loginParameters) {
+        this.loginParameters = loginParameters;
+    }
 }

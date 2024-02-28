@@ -125,6 +125,7 @@ public class Session {
         }
     }
 
+    @JsonIgnore
     public Object getOAuth2Answer() {
         return get(OAUTH2_ANSWER);
     }
@@ -133,6 +134,7 @@ public class Session {
         put(OAUTH2_ANSWER, answer);
     }
 
+    @JsonIgnore
     public OAuth2AnswerParameters getOAuth2AnswerParameters() {
         try {
             return OAuth2AnswerParameters.deserialize(get(OAUTH2_ANSWER));
@@ -145,6 +147,7 @@ public class Session {
         return getOAuth2Answer() != null;
     }
 
+    @JsonIgnore
     public String getAccessToken() {
         return get(ACCESS_TOKEN);
     }
