@@ -7,7 +7,7 @@ import com.predic8.membrane.annot.MCElement;
 import java.util.ArrayList;
 import java.util.List;
 
-@MCElement(name = "keyDef", topLevel = false)
+@MCElement(name = "secret", topLevel = false)
 public class Key {
 
     private final List<Scope> scopes = new ArrayList<>();

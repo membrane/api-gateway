@@ -26,7 +26,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
 @MCElement(name = "keys", topLevel = false)
-public class InConfigKeyStore implements ApiKeyStore {
+public class SimpleKeyStore implements ApiKeyStore {
 
     private final List<Key> keys = new ArrayList<>();
 

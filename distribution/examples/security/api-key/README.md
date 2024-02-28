@@ -61,10 +61,10 @@ File stores maintain API keys and their corresponding scopes through various met
 ```xml
 <apiKey>
    <keys>
-      <keyDef value="123" />
-      <keyDef value="456">
+      <secret value="123" />
+      <secret value="456">
          <scope>admin</scope>
-      </keyDef>
+      </secret>
    </keys>
 </apiKey>
 ```

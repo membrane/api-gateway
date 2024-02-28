@@ -10,12 +10,12 @@ import static java.util.Optional.empty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class InConfigKeyStoreTest {
+class SimpleKeyStoreTest {
 
     @Test
     void getScopes() throws UnauthorizedApiKeyException {
-        InConfigKeyStore inConfigKeyStore = new InConfigKeyStore();
-        inConfigKeyStore.setKeys(of(
+        SimpleKeyStore simpleKeyStore = new SimpleKeyStore();
+        simpleKeyStore.setKeys(of(
                 new Key(){{setValue("12345");}},
                 new Key(){{
                     setValue("67890");
@@ -25,8 +25,8 @@ class InConfigKeyStoreTest {
                     );
                 }})
         );
-        assertEquals(empty(), inConfigKeyStore.getScopes("12345"));
-        assertEquals(Optional.of(of("admin", "user")), inConfigKeyStore.getScopes("67890"));
-        assertThrows(UnauthorizedApiKeyException.class, () -> inConfigKeyStore.getScopes("ABCDE"));
+        assertEquals(empty(), simpleKeyStore.getScopes("12345"));
+        assertEquals(Optional.of(of("admin", "user")), simpleKeyStore.getScopes("67890"));
+        assertThrows(UnauthorizedApiKeyException.class, () -> simpleKeyStore.getScopes("ABCDE"));
     }
 }
