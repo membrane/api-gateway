@@ -12,7 +12,9 @@
             <return statusCode="200"/>
         </api>
         <api port="2002">
-            <path>/foo</path>
+            <return statusCode="404"/>
+        </api>
+        <api port="2003">
             <return statusCode="500"/>
         </api>
 
