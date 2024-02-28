@@ -23,7 +23,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>5.3.3-SNAPSHOT</version>
+		<version>5.3.4-SNAPSHOT</version>
 	</parent>
 
 	<!-- Open Telemetry -->
@@ -268,7 +268,7 @@
 		<dependency>
 			<groupId>com.github.spotbugs</groupId>
 			<artifactId>spotbugs-annotations</artifactId>
-			<version>4.7.3</version>
+			<version>4.8.3</version>
 		</dependency>
 		<dependency>
 			<groupId>io.swagger</groupId>
@@ -322,7 +322,7 @@
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-exporter-otlp</artifactId>
-			<version>1.31.0</version>
+			<version>1.34.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry.instrumentation</groupId>

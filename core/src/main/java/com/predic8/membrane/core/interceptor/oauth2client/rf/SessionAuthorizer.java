@@ -103,6 +103,7 @@ public class SessionAuthorizer {
 
         jwks.setJwks(new ArrayList<>());
         jwks.setJwksUris(auth.getJwksEndpoint());
+        jwks.setAuthorizationService(auth);
 
         return jwks;
     }

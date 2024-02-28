@@ -20,10 +20,12 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.Blob;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.TextUtil;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +34,7 @@ public class Jwks {
 
     List<Jwk> jwks;
     String jwksUris;
+    AuthorizationService authorizationService;
 
     public List<Jwk> getJwks() {
         return jwks;
@@ -71,8 +74,20 @@ public class Jwks {
         }
     }
 
-    private List parseJwksUriIntoList(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper, String uri) throws java.io.IOException {
-        return (List) mapper.readValue(resolverMap.resolve(ResolverMap.combine(baseLocation, uri)), Map.class).get("keys");
+    private List parseJwksUriIntoList(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper, String uri) throws Exception {
+        InputStream resolve = authorizationService != null ?
+                authorizationService.resolve(resolverMap, baseLocation, uri) :
+                resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
+        return (List) mapper.readValue(resolve, Map.class).get("keys");
+    }
+
+    public AuthorizationService getAuthorizationService() {
+        return authorizationService;
+    }
+
+    @MCAttribute
+    public void setAuthorizationService(AuthorizationService authService) {
+        authorizationService = authService;
     }
 
     @MCElement(name="jwk", mixed = true, topLevel = false, id="jwks-jwk")
