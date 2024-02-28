@@ -56,6 +56,20 @@ File stores maintain API keys and their corresponding scopes through various met
 </apiKey>
 ```
 
+**DECLARING API KEYS IN THE CONFIG**
+
+```xml
+<apiKey>
+   <keys>
+      <secret value="123" />
+      <secret value="456">
+         <scope>admin</scope>
+      </secret>
+   </keys>
+</apiKey>
+```
+
+
 ### Mandatory API Key Authentication
 This part of the configuration sets up an API on port `2000`, where providing an API key is mandatory. The setup allows API keys to be received either as HTTP headers or query parameters.  
 On successful authentication we simply return with the message "Secret Area!". Here we would direct the request to the destination server.
