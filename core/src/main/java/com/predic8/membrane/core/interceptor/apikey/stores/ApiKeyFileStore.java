@@ -83,6 +83,7 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
                 .toList();
     }
 
+    @Override
     public Optional<List<String>> getScopes(String key) throws UnauthorizedApiKeyException {
         if (scopes.containsKey(key)) {
             return scopes.get(key);
