@@ -83,10 +83,6 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
         setSpanHttpHeaderTags(exc.getResponse().getHeader(), span);
 
-//        span.addEvent("Response", of(
-//                stringKey("Response Header"), exc.getResponse().getHeader().toString()
-//        ));
-
         if (logBody) {
             span.addEvent("Response", of(
                     stringKey("Response Body"), exc.getResponse().getBodyAsStringDecoded()
@@ -96,9 +92,6 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         span.addEvent("Close Exchange").end();
         return CONTINUE;
     }
-
-    // TODO otel.status_code = Warn? or similar for 400 bad request
-    // TODO Add option to show body in trace log
 
     private static Span getExchangeSpan(Exchange exc) {
         return ((Span) exc.getProperty("span"));

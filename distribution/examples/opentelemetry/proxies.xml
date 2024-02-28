@@ -11,7 +11,9 @@
             <exchangeStore />
             <dispatching />
             <reverseProxying />
-            <openTelemetry  /> <!--globally registers OpenTelemetry for every api-->
+            <openTelemetry sampleRate="1.0"> <!--globally registers OpenTelemetry for every api-->
+                <otlpExporter host="localhost" port="4317"/>
+            </openTelemetry>
             <userFeature />
             <httpClient />
         </transport>
