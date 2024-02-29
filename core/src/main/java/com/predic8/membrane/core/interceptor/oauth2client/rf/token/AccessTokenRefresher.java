@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.WANTED_SCOPE;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.numberToString;
 
@@ -43,19 +44,22 @@ public class AccessTokenRefresher {
             .build();
 
     private AuthorizationService auth;
+    private boolean onlyRefreshToken;
 
-    public void init(AuthorizationService auth) {
+    public void init(AuthorizationService auth, boolean onlyRefreshToken) {
         this.auth = auth;
+        this.onlyRefreshToken = onlyRefreshToken;
     }
 
     public void refreshIfNeeded(Session session, Exchange exc) {
-        if (!refreshingOfAccessTokenIsNeeded(session)) {
+        String wantedScope = (String) exc.getProperty(WANTED_SCOPE);
+        if (!refreshingOfAccessTokenIsNeeded(session, wantedScope)) {
             return;
         }
 
         synchronized (getTokenSynchronizer(session)) {
             try {
-                refreshAccessToken(session);
+                refreshAccessToken(session, wantedScope);
                 exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
             } catch (Exception e) {
                 log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
@@ -64,9 +68,9 @@ public class AccessTokenRefresher {
         }
     }
 
-    private void refreshAccessToken(Session session) throws Exception {
+    private void refreshAccessToken(Session session, String wantedScope) throws Exception {
         var params = session.getOAuth2AnswerParameters();
-        var response = auth.refreshTokenRequest(params);
+        var response = auth.refreshTokenRequest(params, wantedScope);
 
         if (!response.isOk()) {
             response.getBody().read();
@@ -79,7 +83,7 @@ public class AccessTokenRefresher {
 
         var json = new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<Map<String, Object>>() {});
 
-        if (isMissingOneToken(json)) {
+        if (!onlyRefreshToken && isMissingOneToken(json)) {
             response.getBody().read();
             throw new RuntimeException("Statuscode was ok but no access_token and refresh_token was received: " + response.getStatusCode());
         }
@@ -87,10 +91,13 @@ public class AccessTokenRefresher {
         updateSessionTokens(session, json, params);
     }
 
-    private boolean refreshingOfAccessTokenIsNeeded(Session session) {
+    private boolean refreshingOfAccessTokenIsNeeded(Session session, String wantedScope) {
         if (session.getOAuth2Answer() == null) {
             return false;
         }
+
+        if (session.getAccessToken() == null && wantedScope != null)
+            return true;
 
         var params = session.getOAuth2AnswerParameters();
         var expiration = params.getExpiration();
@@ -110,7 +117,9 @@ public class AccessTokenRefresher {
 
     private void updateSessionTokens(Session session, Map<String, Object> json, OAuth2AnswerParameters params) throws UnsupportedEncodingException, JsonProcessingException {
         params.setAccessToken((String) json.get("access_token"));
-        params.setRefreshToken((String) json.get("refresh_token"));
+        String newRefreshToken = (String) json.get("refresh_token");
+        if (newRefreshToken != null)
+            params.setRefreshToken(newRefreshToken);
         params.setExpiration(numberToString(json.get("expires_in")));
         LocalDateTime now = LocalDateTime.now();
         params.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
