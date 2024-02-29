@@ -60,6 +60,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private static final Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
     public static final String ERROR_STATUS = "oauth2-error-status";
     public static final String EXPECTED_AUDIENCE = "oauth2-expected-audience";
+    public static final String WANTED_SCOPE = "oauth2-wanted-scope";
 
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
@@ -103,7 +104,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         publicUrlManager.init(auth, callbackPath);
         accessTokenRevalidator.init(auth, statistics);
-        accessTokenRefresher.init(auth);
+        accessTokenRefresher.init(auth, onlyRefreshToken);
         sessionAuthorizer.init(auth, router, statistics);
         oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator,
                 sessionAuthorizer, publicUrlManager, callbackPath, onlyRefreshToken);
