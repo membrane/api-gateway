@@ -190,7 +190,7 @@
 		<dependency>
 			<groupId>org.graalvm.sdk</groupId>
 			<artifactId>graal-sdk</artifactId>
-			<version>22.3.3</version>
+			<version>22.3.5</version>
 			<scope>provided</scope>
 		</dependency>
 
