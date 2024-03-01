@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RequiredTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/required.yml";
     }
 

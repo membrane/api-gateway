@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.model;
 
 import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.security.*;
 
 import java.util.*;
 
@@ -28,6 +29,8 @@ public class Request extends Message<Request> {
     private String path;
     private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
+
+    private List<SecurityScheme> securitySchemes;
 
     // Security scopes from OAuth2 or API-Keys
     private Set<String> scopes;
@@ -90,6 +93,14 @@ public class Request extends Message<Request> {
         return pathParameters;
     }
 
+    public List<SecurityScheme> getSecuritySchemes() {
+        return securitySchemes;
+    }
+
+    public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
+        this.securitySchemes = securitySchemes;
+    }
+
     public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
         pathParameters = uriTemplateMatcher.match(uriTemplate, path);
     }
@@ -97,10 +108,12 @@ public class Request extends Message<Request> {
     @Override
     public String toString() {
         return "Request{" +
-                "method='" + method + '\'' +
-                ", path='" + path + '\'' +
-                ", uriTemplateMatcher=" + uriTemplateMatcher +
-                ", pathParameters=" + pathParameters +
-                '}';
+               "method='" + method + '\'' +
+               ", path='" + path + '\'' +
+               ", uriTemplateMatcher=" + uriTemplateMatcher +
+               ", pathParameters=" + pathParameters +
+               ", securityScheme=" + securitySchemes +
+               ", scopes=" + scopes +
+               '}';
     }
 }

@@ -1,0 +1,48 @@
+openapi: '3.0.2'
+info:
+  title: API-KEY Security Scheme API
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de
+security:
+  - in-header: []
+  - in-query: []
+  - in-cookie: []
+paths:
+  /in-header:
+    get:
+      security:
+        - in-header: [ ]
+      responses:
+        '200':
+          description: OK
+  /in-query:
+    get:
+      security:
+        - in-query: [ ]
+      responses:
+        '200':
+          description: OK
+  /in-cookie:
+    get:
+      security:
+        - in-cookie: [ ]
+      responses:
+        '200':
+          description: OK
+
+components:
+  securitySchemes:
+    in-header:
+      type: apiKey
+      name: "X-API-KEY"
+      in: header
+    in-query:
+      type: apiKey
+      name: "api-key"
+      in: query
+    in-cookie:
+      type: apiKey
+      name: "API-KEY"
+      in: cookie
+

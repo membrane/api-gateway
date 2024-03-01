@@ -30,7 +30,7 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
     private static final Request APPLICATION_STAR = Request.post().json().path("/application-star").body("{}");
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/content-type-wildcards.yml";
     }
 

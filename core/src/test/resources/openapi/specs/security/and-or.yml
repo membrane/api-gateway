@@ -1,0 +1,33 @@
+openapi: '3.0.2'
+info:
+  title: And and Or Security API
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de
+paths:
+  /both:
+    get:
+      security:
+        - http: []
+          api-key: []
+      responses:
+        '200':
+          description: OK
+  /one:
+    get:
+      security:
+        - http: []
+        - api-key: []
+      responses:
+        '200':
+          description: OK
+
+components:
+  securitySchemes:
+    http:
+      type: http
+      scheme: basic
+    api-key:
+      type: apiKey
+      name: "x-api-key"
+      in: header

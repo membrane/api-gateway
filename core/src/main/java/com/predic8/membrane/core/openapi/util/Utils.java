@@ -21,8 +21,8 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.interceptor.security.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.security.*;
 import jakarta.mail.internet.*;
-import org.slf4j.*;
 
 import java.io.*;
 import java.time.*;
@@ -148,6 +148,10 @@ public class Utils {
         }
         if (!exc.getRequest().isBodyEmpty()) {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
+        }
+
+        if (exc.getProperty(Exchange.SECURITY_SCHEMES) instanceof List schemes) {
+            request.setSecuritySchemes((List<SecurityScheme>) schemes);
         }
 
         // Security scopes from OAuth2 or API-Keys

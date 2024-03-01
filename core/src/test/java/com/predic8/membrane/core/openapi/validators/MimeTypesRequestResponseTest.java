@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/mimetypes.yml";
     }
 

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OpenAPIValidatorObjectTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/customers.yml";
     }
 

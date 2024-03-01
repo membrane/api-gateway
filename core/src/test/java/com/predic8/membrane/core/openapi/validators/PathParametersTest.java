@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PathParametersTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/path-parameters.yml";
     }
 

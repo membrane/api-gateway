@@ -18,10 +18,17 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestBuilderTest {
+
     @Test
     public void testSetContentType(){
         Request req = new Request.Builder().contentType("ContentType").build();
 
         assertEquals("ContentType",req.getHeader().getContentType());
+    }
+
+    @Test
+    void authorization() {
+        Request req = new Request.Builder().authorization("alice","secret").build();
+        assertEquals("Basic YWxpY2U6c2VjcmV0",req.getHeader().getAuthorization());
     }
 }

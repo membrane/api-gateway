@@ -25,13 +25,19 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
 import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
+import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 
 import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.BASIC;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.binary.Base64.decodeBase64;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
@@ -47,7 +53,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
@@ -57,7 +63,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 			return deny(exc);
 		}
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private boolean validUser(Exchange exc) {
@@ -66,6 +72,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 					"username", getUsername(exc),
 					"password", getPassword(exc)
 			));
+			exc.setProperty(SECURITY_SCHEMES, List.of(BASIC));
 			return true;
 		} catch (NoSuchElementException e) {
 			return false;
@@ -83,7 +90,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		exc.setResponse(Response.unauthorized("").
 				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"" + PRODUCT_NAME + " Authentication\"")).
 				build());
-		return Outcome.ABORT;
+		return ABORT;
 	}
 
 	private boolean hasNoAuthorizationHeader(Exchange exc) {

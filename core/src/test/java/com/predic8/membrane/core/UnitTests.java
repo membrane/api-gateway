@@ -95,6 +95,7 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
         HttpUtilTest.class,
 		RequestTest.class,
+		RequestBuilderTest.class,
 		ResponseTest.class,
 		ResponseBuilderTest.class,
 		BasicAuthenticationInterceptorTest.class,
@@ -159,6 +160,7 @@ import org.junit.platform.suite.api.Suite;
 		ApiKeyUtils.class,
 		ReflectiveMethodHandlerTest.class,
 		BuiltInFunctionsTest.class
+
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {

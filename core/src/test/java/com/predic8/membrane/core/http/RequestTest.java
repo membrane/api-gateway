@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.*;
+import org.bouncycastle.cert.ocsp.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -176,4 +177,5 @@ public class RequestTest {
 
 		assertEquals("1,2,3",req.getHeader().getNormalizedValue("Foo"));
 	}
+
 }

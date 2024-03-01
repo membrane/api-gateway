@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ReadWriteOnlyTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/read-write-only.yml";
     }
 

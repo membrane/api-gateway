@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CompositionTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/composition.yml";
     }
 

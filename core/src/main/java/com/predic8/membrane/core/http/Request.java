@@ -250,6 +250,11 @@ public class Request extends Message {
 			return this;
 		}
 
+		public Builder authorization(String username, String password) {
+			req.getHeader().setAuthorization(username,password);
+			return this;
+		}
+
 		public Builder header(String headerName, String headerValue) {
 			req.getHeader().add(headerName, headerValue);
 			return this;

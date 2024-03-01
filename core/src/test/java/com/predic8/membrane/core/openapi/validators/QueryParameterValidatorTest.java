@@ -25,7 +25,7 @@ class QueryParameterValidatorTest extends  AbstractValidatorTest{
     QueryParameterValidator queryParameterValidator;
 
     @Override
-    String getOpenAPIFileName() {
+   protected String getOpenAPIFileName() {
         return "/openapi/specs/query-params.yml";
     }
 
