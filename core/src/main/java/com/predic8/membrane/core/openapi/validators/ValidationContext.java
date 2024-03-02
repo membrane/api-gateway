@@ -195,7 +195,15 @@ public class ValidationContext {
     }
 
     public enum ValidatedEntityType {
-        PATH("path"), METHOD("method"), PATH_PARAMETER("path parameter"), QUERY_PARAMETER("query parameter"), HEADER_PARAMETER("header parameter"), BODY("body"), FIELD("field"), PROPERTY("property"), MEDIA_TYPE("media type");
+        PATH("path"),
+        METHOD("method"),
+        PATH_PARAMETER("path parameter"),
+        QUERY_PARAMETER("query parameter"),
+        HEADER_PARAMETER("header parameter"),
+        BODY("body"),
+        FIELD("field"),
+        PROPERTY("property"),
+        MEDIA_TYPE("media type");
 
         public final String name;
         ValidatedEntityType(String s) {

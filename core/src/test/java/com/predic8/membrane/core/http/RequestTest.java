@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.*;
-import org.bouncycastle.cert.ocsp.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;

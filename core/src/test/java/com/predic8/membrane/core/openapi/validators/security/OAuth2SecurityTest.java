@@ -16,20 +16,18 @@
 
 package com.predic8.membrane.core.openapi.validators.security;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
-import static com.predic8.membrane.core.security.OAuth2SecurityScheme.CLIENT_CREDENTIALS;
+import static com.predic8.membrane.core.security.OAuth2SecurityScheme.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -52,28 +50,36 @@ public class OAuth2SecurityTest extends AbstractSecurityTest {
     void noOAuth2Authentication() throws Exception {
         Exchange exc = getExchange("/get-pet", null);
         assertEquals(RETURN, interceptor.handleRequest(exc));
-        assertEquals(403, exc.getResponse().getStatusCode());
+        assertEquals(401, exc.getResponse().getStatusCode());
     }
 
     @Test
-    void rightFlowAndScopes() throws Exception {
-        Exchange exc = getExchange(METHOD_POST, "/write-pet", CLIENT_CREDENTIALS.scopes("write:pets","read:pets"));
-
+    void wrongFlow() throws Exception {
+        Exchange exc = getExchange(METHOD_POST, "/write-pet", PASSWORD.scopes("write:pets","read:pets"));
 
         Outcome actual = interceptor.handleRequest(exc);
 
+        assertEquals(RETURN, actual);
 
-        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+        assertEquals(401, exc.getResponse().getStatusCode());
 
-        assertEquals(CONTINUE, actual);
+        ObjectMapper om = new ObjectMapper();
 
-        assertEquals(0, exc.getResponse().getStatusCode());
+        JsonNode root = om.readTree(exc.getResponse().getBody().getContentAsStream());
+
+        JsonNode errors = root.get("validationErrors").get("REQUEST/");
+        assertEquals(2,errors.size()); // If optimized one should be right
+        assertTrue(errors.get(0).get("message").asText().contains("'Client Credentials' is required"));
     }
 
     @Test
-    void inHeader() throws Exception {
-        // Check ignore case
-        assertEquals(CONTINUE, interceptor.handleRequest(getExchange("/in-header",new ApiKeySecurityScheme(HEADER,"X-Api-KEY"))));
+    void globalAndOperationRightFlowAndScopes() throws Exception {
+        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_POST, "/write-pet", CLIENT_CREDENTIALS.scopes("write:pets","read:pets"))));
+    }
+
+    @Test
+    void globalRightFlowAndScopes() throws Exception {
+        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_GET, "/get-pet", CLIENT_CREDENTIALS.scopes("read:pets"))));
     }
 
 }

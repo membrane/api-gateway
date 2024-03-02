@@ -37,11 +37,10 @@ public class BasicAuthTest {
 
     private OpenAPIInterceptor oasInterceptor;
     private BasicAuthenticationInterceptor baInterceptor;
-    private Router router;
 
     @BeforeEach
     void setUpSpec() throws Exception {
-        router = new Router();
+        Router router = new Router();
         router.setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();

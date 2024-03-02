@@ -102,11 +102,11 @@ public class OpenAPIValidatorObjectTest extends AbstractValidatorTest {
         ValidationErrors errors = validator.validate(Request.post().path("/customers").json().body(is));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
-        ValidationError error = errors.get(0);
 
-        assertEquals(400, errors.get(0).getContext().getStatusCode());
-        assertEquals(BODY, errors.get(0).getContext().getValidatedEntityType());
-        assertEquals("REQUEST", errors.get(0).getContext().getValidatedEntity());
+        ValidationError error = errors.get(0);
+        assertEquals(400, error.getContext().getStatusCode());
+        assertEquals(BODY, error.getContext().getValidatedEntityType());
+        assertEquals("REQUEST", error.getContext().getValidatedEntity());
     }
 
     @Test

@@ -23,13 +23,16 @@ import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.security.*;
 import jakarta.mail.internet.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.*;
 
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.regex.Pattern.*;
 
@@ -150,12 +153,22 @@ public class Utils {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }
 
-        if (exc.getProperty(Exchange.SECURITY_SCHEMES) instanceof List schemes) {
-            request.setSecuritySchemes((List<SecurityScheme>) schemes);
+        // Scopes form the new SecuritySchemes
+        var scopes = new HashSet<String>();
+        if (exc.getProperty(SECURITY_SCHEMES) instanceof List schemes) {
+            request.setSecuritySchemes(schemes);
+
+            scopes.addAll(((List<SecurityScheme>)schemes).stream().filter(scheme -> scheme instanceof Scopes)
+                    .map(scheme -> ((Scopes) scheme).getScopes())
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toSet()));
+
         }
 
-        // Security scopes from OAuth2 or API-Keys
-        request.setScopes(ScopeExtractorUtil.getScopes(exc));
+        // Scopes from the old Scopes Property - should be migrated to SecurityScheme
+        scopes.addAll(ScopeExtractorUtil.getScopes(exc));
+
+        request.setScopes(scopes);
 
         return request;
     }
@@ -199,5 +212,20 @@ public class Utils {
 
     public static byte[] createErrorMessage(String msg) {
         return String.format("{ \"error\": \"%s\" }",msg).getBytes();
+    }
+
+    @NotNull
+    public static String getFlowNames(io.swagger.v3.oas.models.security.SecurityScheme scheme) {
+        var flowNames = new ArrayList<String>();
+        var flows = scheme.getFlows();
+        if (flows.getClientCredentials() != null)
+            flowNames.add("'Client Credentials'");
+        if (flows.getImplicit() != null)
+            flowNames.add("'Implicit'");
+        if (flows.getPassword() != null)
+            flowNames.add("'Password'");
+        if (flows.getAuthorizationCode() != null)
+            flowNames.add("'Authorization Code'");
+        return String.join(",",flowNames);
     }
 }

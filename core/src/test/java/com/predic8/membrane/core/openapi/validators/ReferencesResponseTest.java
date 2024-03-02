@@ -16,17 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.model.Request;
-import com.predic8.membrane.core.openapi.model.Response;
 import jakarta.mail.internet.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 

@@ -56,7 +56,7 @@ public class ArrayTest extends AbstractValidatorTest {
         m.put("only-numbers", l);
 
         ValidationErrors errors = validator.validate(Request.post().path("/array").body(mapToJson(m)));
-//        assertEquals(0,errors.size());
+        assertEquals(0,errors.size());
     }
 
     @Test

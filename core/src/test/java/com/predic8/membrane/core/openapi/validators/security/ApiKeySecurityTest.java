@@ -18,18 +18,10 @@ package com.predic8.membrane.core.openapi.validators.security;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import java.net.*;
-import java.util.*;
-
-import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;

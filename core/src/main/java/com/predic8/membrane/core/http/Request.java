@@ -77,7 +77,7 @@ public class Request extends Message {
 				throw new EOFWhileReadingFirstLineException(firstLine);
 			}
 		} catch (EOFWhileReadingLineException e) {
-			if (e.getLineSoFar().length() == 0)
+			if (e.getLineSoFar().isEmpty())
 				throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
 			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
 		}

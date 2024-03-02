@@ -22,13 +22,16 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.BASIC;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
+import static com.predic8.membrane.core.security.BearerHttpSecurityScheme.BEARER;
 import static org.slf4j.LoggerFactory.*;
 
 /**
@@ -73,10 +76,10 @@ public class SecurityValidator {
      * Given an OpenAPI:
      * security:
      * - a1: []
-     * a2: []
-     * a3: []
+     *   a2: []
+     *   a3: []
      * - b1:  []
-     * b2: []
+     *   b2: []
      * - c: []
      * To be valid either:
      * - a1,a2,a3 or
@@ -103,37 +106,31 @@ public class SecurityValidator {
         return errors;
     }
 
-    private ValidationErrors checkSecurityRequirements(ValidationContext ctx, SecurityRequirement securityRequirement, Request request) {
-        return securityRequirement.keySet().stream() // Names of SecurityRequirements
-                .map(requirementName -> checkSingleRequirement(ctx, securityRequirement, request, requirementName))
+    private ValidationErrors checkSecurityRequirements(ValidationContext ctx, SecurityRequirement requirement, Request request) {
+        return requirement.keySet().stream() // Names of SecurityRequirements
+                .map(requirementName -> checkSingleRequirement(ctx, requirement, request, requirementName))
                 .reduce(new ValidationErrors(), ValidationErrors::add);
     }
 
-    private ValidationErrors checkSingleRequirement(ValidationContext ctx, SecurityRequirement securityRequirement, Request request, String schemeName) {
+    private ValidationErrors checkSingleRequirement(ValidationContext ctx, SecurityRequirement requirement, Request request, String schemeName) {
         log.debug("Checking mechanism: " + schemeName);
 
         ValidationErrors errors = new ValidationErrors();
 
-        SecurityScheme securityScheme = api.getComponents().getSecuritySchemes().get(schemeName);
+        SecurityScheme schemeDefinition = api.getComponents().getSecuritySchemes().get(schemeName);
 
-        switch (securityScheme.getType()) {
+        switch (schemeDefinition.getType()) {
             case HTTP: {
-                // See Scheme Values: https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
-                if (securityScheme.getScheme().equalsIgnoreCase("basic")) {
-                    // Check if Exchange was authenticated using Basic Auth
-                    if (request.getSecuritySchemes().contains(BASIC)) {
-                        return errors;
-                    }
-                    errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BASIC));
-                }
+                ValidationErrors errorsInt = checkHttp(ctx, request, schemeDefinition);
+                if (!errorsInt.isEmpty()) return errorsInt;
                 break;
             }
             case APIKEY: {
-                checkApiKey(ctx, request, securityScheme, errors);
+                errors.add(checkApiKey(ctx, request, schemeDefinition));
                 break;
             }
             case OAUTH2: {
-                checkOAuth2(ctx, request, securityScheme, errors);
+                errors.add(checkOAuth2(ctx, request, schemeDefinition));
                 break;
             }
             // Implement: ..."apiKey", "http", "mutualTLS", "oauth2", "openIdConnect". See:
@@ -147,8 +144,15 @@ public class SecurityValidator {
             }
         }
 
-        for (String scope : securityRequirement.get(schemeName)) {
+        errors.add(checkScopes(ctx, requirement, request, schemeName));
+        return errors;
+    }
+
+    private ValidationErrors checkScopes(ValidationContext ctx, SecurityRequirement requirement, Request request, String schemeName) {
+        ValidationErrors errors = new ValidationErrors();
+        for (String scope : requirement.get(schemeName)) {
             log.debug("Checking scope: " + scope);
+
             if (request.getScopes() == null || !request.getScopes().contains(scope)) {
                 log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
                 errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
@@ -157,53 +161,67 @@ public class SecurityValidator {
         return errors;
     }
 
-    private void checkOAuth2(ValidationContext ctx, Request request, SecurityScheme securityScheme, ValidationErrors errors) {
+    private static ValidationErrors checkHttp(ValidationContext ctx, Request request, SecurityScheme schemeDefinition) {
 
-        AtomicBoolean apiSchemeIsInRequest = new AtomicBoolean();
+        ValidationErrors errors = new ValidationErrors();
+
+        // See Scheme Values: https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
+        if (schemeDefinition.getScheme().equalsIgnoreCase("basic")) {
+            // Check if Exchange was authenticated using Basic Auth
+            if (request.getSecuritySchemes().contains(BASIC)) {
+                return errors;
+            }
+            errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BASIC));
+        }
+        if (schemeDefinition.getScheme().equalsIgnoreCase("bearer")) {
+            // Check if Exchange was authenticated using Basic Auth
+            if (request.getSecuritySchemes().contains(BEARER)) {
+                return errors;
+            }
+            errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BEARER));
+        }
+        errors.add(ctx.statusCode(401),"Scheme %s is not supported".formatted(schemeDefinition.getScheme()));
+        return errors;
+    }
+
+
+    private ValidationErrors checkOAuth2(ValidationContext ctx, Request request, SecurityScheme securityScheme) {
+
+        ValidationErrors errors = new ValidationErrors();
+
+        AtomicBoolean isSchemeAndFlowInRequest = new AtomicBoolean();
 
         List<ValidationError> e = getSecuritySchemes(request, OAuth2SecurityScheme.class).map(scheme1 -> {
             if (scheme1 instanceof OAuth2SecurityScheme oAuth2SecurityScheme) {
-                apiSchemeIsInRequest.set(true);
+
                 if (securityScheme.getFlows() != null) {
-
                     if (securityScheme.getFlows().getClientCredentials() != null) {
-                        OAuthFlow flow =securityScheme.getFlows().getClientCredentials();
-                        Scopes scopes = flow.getScopes();
-                        System.out.println("scopes = " + scopes);
-                        
-                        List<String> missingScopes = scopes.keySet().stream()
-                                .map(scope -> oAuth2SecurityScheme.hasScope(scope) ?  Optional.<String>empty(): Optional.of(scope))
-                                .flatMap(Optional::stream).toList();
 
-                        System.out.println("missingScopes = " + missingScopes);
-
-                        if (missingScopes.isEmpty()) {
-                            return Optional.of(new ValidationError(ctx, "Call is not in scopes %s.".formatted(missingScopes)));
-                        }
+                        if (oAuth2SecurityScheme.flow == OAuth2SecurityScheme.Flow.CLIENT_CREDENTIALS)
+                            isSchemeAndFlowInRequest.set(true);
                      }
-
-//                    if (!securityScheme. .getIn().toString().equalsIgnoreCase(oAuth2SecurityScheme.in.toString())) {
-//                        return Optional.of(new ValidationError(ctx, "Api-key is in %s but should be in %s".formatted(oAuth2SecurityScheme.in, securityScheme.getIn())));
-//                    }
                 }
             }
             return Optional.<ValidationError>empty();
         }).flatMap(Optional::stream).toList();
 
-        if (!apiSchemeIsInRequest.get()) {
-            errors.add(ctx.statusCode(401),"Authentication by API key is required.");
+        if (!isSchemeAndFlowInRequest.get()) {
+            errors.add(ctx.statusCode(401),"OAuth2 authentication with one of the flows %s is required.".formatted(getFlowNames(securityScheme)));
         }
 
         errors.add(e);
+        return errors;
     }
 
-    private void checkApiKey(ValidationContext ctx, Request request, SecurityScheme securityScheme, ValidationErrors errors) {
+    private ValidationErrors checkApiKey(ValidationContext ctx, Request request, SecurityScheme securityScheme) {
 
-        AtomicBoolean apiSchemeIsInRequest = new AtomicBoolean();
+        ValidationErrors errors = new ValidationErrors();
+
+        AtomicBoolean schemeIsInRequest = new AtomicBoolean();
 
         List<ValidationError> e = getSecuritySchemes(request,ApiKeySecurityScheme.class).map(scheme1 -> {
             if (scheme1 instanceof ApiKeySecurityScheme apiKeySecurityScheme) {
-                apiSchemeIsInRequest.set(true);
+                schemeIsInRequest.set(true);
                 if (securityScheme.getName() != null) {
                     if (!securityScheme.getName().equalsIgnoreCase(apiKeySecurityScheme.name)) {
                         return Optional.of(new ValidationError(ctx, "Name of api-key is %s but should be %s".formatted(apiKeySecurityScheme.name, securityScheme.getName())));
@@ -218,11 +236,12 @@ public class SecurityValidator {
             return Optional.<ValidationError>empty();
         }).flatMap(Optional::stream).toList();
 
-        if (!apiSchemeIsInRequest.get()) {
+        if (!schemeIsInRequest.get()) {
             errors.add(ctx.statusCode(401),"Authentication by API key is required.");
         }
 
         errors.add(e);
+        return errors;
     }
 
     public Stream<com.predic8.membrane.core.security.SecurityScheme> getSecuritySchemes(Request request, Class<? extends com.predic8.membrane.core.security.SecurityScheme> clazz) {

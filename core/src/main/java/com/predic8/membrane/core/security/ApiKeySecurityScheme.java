@@ -12,7 +12,7 @@ public class ApiKeySecurityScheme implements SecurityScheme {
     /**
      * Location of the key
      */
-    public enum In { QUERY, HEADER, COOKIE };
+    public enum In { QUERY, HEADER, COOKIE }
 
     public ApiKeySecurityScheme(In in, String name) {
         this.name = name;

@@ -82,7 +82,7 @@ public class ValidationErrors {
 
     public byte[] getErrorMessage(Direction direction) {
 
-        if (errors.size() == 0)
+        if (errors.isEmpty())
             return "No validation errors!".getBytes();
 
         Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction);

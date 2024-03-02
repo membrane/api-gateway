@@ -16,12 +16,9 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 

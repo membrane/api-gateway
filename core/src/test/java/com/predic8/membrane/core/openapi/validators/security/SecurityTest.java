@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SecurityTest extends AbstractValidatorTest {
 
     private OpenAPIInterceptor interceptor;
-    private Router router;
 
     @Override
     protected String getOpenAPIFileName() {
@@ -45,7 +44,7 @@ public class SecurityTest extends AbstractValidatorTest {
 
     @BeforeEach
     void setUpSpec() throws Exception {
-        router = new Router();
+        Router router = new Router();
         router.setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();

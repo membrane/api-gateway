@@ -69,7 +69,7 @@ protected String getOpenAPIFileName() {
         validateAndAssert(APPLICATION_STAR, true);
     }
 
-    void responseTest(Request request, boolean expectedResult) throws ParseException {
+    void responseTest(Request request, boolean expectedResult) {
         ValidationErrors errors = validator.validateResponse(
                 request,
                 Response.statusCode(200).json().body("{}"));
