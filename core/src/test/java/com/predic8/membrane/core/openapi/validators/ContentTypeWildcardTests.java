@@ -77,17 +77,17 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    void starStarResponseTest() throws ParseException {
+    void starStarResponseTest() {
         responseTest(STAR_STAR, true);
     }
 
     @Test
-    void starTypeResponseTest() throws ParseException {
+    void starTypeResponseTest() {
         responseTest(STAR_JSON, false);
     }
 
     @Test
-    void typeStarResponseTest() throws ParseException {
+    void typeStarResponseTest() {
         responseTest(APPLICATION_STAR, true);
     }
 }
