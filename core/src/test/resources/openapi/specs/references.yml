@@ -9,6 +9,14 @@ paths:
     get:
       parameters:
         - $ref: "#/components/parameters/Rid"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Start"
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: integer
+            minimum: 10
 
       responses:
         '200':
@@ -42,6 +50,19 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/Rid"
+    Limit:
+      in: query
+      name: limit
+      required: false
+      schema:
+        $ref: "#/components/schemas/Limit"
+    Start:
+      name: start
+      in: query
+      required: false
+      schema:
+        minimum: 1
+        type: integer
   schemas:
     Rid:
       type: integer

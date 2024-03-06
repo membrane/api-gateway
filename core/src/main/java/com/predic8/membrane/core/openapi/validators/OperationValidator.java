@@ -23,6 +23,7 @@ import io.swagger.v3.oas.models.parameters.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static java.lang.String.format;
 
@@ -77,8 +78,7 @@ public class OperationValidator {
 
         if (schemaParameters == null || req.getPathParameters().size() == 0)
             return;
-
-        schemaParameters.stream().filter(this::isPathParameter).forEach(parameter -> {
+        schemaParameters.stream().map(this::resolveRefs).filter(this::isPathParameter).forEach(parameter -> {
             String value = req.getPathParameters().get(parameter.getName());
             if (value == null) {
                 throw new RuntimeException("Should not happen!");
@@ -88,6 +88,15 @@ public class OperationValidator {
                     .path(req.getPath())
                     .statusCode(400), value));
         });
+    }
+
+    private Parameter resolveRefs(Parameter p) {
+        if(p.get$ref() != null) {
+            p = api.getComponents().getParameters().get(getComponentLocalNameFromRef(p.get$ref()));
+            if(p.getSchema().get$ref() != null)
+                p.setSchema(api.getComponents().getSchemas().get(getComponentLocalNameFromRef(p.getSchema().get$ref())));
+        }
+        return p;
     }
 
     private boolean isPathParameter(Parameter p) {
