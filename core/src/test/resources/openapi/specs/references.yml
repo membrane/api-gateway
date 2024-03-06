@@ -8,16 +8,7 @@ paths:
   /references/{rid}:
     get:
       parameters:
-        - in: path
-          name: rid
-          required: true
-          schema:
-            $ref: "#/components/schemas/Rid"
-        - in: query
-          name: limit
-          required: false
-          schema:
-            $ref: "#/components/schemas/Limit"
+        - $ref: "#/components/parameters/Rid"
 
       responses:
         '200':
@@ -44,6 +35,13 @@ paths:
           description: OK  
 
 components:
+  parameters:
+    Rid:
+      name: rid
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Rid"
   schemas:
     Rid:
       type: integer
