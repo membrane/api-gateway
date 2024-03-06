@@ -10,7 +10,7 @@ This plugin offers a sample SOAP service that can be used in tutorials and for t
 ## Using the Service 
 ### Get the WSDL
 
-Unter `http://localhost:2000?wsdl` you can retrieve the Web Service Description Language (WSDL).
+Under `http://localhost:2000?wsdl` you can retrieve the Web Service Description Language (WSDL).
 
 `curl http://localhost:2000?wsdl`
 
