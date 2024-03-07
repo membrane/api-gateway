@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.apidocs;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -25,6 +26,12 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     }
 
     @Override
+    public void init(Router router) throws Exception {
+        System.out.println("ApiDocsInterceptor.init");
+        super.init(router);
+    }
+
+    @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (!initialized) {
             initializeRuleApiSpecs();
@@ -42,7 +49,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                 .filter(this::hasOpenAPIInterceptor)
                 .forEach(rule -> {
                     OpenAPIInterceptor interceptor = getOpenAPIInterceptor(rule);
-                    if (interceptor != null) {
+                    if (interceptor != null) { // Mit Optional und Flatmap
                         ruleApiSpecs.put(rule.getName(), interceptor.getApiProxy().getSpecs());
                     }
                 });
