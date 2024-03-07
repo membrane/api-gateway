@@ -31,7 +31,6 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
             initialized = true;
         }
 
-        // Hier kannst du die gespeicherten API-Spezifikationen verwenden, wie du möchtest
         System.out.println(ruleApiSpecs);
         return CONTINUE;
     }
