@@ -8,15 +8,18 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.rules.Rule;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name = "apiDocs")
 public class ApiDocsInterceptor extends AbstractInterceptor {
 
-    private List<List<OpenAPISpec>> apis;
+    private Map<String, List<OpenAPISpec>> ruleApiSpecs;
     private boolean initialized = false;
 
     public ApiDocsInterceptor() {
@@ -26,21 +29,35 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (!initialized) {
-            this.apis = getApis();
+            initializeRuleApiSpecs();
             initialized = true;
         }
 
-        System.out.println(apis);
+        // Hier kannst du die gespeicherten API-Spezifikationen verwenden, wie du möchtest
+        System.out.println(ruleApiSpecs);
         return CONTINUE;
     }
 
-    private List<List<OpenAPISpec>> getApis() {
-        var i = router.getRuleManager().getRules().stream()
-                .flatMap(rule -> rule.getInterceptors().stream())
-                .filter(ic -> ic instanceof OpenAPIInterceptor)
-                .map(icept -> ((OpenAPIInterceptor) icept).getApiProxy())
-                .map(APIProxy::getSpecs).toList();
+    private void initializeRuleApiSpecs() {
+        ruleApiSpecs = new HashMap<>();
 
-        return i;
+        router.getRuleManager().getRules().stream()
+                .filter(this::hasOpenAPIInterceptor)
+                .forEach(rule -> {
+                    OpenAPIInterceptor interceptor = getOpenAPIInterceptor(rule);
+                    if (interceptor != null) {
+                        ruleApiSpecs.put(rule.getName(), interceptor.getApiProxy().getSpecs());
+                    }
+                });
+    }
+
+    private boolean hasOpenAPIInterceptor(Rule rule) {
+        return rule.getInterceptors().stream().anyMatch(ic -> ic instanceof OpenAPIInterceptor);
+    }
+
+    private OpenAPIInterceptor getOpenAPIInterceptor(Rule rule) {
+        return (OpenAPIInterceptor) rule.getInterceptors().stream()
+                .filter(ic -> ic instanceof OpenAPIInterceptor)
+                .findFirst().orElse(null);
     }
 }
