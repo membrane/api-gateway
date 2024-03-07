@@ -1,7 +1,6 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -10,10 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
@@ -29,19 +26,18 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
+    private boolean initialized = false;
+
     public ApiDocsInterceptor() {
         name = "Api Docs";
     }
 
     @Override
-    public void init(Router router) throws Exception {
-        this.router = router;
-        initializeRuleApiSpecs();
-        super.init(router);
-    }
-
-    @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
+        if(!initialized) {
+            initializeRuleApiSpecs();
+            initialized = true;
+        }
         var publisher = new OpenAPIPublisher(flattenApis(ruleApiSpecs));
 
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {

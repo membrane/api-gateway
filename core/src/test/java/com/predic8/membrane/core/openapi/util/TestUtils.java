@@ -16,14 +16,20 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import io.swagger.v3.parser.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.rules.ProxyRuleKey;
+import io.swagger.v3.parser.ObjectMapperFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 import static java.util.Collections.singletonList;
 
@@ -55,6 +61,7 @@ public class TestUtils {
         APIProxy proxy = new APIProxy();
         proxy.init(router);
         proxy.setSpecs(singletonList(spec));
+        proxy.setKey(new ProxyRuleKey(2000));
         proxy.init();
         return proxy;
     }

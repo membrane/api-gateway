@@ -2,7 +2,9 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.util.URIFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,8 +21,6 @@ class ApiDocsInterceptorTest {
 
     Exchange exc = new Exchange(null);
 
-    OpenAPIInterceptor openAPIInterceptor;
-
     ApiDocsInterceptor apiDocsInterceptor;
 
     @BeforeEach
@@ -29,12 +29,16 @@ class ApiDocsInterceptorTest {
         router.setUriFactory(new URIFactory());
 
         specInfoServers = new OpenAPISpec();
-        specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
+        specInfoServers.location = "src/test/resources/openapi/specs/fruitshop-api-v2-openapi-3.yml";
+        exc.setRequest(new Request.Builder().get("/foo").build());
 
-        exc.setRequest(new Request.Builder().method("GET").build());
+        APIProxy rule  = createProxy(router, specInfoServers);
+        router.setExchangeStore(new ForgetfulExchangeStore());
 
-        openAPIInterceptor = new OpenAPIInterceptor(createProxy(router, specInfoServers));
-        openAPIInterceptor.init(router);
+        router.setTransport(new HttpTransport());
+        router.add(rule);
+        router.init();
+
 
         apiDocsInterceptor = new ApiDocsInterceptor();
         apiDocsInterceptor.init(router);
