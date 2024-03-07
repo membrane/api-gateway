@@ -1,12 +1,10 @@
-package com.predic8.membrane.core.interceptor.apidocs;
+package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.rules.Rule;
 
 import java.util.HashMap;
