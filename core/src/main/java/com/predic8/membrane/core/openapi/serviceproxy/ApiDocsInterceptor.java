@@ -17,7 +17,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public class ApiDocsInterceptor extends AbstractInterceptor {
 
     private Map<String, List<OpenAPISpec>> ruleApiSpecs;
-    private boolean initialized = false;
 
     public ApiDocsInterceptor() {
         name = "Api Docs";
@@ -25,17 +24,13 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     @Override
     public void init(Router router) throws Exception {
-        System.out.println("ApiDocsInterceptor.init");
+        this.router = router;
+        initializeRuleApiSpecs();
         super.init(router);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        if (!initialized) {
-            initializeRuleApiSpecs();
-            initialized = true;
-        }
-
         System.out.println(ruleApiSpecs);
         return CONTINUE;
     }

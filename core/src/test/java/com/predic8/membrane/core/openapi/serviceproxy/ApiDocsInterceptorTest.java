@@ -7,6 +7,7 @@ import com.predic8.membrane.core.util.URIFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -15,11 +16,12 @@ class ApiDocsInterceptorTest {
     Router router;
 
     OpenAPISpec specInfoServers;
-    OpenAPISpec specInfo3Servers;
 
     Exchange exc = new Exchange(null);
-    OpenAPIInterceptor interceptor1Server;
-    OpenAPIInterceptor interceptor3Server;
+
+    OpenAPIInterceptor openAPIInterceptor;
+
+    ApiDocsInterceptor apiDocsInterceptor;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -29,23 +31,22 @@ class ApiDocsInterceptorTest {
         specInfoServers = new OpenAPISpec();
         specInfoServers.location = "src/test/resources/openapi/specs/info-servers.yml";
 
-        specInfo3Servers = new OpenAPISpec();
-        specInfo3Servers.location = "src/test/resources/openapi/specs/info-3-servers.yml";
-
-
         exc.setRequest(new Request.Builder().method("GET").build());
 
-        interceptor1Server = new OpenAPIInterceptor(createProxy(router, specInfoServers));
-        interceptor1Server.init(router);
-        interceptor3Server = new OpenAPIInterceptor(createProxy(router, specInfo3Servers));
-        interceptor3Server.init(router);
+        openAPIInterceptor = new OpenAPIInterceptor(createProxy(router, specInfoServers));
+        openAPIInterceptor.init(router);
+
+        apiDocsInterceptor = new ApiDocsInterceptor();
+        apiDocsInterceptor.init(router);
+
     }
 
     @Test
-    public void getMatchingBasePathOneServer() {
-        exc.getRequest().setUri("/base/v2/foo");
-        assertEquals("/base/v2", interceptor1Server.getMatchingBasePath(exc));
+    public void initTest() throws Exception {
+        assertEquals(CONTINUE, apiDocsInterceptor.handleRequest(exc));
     }
+
+
 
 
 }
