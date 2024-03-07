@@ -32,6 +32,7 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
@@ -44,7 +45,6 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
-    public static final String HTML_UTF_8 = "text/html; charset=utf-8";
     private final ObjectMapper om = new ObjectMapper();
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
@@ -109,7 +109,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnHtmlOverview(Exchange exc) {
-        exc.setResponse(ok().contentType(HTML_UTF_8).body(renderOverviewTemplate()).build());
+        exc.setResponse(ok().contentType(HTML_UTF_8.toString()).body(renderOverviewTemplate()).build());
         return RETURN;
     }
 
@@ -149,7 +149,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             return returnNoFound(exc, id);
         }
 
-        exc.setResponse(ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(id, record.api)).build());
+        exc.setResponse(ok().contentType(HTML_UTF_8.toString()).body(renderSwaggerUITemplate(id, record.api)).build());
 
         return RETURN;
     }
