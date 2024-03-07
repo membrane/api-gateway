@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.apidocs;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecordFactory;
@@ -9,6 +10,7 @@ import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextStartedEvent;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,20 +18,18 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @MCElement(name = "apiRegistry")
-public class ApiRegistry implements ApplicationListener<ContextStartedEvent> {
+public class ApiRegistry {
 
     private HashMap<String, OpenAPIRecord> apis = new HashMap<>();
     private List<OpenAPISpec> specs = new ArrayList();
 
-    @Override
-    public void onApplicationEvent(ContextStartedEvent ignored) {
-        apis = resolveApis(specs);
+    private void resolveApis(Router router) throws IOException {
+        var oarf = new OpenAPIRecordFactory(router);
+        apis = (HashMap<String, OpenAPIRecord>) oarf.create(specs);
     }
 
-    private HashMap<String, OpenAPIRecord> resolveApis(List<OpenAPISpec> s) {
-        return s.stream().map(sp -> {
-            var oarf = new OpenAPIRecordFactory();
-        }).collect(Collectors.toMap());
+    public HashMap<String, OpenAPIRecord> getApis() {
+        return apis;
     }
 
     @MCChildElement(allowForeign = true)
