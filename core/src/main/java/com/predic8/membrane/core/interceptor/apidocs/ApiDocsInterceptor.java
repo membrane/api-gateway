@@ -36,10 +36,8 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     private List<Interceptor> getApis() {
         var i = router.getRuleManager().getRules().stream()
                 .flatMap(rule -> rule.getInterceptors().stream())
-                .filter(ic -> {
-                    boolean b = ic instanceof OpenAPIInterceptor;
-                });
+                .filter(ic -> ic instanceof OpenAPIInterceptor).toList();
 
-        return
+        return i;
     }
 }
