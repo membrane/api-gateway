@@ -466,7 +466,7 @@ public abstract class OAuth2ResourceB2CTest {
         this.jwksResponse = rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
     }
 
-    JwtClaims accessToken(String flowId) {
+    JwtClaims accessToken(String flowId, String aud) {
         JwtClaims jwtClaims = createBaseClaims();
 
         jwtClaims.setClaim("iss", issuer);
@@ -478,7 +478,7 @@ public abstract class OAuth2ResourceB2CTest {
         jwtClaims.setClaim("scp", "Read");
         jwtClaims.setClaim("azp", clientId);
         jwtClaims.setClaim("ver", "1.0");
-        jwtClaims.setClaim("aud", api1Id);
+        jwtClaims.setClaim("aud", aud);
         return jwtClaims;
     }
 
@@ -593,13 +593,13 @@ public abstract class OAuth2ResourceB2CTest {
                     String scope = params.get("scope");
 
                     if (scope != null) {
-                        res.put("access_token", createToken(accessToken(flowId)));
+                        res.put("access_token", createToken(accessToken(flowId, scope.contains(api1Id) ? api1Id : api2Id)));
                         res.put("expires_in", expiresIn);
                         var expires = NumericDate.now();
                         expires.addSeconds(expiresIn);
                         res.put("expires_on", expires.getValueInMillis());
                         res.put("resource", api1Id);
-                        res.put("scope", "offline_access openid https://localhost/" + api1Id + "/Read");
+                        res.put("scope", "https://localhost/" + api1Id + "/Read");
                     } else {
                         res.put("scope", "offline_access openid");
                     }

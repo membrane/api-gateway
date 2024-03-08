@@ -140,14 +140,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             handleOriginalRequest(exc);
         }
 
-        if (tokenAuthenticator.userInfoIsNullAndShouldRedirect(session, exc)) {
+        String wantedScope = (String) exc.getProperty(WANTED_SCOPE);
+        if (tokenAuthenticator.userInfoIsNullAndShouldRedirect(session, exc, wantedScope)) {
             return respondWithRedirect(exc);
         }
 
-        accessTokenRevalidator.revalidateIfNeeded(session);
+        accessTokenRevalidator.revalidateIfNeeded(session, wantedScope);
 
-        if (session.hasOAuth2Answer()) {
-            exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
+        if (session.hasOAuth2Answer(wantedScope)) {
+            exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
         }
 
         accessTokenRefresher.refreshIfNeeded(session, exc);
@@ -162,7 +163,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         try {
             if (handleRequest(exc, session)) {
                 if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
-                    exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
+                    exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
                     appendAccessTokenToRequest(exc);
                     return Outcome.CONTINUE;
                 }
