@@ -25,6 +25,7 @@ import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.OriginalExchangeStore;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.TokenResponseHandler;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
@@ -43,6 +44,7 @@ import static com.predic8.membrane.core.http.Header.ACCEPT;
 import static com.predic8.membrane.core.http.Header.USER_AGENT;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.ACCESS_TOKEN;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.csrfTokenMatches;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.getSecurityTokenFromState;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
@@ -59,6 +61,7 @@ public class OAuth2CallbackRequestHandler {
     private AccessTokenRevalidator accessTokenRevalidator;
     private SessionAuthorizer sessionAuthorizer;
     private PublicUrlManager publicUrlManager;
+    private TokenResponseHandler tokenResponseHandler;
     private String callbackPath;
     private boolean onlyRefreshToken;
 
@@ -80,6 +83,8 @@ public class OAuth2CallbackRequestHandler {
         this.publicUrlManager = publicUrlManager;
         this.callbackPath = callbackPath;
         this.onlyRefreshToken = onlyRefreshToken;
+        tokenResponseHandler = new TokenResponseHandler();
+        tokenResponseHandler.init(auth);
 
         if (onlyRefreshToken && !sessionAuthorizer.isSkipUserInfo())
             throw new RuntimeException("If onlyRefreshToken is set, skipUserInfo also has to be set.");
@@ -125,15 +130,17 @@ public class OAuth2CallbackRequestHandler {
                     throw new RuntimeException("No access_token received.");
                 // todo maybe override from requireAuth via exchange property
                 String idToken = (String) json.get("id_token");
-                OAuth2AnswerParameters oauth2Answer = initOAuth2AnswerParameters(json, null);
+                OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
+                tokenResponseHandler.handleTokenResponse(json, oauth2Answer);
                 sessionAuthorizer.verifyJWT(exc, idToken, oauth2Answer, session);
             } else {
                 token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
                 if (token == null)
                     throw new RuntimeException("OAuth2 response with access_token set to null.");
-                session.put("access_token", token); // saving for logout
+                session.put(ACCESS_TOKEN, token); // saving for logout
                 accessTokenRevalidator.getValidTokens().put(token, true);
-                OAuth2AnswerParameters oauth2Answer = initOAuth2AnswerParameters(json, token);
+                OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
+                tokenResponseHandler.handleTokenResponse(json, oauth2Answer);
                 if (!sessionAuthorizer.isSkipUserInfo()) {
                     sessionAuthorizer.retrieveUserInfo(json.get("token_type").toString(), token, oauth2Answer, session);
                 } else {
@@ -205,24 +212,6 @@ public class OAuth2CallbackRequestHandler {
         }
 
         return new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<>(){});
-    }
-
-    private OAuth2AnswerParameters initOAuth2AnswerParameters(Map<String, Object> json, String token) {
-        OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
-        oauth2Answer.setAccessToken(token);
-        oauth2Answer.setTokenType((String) json.get("token_type"));
-        oauth2Answer.setExpiration(numberToString(json.get("expires_in")));
-        oauth2Answer.setRefreshToken((String) json.get("refresh_token"));
-        LocalDateTime now = LocalDateTime.now();
-        oauth2Answer.setReceivedAt(now.withSecond(now.getSecond() / 30 * 30).withNano(0));
-        if (json.containsKey("id_token")) {
-            if (auth.idTokenIsValid((String) json.get("id_token"))) {
-                oauth2Answer.setIdToken((String) json.get("id_token"));
-            } else {
-                oauth2Answer.setIdToken("INVALID");
-            }
-        }
-        return oauth2Answer;
     }
 
     private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws JsonProcessingException {
