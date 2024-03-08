@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf.token;
 
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.session.Session;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -15,8 +16,12 @@ public class TokenResponseHandler {
         this.auth = auth;
     }
 
-    public void handleTokenResponse(Map<String, Object> json, OAuth2AnswerParameters oauth2Answer) {
-        oauth2Answer.setAccessToken((String) json.get("access_token"));
+    public void handleTokenResponse(Session session, String wantedScope, Map<String, Object> json, OAuth2AnswerParameters oauth2Answer) {
+        String accessToken = (String) json.get("access_token");
+        oauth2Answer.setAccessToken(accessToken);
+        if (accessToken != null)
+            session.setAccessToken(wantedScope, accessToken); // saving for logout
+
         oauth2Answer.setTokenType((String) json.get("token_type"));
         oauth2Answer.setRefreshToken((String) json.get("refresh_token"));
         // TODO: "refresh_token_expires_in":1209600

@@ -72,7 +72,7 @@ public class AccessTokenRevalidator {
             return false;
         }
 
-        return validTokens.getIfPresent(session.getAccessToken()) == null;
+        return validTokens.getIfPresent(session.getAccessToken(wantedScope)) == null;
     }
 
     public Cache<String, Boolean> getValidTokens() {
