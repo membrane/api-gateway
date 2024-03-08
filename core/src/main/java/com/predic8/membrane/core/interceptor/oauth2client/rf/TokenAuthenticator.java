@@ -53,7 +53,7 @@ public class TokenAuthenticator {
         if (!sessionAuthorizer.isSkipUserInfo() && !session.isVerified()) {
             String auth = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
             if (auth != null && isBearer(auth)) {
-                session.put(ParamNames.ACCESS_TOKEN, auth.substring(7));
+                session.setAccessToken(wantedScope, auth.substring(7));
 
                 OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
                 oauth2Answer.setAccessToken(auth.substring(7));

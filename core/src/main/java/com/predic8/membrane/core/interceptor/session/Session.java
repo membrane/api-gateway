@@ -170,8 +170,17 @@ public class Session {
     }
 
     @JsonIgnore
+    public String getAccessToken(String wantedScope) {
+        return get(ACCESS_TOKEN + (wantedScope != null ? wantedScope : ""));
+    }
+
+    @JsonIgnore
     public String getAccessToken() {
         return get(ACCESS_TOKEN);
+    }
+
+    public void setAccessToken(String wantedScope, String token) {
+        put(ACCESS_TOKEN + (wantedScope != null ? wantedScope : ""), token);
     }
 
     @JsonIgnore

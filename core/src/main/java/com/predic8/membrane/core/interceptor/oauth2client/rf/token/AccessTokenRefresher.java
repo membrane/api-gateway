@@ -88,7 +88,7 @@ public class AccessTokenRefresher {
         }
 
         // TODO: OAuth2CallbackRequestHandler does more stuff before calling handleTokenResponse()
-        tokenResponseHandler.handleTokenResponse(json, params);
+        tokenResponseHandler.handleTokenResponse(session, wantedScope, json, params);
 
         session.setOAuth2Answer(wantedScope, params.serialize());
     }
@@ -98,7 +98,7 @@ public class AccessTokenRefresher {
             return wantedScope != null && session.getOAuth2Answer() != null;
         }
 
-        if (session.getAccessToken() == null && wantedScope != null)
+        if (session.getAccessToken(wantedScope) == null && wantedScope != null)
             return true;
 
         var params = session.getOAuth2AnswerParameters(wantedScope);

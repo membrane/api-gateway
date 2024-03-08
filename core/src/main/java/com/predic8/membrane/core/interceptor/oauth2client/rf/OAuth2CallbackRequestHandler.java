@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,11 +43,9 @@ import static com.predic8.membrane.core.http.Header.ACCEPT;
 import static com.predic8.membrane.core.http.Header.USER_AGENT;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.ACCESS_TOKEN;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.csrfTokenMatches;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.getSecurityTokenFromState;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.numberToString;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 
 public class OAuth2CallbackRequestHandler {
@@ -131,16 +128,15 @@ public class OAuth2CallbackRequestHandler {
                 // todo maybe override from requireAuth via exchange property
                 String idToken = (String) json.get("id_token");
                 OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
-                tokenResponseHandler.handleTokenResponse(json, oauth2Answer);
+                tokenResponseHandler.handleTokenResponse(session, null, json, oauth2Answer);
                 sessionAuthorizer.verifyJWT(exc, idToken, oauth2Answer, session);
             } else {
                 token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
                 if (token == null)
                     throw new RuntimeException("OAuth2 response with access_token set to null.");
-                session.put(ACCESS_TOKEN, token); // saving for logout
                 accessTokenRevalidator.getValidTokens().put(token, true);
                 OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
-                tokenResponseHandler.handleTokenResponse(json, oauth2Answer);
+                tokenResponseHandler.handleTokenResponse(session, null, json, oauth2Answer);
                 if (!sessionAuthorizer.isSkipUserInfo()) {
                     sessionAuthorizer.retrieveUserInfo(json.get("token_type").toString(), token, oauth2Answer, session);
                 } else {
