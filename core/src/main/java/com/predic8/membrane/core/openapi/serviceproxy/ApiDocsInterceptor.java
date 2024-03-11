@@ -51,15 +51,19 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     public Map<String, OpenAPIRecord> initializeRuleApiSpecs() {
         return router.getRuleManager().getRules().stream()
                 .filter(this::hasOpenAPIInterceptor)
-                .flatMap(rule -> getOpenAPIInterceptor(rule)
-                        .map(ApiDocsInterceptor::getRecordEntryStream)
-                        .orElse(Stream.empty()))
+                .flatMap(this::getRecordEntryStreamOrEmpty)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
                         (key1, key2) -> key1, // If duplicate keys, keep the first one
                         LinkedHashMap::new
                 ));
+    }
+
+    private Stream<Map.Entry<String, OpenAPIRecord>> getRecordEntryStreamOrEmpty(Rule rule) {
+        return getOpenAPIInterceptor(rule)
+                .map(ApiDocsInterceptor::getRecordEntryStream)
+                .orElse(Stream.empty());
     }
 
     private static Stream<Map.Entry<String, OpenAPIRecord>> getRecordEntryStream(OpenAPIInterceptor oai) {

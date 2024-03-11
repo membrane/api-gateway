@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Optional;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -64,7 +63,7 @@ class ApiDocsInterceptorTest {
 
     @Test
     public void initTest() throws Exception {
-        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        assertEquals(RETURN, interceptor.handleRequest(exc));
     }
 
     @Test
