@@ -22,9 +22,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.google.common.net.MediaType.HTML_UTF_8;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
@@ -73,7 +73,7 @@ public class OpenAPIPublisher {
             return returnNoFound(exc, id);
         }
 
-        exc.setResponse(ok().contentType(HTML_UTF_8.toString()).body(renderSwaggerUITemplate(id, record.api)).build());
+        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderSwaggerUITemplate(id, record.api)).build());
 
         return RETURN;
     }
@@ -108,7 +108,7 @@ public class OpenAPIPublisher {
     }
 
     private Outcome returnHtmlOverview(Exchange exc, Router router) {
-        exc.setResponse(ok().contentType(HTML_UTF_8.toString()).body(renderOverviewTemplate(router)).build());
+        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderOverviewTemplate(router)).build());
         return RETURN;
     }
 
