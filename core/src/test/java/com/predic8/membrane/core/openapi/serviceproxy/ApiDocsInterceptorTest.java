@@ -53,7 +53,6 @@ class ApiDocsInterceptorTest {
 
         interceptor = new ApiDocsInterceptor();
         interceptor.init(router);
-
     }
 
     @AfterEach
@@ -98,7 +97,7 @@ class ApiDocsInterceptorTest {
     public void getSwaggerUI() throws Exception {
         exc.getRequest().setUri("/api-docs/ui/fruit-shop-api-v2-0-0");
         assertEquals(RETURN, interceptor.handleRequest(exc));
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("html"));
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Swagger"));
     }
 
     @Test

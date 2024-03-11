@@ -55,7 +55,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        (key1, key2) -> key1, // If duplicate keys, keep the first one
+                        (key1, ignored) -> key1, // If duplicate keys, keep the first one
                         LinkedHashMap::new
                 ));
     }
@@ -78,13 +78,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Rule rule) {
         return rule.getInterceptors().stream()
                 .filter(ic -> ic instanceof OpenAPIInterceptor)
-                .map(ic -> (OpenAPIInterceptor) ic)
+                .map(ic -> (OpenAPIInterceptor) ic) // Previous line checks type, so cast should be fine
                 .findFirst();
-    }
-
-    private boolean acceptsHtmlExplicit(Exchange exc) {
-        if (exc.getRequest().getHeader().getAccept() == null)
-            return false;
-        return exc.getRequest().getHeader().getAccept().contains("html");
     }
 }
