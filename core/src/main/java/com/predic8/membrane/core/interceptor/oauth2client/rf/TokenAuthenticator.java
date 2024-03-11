@@ -48,19 +48,19 @@ public class TokenAuthenticator {
 
     public boolean userInfoIsNullAndShouldRedirect(
             Session session,
-            Exchange exc
-    ) throws Exception {
+            Exchange exc,
+            String wantedScope) throws Exception {
         if (!sessionAuthorizer.isSkipUserInfo() && !session.isVerified()) {
             String auth = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
             if (auth != null && isBearer(auth)) {
-                session.put(ParamNames.ACCESS_TOKEN, auth.substring(7));
+                session.setAccessToken(wantedScope, auth.substring(7));
 
                 OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
                 oauth2Answer.setAccessToken(auth.substring(7));
                 oauth2Answer.setTokenType("Bearer");
 
                 Map<String, Object> userinfo =
-                        accessTokenRevalidator.revalidate(session, statistics);
+                        accessTokenRevalidator.revalidate(session, statistics, wantedScope);
 
                 if (logUserInfoIsNull(userinfo)) {
                     return true;
@@ -68,7 +68,7 @@ public class TokenAuthenticator {
 
                 oauth2Answer.setUserinfo(userinfo);
 
-                session.setOAuth2Answer(oauth2Answer.serialize());
+                session.setOAuth2Answer(wantedScope, oauth2Answer.serialize());
                 sessionAuthorizer.authorizeSession(userinfo, session, authService);
             }
         }

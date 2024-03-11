@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.*;
 
 @MCElement(name = "requireAuth")
 public class RequireAuth extends AbstractInterceptor {
@@ -36,6 +37,9 @@ public class RequireAuth extends AbstractInterceptor {
     private String expectedAud;
     private OAuth2Resource2Interceptor oauth2;
     private JwtAuthInterceptor jwtAuth;
+    private boolean required = true;
+    private Integer errorStatus = null;
+    private String scope = null;
 
     @Override
     public void init(Router router) throws Exception {
@@ -58,8 +62,14 @@ public class RequireAuth extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (!isBearer(exc.getRequest().getHeader())) {
+            if (errorStatus != null)
+                exc.setProperty(ERROR_STATUS, errorStatus);
+            exc.setProperty(EXPECTED_AUDIENCE, expectedAud);
+            exc.setProperty(WANTED_SCOPE, scope);
             var outcome = oauth2.handleRequest(exc);
             if (outcome != Outcome.CONTINUE) {
+                if (!required)
+                    return Outcome.CONTINUE;
                 return outcome;
             }
         }
@@ -93,5 +103,33 @@ public class RequireAuth extends AbstractInterceptor {
     @MCAttribute
     public void setOauth2(OAuth2Resource2Interceptor oauth2) {
         this.oauth2 = oauth2;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    @MCAttribute
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+
+    public Integer getErrorStatus() {
+        return errorStatus;
+    }
+
+    @MCAttribute
+    public void setErrorStatus(Integer errorStatus) {
+        this.errorStatus = errorStatus;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    @MCAttribute
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }

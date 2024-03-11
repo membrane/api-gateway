@@ -38,7 +38,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     private final Logger log = LoggerFactory.getLogger(ApiKeysInterceptor.class);
 
     public static final String SCOPES = "membrane-scopes";
-    public static final String TYPE_4XX = "predic8.de/authorization/denied";
+    public static final String TYPE_4XX = "/authorization-denied";
     public static final String TITLE_4XX = "Access Denied";
     private final List<ApiKeyStore> stores = new ArrayList<>();
     private final List<ApiKeyExtractor> extractors = new ArrayList<>();

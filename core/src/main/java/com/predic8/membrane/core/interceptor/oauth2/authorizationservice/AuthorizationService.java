@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.LogHelper;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
@@ -40,6 +41,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,6 +50,7 @@ import static com.predic8.membrane.core.Constants.USERAGENT;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class AuthorizationService {
     protected Logger log;
@@ -65,6 +69,7 @@ public abstract class AuthorizationService {
     private SSLParser sslParser;
     private SSLContext sslContext;
     private boolean useJWTForClientAuth;
+    private final LogHelper logHelper = new LogHelper();
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -224,14 +229,19 @@ public abstract class AuthorizationService {
         return requestBuilder;
     }
 
-    public Response refreshTokenRequest(OAuth2AnswerParameters params) throws Exception {
-        return doRequest(applyAuth(
+    public Response refreshTokenRequest(OAuth2AnswerParameters params, String wantedScope) throws Exception {
+        Exchange e = applyAuth(
                 new Request.Builder().post(getTokenEndpoint())
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
-                "grant_type=refresh_token" + "&refresh_token=" + params.getRefreshToken())
-                .buildExchange());
+                "grant_type=refresh_token" + "&refresh_token=" + params.getRefreshToken() +
+                        (wantedScope != null ? "&scope=" + URLEncoder.encode(wantedScope, UTF_8) : ""))
+                .buildExchange();
+        logHelper.handleRequest(e);
+        Response response = doRequest(e);
+        logHelper.handleResponse(e);
+        return response;
     }
 
     public Response requestUserEndpoint(OAuth2AnswerParameters params) throws Exception {
