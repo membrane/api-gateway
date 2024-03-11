@@ -21,6 +21,7 @@ import com.predic8.membrane.core.security.*;
 
 import java.util.*;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.*;
 
 public class Request extends Message<Request> {
@@ -30,7 +31,7 @@ public class Request extends Message<Request> {
     private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
 
-    private List<SecurityScheme> securitySchemes;
+    private List<SecurityScheme> securitySchemes = emptyList();
 
     // Security scopes from OAuth2 or API-Keys
     private Set<String> scopes;
@@ -68,6 +69,11 @@ public class Request extends Message<Request> {
         return this;
     }
 
+    public Request securitySchemes(List<SecurityScheme> schemes) {
+        this.securitySchemes = schemes;
+        return this;
+    }
+
     public Request scopes(String... scope) {
         this.scopes = Arrays.stream(scope).collect(toSet());
         return this;
@@ -97,8 +103,8 @@ public class Request extends Message<Request> {
         return securitySchemes;
     }
 
-    public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
-        this.securitySchemes = securitySchemes;
+    public boolean hasScheme(SecurityScheme scheme) {
+       return securitySchemes.stream().anyMatch(s -> s.equals(scheme));
     }
 
     public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {

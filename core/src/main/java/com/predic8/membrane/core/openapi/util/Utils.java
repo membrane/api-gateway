@@ -17,11 +17,11 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.security.*;
-import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.security.*;
 import jakarta.mail.internet.*;
 import org.jetbrains.annotations.*;
 
@@ -30,10 +30,8 @@ import java.time.*;
 import java.time.format.*;
 import java.util.*;
 import java.util.regex.*;
-import java.util.stream.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.*;
 import static java.util.regex.Pattern.*;
 
 public class Utils {
@@ -153,22 +151,22 @@ public class Utils {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }
 
-        // Scopes form the new SecuritySchemes
-        var scopes = new HashSet<String>();
-        if (exc.getProperty(SECURITY_SCHEMES) instanceof List schemes) {
-            request.setSecuritySchemes(schemes);
+//        // Scopes form the new SecuritySchemes
+//        var scopes = new HashSet<String>();
+//        if (exc.getProperty(SECURITY_SCHEMES) instanceof List schemes) {
+//            request.setSecuritySchemes(schemes);
+//
+//            scopes.addAll(((List<SecurityScheme>)schemes).stream().filter(scheme -> scheme instanceof Scopes)
+//                    .map(scheme -> ((Scopes) scheme).getScopes())
+//                    .flatMap(Set::stream)
+//                    .collect(Collectors.toSet()));
+//
+//        }
+//
+//        // Scopes from the old Scopes Property - should be migrated to SecurityScheme
+//        scopes.addAll();
 
-            scopes.addAll(((List<SecurityScheme>)schemes).stream().filter(scheme -> scheme instanceof Scopes)
-                    .map(scheme -> ((Scopes) scheme).getScopes())
-                    .flatMap(Set::stream)
-                    .collect(Collectors.toSet()));
-
-        }
-
-        // Scopes from the old Scopes Property - should be migrated to SecurityScheme
-        scopes.addAll(ScopeExtractorUtil.getScopes(exc));
-
-        request.setScopes(scopes);
+        request.setScopes(ScopeExtractorUtil.getScopes(exc));
 
         return request;
     }

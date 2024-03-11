@@ -12,7 +12,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 
-public abstract class AbstractSecurityTest {
+public abstract class AbstractSecurityValidatorTest {
 
     @NotNull
     Exchange getExchange(String path, SecurityScheme scheme) throws URISyntaxException {

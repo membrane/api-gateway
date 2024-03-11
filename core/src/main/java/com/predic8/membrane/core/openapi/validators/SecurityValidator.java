@@ -17,12 +17,11 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.security.Scopes;
 import com.predic8.membrane.core.security.*;
 import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -31,7 +30,6 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
-import static com.predic8.membrane.core.security.BearerHttpSecurityScheme.BEARER;
 import static org.slf4j.LoggerFactory.*;
 
 /**
@@ -152,11 +150,28 @@ public class SecurityValidator {
         ValidationErrors errors = new ValidationErrors();
         for (String scope : requirement.get(schemeName)) {
             log.debug("Checking scope: " + scope);
+            
+            var hasScope = new AtomicBoolean();
+            request.getSecuritySchemes().forEach(scheme -> {
+                System.out.println("scheme = " + scheme);
 
-            if (request.getScopes() == null || !request.getScopes().contains(scope)) {
+                if (scheme instanceof Scopes scopes) {
+                    if(scopes.hasScope(scope)) {
+                      hasScope.set(true);
+                    }
+                }
+            });
+
+            if(!hasScope.get()) {
                 log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
                 errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
             }
+            
+
+//            if (request.getScopes() == null || !request.getScopes().contains(scope)) {
+//                log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
+//                errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
+//            }
         }
         return errors;
     }
@@ -165,25 +180,26 @@ public class SecurityValidator {
 
         ValidationErrors errors = new ValidationErrors();
 
-        // See Scheme Values: https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
-        if (schemeDefinition.getScheme().equalsIgnoreCase("basic")) {
-            // Check if Exchange was authenticated using Basic Auth
-            if (request.getSecuritySchemes().contains(BASIC)) {
+        switch (schemeDefinition.getScheme().toLowerCase()) {
+            case   "basic": {
+                if (request.hasScheme(BASIC())) {
+                    return errors;
+                }
+                errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BASIC()));
                 return errors;
             }
-            errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BASIC));
-        }
-        if (schemeDefinition.getScheme().equalsIgnoreCase("bearer")) {
-            // Check if Exchange was authenticated using Basic Auth
-            if (request.getSecuritySchemes().contains(BEARER)) {
+            case "bearer": {
+                if (request.hasScheme(BEARER())) {
+                    return errors;
+                }
+                errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BEARER()));
                 return errors;
             }
-            errors.add(ctx.statusCode(401), "Caller ist not authenticated with HTTP and %s.".formatted(BEARER));
         }
+
         errors.add(ctx.statusCode(401),"Scheme %s is not supported".formatted(schemeDefinition.getScheme()));
         return errors;
     }
-
 
     private ValidationErrors checkOAuth2(ValidationContext ctx, Request request, SecurityScheme securityScheme) {
 

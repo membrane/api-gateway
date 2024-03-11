@@ -66,7 +66,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 					"username", getUsername(exc),
 					"password", getPassword(exc)
 			));
-			exc.setProperty(SECURITY_SCHEMES, List.of(BASIC));
+			exc.setProperty(SECURITY_SCHEMES, List.of(BASIC()));
 			return true;
 		} catch (NoSuchElementException e) {
 			return false;

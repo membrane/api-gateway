@@ -6,14 +6,24 @@ public class OAuth2SecurityScheme implements SecurityScheme, Scopes {
 
     public final Flow flow;
 
-    public static OAuth2SecurityScheme IMPLICIT = new OAuth2SecurityScheme(Flow.IMPLICIT);
-    public static OAuth2SecurityScheme PASSWORD = new OAuth2SecurityScheme(Flow.PASSWORD);
+    public static OAuth2SecurityScheme IMPLICIT() {
+        return new OAuth2SecurityScheme(Flow.IMPLICIT);
+    }
 
-    public static OAuth2SecurityScheme CLIENT_CREDENTIALS = new OAuth2SecurityScheme(Flow.CLIENT_CREDENTIALS);
+    public static OAuth2SecurityScheme PASSWORD() {
+        return new OAuth2SecurityScheme(Flow.PASSWORD);
+    }
 
-    public static OAuth2SecurityScheme AUTHORIZATION_CODE = new OAuth2SecurityScheme(Flow.AUTHORIZATION_CODE);
+    public static OAuth2SecurityScheme CLIENT_CREDENTIALS() {
+        return new OAuth2SecurityScheme(Flow.CLIENT_CREDENTIALS);
+    }
 
-    public Set<String> scopes;
+    public static OAuth2SecurityScheme AUTHORIZATION_CODE() {
+        return new OAuth2SecurityScheme(Flow.AUTHORIZATION_CODE);
+    }
+
+
+    public Set<String> scopes = new HashSet<>();
 
     public OAuth2SecurityScheme(Flow flow) {
         this.flow = flow;

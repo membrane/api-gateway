@@ -31,7 +31,7 @@ import static com.predic8.membrane.core.security.OAuth2SecurityScheme.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class OAuth2SecurityTest extends AbstractSecurityTest {
+public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
 
     private OpenAPIInterceptor interceptor;
 
@@ -55,7 +55,7 @@ public class OAuth2SecurityTest extends AbstractSecurityTest {
 
     @Test
     void wrongFlow() throws Exception {
-        Exchange exc = getExchange(METHOD_POST, "/write-pet", PASSWORD.scopes("write:pets","read:pets"));
+        Exchange exc = getExchange(METHOD_POST, "/write-pet", PASSWORD().scopes("write:pets","read:pets"));
 
         Outcome actual = interceptor.handleRequest(exc);
 
@@ -74,12 +74,12 @@ public class OAuth2SecurityTest extends AbstractSecurityTest {
 
     @Test
     void globalAndOperationRightFlowAndScopes() throws Exception {
-        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_POST, "/write-pet", CLIENT_CREDENTIALS.scopes("write:pets","read:pets"))));
+        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_POST, "/write-pet", CLIENT_CREDENTIALS().scopes("write:pets","read:pets"))));
     }
 
     @Test
     void globalRightFlowAndScopes() throws Exception {
-        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_GET, "/get-pet", CLIENT_CREDENTIALS.scopes("read:pets"))));
+        assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_GET, "/get-pet", CLIENT_CREDENTIALS().scopes("read:pets"))));
     }
 
 }
