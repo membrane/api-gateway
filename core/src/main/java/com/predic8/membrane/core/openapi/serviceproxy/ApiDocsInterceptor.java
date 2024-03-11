@@ -46,8 +46,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
             return publisher.handleSwaggerUi(exc);
         }
 
-        if (!exc.getRequest().getUri().startsWith("/api-doc"))
-            return CONTINUE;
+
 
 
         return publisher.handleOverviewOpenAPIDoc(exc, router, log);
