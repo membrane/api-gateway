@@ -16,8 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators.security;
 
-import com.predic8.membrane.core.openapi.model.Request;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;

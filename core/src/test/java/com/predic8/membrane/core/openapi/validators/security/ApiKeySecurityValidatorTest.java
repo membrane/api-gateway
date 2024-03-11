@@ -18,7 +18,13 @@ package com.predic8.membrane.core.openapi.validators.security;
 
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
+
+import java.util.*;
+
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
@@ -30,41 +36,45 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
 
     @Test
     void noHeader() {
-        var errprs = validator.validate(Request.get().path("/in-header"));
-        System.out.println("errprs = " + errprs);
-
+        var errors = validator.validate(Request.get().path("/in-header"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).getMessage().contains("by API key"));
     }
 
-//    @Test
-//    void inHeader() throws Exception {
-//        // Check ignore case
-//        assertEquals(CONTINUE, interceptor.handleRequest(getExchange("/in-header",new ApiKeySecurityScheme(HEADER,"X-Api-KEY"))));
-//    }
-//
-//    @Test
-//    void inQuery() throws Exception {
-//        // Check ignore case
-//        assertEquals(CONTINUE, interceptor.handleRequest(getExchange("/in-query",new ApiKeySecurityScheme(QUERY,"api-key"))));
-//    }
-//
-//    @Test
-//    void inCookie() throws Exception {
-//        // Check ignore case
-//        assertEquals(CONTINUE, interceptor.handleRequest(getExchange("/in-cookie",new ApiKeySecurityScheme(COOKIE,"API-KEY"))));
-//    }
-//
-//    @Test
-//    void inHeaderWrongName() throws Exception {
-//        assertEquals(RETURN, interceptor.handleRequest(getExchange("/in-header", new ApiKeySecurityScheme(HEADER,"X-APIKEY"))));
-//    }
-//
-//    @Test
-//    void inHeaderWrongIn() throws Exception {
-//        Exchange exc = getExchange("/in-header", new ApiKeySecurityScheme(QUERY, "X-APIKEY"));
-//        assertEquals(RETURN, interceptor.handleRequest(exc));
-//        assertEquals(403,exc.getResponse().getStatusCode());
-//        dumpResponseBody(exc);
-//    }
+    @Test
+    void inHeaderIgnoreCase() throws Exception {
+        assertTrue(validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER,"X-Api-KEY")))).isEmpty());
+    }
 
 
+
+    @Test
+    void inQuery() throws Exception {
+        assertTrue(validator.validate(Request.get().path("/in-query").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY,"api-key")))).isEmpty());
+    }
+
+
+
+    @Test
+    void inCookieIgnoreCase() throws Exception {
+        assertTrue(validator.validate(Request.get().path("/in-cookie").securitySchemes(List.of(new ApiKeySecurityScheme(COOKIE,"api-key")))).isEmpty());
+    }
+
+
+    @Test
+    void inHeaderWrongName() throws Exception {
+        ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER, "APIKEY"))));
+        System.out.println("errors = " + errors);
+        assertEquals(1,errors.size());
+        assertTrue(errors.get(0).getMessage().contains("api-key is APIKEY but should be X-API-KEY"));
+    }
+
+    @Test
+    void inHeaderWrongIn() throws Exception {
+        ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY, "X-API-KEY"))));
+        System.out.println("errors = " + errors);
+        assertEquals(1,errors.size());
+        assertEquals(403, errors.get(0).getContext().getStatusCode());
+        assertTrue(errors.get(0).getMessage().contains("Api-key is in QUERY but should be in header"));
+    }
 }

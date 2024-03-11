@@ -4,10 +4,6 @@ info:
   version: '1.0'
 servers:
   - url: https://api.predic8.de
-security:
-  - in-header: []
-  - in-query: []
-  - in-cookie: []
 paths:
   /in-header:
     get:
