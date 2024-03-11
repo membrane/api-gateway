@@ -22,11 +22,9 @@ class ApiDocsInterceptorTest {
 
     Router router;
 
-    OpenAPISpec specInfoServers;
-
     Exchange exc = new Exchange(null);
 
-    ApiDocsInterceptor apiDocsInterceptor;
+    ApiDocsInterceptor interceptor;
     APIProxy rule;
 
     @BeforeEach
@@ -34,11 +32,11 @@ class ApiDocsInterceptorTest {
         router = new Router();
         router.setUriFactory(new URIFactory());
 
-        specInfoServers = new OpenAPISpec();
-        specInfoServers.location = "src/test/resources/openapi/specs/fruitshop-api-v2-openapi-3.yml";
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.location = "src/test/resources/openapi/specs/fruitshop-api-v2-openapi-3.yml";
         exc.setRequest(new Request.Builder().get("/foo").build());
 
-        rule = createProxy(router, specInfoServers);
+        rule = createProxy(router, spec);
         router.setExchangeStore(new ForgetfulExchangeStore());
 
         router.setTransport(new HttpTransport());
@@ -46,8 +44,8 @@ class ApiDocsInterceptorTest {
         router.init();
 
 
-        apiDocsInterceptor = new ApiDocsInterceptor();
-        apiDocsInterceptor.init(router);
+        interceptor = new ApiDocsInterceptor();
+        interceptor.init(router);
 
     }
 
@@ -58,22 +56,21 @@ class ApiDocsInterceptorTest {
 
     @Test
     public void initTest() throws Exception {
-        assertEquals(CONTINUE, apiDocsInterceptor.handleRequest(exc));
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
     }
 
     @Test
     public void getOpenApiInterceptorTest() {
-        assertEquals("OpenAPI", apiDocsInterceptor.getOpenAPIInterceptor(rule).getDisplayName());
-        assertNull(apiDocsInterceptor.getOpenAPIInterceptor(new APIProxy()));
+        assertEquals("OpenAPI", interceptor.getOpenAPIInterceptor(rule).getDisplayName());
+        assertNull(interceptor.getOpenAPIInterceptor(new APIProxy()));
     }
 
 
 
     @Test
     public void initializeRuleApiSpecsTest() {
-        apiDocsInterceptor.initializeRuleApiSpecs();
-        Map<String, Map<String, OpenAPIRecord>> map = Map.of(" *:2000", apiDocsInterceptor.getOpenAPIInterceptor(rule).getApiProxy().apiRecords);
-        assertEquals(map , apiDocsInterceptor.ruleApiSpecs);
+        interceptor.initializeRuleApiSpecs();
+        assertEquals(Map.of(" *:2000", interceptor.getOpenAPIInterceptor(rule).getApiProxy().apiRecords), interceptor.ruleApiSpecs);
     }
 
     @Test
@@ -83,4 +80,14 @@ class ApiDocsInterceptorTest {
         adi.initializeRuleApiSpecs();
         assertEquals(new HashMap<>(), adi.ruleApiSpecs);
     }
+
+    // See OA PubTest?
+
+    // Accept: html => HTML?
+
+    // => Json? Einträge drin
+
+    // Download YAML ueber Link
+
+    // Kommt Swagger UI
 }

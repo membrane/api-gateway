@@ -2,8 +2,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +15,7 @@ import java.util.regex.Pattern;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static java.lang.String.valueOf;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toMap;
 
 @MCElement(name = "apiDocs")
@@ -25,7 +25,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     Map<String, Map<String, OpenAPIRecord>> ruleApiSpecs;
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ApiDocsInterceptor.class.getName());
 
     private boolean initialized = false;
 
@@ -52,6 +52,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         return publisher.handleOverviewOpenAPIDoc(exc, router, log);
     }
 
+    // Untersuchen
     public static Map<String, OpenAPIRecord> flattenApis(Map<String, Map<String, OpenAPIRecord>> ruleApiSpecs) {
         return ruleApiSpecs.values()
                 .stream()
@@ -59,16 +60,19 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                 .collect(toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        (value1, value2) -> value1
+                        (entry, ignored) -> entry
                 ));
     }
 
+    // No void return value instead.
     void initializeRuleApiSpecs() {
         ruleApiSpecs = new HashMap<>();
 
         router.getRuleManager().getRules().stream()
                 .filter(this::hasOpenAPIInterceptor)
-                .forEach(rule -> Optional.of(getOpenAPIInterceptor(rule)).ifPresent(openAPIInterceptor -> ruleApiSpecs.put(
+
+                // Functional?
+                .forEach(rule -> getOpenAPIInterceptor(rule).ifPresent(openAPIInterceptor -> ruleApiSpecs.put(
                         rule.getName(),
                         openAPIInterceptor.getApiProxy().apiRecords)
                 ));
@@ -78,10 +82,18 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         return rule.getInterceptors().stream().anyMatch(ic -> ic instanceof OpenAPIInterceptor);
     }
 
-    OpenAPIInterceptor getOpenAPIInterceptor(Rule rule) {
-        return (OpenAPIInterceptor) rule.getInterceptors().stream()
+    Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Rule rule) {
+        Optional<Interceptor> i = rule.getInterceptors().stream()
                 .filter(ic -> ic instanceof OpenAPIInterceptor)
-                .findFirst().orElse(null);
+                .findFirst();
+
+        if (i.isEmpty())
+            return empty();
+
+        if (i.get() instanceof OpenAPIInterceptor oasInterceptor) {
+            return Optional.of(oasInterceptor);
+        }
+        throw new RuntimeException("Should not happen!");
     }
 
     private boolean acceptsHtmlExplicit(Exchange exc) {
