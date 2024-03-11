@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -68,10 +69,10 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         router.getRuleManager().getRules().stream()
                 .filter(this::hasOpenAPIInterceptor)
                 .forEach(rule -> {
-                    OpenAPIInterceptor interceptor = getOpenAPIInterceptor(rule);
-                    if (interceptor != null) { // TODO Mit Optional und Flatmap
-                        ruleApiSpecs.put(rule.getName(), interceptor.getApiProxy().apiRecords);
-                    }
+                    Optional.of(getOpenAPIInterceptor(rule)).ifPresent(openAPIInterceptor -> ruleApiSpecs.put(
+                            rule.getName(),
+                            openAPIInterceptor.getApiProxy().apiRecords)
+                    );
                 });
     }
 
