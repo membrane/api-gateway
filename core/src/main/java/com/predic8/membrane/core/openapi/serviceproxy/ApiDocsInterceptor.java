@@ -23,7 +23,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
-    private Map<String, Map<String, OpenAPIRecord>> ruleApiSpecs;
+    Map<String, Map<String, OpenAPIRecord>> ruleApiSpecs;
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
@@ -63,7 +63,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                 ));
     }
 
-    private void initializeRuleApiSpecs() {
+    void initializeRuleApiSpecs() {
         ruleApiSpecs = new HashMap<>();
 
         router.getRuleManager().getRules().stream()
@@ -80,7 +80,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         return rule.getInterceptors().stream().anyMatch(ic -> ic instanceof OpenAPIInterceptor);
     }
 
-    private OpenAPIInterceptor getOpenAPIInterceptor(Rule rule) {
+    OpenAPIInterceptor getOpenAPIInterceptor(Rule rule) {
         return (OpenAPIInterceptor) rule.getInterceptors().stream()
                 .filter(ic -> ic instanceof OpenAPIInterceptor)
                 .findFirst().orElse(null);
