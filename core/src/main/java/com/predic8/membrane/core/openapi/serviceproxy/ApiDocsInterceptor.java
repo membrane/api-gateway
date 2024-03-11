@@ -68,12 +68,10 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
         router.getRuleManager().getRules().stream()
                 .filter(this::hasOpenAPIInterceptor)
-                .forEach(rule -> {
-                    Optional.of(getOpenAPIInterceptor(rule)).ifPresent(openAPIInterceptor -> ruleApiSpecs.put(
-                            rule.getName(),
-                            openAPIInterceptor.getApiProxy().apiRecords)
-                    );
-                });
+                .forEach(rule -> Optional.of(getOpenAPIInterceptor(rule)).ifPresent(openAPIInterceptor -> ruleApiSpecs.put(
+                        rule.getName(),
+                        openAPIInterceptor.getApiProxy().apiRecords)
+                ));
     }
 
     private boolean hasOpenAPIInterceptor(Rule rule) {
