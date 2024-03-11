@@ -2,12 +2,13 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -17,8 +18,6 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static java.lang.String.valueOf;
-import static java.util.Optional.empty;
-import java.util.LinkedHashMap;
 
 @MCElement(name = "apiDocs")
 public class ApiDocsInterceptor extends AbstractInterceptor {
