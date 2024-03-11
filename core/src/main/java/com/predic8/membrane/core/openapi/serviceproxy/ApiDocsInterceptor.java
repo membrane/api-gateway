@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static java.lang.String.valueOf;
 
@@ -45,9 +44,6 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
             return publisher.handleSwaggerUi(exc);
         }
-
-
-
 
         return publisher.handleOverviewOpenAPIDoc(exc, router, log);
     }

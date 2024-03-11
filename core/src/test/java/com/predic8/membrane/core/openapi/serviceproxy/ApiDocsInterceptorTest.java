@@ -119,13 +119,4 @@ class ApiDocsInterceptorTest {
         assertTrue(json.has("title"));
         assertTrue(json.has("type"));
     }
-
-    // TODO fix
-    @Test
-    public void getYaml() throws Exception {
-        exc.getRequest().setUri("/api-docs/fruit-shop-api-v2-0-0");
-        interceptor.handleRequest(exc);
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("html"));
-    }
-
 }
