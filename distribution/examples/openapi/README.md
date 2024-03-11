@@ -101,7 +101,7 @@ The `api-docs` plugin provides a web page listing all deployed APIs, facilitatin
 
 ## Configuration
 
-To utilize the plugin, simply include the `<apiDocs />` tag an endpoint.
+To utilize the plugin, simply include the `<apiDocs />` tag at an endpoint.
 
 ```xml
 <router>
