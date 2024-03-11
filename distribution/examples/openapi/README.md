@@ -95,6 +95,44 @@ To get a JSON description of the deployed OpenAPI documents call the same `<a hr
 curl http://localhost:2000/api-docs
 ```
 
+# OpenAPI Overview
+
+The `api-docs` plugin provides an overview of all APIs deployed on Membrane, facilitating effortless navigation to the Swagger UI for each API. This readme serves as a reference for using the `api-docs` plugin.
+
+## Configuration
+
+To utilize the plugin, simply include the `<apiDocs />` tag at the desired endpoint.
+
+```xml
+<router>
+
+   <api port="2000">
+       <apiDocs />
+   </api>
+
+    <api port="2001">
+        <openapi location="https://developer.lufthansa.com/swagger/export/21516"/>
+    </api>
+
+    <api port="2002">
+        <openapi location="https://api.apis.guru/v2/specs/nowpayments.io/1.0.0/openapi.json"/>
+    </api>
+
+    <api port="2003">
+        <openapi location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
+    </api>
+
+</router>
+```
+### Usage
+After configuring the plugin, access it via the defined port, for example: http://localhost:2000/.
+
+**API List:** The overview displays all deployed APIs.
+
+**Swagger UI:** Click on any API to access its Swagger UI.
+
+**Download OpenAPI Document:** Each API entry provides a link to download its OpenAPI document.
+
 
 # Rewriting of Server Addresses
 
@@ -102,7 +140,6 @@ When an API is published on a gateway the OpenAPI must point to the gateway inst
 
 The _api_ exposes the OpenAPI specifications in the UI and over an endpoint:
 
-```
 /api-docs/<<id of the api>>
 ```
 
