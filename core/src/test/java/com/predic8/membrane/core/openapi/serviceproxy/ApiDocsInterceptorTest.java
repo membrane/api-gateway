@@ -91,22 +91,22 @@ class ApiDocsInterceptorTest {
         Header header = new Header();
         header.setAccept("html");
         exc.getRequest().setHeader(header);
-        assertEquals( RETURN, interceptor.handleRequest(exc));
+        assertEquals(RETURN, interceptor.handleRequest(exc));
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("<a href=\"/api-docs/ui/fruit-shop-api-v2-0-0\">Fruit Shop API</a>"));
     }
 
     @Test
     public void getSwaggerUI() throws Exception {
         exc.getRequest().setUri("/api-docs/ui/fruit-shop-api-v2-0-0");
-        assertEquals( RETURN, interceptor.handleRequest(exc));
+        assertEquals(RETURN, interceptor.handleRequest(exc));
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("html"));
     }
 
     @Test
     public void getSwaggerUIWrongId() throws Exception {
         exc.getRequest().setUri("/api-docs/wrong-id");
-        assertEquals( RETURN, interceptor.handleRequest(exc));
-        assertEquals( 404, exc.getResponse().getStatusCode());
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        assertEquals(404, exc.getResponse().getStatusCode());
         checkHasValidProblemJSON(exc);
     }
 
