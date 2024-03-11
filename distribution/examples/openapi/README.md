@@ -97,11 +97,11 @@ curl http://localhost:2000/api-docs
 
 # OpenAPI Overview
 
-The `api-docs` plugin provides an overview of all APIs deployed on Membrane, facilitating effortless navigation to the Swagger UI for each API.
+The `api-docs` plugin provides a web page listing all deployed APIs, facilitating effortless navigation to the Swagger UI.
 
 ## Configuration
 
-To utilize the plugin, simply include the `<apiDocs />` tag at the desired endpoint.
+To utilize the plugin, simply include the `<apiDocs />` tag an endpoint.
 
 ```xml
 <router>
@@ -125,7 +125,7 @@ To utilize the plugin, simply include the `<apiDocs />` tag at the desired endpo
 </router>
 ```
 ### Usage
-After configuring the plugin, access it via the defined api, for example: http://localhost:2000/.
+Access http://localhost:2000/ to see the overview.
 
 **API List:** The overview displays all deployed APIs.
 
