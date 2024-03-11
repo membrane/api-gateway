@@ -59,9 +59,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -82,6 +85,7 @@ public abstract class OAuth2ResourceB2CTest {
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
     private final String api1Id = UUID.randomUUID().toString();
+    private final String api2Id = UUID.randomUUID().toString();
     private String baseServerAddr;
     private String issuer;
     private final String userFullName = "Mem Brane";
@@ -92,6 +96,8 @@ public abstract class OAuth2ResourceB2CTest {
     private final String susiFlowId = "b2c_1_susi";
     private final String peFlowId = "b2c_1_profile_editing";
     private volatile int expiresIn;
+    private final AtomicBoolean didLogIn = new AtomicBoolean();
+    private final AtomicBoolean errorDuringSignIn = new AtomicBoolean();
 
     private String getServerAddress() {
         return "http://" + serverHost + ":" + serverPort + "/" + tenantId.toString();
@@ -104,6 +110,8 @@ public abstract class OAuth2ResourceB2CTest {
     @BeforeEach
     public void init() throws Exception {
         expiresIn = 60;
+        didLogIn.set(false);
+        errorDuringSignIn.set(false);
         baseServerAddr = getServerAddress();
         issuer = baseServerAddr + "/v2.0/";
 
@@ -114,8 +122,8 @@ public abstract class OAuth2ResourceB2CTest {
         mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, susiFlowId), RuleManager.RuleDefinitionSource.MANUAL);
-        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, peFlowId), RuleManager.RuleDefinitionSource.MANUAL);
+        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, susiFlowId), MANUAL);
+        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, peFlowId), MANUAL);
         mockAuthServer.start();
 
         oauth2Resource = new HttpRouter();
@@ -127,11 +135,28 @@ public abstract class OAuth2ResourceB2CTest {
         ServiceProxy sp1 = getConfiguredOAuth2Resource();
         ServiceProxy sp2 = getFlowInitiatorServiceProxy();
         sp1.init(oauth2Resource); // TODO backfired das sobald es keinen globalen oauth resource interceptor gibt?
-        ServiceProxy sp3 = getRequireAuthServiceProxy();
+        ServiceProxy sp3 = getRequireAuthServiceProxy(api1Id, "/api/", ra -> {
+            requireAuth = ra;
+            ra.setScope("https://localhost/" + api1Id + "/Read");
+        });
+        ServiceProxy sp4 = getRequireAuthServiceProxy(api1Id, "/api-no-auth-needed/", ra -> {
+            ra.setRequired(false);
+            ra.setScope("https://localhost/" + api1Id + "/Read");
+        });
+        ServiceProxy sp5 = getRequireAuthServiceProxy(api1Id, "/api-no-redirect/", ra -> {
+            ra.setErrorStatus(403);
+            ra.setScope("https://localhost/" + api1Id + "/Read");
+        });
+        ServiceProxy sp6 = getRequireAuthServiceProxy(api2Id, "/api2/", ra -> {
+            ra.setScope("https://localhost/" + api2Id + "/Read");
+        });
 
-        oauth2Resource.getRuleManager().addProxy(sp3, RuleManager.RuleDefinitionSource.MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp2, RuleManager.RuleDefinitionSource.MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp1, RuleManager.RuleDefinitionSource.MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp6, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp5, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp4, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp3, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp2, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp1, MANUAL);
         oauth2Resource.start();
     }
 
@@ -152,6 +177,7 @@ public abstract class OAuth2ResourceB2CTest {
         assertEquals("/init", body2.get("path"));
         assertEquals("", body2.get("body"));
         assertEquals("GET", body2.get("method"));
+        assertTrue(didLogIn.get());
     }
 
     @Test
@@ -185,11 +211,11 @@ public abstract class OAuth2ResourceB2CTest {
                     cdl.countDown();
                     cdl.await();
                     String uuid = UUID.randomUUID().toString();
-                    Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
+                    Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/api/" + uuid).buildExchange();
                     excCallResource2 = browser.apply(excCallResource2);
                     Map body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
                     String path = (String) body.get("path");
-                    assertEquals("/" + uuid, path);
+                    assertEquals("/api/" + uuid, path);
                     synchronized (accessTokens) {
                         accessTokens.add((String) body.get("accessToken"));
                     }
@@ -277,7 +303,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         requireAuth.setExpectedAud(UUID.randomUUID().toString());
         Exchange exc2 = new Request.Builder().get(getClientAddress() + "/api/init").buildExchange();
-        exc2 = browser.apply(exc);
+        exc2 = browser.apply(exc2);
 
         assertTrue(exc2.getResponse().getStatusCode() >= 400);
     }
@@ -295,16 +321,14 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(exc);
 
         String a1 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
-        JwtClaims c1 = jc.processToClaims(a1);
-        assertEquals(c1.getClaimsMap().size(), 12);
+        assertNull(a1);
 
-        exc = new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange();
+        exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
         exc = browser.apply(exc);
 
         String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
         JwtClaims c2 = jc.processToClaims(a2);
-        assertEquals(c2.getClaimsMap().size(), 11);
-        // weirdly the 'name' payload is missing here, see accessToken()
+        assertEquals(12, c2.getClaimsMap().size());
     }
 
     @Test
@@ -348,6 +372,88 @@ public abstract class OAuth2ResourceB2CTest {
         assertFalse(params.containsKey("illegal"));
     }
 
+    @Test
+    public void loginNotRequired() throws Exception {
+        // access 1: not authenticated, expecting no token
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api-no-auth-needed/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        Map res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        assertEquals("null", res.get("accessToken"));
+
+        browser.apply(new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange());
+
+        // access 2: authenticated, expecting JWT
+        exc = new Request.Builder().get(getClientAddress() + "/api-no-auth-needed/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
+    }
+
+    @Test
+    public void returning4xx() throws Exception {
+        // access 1: not authenticated, expecting 4xx
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api-no-redirect/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+
+        assertEquals(403, exc.getResponse().getStatusCode());
+        assertEquals("Forbidden", exc.getResponse().getStatusMessage());
+
+        browser.apply(new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange());
+
+        // access 2: authenticated, expecting JWT
+        exc = new Request.Builder().get(getClientAddress() + "/api-no-redirect/").buildExchange();
+        exc = browser.applyWithoutRedirect(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        Map res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
+    }
+
+    @Test
+    public void requireAuthRedirects() throws Exception {
+        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
+
+        excCallResource = browser.applyWithoutRedirect(excCallResource);
+        assertEquals(307, excCallResource.getResponse().getStatusCode());
+        assertTrue(excCallResource.getResponse().getHeader().getFirstValue(Header.LOCATION).contains(":"+serverPort+"/"));
+        assertFalse(didLogIn.get());
+    }
+
+    @Test
+    public void errorDuringSignIn() throws Exception {
+        errorDuringSignIn.set(true);
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
+        exc = browser.apply(exc);
+        Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
+        System.out.println(exc.getResponse().getBodyAsStringDecoded());
+        assertEquals("http://membrane-api.io/error/oauth2-error-from-authentication-server", body.get("type"));
+        assertEquals("DEMO-123", ((Map)body.get("details")).get("error"));
+        assertEquals("This is a demo error.", ((Map)body.get("details")).get("error_description"));
+    }
+
+    @Test
+    public void api1and2() throws Exception {
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
+        exc = browser.apply(exc);
+        Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
+        assertEquals("/api/", body.get("path"));
+        assertEquals("", body.get("body"));
+        assertEquals("GET", body.get("method"));
+        assertTrue(((String)body.get("accessToken")).startsWith("eyJ"));
+
+        exc = new Request.Builder().get(getClientAddress() + "/api2/").buildExchange();
+        exc = browser.apply(exc);
+        body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
+        assertEquals("/api2/", body.get("path"));
+        assertEquals("", body.get("body"));
+        assertEquals("GET", body.get("method"));
+        assertTrue(((String)body.get("accessToken")).startsWith("eyJ"));
+    }
 
     void createKey() throws JoseException {
         String serial = "1";
@@ -360,7 +466,7 @@ public abstract class OAuth2ResourceB2CTest {
         this.jwksResponse = rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY);
     }
 
-    JwtClaims accessToken(String flowId) {
+    JwtClaims accessToken(String flowId, String aud) {
         JwtClaims jwtClaims = createBaseClaims();
 
         jwtClaims.setClaim("iss", issuer);
@@ -372,7 +478,7 @@ public abstract class OAuth2ResourceB2CTest {
         jwtClaims.setClaim("scp", "Read");
         jwtClaims.setClaim("azp", clientId);
         jwtClaims.setClaim("ver", "1.0");
-        jwtClaims.setClaim("aud", api1Id);
+        jwtClaims.setClaim("aud", aud);
         return jwtClaims;
     }
 
@@ -458,7 +564,12 @@ public abstract class OAuth2ResourceB2CTest {
                     exc.setResponse(Response.ok(payload).contentType(APPLICATION_JSON).build());
                 } else if (exc.getRequestURI().contains("/authorize?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                    exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
+                    if (errorDuringSignIn.get()) {
+                        exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build());
+                    } else {
+                        didLogIn.set(true);
+                        exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?code=1234&state=" + params.get("state"), false).build());
+                    }
                 } else if (exc.getRequestURI().contains("/token")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     String grantType = params.get("grant_type");
@@ -479,23 +590,32 @@ public abstract class OAuth2ResourceB2CTest {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, Object> res = new HashMap<>();
 
-                    res.put("access_token", createToken(accessToken(flowId)));
-                    res.put("token_type", "Bearer");
-                    res.put("expires_in", expiresIn);
+                    String scope = params.get("scope");
 
-                    var expires = NumericDate.now();
-                    expires.addSeconds(expiresIn);
-                    res.put("expires_on", expires.getValueInMillis());
+                    if (scope != null) {
+                        res.put("access_token", createToken(accessToken(flowId, scope.contains(api1Id) ? api1Id : api2Id)));
+                        res.put("expires_in", expiresIn);
+                        var expires = NumericDate.now();
+                        expires.addSeconds(expiresIn);
+                        res.put("expires_on", expires.getValueInMillis());
+                        res.put("resource", api1Id);
+                        res.put("scope", "https://localhost/" + api1Id + "/Read");
+                    } else {
+                        res.put("scope", "offline_access openid");
+                    }
+                    res.put("token_type", "Bearer");
 
                     var nbf = NumericDate.now();
                     nbf.setValue(nbf.getValue() - 60);
                     res.put("not_before", nbf);
 
-                    res.put("refresh_token", new BigInteger(130, rand).toString(32));
-                    res.put("refresh_token_expires_in", 1209600);
+                    if (scope == null) {
+                        res.put("refresh_token", new BigInteger(130, rand).toString(32));
+                        res.put("refresh_token_expires_in", 1209600);
 
-                    res.put("id_token", createToken(idToken(flowId)));
-                    res.put("id_token_expires_in", expiresIn);
+                        res.put("id_token", createToken(idToken(flowId)));
+                        res.put("id_token_expires_in", expiresIn);
+                    }
 
                     HashMap<String, Object> pi = new HashMap<>();
                     pi.put("ver", "1.0");
@@ -507,9 +627,6 @@ public abstract class OAuth2ResourceB2CTest {
                     String profileInfo = om.writeValueAsString(pi);
 
                     res.put("profile_info", Base64.getUrlEncoder().encodeToString(profileInfo.getBytes(StandardCharsets.UTF_8)));
-
-                    res.put("resource", api1Id);
-                    res.put("scope", "offline_access openid https://localhost/" + api1Id + "/Read");
 
                     exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
                 }
@@ -523,17 +640,17 @@ public abstract class OAuth2ResourceB2CTest {
         return sp;
     }
 
-    private ServiceProxy getRequireAuthServiceProxy() {
+    private ServiceProxy getRequireAuthServiceProxy(String expectedAudience, String path, Consumer<RequireAuth> requireAuthConfigurer) {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
 
-        Path path = new Path();
-        path.setValue("/api/");
-        sp.setPath(path);
+        Path path2 = new Path();
+        path2.setValue(path);
+        sp.setPath(path2);
 
         var requireAuth = new RequireAuth();
-        this.requireAuth = requireAuth;
-        requireAuth.setExpectedAud(api1Id);
+        requireAuth.setExpectedAud(expectedAudience);
         requireAuth.setOauth2(oAuth2Resource2Interceptor);
+        requireAuthConfigurer.accept(requireAuth);
 
         sp.getInterceptors().add(requireAuth);
         sp.getInterceptors().add(createTestResponseInterceptor());
@@ -585,7 +702,7 @@ public abstract class OAuth2ResourceB2CTest {
         auth.setSrc(baseServerAddr + "/" + susiFlowId + "/v2.0");
         auth.setClientId(clientId);
         auth.setClientSecret(clientSecret);
-        auth.setScope("openid profile offline_access https://localhost/" + api1Id + "/Read");
+        auth.setScope("openid profile offline_access");
         auth.setSubject("sub");
 
         oAuth2ResourceInterceptor.setAuthService(auth);
@@ -593,6 +710,7 @@ public abstract class OAuth2ResourceB2CTest {
         oAuth2ResourceInterceptor.setLogoutUrl("/logout");
         oAuth2ResourceInterceptor.setSkipUserInfo(true);
         oAuth2ResourceInterceptor.setAppendAccessTokenToRequest(true);
+        oAuth2Resource2Interceptor.setOnlyRefreshToken(true);
 
         var withOutValue = new LoginParameter();
         withOutValue.setName("login_hint");
@@ -605,11 +723,6 @@ public abstract class OAuth2ResourceB2CTest {
                 withOutValue,
                 withValue
         ));
-
-        var aud = new RequireAuth();
-        aud.setExpectedAud("asdf");
-        aud.setOauth2(oAuth2ResourceInterceptor);
-
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
@@ -634,13 +747,13 @@ public abstract class OAuth2ResourceB2CTest {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
-                String accessToken = answer.getAccessToken();
-                Map<String, String> body = Map.of(
-                        "accessToken", accessToken,
-                        "path", exc.getRequestURI(),
-                        "method", exc.getRequest().getMethod(),
-                        "body", exc.getRequest().getBodyAsStringDecoded()
-                );
+                String accessToken = answer == null ? "null" : answer.getAccessToken();
+                Map<String, String> body = new HashMap<>();
+                if (accessToken != null)
+                    body.put("accessToken", accessToken);
+                body.put("path", exc.getRequestURI());
+                body.put("method", exc.getRequest().getMethod());
+                body.put("body", exc.getRequest().getBodyAsStringDecoded());
 
                 exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
                 return Outcome.RETURN;

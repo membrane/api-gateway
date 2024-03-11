@@ -40,18 +40,18 @@ public class AccessTokenRevalidator {
         this.statistics = statistics;
     }
 
-    public void revalidateIfNeeded(Session session) throws Exception {
-        if (!tokenNeedsRevalidation(session)) {
+    public void revalidateIfNeeded(Session session, String wantedScope) throws Exception {
+        if (!tokenNeedsRevalidation(session, wantedScope)) {
             return;
         }
 
-        if (revalidate(session, statistics) == null) {
+        if (revalidate(session, statistics, wantedScope) == null) {
             session.clear();
         }
     }
 
-    public Map<String, Object> revalidate(Session session, OAuth2Statistics statistics) throws Exception {
-        Response response = auth.requestUserEndpoint(session.getOAuth2AnswerParameters());
+    public Map<String, Object> revalidate(Session session, OAuth2Statistics statistics, String wantedScope) throws Exception {
+        Response response = auth.requestUserEndpoint(session.getOAuth2AnswerParameters(wantedScope));
 
         if (response.getStatusCode() != 200) {
             statistics.accessTokenValid();
@@ -67,12 +67,12 @@ public class AccessTokenRevalidator {
         }
     }
 
-    private boolean tokenNeedsRevalidation(Session session) {
-        if (!session.hasOAuth2Answer() || revalidateTokenAfter < 0) {
+    private boolean tokenNeedsRevalidation(Session session, String wantedScope) {
+        if (!session.hasOAuth2Answer(wantedScope) || revalidateTokenAfter < 0) {
             return false;
         }
 
-        return validTokens.getIfPresent(session.getAccessToken()) == null;
+        return validTokens.getIfPresent(session.getAccessToken(wantedScope)) == null;
     }
 
     public Cache<String, Boolean> getValidTokens() {
