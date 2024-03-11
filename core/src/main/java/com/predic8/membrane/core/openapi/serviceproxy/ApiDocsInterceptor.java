@@ -11,19 +11,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static java.lang.String.valueOf;
 import static java.util.Optional.empty;
-import static java.util.stream.Collectors.toMap;
+import java.util.LinkedHashMap;
 
 @MCElement(name = "apiDocs")
 public class ApiDocsInterceptor extends AbstractInterceptor {
 
     private static final Pattern PATTERN_UI = Pattern.compile(PATH + "?/ui/(.*)");
 
-    Map<String, Map<String, OpenAPIRecord>> ruleApiSpecs;
+    Map<String, OpenAPIRecord>  ruleApiSpecs;
 
     private static final Logger log = LoggerFactory.getLogger(ApiDocsInterceptor.class.getName());
 
@@ -36,10 +38,10 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if(!initialized) {
-            initializeRuleApiSpecs();
+            ruleApiSpecs = initializeRuleApiSpecs();
             initialized = true;
         }
-        var publisher = new OpenAPIPublisher(flattenApis(ruleApiSpecs));
+        var publisher = new OpenAPIPublisher(ruleApiSpecs);
 
         if (exc.getRequest().getUri().matches(valueOf(PATTERN_UI))) {
             return publisher.handleSwaggerUi(exc);
@@ -52,29 +54,18 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         return publisher.handleOverviewOpenAPIDoc(exc, router, log);
     }
 
-    // Untersuchen
-    public static Map<String, OpenAPIRecord> flattenApis(Map<String, Map<String, OpenAPIRecord>> ruleApiSpecs) {
-        return ruleApiSpecs.values()
-                .stream()
-                .flatMap(map -> map.entrySet().stream())
-                .collect(toMap(
+    public Map<String, OpenAPIRecord> initializeRuleApiSpecs() {
+        return router.getRuleManager().getRules().stream()
+                .filter(this::hasOpenAPIInterceptor)
+                .flatMap(rule -> getOpenAPIInterceptor(rule)
+                        .map(openAPIInterceptor -> openAPIInterceptor.getApiProxy().apiRecords.entrySet().stream()
+                                .map(entry -> Map.entry(entry.getKey(), entry.getValue())))
+                        .orElse(Stream.empty()))
+                .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        (entry, ignored) -> entry
-                ));
-    }
-
-    // No void return value instead.
-    void initializeRuleApiSpecs() {
-        ruleApiSpecs = new HashMap<>();
-
-        router.getRuleManager().getRules().stream()
-                .filter(this::hasOpenAPIInterceptor)
-
-                // Functional?
-                .forEach(rule -> getOpenAPIInterceptor(rule).ifPresent(openAPIInterceptor -> ruleApiSpecs.put(
-                        rule.getName(),
-                        openAPIInterceptor.getApiProxy().apiRecords)
+                        (key1, key2) -> key1, // If duplicate keys, keep the first one
+                        LinkedHashMap::new
                 ));
     }
 
@@ -83,17 +74,10 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     }
 
     Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Rule rule) {
-        Optional<Interceptor> i = rule.getInterceptors().stream()
+        return rule.getInterceptors().stream()
                 .filter(ic -> ic instanceof OpenAPIInterceptor)
+                .map(ic -> (OpenAPIInterceptor) ic)
                 .findFirst();
-
-        if (i.isEmpty())
-            return empty();
-
-        if (i.get() instanceof OpenAPIInterceptor oasInterceptor) {
-            return Optional.of(oasInterceptor);
-        }
-        throw new RuntimeException("Should not happen!");
     }
 
     private boolean acceptsHtmlExplicit(Exchange exc) {

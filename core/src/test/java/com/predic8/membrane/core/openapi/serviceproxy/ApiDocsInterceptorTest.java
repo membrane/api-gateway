@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
@@ -61,24 +62,22 @@ class ApiDocsInterceptorTest {
 
     @Test
     public void getOpenApiInterceptorTest() {
-        assertEquals("OpenAPI", interceptor.getOpenAPIInterceptor(rule).getDisplayName());
-        assertNull(interceptor.getOpenAPIInterceptor(new APIProxy()));
+        assertEquals("OpenAPI", interceptor.getOpenAPIInterceptor(rule).get().getDisplayName());
+        assertEquals(Optional.empty(), interceptor.getOpenAPIInterceptor(new APIProxy()));
     }
 
 
 
     @Test
     public void initializeRuleApiSpecsTest() {
-        interceptor.initializeRuleApiSpecs();
-        assertEquals(Map.of(" *:2000", interceptor.getOpenAPIInterceptor(rule).getApiProxy().apiRecords), interceptor.ruleApiSpecs);
+        assertEquals(interceptor.getOpenAPIInterceptor(rule).get().getApiProxy().apiRecords, interceptor.initializeRuleApiSpecs());
     }
 
     @Test
     public void initializeEmptyRuleApiSpecsTest() throws Exception {
         ApiDocsInterceptor adi = new ApiDocsInterceptor();
         adi.init(new Router());
-        adi.initializeRuleApiSpecs();
-        assertEquals(new HashMap<>(), adi.ruleApiSpecs);
+        assertEquals(new HashMap<>(), adi.initializeRuleApiSpecs());
     }
 
     // See OA PubTest?
