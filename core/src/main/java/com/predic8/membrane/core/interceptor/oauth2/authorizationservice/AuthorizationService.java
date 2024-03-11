@@ -24,8 +24,8 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.LogHelper;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
+import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -229,15 +228,21 @@ public abstract class AuthorizationService {
         return requestBuilder;
     }
 
-    public Response refreshTokenRequest(OAuth2AnswerParameters params, String wantedScope) throws Exception {
+    public Response refreshTokenRequest(Session session, OAuth2AnswerParameters params, String wantedScope) throws Exception {
+        String tokenEndpoint = getTokenEndpoint();
+        if (session.get("defaultFlow") != null) {
+            tokenEndpoint = tokenEndpoint.replaceAll(session.get("defaultFlow"), session.get("triggerFlow"));
+        }
+
         Exchange e = applyAuth(
-                new Request.Builder().post(getTokenEndpoint())
+                new Request.Builder().post(tokenEndpoint)
                         .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                         .header(ACCEPT, APPLICATION_JSON)
                         .header(USER_AGENT, USERAGENT),
                 "grant_type=refresh_token" + "&refresh_token=" + params.getRefreshToken() +
                         (wantedScope != null ? "&scope=" + URLEncoder.encode(wantedScope, UTF_8) : ""))
                 .buildExchange();
+
         logHelper.handleRequest(e);
         Response response = doRequest(e);
         logHelper.handleResponse(e);

@@ -116,7 +116,6 @@ public class OAuth2CallbackRequestHandler {
             String tokenEndpoint = auth.getTokenEndpoint();
             if (session.get("defaultFlow") != null) {
                 tokenEndpoint = tokenEndpoint.replaceAll(session.get("defaultFlow"), session.get("triggerFlow"));
-                session.remove("defaultFlow", "triggerFlow");
             }
             Map<String, Object> json = exchangeCodeForToken(
                     tokenEndpoint, publicUrlManager.getPublicURL(exc), params);
