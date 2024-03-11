@@ -37,13 +37,13 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     private String dateTimePattern = "dd/MM/yyyy:HH:mm:ss Z";
     private boolean excludePayloadSize = false;
 
-    private AccessLogInterceptorService accessLogInterceptorService;
+    private AccessLogService accessLogInterceptorService;
 
     @Override
     public void init() throws Exception {
         super.init();
 
-        accessLogInterceptorService = new AccessLogInterceptorService(
+        accessLogInterceptorService = new AccessLogService(
                 dateTimePattern,
                 defaultValue,
                 additionalVariables,

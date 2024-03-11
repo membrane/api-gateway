@@ -18,6 +18,7 @@ package com.predic8.membrane.core.interceptor.log;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -33,7 +34,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class AccessLogInterceptorService {
+public class AccessLogService {
 
     private static final Logger log = LoggerFactory.getLogger(AccessLogInterceptor.class);
 
@@ -42,7 +43,7 @@ public class AccessLogInterceptorService {
     private final List<AdditionalVariable> additionalVariables;
     private final boolean excludePayloadSize;
 
-    public AccessLogInterceptorService(
+    public AccessLogService(
             String dateTimePattern,
             String defaultValue,
             List<AdditionalVariable> additionalVariables,
@@ -154,12 +155,17 @@ public class AccessLogInterceptorService {
     private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
-                safe(() -> new SpelExpressionParser()
-                        .parseExpression(additionalPattern.getExpression())
-                        .getValue(new ExchangeEvaluationContext(exc)),
+                safe(() -> parseValue(exc, additionalPattern),
                     additionalPattern.getDefaultValue()
                 )
         );
+    }
+
+    @Nullable
+    public static Object parseValue(Exchange exc, AdditionalVariable av) {
+        return new SpelExpressionParser()
+                .parseExpression(av.getExpression())
+                .getValue(new ExchangeEvaluationContext(exc));
     }
 
     private String convert(String timestamp) {

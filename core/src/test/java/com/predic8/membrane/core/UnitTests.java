@@ -43,6 +43,7 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.JavascriptInterceptor;
 import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
 import com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptorTest;
+import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptorTest;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
@@ -158,7 +159,8 @@ import org.junit.platform.suite.api.Suite;
 		ApiKeyHeaderExtractorTest.class,
 		ApiKeyUtils.class,
 		ReflectiveMethodHandlerTest.class,
-		BuiltInFunctionsTest.class
+		BuiltInFunctionsTest.class,
+		AccessLogServiceTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})
 public class UnitTests {
