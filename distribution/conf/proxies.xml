@@ -6,49 +6,16 @@
 
     <router>
 
-        <transport>
-            <ruleMatching />
-            <exchangeStore />
-            <dispatching />
-            <reverseProxying />
-            <openTelemetry sampleRate="1.0"> <!--globally registers OpenTelemetry for every api-->
-                <otlpExporter host="localhost" port="4317"/>
-            </openTelemetry>
-            <userFeature />
-            <httpClient />
-        </transport>
+       <api port="2000">
+           <apiDocs />
+           <return statusCode="200" />
+       </api>
 
-        <api port="2000">
-            <target url="http://localhost:2001" />
+        <api port="2001">
+            <openapi location="/home/predic8/IdeaProjects/api-gateway/distribution/conf/fruitshop-api.yml" />
+            <return statusCode="200" />
         </api>
 
-        <api port="2001" name="AccessControl">
-            <target url="http://localhost:2002" />
-        </api>
-
-        <api port="2002" name="Validation">
-            <target url="http://localhost:3000" />
-        </api>
-
-        <api port="3000" name="Replace with your Backend">
-            <request>
-                <!-- Print the request headers.
-                     traceparents will be added to them
-                     showing which spans were involved
-                     in the exchange.                   -->
-                <groovy>
-                    println "Request headers:"
-                    header.allHeaderFields.each {
-                    print it
-                    }
-                    CONTINUE
-                </groovy>
-            </request>
-            <response>
-                <template>Hello from a faked backend!</template>
-            </response>
-            <return/>
-        </api>
     </router>
 
 </spring:beans>

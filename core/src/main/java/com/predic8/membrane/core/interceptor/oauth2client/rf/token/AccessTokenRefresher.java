@@ -69,7 +69,7 @@ public class AccessTokenRefresher {
 
     private void refreshAccessToken(Session session, String wantedScope) throws Exception {
         var params = session.getOAuth2AnswerParameters();
-        var response = auth.refreshTokenRequest(params, wantedScope);
+        var response = auth.refreshTokenRequest(session, params, wantedScope);
 
         if (!response.isOk()) {
             response.getBody().read();
@@ -102,9 +102,10 @@ public class AccessTokenRefresher {
             return true;
 
         var params = session.getOAuth2AnswerParameters(wantedScope);
+        var rparams = session.getOAuth2AnswerParameters();
         var expiration = params.getExpiration();
 
-        if (isNullOrEmpty(params.getRefreshToken(), expiration)) {
+        if (isNullOrEmpty(rparams.getRefreshToken(), expiration)) {
             return false;
         }
 
