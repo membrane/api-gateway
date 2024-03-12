@@ -135,7 +135,7 @@ public class AccessLogInterceptorService {
         return safe(access, defaultValue);
     }
 
-    private String safe(Supplier<Object> access, String defaultValue) {
+    private static String safe(Supplier<Object> access, String defaultValue) {
         try {
             return String.valueOf(access.get());
         } catch (Exception e) {
@@ -151,7 +151,7 @@ public class AccessLogInterceptorService {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
+    static public Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
                 safe(() -> new SpelExpressionParser()
