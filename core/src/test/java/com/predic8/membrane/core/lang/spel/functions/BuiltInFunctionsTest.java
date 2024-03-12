@@ -15,13 +15,18 @@ package com.predic8.membrane.core.lang.spel.functions;
 
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.security.ApiKeySecurityScheme;
+import com.predic8.membrane.core.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.util.List;
 
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.http.Request.In.HEADER;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -34,7 +39,7 @@ public class BuiltInFunctionsTest {
     @BeforeAll
     static void init() throws URISyntaxException {
         var exc = Request.get("foo").buildExchange();
-        exc.setProperty(SCOPES, of("demo", "test"));
+        exc.setProperty(SECURITY_SCHEMES, List.of(new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test")));
         ctx = new ExchangeEvaluationContext(exc);
     }
 
