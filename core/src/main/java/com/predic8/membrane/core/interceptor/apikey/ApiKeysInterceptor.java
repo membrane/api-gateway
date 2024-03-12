@@ -62,7 +62,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         if (key.isPresent()) {
             try {
                 var k = key.get();
-                new ApiKeySecurityScheme(k.location(), "SOME-NAME").scopes(getScopes(k.key())).add(exc);
+                new ApiKeySecurityScheme(k.location(), k.name()).scopes(getScopes(k.key())).add(exc);
 
             } catch (UnauthorizedApiKeyException e) {
                 if (!required) {return CONTINUE;}
