@@ -130,8 +130,17 @@ public class Session {
         return get(OAUTH2_ANSWER);
     }
 
+    @JsonIgnore
+    public Object getOAuth2Answer(String wantedScope) {
+        return get(OAUTH2_ANSWER + (wantedScope != null ? wantedScope : ""));
+    }
+
     public void setOAuth2Answer(String answer) {
         put(OAUTH2_ANSWER, answer);
+    }
+
+    public void setOAuth2Answer(String wantedScope, String answer) {
+        put(OAUTH2_ANSWER+wantedScope, answer);
     }
 
     @JsonIgnore
@@ -143,13 +152,35 @@ public class Session {
         }
     }
 
+    @JsonIgnore
+    public OAuth2AnswerParameters getOAuth2AnswerParameters(String wantedScope) {
+        try {
+            return OAuth2AnswerParameters.deserialize(get(OAUTH2_ANSWER + (wantedScope != null ? wantedScope : "")));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public boolean hasOAuth2Answer() {
         return getOAuth2Answer() != null;
+    }
+
+    public boolean hasOAuth2Answer(String wantedScope) {
+        return getOAuth2Answer(wantedScope) != null;
+    }
+
+    @JsonIgnore
+    public String getAccessToken(String wantedScope) {
+        return get(ACCESS_TOKEN + (wantedScope != null ? wantedScope : ""));
     }
 
     @JsonIgnore
     public String getAccessToken() {
         return get(ACCESS_TOKEN);
+    }
+
+    public void setAccessToken(String wantedScope, String token) {
+        put(ACCESS_TOKEN + (wantedScope != null ? wantedScope : ""), token);
     }
 
     @JsonIgnore

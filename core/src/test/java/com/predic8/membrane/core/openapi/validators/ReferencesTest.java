@@ -102,4 +102,22 @@ public class ReferencesTest extends AbstractValidatorTest {
         assertEquals("/contract/details", ctx.getJSONpointer());
         assertEquals("REQUEST/BODY#/contract/details", ctx.getLocationForRequest());
     }
+
+    @Test
+    public void noSchemaRef() {
+        ValidationErrors errors = validator.validate(Request.get().path("/references/546?start=0"));
+        assertEquals(1,errors.size());
+        ValidationErrors errors2 = validator.validate(Request.get().path("/references/546?start=2"));
+        assertEquals(0,errors2.size());
+    }
+
+    @Test
+    public void noRef() {
+        ValidationErrors errors = validator.validate(Request.get().path("/references/546?search=8"));
+        assertEquals(1, errors.size());
+        ValidationErrors errors2 = validator.validate(Request.get().path("/references/546?search=foo"));
+        assertEquals(1, errors2.size());
+        ValidationErrors errors3 = validator.validate(Request.get().path("/references/546?search=123"));
+        assertEquals(0, errors3.size());
+    }
 }

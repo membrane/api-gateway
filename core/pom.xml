@@ -23,7 +23,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>5.3.3</version>
+		<version>5.3.6-SNAPSHOT</version>
 	</parent>
 
 	<!-- Open Telemetry -->
@@ -67,7 +67,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
-			<version>1.10.0</version>
+			<version>1.11.0</version>
 		</dependency>
 
 		<dependency>
@@ -154,7 +154,7 @@
 		<dependency>
 			<groupId>redis.clients</groupId>
 			<artifactId>jedis</artifactId>
-			<version>4.4.3</version>
+			<version>4.4.6</version>
 		</dependency>
 		<dependency>
 			<groupId>com.bornium</groupId>
@@ -190,7 +190,7 @@
 		<dependency>
 			<groupId>org.graalvm.sdk</groupId>
 			<artifactId>graal-sdk</artifactId>
-			<version>22.3.3</version>
+			<version>22.3.5</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -281,7 +281,7 @@
 		<dependency>
 			<groupId>org.bitbucket.b_c</groupId>
 			<artifactId>jose4j</artifactId>
-			<version>0.9.3</version>
+			<version>0.9.5</version>
 		</dependency>
 		<dependency>
 			<groupId>fi.solita.clamav</groupId>
@@ -317,12 +317,12 @@
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-sdk</artifactId>
-			<version>1.31.0</version>
+			<version>1.35.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-exporter-otlp</artifactId>
-			<version>1.34.1</version>
+			<version>1.35.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry.instrumentation</groupId>

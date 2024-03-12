@@ -27,6 +27,7 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.Membran
 import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.util.URI;
@@ -48,7 +49,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -304,19 +304,10 @@ public abstract class OAuth2ResourceTest {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                    exc.setResponse(Response.ok().contentType(TEXT_HTML_UTF8).body("""
-                            <html>
-                              <head><title>Submit This Form</title></head>
-                              <body onload="javascript:document.forms[0].submit()">
-                               <form method="post" action="https://client.example.org/callback">
-                                 <input type="hidden" name="state" value="STATE"/>
-                                 <input type="hidden" name="code" value="CODE"/>
-                               </form>
-                              </body>
-                             </html>""".replace(
-                                     "https://client.example.org/callback",
-                                getClientAddress() + "/oauth2callback"
-                            ).replace("STATE", params.get("state")).replace("CODE", "1234")).build());
+                    exc.setResponse(new FormPostGenerator(getClientAddress() + "/oauth2callback")
+                        .withParameter("state", params.get("state"))
+                        .withParameter("code", params.get("1234"))
+                        .build());
                 } else if (exc.getRequestURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, String> res = new HashMap<>();
@@ -369,11 +360,6 @@ public abstract class OAuth2ResourceTest {
                 withOutValue,
                 withValue
         ));
-
-        var aud = new RequireAuth();
-        aud.setExpectedAud("asdf");
-        aud.setOauth2(oAuth2ResourceInterceptor);
-
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override

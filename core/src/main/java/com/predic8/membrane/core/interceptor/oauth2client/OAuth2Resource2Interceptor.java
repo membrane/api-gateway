@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.bornium.http.util.UriUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -40,13 +39,11 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
@@ -61,6 +58,9 @@ import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
 public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private static final Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
+    public static final String ERROR_STATUS = "oauth2-error-status";
+    public static final String EXPECTED_AUDIENCE = "oauth2-expected-audience";
+    public static final String WANTED_SCOPE = "oauth2-wanted-scope";
 
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
@@ -77,8 +77,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private String customHeaderUserPropertyPrefix;
     private String logoutUrl;
     private String afterLogoutUrl = "/";
+    private String afterErrorUrl = null;
     private List<LoginParameter> loginParameters = new ArrayList<>();
     private boolean appendAccessTokenToRequest;
+    private boolean onlyRefreshToken = false;
 
     @Override
     public void init() throws Exception {
@@ -102,9 +104,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         publicUrlManager.init(auth, callbackPath);
         accessTokenRevalidator.init(auth, statistics);
-        accessTokenRefresher.init(auth);
+        accessTokenRefresher.init(auth, onlyRefreshToken);
         sessionAuthorizer.init(auth, router, statistics);
-        oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator, sessionAuthorizer, publicUrlManager, callbackPath);
+        oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator,
+                sessionAuthorizer, publicUrlManager, callbackPath, onlyRefreshToken);
         tokenAuthenticator.init(sessionAuthorizer, statistics, accessTokenRevalidator, auth);
     }
 
@@ -123,12 +126,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
             logOutSession(exc);
 
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         if (isFaviconRequest(exc)) {
             exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         OAuthUtils.simplifyMultipleOAuth2Answers(session);
@@ -137,14 +140,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             handleOriginalRequest(exc);
         }
 
-        if (tokenAuthenticator.userInfoIsNullAndShouldRedirect(session, exc)) {
+        String wantedScope = (String) exc.getProperty(WANTED_SCOPE);
+        if (tokenAuthenticator.userInfoIsNullAndShouldRedirect(session, exc, wantedScope)) {
             return respondWithRedirect(exc);
         }
 
-        accessTokenRevalidator.revalidateIfNeeded(session);
+        accessTokenRevalidator.revalidateIfNeeded(session, wantedScope);
 
-        if (session.hasOAuth2Answer()) {
-            exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
+        if (session.hasOAuth2Answer(wantedScope)) {
+            exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
         }
 
         accessTokenRefresher.refreshIfNeeded(session, exc);
@@ -156,22 +160,34 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return Outcome.CONTINUE;
         }
 
-        if (handleRequest(exc, session)) {
-            if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
-                exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters());
-                appendAccessTokenToRequest(exc);
-                return Outcome.CONTINUE;
+        try {
+            if (handleRequest(exc, session)) {
+                if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
+                    exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
+                    appendAccessTokenToRequest(exc);
+                    return Outcome.CONTINUE;
+                }
+
+                if (exc.getResponse().getStatusCode() >= 400) {
+                    session.clear();
+                }
+
+                return RETURN;
             }
 
-            if (exc.getResponse().getStatusCode() >= 400) {
-                session.clear();
+            log.debug("session present, but not verified, redirecting.");
+            return respondWithRedirect(exc);
+        } catch (OAuth2Exception e) {
+            if (afterErrorUrl != null) {
+                FormPostGenerator fpg = new FormPostGenerator(afterErrorUrl).withParameter("error", e.getError());
+                if (e.getErrorDescription() != null)
+                    fpg.withParameter("error_description", e.getErrorDescription());
+                exc.setResponse(fpg.build());
+            } else {
+                exc.setResponse(e.getResponse());
             }
-
-            return Outcome.RETURN;
+            return RETURN;
         }
-
-        log.debug("session present, but not verified, redirecting.");
-        return respondWithRedirect(exc);
     }
 
     private void handleOriginalRequest(Exchange exc) throws Exception {
@@ -220,6 +236,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     public Outcome respondWithRedirect(Exchange exc) throws Exception {
+        Integer errorStatus = (Integer) exc.getProperty(ERROR_STATUS);
+        if (errorStatus != null) {
+            exc.setResponse(Response.statusCode(errorStatus).build());
+            return RETURN;
+        }
+
         String state = generateNewState();
 
         Map<String, String> lps = loginParameters.stream()
@@ -227,7 +249,14 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Optional.ofNullable((List<LoginParameter>) exc.getProperty("loginParameters")).orElse(List.of())
                 .forEach(lp -> lps.put(lp.getName(), lp.getValue()));
 
-        var combinedLoginParameters = lps.entrySet().stream().map(e ->
+        var combinedLoginParameters = lps.entrySet().stream()
+                .filter(e -> {
+                    String key = e.getKey();
+                    return !"client_id".equals(key) && !"response_type".equals(key) && !"scope".equals(key)
+                            && !"redirect_uri".equals(key) && !"response_mode".equals(key) && !"state".equals(key)
+                            && !"claims".equals(key);
+                })
+                .map(e ->
             new LoginParameter(e.getKey(), e.getValue())
         ).toList();
 
@@ -243,7 +272,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             state = session.get(ParamNames.STATE) + SESSION_VALUE_SEPARATOR + state;
         session.put(ParamNames.STATE, state);
 
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
@@ -406,5 +435,23 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @MCAttribute
     public void setAppendAccessTokenToRequest(boolean appendAccessTokenToRequest) {
         this.appendAccessTokenToRequest = appendAccessTokenToRequest;
+    }
+
+    public String getAfterErrorUrl() {
+        return afterErrorUrl;
+    }
+
+    @MCAttribute
+    public void setAfterErrorUrl(String afterErrorUrl) {
+        this.afterErrorUrl = afterErrorUrl;
+    }
+
+    public boolean isOnlyRefreshToken() {
+        return onlyRefreshToken;
+    }
+
+    @MCAttribute
+    public void setOnlyRefreshToken(boolean onlyRefreshToken) {
+        this.onlyRefreshToken = onlyRefreshToken;
     }
 }
