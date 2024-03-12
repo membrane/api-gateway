@@ -20,6 +20,7 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.In.QUERY;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.lang.String.*;
@@ -33,7 +34,7 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
     private String paramName = "api-key";
 
     @Override
-    public Optional<String> extract(Exchange exc) {
+    public Optional<LocationNameValue> extract(Exchange exc) {
         Map<String, String> queryParams;
         try {
             queryParams = new TreeMap<>(CASE_INSENSITIVE_ORDER); // Handle key names case insensitive
@@ -44,7 +45,7 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
         }
 
         if (queryParams.containsKey(paramName.toLowerCase())) {
-            return Optional.of(queryParams.get(paramName.toLowerCase()));
+            return Optional.of(new LocationNameValue(QUERY, paramName, queryParams.get(paramName.toLowerCase())));
         }
 
         return empty();

@@ -1,6 +1,9 @@
 package com.predic8.membrane.core.security;
 
-public class ApiKeySecurityScheme implements SecurityScheme {
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Request.*;
+
+public class ApiKeySecurityScheme extends AbstractSecurityScheme {
 
     /**
      * Name of the header, query or cookie parameter
@@ -10,10 +13,10 @@ public class ApiKeySecurityScheme implements SecurityScheme {
    public In in;
 
     /**
-     * Location of the key
+     *
+     * @param in Location of the key
+     * @param name Name of the header, query or cookie parameter
      */
-    public enum In { QUERY, HEADER, COOKIE }
-
     public ApiKeySecurityScheme(In in, String name) {
         this.name = name;
         this.in = in;

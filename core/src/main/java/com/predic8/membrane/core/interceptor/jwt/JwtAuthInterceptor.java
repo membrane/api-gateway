@@ -23,6 +23,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.security.*;
 import org.jose4j.base64url.Base64Url;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwt.consumer.InvalidJwtException;
@@ -120,6 +121,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 
         exc.getProperties().put("jwt",jwtClaims);
+        new JWTSecurityScheme(jwtClaims).add(exc);
 
         return CONTINUE;
     }

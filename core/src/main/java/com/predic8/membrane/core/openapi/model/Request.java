@@ -103,6 +103,10 @@ public class Request extends Message<Request> {
         return securitySchemes;
     }
 
+    public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
+        this.securitySchemes = securitySchemes;
+    }
+
     public boolean hasScheme(SecurityScheme scheme) {
        return securitySchemes.stream().anyMatch(s -> s.equals(scheme));
     }

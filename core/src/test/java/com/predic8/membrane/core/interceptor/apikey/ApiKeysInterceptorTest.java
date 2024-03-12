@@ -17,8 +17,12 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
 import com.predic8.membrane.core.interceptor.apikey.stores.*;
+import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
 
+import java.util.*;
+
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.*;
@@ -72,7 +76,12 @@ public class ApiKeysInterceptorTest {
     void handleRequestWithKeyRequiredWithValidApiKey() {
         Exchange exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
         assertEquals(CONTINUE, akiWithProp.handleRequest(exc));
-        assertEquals(of("accounting", "management"), exc.getProperty(SCOPES));
+        assertEquals(Set.of("accounting", "management"), getScopes(exc));
+        
+    }
+
+    private static Set<String> getScopes(Exchange exc) {
+        return ((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES)).get(0).getScopes();
     }
 
     @Test
@@ -97,7 +106,7 @@ public class ApiKeysInterceptorTest {
     void handleRequestWithoutKeyRequiredWithApiKey() {
         Exchange exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
         assertEquals(CONTINUE, akiWithoutProp.handleRequest(exc));
-        assertEquals(of("accounting", "management"), exc.getProperty(SCOPES));
+        assertEquals(Set.of("accounting", "management"), getScopes(exc));
     }
 
     @Test
@@ -117,12 +126,12 @@ public class ApiKeysInterceptorTest {
 
     @Test
     void handleRequestWithTwoStores() throws UnauthorizedApiKeyException {
-        assertEquals(asList("finance", "internal", "account"), akiWithTwoStores.getScopes("5XF27"));
+        assertEquals(Set.of("finance", "internal", "account"), akiWithTwoStores.getScopes("5XF27"));
     }
 
     @Test
     void handleRequestWithKeyWithoutScopes() throws UnauthorizedApiKeyException {
-        assertEquals(emptyList(), akiWithProp.getScopes("L63NC"));
+        assertEquals( new HashSet<>(), akiWithProp.getScopes("L63NC"));
     }
 
     @Test

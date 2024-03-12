@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.security.Scopes;
 import com.predic8.membrane.core.security.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -74,10 +73,10 @@ public class SecurityValidator {
      * Given an OpenAPI:
      * security:
      * - a1: []
-     *   a2: []
-     *   a3: []
+     * a2: []
+     * a3: []
      * - b1:  []
-     *   b2: []
+     * b2: []
      * - c: []
      * To be valid either:
      * - a1,a2,a3 or
@@ -150,23 +149,19 @@ public class SecurityValidator {
         ValidationErrors errors = new ValidationErrors();
         for (String scope : requirement.get(schemeName)) {
             log.debug("Checking scope: " + scope);
-            
+
             var hasScope = new AtomicBoolean();
             request.getSecuritySchemes().forEach(scheme -> {
-                System.out.println("scheme = " + scheme);
-
-                if (scheme instanceof Scopes scopes) {
-                    if(scopes.hasScope(scope)) {
-                      hasScope.set(true);
-                    }
+                if (scheme.hasScope(scope)) {
+                    hasScope.set(true);
                 }
             });
 
-            if(!hasScope.get()) {
+            if (!hasScope.get()) {
                 log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
                 errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
             }
-            
+
 
 //            if (request.getScopes() == null || !request.getScopes().contains(scope)) {
 //                log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
@@ -181,7 +176,7 @@ public class SecurityValidator {
         ValidationErrors errors = new ValidationErrors();
 
         switch (schemeDefinition.getScheme().toLowerCase()) {
-            case   "basic": {
+            case "basic": {
                 if (request.hasScheme(BASIC())) {
                     return errors;
                 }
@@ -197,7 +192,7 @@ public class SecurityValidator {
             }
         }
 
-        errors.add(ctx.statusCode(401),"Scheme %s is not supported".formatted(schemeDefinition.getScheme()));
+        errors.add(ctx.statusCode(401), "Scheme %s is not supported".formatted(schemeDefinition.getScheme()));
         return errors;
     }
 
@@ -215,14 +210,14 @@ public class SecurityValidator {
 
                         if (oAuth2SecurityScheme.flow == OAuth2SecurityScheme.Flow.CLIENT_CREDENTIALS)
                             isSchemeAndFlowInRequest.set(true);
-                     }
+                    }
                 }
             }
             return Optional.<ValidationError>empty();
         }).flatMap(Optional::stream).toList();
 
         if (!isSchemeAndFlowInRequest.get()) {
-            errors.add(ctx.statusCode(401),"OAuth2 authentication with one of the flows %s is required.".formatted(getFlowNames(securityScheme)));
+            errors.add(ctx.statusCode(401), "OAuth2 authentication with one of the flows %s is required.".formatted(getFlowNames(securityScheme)));
         }
 
         errors.add(e);
@@ -235,7 +230,7 @@ public class SecurityValidator {
 
         AtomicBoolean schemeIsInRequest = new AtomicBoolean();
 
-        List<ValidationError> e = getSecuritySchemes(request,ApiKeySecurityScheme.class).map(scheme1 -> {
+        List<ValidationError> e = getSecuritySchemes(request, ApiKeySecurityScheme.class).map(scheme1 -> {
             if (scheme1 instanceof ApiKeySecurityScheme apiKeySecurityScheme) {
                 schemeIsInRequest.set(true);
                 if (securityScheme.getName() != null) {
@@ -253,7 +248,7 @@ public class SecurityValidator {
         }).flatMap(Optional::stream).toList();
 
         if (!schemeIsInRequest.get()) {
-            errors.add(ctx.statusCode(401),"Authentication by API key is required.");
+            errors.add(ctx.statusCode(401), "Authentication by API key is required.");
         }
 
         errors.add(e);

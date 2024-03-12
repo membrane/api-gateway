@@ -2,7 +2,7 @@ package com.predic8.membrane.core.security;
 
 import java.util.*;
 
-public class OAuth2SecurityScheme implements SecurityScheme, Scopes {
+public class OAuth2SecurityScheme extends AbstractSecurityScheme {
 
     public final Flow flow;
 
@@ -22,9 +22,6 @@ public class OAuth2SecurityScheme implements SecurityScheme, Scopes {
         return new OAuth2SecurityScheme(Flow.AUTHORIZATION_CODE);
     }
 
-
-    public Set<String> scopes = new HashSet<>();
-
     public OAuth2SecurityScheme(Flow flow) {
         this.flow = flow;
     }
@@ -37,19 +34,5 @@ public class OAuth2SecurityScheme implements SecurityScheme, Scopes {
         Flow(String flow) {
             this.value = flow;
         }
-    }
-
-    public OAuth2SecurityScheme scopes(String... scopes) {
-        this.scopes = new HashSet<>(Arrays.stream(scopes).toList());
-        return this;
-    }
-
-    public boolean hasScope(String scope) {
-        return scopes.contains(scope);
-    }
-
-    @Override
-    public Set<String> getScopes() {
-        return scopes;
     }
 }

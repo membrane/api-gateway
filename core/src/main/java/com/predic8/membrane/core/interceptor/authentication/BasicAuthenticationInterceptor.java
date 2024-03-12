@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
+import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.*;
 
 import java.util.*;
@@ -32,6 +33,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
+import static com.predic8.membrane.core.security.HttpSecurityScheme.BASIC;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.codec.binary.Base64.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
@@ -56,6 +58,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		if (hasNoAuthorizationHeader(exc) || !validUser(exc)) {
 			return deny(exc);
 		}
+
+		BASIC().add(exc);
 
 		return CONTINUE;
 	}

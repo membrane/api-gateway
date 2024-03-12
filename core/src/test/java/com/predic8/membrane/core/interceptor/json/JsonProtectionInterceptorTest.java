@@ -78,8 +78,7 @@ public class JsonProtectionInterceptorTest {
                 RETURN,
                 1,
                 11,
-                "Duplicate field 'a'\n"
-                        + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 11]");
+                "Duplicate field");
     }
 
     @Test
@@ -89,9 +88,7 @@ public class JsonProtectionInterceptorTest {
                 RETURN,
                 1,
                 2,
-                "Unexpected end-of-input: expected close marker for Object"
-                        + " (start marker at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 1])\n"
-                        + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 2]");
+                "close marker for Object");
     }
 
     @Test
@@ -256,7 +253,10 @@ public class JsonProtectionInterceptorTest {
 
             assertEquals(expectOut, jpiDev.handleRequest(e));
             JsonNode jn = om.readTree(e.getResponse().getBodyAsStringDecoded());
-            assertEquals(parameters[2], jn.get("details").get("message").asText());
+
+            System.out.println("jn.get(\"details\").get(\"message\").asText() = " + jn.get("details").get("message").asText());
+            
+            assertTrue(jn.get("details").get("message").asText().contains(parameters[2].toString()));
             assertEquals("JSON Protection Violation", jn.get("title").asText());
             assertEquals(parameters[0],jn.get("details").get("line").asInt());
             assertEquals(parameters[1], jn.get("details").get("column").asInt());

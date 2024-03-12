@@ -16,8 +16,7 @@ package com.predic8.membrane.core.interceptor.apikey.extractors;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderName;
+import com.predic8.membrane.core.http.*;
 
 import java.util.Optional;
 
@@ -27,11 +26,11 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
     private HeaderName headerName = new HeaderName("X-Api-Key");
 
     @Override
-    public Optional<String> extract(Exchange exc) {
+    public Optional<LocationNameValue> extract(Exchange exc) {
         Header header = exc.getRequest().getHeader();
 
         if (header.contains(headerName)) {
-            return Optional.of(header.getFirstValue(headerName));
+            return Optional.of(new LocationNameValue(Request.In.HEADER, headerName.getName(), header.getFirstValue(headerName)));
         }
 
         return Optional.empty();

@@ -18,5 +18,5 @@ import com.predic8.membrane.core.exchange.Exchange;
 import java.util.Optional;
 
 public interface ApiKeyExtractor {
-    Optional<String> extract(Exchange exc);
+    Optional<LocationNameValue> extract(Exchange exc);
 }

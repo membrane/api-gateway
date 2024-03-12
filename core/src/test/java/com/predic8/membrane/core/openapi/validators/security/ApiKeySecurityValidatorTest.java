@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static com.predic8.membrane.core.http.Request.In.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -43,29 +43,24 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
 
     @Test
     void inHeaderIgnoreCase() throws Exception {
-        assertTrue(validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER,"X-Api-KEY")))).isEmpty());
+        assertTrue(validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER, "X-Api-KEY")))).isEmpty());
     }
-
-
 
     @Test
     void inQuery() throws Exception {
-        assertTrue(validator.validate(Request.get().path("/in-query").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY,"api-key")))).isEmpty());
+        assertTrue(validator.validate(Request.get().path("/in-query").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY, "api-key")))).isEmpty());
     }
-
-
 
     @Test
     void inCookieIgnoreCase() throws Exception {
-        assertTrue(validator.validate(Request.get().path("/in-cookie").securitySchemes(List.of(new ApiKeySecurityScheme(COOKIE,"api-key")))).isEmpty());
+        assertTrue(validator.validate(Request.get().path("/in-cookie").securitySchemes(List.of(new ApiKeySecurityScheme(COOKIE, "api-key")))).isEmpty());
     }
-
 
     @Test
     void inHeaderWrongName() throws Exception {
         ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER, "APIKEY"))));
         System.out.println("errors = " + errors);
-        assertEquals(1,errors.size());
+        assertEquals(1, errors.size());
         assertTrue(errors.get(0).getMessage().contains("api-key is APIKEY but should be X-API-KEY"));
     }
 
@@ -73,7 +68,7 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
     void inHeaderWrongIn() throws Exception {
         ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY, "X-API-KEY"))));
         System.out.println("errors = " + errors);
-        assertEquals(1,errors.size());
+        assertEquals(1, errors.size());
         assertEquals(403, errors.get(0).getContext().getStatusCode());
         assertTrue(errors.get(0).getMessage().contains("Api-key is in QUERY but should be in header"));
     }

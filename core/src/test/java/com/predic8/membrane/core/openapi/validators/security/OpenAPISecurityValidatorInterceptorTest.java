@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.security.OAuth2SecurityScheme.CLIENT_CRE
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class SecurityTest extends AbstractValidatorTest {
+public class OpenAPISecurityValidatorInterceptorTest extends AbstractValidatorTest {
 
     private OpenAPIInterceptor interceptor;
 

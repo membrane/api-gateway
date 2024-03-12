@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static com.predic8.membrane.core.http.Request.In.HEADER;
 import static java.util.Optional.empty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -41,12 +42,14 @@ public class ApiKeyHeaderExtractorTest {
 
     @Test
     void extractHeader() {
-        assertEquals(Optional.of(API_KEY), ahe.extract(getExchange("X-api-key")));
+        assertEquals(API_KEY, ahe.extract(getExchange("X-api-key")).get().key());
+        assertEquals("X-api-key", ahe.extract(getExchange("X-api-key")).get().name());
+        assertEquals(HEADER, ahe.extract(getExchange("X-api-key")).get().location());
     }
 
     @Test
     void extractHeaderRandomCase() {
-        assertEquals(Optional.of(API_KEY), ahe.extract(getExchange("X-aPi-KeY")));
+        assertEquals(API_KEY, ahe.extract(getExchange("X-aPi-KeY")).get().key());
     }
 
     private static Exchange getExchange(String headerName) {

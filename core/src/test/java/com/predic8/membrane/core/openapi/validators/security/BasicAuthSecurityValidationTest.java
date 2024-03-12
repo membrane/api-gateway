@@ -23,17 +23,19 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class BasicAuthTest {
+public class BasicAuthSecurityValidationTest {
 
     private OpenAPIInterceptor oasInterceptor;
     private BasicAuthenticationInterceptor baInterceptor;
@@ -45,7 +47,7 @@ public class BasicAuthTest {
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/specs/security/http-basic.yml";
-        spec.validateRequests = OpenAPISpec.YesNoOpenAPIOption.YES;
+        spec.validateRequests = YES;
 
         oasInterceptor = new OpenAPIInterceptor(createProxy(router, spec));
         oasInterceptor.init(router);
@@ -76,12 +78,11 @@ public class BasicAuthTest {
         exc.setOriginalRequestUri("/v1/foo");
 
         Outcome outcome = baInterceptor.handleRequest(exc);
-
+        
         assertEquals(CONTINUE,outcome);
 
         outcome = oasInterceptor.handleRequest(exc);
 
         assertEquals(CONTINUE, outcome);
-
     }
 }
