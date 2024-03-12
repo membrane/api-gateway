@@ -15,8 +15,11 @@
                 <keys>
                     <secret value="demo-key-foobar" />
                 </keys>
+                <headerExtractor />
                 <queryParamExtractor name="X-Api-Key" />
             </apiKey>
+            <template>Success!</template>
+            <return statusCode="200" />
         </api>
 
     </router>

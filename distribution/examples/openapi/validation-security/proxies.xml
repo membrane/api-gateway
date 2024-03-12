@@ -7,7 +7,7 @@
 	<router>
 
 		<api port="2000">
-            <openapi location="security-api-v1.yml"
+			<openapi location="security-api-v1.yml"
 					 validateRequests="yes"
 					 validateResponses="no"
 					 validationDetails="yes" />
@@ -15,9 +15,12 @@
 				<keys>
 					<secret value="demo-key-foobar" />
 				</keys>
+				<headerExtractor />
 				<queryParamExtractor name="X-Api-Key" />
 			</apiKey>
-        </api>
+			<template>Success!</template>
+			<return statusCode="200" />
+		</api>
 	
 	</router>
 	
