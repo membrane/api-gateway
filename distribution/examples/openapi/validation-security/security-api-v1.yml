@@ -1,0 +1,23 @@
+openapi: '3.0.2'
+info:
+  title: Security Demo API
+  version: '1.0'
+
+servers:
+  - url: http://localhost:3000/security-api/v2/
+
+paths:
+  /:
+    get:
+      security:
+        - apikey: []
+      responses:
+        200:
+          description: OK
+
+components:
+  securitySchemes:
+    apikey:
+      type: apiKey
+      name: "X-API-KEY"
+      in: header

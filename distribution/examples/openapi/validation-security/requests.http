@@ -1,0 +1,5 @@
+GET http://localhost:2000/security-api/v2/
+X-Api-Key: demo-key-foobar
+###
+
+GET http://localhost:2000/security-api/v2/?x-api-key=demo-key-foobar
