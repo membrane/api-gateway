@@ -24,7 +24,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.QueryParameter;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
 import java.util.*;
@@ -44,7 +43,7 @@ public class QueryParameterValidator extends AbstractParameterValidator{
                 .map(param -> getErrors(ctx, queryParams, param))
                 .reduce(ValidationErrors::add)
                 .orElse(new ValidationErrors())
-                .add(validateAdditionalQueryParameters(ctx, queryParams, operation, api));
+                .add(validateAdditionalQueryParameters(ctx, queryParams, api));
     }
 
     private ValidationErrors getErrors(ValidationContext ctx, Map<String, String> queryParams, Parameter param) {
@@ -63,26 +62,8 @@ public class QueryParameterValidator extends AbstractParameterValidator{
         return new HashMap<>();
     }
 
-   /* private ValidationError validateAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams, Operation op) {
-        if (!qparams.isEmpty()) {
-            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
-        }
-        return null;
-    }*/
-
-    private ValidationError validateAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams, Operation op, OpenAPI openAPI) {
-        boolean isGlobalPresent = openAPI.getSecurity() != null && !openAPI.getSecurity().isEmpty();
-        boolean isGlobalSatisfied = isGlobalPresent && checkSecurityRequirements(openAPI.getSecurity(), qparams, openAPI);
-
-        if (isGlobalPresent && !isGlobalSatisfied) {
-            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "Query parameters do not satisfy global security requirements: " + qparams.keySet());
-        }
-
-        boolean isLocalPresent = op.getSecurity() != null && !op.getSecurity().isEmpty();
-        boolean isLocalSatisfied = isLocalPresent && checkSecurityRequirements(op.getSecurity(), qparams, openAPI);
-        if (isLocalPresent && !isLocalSatisfied) {
-            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "Query parameters do not satisfy operation-level security requirements: " + qparams.keySet());
-        }
+    ValidationError validateAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams, OpenAPI api) {
+        collectSchemeQueryParamKeys(api).forEach(qparams::remove);
 
         if (!qparams.isEmpty()) {
             return new ValidationError(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
@@ -91,23 +72,10 @@ public class QueryParameterValidator extends AbstractParameterValidator{
         return null;
     }
 
-    boolean checkSecurityRequirements(List<SecurityRequirement> securityRequirements, Map<String, String> qparams, OpenAPI api) {
-        return securityRequirements.stream().anyMatch(req -> {
-            for (String key : req.keySet()) {
-                SecurityScheme scheme = api.getComponents().getSecuritySchemes().get(key);
-                if (scheme != null && scheme.getIn() != null && scheme.getIn().toString().equals("query")) {
-                    if (!validateParams(scheme, qparams)) {
-                        return false;
-                    }
-                    qparams.remove(scheme.getName());
-                }
-            }
-            return true;
-        });
-    }
-
-    boolean validateParams(SecurityScheme s, Map<String, String> qparams) {
-        if (s.getName() != null) return qparams.containsKey(s.getName());
-        return false;
+    public List<String> collectSchemeQueryParamKeys(OpenAPI api) {
+        return api.getComponents().getSecuritySchemes().values().stream()
+                .filter(scheme -> scheme != null && scheme.getIn() != null && scheme.getIn().toString().equals("query"))
+                .map(SecurityScheme::getName)
+                .toList();
     }
 }

@@ -66,104 +66,38 @@ class QueryParameterValidatorTest extends AbstractValidatorTest{
     }
 
     @Test
-    void testCheckSecurityRequirementsSimple() {
-        List<SecurityRequirement> requirements = List.of(new SecurityRequirement() {{
-            put("test1", emptyList());
-        }});
+    void testValidateAdditionalQueryParametersValid() {
         var spec = new OpenAPI().components(new Components() {{
-            addSecuritySchemes("test1", new SecurityScheme().name("apiKey").in(QUERY));
+            addSecuritySchemes("test1", new SecurityScheme().name("foo").in(QUERY));
         }});
 
-        Pair<Map<String, String>, Boolean> res = checkParam(requirements, spec, "apiKey");
-        assertTrue(res.getRight());
-        assertTrue(res.getLeft().isEmpty());
-        assertFalse(checkParam(requirements, spec, "wrongParam").getRight());
-    }
-
-    @Test
-    void testCheckSecurityRequirementsNonQueryScheme() {
-        List<SecurityRequirement> requirements = List.of(new SecurityRequirement() {{
-            put("test1", emptyList());
-        }});
-        var spec = new OpenAPI().components(new Components() {{
-            addSecuritySchemes("test1", new SecurityScheme().name("apiKey").in(HEADER));
-        }});
-
-        Pair<Map<String, String>, Boolean> res = checkParam(requirements, spec, "apiKey");
-        assertTrue(res.getRight());
-        assertEquals(1, res.getLeft().size());
-    }
-
-    @Test
-    void testCheckSecurityRequirementsOr() {
-        List<SecurityRequirement> requirements = List.of(new SecurityRequirement() {{
-            put("foo", emptyList());
-        }}, new SecurityRequirement() {{
-            put("bar", emptyList());
-        }});
-        var spec = new OpenAPI().components(new Components() {{
-            addSecuritySchemes("foo", new SecurityScheme().name("apiKey").in(QUERY));
-            addSecuritySchemes("bar", new SecurityScheme().name("apiToken").in(QUERY));
-        }});
-
-        assertTrue(checkParam(requirements, spec, "apiKey").getRight());
-        assertTrue(checkParam(requirements, spec, "apiToken").getRight());
-    }
-
-    @Test
-    void testCheckSecurityRequirementsAnd() {
-        List<SecurityRequirement> requirements = List.of(new SecurityRequirement() {{
-            put("foo", emptyList());
-            put("bar", emptyList());
-        }});
-        var spec = new OpenAPI().components(new Components() {{
-            addSecuritySchemes("foo", new SecurityScheme().name("apiKey").in(QUERY));
-            addSecuritySchemes("bar", new SecurityScheme().name("apiToken").in(QUERY));
-        }});
-
-        assertTrue(checkParam2(requirements, spec, "apiKey", "apiToken"));
-        assertFalse(checkParam(requirements, spec, "apiToken").getRight());
-    }
-
-    @Test
-    void testValidateParamsPresent() {
-        assertTrue(queryParameterValidator.validateParams(
-                new SecurityScheme().name("apiKey").in(QUERY),
-                Map.of("apiKey", "12345")
+        assertNull(queryParameterValidator.validateAdditionalQueryParameters(
+                new ValidationContext(),
+                new HashMap<>(){{put("foo", "bar");}},
+                spec
         ));
     }
 
     @Test
-    void testValidateParamsAbsent() {
-        assertFalse(queryParameterValidator.validateParams(
-                new SecurityScheme().name("apiKey").in(QUERY),
-                Map.of()
+    void testValidateAdditionalQueryParametersInvalid() {
+        var spec = new OpenAPI().components(new Components() {{
+            addSecuritySchemes("test1", new SecurityScheme().name("foo").in(QUERY));
+        }});
+
+        assertNotNull(queryParameterValidator.validateAdditionalQueryParameters(
+                new ValidationContext(),
+                new HashMap<>(){{put("bar", "baz");}},
+                spec
         ));
     }
 
     @Test
-    void testValidateParamsInvalid() {
-        assertFalse(queryParameterValidator.validateParams(
-                new SecurityScheme().name("apiToken").in(QUERY),
-                Map.of("apiKey", "12345")
-        ));
-        assertFalse(queryParameterValidator.validateParams(
-                new SecurityScheme().name("apiKey").in(QUERY),
-                Map.of("apiToken", "12345")
-        ));
-    }
+    void testCollectSchemeQueryParamKeys() {
+        var spec = new OpenAPI().components(new Components() {{
+            addSecuritySchemes("test1", new SecurityScheme().name("foo").in(QUERY));
+            addSecuritySchemes("test2", new SecurityScheme().name("bar").in(QUERY));
+        }});
 
-    private Pair<Map<String, String>, Boolean> checkParam(List<SecurityRequirement> requirements, OpenAPI spec, String key) {
-        Map<String, String> map = new HashMap<>() {{
-            put(key, "12345");
-        }};
-        return Pair.of(map, queryParameterValidator.checkSecurityRequirements(requirements, map, spec));
-    }
-
-    private boolean checkParam2(List<SecurityRequirement> requirements, OpenAPI spec, String key, String key2) {
-        return queryParameterValidator.checkSecurityRequirements(requirements, new HashMap<>() {{
-            put(key, "12345");
-            put(key2, "12345");
-        }}, spec);
+        assertEquals(List.of("foo", "bar"), queryParameterValidator.collectSchemeQueryParamKeys(spec));
     }
 }
