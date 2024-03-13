@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.slf4j.Logger;
@@ -58,8 +59,7 @@ public class AccessTokenRefresher {
 
         synchronized (getTokenSynchronizer(session)) {
             try {
-                refreshAccessToken(session, wantedScope);
-                exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
+                exc.setProperty(Exchange.OAUTH2, refreshAccessToken(session, wantedScope));
             } catch (Exception e) {
                 log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
                 session.clearAuthentication();
@@ -67,7 +67,7 @@ public class AccessTokenRefresher {
         }
     }
 
-    private void refreshAccessToken(Session session, String wantedScope) throws Exception {
+    private OAuth2AnswerParameters refreshAccessToken(Session session, String wantedScope) throws Exception {
         var params = session.getOAuth2AnswerParameters();
         var response = auth.refreshTokenRequest(session, params, wantedScope);
 
@@ -91,6 +91,8 @@ public class AccessTokenRefresher {
         tokenResponseHandler.handleTokenResponse(session, wantedScope, json, params);
 
         session.setOAuth2Answer(wantedScope, params.serialize());
+
+        return params;
     }
 
     private boolean refreshingOfAccessTokenIsNeeded(Session session, String wantedScope) {
