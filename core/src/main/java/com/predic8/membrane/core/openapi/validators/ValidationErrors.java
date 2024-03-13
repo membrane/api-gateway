@@ -68,6 +68,10 @@ public class ValidationErrors {
         return errors.size();
     }
 
+    public static ValidationErrors empty() {
+        return new ValidationErrors();
+    }
+
     public boolean isEmpty() {
         return size() == 0;
     }

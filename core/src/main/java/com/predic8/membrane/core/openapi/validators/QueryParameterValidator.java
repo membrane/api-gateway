@@ -30,6 +30,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static io.swagger.v3.oas.models.security.SecurityScheme.In.QUERY;
+import static io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY;
 
 public class QueryParameterValidator extends AbstractParameterValidator{
 
@@ -62,19 +64,19 @@ public class QueryParameterValidator extends AbstractParameterValidator{
         return new HashMap<>();
     }
 
-    ValidationError validateAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams, OpenAPI api) {
-        collectSchemeQueryParamKeys(api).forEach(qparams::remove);
+    ValidationErrors validateAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams, OpenAPI api) {
+        securitySchemeApiKeyQueryParamNames(api).forEach(qparams::remove);
 
         if (!qparams.isEmpty()) {
-            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
+            return ValidationErrors.create(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
         }
 
-        return null;
+        return ValidationErrors.empty();
     }
 
-    public List<String> collectSchemeQueryParamKeys(OpenAPI api) {
+    public List<String> securitySchemeApiKeyQueryParamNames(OpenAPI api) {
         return api.getComponents().getSecuritySchemes().values().stream()
-                .filter(scheme -> scheme != null && scheme.getIn() != null && scheme.getIn().toString().equals("query"))
+                .filter(scheme -> scheme != null && scheme.getType().equals(APIKEY) && scheme.getIn().equals(QUERY))
                 .map(SecurityScheme::getName)
                 .toList();
     }
