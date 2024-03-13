@@ -19,5 +19,5 @@ components:
   securitySchemes:
     apikey:
       type: apiKey
-      name: "X-API-KEY"
+      name: X-Api-Keyz
       in: query

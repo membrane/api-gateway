@@ -1,5 +1,5 @@
 ### Successful Authentication. Correct api-key and location.
-GET http://localhost:2000/security-api/v1/?x-api-key=demo-key-foobar
+GET http://localhost:2000/security-api/v1/?X-Api-Key=demo-key-foobar
 
 ### Validation Failure. Correct api-key, but wrong location.
 GET http://localhost:2000/security-api/v1/

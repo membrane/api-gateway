@@ -24,9 +24,10 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.QueryParameter;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
@@ -43,7 +44,7 @@ public class QueryParameterValidator extends AbstractParameterValidator{
                 .map(param -> getErrors(ctx, queryParams, param))
                 .reduce(ValidationErrors::add)
                 .orElse(new ValidationErrors())
-                .add(checkForAdditionalQueryParameters(ctx, queryParams));
+                .add(validateAdditionalQueryParameters(ctx, queryParams, operation, api));
     }
 
     private ValidationErrors getErrors(ValidationContext ctx, Map<String, String> queryParams, Parameter param) {
@@ -62,10 +63,51 @@ public class QueryParameterValidator extends AbstractParameterValidator{
         return new HashMap<>();
     }
 
-    private ValidationError checkForAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams) {
+   /* private ValidationError validateAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams, Operation op) {
         if (!qparams.isEmpty()) {
             return new ValidationError(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
         }
         return null;
+    }*/
+
+    private ValidationError validateAdditionalQueryParameters(ValidationContext ctx, Map<String, String> qparams, Operation op, OpenAPI openAPI) {
+        boolean isGlobalPresent = openAPI.getSecurity() != null && !openAPI.getSecurity().isEmpty();
+        boolean isGlobalSatisfied = isGlobalPresent && checkSecurityRequirements(openAPI.getSecurity(), qparams, openAPI);
+
+        if (isGlobalPresent && !isGlobalSatisfied) {
+            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "Query parameters do not satisfy global security requirements: " + qparams.keySet());
+        }
+
+        boolean isLocalPresent = op.getSecurity() != null && !op.getSecurity().isEmpty();
+        boolean isLocalSatisfied = isLocalPresent && checkSecurityRequirements(op.getSecurity(), qparams, openAPI);
+        if (isLocalPresent && !isLocalSatisfied) {
+            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "Query parameters do not satisfy operation-level security requirements: " + qparams.keySet());
+        }
+
+        if (!qparams.isEmpty()) {
+            return new ValidationError(ctx.entityType(QUERY_PARAMETER), "There are query parameters that are not supported by the API: " + qparams.keySet());
+        }
+
+        return null;
+    }
+
+    boolean checkSecurityRequirements(List<SecurityRequirement> securityRequirements, Map<String, String> qparams, OpenAPI api) {
+        return securityRequirements.stream().anyMatch(req -> {
+            for (String key : req.keySet()) {
+                SecurityScheme scheme = api.getComponents().getSecuritySchemes().get(key);
+                if (scheme != null && scheme.getIn() != null && scheme.getIn().toString().equals("query")) {
+                    if (!validateParams(scheme, qparams)) {
+                        return false;
+                    }
+                    qparams.remove(scheme.getName());
+                }
+            }
+            return true;
+        });
+    }
+
+    boolean validateParams(SecurityScheme s, Map<String, String> qparams) {
+        if (s.getName() != null) return qparams.containsKey(s.getName());
+        return false;
     }
 }

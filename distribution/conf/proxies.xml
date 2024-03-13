@@ -18,6 +18,10 @@
                 <headerExtractor />
                 <queryParamExtractor name="X-Api-Key" />
             </apiKey>
+            <target host="localhost" port="2001" />
+        </api>
+
+        <api port="2001">
             <template>Success!</template>
             <return statusCode="200" />
         </api>
