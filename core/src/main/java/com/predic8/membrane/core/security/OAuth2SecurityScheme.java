@@ -1,7 +1,5 @@
 package com.predic8.membrane.core.security;
 
-import java.util.*;
-
 public class OAuth2SecurityScheme extends AbstractSecurityScheme {
 
     public final Flow flow;

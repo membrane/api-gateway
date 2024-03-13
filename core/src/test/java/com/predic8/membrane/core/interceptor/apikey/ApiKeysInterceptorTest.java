@@ -22,12 +22,10 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.*;
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
 import static java.util.List.*;
 import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -80,6 +78,7 @@ public class ApiKeysInterceptorTest {
         
     }
 
+    @SuppressWarnings("unchecked")
     private static Set<String> getScopes(Exchange exc) {
         return ((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES)).get(0).getScopes();
     }

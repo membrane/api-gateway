@@ -42,22 +42,22 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
-    void inHeaderIgnoreCase() throws Exception {
+    void inHeaderIgnoreCase() {
         assertTrue(validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER, "X-Api-KEY")))).isEmpty());
     }
 
     @Test
-    void inQuery() throws Exception {
+    void inQuery() {
         assertTrue(validator.validate(Request.get().path("/in-query").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY, "api-key")))).isEmpty());
     }
 
     @Test
-    void inCookieIgnoreCase() throws Exception {
+    void inCookieIgnoreCase() {
         assertTrue(validator.validate(Request.get().path("/in-cookie").securitySchemes(List.of(new ApiKeySecurityScheme(COOKIE, "api-key")))).isEmpty());
     }
 
     @Test
-    void inHeaderWrongName() throws Exception {
+    void inHeaderWrongName() {
         ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER, "APIKEY"))));
         System.out.println("errors = " + errors);
         assertEquals(1, errors.size());
@@ -65,7 +65,7 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
-    void inHeaderWrongIn() throws Exception {
+    void inHeaderWrongIn() {
         ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY, "X-API-KEY"))));
         System.out.println("errors = " + errors);
         assertEquals(1, errors.size());

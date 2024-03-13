@@ -18,7 +18,6 @@ package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.security.*;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -32,7 +31,7 @@ import java.time.format.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.regex.Pattern.*;
 

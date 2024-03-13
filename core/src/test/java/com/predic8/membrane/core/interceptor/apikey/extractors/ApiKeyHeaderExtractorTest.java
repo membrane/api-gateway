@@ -13,17 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
 
-import java.util.Optional;
+import static com.predic8.membrane.core.http.Request.In.*;
+import static java.util.Optional.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static com.predic8.membrane.core.http.Request.In.HEADER;
-import static java.util.Optional.empty;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ApiKeyHeaderExtractorTest {
 
     static final String API_KEY = "123456789";

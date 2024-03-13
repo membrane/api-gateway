@@ -14,19 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 
-import java.util.Arrays;
-
 import static com.google.common.base.Strings.*;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -180,7 +176,7 @@ public class JsonProtectionInterceptorTest {
         for (int i = 0; i < 11; i++) {
             if (i != 0)
                 sb.append(",");
-            sb.append("\"" + i + "\": 1");
+            sb.append("\"").append(i).append("\": 1");
         }
         sb.append("}");
         send(sb.toString(),
@@ -196,7 +192,7 @@ public class JsonProtectionInterceptorTest {
         for (int i = 0; i < 10; i++) {
             if (i != 0)
                 sb.append(",");
-            sb.append("\"" + i + "\": 1");
+            sb.append("\"").append(i).append("\": 1");
         }
         sb.append("}");
         send(sb.toString(),

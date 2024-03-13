@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.security;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Request.*;
 
 public class ApiKeySecurityScheme extends AbstractSecurityScheme {

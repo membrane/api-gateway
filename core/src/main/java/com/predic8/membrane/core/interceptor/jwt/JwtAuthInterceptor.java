@@ -13,37 +13,28 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.security.*;
-import org.jose4j.base64url.Base64Url;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jose4j.jwk.*;
+import org.jose4j.jwt.consumer.*;
+import org.slf4j.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.util.EnumSet.of;
-import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.EnumSet.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 @MCElement(name = "jwtAuth")
 public class JwtAuthInterceptor extends AbstractInterceptor {
+
     private static final Logger LOG = LoggerFactory.getLogger(JwtAuthInterceptor.class);
     public static final String ERROR_JWT_NOT_FOUND = "Could not retrieve JWT";
     public static final String ERROR_DECODED_HEADER_NOT_JSON = "JWT header is not valid JSON";
@@ -121,6 +112,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 
         exc.getProperties().put("jwt",jwtClaims);
+
         new JWTSecurityScheme(jwtClaims).add(exc);
 
         return CONTINUE;

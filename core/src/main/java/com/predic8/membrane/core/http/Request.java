@@ -18,7 +18,6 @@ import com.google.common.collect.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
@@ -26,12 +25,11 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.CRLF;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 
 public class Request extends Message {
 
-	private static final Logger log = LoggerFactory.getLogger(Request.class.getName());
 	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 	private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
@@ -45,7 +43,7 @@ public class Request extends Message {
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
 
-	public enum In { HEADER, QUERY, COOKIE };
+	public enum In { HEADER, QUERY, COOKIE }
 
 	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet("GET", "HEAD", "CONNECT");
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
