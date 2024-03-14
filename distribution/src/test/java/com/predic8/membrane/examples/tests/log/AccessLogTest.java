@@ -19,6 +19,8 @@ import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.WaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
@@ -44,6 +46,15 @@ public class AccessLogTest extends DistributionExtractingTestcase {
         try (var ignore = startServiceProxyScript()) {
             getAndAssert200("http://localhost:2000");
         }
+        assertContains("\"GET / HTTP/1.1\" 200 0 [application/json]", readFile("access.log"));
+    }
+
+    @Test
+    void testHeader() throws Exception {
+        try (var ignore = startServiceProxyScript()) {
+            getAndAssert200("http://localhost:2000");
+        }
+        System.out.println(readFile("access.log"));
         assertContains("\"GET / HTTP/1.1\" 200 0 [application/json]", readFile("access.log"));
     }
 }
