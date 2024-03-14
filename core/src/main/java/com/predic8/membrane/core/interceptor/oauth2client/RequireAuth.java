@@ -120,7 +120,7 @@ public class RequireAuth extends AbstractInterceptor {
     }
 
     @MCAttribute
-    public void setErrorStatus(Integer errorStatus) {
+    public void setErrorStatus(int errorStatus) {
         this.errorStatus = errorStatus;
     }
 
