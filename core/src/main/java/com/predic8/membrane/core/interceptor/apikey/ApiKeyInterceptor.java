@@ -33,9 +33,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.util.Map.of;
 import static java.util.stream.Stream.ofNullable;
 
+/**
+ * @description Secure endpoints using API keys combined with role-based access control (RBAC).
+ * @topic 6. Security
+ */
 @MCElement(name = "apiKey")
-public class ApiKeysInterceptor extends AbstractInterceptor {
-    private final Logger log = LoggerFactory.getLogger(ApiKeysInterceptor.class);
+public class ApiKeyInterceptor extends AbstractInterceptor {
+    private final Logger log = LoggerFactory.getLogger(ApiKeyInterceptor.class);
 
     public static final String SCOPES = "membrane-scopes";
     public static final String TYPE_4XX = "/authorization-denied";

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.*;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyInterceptor.*;
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static java.util.List.*;
@@ -36,9 +36,9 @@ public class ApiKeysInterceptorTest {
     static ApiKeyFileStore mergeStore;
     static ApiKeyHeaderExtractor ahe;
     static ApiKeyQueryParamExtractor aqe;
-    static ApiKeysInterceptor akiWithProp;
-    static ApiKeysInterceptor akiWithoutProp;
-    static ApiKeysInterceptor akiWithTwoStores;
+    static ApiKeyInterceptor akiWithProp;
+    static ApiKeyInterceptor akiWithoutProp;
+    static ApiKeyInterceptor akiWithTwoStores;
 
     @BeforeAll
     static void setup() {
@@ -55,16 +55,16 @@ public class ApiKeysInterceptorTest {
         ahe = new ApiKeyHeaderExtractor();
         aqe = new ApiKeyQueryParamExtractor();
 
-        akiWithProp = new ApiKeysInterceptor();
+        akiWithProp = new ApiKeyInterceptor();
         akiWithProp.setExtractors(of(ahe));
         akiWithProp.setStores(of(store));
 
-        akiWithoutProp = new ApiKeysInterceptor();
+        akiWithoutProp = new ApiKeyInterceptor();
         akiWithoutProp.setExtractors(of(ahe));
         akiWithoutProp.setRequired(false);
         akiWithoutProp.setStores(of(store));
 
-        akiWithTwoStores = new ApiKeysInterceptor();
+        akiWithTwoStores = new ApiKeyInterceptor();
         akiWithTwoStores.setStores(of(store, mergeStore));
     }
 

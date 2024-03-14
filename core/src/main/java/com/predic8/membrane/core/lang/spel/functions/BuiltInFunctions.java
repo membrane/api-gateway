@@ -13,10 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
-import org.apache.http.auth.AUTH;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +22,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyInterceptor.SCOPES;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
