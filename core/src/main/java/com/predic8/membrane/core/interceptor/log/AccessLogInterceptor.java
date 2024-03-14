@@ -12,7 +12,6 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-
 package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.annot.MCAttribute;
