@@ -78,8 +78,9 @@ public class JsonProtectionInterceptorTest {
                 RETURN,
                 1,
                 11,
-                "Duplicate field 'a'\n"
-                        + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 11]");
+                """
+                Duplicate field 'a'
+                 at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 11]""");
     }
 
     @Test
@@ -89,9 +90,9 @@ public class JsonProtectionInterceptorTest {
                 RETURN,
                 1,
                 2,
-                "Unexpected end-of-input: expected close marker for Object"
-                        + " (start marker at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 1])\n"
-                        + " at [Source: (com.google.common.io.CountingInputStream); line: 1, column: 2]");
+                """
+                Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
+                 at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]""");
     }
 
     @Test

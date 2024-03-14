@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import groovy.text.*;
 import io.swagger.v3.oas.models.*;
@@ -44,7 +43,6 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIPublisherInterceptor.class.getName());
 
-    public static final String HTML_UTF_8 = "text/html; charset=utf-8";
     private final ObjectMapper om = new ObjectMapper();
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
@@ -109,7 +107,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnHtmlOverview(Exchange exc) {
-        exc.setResponse(ok().contentType(HTML_UTF_8).body(renderOverviewTemplate()).build());
+        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderOverviewTemplate()).build());
         return RETURN;
     }
 
@@ -149,7 +147,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             return returnNoFound(exc, id);
         }
 
-        exc.setResponse(ok().contentType(HTML_UTF_8).body(renderSwaggerUITemplate(id, record.api)).build());
+        exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderSwaggerUITemplate(id, record.api)).build());
 
         return RETURN;
     }

@@ -5,14 +5,15 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-        <api port="2000">
-            <apiKey>
-                <keyFileStore location="../../keys.txt"/>
-                <headerExtractor name="api"/>
-                <queryParamExtractor name="api"/>
-            </apiKey>
-            <template>bla</template>
-            <return/>
+
+       <api port="2000">
+           <apiDocs />
+           <return statusCode="200" />
+       </api>
+
+        <api port="2001">
+            <openapi location="/home/predic8/IdeaProjects/api-gateway/distribution/conf/fruitshop-api.yml" />
+            <return statusCode="200" />
         </api>
 
     </router>

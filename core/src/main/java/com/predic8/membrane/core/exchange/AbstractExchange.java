@@ -40,6 +40,7 @@ public abstract class AbstractExchange {
 	private String errMessage = "";
 	private final Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<>();
 	private final Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
+
 	protected Rule rule;
 
 	protected Map<String, Object> properties = new HashMap<>();

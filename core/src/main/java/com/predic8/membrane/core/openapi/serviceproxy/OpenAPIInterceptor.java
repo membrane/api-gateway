@@ -49,6 +49,11 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         this.apiProxy = apiProxy;
     }
 
+
+    public APIProxy getApiProxy() {
+        return apiProxy;
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         String basePath = getMatchingBasePath(exc);

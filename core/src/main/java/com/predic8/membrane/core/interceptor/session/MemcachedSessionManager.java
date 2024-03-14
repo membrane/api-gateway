@@ -29,6 +29,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * For testing, the class FakeSyncSessionStoreManager is used instead.
+ */
 @MCElement(name = "memcachedSessionManager")
 public class MemcachedSessionManager extends SessionManager {
 

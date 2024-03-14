@@ -27,6 +27,9 @@ import redis.clients.jedis.*;
 import java.util.*;
 import java.util.stream.*;
 
+/**
+ * For testing, the class FakeSyncSessionStoreManager is used instead.
+ */
 @MCElement(name = "redisSessionManager")
 public class RedisSessionManager extends SessionManager{
 

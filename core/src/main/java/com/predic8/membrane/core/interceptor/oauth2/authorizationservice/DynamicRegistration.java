@@ -30,6 +30,7 @@ import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.transport.http.AbortException;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.Util;
@@ -50,13 +51,14 @@ public class DynamicRegistration {
     private SSLContext sslContext;
     private InterceptorFlowController flowController = new InterceptorFlowController();
     private HttpClient client;
+    private HttpClientConfiguration httpClientConfiguration;
 
     public void init(Router router) throws Exception {
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         for(Interceptor i : interceptors)
             i.init(router);
-        client = router.getHttpClientFactory().createClient(null);
+        client = router.getHttpClientFactory().createClient(httpClientConfiguration);
     }
 
     public InputStream retrieveOpenIDConfiguration(String uri) throws Exception {
@@ -127,5 +129,14 @@ public class DynamicRegistration {
     @MCChildElement(order = 20)
     public void setInterceptors(List<Interceptor> interceptors) {
         this.interceptors = interceptors;
+    }
+
+    public HttpClientConfiguration getHttpClientConfiguration() {
+        return httpClientConfiguration;
+    }
+
+    @MCChildElement(order = 30)
+    public void setHttpClientConfiguration(HttpClientConfiguration httpClientConfiguration) {
+        this.httpClientConfiguration = httpClientConfiguration;
     }
 }
