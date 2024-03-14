@@ -46,6 +46,9 @@ import java.util.function.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.http.Header.SET_COOKIE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceB2CTest {
@@ -380,6 +383,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         assertEquals(403, exc.getResponse().getStatusCode());
         assertEquals("Forbidden", exc.getResponse().getStatusMessage());
+        assertNull(exc.getResponse().getHeader().getFirstValue(SET_COOKIE));
 
         browser.apply(new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange());
 
@@ -732,6 +736,7 @@ public abstract class OAuth2ResourceB2CTest {
                 body.put("path", exc.getRequestURI());
                 body.put("method", exc.getRequest().getMethod());
                 body.put("body", exc.getRequest().getBodyAsStringDecoded());
+
                 exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
                 return Outcome.RETURN;
             }

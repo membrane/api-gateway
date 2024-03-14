@@ -238,7 +238,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public Outcome respondWithRedirect(Exchange exc) throws Exception {
         Integer errorStatus = (Integer) exc.getProperty(ERROR_STATUS);
         if (errorStatus != null) {
-            exc.setResponse(Response.statusCode(errorStatus).build());
+            exc.setResponse(Response.statusCode(errorStatus).header(CONTENT_LENGTH, "0").build());
             return RETURN;
         }
 
