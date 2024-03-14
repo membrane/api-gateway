@@ -16,12 +16,11 @@
 package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -154,9 +153,7 @@ public class AccessLogInterceptorService {
     private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
-                safe(() -> new SpelExpressionParser()
-                        .parseExpression(additionalPattern.getExpression())
-                        .getValue(new ExchangeEvaluationContext(exc)),
+                safe(() ->  additionalPattern.getExpression().getValue(new ExchangeEvaluationContext(exc)),
                     additionalPattern.getDefaultValue()
                 )
         );
