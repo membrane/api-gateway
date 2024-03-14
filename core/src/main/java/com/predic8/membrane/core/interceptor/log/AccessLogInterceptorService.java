@@ -154,9 +154,7 @@ public class AccessLogInterceptorService {
     private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
-                safe(() -> new SpelExpressionParser()
-                        .parseExpression(additionalPattern.getExpression())
-                        .getValue(new ExchangeEvaluationContext(exc)),
+                safe(() ->  additionalPattern.getExpression().getValue(new ExchangeEvaluationContext(exc)),
                     additionalPattern.getDefaultValue()
                 )
         );
