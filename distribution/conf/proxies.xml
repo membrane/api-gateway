@@ -11,13 +11,13 @@
                      validateRequests="yes"
                      validateResponses="no"
                      validationDetails="yes" />
-            <apiKey>
-                <keys>
-                    <secret value="demo-key-foobar" />
-                </keys>
-                <headerExtractor />
-                <queryParamExtractor name="X-Api-Key" />
-            </apiKey>
+<!--            <apiKey>-->
+<!--                <keys>-->
+<!--                    <secret value="demo-key-foobar" />-->
+<!--                </keys>-->
+<!--                <headerExtractor />-->
+<!--                <queryParamExtractor name="X-Api-Key" />-->
+<!--            </apiKey>-->
             <target host="localhost" port="2001" />
         </api>
 

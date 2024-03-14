@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.openapi.validators.ValidationContext.Val
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static io.swagger.v3.oas.models.security.SecurityScheme.In.QUERY;
 import static io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY;
+import static java.util.Collections.emptyList;
 
 public class QueryParameterValidator extends AbstractParameterValidator{
 
@@ -75,6 +76,9 @@ public class QueryParameterValidator extends AbstractParameterValidator{
     }
 
     public List<String> securitySchemeApiKeyQueryParamNames(OpenAPI api) {
+        if (api.getComponents() == null || api.getComponents().getSecuritySchemes() == null)
+            return emptyList();
+
         return api.getComponents().getSecuritySchemes().values().stream()
                 .filter(scheme -> scheme != null && scheme.getType().equals(APIKEY) && scheme.getIn().equals(QUERY))
                 .map(SecurityScheme::getName)

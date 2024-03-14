@@ -29,6 +29,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static com.predic8.membrane.core.security.OAuth2SecurityScheme.CLIENT_CREDENTIALS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,7 +51,7 @@ public class OpenAPISecurityValidatorInterceptorTest extends AbstractValidatorTe
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/specs/security/security.yml";
-        spec.validateRequests = OpenAPISpec.YesNoOpenAPIOption.YES;
+        spec.validateRequests = YES;
 
         interceptor = new OpenAPIInterceptor(createProxy(router, spec));
         interceptor.init(router);
@@ -109,8 +110,8 @@ public class OpenAPISecurityValidatorInterceptorTest extends AbstractValidatorTe
 
         Outcome outcome = interceptor.handleRequest(exc);
         assertEquals(RETURN, outcome);
-        System.out.println("exc = " + exc.getResponse().getStatusCode());
-        System.out.println("exc = " + exc.getResponse().getBodyAsStringDecoded());
+        assertEquals(401, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Caller ist not in scope finance"));
     }
 
 

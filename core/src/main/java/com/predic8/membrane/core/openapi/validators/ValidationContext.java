@@ -36,6 +36,7 @@ public class ValidationContext {
         ValidationContext ctx = new ValidationContext();
         ctx.method = request.getMethod();
         ctx.path = request.getPath();
+        ctx.statusCode = 400;
         return ctx;
     }
 

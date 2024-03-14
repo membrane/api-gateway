@@ -13,19 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request.Builder;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Request.*;
+import com.predic8.membrane.core.http.Response.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.*;
+import com.predic8.membrane.core.security.*;
 
-import java.util.List;
-
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
-import static java.util.List.of;
+import static com.predic8.membrane.core.http.Request.In.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.List.*;
 
 class ConditionalEvaluationTestContext {
 
@@ -34,7 +32,7 @@ class ConditionalEvaluationTestContext {
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var condInt = new ConditionalInterceptor();
 
-        exc.setProperty(SCOPES, List.of("test", "main"));
+        new ApiKeySecurityScheme(HEADER,"x-api-key").scopes("test", "main").add(exc);
 
         condInt.setLanguage(lang);
         condInt.setInterceptors(of(mockInt));
