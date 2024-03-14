@@ -23,6 +23,7 @@ import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing1StaticTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing3ClientTest;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing5MultipleTest;
+import com.predic8.membrane.examples.tests.log.AccessLogTest;
 import com.predic8.membrane.examples.tests.message_transformation.Json2XmlTest;
 import com.predic8.membrane.examples.tests.message_transformation.TransformationUsingJavascriptTest;
 import com.predic8.membrane.examples.tests.message_transformation.Xml2JsonTest;
@@ -65,6 +66,9 @@ import org.junit.platform.suite.api.Suite;
         JSONSchemaValidationTest.class,
         XMLValidationTest.class,
         SampleSoapServiceTest.class,
+
+        // Logging
+        AccessLogTest.class,
 
         // Transformation
         Xml2JsonTest.class,

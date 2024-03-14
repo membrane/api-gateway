@@ -21,7 +21,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -54,6 +55,11 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     public Outcome handleResponse(Exchange exc) throws Exception {
         accessLogInterceptorService.handleAccessLogging(exc);
         return CONTINUE;
+    }
+
+    @Override
+    public void handleAbort(Exchange exc) {
+        accessLogInterceptorService.handleAccessLogging(exc);
     }
 
     @SuppressWarnings("unused")
