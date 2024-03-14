@@ -9,6 +9,7 @@
         <api port="2000">
             <accessLog>
                 <additionalVariable name="res.contentType" expression="response?.headers.contentType" />
+                <additionalVariable name="forwarded" expression="headers['x-forwarded-for']" />
             </accessLog>
             <target host="api.predic8.de">
                 <ssl />
