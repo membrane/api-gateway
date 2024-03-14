@@ -18,8 +18,6 @@ package com.predic8.membrane.core.interceptor.log;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 

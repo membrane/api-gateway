@@ -16,12 +16,11 @@
 package com.predic8.membrane.core.interceptor.log;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
