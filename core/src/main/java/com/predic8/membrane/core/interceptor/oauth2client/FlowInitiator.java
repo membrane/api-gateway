@@ -74,6 +74,12 @@ public class FlowInitiator extends AbstractInterceptor {
     }
 
     @Override
+    public void init() throws Exception {
+        for (LoginParameter loginParameter : loginParameters)
+            loginParameter.init();
+    }
+
+    @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         // remove session
         exc.setResponse(Response.ok().build());

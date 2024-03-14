@@ -109,6 +109,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         oAuth2CallbackRequestHandler.init(uriFactory, auth, originalExchangeStore, accessTokenRevalidator,
                 sessionAuthorizer, publicUrlManager, callbackPath, onlyRefreshToken);
         tokenAuthenticator.init(sessionAuthorizer, statistics, accessTokenRevalidator, auth);
+        for (LoginParameter loginParameter : loginParameters)
+            loginParameter.init();
     }
 
     @Override

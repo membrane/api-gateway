@@ -356,7 +356,7 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void loginParamsPerFlow() throws Exception {
-        Exchange exc = new Request.Builder().get(getClientAddress() + "/pe/init?domain_hint=flow&illegal=true").buildExchange();
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/pe/init?domain_hint=flow%c3%b6&illegal=true").buildExchange();
         browser.applyWithoutRedirect(exc);
 
         String location = exc.getResponse().getHeader().getFirstValue("Location");
@@ -369,7 +369,7 @@ public abstract class OAuth2ResourceB2CTest {
         assertTrue(params.containsKey("fooflow"));
         assertEquals("bar", params.get("foo"));
         assertTrue(params.containsKey("domain_hint"));
-        assertEquals("flow", params.get("domain_hint"));
+        assertEquals("flow\u00f6", params.get("domain_hint")); // 'c3 b6' in UTF-8 for unicode '00 f6': o umlaut
         assertFalse(params.containsKey("illegal"));
     }
 

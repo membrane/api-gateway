@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.bornium.http.util.UriUtil;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -21,9 +20,12 @@ import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name = "loginParameter")
 public class LoginParameter {
@@ -38,6 +40,11 @@ public class LoginParameter {
         this.value = value;
     }
 
+    public void init() throws UnsupportedEncodingException {
+        if (!name.equals(URLEncoder.encode(name, UTF_8)))
+            throw new RuntimeException("<loginParameter /> may only take a name which is identical under URL encoding so far: " + name);
+    }
+
     public static String copyLoginParameters(Exchange exc, List<LoginParameter> loginParameters) throws Exception {
         StringBuilder sb = new StringBuilder();
 
@@ -46,23 +53,19 @@ public class LoginParameter {
 
         Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
         loginParameters.forEach(lp -> {
-            try {
-                if (lp.getValue() != null) {
+            if (lp.getValue() != null) {
+                sb.append("&");
+                sb.append(lp.getName());
+                sb.append("=");
+                sb.append(URLEncoder.encode(lp.getValue(), UTF_8));
+            } else {
+                if (params.containsKey(lp.getName())) {
+                    String encoded = URLEncoder.encode(params.get(lp.getName()), UTF_8);
                     sb.append("&");
                     sb.append(lp.getName());
                     sb.append("=");
-                    sb.append(UriUtil.encode(lp.getValue()));
-                } else {
-                    if (params.containsKey(lp.getName())) {
-                        String encoded = UriUtil.encode(params.get(lp.getName()));
-                        sb.append("&");
-                        sb.append(lp.getName());
-                        sb.append("=");
-                        sb.append(encoded);
-                    }
+                    sb.append(encoded);
                 }
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException(e);
             }
         });
 
