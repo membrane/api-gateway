@@ -69,25 +69,25 @@ protected String getOpenAPIFileName() {
         validateAndAssert(APPLICATION_STAR, true);
     }
 
-    void responseTest(Request request, boolean expectedResult) {
+    void responseTest(Request request) {
         ValidationErrors errors = validator.validateResponse(
                 request,
                 Response.statusCode(200).json().body("{}"));
-        assertEquals(expectedResult, errors.isEmpty());
+        assertEquals(true, errors.isEmpty());
     }
 
     @Test
     void starStarResponseTest() {
-        responseTest(STAR_STAR, true);
+        responseTest(STAR_STAR);
     }
 
     @Test
     void starTypeResponseTest() {
-        responseTest(STAR_JSON, true);
+        responseTest(STAR_JSON);
     }
 
     @Test
     void typeStarResponseTest() {
-        responseTest(APPLICATION_STAR, true);
+        responseTest(APPLICATION_STAR);
     }
 }
