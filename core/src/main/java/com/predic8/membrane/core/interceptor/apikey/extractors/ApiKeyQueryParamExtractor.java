@@ -20,7 +20,7 @@ import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.In.QUERY;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.lang.String.*;

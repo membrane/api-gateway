@@ -15,6 +15,8 @@ package com.predic8.membrane.core.security;
 
 public class BasicHttpSecurityScheme extends HttpSecurityScheme {
 
+    private String username;
+
     @Override
     public int hashCode() {
         // There is no field yet, so there are no two different BasicHttpSecurityScheme
@@ -30,5 +32,14 @@ public class BasicHttpSecurityScheme extends HttpSecurityScheme {
     @Override
     public String toString() {
         return "basic scheme";
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public BasicHttpSecurityScheme username(String username) {
+        this.username = username;
+        return this;
     }
 }

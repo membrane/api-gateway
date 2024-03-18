@@ -17,7 +17,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.Request.In.*;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.HEADER;
 import static java.util.Optional.*;
 import static org.junit.jupiter.api.Assertions.*;
 

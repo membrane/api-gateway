@@ -57,18 +57,17 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 			return deny(exc);
 		}
 
-		BASIC().add(exc);
-
 		return CONTINUE;
 	}
 
 	private boolean validUser(Exchange exc) {
 		try {
+			String username = getUsername(exc);
 			userDataProvider.verify(ImmutableMap.of(
-					"username", getUsername(exc),
+					"username", username,
 					"password", getPassword(exc)
 			));
-			exc.setProperty(SECURITY_SCHEMES, List.of(BASIC()));
+			exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(username)));
 			return true;
 		} catch (NoSuchElementException e) {
 			return false;

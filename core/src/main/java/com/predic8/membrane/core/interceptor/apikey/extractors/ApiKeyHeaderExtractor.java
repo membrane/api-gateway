@@ -13,12 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 
-import java.util.Optional;
+import java.util.*;
+
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 
 @MCElement(name="headerExtractor", topLevel = false)
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
@@ -30,7 +31,7 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
         Header header = exc.getRequest().getHeader();
 
         if (header.contains(headerName)) {
-            return Optional.of(new LocationNameValue(Request.In.HEADER, headerName.getName(), header.getFirstValue(headerName)));
+            return Optional.of(new LocationNameValue(HEADER, headerName.getName(), header.getFirstValue(headerName)));
         }
 
         return Optional.empty();
