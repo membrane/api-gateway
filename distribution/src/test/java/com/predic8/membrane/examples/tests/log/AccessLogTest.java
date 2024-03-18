@@ -20,8 +20,8 @@ import com.predic8.membrane.examples.util.WaitableConsoleEvent;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static org.junit.jupiter.api.Assertions.*;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AccessLogTest extends DistributionExtractingTestcase {
 
@@ -33,7 +33,7 @@ public class AccessLogTest extends DistributionExtractingTestcase {
     @Test
     void testConsole() throws Exception {
         try (var process = startServiceProxyScript()) {
-            var console = new WaitableConsoleEvent(process, p -> p.equals("127.0.0.1 \"GET / HTTP/1.1\" 200 0 [application/json]"));
+            var console = new WaitableConsoleEvent(process, p -> p.contains("\"GET / HTTP/1.1\" 200 0 [application/json]"));
             getAndAssert200("http://localhost:2000");
             assertTrue(console.occurred());
         }
@@ -44,6 +44,14 @@ public class AccessLogTest extends DistributionExtractingTestcase {
         try (var ignore = startServiceProxyScript()) {
             getAndAssert200("http://localhost:2000");
         }
-        assertContains("127.0.0.1 \"GET / HTTP/1.1\" 200 0 [application/json]", readFile("access.log"));
+        assertContains("\"GET / HTTP/1.1\" 200 0 [application/json]", readFile("access.log"));
+    }
+
+    @Test
+    void testHeader() throws Exception {
+        try (var ignore = startServiceProxyScript()) {
+            getAndAssert200("http://localhost:2000");
+        }
+        assertContains("X-Forwarded-For: 127.0.0.1", readFile("access.log"));
     }
 }

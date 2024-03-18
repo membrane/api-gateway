@@ -18,15 +18,17 @@ package com.predic8.membrane.core.interceptor.log;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
 @MCElement(name = "additionalVariable", topLevel = false, id = "accessLog-scope")
 public class AdditionalVariable {
 
     private String name;
-    private String expression;
+    private Expression expression;
     private String defaultValue = "-";
 
-    public String getExpression() {
+    public Expression getExpression() {
         return expression;
     }
 
@@ -37,7 +39,8 @@ public class AdditionalVariable {
     @Required
     @MCAttribute
     public void setExpression(String expression) {
-        this.expression = expression;
+        this.expression = new SpelExpressionParser()
+                .parseExpression(expression);
     }
 
     public String getName() {
