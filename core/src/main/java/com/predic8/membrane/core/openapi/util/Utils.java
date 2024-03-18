@@ -17,11 +17,13 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.security.*;
 import jakarta.mail.internet.*;
-import org.slf4j.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.time.*;
@@ -29,12 +31,11 @@ import java.time.format.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static java.nio.charset.StandardCharsets.*;
 import static java.util.regex.Pattern.*;
 
 public class Utils {
-
-    private static final Logger log = LoggerFactory.getLogger(Utils.class.getName());
 
     //noinspection
     final static Pattern componentSchemaPattern = compile("#/components/\\w+/(.*)");
@@ -103,6 +104,7 @@ public class Utils {
 
     public static boolean isValidDate(String s) {
         try {
+            //noinspection ResultOfMethodCallIgnored
             java.time.LocalDate.parse(s, dateFormat);
             return datePattern.matcher(s).matches(); // Because 2022-1-19 is fine with DateFormat
         } catch (Exception e) {
@@ -117,6 +119,7 @@ public class Utils {
 
     public static boolean isValidDateTime(String s) {
         try {
+            //noinspection ResultOfMethodCallIgnored
             LocalDate.parse(s, dateTimeFormat);
             return true;
         } catch (Exception e) {
@@ -132,7 +135,7 @@ public class Utils {
     public static boolean areThereErrors(ValidationErrors ve) {
         if (ve == null)
             return false;
-        return ve.size() > 0;
+        return !ve.isEmpty();
     }
 
     public static Request getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
@@ -148,6 +151,12 @@ public class Utils {
         if (!exc.getRequest().isBodyEmpty()) {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }
+
+        if (exc.getProperty(SECURITY_SCHEMES) != null) {
+            //noinspection unchecked
+            request.setSecuritySchemes((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES));
+        }
+
         return request;
     }
 
@@ -190,5 +199,20 @@ public class Utils {
 
     public static byte[] createErrorMessage(String msg) {
         return String.format("{ \"error\": \"%s\" }",msg).getBytes();
+    }
+
+    @NotNull
+    public static String getFlowNames(io.swagger.v3.oas.models.security.SecurityScheme scheme) {
+        var flowNames = new ArrayList<String>();
+        var flows = scheme.getFlows();
+        if (flows.getClientCredentials() != null)
+            flowNames.add("'Client Credentials'");
+        if (flows.getImplicit() != null)
+            flowNames.add("'Implicit'");
+        if (flows.getPassword() != null)
+            flowNames.add("'Password'");
+        if (flows.getAuthorizationCode() != null)
+            flowNames.add("'Authorization Code'");
+        return String.join(",",flowNames);
     }
 }

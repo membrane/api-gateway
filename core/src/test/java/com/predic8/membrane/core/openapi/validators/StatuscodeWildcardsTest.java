@@ -29,7 +29,7 @@ public class StatuscodeWildcardsTest extends AbstractValidatorTest {
     Request two = Request.get().path("/two");
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/statuscode-wildcards.yml";
     }
 

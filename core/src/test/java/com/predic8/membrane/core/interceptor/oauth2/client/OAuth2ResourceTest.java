@@ -13,42 +13,28 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
-import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
-import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2client.*;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
+import java.io.*;
+import java.math.*;
+import java.security.*;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -59,8 +45,8 @@ public abstract class OAuth2ResourceTest {
     protected ObjectMapper om = new ObjectMapper();
     Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
     int serverPort = 3062;
-    private String serverHost = "localhost";
-    private int clientPort = 31337;
+    private final String serverHost = "localhost";
+    private final int clientPort = 31337;
     private HttpRouter oauth2Resource;
     private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
 
@@ -104,7 +90,7 @@ public abstract class OAuth2ResourceTest {
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
         assertEquals("", body2.get("body"));
         assertEquals("GET", body2.get("method"));
@@ -115,7 +101,7 @@ public abstract class OAuth2ResourceTest {
         Exchange excCallResource = new Request.Builder().post(getClientAddress() + "/init").body("demobody").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
         assertEquals("demobody", body2.get("body"));
         assertEquals("POST", body2.get("method"));
@@ -127,7 +113,7 @@ public abstract class OAuth2ResourceTest {
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
 
         Set<String> accessTokens = new HashSet<>();
@@ -141,7 +127,7 @@ public abstract class OAuth2ResourceTest {
                     String uuid = UUID.randomUUID().toString();
                     Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
                     excCallResource2 = browser.apply(excCallResource2);
-                    Map body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
+                    var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
                     String path = (String) body.get("path");
                     assertEquals("/" + uuid, path);
                     synchronized (accessTokens) {
@@ -162,7 +148,7 @@ public abstract class OAuth2ResourceTest {
             }
         });
         synchronized (accessTokens) {
-            assertEquals(accessTokens.size(), limit);
+            assertEquals(limit, accessTokens.size());
         }
     }
 
@@ -296,7 +282,7 @@ public abstract class OAuth2ResourceTest {
 
         sp.getInterceptors().add(new AbstractInterceptor() {
 
-            SecureRandom rand = new SecureRandom();
+            final SecureRandom rand = new SecureRandom();
 
             @Override
             public synchronized Outcome handleRequest(Exchange exc) throws Exception {

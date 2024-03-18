@@ -24,7 +24,7 @@ public class APIKeyTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
-        return "security/api-key";
+        return "security/api-key/simple";
     }
 
     @Test

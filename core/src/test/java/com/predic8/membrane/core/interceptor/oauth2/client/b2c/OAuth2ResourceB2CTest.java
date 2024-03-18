@@ -13,57 +13,39 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableSet;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2.client.BrowserMock;
-import com.predic8.membrane.core.interceptor.oauth2client.FlowInitiator;
-import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
-import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
-import com.predic8.membrane.core.interceptor.oauth2client.RequireAuth;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.NumericDate;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.jose4j.lang.JoseException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2.client.*;
+import com.predic8.membrane.core.interceptor.oauth2client.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.jwt.*;
+import org.jose4j.jwt.consumer.*;
+import org.jose4j.lang.*;
+import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
+import java.io.*;
+import java.math.*;
+import java.nio.charset.*;
+import java.security.*;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+import java.util.function.*;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.http.Header.SET_COOKIE;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -148,9 +130,7 @@ public abstract class OAuth2ResourceB2CTest {
             ra.setErrorStatus(403);
             ra.setScope("https://localhost/" + api1Id + "/Read");
         });
-        ServiceProxy sp6 = getRequireAuthServiceProxy(api2Id, "/api2/", ra -> {
-            ra.setScope("https://localhost/" + api2Id + "/Read");
-        });
+        ServiceProxy sp6 = getRequireAuthServiceProxy(api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + api2Id + "/Read"));
 
         oauth2Resource.getRuleManager().addProxy(sp6, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp5, MANUAL);
@@ -174,7 +154,7 @@ public abstract class OAuth2ResourceB2CTest {
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
         assertEquals("", body2.get("body"));
         assertEquals("GET", body2.get("method"));
@@ -186,7 +166,7 @@ public abstract class OAuth2ResourceB2CTest {
         Exchange excCallResource = new Request.Builder().post(getClientAddress() + "/init").body("demobody").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class); // No
+        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class); // No
         assertEquals("/init", body2.get("path"));
         assertEquals("demobody", body2.get("body"));
         assertEquals("POST", body2.get("method"));
@@ -200,7 +180,7 @@ public abstract class OAuth2ResourceB2CTest {
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
 
         excCallResource = browser.apply(excCallResource);
-        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        var body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/init", body2.get("path"));
 
         Set<String> accessTokens = new HashSet<>();
@@ -214,7 +194,7 @@ public abstract class OAuth2ResourceB2CTest {
                     String uuid = UUID.randomUUID().toString();
                     Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/api/" + uuid).buildExchange();
                     excCallResource2 = browser.apply(excCallResource2);
-                    Map body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
+                    var body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
                     String path = (String) body.get("path");
                     assertEquals("/api/" + uuid, path);
                     synchronized (accessTokens) {
@@ -381,7 +361,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals("Ok", exc.getResponse().getStatusMessage());
-        Map res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        var res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
         assertEquals("null", res.get("accessToken"));
 
         browser.apply(new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange());
@@ -412,7 +392,7 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.applyWithoutRedirect(exc);
         assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals("Ok", exc.getResponse().getStatusMessage());
-        Map res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
+        var res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
         assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
     }
 
@@ -431,7 +411,7 @@ public abstract class OAuth2ResourceB2CTest {
         errorDuringSignIn.set(true);
         Exchange exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
         exc = browser.apply(exc);
-        Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
+        var body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
         System.out.println(exc.getResponse().getBodyAsStringDecoded());
         assertEquals("http://membrane-api.io/error/oauth2-error-from-authentication-server", body.get("type"));
         assertEquals("DEMO-123", ((Map)body.get("details")).get("error"));

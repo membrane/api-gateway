@@ -13,14 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.net.UnknownHostException;
+import com.predic8.membrane.core.*;
+import org.junit.jupiter.api.*;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HostnameTest {
 
@@ -42,22 +38,22 @@ public class HostnameTest {
 
 	@Test
 	public void matchesPlainString() {
-		assertEquals(true, h1.matches("localhost", "localhost"));
+        assertTrue(h1.matches("localhost", "localhost"));
 	}
 
 	@Test
 	public void notMatchesPlainString() {
-		assertEquals(false, h1.matches("local", "local"));
+        assertFalse(h1.matches("local", "local"));
 	}
 
 	@Test
 	public void matchesRegexString() {
-		assertEquals(true, h1.matches("localhost", "localhost"));
+        assertTrue(h1.matches("localhost", "localhost"));
 	}
 
 	@Test
 	public void notMatchesRegexString() {
-		assertEquals(false, h1.matches("hostlocal", "hostlocal"));
+        assertFalse(h1.matches("hostlocal", "hostlocal"));
 	}
 
 }

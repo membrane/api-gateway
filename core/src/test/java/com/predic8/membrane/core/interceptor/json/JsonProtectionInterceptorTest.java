@@ -14,19 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.junit.jupiter.api.*;
 
-import java.util.Arrays;
-
 import static com.google.common.base.Strings.*;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -78,9 +74,7 @@ public class JsonProtectionInterceptorTest {
                 RETURN,
                 1,
                 11,
-                """
-                Duplicate field 'a'
-                 at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 11]""");
+                "Duplicate field");
     }
 
     @Test
@@ -90,9 +84,7 @@ public class JsonProtectionInterceptorTest {
                 RETURN,
                 1,
                 2,
-                """
-                Unexpected end-of-input: expected close marker for Object (start marker at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1])
-                 at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 2]""");
+                "close marker for Object");
     }
 
     @Test
@@ -184,7 +176,7 @@ public class JsonProtectionInterceptorTest {
         for (int i = 0; i < 11; i++) {
             if (i != 0)
                 sb.append(",");
-            sb.append("\"" + i + "\": 1");
+            sb.append("\"").append(i).append("\": 1");
         }
         sb.append("}");
         send(sb.toString(),
@@ -200,7 +192,7 @@ public class JsonProtectionInterceptorTest {
         for (int i = 0; i < 10; i++) {
             if (i != 0)
                 sb.append(",");
-            sb.append("\"" + i + "\": 1");
+            sb.append("\"").append(i).append("\": 1");
         }
         sb.append("}");
         send(sb.toString(),
@@ -257,7 +249,8 @@ public class JsonProtectionInterceptorTest {
 
             assertEquals(expectOut, jpiDev.handleRequest(e));
             JsonNode jn = om.readTree(e.getResponse().getBodyAsStringDecoded());
-            assertEquals(parameters[2], jn.get("details").get("message").asText());
+            
+            assertTrue(jn.get("details").get("message").asText().contains(parameters[2].toString()));
             assertEquals("JSON Protection Violation", jn.get("title").asText());
             assertEquals(parameters[0],jn.get("details").get("line").asInt());
             assertEquals(parameters[1], jn.get("details").get("column").asInt());

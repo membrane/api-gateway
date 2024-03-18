@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class BooleanTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/boolean.yml";
     }
 

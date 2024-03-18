@@ -17,8 +17,12 @@
 package com.predic8.membrane.core.openapi.model;
 
 import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.security.*;
 
 import java.util.*;
+
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.*;
 
 public class Request extends Message<Request> {
 
@@ -27,6 +31,10 @@ public class Request extends Message<Request> {
     private final UriTemplateMatcher uriTemplateMatcher = new UriTemplateMatcher();
     private Map<String,String> pathParameters;
 
+    private List<SecurityScheme> securitySchemes = emptyList();
+
+    // Security scopes from OAuth2 or API-Keys
+    private Set<String> scopes;
 
     public Request(String method) {
         this.method = method;
@@ -61,6 +69,16 @@ public class Request extends Message<Request> {
         return this;
     }
 
+    public Request securitySchemes(List<SecurityScheme> schemes) {
+        this.securitySchemes = schemes;
+        return this;
+    }
+
+    public Request scopes(String... scope) {
+        this.scopes = Arrays.stream(scope).collect(toSet());
+        return this;
+    }
+
     public String getMethod() {
         return method;
     }
@@ -69,8 +87,28 @@ public class Request extends Message<Request> {
         return path;
     }
 
+    public Set<String> getScopes() {
+        return scopes;
+    }
+
+    public void setScopes(Set<String> scopes) {
+        this.scopes = scopes;
+    }
+
     public Map<String, String> getPathParameters() {
         return pathParameters;
+    }
+
+    public List<SecurityScheme> getSecuritySchemes() {
+        return securitySchemes;
+    }
+
+    public void setSecuritySchemes(List<SecurityScheme> securitySchemes) {
+        this.securitySchemes = securitySchemes;
+    }
+
+    public boolean hasScheme(SecurityScheme scheme) {
+       return securitySchemes.stream().anyMatch(s -> s.equals(scheme));
     }
 
     public void parsePathParameters(String uriTemplate) throws PathDoesNotMatchException {
@@ -80,10 +118,12 @@ public class Request extends Message<Request> {
     @Override
     public String toString() {
         return "Request{" +
-                "method='" + method + '\'' +
-                ", path='" + path + '\'' +
-                ", uriTemplateMatcher=" + uriTemplateMatcher +
-                ", pathParameters=" + pathParameters +
-                '}';
+               "method='" + method + '\'' +
+               ", path='" + path + '\'' +
+               ", uriTemplateMatcher=" + uriTemplateMatcher +
+               ", pathParameters=" + pathParameters +
+               ", securityScheme=" + securitySchemes +
+               ", scopes=" + scopes +
+               '}';
     }
 }

@@ -36,6 +36,7 @@ public class ValidationContext {
         ValidationContext ctx = new ValidationContext();
         ctx.method = request.getMethod();
         ctx.path = request.getPath();
+        ctx.statusCode = 400;
         return ctx;
     }
 
@@ -98,6 +99,9 @@ public class ValidationContext {
         StringBuilder sb = new StringBuilder();
         sb.append(message);
         sb.append("/");
+
+        if(validatedEntityType == null)
+            return sb.toString();
 
         if (validatedEntityType.equals(QUERY_PARAMETER)) {
             sb.append(validatedEntityType.name());
@@ -192,7 +196,15 @@ public class ValidationContext {
     }
 
     public enum ValidatedEntityType {
-        PATH("path"), METHOD("method"), PATH_PARAMETER("path parameter"), QUERY_PARAMETER("query parameter"), HEADER_PARAMETER("header parameter"), BODY("body"), FIELD("field"), PROPERTY("property"), MEDIA_TYPE("media type");
+        PATH("path"),
+        METHOD("method"),
+        PATH_PARAMETER("path parameter"),
+        QUERY_PARAMETER("query parameter"),
+        HEADER_PARAMETER("header parameter"),
+        BODY("body"),
+        FIELD("field"),
+        PROPERTY("property"),
+        MEDIA_TYPE("media type");
 
         public final String name;
         ValidatedEntityType(String s) {

@@ -44,6 +44,10 @@ public class HeaderName {
 		return hash(name.toLowerCase());
 	}
 
+	public String getName() {
+		return name;
+	}
+
 	@Override
 	public String toString() {
 		return name;

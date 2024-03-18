@@ -18,7 +18,6 @@ import com.google.common.collect.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
@@ -26,12 +25,11 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.CRLF;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 
 public class Request extends Message {
 
-	private static final Logger log = LoggerFactory.getLogger(Request.class.getName());
 	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 	private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
@@ -77,7 +75,7 @@ public class Request extends Message {
 				throw new EOFWhileReadingFirstLineException(firstLine);
 			}
 		} catch (EOFWhileReadingLineException e) {
-			if (e.getLineSoFar().length() == 0)
+			if (e.getLineSoFar().isEmpty())
 				throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
 			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
 		}
@@ -247,6 +245,11 @@ public class Request extends Message {
 		public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
 			fullURL = url;
 			req.setUri(URLUtil.getPathQuery(uriFactory, url));
+			return this;
+		}
+
+		public Builder authorization(String username, String password) {
+			req.getHeader().setAuthorization(username,password);
 			return this;
 		}
 

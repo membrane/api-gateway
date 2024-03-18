@@ -13,16 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
 
-import java.util.Optional;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.HEADER;
+import static java.util.Optional.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import static java.util.Optional.empty;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class ApiKeyHeaderExtractorTest {
 
     static final String API_KEY = "123456789";
@@ -41,12 +40,14 @@ public class ApiKeyHeaderExtractorTest {
 
     @Test
     void extractHeader() {
-        assertEquals(Optional.of(API_KEY), ahe.extract(getExchange("X-api-key")));
+        assertEquals(API_KEY, ahe.extract(getExchange("X-api-key")).get().key());
+        assertEquals("X-api-key", ahe.extract(getExchange("X-api-key")).get().name());
+        assertEquals(HEADER, ahe.extract(getExchange("X-api-key")).get().location());
     }
 
     @Test
     void extractHeaderRandomCase() {
-        assertEquals(Optional.of(API_KEY), ahe.extract(getExchange("X-aPi-KeY")));
+        assertEquals(API_KEY, ahe.extract(getExchange("X-aPi-KeY")).get().key());
     }
 
     private static Exchange getExchange(String headerName) {

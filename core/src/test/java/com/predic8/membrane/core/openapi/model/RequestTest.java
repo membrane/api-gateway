@@ -16,19 +16,35 @@
 
 package com.predic8.membrane.core.openapi.model;
 
+import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
+import static com.predic8.membrane.core.security.HttpSecurityScheme.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RequestTest {
 
     @Test
     void doesSettingAJsonBodySetTheMimeType() {
-        Request req =  Request.post().path("/boolean").body(new JsonBody(mapToJson(new HashMap<>())));
-        assertEquals(APPLICATION_JSON,req.getMediaType().getBaseType());
+        assertEquals(APPLICATION_JSON, Request.post().path("/boolean").body(new JsonBody(mapToJson(new HashMap<>()))).getMediaType().getBaseType());
+    }
+
+    @Test
+    void hasSchemeBasic() {
+        assertTrue(Request.get().securitySchemes(List.of(BasicHttpSecurityScheme.BASIC())).hasScheme(BASIC()));
+    }
+
+    @Test
+    void hasSchemeBearer() {
+        assertTrue(Request.get().securitySchemes(List.of(BearerHttpSecurityScheme.BEARER())).hasScheme(BEARER()));
+    }
+
+    @Test
+    void hasSchemeWrong() {
+        assertFalse(Request.get().securitySchemes(List.of(BearerHttpSecurityScheme.BEARER())).hasScheme(BASIC()));
     }
 }

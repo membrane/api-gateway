@@ -176,4 +176,5 @@ public class RequestTest {
 
 		assertEquals("1,2,3",req.getHeader().getNormalizedValue("Foo"));
 	}
+
 }

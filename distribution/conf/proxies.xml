@@ -6,13 +6,23 @@
 
     <router>
 
-       <api port="2000">
-           <apiDocs />
-           <return statusCode="200" />
-       </api>
+        <api port="2000">
+            <openapi location="security-api-v1.yml"
+                     validateRequests="yes"
+                     validateResponses="no"
+                     validationDetails="yes" />
+<!--            <apiKey>-->
+<!--                <keys>-->
+<!--                    <secret value="demo-key-foobar" />-->
+<!--                </keys>-->
+<!--                <headerExtractor />-->
+<!--                <queryParamExtractor name="X-Api-Key" />-->
+<!--            </apiKey>-->
+            <target host="localhost" port="2001" />
+        </api>
 
         <api port="2001">
-            <openapi location="/home/predic8/IdeaProjects/api-gateway/distribution/conf/fruitshop-api.yml" />
+            <template>Success!</template>
             <return statusCode="200" />
         </api>
 

@@ -30,7 +30,7 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
     private static final Request APPLICATION_STAR = Request.post().json().path("/application-star").body("{}");
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/content-type-wildcards.yml";
     }
 
@@ -69,7 +69,7 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
         validateAndAssert(APPLICATION_STAR, true);
     }
 
-    void responseTest(Request request, boolean expectedResult) throws ParseException {
+    void responseTest(Request request, boolean expectedResult) {
         ValidationErrors errors = validator.validateResponse(
                 request,
                 Response.statusCode(200).json().body("{}"));
@@ -77,17 +77,17 @@ public class ContentTypeWildcardTests extends AbstractValidatorTest {
     }
 
     @Test
-    void starStarResponseTest() throws ParseException {
+    void starStarResponseTest() {
         responseTest(STAR_STAR, true);
     }
 
     @Test
-    void starTypeResponseTest() throws ParseException {
+    void starTypeResponseTest() {
         responseTest(STAR_JSON, false);
     }
 
     @Test
-    void typeStarResponseTest() throws ParseException {
+    void typeStarResponseTest() {
         responseTest(APPLICATION_STAR, true);
     }
 }

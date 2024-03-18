@@ -34,7 +34,7 @@ public class HeaderParameterTest extends AbstractValidatorTest {
     Request request;
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/header-params.yml";
     }
 

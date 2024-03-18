@@ -19,9 +19,10 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
+import com.predic8.membrane.core.interceptor.apikey.extractors.*;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.core.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +61,9 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
         if (key.isPresent()) {
             try {
-                addScopes(exc, getScopes(key.get()));
+                var k = key.get();
+                new ApiKeySecurityScheme(k.location(), k.name()).scopes(getScopes(k.key())).add(exc);
+
             } catch (UnauthorizedApiKeyException e) {
                 if (!required) {return CONTINUE;}
                 problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid.");
@@ -70,16 +73,12 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    public void addScopes(Exchange exc, List<String> scopes) {
-        exc.setProperty(SCOPES, scopes);
-    }
-
     public void problemJsonResponse(Exchange exc, int statusCode, String type, String title, String info) {
         log.warn(info);
         exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
     }
 
-    public List<String> getScopes(String key) throws UnauthorizedApiKeyException {
+    public Set<String> getScopes(String key) throws UnauthorizedApiKeyException {
         Set<String> combinedScopes = new LinkedHashSet<>();
         boolean keyFound = false;
 
@@ -94,10 +93,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
             throw new UnauthorizedApiKeyException();
         }
 
-        return combinedScopes.stream().toList();
+        return new HashSet<>(combinedScopes);
     }
 
-    public Optional<String> getKey(Exchange exc) {
+    public Optional<LocationNameValue> getKey(Exchange exc) {
         return extractors.stream()
                          .flatMap(ext -> ofNullable(
                                  ext.extract(exc).orElse(null)

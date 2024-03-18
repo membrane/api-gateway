@@ -50,6 +50,7 @@ public class OperationValidator {
 
             errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
             errors.add(new HeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
+            errors.add(new SecurityValidator(api).validateSecurity(ctx,req, operation));
 
             return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
         } else {
@@ -76,7 +77,7 @@ public class OperationValidator {
 
     private void validatePathParameters(ValidationContext ctx, Request req, List<Parameter> schemaParameters) {
 
-        if (schemaParameters == null || req.getPathParameters().size() == 0)
+        if (schemaParameters == null || req.getPathParameters().isEmpty())
             return;
         schemaParameters.stream().map(this::resolveRefs).filter(this::isPathParameter).forEach(parameter -> {
             String value = req.getPathParameters().get(parameter.getName());

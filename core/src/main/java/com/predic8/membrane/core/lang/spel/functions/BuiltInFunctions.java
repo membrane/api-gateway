@@ -13,18 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
-import org.apache.http.auth.AUTH;
+import com.predic8.membrane.core.security.SecurityScheme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
@@ -70,8 +74,11 @@ public class BuiltInFunctions {
 
     @SuppressWarnings("unchecked")
     private static Boolean scopesContainsByPredicate(ExchangeEvaluationContext ctx, Predicate<List<String>> predicate) {
-        return ofNullable((List<String>) ctx.getExchange().getProperties().get(SCOPES))
-                .map(predicate::test)
-                .orElse(false);
+        return predicate.test(Optional.ofNullable((List<SecurityScheme>) ctx.getExchange().getProperty(SECURITY_SCHEMES))
+                .map(list -> list.stream()
+                        .map(SecurityScheme::getScopes)
+                        .flatMap(Collection::stream)
+                        .toList())
+                .orElse(emptyList()));
     }
 }

@@ -68,6 +68,10 @@ public class ValidationErrors {
         return errors.size();
     }
 
+    public static ValidationErrors empty() {
+        return new ValidationErrors();
+    }
+
     public boolean isEmpty() {
         return size() == 0;
     }
@@ -82,7 +86,7 @@ public class ValidationErrors {
 
     public byte[] getErrorMessage(Direction direction) {
 
-        if (errors.size() == 0)
+        if (errors.isEmpty())
             return "No validation errors!".getBytes();
 
         Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction);

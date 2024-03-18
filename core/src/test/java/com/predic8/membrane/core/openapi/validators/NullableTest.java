@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class NullableTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/nullable.yml";
     }
 

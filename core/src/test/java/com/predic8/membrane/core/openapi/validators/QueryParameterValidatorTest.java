@@ -13,19 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
+import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.parameters.*;
+import io.swagger.v3.oas.models.security.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
+import static io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY;
 import static org.junit.jupiter.api.Assertions.*;
 
-class QueryParameterValidatorTest extends  AbstractValidatorTest{
+class QueryParameterValidatorTest extends AbstractValidatorTest{
 
     QueryParameterValidator queryParameterValidator;
 
     @Override
-    String getOpenAPIFileName() {
+   protected String getOpenAPIFileName() {
         return "/openapi/specs/query-params.yml";
     }
 
@@ -55,5 +59,38 @@ class QueryParameterValidatorTest extends  AbstractValidatorTest{
         Parameter referencingParam = validator.getApi().getPaths().get("/cities").getParameters().get(1);
         Parameter resolvedParam = queryParameterValidator.resolveReferencedParameter(referencingParam);
         assertEquals("bar",resolvedParam.getName());
+    }
+
+    @Test
+    void testValidateAdditionalQueryParametersValid() {
+        assertTrue(queryParameterValidator.validateAdditionalQueryParameters(
+                new ValidationContext(),
+                new HashMap<>(){{put("api-key", "234523");}},
+                new OpenAPI().components(new Components() {{
+                    addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
+                }})
+        ).isEmpty());
+    }
+
+    @Test
+    void testValidateAdditionalQueryParametersInvalid() {
+
+        assertFalse(queryParameterValidator.validateAdditionalQueryParameters(
+                new ValidationContext(),
+                new HashMap<>(){{put("bar", "2315124");}},
+                new OpenAPI().components(new Components() {{
+                    addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
+                }})
+        ).isEmpty());
+    }
+
+    @Test
+    void testCollectSchemeQueryParamKeys() {
+        var spec = new OpenAPI().components(new Components() {{
+            addSecuritySchemes("schemaA", new SecurityScheme().type(APIKEY).name("api-key").in(QUERY));
+            addSecuritySchemes("schemaB", new SecurityScheme().type(APIKEY).name("x-api-key").in(QUERY));
+        }});
+
+        assertEquals(List.of("api-key", "x-api-key"), queryParameterValidator.securitySchemeApiKeyQueryParamNames(spec));
     }
 }

@@ -14,27 +14,27 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
-import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
-import com.predic8.membrane.core.util.HttpUtil;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
+import com.predic8.membrane.core.util.*;
 
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
-import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.codec.binary.Base64.decodeBase64;
-import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.security.HttpSecurityScheme.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.codec.binary.Base64.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
@@ -47,7 +47,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
@@ -57,15 +57,17 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 			return deny(exc);
 		}
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private boolean validUser(Exchange exc) {
 		try {
+			String username = getUsername(exc);
 			userDataProvider.verify(ImmutableMap.of(
-					"username", getUsername(exc),
+					"username", username,
 					"password", getPassword(exc)
 			));
+			exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(username)));
 			return true;
 		} catch (NoSuchElementException e) {
 			return false;
@@ -83,7 +85,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		exc.setResponse(Response.unauthorized("").
 				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"" + PRODUCT_NAME + " Authentication\"")).
 				build());
-		return Outcome.ABORT;
+		return ABORT;
 	}
 
 	private boolean hasNoAuthorizationHeader(Exchange exc) {

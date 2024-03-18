@@ -27,16 +27,16 @@ public abstract class AbstractValidatorTest {
 
     protected final static ObjectMapper om = new ObjectMapper();
 
-    OpenAPIValidator validator;
+    protected OpenAPIValidator validator;
 
     @BeforeEach
     public void setUp() {
         validator = new OpenAPIValidator(new URIFactory(), getResourceAsStream(getOpenAPIFileName()));
     }
 
-    abstract String getOpenAPIFileName();
+    protected abstract String getOpenAPIFileName();
 
-    public InputStream getResourceAsStream(String fileName) {
+    protected InputStream getResourceAsStream(String fileName) {
         return this.getClass().getResourceAsStream(fileName);
     }
 }

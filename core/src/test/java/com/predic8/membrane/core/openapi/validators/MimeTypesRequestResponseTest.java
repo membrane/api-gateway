@@ -16,14 +16,9 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.model.Request;
-import com.predic8.membrane.core.openapi.model.Response;
 import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
 
     @Override
-    String getOpenAPIFileName() {
+protected String getOpenAPIFileName() {
         return "/openapi/specs/mimetypes.yml";
     }
 
