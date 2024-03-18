@@ -152,21 +152,6 @@ public class Utils {
             request.body(exc.getRequest().getBodyAsStreamDecoded());
         }
 
-//        // Scopes form the new SecuritySchemes
-//        var scopes = new HashSet<String>();
-//        if (exc.getProperty(SECURITY_SCHEMES) instanceof List schemes) {
-//            request.setSecuritySchemes(schemes);
-//
-//            scopes.addAll(((List<SecurityScheme>)schemes).stream().filter(scheme -> scheme instanceof Scopes)
-//                    .map(scheme -> ((Scopes) scheme).getScopes())
-//                    .flatMap(Set::stream)
-//                    .collect(Collectors.toSet()));
-//
-//        }
-//
-//        // Scopes from the old Scopes Property - should be migrated to SecurityScheme
-//        scopes.addAll();
-
         if (exc.getProperty(SECURITY_SCHEMES) != null) {
             //noinspection unchecked
             request.setSecuritySchemes((List<SecurityScheme>) exc.getProperty(SECURITY_SCHEMES));
