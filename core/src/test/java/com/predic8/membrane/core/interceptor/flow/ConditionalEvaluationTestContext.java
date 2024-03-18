@@ -21,8 +21,8 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.*;
 import com.predic8.membrane.core.security.*;
 
-import static com.predic8.membrane.core.http.Request.In.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static java.util.List.*;
 
 class ConditionalEvaluationTestContext {

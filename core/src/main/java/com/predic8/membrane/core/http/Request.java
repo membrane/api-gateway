@@ -43,8 +43,6 @@ public class Request extends Message {
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
 
-	public enum In { HEADER, QUERY, COOKIE }
-
 	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet("GET", "HEAD", "CONNECT");
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
 			"DELETE",

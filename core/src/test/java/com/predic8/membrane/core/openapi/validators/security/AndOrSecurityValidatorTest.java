@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.In.HEADER;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
 import static org.junit.jupiter.api.Assertions.*;
 

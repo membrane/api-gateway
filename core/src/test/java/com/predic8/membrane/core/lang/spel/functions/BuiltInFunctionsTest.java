@@ -13,24 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
-import com.predic8.membrane.core.security.ApiKeySecurityScheme;
-import com.predic8.membrane.core.security.SecurityScheme;
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.security.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.http.Request.In.HEADER;
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
-import static java.util.List.of;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static java.util.List.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BuiltInFunctionsTest {
 
