@@ -17,20 +17,19 @@
 package com.predic8.membrane.core.openapi.validators;
 
 
-import com.predic8.membrane.core.openapi.model.*;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MultipleContentTest extends AbstractValidatorTest {
 
     @Override
-protected String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/multiple-content.yml";
     }
 
@@ -42,20 +41,27 @@ protected String getOpenAPIFileName() {
                     "name": "Alice"
                 }
                 """));
-        System.out.println("errors = " + errors);
-        assertEquals(0,errors.size());
+        assertEquals(0, errors.size());
     }
 
     @Test
     public void returnXML() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/foo"), Response.statusCode(200).mediaType(APPLICATION_JSON).body("""
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/foo"), Response.statusCode(200).mediaType(APPLICATION_XML).body("""
+                <name>Alice</name>
+                """));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    public void returnAny() throws ParseException {
+
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/foo"), Response.statusCode(200).mediaType("*/*").body("""
                 {
                     "name": "Alice"
                 }
                 """));
-        System.out.println("errors = " + errors);
-        assertEquals(0,errors.size());
+        assertEquals(0, errors.size());
     }
 
 
