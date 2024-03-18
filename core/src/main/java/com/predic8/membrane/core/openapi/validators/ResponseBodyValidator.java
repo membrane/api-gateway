@@ -35,6 +35,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
     }
 
     ValidationErrors validateResponseBody(ValidationContext ctx, Response response, Operation operation) {
+        ValidationErrors errors = new ValidationErrors();
 
         if (operation.getResponses() == null)
             throw new RuntimeException("An operation should always have at least one response declared.");
@@ -50,7 +51,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         if (!foundMatchingResponse) {
             if (operation.getResponses().getDefault() != null) {
                 foundMatchingResponse = true;
-                validateBody(ctx, operation.getResponses().getDefault(), response);
+                errors.add(validateBody(ctx, operation.getResponses().getDefault(), response));
             }
         }
 
@@ -91,42 +92,44 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         return foundMatchingResponse.get();
     }
 
-    private void validateBody(ValidationContext ctx, ApiResponse responseSpec, Response response) {
+    private ValidationErrors validateBody(ValidationContext ctx, ApiResponse responseSpec, Response response) {
+        ValidationErrors errors = new ValidationErrors();
         if (responseSpec.getContent() != null) {
-            validateResponseBodyInternal(ctx, response, responseSpec);
+            errors.add(validateResponseBodyInternal(ctx, response, responseSpec));
         } else {
             String ref = responseSpec.get$ref();
             if (ref != null) {
-                validateResponseBodyInternal(ctx, response, api.getComponents().getResponses().get(getComponentLocalNameFromRef(ref)));
+                errors.add(validateResponseBodyInternal(ctx, response, api.getComponents().getResponses().get(getComponentLocalNameFromRef(ref))));
             } else {
                 if (response.hasBody()) {
                     errors.add(ctx.statusCode(500), "Response shouldn't have a body. There is no content described in the API specification.");
                 }
             }
         }
+        return errors;
     }
 
-    private void validateResponseBodyInternal(ValidationContext ctx, Response response, ApiResponse apiResponse) {
-
+    private ValidationErrors validateResponseBodyInternal(ValidationContext ctx, Response response, ApiResponse apiResponse) {
         if (apiResponse.getContent() == null)
-            return;
-
+            return null;
         AtomicBoolean matched;
         ValidationErrors errors = new ValidationErrors();
         apiResponse.getContent().forEach((s, mediaType) -> {
             try {
-                validateMediaType(ctx, s, mediaType, response);
+                errors.add(validateMediaType(ctx, s, mediaType, response));
             } catch (ParseException e) {
                 errors.add(ctx.statusCode(500), format("Validating error. Something is wrong with the mediaType %s", mediaType));
             }
         });
+        return errors;
     }
 
-    private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) throws ParseException {
+    private ValidationErrors validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) throws ParseException {
+        ValidationErrors errors = new ValidationErrors();
 
         if (response.getMediaType() == null) {
             errors.add(ctx.statusCode(500), "The response has a body, but no Content-Type header.");
-            return;
+            return errors;
         }
 
         // Check if the mediaType of the message is the same as the one declared for that status code
@@ -135,8 +138,9 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
             errors.add(ctx.statusCode(500).entityType(MEDIA_TYPE)
                             .entity(response.getMediaType().toString()),
                     format("Response with status code %d has mediatype %s instead of the expected type %s.", response.getStatusCode(), response.getMediaType(), mediaType));
-            return;
+            return errors;
         }
-        validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, response, 500);
+        errors.add(validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, response, 500));
+        return errors;
     }
 }

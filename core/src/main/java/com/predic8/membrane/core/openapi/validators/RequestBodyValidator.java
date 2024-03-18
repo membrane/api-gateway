@@ -32,7 +32,7 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request> {
     }
 
     ValidationErrors validateRequestBody(ValidationContext ctx, Operation operation, Request request) {
-
+        ValidationErrors errors = new ValidationErrors();
         if (operation.getRequestBody() == null) {
             if (!request.hasBody())
                 return errors;
@@ -41,11 +41,11 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request> {
         }
 
         if (operation.getRequestBody().getContent() != null) {
-            validateRequestBodyInternal(ctx, request, operation.getRequestBody());
+            errors.add(validateRequestBodyInternal(ctx, request, operation.getRequestBody()));
         } else {
             String ref = operation.getRequestBody().get$ref();
             if (ref != null) {
-                validateRequestBodyInternal(ctx, request, getRequestBodyFromSchema(ref));
+                errors.add(validateRequestBodyInternal(ctx, request, getRequestBodyFromSchema(ref)));
             } else {
                 throw new RuntimeException("Should not happen!");
             }
@@ -58,21 +58,24 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request> {
         return api.getComponents().getRequestBodies().get(Utils.getComponentLocalNameFromRef(ref));
     }
 
-    private void validateRequestBodyInternal(ValidationContext ctx, Request request, RequestBody requestBody) {
-        requestBody.getContent().forEach((s, mediaType) -> validateMediaType(ctx, s, mediaType, request));
+    private ValidationErrors validateRequestBodyInternal(ValidationContext ctx, Request request, RequestBody requestBody) {
+        ValidationErrors errors = new ValidationErrors();
+        requestBody.getContent().forEach((s, mediaType) -> errors.add(validateMediaType(ctx, s, mediaType, request)));
+        return errors;
     }
 
-    private void validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Request request) {
-
+    private ValidationErrors validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Request request) {
+        ValidationErrors errors = new ValidationErrors();
         if (request.getMediaType() == null) {
             errors.add(ctx.statusCode(400),"The request has a body, but no Content-Type header.");
-            return;
+            return errors;
         }
 
         if (!request.isOfMediaType(mediaType)) {
             errors.add(ctx.statusCode(415).entityType(MEDIA_TYPE).entity(request.getMediaType().toString()), format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
-            return;
+            return errors;
         }
-        validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, request, 400);
+        errors.add(validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, request, 400));
+        return errors;
     }
 }
