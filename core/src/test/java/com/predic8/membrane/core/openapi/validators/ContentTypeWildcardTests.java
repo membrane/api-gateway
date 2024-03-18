@@ -83,7 +83,7 @@ protected String getOpenAPIFileName() {
 
     @Test
     void starTypeResponseTest() {
-        responseTest(STAR_JSON, false);
+        responseTest(STAR_JSON, true);
     }
 
     @Test
