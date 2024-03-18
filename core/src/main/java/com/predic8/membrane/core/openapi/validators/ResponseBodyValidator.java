@@ -112,16 +112,26 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
     private ValidationErrors validateResponseBodyInternal(ValidationContext ctx, Response response, ApiResponse apiResponse) {
         if (apiResponse.getContent() == null)
             return null;
-        AtomicBoolean matched;
+        AtomicBoolean matched = new AtomicBoolean(false); // Initialize the flag
         ValidationErrors errors = new ValidationErrors();
+
         apiResponse.getContent().forEach((s, mediaType) -> {
             try {
-                errors.add(validateMediaType(ctx, s, mediaType, response));
+                ValidationErrors err = validateMediaType(ctx, s, mediaType, response);
+                if (err.isEmpty()) {
+                    matched.set(true); // Set the flag if there's a successful match
+                } else {
+                    errors.add(err);
+                }
             } catch (ParseException e) {
                 errors.add(ctx.statusCode(500), format("Validating error. Something is wrong with the mediaType %s", mediaType));
             }
         });
-        return errors;
+        if (matched.get()) {
+            return null; // Return null if at least one mediaType matches
+        } else {
+            return errors; // Return all errors if no mediaType matches
+        }
     }
 
     private ValidationErrors validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) throws ParseException {
