@@ -45,6 +45,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     private final List<ApiKeyExtractor> extractors = new ArrayList<>();
     private boolean required = true;
 
+    public ApiKeysInterceptor() {name = "Api Key";}
+
     @Override
     public void init() {
         stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());

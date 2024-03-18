@@ -42,10 +42,6 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     private boolean initialized = false;
 
-    public ApiDocsInterceptor() {
-        name = "Api Docs";
-    }
-
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         if(!initialized) {
@@ -93,5 +89,42 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                 .filter(ic -> ic instanceof OpenAPIInterceptor)
                 .map(ic -> (OpenAPIInterceptor) ic) // Previous line checks type, so cast should be fine
                 .findFirst();
+    }
+
+    @Override
+    public String getDisplayName() {
+        return "Api Docs";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Displays all deployed APIs";
+    }
+
+    @Override
+    public String getLongDescription() {
+        ruleApiSpecs = initializeRuleApiSpecs();
+        initialized = true;
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<table>");
+        sb.append("<thead><th>API</th><th>OpenAPI Version</th></thead>");
+
+        // Iterate over each key in ruleApiSpecs
+        for (String ruleKey : ruleApiSpecs.keySet()) {
+            OpenAPIRecord apiSpec = ruleApiSpecs.get(ruleKey);
+            sb.append("<tr>");
+            sb.append("<td>");
+            sb.append(ruleKey); // Assuming the rule key is the API name
+            sb.append("</td>");
+            sb.append("<td>");
+            sb.append(apiSpec.version);
+            sb.append("</td>");
+            sb.append("</tr>");
+        }
+
+        sb.append("</table>");
+
+        return sb.toString();
     }
 }
