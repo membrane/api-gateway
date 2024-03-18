@@ -249,8 +249,6 @@ public class JsonProtectionInterceptorTest {
 
             assertEquals(expectOut, jpiDev.handleRequest(e));
             JsonNode jn = om.readTree(e.getResponse().getBodyAsStringDecoded());
-
-            System.out.println("jn.get(\"details\").get(\"message\").asText() = " + jn.get("details").get("message").asText());
             
             assertTrue(jn.get("details").get("message").asText().contains(parameters[2].toString()));
             assertEquals("JSON Protection Violation", jn.get("title").asText());
