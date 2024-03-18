@@ -61,7 +61,7 @@ public class TutorialRestStepsTest extends AbstractSampleMembraneStartStopTestca
 
     @Test
     public void step1() {
-        get("http://localhost:2001/shop/products/")
+        get("http://localhost:2001/shop/v2/products/")
                 .then()
                 .assertThat()
                     .contentType(APPLICATION_JSON)
@@ -75,7 +75,7 @@ public class TutorialRestStepsTest extends AbstractSampleMembraneStartStopTestca
 
     @Test
     public void step2() {
-        get("http://localhost:2001/shop/products/")
+        get("http://localhost:2001/shop/v2/products/")
                 .then()
                 .assertThat()
                     .contentType(APPLICATION_JSON)
