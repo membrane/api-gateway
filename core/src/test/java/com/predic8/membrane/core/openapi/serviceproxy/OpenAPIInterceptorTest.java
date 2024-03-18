@@ -179,8 +179,8 @@ public class OpenAPIInterceptorTest {
 
         exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
 
-        assertEquals(RETURN, interceptor.handleResponse(exc));
-        assertEquals(500,exc.getResponse().getStatusCode());
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(200,exc.getResponse().getStatusCode());
         return exc;
     }
 

@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.util.Pair;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.*;
@@ -40,11 +41,15 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         if (operation.getResponses() == null)
             throw new RuntimeException("An operation should always have at least one response declared.");
 
-        boolean foundMatchingResponse = findExactMatchingResponseByStatusCodeAndValidate(ctx, operation, response);
+        Pair<Boolean, ValidationErrors> vrr = findExactMatchingResponseByStatusCodeAndValidate(ctx, operation, response);
+        boolean foundMatchingResponse = vrr.first();
+        errors.add(vrr.second());
 
         // Maybe a wildcard like 2XX, 3XX could match
         if (!foundMatchingResponse) {
-            foundMatchingResponse = matchStatuscodeWildcardsAndValidate(ctx, operation, response);
+            Pair<Boolean, ValidationErrors> vr = matchStatuscodeWildcardsAndValidate(ctx, operation, response);
+            foundMatchingResponse = vr.first();
+            errors.add(vr.second());
         }
 
         // Maybe there is a default-Response
@@ -63,8 +68,9 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         return errors;
     }
 
-    private boolean matchStatuscodeWildcardsAndValidate(ValidationContext ctx, Operation operation, Response response) {
+    private Pair<Boolean, ValidationErrors> matchStatuscodeWildcardsAndValidate(ValidationContext ctx, Operation operation, Response response) {
         AtomicBoolean foundMatchingResponse = new AtomicBoolean();
+        ValidationErrors errors = new ValidationErrors();
         operation.getResponses().forEach((statusCode, responseSpec) -> {
 
             // No wildcard like 2XX
@@ -75,21 +81,22 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
                 return;
 
             foundMatchingResponse.set(true);
-            validateBody(ctx, responseSpec, response);
+            errors.add(validateBody(ctx, responseSpec, response));
         });
-        return foundMatchingResponse.get();
+        return new Pair<>(foundMatchingResponse.get(), errors);
     }
 
-    private boolean findExactMatchingResponseByStatusCodeAndValidate(ValidationContext ctx, Operation operation, Response response) {
+    private Pair<Boolean, ValidationErrors> findExactMatchingResponseByStatusCodeAndValidate(ValidationContext ctx, Operation operation, Response response) {
         AtomicBoolean foundMatchingResponse = new AtomicBoolean();
+        ValidationErrors errors = new ValidationErrors();
         operation.getResponses().forEach((statusCode, responseSpec) -> {
             if (!response.sameStatusCode(statusCode))
                 return;
 
             foundMatchingResponse.set(true);
-            validateBody(ctx, responseSpec, response);
+            errors.add(validateBody(ctx, responseSpec, response));
         });
-        return foundMatchingResponse.get();
+        return new Pair<>(foundMatchingResponse.get(), errors);
     }
 
     private ValidationErrors validateBody(ValidationContext ctx, ApiResponse responseSpec, Response response) {
@@ -118,6 +125,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         apiResponse.getContent().forEach((s, mediaType) -> {
             try {
                 ValidationErrors err = validateMediaType(ctx, s, mediaType, response);
+                System.out.println(err);
                 if (err.isEmpty()) {
                     matched.set(true); // Set the flag if there's a successful match
                 } else {
