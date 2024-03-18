@@ -111,6 +111,8 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         if (apiResponse.getContent() == null)
             return;
 
+        AtomicBoolean matched;
+        ValidationErrors errors = new ValidationErrors();
         apiResponse.getContent().forEach((s, mediaType) -> {
             try {
                 validateMediaType(ctx, s, mediaType, response);

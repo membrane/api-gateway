@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 public class AbstractBodyValidator<T> {
 
     protected OpenAPI api;
-    protected ValidationErrors errors = new ValidationErrors();
+    //protected ValidationErrors errors = new ValidationErrors();
 
     public AbstractBodyValidator(OpenAPI api) {
         this.api = api;

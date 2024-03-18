@@ -1,0 +1,52 @@
+openapi: '3.0.2'
+info:
+  title: API Title
+  version: '1.0'
+  description: |
+    From specification: https://spec.openapis.org/oas/v3.1.0#request-body-examples
+servers:
+  - url: https://api.server.test
+paths:
+  /foo:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserA'
+              examples:
+                user:
+                  summary: User Example
+                  externalValue: 'https://foo.bar/examples/user-example.json'
+            'application/xml':
+              schema:
+                $ref: '#/components/schemas/UserB'
+              examples:
+                user:
+                  summary: User example in XML
+                  externalValue: 'https://foo.bar/examples/user-example.xml'
+            'text/plain':
+              examples:
+                user:
+                  summary: User example in Plain text
+                  externalValue: 'https://foo.bar/examples/user-example.txt'
+            '*/*':
+              examples:
+                user:
+                  summary: User example in other format
+                  externalValue: 'https://foo.bar/examples/user-example.whatever'
+
+components:
+  schemas:
+    UserA:
+      type: object
+      properties:
+        name:
+          type: string
+    UserB:
+      type: object
+      properties:
+        lastname:
+          type: string
