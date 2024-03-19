@@ -22,15 +22,19 @@ import io.swagger.v3.oas.models.media.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 
-public class AbstractBodyValidator<T> {
+public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>> {
 
     protected OpenAPI api;
+
+    public abstract int getDefaultStatusCode();
+
+    public abstract String getNessageName();
 
     public AbstractBodyValidator(OpenAPI api) {
         this.api = api;
     }
 
-    protected ValidationErrors validateBodyAccordingToMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Message<T> message, int statusCode) {
+    protected ValidationErrors validateBodyAccordingToMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, T message, int statusCode) {
         ValidationErrors errors = new ValidationErrors();
 
         // Use the value of the OpenAPI spec for comparison, so it can not
@@ -48,4 +52,17 @@ public class AbstractBodyValidator<T> {
         // Other types that can't be validated against OpenAPI are Ok.
         return errors;
     }
+
+    protected ValidationErrors validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, T message)  {
+        ValidationErrors errors = new ValidationErrors();
+        if (message.getMediaType() == null) {
+            errors.add(ctx.statusCode(getDefaultStatusCode()), getNessageName() + " has a body, but no Content-Type header.");
+            return errors;
+        }
+
+        return errors.add(validateMediaTypeForMessageType(ctx,mediaType,mediaTypeObj,message));
+    }
+
+    protected abstract ValidationErrors validateMediaTypeForMessageType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, T response);
+
 }

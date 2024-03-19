@@ -36,7 +36,7 @@ public class MultipleContentTest extends AbstractValidatorTest {
     @Test
     public void returnJSON() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/foo"), Response.statusCode(200).mediaType(APPLICATION_JSON).body("""
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType(APPLICATION_JSON).body("""
                 {
                     "name": "Alice"
                 }
@@ -47,7 +47,7 @@ public class MultipleContentTest extends AbstractValidatorTest {
     @Test
     public void returnXML() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/foo"), Response.statusCode(200).mediaType(APPLICATION_XML).body("""
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType(APPLICATION_XML).body("""
                 <name>Alice</name>
                 """));
         assertEquals(0, errors.size());
@@ -56,11 +56,31 @@ public class MultipleContentTest extends AbstractValidatorTest {
     @Test
     public void returnAny() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/foo"), Response.statusCode(200).mediaType("*/*").body("""
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType("*/*").body("""
                 {
                     "name": "Alice"
                 }
                 """));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    public void wildcardTest() throws ParseException {
+        assertEquals(0, validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType("foo/baz").body("""
+                {
+                    "name": "Alice"
+                }
+                """)).size());
+    }
+
+    @Test
+    public void mediaTypeNotDefined() throws ParseException {
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/no-wildcard"), Response.statusCode(200).mediaType("foo/baz").body("""
+                {
+                    "name": "Alice"
+                }
+                """));
+        System.out.println("errors = " + errors);
         assertEquals(0, errors.size());
     }
 

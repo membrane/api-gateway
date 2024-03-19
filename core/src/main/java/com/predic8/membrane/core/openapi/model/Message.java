@@ -25,9 +25,7 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_CONTENT_TYPE;
 
-public abstract class Message<T> {
-
-    private static final Logger log = LoggerFactory.getLogger(Message.class.getName());
+public abstract class Message<T extends Body, S extends Message<T,S>> {
 
     protected Body body = new NoBody();
     protected ContentType mediaType;
@@ -52,37 +50,51 @@ public abstract class Message<T> {
         return body;
     }
 
-    @SuppressWarnings("unchecked")
-    public T body(Body body) {
+
+    public S body(Body body) {
         this.body = body;
         if (body instanceof JsonBody)
             this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
-        return (T) this;
+
+        //noinspection unchecked
+        return (S)this;
     }
 
-    @SuppressWarnings("unchecked")
-    public T body(InputStream inputStream) {
+
+    public S body(InputStream inputStream) {
         this.body = new InputStreamBody(inputStream);
-        return (T) this;
+
+        //noinspection unchecked
+        return (S)this;
     }
 
-    @SuppressWarnings("unchecked")
-    public T body(String s) {
+    public S body(String s) {
         this.body = new StringBody(s);
-        return (T) this;
+
+        //noinspection unchecked
+        return (S)this;
     }
 
-    @SuppressWarnings("unchecked")
-    public T body(JsonNode n) {
+    public S body(JsonNode n) {
         this.body = new JsonBody(n);
         this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
-        return (T) this;
+
+        //noinspection unchecked
+        return (S)this;
     }
 
-    @SuppressWarnings("unchecked")
-    public T mediaType(String mediaType) throws ParseException {
+    public S mediaType(String mediaType) throws ParseException {
         this.mediaType = new ContentType(mediaType);
-        return (T) this;
+
+        //noinspection unchecked
+        return (S)this;
+    }
+
+    public S json() {
+        this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
+
+        //noinspection unchecked
+        return (S)this;
     }
 
     public boolean isOfMediaType(String mediaType) {
@@ -101,11 +113,7 @@ public abstract class Message<T> {
         return !(body instanceof NoBody);
     }
 
-    @SuppressWarnings("unchecked")
-    public T json() {
-        this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
-        return (T) this;
-    }
+
 
     public ContentType getMediaType() {
         return mediaType;

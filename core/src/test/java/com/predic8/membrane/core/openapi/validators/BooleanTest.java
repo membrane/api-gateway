@@ -34,7 +34,7 @@ protected String getOpenAPIFileName() {
 
     @Test
     public void validInBody() {
-        ValidationErrors errors = validator.validate(Request.post().path("/boolean").json().body(new JsonBody(getBoolean("good",true))));
+        ValidationErrors errors = validator.validate(Request.<JsonBody>post().path("/boolean").json().body(new JsonBody(getBoolean("good",true))));
         assertEquals(0,errors.size());
     }
 

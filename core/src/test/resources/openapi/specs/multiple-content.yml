@@ -7,7 +7,7 @@ info:
 servers:
   - url: https://api.server.test
 paths:
-  /foo:
+  /with-wildcard:
     get:
       responses:
         '200':
@@ -16,27 +16,29 @@ paths:
             'application/json':
               schema:
                 $ref: '#/components/schemas/UserA'
-              examples:
-                user:
-                  summary: User Example
-                  externalValue: 'https://foo.bar/examples/user-example.json'
             'application/xml':
               schema:
                 $ref: '#/components/schemas/UserB'
-              examples:
-                user:
-                  summary: User example in XML
-                  externalValue: 'https://foo.bar/examples/user-example.xml'
             'text/plain':
-              examples:
-                user:
-                  summary: User example in Plain text
-                  externalValue: 'https://foo.bar/examples/user-example.txt'
+              schema:
+                type: string
+                format: byte
             '*/*':
-              examples:
-                user:
-                  summary: User example in other format
-                  externalValue: 'https://foo.bar/examples/user-example.whatever'
+              schema:
+                type: string
+                format: byte
+  /no-wildcard:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserA'
+            'application/xml':
+              schema:
+                $ref: '#/components/schemas/UserB'
 
 components:
   schemas:

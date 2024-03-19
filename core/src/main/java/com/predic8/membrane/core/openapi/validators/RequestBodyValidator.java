@@ -25,13 +25,23 @@ import io.swagger.v3.oas.models.parameters.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static java.lang.String.*;
 
-public class RequestBodyValidator extends AbstractBodyValidator<Request> {
+public class RequestBodyValidator extends AbstractBodyValidator<Request<? extends Body>> {
+
+    @Override
+    public int getDefaultStatusCode() {
+        return 400;
+    }
+
+    @Override
+    public String getNessageName() {
+        return "Request";
+    }
 
     public RequestBodyValidator(OpenAPI api) {
         super(api);
     }
 
-    ValidationErrors validateRequestBody(ValidationContext ctx, Operation operation, Request request) {
+    ValidationErrors validateRequestBody(ValidationContext ctx, Operation operation, Request<?> request) {
         ValidationErrors errors = new ValidationErrors();
         if (operation.getRequestBody() == null) {
             if (!request.hasBody())
@@ -58,19 +68,14 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request> {
         return api.getComponents().getRequestBodies().get(Utils.getComponentLocalNameFromRef(ref));
     }
 
-    private ValidationErrors validateRequestBodyInternal(ValidationContext ctx, Request request, RequestBody requestBody) {
+    private ValidationErrors validateRequestBodyInternal(ValidationContext ctx, Request<?> request, RequestBody requestBody) {
         ValidationErrors errors = new ValidationErrors();
         requestBody.getContent().forEach((s, mediaType) -> errors.add(validateMediaType(ctx, s, mediaType, request)));
         return errors;
     }
 
-    private ValidationErrors validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Request request) {
+    protected ValidationErrors validateMediaTypeForMessageType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Request<?> request) {
         ValidationErrors errors = new ValidationErrors();
-        if (request.getMediaType() == null) {
-            errors.add(ctx.statusCode(400),"The request has a body, but no Content-Type header.");
-            return errors;
-        }
-
         if (!request.isOfMediaType(mediaType)) {
             errors.add(ctx.statusCode(415).entityType(MEDIA_TYPE).entity(request.getMediaType().toString()), format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
             return errors;

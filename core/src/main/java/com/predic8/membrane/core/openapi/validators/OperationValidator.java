@@ -36,7 +36,7 @@ public class OperationValidator {
         this.api = api;
     }
 
-    public ValidationErrors validateOperation(ValidationContext ctx, Request req, Response response, PathItem pathItem) throws MethodNotAllowException {
+    public ValidationErrors validateOperation(ValidationContext ctx, Request<?> req, Response<?> response, PathItem pathItem) throws MethodNotAllowException {
 
         Operation operation = getOperation(req.getMethod(), pathItem);
         if (operation == null)
@@ -75,7 +75,7 @@ public class OperationValidator {
         }
     }
 
-    private void validatePathParameters(ValidationContext ctx, Request req, List<Parameter> schemaParameters) {
+    private void validatePathParameters(ValidationContext ctx, Request<?> req, List<Parameter> schemaParameters) {
 
         if (schemaParameters == null || req.getPathParameters().isEmpty())
             return;

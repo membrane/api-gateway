@@ -17,11 +17,10 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.util.Pair;
+import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.*;
-import jakarta.mail.internet.*;
 
 import java.util.concurrent.atomic.*;
 
@@ -29,13 +28,26 @@ import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static java.lang.String.*;
 
-public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
+public class ResponseBodyValidator extends AbstractBodyValidator<Response<?>> {
+
+
+    @Override
+    public int getDefaultStatusCode() {
+        return 500;
+    }
+
+    @Override
+    public String getNessageName() {
+        return "Response";
+    }
 
     public ResponseBodyValidator(OpenAPI api) {
         super(api);
     }
 
-    ValidationErrors validateResponseBody(ValidationContext ctx, Response response, Operation operation) {
+
+
+    ValidationErrors validateResponseBody(ValidationContext ctx, Response<?> response, Operation operation) {
         ValidationErrors errors = new ValidationErrors();
 
         if (operation.getResponses() == null)
@@ -68,7 +80,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         return errors;
     }
 
-    private Pair<Boolean, ValidationErrors> matchStatuscodeWildcardsAndValidate(ValidationContext ctx, Operation operation, Response response) {
+    private Pair<Boolean, ValidationErrors> matchStatuscodeWildcardsAndValidate(ValidationContext ctx, Operation operation, Response<?> response) {
         AtomicBoolean foundMatchingResponse = new AtomicBoolean();
         ValidationErrors errors = new ValidationErrors();
         operation.getResponses().forEach((statusCode, responseSpec) -> {
@@ -86,7 +98,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         return new Pair<>(foundMatchingResponse.get(), errors);
     }
 
-    private Pair<Boolean, ValidationErrors> findExactMatchingResponseByStatusCodeAndValidate(ValidationContext ctx, Operation operation, Response response) {
+    private Pair<Boolean, ValidationErrors> findExactMatchingResponseByStatusCodeAndValidate(ValidationContext ctx, Operation operation, Response<?> response) {
         AtomicBoolean foundMatchingResponse = new AtomicBoolean();
         ValidationErrors errors = new ValidationErrors();
         operation.getResponses().forEach((statusCode, responseSpec) -> {
@@ -99,7 +111,7 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         return new Pair<>(foundMatchingResponse.get(), errors);
     }
 
-    private ValidationErrors validateBody(ValidationContext ctx, ApiResponse responseSpec, Response response) {
+    private ValidationErrors validateBody(ValidationContext ctx, ApiResponse responseSpec, Response<?> response) {
         ValidationErrors errors = new ValidationErrors();
         if (responseSpec.getContent() != null) {
             errors.add(validateResponseBodyInternal(ctx, response, responseSpec));
@@ -116,24 +128,23 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         return errors;
     }
 
-    private ValidationErrors validateResponseBodyInternal(ValidationContext ctx, Response response, ApiResponse apiResponse) {
+    private ValidationErrors validateResponseBodyInternal(ValidationContext ctx, Response<?> response, ApiResponse apiResponse) {
         if (apiResponse.getContent() == null)
             return null;
         AtomicBoolean matched = new AtomicBoolean(false); // Initialize the flag
         ValidationErrors errors = new ValidationErrors();
 
         apiResponse.getContent().forEach((s, mediaType) -> {
-            try {
+//            try {
                 ValidationErrors err = validateMediaType(ctx, s, mediaType, response);
-                System.out.println(err);
                 if (err.isEmpty()) {
                     matched.set(true); // Set the flag if there's a successful match
                 } else {
                     errors.add(err);
                 }
-            } catch (ParseException e) {
-                errors.add(ctx.statusCode(500), format("Validating error. Something is wrong with the mediaType %s", mediaType));
-            }
+//            } catch (ParseException e) {
+//                errors.add(ctx.statusCode(500), format("Validating error. Something is wrong with the mediaType %s", mediaType));
+//            }
         });
         if (matched.get()) {
             return null; // Return null if at least one mediaType matches
@@ -142,14 +153,9 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response> {
         }
     }
 
-    private ValidationErrors validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response response) throws ParseException {
+    @Override
+    protected ValidationErrors validateMediaTypeForMessageType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Response<?> response) {
         ValidationErrors errors = new ValidationErrors();
-
-        if (response.getMediaType() == null) {
-            errors.add(ctx.statusCode(500), "The response has a body, but no Content-Type header.");
-            return errors;
-        }
-
         // Check if the mediaType of the message is the same as the one declared for that status code
         // in the OpenAPI document.
         if (!response.isOfMediaType(mediaType)) {

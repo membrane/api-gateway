@@ -46,7 +46,7 @@ public class SecurityValidator {
         this.api = api;
     }
 
-    public ValidationErrors validateSecurity(ValidationContext ctx, Request request, Operation operation) {
+    public ValidationErrors validateSecurity(ValidationContext ctx, Request<?> request, Operation operation) {
 
         ctx = ctx.statusCode(403); // Forbidden
 
@@ -55,14 +55,14 @@ public class SecurityValidator {
         return errors;
     }
 
-    private ValidationErrors checkGlobalSecurity(ValidationContext ctx, Request request) {
+    private ValidationErrors checkGlobalSecurity(ValidationContext ctx, Request<?> request) {
         if (api.getSecurity() == null)
             return new ValidationErrors();
 
         return validateDisjunctiveSecurityRequirement(ctx, api.getSecurity(), request);
     }
 
-    private ValidationErrors checkOperationSecurity(ValidationContext ctx, Operation operation, Request request) {
+    private ValidationErrors checkOperationSecurity(ValidationContext ctx, Operation operation, Request<?> request) {
         if (operation.getSecurity() == null)
             return new ValidationErrors();
 
@@ -84,7 +84,7 @@ public class SecurityValidator {
      * - c
      * must be valid.
      */
-    private ValidationErrors validateDisjunctiveSecurityRequirement(ValidationContext ctx, List<SecurityRequirement> requirements, Request request) {
+    private ValidationErrors validateDisjunctiveSecurityRequirement(ValidationContext ctx, List<SecurityRequirement> requirements, Request<?> request) {
 
         ValidationErrors errors = new ValidationErrors();
 
@@ -103,13 +103,13 @@ public class SecurityValidator {
         return errors;
     }
 
-    private ValidationErrors checkSecurityRequirements(ValidationContext ctx, SecurityRequirement requirement, Request request) {
+    private ValidationErrors checkSecurityRequirements(ValidationContext ctx, SecurityRequirement requirement, Request<?> request) {
         return requirement.keySet().stream() // Names of SecurityRequirements
                 .map(requirementName -> checkSingleRequirement(ctx, requirement, request, requirementName))
                 .reduce(new ValidationErrors(), ValidationErrors::add);
     }
 
-    private ValidationErrors checkSingleRequirement(ValidationContext ctx, SecurityRequirement requirement, Request request, String schemeName) {
+    private ValidationErrors checkSingleRequirement(ValidationContext ctx, SecurityRequirement requirement, Request<?> request, String schemeName) {
         log.debug("Checking mechanism: " + schemeName);
 
         ValidationErrors errors = new ValidationErrors();
@@ -145,7 +145,7 @@ public class SecurityValidator {
         return errors;
     }
 
-    private ValidationErrors checkScopes(ValidationContext ctx, SecurityRequirement requirement, Request request, String schemeName) {
+    private ValidationErrors checkScopes(ValidationContext ctx, SecurityRequirement requirement, Request<?> request, String schemeName) {
         ValidationErrors errors = new ValidationErrors();
         for (String scope : requirement.get(schemeName)) {
             log.debug("Checking scope: " + scope);
@@ -171,7 +171,7 @@ public class SecurityValidator {
         return errors;
     }
 
-    private static ValidationErrors checkHttp(ValidationContext ctx, Request request, SecurityScheme schemeDefinition) {
+    private static ValidationErrors checkHttp(ValidationContext ctx, Request<?> request, SecurityScheme schemeDefinition) {
 
         ValidationErrors errors = new ValidationErrors();
 
@@ -224,7 +224,7 @@ public class SecurityValidator {
         return errors;
     }
 
-    private ValidationErrors checkApiKey(ValidationContext ctx, Request request, SecurityScheme securityScheme) {
+    private ValidationErrors checkApiKey(ValidationContext ctx, Request<?> request, SecurityScheme securityScheme) {
 
         ValidationErrors errors = new ValidationErrors();
 
@@ -255,7 +255,7 @@ public class SecurityValidator {
         return errors;
     }
 
-    public Stream<com.predic8.membrane.core.security.SecurityScheme> getSecuritySchemes(Request request, Class<? extends com.predic8.membrane.core.security.SecurityScheme> clazz) {
+    public Stream<com.predic8.membrane.core.security.SecurityScheme> getSecuritySchemes(Request<?> request, Class<? extends com.predic8.membrane.core.security.SecurityScheme> clazz) {
         if (request.getSecuritySchemes() == null)
             return Stream.empty();
 
