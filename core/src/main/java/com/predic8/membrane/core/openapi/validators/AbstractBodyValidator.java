@@ -21,6 +21,10 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.MEDIA_TYPE;
+import static com.predic8.membrane.core.util.MediaTypeUtil.getMostSpecificMediaType;
+import static java.lang.String.format;
 
 public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>> {
 
@@ -28,13 +32,13 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
 
     public abstract int getDefaultStatusCode();
 
-    public abstract String getNessageName();
+    public abstract String getMessageName();
 
     public AbstractBodyValidator(OpenAPI api) {
         this.api = api;
     }
 
-    protected ValidationErrors validateBodyAccordingToMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, T message, int statusCode) {
+    protected ValidationErrors validateBodyAccordingToMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Message<?,?> message) {
         ValidationErrors errors = new ValidationErrors();
 
         // Use the value of the OpenAPI spec for comparison, so it can not
@@ -43,26 +47,63 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
             if (mediaTypeObj.getSchema().get$ref() != null) {
                 ctx.schemaType(mediaTypeObj.getSchema().get$ref());
             }
-            errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx.statusCode(statusCode), message.getBody()));
+            errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
         } else if(isXML(mediaType)) {
-            errors.add(ctx.statusCode(statusCode),"Validation of XML messages is not implemented yet!");
+            errors.add(ctx,"Validation of XML messages is not implemented yet!");
         } else if(isWWWFormUrlEncoded(mediaType)) {
-            errors.add(ctx.statusCode(statusCode),"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
+            errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
         }
         // Other types that can't be validated against OpenAPI are Ok.
         return errors;
     }
 
-    protected ValidationErrors validateMediaType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, T message)  {
+    protected ValidationErrors validateContentTypeHeader(ValidationContext ctx, Message<?,?> message)  {
         ValidationErrors errors = new ValidationErrors();
         if (message.getMediaType() == null) {
-            errors.add(ctx.statusCode(getDefaultStatusCode()), getNessageName() + " has a body, but no Content-Type header.");
+            errors.add(ctx.statusCode(getDefaultStatusCode()), getMessageName() + " has a body, but no Content-Type header.");
             return errors;
         }
-
-        return errors.add(validateMediaTypeForMessageType(ctx,mediaType,mediaTypeObj,message));
+        if (message.getMediaType().getBaseType().equals("*") || message.getMediaType().getSubType().equals("*")) {
+            errors.add(ctx.statusCode(getDefaultStatusCode()), "Content-Type %s is not concrete.".formatted(message.getMediaType()));
+        }
+        return errors;
     }
 
-    protected abstract ValidationErrors validateMediaTypeForMessageType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, T response);
+    protected ValidationErrors validateMediaTypeForMessageType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Message<?,?> response) {
+        ValidationErrors errors = new ValidationErrors();
+        // Check if the mediaType of the message is the same as the one declared for that status code
+        // in the OpenAPI document.
+        if (!response.isOfMediaType(mediaType)) {
+            errors.add(ctx.entityType(MEDIA_TYPE)
+                            .entity(response.getMediaType().toString()),
+                    format("Message has media type %s instead of the expected type %s.", response.getMediaType(), mediaType));
+            return errors;
+        }
+        errors.add(validateBodyAccordingToMediaType(ctx.statusCode(getDefaultStatusCode()), mediaType, mediaTypeObj, response));
+        return errors;
+    }
+
+    protected ValidationErrors validateBodyInternal(ValidationContext ctx, Message<?,?> msg, Content content) {
+        if (content == null)
+            return null;
+
+        ValidationErrors errors = validateContentTypeHeader(ctx.entityType(BODY), msg);
+        if (!errors.isEmpty())
+            return errors;
+
+        String mostSpecificMediaType;
+        try {
+            mostSpecificMediaType = getMostSpecificMediaType(msg.getMediaType().toString(), content.keySet()).orElseThrow();
+        } catch (Exception e) {
+            return ValidationErrors.create(ctx.statusCode(getStatusCodeForWrongMediaType()).entityType(MEDIA_TYPE).entity(msg.getMediaType().toString()),  "The media type(Content-Type header) of the %s does not match any of %s.".formatted(getMessageName(), content.keySet()));
+        }
+
+        return validateMediaTypeForMessageType(ctx.statusCode(getStatusCodeForWrongMediaType()), mostSpecificMediaType, content.get(mostSpecificMediaType), msg);
+    }
+
+    /**
+     * If the media type is not supported the status code should be different for requests and responses
+     */
+    protected abstract int getStatusCodeForWrongMediaType();
 
 }

@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MultipleContentTest extends AbstractValidatorTest {
 
@@ -34,7 +35,18 @@ public class MultipleContentTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void returnJSON() throws ParseException {
+    public void sendJSONRequest() throws ParseException {
+
+        ValidationErrors errors = validator.validate(Request.put().path("/with-wildcard").mediaType(APPLICATION_JSON).body("""
+                {
+                    "name": "Alice"
+                }
+                """));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    public void returnJSONResponse() throws ParseException {
 
         ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType(APPLICATION_JSON).body("""
                 {
@@ -45,27 +57,53 @@ public class MultipleContentTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void returnXML() throws ParseException {
+    public void sendXMLRequest() throws ParseException {
+        ValidationErrors errors = validator.validate(Request.put().path("/with-wildcard").mediaType(APPLICATION_XML).body("""
+                <name>Alice</name>
+                """));
+        assertEquals(1, errors.size());
+        ValidationError error = errors.get(0);
+        assertEquals(400, error.getContext().getStatusCode());
+        assertTrue(error.getMessage().contains("not implemented"));
+    }
+
+    @Test
+    public void returnXMLResponse() throws ParseException {
 
         ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType(APPLICATION_XML).body("""
                 <name>Alice</name>
                 """));
-        assertEquals(0, errors.size());
+        assertEquals(1, errors.size());
+        ValidationError error = errors.get(0);
+        assertEquals(500, error.getContext().getStatusCode());
+        assertTrue(error.getMessage().contains("not implemented"));
+    }
+
+    @Test
+    public void sendAnyRequest() throws ParseException {
+        ValidationErrors errors = validator.validate(Request.put().path("/with-wildcard").mediaType("*/*").body("{}"));
+        assertEquals(1, errors.size());
+        ValidationError error = errors.get(0);
+        assertEquals(400, error.getContext().getStatusCode());
+        assertTrue(error.getMessage().contains("not concrete"));
     }
 
     @Test
     public void returnAny() throws ParseException {
-
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType("*/*").body("""
-                {
-                    "name": "Alice"
-                }
-                """));
-        assertEquals(0, errors.size());
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType("*/*").body("{}"));
+        assertEquals(1, errors.size());
+        ValidationError error = errors.get(0);
+        assertEquals(500, error.getContext().getStatusCode());
+        assertTrue(error.getMessage().contains("not concrete"));
     }
 
     @Test
-    public void wildcardTest() throws ParseException {
+    public void wildcardTestRequest() throws ParseException {
+        assertEquals(0, validator.validate(Request.put().path("/with-wildcard").mediaType("foo/baz").body("{}")).size());
+    }
+
+    @Test
+    public void wildcardTestResponse() throws ParseException {
         assertEquals(0, validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType("foo/baz").body("""
                 {
                     "name": "Alice"
@@ -74,15 +112,22 @@ public class MultipleContentTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void mediaTypeNotDefined() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/no-wildcard"), Response.statusCode(200).mediaType("foo/baz").body("""
-                {
-                    "name": "Alice"
-                }
-                """));
-        System.out.println("errors = " + errors);
-        assertEquals(0, errors.size());
+    public void mediaTypeNotDefinedRequest() throws ParseException {
+        ValidationErrors errors = validator.validate(Request.put().path("/no-wildcard").mediaType("foo/baz").body("Bar"));
+        assertEquals(1, errors.size());
+        ValidationError error = errors.get(0);
+        assertTrue(error.getMessage().contains("Content-Type"));
+        assertTrue(error.getMessage().contains("does not"));
+        assertTrue(error.getMessage().contains("[application/json, application/xml]"));
     }
 
-
+    @Test
+    public void mediaTypeNotDefinedResponse() throws ParseException {
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/no-wildcard"), Response.statusCode(200).mediaType("foo/baz").body("Bar"));
+        assertEquals(1, errors.size());
+        ValidationError error = errors.get(0);
+        assertTrue(error.getMessage().contains("Content-Type"));
+        assertTrue(error.getMessage().contains("does not"));
+        assertTrue(error.getMessage().contains("[application/json, application/xml]"));
+    }
 }

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RequestsTest extends AbstractValidatorTest {
 
     @Override
-protected String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/customers.yml";
     }
 
@@ -40,7 +40,7 @@ protected String getOpenAPIFileName() {
         assertEquals(MEDIA_TYPE,ctx.getValidatedEntityType());
         assertEquals("text/plain",ctx.getValidatedEntity());
         assertEquals(415,ctx.getStatusCode());
-        assertTrue(errors.get(0).getMessage().toLowerCase().contains("mediatype"));
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("media type"));
         assertEquals("REQUEST/HEADER/Content-Type", ctx.getLocationForRequest());
     }
 
@@ -52,6 +52,7 @@ protected String getOpenAPIFileName() {
 
         ValidationErrors errors = validator.validate(Request.get().path("/customers").json().body(getResourceAsStream("/openapi/messages/customer.json")));
         assertEquals(1,errors.size());
+        System.out.println("errors = " + errors);
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());
         assertEquals("REQUEST",e.getContext().getValidatedEntity());

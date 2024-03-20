@@ -18,12 +18,11 @@ package com.predic8.membrane.core.openapi.model;
 
 import com.fasterxml.jackson.databind.*;
 import jakarta.mail.internet.*;
-import org.slf4j.*;
 
 import java.io.*;
-import java.util.Map;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.*;
 
 public abstract class Message<T extends Body, S extends Message<T,S>> {
 

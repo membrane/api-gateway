@@ -196,7 +196,7 @@ public class SecurityValidator {
         return errors;
     }
 
-    private ValidationErrors checkOAuth2(ValidationContext ctx, Request request, SecurityScheme securityScheme) {
+    private ValidationErrors checkOAuth2(ValidationContext ctx, Request<?> request, SecurityScheme securityScheme) {
 
         ValidationErrors errors = new ValidationErrors();
 

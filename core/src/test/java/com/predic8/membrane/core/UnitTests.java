@@ -162,7 +162,8 @@ import org.junit.platform.suite.api.Suite;
 		ReflectiveMethodHandlerTest.class,
 		BuiltInFunctionsTest.class,
 
-		AccessLogInterceptorTest.class
+		AccessLogInterceptorTest.class,
+		MediaTypeUtilTest.class
 
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})

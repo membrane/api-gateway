@@ -19,11 +19,7 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.*;
-
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static java.lang.String.*;
 
 public class RequestBodyValidator extends AbstractBodyValidator<Request<? extends Body>> {
 
@@ -33,7 +29,7 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request<? extend
     }
 
     @Override
-    public String getNessageName() {
+    public String getMessageName() {
         return "Request";
     }
 
@@ -41,21 +37,26 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request<? extend
         super(api);
     }
 
-    ValidationErrors validateRequestBody(ValidationContext ctx, Operation operation, Request<?> request) {
+    @Override
+    protected int getStatusCodeForWrongMediaType() {
+        return 415;
+    }
+
+    ValidationErrors validate(ValidationContext ctx, Request<?> request, Operation operation) {
         ValidationErrors errors = new ValidationErrors();
         if (operation.getRequestBody() == null) {
             if (!request.hasBody())
                 return errors;
             else
-                return errors.add(ctx.statusCode(400),"Request has a body although it should't.");
+                return errors.add(ctx.statusCode(400),"Request has a body although it shouldn't.");
         }
 
         if (operation.getRequestBody().getContent() != null) {
-            errors.add(validateRequestBodyInternal(ctx, request, operation.getRequestBody()));
+            errors.add(validateBodyInternal(ctx, request, operation.getRequestBody().getContent()));
         } else {
             String ref = operation.getRequestBody().get$ref();
             if (ref != null) {
-                errors.add(validateRequestBodyInternal(ctx, request, getRequestBodyFromSchema(ref)));
+                errors.add(validateBodyInternal(ctx, request, getRequestBodyFromSchema(ref).getContent()));
             } else {
                 throw new RuntimeException("Should not happen!");
             }
@@ -66,21 +67,5 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request<? extend
 
     private RequestBody getRequestBodyFromSchema(String ref) {
         return api.getComponents().getRequestBodies().get(Utils.getComponentLocalNameFromRef(ref));
-    }
-
-    private ValidationErrors validateRequestBodyInternal(ValidationContext ctx, Request<?> request, RequestBody requestBody) {
-        ValidationErrors errors = new ValidationErrors();
-        requestBody.getContent().forEach((s, mediaType) -> errors.add(validateMediaType(ctx, s, mediaType, request)));
-        return errors;
-    }
-
-    protected ValidationErrors validateMediaTypeForMessageType(ValidationContext ctx, String mediaType, MediaType mediaTypeObj, Request<?> request) {
-        ValidationErrors errors = new ValidationErrors();
-        if (!request.isOfMediaType(mediaType)) {
-            errors.add(ctx.statusCode(415).entityType(MEDIA_TYPE).entity(request.getMediaType().toString()), format("Request has mediatype %s instead of the expected type %s.",request.getMediaType(),mediaType));
-            return errors;
-        }
-        errors.add(validateBodyAccordingToMediaType(ctx, mediaType, mediaTypeObj, request, 400));
-        return errors;
     }
 }
