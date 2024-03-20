@@ -17,11 +17,11 @@ package com.predic8.membrane.core.interceptor.xml;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.annot.Required;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -57,6 +57,12 @@ public class XmlPathExtractorInterceptor extends AbstractInterceptor{
     /**
      * @description Defines a xpath and name for exchange property.
      */
+
+    @Override
+    public String getShortDescription() {
+        return "Extracts values from request bodies through XPath and fills them into exchange properties.";
+    }
+
     @Required
     @MCChildElement
     public void setMappings(List<Property> properties) {

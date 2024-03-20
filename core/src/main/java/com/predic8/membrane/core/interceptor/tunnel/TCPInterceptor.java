@@ -13,12 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.tunnel;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.URLUtil;
 
 /**
  * @description Allow HTTP protocol upgrades to the <a
@@ -29,6 +27,15 @@ import com.predic8.membrane.core.util.URLUtil;
  */
 @MCElement(name = "tcp")
 public class TCPInterceptor extends AbstractInterceptor {
+
+	public TCPInterceptor() {
+		name = "TCP Enabler";
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Allows protocol upgrades to plain TCP.";
+	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {

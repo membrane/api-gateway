@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.util.regex.Pattern;
-
 import org.junit.jupiter.api.Test;
+
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,7 +52,7 @@ public class IndexInterceptorTest {
 	 * If fulfillment succeeds, the result has to be matchable by the regex.
 	 */
 	private void check(String regex, boolean allowFulfillmentFailure) {
-		String fulfilled = IndexInterceptor.fullfillRegexp(regex);
+		String fulfilled = IndexInterceptor.fulfillRegexp(regex);
 		if (allowFulfillmentFailure) {
 			if (fulfilled == null)
 				return;

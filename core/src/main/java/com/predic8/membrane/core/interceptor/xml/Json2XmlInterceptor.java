@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.json.XML;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
@@ -38,6 +39,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 @MCElement(name="json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
+
+    @Override
+    public String getShortDescription() {
+        return "Converts JSON message bodies to XML.";
+    }
 
     private static final String ROOT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
