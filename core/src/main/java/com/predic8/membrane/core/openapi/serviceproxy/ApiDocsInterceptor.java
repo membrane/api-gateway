@@ -110,12 +110,11 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         sb.append("<table>");
         sb.append("<thead><th>API</th><th>OpenAPI Version</th></thead>");
 
-        // Iterate over each key in ruleApiSpecs
         for (String ruleKey : ruleApiSpecs.keySet()) {
             OpenAPIRecord apiSpec = ruleApiSpecs.get(ruleKey);
             sb.append("<tr>");
             sb.append("<td>");
-            sb.append(ruleKey); // Assuming the rule key is the API name
+            sb.append(ruleKey);
             sb.append("</td>");
             sb.append("<td>");
             sb.append(apiSpec.version);
