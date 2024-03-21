@@ -34,8 +34,6 @@ import org.junit.platform.suite.api.Suite;
         GettingStartedTest.class,  // See: https://membrane-api.io/getting-started
         HelpLinkExistenceTest.class,
 
-        ExampleTestsWithoutInternet.class,
-
         ACLTest.class,
         BasicAuthTest.class,
         FileExchangeStoreTest.class,

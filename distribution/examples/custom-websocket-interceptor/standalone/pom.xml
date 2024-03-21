@@ -13,7 +13,7 @@
         <dependency>
             <groupId>org.membrane-soa</groupId>
             <artifactId>membrane-service-proxy</artifactId>
-            <version>5.3.3</version>
+            <version>5.3.6-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
