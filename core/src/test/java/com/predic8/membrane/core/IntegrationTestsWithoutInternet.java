@@ -18,6 +18,7 @@ import com.predic8.membrane.core.config.SpringReferencesTest;
 import com.predic8.membrane.core.http.MethodTest;
 import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
 import com.predic8.membrane.core.resolver.ResolverTest;
 import com.predic8.membrane.core.rules.ProxySSLTest;
@@ -38,6 +39,7 @@ import org.junit.platform.suite.api.Suite;
         RegExReplaceInterceptorTest.class,
         BoundConnectionTest.class,
         ExceptionHandlingTest.class,
+        REST2SOAPInterceptorIntegrationTest.class,
         WSDLPublisherTest.class,
         LimitInterceptorTest.class,
         SpringReferencesTest.class,

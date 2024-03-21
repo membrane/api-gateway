@@ -13,21 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.*;
-
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.params.HttpProtocolParams;
-
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.Mapping;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.apache.http.params.CoreProtocolPNames.PROTOCOL_VERSION;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class REST2SOAPInterceptorIntegrationTest {
 
@@ -36,13 +39,17 @@ public class REST2SOAPInterceptorIntegrationTest {
 	@BeforeAll
 	public static void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*",
-				".*", 3004), "www.thomas-bayer.com", 80);
+				".*", 3004), "", 0);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		var interceptors = rule.getInterceptors();
 
 		REST2SOAPInterceptor rest2SoapInt = new REST2SOAPInterceptor();
 		rest2SoapInt.setMappings(getMappings());
-		rule.getInterceptors().add(rest2SoapInt);
+		interceptors.add(rest2SoapInt);
+
+		SampleSoapServiceInterceptor sampleSoapInt = new SampleSoapServiceInterceptor();
+		interceptors.add(sampleSoapInt);
 		router.init();
 	}
 
@@ -54,12 +61,11 @@ public class REST2SOAPInterceptorIntegrationTest {
 	@Test
 	public void testRest() throws Exception {
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
-				HttpVersion.HTTP_1_1);
-		GetMethod get = new GetMethod("http://localhost:3004/bank/37050198");
+		client.getParams().setParameter(PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		GetMethod get = new GetMethod("http://localhost:3004/city/Bonn");
 
 		int status = client.executeMethod(get);
-		//System.out.println(get.getResponseBodyAsString());
+		System.out.println(get.getResponseBodyAsString());
 
 		assertEquals(200, status);
 	}
@@ -67,9 +73,9 @@ public class REST2SOAPInterceptorIntegrationTest {
 	private static List<Mapping> getMappings() {
 		List<Mapping> mappings = new ArrayList<>();
 		Mapping m = new Mapping();
-		m.regex = "/bank/.*";
+		m.regex = "/city/.*";
 		m.soapAction = "";
-		m.soapURI = "/axis2/services/BLZService";
+		m.soapURI = "/city-service";
 		m.requestXSLT = "classpath:/blz-httpget2soap-request.xsl";
 		m.responseXSLT = "classpath:/strip-soap-envelope.xsl";
 		mappings.add(m);
