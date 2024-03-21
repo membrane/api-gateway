@@ -5,9 +5,9 @@
 	<xsl:template match="/">
 		<s11:Envelope >
 		  <s11:Body>
-		    <ns1:getBank>
-		      <ns1:blz><xsl:value-of select="//path/component[2]"/></ns1:blz>
-		    </ns1:getBank>
+		    <ns1:getCity>
+		      <ns1:name><xsl:value-of select="//path/component[2]"/></ns1:name>
+		    </ns1:getCity>
 		  </s11:Body>
 		</s11:Envelope>	
 	</xsl:template>
