@@ -55,7 +55,6 @@ protected String getOpenAPIFileName() {
 
     private void testNotImplementedRequest(String mimeType, String path) throws ParseException {
         ValidationErrors errors = validator.validate(Request.post().path(path).mediaType(mimeType).body("{}"));
-        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertTrue(e.getMessage().toLowerCase().contains("not implemented"));

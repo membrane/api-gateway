@@ -30,19 +30,22 @@ paths:
               $ref: "#/components/schemas/Rid"
       responses:
         '200':
-          description: OK 
+          description: OK
   /obj-ref-obj:
     post:
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Customer"
+        $ref: "#/components/schemas/Customer"
       responses:
         '200':
           description: OK  
 
 components:
+  requestBodies:
+    Customer:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Customer"
   parameters:
     Rid:
       name: rid

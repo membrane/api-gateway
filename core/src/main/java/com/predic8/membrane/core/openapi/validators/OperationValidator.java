@@ -36,7 +36,7 @@ public class OperationValidator {
         this.api = api;
     }
 
-    public ValidationErrors validateOperation(ValidationContext ctx, Request req, Response response, PathItem pathItem) throws MethodNotAllowException {
+    public ValidationErrors validateOperation(ValidationContext ctx, Request<?> req, Response<?> response, PathItem pathItem) throws MethodNotAllowException {
 
         Operation operation = getOperation(req.getMethod(), pathItem);
         if (operation == null)
@@ -52,9 +52,9 @@ public class OperationValidator {
             errors.add(new HeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
             errors.add(new SecurityValidator(api).validateSecurity(ctx,req, operation));
 
-            return errors.add(new RequestBodyValidator(api).validateRequestBody(ctx.entityType(BODY).entity("REQUEST"), operation, req));
+            return errors.add(new RequestBodyValidator(api).validate(ctx.entityType(BODY).entity("REQUEST"), req, operation));
         } else {
-            return errors.add(new ResponseBodyValidator(api).validateResponseBody(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
+            return errors.add(new ResponseBodyValidator(api).validate(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
         }
     }
 
@@ -75,7 +75,7 @@ public class OperationValidator {
         }
     }
 
-    private void validatePathParameters(ValidationContext ctx, Request req, List<Parameter> schemaParameters) {
+    private void validatePathParameters(ValidationContext ctx, Request<?> req, List<Parameter> schemaParameters) {
 
         if (schemaParameters == null || req.getPathParameters().isEmpty())
             return;

@@ -60,21 +60,18 @@ public class OpenAPISecurityValidatorInterceptorTest extends AbstractValidatorTe
     @Test
     void simpleHasScopes() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/finance").securitySchemes(List.of(CLIENT_CREDENTIALS().scopes("finance","read"))));
-        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 
     @Test
     void simpleMissingAllScopes() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/finance-and-write").securitySchemes(List.of(CLIENT_CREDENTIALS())));
-        System.out.println("errors = " + errors);
         assertEquals(3,errors.size());
     }
 
     @Test
     void simpleMissingTwoScopes() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/finance-and-write").securitySchemes(List.of(CLIENT_CREDENTIALS().scopes("read"))));
-        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
     }
 
@@ -82,7 +79,6 @@ public class OpenAPISecurityValidatorInterceptorTest extends AbstractValidatorTe
     void simpleIgnoreAdditionalScopes() {
         ValidationErrors errors = validator.validate(Request.get().path("/v1/finance")
                 .securitySchemes(List.of(CLIENT_CREDENTIALS().scopes("read", "finance", "development"))));
-        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
 

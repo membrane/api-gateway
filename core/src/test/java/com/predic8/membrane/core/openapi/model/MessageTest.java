@@ -14,36 +14,33 @@
 package com.predic8.membrane.core.openapi.model;
 
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.core.*;
+import org.junit.jupiter.api.*;
 
-import javax.validation.constraints.AssertTrue;
-import java.net.URISyntaxException;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MessageTest {
 
-    private Request request;
+    private Message<JsonBody,?> message;
 
     @BeforeEach
-    void setup() throws URISyntaxException {
-        request = Request.post().json().path("/star-star").body("{}");
+    void setup() throws JsonProcessingException {
+
+        message = Request.<JsonBody>post().path("/star-star").json().body(new JsonBody("{}"));
     }
 
     @Test
     void starStarTest() {
-        assertTrue(request.isOfMediaType("*/*"));
+        assertTrue(message.isOfMediaType("*/*"));
     }
 
     @Test
     void typeStarTest() {
-        assertTrue(request.isOfMediaType("application/*"));
+        assertTrue(message.isOfMediaType("application/*"));
     }
 
     @Test
     void starTypeTest() {
-        assertFalse(request.isOfMediaType("*/json"));
+        assertFalse(message.isOfMediaType("*/json"));
     }
 }

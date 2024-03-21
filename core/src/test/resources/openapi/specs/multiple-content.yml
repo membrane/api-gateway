@@ -1,0 +1,87 @@
+openapi: '3.0.2'
+info:
+  title: API Title
+  version: '1.0'
+  description: |
+    From specification: https://spec.openapis.org/oas/v3.1.0#request-body-examples
+servers:
+  - url: https://api.server.test
+paths:
+  /with-wildcard:
+    put:
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UserA'
+          'application/xml':
+            schema:
+              $ref: '#/components/schemas/UserB'
+          'text/plain':
+            schema:
+              type: string
+              format: byte
+          '*/*':
+            schema:
+              type: string
+              format: byte
+      responses:
+        '200':
+          description: OK
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserA'
+            'application/xml':
+              schema:
+                $ref: '#/components/schemas/UserB'
+            'text/plain':
+              schema:
+                type: string
+                format: byte
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /no-wildcard:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/UserA'
+            'application/xml':
+              schema:
+                $ref: '#/components/schemas/UserB'
+    put:
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UserA'
+          'application/xml':
+            schema:
+              $ref: '#/components/schemas/UserB'
+      responses:
+        '200':
+          description: OK
+
+
+components:
+  schemas:
+    UserA:
+      type: object
+      properties:
+        name:
+          type: string
+    UserB:
+      type: object
+      properties:
+        lastname:
+          type: string

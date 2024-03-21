@@ -21,14 +21,13 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,7 +93,6 @@ public class OpenAPIInterceptorTest {
         assertTrue(exc.getResponse().getHeader().getContentType().contains(APPLICATION_PROBLEM_JSON));
         exc.getResponse().getBody().getContent();
 
-        System.out.println("getMapFromResponse(exc) = " + getMapFromResponse(exc));
         assertEquals("No matching API found!", getMapFromResponse(exc).get("title"));
         assertEquals("http://membrane-api.io/error/not-found", getMapFromResponse(exc).get("type"));
     }
@@ -126,7 +124,7 @@ public class OpenAPIInterceptorTest {
     @Test
     public void validateRequest() throws Exception {
 
-        specCustomers.validateRequests = OpenAPISpec.YesNoOpenAPIOption.YES;
+        specCustomers.validateRequests = YES;
 
         Map<String,Object> customer = new HashMap<>();
         customer.put("id","CUST-7");
@@ -149,15 +147,16 @@ public class OpenAPIInterceptorTest {
     @SuppressWarnings({"unchecked"})
     @Test
     public void validateResponse() throws Exception {
-        specCustomers.validateResponses = OpenAPISpec.YesNoOpenAPIOption.YES;
-        assertEquals("PUT", getMapFromResponse(callPut(specCustomers)).get("method"));
-        testValidationResults(getMapFromResponse(callPut(specCustomers)), "RESPONSE");
+        specCustomers.validateResponses = YES;
+        Exchange exc = callPut(specCustomers);
+        assertEquals("PUT", getMapFromResponse(exc).get("method"));
+        testValidationResults(getMapFromResponse(exc), "RESPONSE");
     }
 
     @Test
     public void validateResponseLessDetails() throws Exception {
-        specCustomers.validateResponses = OpenAPISpec.YesNoOpenAPIOption.YES;
-        specCustomers.validationDetails = OpenAPISpec.YesNoOpenAPIOption.NO;
+        specCustomers.validateResponses = YES;
+        specCustomers.validationDetails = NO;
         assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("error"));
     }
 
@@ -178,7 +177,6 @@ public class OpenAPIInterceptorTest {
         customer.put("foo",110);
 
         exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
-
         assertEquals(RETURN, interceptor.handleResponse(exc));
         assertEquals(500,exc.getResponse().getStatusCode());
         return exc;

@@ -75,14 +75,13 @@ protected String getOpenAPIFileName() {
 
     @Test
     public void wrongMediaTypeResponse() throws ParseException {
-
         ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_XML).body(getResourceAsStream("/openapi/messages/customer.json")));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(MEDIA_TYPE,e.getContext().getValidatedEntityType());
         assertEquals("application/xml",e.getContext().getValidatedEntity());
         assertEquals(500,e.getContext().getStatusCode());
-        assertTrue(e.getMessage().toLowerCase().contains("mediatype"));
+        assertTrue(e.getMessage().toLowerCase().contains("media type"));
     }
 
     /**
@@ -90,8 +89,7 @@ protected String getOpenAPIFileName() {
      */
     @Test
     public void noContentInResponseSendPayload() throws ParseException {
-
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(200).mediaType(APPLICATION_JSON).body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(200).mediaType(APPLICATION_JSON).body("{}"));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());
@@ -104,6 +102,7 @@ protected String getOpenAPIFileName() {
     public void statusCodeNotInResponse() throws ParseException {
 
         ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(202).mediaType(APPLICATION_JSON).body("{ }"));
+        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("POST",e.getContext().getMethod());
@@ -111,5 +110,6 @@ protected String getOpenAPIFileName() {
         assertEquals("RESPONSE",e.getContext().getValidatedEntity());
         assertEquals(500,e.getContext().getStatusCode());
         assertTrue(e.getMessage().toLowerCase().contains("status"));
+        assertTrue(e.getMessage().toLowerCase().contains("but allowed are only"));
     }
 }
