@@ -13,24 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.errorhandling.*;
-import com.predic8.membrane.examples.config.*;
-import com.predic8.membrane.examples.env.*;
-import com.predic8.membrane.examples.tests.*;
-import com.predic8.membrane.examples.tests.loadbalancing.*;
-import com.predic8.membrane.examples.tests.oauth2.*;
-import com.predic8.membrane.examples.tests.oauth2.OAuth2MembraneTest;
-import com.predic8.membrane.examples.tests.openapi.*;
-import com.predic8.membrane.examples.tests.ssl.*;
-import com.predic8.membrane.examples.tests.template.json.*;
-import com.predic8.membrane.examples.tests.template.text.*;
-import com.predic8.membrane.examples.tests.template.xml.*;
-import com.predic8.membrane.examples.tests.validation.FormValidationTest;
-import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
-import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
-import com.predic8.membrane.examples.tests.versioning.RoutingTest;
-import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
-import com.predic8.membrane.examples.tutorials.rest.*;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
