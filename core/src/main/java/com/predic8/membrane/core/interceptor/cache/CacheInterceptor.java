@@ -13,20 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.cache;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import org.apache.commons.codec.binary.Base64;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.text.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description <p>
@@ -47,6 +56,15 @@ public class CacheInterceptor extends AbstractInterceptor {
 	static final Logger log = LoggerFactory.getLogger(CacheInterceptor.class.getName());
 
 	private Store store;
+
+	public CacheInterceptor() {
+		name = "Cache (Deprecated)";
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Legacy caching component. Does not perform RFC-conform HTTP caching.";
+	}
 
 	public static abstract class Store {
 		public void init(Router router) {}

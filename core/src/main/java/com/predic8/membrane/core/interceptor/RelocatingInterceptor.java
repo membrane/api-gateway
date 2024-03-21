@@ -14,15 +14,16 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.XMLStreamException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.ws.relocator.Relocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.stream.XMLStreamException;
+import java.io.StringWriter;
 
 abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
@@ -139,5 +140,52 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 	public void setPathRewriter(Relocator.PathRewriter pathRewriter) {
 		this.pathRewriter = pathRewriter;
+	}
+
+	@Override
+	public String getLongDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getShortDescription());
+		sb.append("<br/>");
+		sb.append("The protocol, host and port of the incoming request will be used for the substitution");
+
+		if (protocol != null || port != null || host != null) {
+			sb.append(" except the following fixed values:");
+			StringWriter sw = new StringWriter();
+			new Html(sw){{
+				table();
+				thead();
+				tr();
+				th().text("Part").end();
+				th().text("Value").end();
+				end();
+				end();
+				tbody();
+				if (protocol != null) {
+					tr();
+					td().text("Protocol").end();
+					td().text(protocol).end();
+					end();
+				}
+				if (host != null) {
+					tr();
+					td().text("Host").end();
+					td().text(host).end();
+					end();
+				}
+				if (port != null) {
+					tr();
+					td().text("Port").end();
+					td().text(port).end();
+					end();
+				}
+				end();
+				end();
+			}};
+			sb.append(sw);
+		} else {
+			sb.append(".");
+		}
+		return sb.toString();
 	}
 }

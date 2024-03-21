@@ -24,7 +24,6 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.util.URLUtil;
 
 @MCElement(name = "apiKeyChecker")
 public class ApiKeyCheckerInterceptor extends AbstractInterceptor {
@@ -33,6 +32,15 @@ public class ApiKeyCheckerInterceptor extends AbstractInterceptor {
 
     ApiKeyValidator apiKeyValidator;
     ApiKeyTransmissionStrategy apiKeyTransmissionStrategy;
+
+    public ApiKeyCheckerInterceptor() {
+        name = "Api Key Checker (Legacy)";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Protects APIs using an api key. (Deprecated, use Api Key plugin instead.)";
+    }
 
     @Override
     public void init(Router router) throws Exception {

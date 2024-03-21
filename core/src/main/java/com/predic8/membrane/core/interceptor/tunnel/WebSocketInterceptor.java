@@ -22,7 +22,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.util.URLUtil;
-import org.joda.time.format.PeriodFormat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +41,7 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 
 	@Override
 	public void init(Router router) throws Exception {
-		name = "Websocket interceptor";
+		name = "WebSocket Interceptor";
 		this.router = router;
 	}
 

@@ -41,6 +41,15 @@ public class ClamAntiVirusInterceptor extends AbstractInterceptor {
 
     ClamAVClient client;
 
+    public ClamAntiVirusInterceptor() {
+        name = "ClamAV";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Scans responses for malicious content.";
+    }
+
     @Override
     public void init(Router router) throws Exception {
         super.init(router);

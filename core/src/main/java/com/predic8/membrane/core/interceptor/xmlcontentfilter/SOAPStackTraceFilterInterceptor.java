@@ -13,11 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import javax.xml.xpath.XPathExpressionException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -25,6 +20,10 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.xpath.XPathExpressionException;
 
 /**
  * @description <p>
@@ -56,6 +55,11 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 		this.xmlContentFilter = new XMLContentFilter(XPATH);
 		setDisplayName("SOAP StackTrace Filter");
 		setFlow(Flow.Set.REQUEST_RESPONSE);
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Removes SOAP stacktraces from envelopes.";
 	}
 
 	@Override

@@ -19,11 +19,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.annot.Required;
 
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
@@ -52,6 +52,12 @@ public class JsonPointerExtractorInterceptor extends AbstractInterceptor{
     public JsonPointerExtractorInterceptor() {
         name = "JsonPointer";
     }
+
+    @Override
+    public String getShortDescription() {
+        return "Takes values from JSON request body and puts them into Exchange object as properties.";
+    }
+
     /**
      * @description Defines a json pointer and name for exchange property.
      */

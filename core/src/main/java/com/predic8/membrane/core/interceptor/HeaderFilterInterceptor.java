@@ -13,21 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @description Removes message headers matching a list of patterns.
@@ -43,6 +42,11 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 
 	public HeaderFilterInterceptor() {
 		name = "Header Filter";
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Filters message headers using a list of regular expressions.";
 	}
 
 	public enum Action { KEEP, REMOVE }

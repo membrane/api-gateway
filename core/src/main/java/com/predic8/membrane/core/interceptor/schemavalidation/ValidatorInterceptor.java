@@ -14,12 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -30,8 +24,13 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.TextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -53,6 +52,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	private IValidator validator;
 	private ResolverMap resourceResolver;
 	private ApplicationContext applicationContext;
+
+	public ValidatorInterceptor() {
+		name = "Validator";
+	}
 
 	private void setValidator(IValidator validator) throws Exception {
 		if (this.validator != null)

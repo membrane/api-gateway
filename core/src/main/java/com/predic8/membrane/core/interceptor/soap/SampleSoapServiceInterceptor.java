@@ -13,28 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
-import javax.xml.parsers.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import javax.xml.transform.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.TransformerException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.Constants.SOAP11_NS;
 import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.util.XMLUtil.*;
-import static javax.xml.stream.XMLStreamConstants.*;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
+import static com.predic8.membrane.core.util.XMLUtil.xml2string;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 @MCElement(name = "sampleSoapService")
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {
@@ -44,6 +51,11 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     public SampleSoapServiceInterceptor() {
         name = "SampleSoapService";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Provides a simple SOAP service for testing and demonstration purposes.";
     }
 
     @Override

@@ -21,10 +21,10 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -58,6 +58,15 @@ public class RouterIpResolverInterceptor extends AbstractInterceptor {
     private SSLContext sslContext;
     private Outcome errorOutcome = Outcome.ABORT;
     private int port;
+
+    public RouterIpResolverInterceptor() {
+        name = "Router IP";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Resolve actual IP addresses in redundant router configuration scenarios.";
+    }
 
     public String getRouterIps() {
         return String.join(",", routerIps);

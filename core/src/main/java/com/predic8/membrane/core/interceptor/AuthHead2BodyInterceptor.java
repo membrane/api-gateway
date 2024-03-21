@@ -14,25 +14,24 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.io.InputStream;
-import java.io.StringWriter;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.http.Body;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.http.Body;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.InputStream;
+import java.io.StringWriter;
 
+// TODO Can be deleted?
 @MCElement(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String COM_NS  = "test";

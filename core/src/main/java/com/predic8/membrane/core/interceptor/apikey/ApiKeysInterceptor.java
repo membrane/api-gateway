@@ -45,6 +45,16 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     private final List<ApiKeyExtractor> extractors = new ArrayList<>();
     private boolean required = true;
 
+    public ApiKeysInterceptor() {
+        name = "Api Key";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return required ? "Provides access to this endpoint if a valid api key is provided. Stores scopes in a security scheme."
+                        : "Finds scopes associated to an api key and stores them in a security scheme.";
+    }
+
     @Override
     public void init() {
         stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());

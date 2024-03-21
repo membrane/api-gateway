@@ -13,6 +13,7 @@
    limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.xml;
+
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -24,12 +25,14 @@ import org.w3c.dom.Document;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -44,6 +47,11 @@ import static javax.xml.transform.OutputKeys.*;
  */
 @MCElement(name="xml2Json")
 public class Xml2JsonInterceptor extends AbstractInterceptor {
+
+    @Override
+    public String getShortDescription() {
+        return "Converts XML message bodies to JSON.";
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
