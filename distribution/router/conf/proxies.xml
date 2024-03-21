@@ -50,7 +50,7 @@
 				<xml2Json/>
 				<log headerOnly="false"/> 
 			</response>
-			<target url="http://www.thomas-bayer.com"/>
+			<target url="https://api.predic8.de"/>
 		</api>
 
 		<!-- 
