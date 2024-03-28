@@ -100,6 +100,8 @@ public abstract class AuthorizationService {
 
     public abstract String getJwksEndpoint() throws Exception;
 
+    public abstract String getEndSessionEndpoint() throws Exception;
+
     public abstract String getLoginURL(String securityToken, String callbackURL, String callbackPath);
 
     public abstract String getUserInfoEndpoint();

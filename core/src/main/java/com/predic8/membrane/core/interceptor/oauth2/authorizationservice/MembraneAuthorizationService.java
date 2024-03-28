@@ -50,6 +50,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String revocationEndpoint;
     private String registrationEndpoint;
     private String jwksEndpoint;
+    private String endSessionEndpoint;
     private String claims;
     private String claimsIdt;
     private String claimsParameter;
@@ -119,6 +120,11 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
+    public String getEndSessionEndpoint() throws Exception {
+        return endSessionEndpoint;
+    }
+
+    @Override
     protected void doDynamicRegistration(List<String> callbackURLs) throws Exception {
         if(dynamicRegistration == null || registrationEndpoint == null || registrationEndpoint.isEmpty())
             throw new RuntimeException("A registration bean is required and src needs to specify a registration endpoint");
@@ -164,6 +170,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         revocationEndpoint = (String) json.get("revocation_endpoint");
         registrationEndpoint = (String) json.get("registration_endpoint");
         jwksEndpoint = (String) json.get("jwks_uri");
+        endSessionEndpoint = (String) json.get("end_session_endpoint");
         issuer = (String) json.get("issuer");
         if (json.containsKey("response_modes_supported")) {
             List<?> v = (List<?>) json.get("response_modes_supported");

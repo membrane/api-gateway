@@ -64,4 +64,9 @@ public class GithubAuthorizationService extends AuthorizationService {
     public String getRevocationEndpoint() {
         return null;
     }
+
+    @Override
+    public String getEndSessionEndpoint() throws Exception {
+        return null;
+    }
 }
