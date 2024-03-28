@@ -182,8 +182,12 @@ public class OpenAPIRecordFactory {
         if (spec.validateResponses != ASINOPENAPI)
             extension.put(RESPONSES, toYesNo(spec.validateResponses));
 
+        if (spec.validateSecurity != ASINOPENAPI)
+            extension.put(SECURITY, toYesNo(spec.validateSecurity));
+
         extension.putIfAbsent(REQUESTS, false);
         extension.putIfAbsent(RESPONSES, false);
+        extension.putIfAbsent(SECURITY, true);
 
         return extension;
     }
