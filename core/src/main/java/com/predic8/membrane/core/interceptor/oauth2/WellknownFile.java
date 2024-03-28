@@ -32,6 +32,7 @@ public class WellknownFile {
     private static final String USERINFO_ENDPOINT = "userinfo_endpoint";
     private static final String REVOCATION_ENDPOINT = "revocation_endpoint";
     private static final String JWKS_URI = "jwks_uri";
+    private static final String END_SESSION_ENDPOINT = "end_session_endpoint";
     private static final String RESPONSE_TYPES_SUPPORTED = "response_types_supported";
     private static final String RESPONSE_MODES_SUPPORTED = "response_modes_supported";
     private static final String SUBJECT_TYPES_SUPPORTED = "subject_types_supported";
@@ -52,6 +53,7 @@ public class WellknownFile {
     private String userinfoEndpoint;
     private String revocationEndpoint;
     private String jwksUri;
+    private String endSessionEndpoint;
     private String supportedResponseTypes;
     private String supportedResponseModes;
     private String supportedSubjectType;
@@ -118,6 +120,7 @@ public class WellknownFile {
         writeUserinfoEndpoint();
         writeRevocationEndpoint();
         writeJwksUri();
+        writeEndSessionEndpoint();
         writeSupportedResponseTypes();
         writeSupportedResponseModes();
         writeSupportedSubjectTypes();
@@ -168,6 +171,10 @@ public class WellknownFile {
 
     private void writeJwksUri() throws IOException {
         writeSingleJsonField(JWKS_URI, getJwksUri());
+    }
+
+    private void writeEndSessionEndpoint() throws IOException {
+        writeSingleJsonField(END_SESSION_ENDPOINT, getEndSessionEndpoint());
     }
 
     private void writeSingleJsonField(String name, String value) throws IOException {
@@ -240,6 +247,14 @@ public class WellknownFile {
 
     public void setJwksUri(String jwksUri) {
         this.jwksUri = jwksUri;
+    }
+
+    public String getEndSessionEndpoint() {
+        return endSessionEndpoint;
+    }
+
+    public void setEndSessionEndpoint(String endSessionEndpoint) {
+        this.endSessionEndpoint = endSessionEndpoint;
     }
 
     public String getSupportedResponseTypes() {

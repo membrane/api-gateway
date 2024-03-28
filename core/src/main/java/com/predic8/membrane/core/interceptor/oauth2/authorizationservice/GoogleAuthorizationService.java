@@ -66,6 +66,11 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
+    public String getEndSessionEndpoint() throws Exception {
+        return null; // not supported
+    }
+
+    @Override
     public String getSubject() {
         return "email"; // "login"
     }
