@@ -16,22 +16,36 @@
                      validateResponses="no"
                      validationDetails="yes" />
             <path isRegExp="true">/foo</path>
-            <swaggerRewriter swaggerJson="https://petstore.swagger.io/v2/swagger.json"/>
-            <log/>
             <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
             <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
                 <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
             </jwtAuth>
+            <apiKey>
+                <keys>
+                    <secret value="demo-key-foobar" />
+                </keys>
+                <headerExtractor />
+                <queryParamExtractor name="X-Api-Key" />
+            </apiKey>
             <ntlm user="X-Username" pass="X-Password" />
+            <login path="/login/" location="../examples/login/dialog">
+                <staticUserDataProvider>
+                    <user username="john" password="password" secret="abcdefghijklmnop" />
+                </staticUserDataProvider>
+                <totpTokenProvider />
+            </login>
+            <basicAuthentication>
+                <user name="admin" password="adminadmin" />
+                <user name="guest" password="guestguest" />
+            </basicAuthentication>
             <tokenValidator endpoint="http://localhost:7007/oauth2/userinfo"/>
-            <spdy />
-
+            <accessControl file="../examples/acl/acl.xml" />
             <oauth2Resource>
                 <membrane src="https://accounts.google.com"
-                          clientId="INSERT_CLIENT_ID"
-                          clientSecret="INSERT_CLIENT_SECRET"
-                          scope="email profile"
-                          subject="sub"/>
+                clientId="INSERT_CLIENT_ID"
+                clientSecret="INSERT_CLIENT_SECRET"
+                scope="email profile"
+                subject="sub"/>
             </oauth2Resource>
             <oauth2authserver issuer="http://localhost:7000">
 
@@ -55,7 +69,18 @@
 
                 </claims>
             </oauth2authserver>
-            <prometheus />
+            <xmlProtection />
+            <jsonProtection maxTokens="15"
+                            maxSize="110"
+                            maxDepth="3"
+                            maxStringLength="5"
+                            maxKeyLength="1"
+                            maxObjectSize="3"
+                            maxArraySize="3" />
+            <formValidation>
+                <field name="name" regex="[a-zA-Z]+" />
+            </formValidation>
+            <throttle delay="1000" maxThreads="5" busyDelay="3000"/>
             <webSocket url="http://my.websocket.server:1234">
                 <wsStompReassembler>
                     <!-- modify the exchange to have a "[MEMBRANE]:" prefix -->
@@ -71,33 +96,21 @@
                 <!-- logs the content of a WebSocket frame to the console  -->
                 <wsLog/>
             </webSocket>
-            <apiKey>
-                <keys>
-                    <secret value="demo-key-foobar" />
-                </keys>
-                <headerExtractor />
-                <queryParamExtractor name="X-Api-Key" />
-            </apiKey>
-            <basicAuthentication>
-                <user name="admin" password="adminadmin" />
-                <user name="guest" password="guestguest" />
-            </basicAuthentication>
+            <swaggerRewriter swaggerJson="https://petstore.swagger.io/v2/swagger.json"/>
+            <log/>
+            <spdy />
+            <tcp />
             <openTelemetry sampleRate="1.0">
                 <otlpExporter host="localhost" port="4317"/>
             </openTelemetry>
-            <throttle delay="1000" maxThreads="5" busyDelay="3000"/>
-            <accessControl file="../examples/acl/acl.xml" />
+            <prometheus />
+
             <statisticsCSV file="path" />
             <wsdlRewriter />
-            <xmlProtection />
+
             <sampleSoapService />
-            <jsonProtection maxTokens="15"
-                            maxSize="110"
-                            maxDepth="3"
-                            maxStringLength="5"
-                            maxKeyLength="1"
-                            maxObjectSize="3"
-                            maxArraySize="3" />
+            <testService />
+
             <exchangeStore name="es" />
             <if test="hasScopes({'admin', 'webmaster'})" language="SpEL">
                 <rewriter>
@@ -123,20 +136,13 @@
                 <byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
                                   retryTimeOnBusy="1000" />
             </balancer>
-            <login path="/login/" location="../examples/login/dialog">
-                <staticUserDataProvider>
-                    <user username="john" password="password" secret="abcdefghijklmnop" />
-                </staticUserDataProvider>
-                <totpTokenProvider />
-            </login>
+            <acmeHttpChallenge />
             <headerFilter>
                 <include>Content.*</include>
                 <include>Location</include>
                 <exclude>.*</exclude>
             </headerFilter>
-            <formValidation>
-                <field name="name" regex="[a-zA-Z]+" />
-            </formValidation>
+
             <rest2Soap>
                 <mapping regex="/bank/.*" soapAction=""
                          soapURI="/axis2/services/BLZService" requestXSLT="blz-request.xsl"
