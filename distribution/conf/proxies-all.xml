@@ -110,7 +110,7 @@
 
             <sampleSoapService />
             <testService />
-
+            <wsdlPublisher wsdl="/WEB-INF/ArticleService.wsdl" />
             <exchangeStore name="es" />
             <if test="hasScopes({'admin', 'webmaster'})" language="SpEL">
                 <rewriter>
