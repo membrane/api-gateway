@@ -1,5 +1,5 @@
 /*
- *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *  Copyright 2024 predic8 GmbH, www.predic8.com
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.openapi.validators;
+package com.predic8.membrane.core.openapi;
 
-import com.predic8.membrane.core.openapi.*;
-
-interface IJSONSchemaValidator {
-    ValidationErrors validate(ValidationContext ctx, Object value);
+public class OpenAPIParsingException extends RuntimeException {
+    public OpenAPIParsingException(String s) {
+        super(s);
+    }
 }

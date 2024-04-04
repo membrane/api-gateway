@@ -24,6 +24,7 @@ import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.servers.*;
 import jakarta.mail.internet.*;
+import org.slf4j.*;
 import redis.clients.jedis.*;
 
 import java.io.*;
@@ -42,6 +43,8 @@ import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Dire
 
 
 public class OpenAPIInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
 
     protected final APIProxy apiProxy;
 
@@ -73,11 +76,24 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (!hasProxyATargetElement())
             setDestinationsFromOpenAPI(rec, exc);
 
-        ValidationErrors errors = validateRequest(rec.api, exc);
+        try {
+            ValidationErrors errors = validateRequest(rec.api, exc);
 
-        if (!errors.isEmpty()) {
-            apiProxy.statisticCollector.collect(errors);
-            return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
+            if (!errors.isEmpty()) {
+                apiProxy.statisticCollector.collect(errors);
+                return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
+            }
+        } catch (OpenAPIParsingException e) {
+            log.error("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()));
+            log.error(e.getMessage(),e);
+            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+            return RETURN;
+        }
+        catch (Throwable t /* No Purpose! Catch absolutely all */) {
+            log.error("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()));
+            log.error(t.getMessage(),t);
+            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+            return RETURN;
         }
 
         exc.setProperty("openApi", rec);
@@ -93,13 +109,29 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     public Outcome handleResponse(Exchange exc) throws Exception {
 
         OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty("openApi");
-        ValidationErrors errors = validateResponse(rec.api, exc);
 
-        if (errors != null && errors.hasErrors()) {
-            exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
-            apiProxy.statisticCollector.collect(errors);
-            return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
+        try {
+            ValidationErrors errors = validateResponse(rec.api, exc);
+
+            if (errors != null && errors.hasErrors()) {
+                exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
+                apiProxy.statisticCollector.collect(errors);
+                return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
+            }
+        } catch (OpenAPIParsingException e) {
+            log.error("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()));
+            log.error(e.getMessage(),e);
+            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+            return RETURN;
         }
+        catch (Throwable t /* No Purpose! Catch absolutely all */) {
+            log.error("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()));
+            log.error(t.getMessage(),t);
+            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+            return RETURN;
+
+        }
+
         return CONTINUE;
     }
 

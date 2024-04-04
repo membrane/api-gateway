@@ -28,12 +28,12 @@ import static com.predic8.membrane.core.exchange.Exchange.*;
 public abstract class AbstractSecurityValidatorTest {
 
     @NotNull
-    Exchange getExchange(String path, SecurityScheme scheme) throws URISyntaxException {
+    protected Exchange getExchange(String path, SecurityScheme scheme) throws URISyntaxException {
         return getExchange("GET", path, scheme);
     }
 
     @NotNull
-    Exchange getExchange(String method, String path, SecurityScheme scheme) throws URISyntaxException {
+    protected Exchange getExchange(String method, String path, SecurityScheme scheme) throws URISyntaxException {
         Exchange exc = new Request.Builder().method(method).url(new URIFactory(),path).buildExchange();
         exc.setOriginalRequestUri(path);
         if (scheme!=null)
@@ -41,7 +41,7 @@ public abstract class AbstractSecurityValidatorTest {
         return exc;
     }
 
-    static Router getRouter() {
+    protected static Router getRouter() {
         Router router = new Router();
         router.setUriFactory(new URIFactory());
         return router;
