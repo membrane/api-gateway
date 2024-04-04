@@ -132,7 +132,8 @@ public class Jwks {
 
     String getLongDescription() {
         if (jwksUris != null)
-            return "JWKs from " + TextUtil.toEnglishList("and", jwksUris.split(" "));
+            return " JWKs from <a href=\" "+ TextUtil.toEnglishList("and", jwksUris.split(" ")) +"\">here</a> ";
         return "a predefined set of JWKs";
     }
+
 }

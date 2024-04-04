@@ -157,4 +157,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 		this.fields = fields;
 	}
 
+	@Override
+	public String getDisplayName() {
+		return "Form Validation";
+	}
+
+
 }

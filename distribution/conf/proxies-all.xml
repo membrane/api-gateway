@@ -105,7 +105,7 @@
             </openTelemetry>
             <prometheus />
 
-            <statisticsCSV file="path" />
+            <statisticsCSV file="demofile" />
             <wsdlRewriter />
 
             <sampleSoapService />

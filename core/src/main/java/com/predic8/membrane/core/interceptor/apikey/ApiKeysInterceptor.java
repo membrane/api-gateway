@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -51,8 +52,14 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return required ? "Provides access to this endpoint if a valid api key is provided. Stores scopes in a security scheme."
-                        : "Finds scopes associated to an api key and stores them in a security scheme.";
+        return "Secures access with ApiKeys and RBAC with Scopes. ";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return getShortDescription() + "<br/>" +  extractors.stream()
+                .map(extractor -> extractor.getDescription() + "<br/>")
+                .collect(Collectors.joining());
     }
 
     @Override

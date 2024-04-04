@@ -63,6 +63,17 @@ public class XmlPathExtractorInterceptor extends AbstractInterceptor{
         return "Extracts values from request bodies through XPath and fills them into exchange properties.";
     }
 
+    @Override
+    public String getLongDescription() {
+        StringBuilder description = new StringBuilder(getShortDescription());
+        description.append("<br/>");
+        description.append("Properties:<br/>");
+        for (Property property : properties) {
+            description.append("- Name: ").append(property.getName()).append(", XPath: ").append(property.xPathString).append("<br/>");
+        }
+        return description.toString();
+    }
+
     @Required
     @MCChildElement
     public void setMappings(List<Property> properties) {
@@ -120,6 +131,7 @@ public class XmlPathExtractorInterceptor extends AbstractInterceptor{
     @MCElement(name="property", topLevel=false, id="xpath-map")
     public static class Property {
         String name;
+        String xPathString;
         XPathExpression xpath;
         static XPathFactory xPathFactory = XPathFactory.newInstance();
 
@@ -143,6 +155,7 @@ public class XmlPathExtractorInterceptor extends AbstractInterceptor{
         @MCAttribute
         public void setXpath(String xpath) {
             try {
+                xPathString = xpath;
                 this.xpath = xPathFactory.newXPath().compile(xpath);
             } catch (XPathExpressionException e) {
                 throw new RuntimeException(String.format("Wrong xpath expression %s with property %s", xpath, name),e);

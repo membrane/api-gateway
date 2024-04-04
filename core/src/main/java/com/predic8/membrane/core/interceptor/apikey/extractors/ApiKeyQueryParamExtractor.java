@@ -60,4 +60,9 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
     public String getParamName() {
         return paramName;
     }
+
+    @Override
+    public String getDescription() {
+        return "Query Param name: " + paramName + ". ";
+    }
 }

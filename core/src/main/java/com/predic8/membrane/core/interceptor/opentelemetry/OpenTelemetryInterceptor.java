@@ -68,6 +68,12 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     @Override
+    public String getLongDescription() {
+        return getShortDescription() + "<br/>" +
+                "Collector: " + exporter.getEndpointUrl();
+    }
+
+    @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         startMembraneScope(exc, getExtractContext(exc), getSpanName(exc)); // Params in Methode
         var span = getExchangeSpan(exc);
