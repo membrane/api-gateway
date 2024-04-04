@@ -283,6 +283,11 @@ public class IndexInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
+	public String getDisplayName() {
+		return "Index Interceptor";
+	}
+
+	@Override
 	public String getShortDescription() {
 		return "Lists services available through the " + Constants.PRODUCT_NAME + " service proxies.";
 	}

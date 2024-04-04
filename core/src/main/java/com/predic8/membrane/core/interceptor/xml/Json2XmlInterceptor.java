@@ -41,6 +41,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class Json2XmlInterceptor extends AbstractInterceptor {
 
     @Override
+    public String getDisplayName() {
+        return "JSON2XML";
+    }
+
+    @Override
     public String getShortDescription() {
         return "Converts JSON message bodies to XML.";
     }
