@@ -1,0 +1,54 @@
+openapi: '3.0.2'
+info:
+  title: Security Scheme Tests API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /multiple:
+    get:
+      security:
+        - xsrf-header: []
+        - xsrf-cookie: []
+        - captcha-header: []
+        - captcha-cookie: []
+      responses:
+        '200':
+          description: OK
+  /wrong-no-type:
+    get:
+      security:
+        - wrong-no-type: []
+      responses:
+        '200':
+          description: OK
+  /scheme-does-not-exist:
+    get:
+      security:
+        - unknown: []
+      responses:
+        '200':
+          description: OK
+
+components:
+  securitySchemes:
+    xsrf-header:
+      type: apiKey
+      in: header
+      name: X-XSRF-TOKEN
+    xsrf-cookie:
+      type: apiKey
+      in: cookie
+      name: XSRF-TOKEN
+    captcha-header:
+      type: apiKey
+      in: header
+      name: X-CAPTCHA
+    captcha-cookie:
+      type: apiKey
+      in: cookie
+      name: CAPTCHA
+# Property type is missing on purpose to test the error message!
+    wrong-no-type:
+      in: cookie
+      name: CAPTCHA

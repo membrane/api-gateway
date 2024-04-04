@@ -17,37 +17,45 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.*;
 
-public class XMembraneExtentionTest {
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class XMembraneExtensionSecurityTest {
 
     OpenAPIPublisherInterceptor interceptor;
 
-    Exchange get = new Exchange(null);
-
     @BeforeEach
-    public void setUp() throws IOException, ClassNotFoundException {
+    void setUp() throws IOException, ClassNotFoundException {
         Router router = new Router();
         router.setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();
-        spec.setDir("src/test/resources/openapi/specs");
+        spec.setLocation("src/test/resources/openapi/openapi-proxy/validate-security-extensions.yml");
         Map<String,OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
 
         interceptor = new OpenAPIPublisherInterceptor(records);
 
-        get.setRequest(new Request.Builder().method("GET").build());
     }
 
     @Test
-    public void ids() {
-        interceptor.apis.get("extension-sample-1-4");
+    void checkXMembraneIdIsSet() {
+        assertNotNull(interceptor.apis.get("validate-security-api-v1-0"));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void readingExtensionsForValidation() {
+        OpenAPIRecord rec = interceptor.apis.get("validate-security-api-v1-0");
+        assertEquals(ASINOPENAPI,rec.spec.validateSecurity);
+        var validationExtension = (Map<String, Boolean>) rec.api.getExtensions().get(X_MEMBRANE_VALIDATION);
+        assertEquals(true,validationExtension.get(REQUESTS));
+        assertEquals(true,validationExtension.get(RESPONSES));
+        assertEquals(true,validationExtension.get(SECURITY));
+    }
 }

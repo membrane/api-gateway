@@ -23,7 +23,7 @@ import org.jetbrains.annotations.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 
 public abstract class AbstractSecurityValidatorTest {
 
@@ -39,11 +39,6 @@ public abstract class AbstractSecurityValidatorTest {
         if (scheme!=null)
             exc.setProperty(SECURITY_SCHEMES, List.of(scheme));
         return exc;
-    }
-
-    void dumpResponseBody(Exchange exc) {
-        if (exc.getResponse() != null)
-            System.out.println("Body:\n" + exc.getResponse().getBodyAsStringDecoded());
     }
 
     static Router getRouter() {

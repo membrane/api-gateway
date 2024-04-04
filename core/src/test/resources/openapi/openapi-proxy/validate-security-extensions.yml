@@ -1,0 +1,23 @@
+openapi: '3.0.2'
+info:
+  title: OpenAPIProxy Test - Validate Security
+  version: '1.0'
+  x-membrane-id: validate-security-api
+servers:
+  - url: https://localhost:3000
+x-membrane-validation:
+  requests: true
+  responses: true
+  security: true
+paths:
+  /boolean:
+    get:
+      responses:
+        '200':
+          description: OK
+
+components:
+  securitySchemes:
+    openid:
+      type: openIdConnect
+      openIdConnectUrl: http://dummy
