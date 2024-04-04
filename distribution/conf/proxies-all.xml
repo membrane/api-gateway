@@ -8,7 +8,7 @@
 
     <router>
 
-        <api port="2000">
+        <api port="2000" name="All Interceptors">
 
             <openapi location="fruitshop-api.yml" />
             <openapi location="security-api-v1.yml"
@@ -187,7 +187,7 @@
             <validator />
         </soapProxy>
 
-        <api port="9000">
+        <api port="9000" name="Admin Console">
             <adminConsole />
         </api>
 
