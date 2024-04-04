@@ -13,6 +13,7 @@
                      validateResponses="no"
                      validationDetails="yes" />
             <log/>
+            <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
             <apiKey>
                 <keys>
                     <secret value="demo-key-foobar" />
@@ -20,6 +21,7 @@
                 <headerExtractor />
                 <queryParamExtractor name="X-Api-Key" />
             </apiKey>
+            <index />
             <request >
                 <clusterNotification validateSignature="true"
                                      keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
@@ -41,6 +43,11 @@
         </api>
 
         <api port="2004">
+            <request>
+                <javascript>
+                    ({ id:7, city:"Berlin" })
+                </javascript>
+            </request>
             <response>
                 <counter name="Node 1" />
                 <transform xslt="../examples/xslt/customer2person.xsl" />
@@ -49,15 +56,34 @@
         </api>
 
         <api port="2005">
+            <basicAuthentication>
+                <user name="admin" password="adminadmin" />
+                <user name="guest" password="guestguest" />
+            </basicAuthentication>
+            <throttle delay="1000" maxThreads="5" busyDelay="3000"/>
+            <accessControl file="../examples/acl/acl.xml" />
             <statisticsCSV file="path" />
             <wsdlRewriter />
+            <xmlProtection />
             <response>
+                <soapStackTraceFilter />
                 <xmlContentFilter xPath="//book/reviews" />
             </response>
             <target host="www.membrane-soa.org" />
         </api>
 
         <api port="2006">
+            <login path="/login/" location="../examples/login/dialog">
+                <staticUserDataProvider>
+                    <user username="john" password="password" secret="abcdefghijklmnop" />
+                </staticUserDataProvider>
+                <totpTokenProvider />
+            </login>
+            <headerFilter>
+                <include>Content.*</include>
+                <include>Location</include>
+                <exclude>.*</exclude>
+            </headerFilter>
             <formValidation>
                 <field name="name" regex="[a-zA-Z]+" />
             </formValidation>
@@ -92,14 +118,13 @@
         </api>
 
         <api port="2009">
+            <rewriter>
+                <map from="^/store/(.*)" to="/shop/v2/$1" />
+            </rewriter>
+            <target host="api.predic8.de" port="443">
+                <ssl/>
+            </target>
         </api>
-        <api port="2009">
-        </api>
-        <api port="2009">
-        </api>
-        <api port="2009">
-        </api>
-
 
         <api port="9000">
             <adminConsole />
