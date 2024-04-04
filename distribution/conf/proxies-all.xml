@@ -4,16 +4,73 @@
               xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
+    <fileExchangeStore id="es" dir="./exchanges"/>
+
     <router>
 
         <api port="2000">
+
             <openapi location="fruitshop-api.yml" />
             <openapi location="security-api-v1.yml"
                      validateRequests="yes"
                      validateResponses="no"
                      validationDetails="yes" />
+            <path isRegExp="true">/foo</path>
+            <swaggerRewriter swaggerJson="https://petstore.swagger.io/v2/swagger.json"/>
             <log/>
             <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+            <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
+                <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
+            </jwtAuth>
+            <ntlm user="X-Username" pass="X-Password" />
+            <tokenValidator endpoint="http://localhost:7007/oauth2/userinfo"/>
+            <spdy />
+
+            <oauth2Resource>
+                <membrane src="https://accounts.google.com"
+                          clientId="INSERT_CLIENT_ID"
+                          clientSecret="INSERT_CLIENT_SECRET"
+                          scope="email profile"
+                          subject="sub"/>
+            </oauth2Resource>
+            <oauth2authserver issuer="http://localhost:7000">
+
+                <!-- UserDataProvider is exchangeable, e.g. for a database table -->
+                <staticUserDataProvider>
+                    <user username="john" password="password" email="john@predic8.de" />
+                </staticUserDataProvider>
+
+                <staticClientList>
+                    <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2000/oauth2callback" />
+                </staticClientList>
+
+                <!-- Generates tokens in the given format -->
+                <bearerToken/>
+
+                <claims value="aud email iss sub username">
+
+                    <!-- Scopes are defined from the claims exposed above -->
+                    <scope id="username" claims="username"/>
+                    <scope id="profile" claims="username email"/>
+
+                </claims>
+            </oauth2authserver>
+            <prometheus />
+            <webSocket url="http://my.websocket.server:1234">
+                <wsStompReassembler>
+                    <!-- modify the exchange to have a "[MEMBRANE]:" prefix -->
+                    <groovy>
+                        def method = exc.getRequest().getMethod();
+                        def header = exc.getRequest().getHeader();
+                        def body = exc.getRequest().getBodyAsStringDecoded();
+                        if(exc.getRequest().getMethod() == "SEND")
+                        body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
+                        exc.setRequest(new Request.Builder().method(method).header(header).body(body).build());
+                    </groovy>
+                </wsStompReassembler>
+                <!-- logs the content of a WebSocket frame to the console  -->
+                <wsLog/>
+            </webSocket>
             <apiKey>
                 <keys>
                     <secret value="demo-key-foobar" />
@@ -21,58 +78,51 @@
                 <headerExtractor />
                 <queryParamExtractor name="X-Api-Key" />
             </apiKey>
-            <index />
-            <request >
-                <clusterNotification validateSignature="true"
-                                     keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
-            </request>
-            <target host="localhost" port="2001" />
-        </api>
-
-        <api port="2001">
-            <template>Success!</template>
-            <return statusCode="200" />
-        </api>
-
-        <api port="2003">
-            <switch>
-                <case xPath="//product" url="https://api.predic8.de/shop/v2/products" />
-                <case xPath="//vendor" url="https://api.predic8.de/shop/v2/vendors" />
-                <case xPath="//order" url="https://api.predic8.de/shop/v2/orders" />
-            </switch>
-        </api>
-
-        <api port="2004">
-            <request>
-                <javascript>
-                    ({ id:7, city:"Berlin" })
-                </javascript>
-            </request>
-            <response>
-                <counter name="Node 1" />
-                <transform xslt="../examples/xslt/customer2person.xsl" />
-            </response>
-            <target host="www.thomas-bayer.com" port="80" />
-        </api>
-
-        <api port="2005">
             <basicAuthentication>
                 <user name="admin" password="adminadmin" />
                 <user name="guest" password="guestguest" />
             </basicAuthentication>
+            <openTelemetry sampleRate="1.0">
+                <otlpExporter host="localhost" port="4317"/>
+            </openTelemetry>
             <throttle delay="1000" maxThreads="5" busyDelay="3000"/>
             <accessControl file="../examples/acl/acl.xml" />
             <statisticsCSV file="path" />
             <wsdlRewriter />
             <xmlProtection />
-            <response>
-                <soapStackTraceFilter />
-                <xmlContentFilter xPath="//book/reviews" />
-            </response>
-            <target host="www.membrane-soa.org" />
-        </api>
-
-        <api port="2006">
+            <sampleSoapService />
+            <jsonProtection maxTokens="15"
+                            maxSize="110"
+                            maxDepth="3"
+                            maxStringLength="5"
+                            maxKeyLength="1"
+                            maxObjectSize="3"
+                            maxArraySize="3" />
+            <exchangeStore name="es" />
+            <if test="hasScopes({'admin', 'webmaster'})" language="SpEL">
+                <rewriter>
+                    <map from="^/store/(.*)" to="/shop/v2/$1" />
+                </rewriter>
+            </if>
+            <index />
+            <switch>
+                <case xPath="//product" url="https://api.predic8.de/shop/v2/products" />
+                <case xPath="//vendor" url="https://api.predic8.de/shop/v2/vendors" />
+                <case xPath="//order" url="https://api.predic8.de/shop/v2/orders" />
+            </switch>
+            <balancer>
+                <xmlSessionIdExtractor namespace="http://chat.predic8.com/"
+                                       localName="session" />
+                <clusters>
+                    <cluster name="Default">
+                        <node host="node1.predic8.com" port="8080" />
+                        <node host="node2.predic8.com" port="8090" />
+                        <node host="node3.predic8.com" port="8100" />
+                    </cluster>
+                </clusters>
+                <byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
+                                  retryTimeOnBusy="1000" />
+            </balancer>
             <login path="/login/" location="../examples/login/dialog">
                 <staticUserDataProvider>
                     <user username="john" password="password" secret="abcdefghijklmnop" />
@@ -95,36 +145,41 @@
                          soapURI="/axis2/services/ShopService" requestXSLT="shop-request.xsl"
                          responseXSLT="shop-response.xsl" />
             </rest2Soap>
-        </api>
 
-        <soapProxy port="2007" wsdl="https://www.predic8.de/city-service?wsdl">
-            <validator />
-        </soapProxy>
-
-        <api port="2008">
-            <balancer>
-                <xmlSessionIdExtractor namespace="http://chat.predic8.com/"
-                                       localName="session" />
-                <clusters>
-                    <cluster name="Default">
-                        <node host="node1.predic8.com" port="8080" />
-                        <node host="node2.predic8.com" port="8090" />
-                        <node host="node3.predic8.com" port="8100" />
-                    </cluster>
-                </clusters>
-                <byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
-                                  retryTimeOnBusy="1000" />
-            </balancer>
-        </api>
-
-        <api port="2009">
-            <rewriter>
-                <map from="^/store/(.*)" to="/shop/v2/$1" />
-            </rewriter>
-            <target host="api.predic8.de" port="443">
+            <request >
+                <json2Xml/>
+                <xpathExtractor>
+                    <property name="fn" xpath="person/@firstname"/>
+                </xpathExtractor>
+                <clusterNotification validateSignature="true"
+                                     keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
+                <javascript>
+                    ({ id:7, city:"Berlin" })
+                </javascript>
+            </request>
+            <response>
+                <xml2Json/>
+                <counter name="Node 1" />
+                <transform xslt="../examples/xslt/customer2person.xsl" />
+                <soapStackTraceFilter />
+                <xmlContentFilter xPath="//book/reviews" />
+                <groovy>
+                    exc.getResponse().setBodyContent("Example".getBytes())
+                </groovy>
+            </response>
+            <template contentType="application/json" pretty="yes">
+                { "answer": ${params.answer} }
+            </template>
+            <return statusCode="200" />
+            <target host="localhost" port="2001" >
                 <ssl/>
             </target>
+
         </api>
+
+        <soapProxy port="2004" wsdl="https://www.predic8.de/city-service?wsdl">
+            <validator />
+        </soapProxy>
 
         <api port="9000">
             <adminConsole />
