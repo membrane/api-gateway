@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
 
-    private ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om = new ObjectMapper();
 
     private OpenAPIInterceptor interceptor;
 

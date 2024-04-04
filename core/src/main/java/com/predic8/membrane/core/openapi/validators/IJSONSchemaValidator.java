@@ -16,8 +16,6 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.*;
-
 interface IJSONSchemaValidator {
     ValidationErrors validate(ValidationContext ctx, Object value);
 }

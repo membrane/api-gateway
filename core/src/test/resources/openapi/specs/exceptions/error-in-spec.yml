@@ -22,7 +22,8 @@ paths:
           content:
             application/json:
               schema:
-                type: unknown
+                description: Wrong type on purpose!
+                type: unknown # Ok!
   /nowhere:
     get:
       description: No Response on Purpose!
@@ -32,7 +33,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schema/nowhere"
+                description: Reference into nowhere on purpose!
+                $ref: "#/components/schema/nowhere" # Ok!
 
 
 
