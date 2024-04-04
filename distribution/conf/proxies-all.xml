@@ -142,7 +142,7 @@
                 <include>Location</include>
                 <exclude>.*</exclude>
             </headerFilter>
-
+            <apiDocs />
             <rest2Soap>
                 <mapping regex="/bank/.*" soapAction=""
                          soapURI="/axis2/services/BLZService" requestXSLT="blz-request.xsl"
