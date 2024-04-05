@@ -211,21 +211,23 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     public void checkServerPaths() {
         if (apis.size() > 1) {
+            URIFactory uriFactory = new URIFactory();
             apis.values().stream()
-                    .filter(this::hasPathMatchingAllRequests)
+                    .filter(apiRecord -> hasPathMatchingAllRequests(apiRecord, uriFactory))
                     .forEach(apiRecord -> log.warn("The API '" + apiRecord.api.getInfo().getTitle() + "' contains URLs with '/' matching all requests. This might cause routing to the wrong API!"));
         }
     }
 
-    private boolean hasPathMatchingAllRequests(OpenAPIRecord apiRecord) {
+    private boolean hasPathMatchingAllRequests(OpenAPIRecord apiRecord, URIFactory uriFactory) {
         return apiRecord.api.getServers().stream()
                 .map(server -> {
                     try {
-                        return getPathFromURL(new URIFactory(), server.getUrl());
+                        return getPathFromURL(uriFactory, server.getUrl());
                     } catch (URISyntaxException e) {
                         throw new RuntimeException(e);
                     }
                 })
                 .anyMatch(serverUrl -> serverUrl == null || serverUrl.isEmpty() || serverUrl.equals("/"));
     }
+
 }
