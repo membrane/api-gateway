@@ -98,7 +98,7 @@
 
 <% if (apis.size() > 1 && apis.any { api -> api.value.api.servers.any { server -> com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '' || com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '/' } }) { %>
 <div class="warning-box">
-    <p>Warning: The marked APIs contain "/" as a path and will therefore match all requests.</p>
+    <p><b>Warning:</b> Marked APIs contain URLs with "/" matching all requests. This might cause routing to the wrong API!</p>
 </div>
 <% } %>
 
