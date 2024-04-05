@@ -209,20 +209,21 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         return "Publishes the OpenAPI description and Swagger UI.";
     }
 
-    public void checkServerPaths() {
-        if (apis.size() > 1) {
-            URIFactory uriFactory = new URIFactory();
-            apis.values().stream()
-                    .filter(apiRecord -> hasPathMatchingAllRequests(apiRecord, uriFactory))
-                    .forEach(apiRecord -> log.warn("The API '" + apiRecord.api.getInfo().getTitle() + "' contains URLs with '/' matching all requests. This might cause routing to the wrong API!"));
-        }
+    private void checkServerPaths() {
+        if (apis.size() <= 1)
+            return;
+
+        apis.values().stream()
+                .filter(this::hasPathMatchingAllRequests)
+                .forEach(apiRecord -> log.warn("API '" + apiRecord.api.getInfo().getTitle() + "' contains URLs with '/' matching all requests. This might cause routing to the wrong API!"));
+
     }
 
-    private boolean hasPathMatchingAllRequests(OpenAPIRecord apiRecord, URIFactory uriFactory) {
+    private boolean hasPathMatchingAllRequests(OpenAPIRecord apiRecord) {
         return apiRecord.api.getServers().stream()
                 .map(server -> {
                     try {
-                        return getPathFromURL(uriFactory, server.getUrl());
+                        return getPathFromURL(new URIFactory(), server.getUrl());
                     } catch (URISyntaxException e) {
                         throw new RuntimeException(e);
                     }
