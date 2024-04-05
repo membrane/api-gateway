@@ -61,6 +61,13 @@
 
 <body>
 
+<%
+def hasRootServerPath = {server -> com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '' || com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '/' }
+%>
+
+
+
+
 <div class="box">
     <h1 class="title">APIs</h1>
 </div>
@@ -74,7 +81,7 @@
         <th>Key</th>
     </tr>
     <% for (api in apis) { %>
-    <tr <% if (apis.size() > 1 && api.value.api.servers.any { server -> com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '' || com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '/' }) { %> class="warning" <% } %> >
+    <tr <% if (apis.size() > 1 && api.value.api.servers.any { server -> hasRootServerPath(server)}) { %> class="warning" <% } %> >
     <td>
         <!--suppress HtmlUnknownTarget -->
         <a href="${pathUi}/${api.key}"><%= api.value.api.info.title %></a></td>
@@ -96,7 +103,7 @@
     <% } %>
 </table>
 
-<% if (apis.size() > 1 && apis.any { api -> api.value.api.servers.any { server -> com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '' || com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '/' } }) { %>
+<% if (apis.size() > 1 && apis.any { api -> api.value.api.servers.any { server -> hasRootServerPath(server)}}) { %>
 <div class="warning-box">
     <p><b>Warning:</b> Marked APIs contain URLs with "/" matching all requests. This might cause routing to the wrong API!</p>
 </div>
