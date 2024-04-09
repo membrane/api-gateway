@@ -1,0 +1,5 @@
+# Simple key without any scope
+111
+# Keys associated with roles/scopes
+222: write
+333: write,delete
