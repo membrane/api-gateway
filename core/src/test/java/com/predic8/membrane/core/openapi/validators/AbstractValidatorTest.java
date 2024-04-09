@@ -22,6 +22,9 @@ import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.util.HashMap;
+
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 
 public abstract class AbstractValidatorTest {
 
@@ -32,6 +35,14 @@ public abstract class AbstractValidatorTest {
     @BeforeEach
     public void setUp() {
         validator = new OpenAPIValidator(new URIFactory(), getResourceAsStream(getOpenAPIFileName()));
+        validator.getApi().setExtensions(new HashMap<>() {{
+            put(
+                    X_MEMBRANE_VALIDATION,
+                    new HashMap<>() {{
+                        put(SECURITY, true);
+                        put(REQUESTS, true);
+                    }});
+        }});
     }
 
     protected abstract String getOpenAPIFileName();
