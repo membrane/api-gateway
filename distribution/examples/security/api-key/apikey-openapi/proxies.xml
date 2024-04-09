@@ -16,13 +16,12 @@
     </spring:bean>
 
     <router>
-
-        <!--API key authentication, providing key is mandatory.-->
         <api port="2000">
             <openapi location="fruitshop-api-v2-openapi-3-security.yml" validateRequests="yes" validationDetails="yes"/>
             <apiKey required = "false">
                 <headerExtractor />
             </apiKey>
+            <!--Swagger UI requires CORS but FruitShop does not use CORS, so we disable CORS.-->
             <headerFilter>
                 <exclude>Origin</exclude>
             </headerFilter>
