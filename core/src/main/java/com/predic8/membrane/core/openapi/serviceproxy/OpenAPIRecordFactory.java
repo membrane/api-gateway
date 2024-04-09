@@ -195,7 +195,7 @@ public class OpenAPIRecordFactory {
 
         extension.putIfAbsent(SECURITY, true);
         if (extension.get(SECURITY).equals(true))
-            extension.putIfAbsent(REQUESTS, true);
+            extension.put(REQUESTS, true);
 
         extension.putIfAbsent(REQUESTS, false);
         extension.putIfAbsent(RESPONSES, false);
