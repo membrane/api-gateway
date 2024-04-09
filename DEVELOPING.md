@@ -24,15 +24,15 @@ Meeting the Requirements
 Building in Eclipse
 ===================
 
-1. Checkout the source code from https://github.com/membrane/service-proxy .
+1. Checkout the source code from https://github.com/membrane/api-gateway .
 
 2. Now go to Files->import and select "Existing Maven projects".
 
-3. In the next section you will have to set the service-proxy\cli directory as root-directory. Hit Finish. Eclipse is now building the Workspace, this might take some time. Some build errors will remain until you have completed the next steps.
+3. In the next section you will have to set the api-gateway\cli directory as root-directory. Hit Finish. Eclipse is now building the Workspace, this might take some time. Some build errors will remain until you have completed the next steps.
 
-4. The project service-proxy-annot should be error-free. Right click it and run as "Maven install".
+4. The project api-gateway-annot should be error-free. Right click it and run as "Maven install".
 
-5. Enable annotation processing on service-proxy-core and service-proxy-war: For both projects,
+5. Enable annotation processing on api-gateway-core and api-gateway-war: For both projects,
    a. Right-click the project.
    b. Choose "Properties".
    c. Expand "Java Compiler".
@@ -43,11 +43,11 @@ Building in Eclipse
 
 (Skip to the next section, if you don't need a distribution build.)
 
-6. Right click the service-proxy-core and run as "Maven install".
+6. Right click the api-gateway-core and run as "Maven install".
 
-7. Right click membrane-service-proxy and run as "Maven install".
+7. Right click membrane-api-gateway and run as "Maven install".
 
-8. After doing so membrane-service-proxy-x.x.x.zip should be in the \cli\target folder.
+8. After doing so membrane-api-gateway-x.x.x.zip should be in the \cli\target folder.
 
 
 Running Service Proxy in Eclipse
@@ -68,7 +68,7 @@ if you have a Docker Engine available.
 Examples Tests
 ==============
 
-The example tests try to run the service-proxy.sh/bat scripts in the examples folders of a
+The example tests try to run the api-gateway.sh/bat scripts in the examples folders of a
 distribution build in the target folder. Remember to build after any change otherwise old code
 is tested:
 

@@ -231,7 +231,7 @@ public class ConsistentVersionNumbers {
 		return p.compile(
 				isPartOfProject ?
 						"//project/version | //project/parent/version" :
-						"//project/dependencies/dependency[./artifactId='service-proxy-core']/version"
+						"//project/dependencies/dependency[./artifactId='api-gateway-core']/version"
 		);
 
 	}
@@ -240,15 +240,15 @@ public class ConsistentVersionNumbers {
 		Document d = readDocument(factoryPath);
 		XPathFactory pf = XPathFactory.newInstance();
 		XPath p = pf.newXPath();
-		NodeList l = (NodeList) p.compile("//factorypath/factorypathentry[@kind='VARJAR' and contains(@id, 'service-proxy-annot')]").evaluate(d, NODESET);
+		NodeList l = (NodeList) p.compile("//factorypath/factorypathentry[@kind='VARJAR' and contains(@id, 'api-gateway-annot')]").evaluate(d, NODESET);
 		for (int i = 0; i < l.getLength(); i++) {
 			Element e = (Element) l.item(i);
-			// "M2_REPO/org/membrane-soa/service-proxy-annot/4.0.3/service-proxy-annot-4.0.3.jar"
-			Matcher m = Pattern.compile("service-proxy-annot-(.*?).jar").matcher(e.getAttribute("id"));
+			// "M2_REPO/org/membrane-soa/api-gateway-annot/4.0.3/api-gateway-annot-4.0.3.jar"
+			Matcher m = Pattern.compile("api-gateway-annot-(.*?).jar").matcher(e.getAttribute("id"));
 			if (!m.find())
 				throw new RuntimeException("Could not match: " + e.getAttribute("id"));
 			String newValue = versionTransformer.map(factoryPath, new MembraneVersion(m.group(1))).getValue();
-			e.setAttribute("id", "M2_REPO/org/membrane-soa/service-proxy-annot/" + newValue + "/service-proxy-annot-" + newValue + ".jar");
+			e.setAttribute("id", "M2_REPO/org/membrane-soa/api-gateway-annot/" + newValue + "/api-gateway-annot-" + newValue + ".jar");
 		}
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(factoryPath));
 	}

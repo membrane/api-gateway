@@ -9,7 +9,7 @@ Specification for Version 2.0 is available at
 #### PREPARATIONS
 
 1.	Go to the `examples/swagger` directory.
-2.	Execute `service-proxy.sh` or `service-proxy.bat`
+2.	Execute `api-gateway.sh` or `api-gateway.bat`
 
 
 #### RUNNING THE EXAMPLE

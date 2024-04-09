@@ -35,7 +35,7 @@ public class ProxiesXMLOfflineTest extends AbstractSampleMembraneStartStopTestca
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process =  new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-offline.xml").waitForMembrane().start();
+        process =  new Process2.Builder().in(baseDir).script("api-gateway").parameters("-c conf/proxies-offline.xml").waitForMembrane().start();
 
         // Dump HTTP
         //RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());

@@ -40,7 +40,7 @@ public class OpenTelemetryTest extends AbstractSampleMembraneStartStopTestcase {
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
         logger = new BufferLogger();
-        process = new Process2.Builder().in(baseDir).script("service-proxy").withWatcher(logger).waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("api-gateway").withWatcher(logger).waitForMembrane().start();
     }
 
     @Test

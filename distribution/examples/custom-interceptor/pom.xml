@@ -27,7 +27,7 @@
 
     <dependency>
       <groupId>org.membrane-soa</groupId>
-      <artifactId>service-proxy-core</artifactId>
+      <artifactId>api-gateway-core</artifactId>
       <version>5.3.6-SNAPSHOT</version>
     </dependency>
 

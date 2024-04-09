@@ -8,7 +8,7 @@ This sample explains how to set up and use the `validator` plugin within a `soap
 1. Go to `<membrane-root>/examples/validation/soap-Proxy`
 
 
-2. Start `service-proxy.bat` or `service-proxy.sh`
+2. Start `api-gateway.bat` or `api-gateway.sh`
 
 
 3. Run the following command, observe a successful response:  

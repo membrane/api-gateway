@@ -190,7 +190,7 @@ public class AdminPageBuilder extends Html {
 			 */
 			return;
 
-		form().id("addFwdRuleForm").action("/admin/service-proxy/save").method("POST");
+		form().id("addFwdRuleForm").action("/admin/api-gateway/save").method("POST");
 		div()
 		.span().text("Name").end()
 		.span().input().type("text").id("name").name("name").classAttr("validate[required]").end(2)
@@ -713,7 +713,7 @@ public class AdminPageBuilder extends Html {
 		String helpId = i.getHelpId();
 		if (helpId != null) {
 			div().style("float:right;");
-			a().href("http://membrane-soa.org/service-proxy-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm");
+			a().href("http://membrane-soa.org/api-gateway-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm");
 			span().classAttr("ui-icon ui-icon-help").title("help").end();
 			end();
 			end();

@@ -27,7 +27,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
  *              </p>
  *              <p>
  *                  Has undefined behavior when Membrane is <b>not</b> started from command line
- *                  (=via the RouterCLI class, which <tt>service-proxy.bat</tt>/<tt>service-proxy.sh</tt>
+ *                  (=via the RouterCLI class, which <tt>api-gateway.bat</tt>/<tt>api-gateway.sh</tt>
  *                  do use).
  *              </p>
  *              <p>

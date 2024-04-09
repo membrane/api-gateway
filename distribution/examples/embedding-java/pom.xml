@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.membrane-soa</groupId>
-    <artifactId>service-proxy-example-java-api</artifactId>
+    <artifactId>api-gateway-example-java-api</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <build>
@@ -28,7 +28,7 @@
         </dependency>
         <dependency>
             <groupId>org.membrane-soa</groupId>
-            <artifactId>service-proxy-core</artifactId>
+            <artifactId>api-gateway-core</artifactId>
             <version>5.4.2-SNAPSHOT</version>
         </dependency>
         <dependency>

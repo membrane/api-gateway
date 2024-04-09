@@ -70,7 +70,7 @@ public class Loadbalancing3ClientTest extends DistributionExtractingTestcase {
 			assertEquals(3, getRespondingNode("http://localhost:3023/service"));
 		}
 
-		try(Process2 ignored = startServiceProxyScript(null,"service-proxy-secured")) {
+		try(Process2 ignored = startServiceProxyScript(null,"api-gateway-secured")) {
 			controlNodeViaScript(1, baseDir, "up", "localhost", 4000); // 1 indicates failure
 
 			File propFile = new File(baseDir, "client.properties");

@@ -22,7 +22,7 @@ To run the example execute the following steps:
 
 3. Execute
 
-   `service-proxy.bat`
+   `api-gateway.bat`
 
    This will initialize the `LoadBalancingInterceptor` and associate it with a rule.
 

@@ -10,7 +10,7 @@ In this example we will send requests to a service with and without an API key. 
 
 1. Download and install cURL ( https://curl.haxx.se/download.html )
 
-2. Run the `service-proxy.bat` or `service-proxy.sh`
+2. Run the `api-gateway.bat` or `api-gateway.sh`
 
 3. Open terminal and run below command
 

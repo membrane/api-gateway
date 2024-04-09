@@ -13,7 +13,7 @@ We want to access this API with the path `store/products/`. To do this we have t
 
 1. Go to the `examples/rewriter` directory.
 
-2. Execute `service-proxy.bat`
+2. Execute `api-gateway.bat`
 
 3. Open the URL http://localhost:2000/store/products/ in your browser.
 

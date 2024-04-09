@@ -30,7 +30,7 @@ This example walks you through configuring versioned endpoints in a SOAP service
     ```
    
 
-6. Start Membrane by running `service-proxy.sh` or the `.bat` equivalent.
+6. Start Membrane by running `api-gateway.sh` or the `.bat` equivalent.
 
 
 7. Return to another terminal, now send two requests to the single Membrane endpoint,  

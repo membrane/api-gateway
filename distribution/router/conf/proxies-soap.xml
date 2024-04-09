@@ -2,9 +2,9 @@
 	*** Web Services with SOAP and WSDL Configuration ***
 
 	Start Membrane with:
-	./service-proxy.sh -c conf/proxies-soap.xml
+	./api-gateway.sh -c conf/proxies-soap.xml
 	or
-    service-proxy.bat -c conf/proxies-soap.xml
+    api-gateway.bat -c conf/proxies-soap.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
@@ -25,7 +25,7 @@
 			 After starting open the following URLs in the browser:
 			 http://localhost:2000/blz-service
 			 http://localhost:2000/blz-service?wsdl
-			 http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000
+			 http://localhost:9000/admin/api-gateway/show?name=BLZService%3A2000
 
 			 Documentation:
 			 https://membrane-soa.org/api-gateway-doc/current/configuration/reference/soapProxy.htm

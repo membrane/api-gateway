@@ -49,7 +49,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
 
     @Test
     public void testCbrRequest() throws Exception {
-        replaceInFile2("service-proxy.sh","proxies_soap", "proxies_service");
+        replaceInFile2("api-gateway.sh","proxies_soap", "proxies_service");
 
         try(Process2 sl = startServiceProxyScript()) {
             SubstringWaitableConsoleEvent internalOutput =
@@ -61,7 +61,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
 
     @Test
     public void testCbrRequestWithoutInternal() throws Exception {
-        replaceInFile2("service-proxy.sh","proxies_soap", "proxies_service");
+        replaceInFile2("api-gateway.sh","proxies_soap", "proxies_service");
 
         try(Process2 sl = startServiceProxyScript()) {
             SubstringWaitableConsoleEvent internalOutput =

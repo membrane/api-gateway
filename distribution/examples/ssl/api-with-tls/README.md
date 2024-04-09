@@ -5,7 +5,7 @@ This example describes how to secure an API with SSL/TLS.
 
 ## Running the Example
 
-1. Run `service-proxy.bat` or `service-proxy.sh`
+1. Run `api-gateway.bat` or `api-gateway.sh`
 2. Open the following URL in your browser. Please do not forget to use `https` instead of `http`.
 
     `https://localhost/`
@@ -56,7 +56,7 @@ The output should look like this:
 
 ## Configuration
 
-Just put an SSL element into a proxy. See the [documentation](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/ssl.htm).
+Just put an SSL element into a proxy. See the [documentation](https://www.membrane-soa.org/api-gateway-doc/4.4/configuration/reference/ssl.htm).
 
 ```xml
 <serviceProxy port="443">

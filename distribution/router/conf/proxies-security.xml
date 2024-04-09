@@ -2,9 +2,9 @@
 	*** Secure Configuration Sample ***
 
 	Start Membrane with:
-	./service-proxy.sh -c conf/proxies-security.xml
+	./api-gateway.sh -c conf/proxies-security.xml
 	or
-    service-proxy.bat -c conf/proxies-security.xml
+    api-gateway.bat -c conf/proxies-security.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"

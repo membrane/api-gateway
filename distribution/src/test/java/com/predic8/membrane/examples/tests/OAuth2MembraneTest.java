@@ -25,10 +25,10 @@ public class OAuth2MembraneTest extends DistributionExtractingTestcase {
 
     @Test
     public void test() throws Exception {
-        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("service-proxy").waitForMembrane()
+        try(Process2 ignored = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("api-gateway").waitForMembrane()
                 .start()) {
 
-            try(Process2 ignored2 = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("service-proxy").waitForMembrane()
+            try(Process2 ignored2 = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("api-gateway").waitForMembrane()
                     .start()) {
                     getAndAssert200("http://localhost:2001");
                     String[] headers = new String[2];

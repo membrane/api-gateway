@@ -33,7 +33,7 @@ public class ProxiesXMLFullSampleTest extends AbstractSampleMembraneStartStopTes
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process =  new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-full-sample.xml").waitForMembrane().start();
+        process =  new Process2.Builder().in(baseDir).script("api-gateway").parameters("-c conf/proxies-full-sample.xml").waitForMembrane().start();
 
         // Dump HTTP
         // RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());

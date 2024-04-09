@@ -31,7 +31,7 @@ public class Json2XmlTest extends DistributionExtractingTestcase {
     @Test
     public void test() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
+        try(Process2 ignored = new Process2.Builder().in(baseDir).script("api-gateway").waitForMembrane().withWatcher(logger).start()) {
             sleep(1000);
             postAndAssert(200,"http://localhost:2000/", new String[]{"Content-Type", APPLICATION_JSON}, readFileFromBaseDir("customers.json"));
             sleep(500);

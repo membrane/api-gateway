@@ -5,7 +5,7 @@
 
 In the example we will route to an SSL protected API.
 
-1. Execute `service-proxy.sh` or `service-proxy.bat`
+1. Execute `api-gateway.sh` or `api-gateway.bat`
 
 2. Open the URL http://localhost:2000 in your browser.
 

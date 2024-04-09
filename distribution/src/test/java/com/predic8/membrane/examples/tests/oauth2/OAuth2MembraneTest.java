@@ -41,8 +41,8 @@ public class OAuth2MembraneTest extends DistributionExtractingTestcase {
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        authorizationServer = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("service-proxy").waitForMembrane().start();
-        oauth2Client = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("service-proxy").waitForMembrane().start();
+        authorizationServer = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("api-gateway").waitForMembrane().start();
+        oauth2Client = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("api-gateway").waitForMembrane().start();
 
         // Dump HTTP
         RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());

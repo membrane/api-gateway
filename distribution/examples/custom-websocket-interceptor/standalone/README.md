@@ -15,7 +15,7 @@ of the proxies.xml file.
 #### RUNNING THE EXAMPLE
 
 1. Run the `compile-and-copy.[bat|sh]`. Wait until the console window closes
-2. Start Membrane Service proxy by running the `service-proxy.[bat|sh]` in this folder
+2. Start Membrane Service proxy by running the `api-gateway.[bat|sh]` in this folder
 3. Look at the console window and wait until `"Membrane ... up and running!"`. This window will remain open
 4. Start the WebSocket Server
 5. Start the WebSocket client

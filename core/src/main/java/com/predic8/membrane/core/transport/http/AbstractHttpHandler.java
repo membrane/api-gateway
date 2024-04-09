@@ -121,7 +121,7 @@ public abstract class AbstractHttpHandler  {
 
 	private static String getComment(boolean printStackTrace) {
 		return "Stack traces can be " + (printStackTrace ? "dis" : "en") + "abled by setting the " +
-			   "@printStackTrace attribute on <a href=\"https://membrane-soa.org/service-proxy-doc/current/configuration/reference/transport.htm\">transport</a>. " +
+			   "@printStackTrace attribute on <a href=\"https://membrane-soa.org/api-gateway-doc/current/configuration/reference/transport.htm\">transport</a>. " +
 			   "More details might be found in the log.";
 	}
 

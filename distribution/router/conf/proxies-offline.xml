@@ -2,9 +2,9 @@
 	*** Offline Configuration ***
 
 	Start Membrane with:
-	./service-proxy.sh -c conf/proxies-offline.xml
+	./api-gateway.sh -c conf/proxies-offline.xml
 	or
-	service-proxy.bat -c conf/proxies-offline.xml
+	api-gateway.bat -c conf/proxies-offline.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"

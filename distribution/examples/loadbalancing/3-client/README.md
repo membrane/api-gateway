@@ -12,7 +12,7 @@ To run the example execute the following steps:
 
 1. Go to the `examples/loadbalancing/3-node-api` directory.
 
-2. Run `service-proxy.bat` or `service-proxy.sh`
+2. Run `api-gateway.bat` or `api-gateway.sh`
 
    This will start three nodes, the loadbalancer and the node management API.
 
@@ -56,7 +56,7 @@ To run the example execute the following steps:
 
 1. First stop the router by closing the command line that runs the router e.g. by using CTRL-C.
 
-2. Execute `service-proxy-secured.bat` or `service-proxy-secured.sh`
+2. Execute `api-gateway-secured.bat` or `api-gateway-secured.sh`
 
 3. Execute `lbclient.sh up localhost 4000`
 

@@ -45,7 +45,7 @@ public abstract class Store {
 
 	/**
 	 * @description A file/resource containing the PKCS#12 keystore (*.p12).
-	 * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
+	 * See <a href="https://www.membrane-soa.org/api-gateway-doc/current/configuration/location.htm">here</a> for a description of the format.
 	 */
 	@MCAttribute
 	public void setLocation(String location) {

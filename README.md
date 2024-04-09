@@ -2,8 +2,8 @@
 
 # API Gateway
 
-[![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
-[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
+[![GitHub release](https://img.shields.io/github/release/membrane/api-gateway.svg)](https://github.com/membrane/api-gateway/releases/latest)
+[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/api-gateway/master/distribution/router/LICENSE.txt)
 
 API Gateway for REST, WebSockets and legacy Web Services written in Java. Featuring:
 
@@ -15,9 +15,9 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 **API Security:**
 
 * [JSON Web Tokens](#json-web-tokens)
-* [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm)
+* [OAuth2](https://www.membrane-soa.org/api-gateway/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm)
   and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm)
-* [OAuth2 authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html)
+* [OAuth2 authorization server](https://www.membrane-soa.org/api-gateway-doc/4.8/security/oauth2/flows/code/index.html)
 * [Rate limiting](#rate-limiting)
 * GraphQL-, JSON- and XML protection
 
@@ -39,9 +39,9 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 
 1. Make sure Java 17 or newer is installed.
 
-2. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it.
+2. Download the [binary](https://github.com/membrane/api-gateway/releases) and unzip it.
 
-3. Run `service-proxy.sh` or `service-proxy.bat` in a terminal
+3. Run `api-gateway.sh` or `api-gateway.bat` in a terminal
 4. Open http://localhost:2000 to access https://api.predic8.de over the gateway.
 
 5. Change the configuration in `conf/proxies.xml`
@@ -65,7 +65,7 @@ More about setting up [Membrane for Docker](https://membrane-api.io/deployment/#
 ## Next Steps
 
 See the snippets below, run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/)
-or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial or have a look at the [documentation](https://www.membrane-soa.org/service-proxy-doc/).
+or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial or have a look at the [documentation](https://www.membrane-soa.org/api-gateway-doc/).
 
 # Configuration
 
@@ -427,7 +427,7 @@ Operate your own identity provider:
 </api>
 ```
 
-See the [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.html) example.
+See the [OAuth2 Authorization Server](https://www.membrane-soa.org/api-gateway-doc/4.8/oauth2-code-flow-example.html) example.
 
 ## Basic Authentication
 
@@ -536,7 +536,7 @@ Route and intercept WebSocket traffic:
 </api>
 ```
 
-See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.html)
+See [documentation](https://www.membrane-soa.org/api-gateway-doc/4.8/websocket-routing-intercepting.html)
 
 # SOAP Web Services
 

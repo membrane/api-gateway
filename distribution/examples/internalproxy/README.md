@@ -10,7 +10,7 @@ Let's start first example with the `<soapProxy>`
 
 1. Go to the `examples/internalProxy` directory
 
-2. Execute `service-proxy.sh`
+2. Execute `api-gateway.sh`
 
 3. Go to [http://localhost:2000/axis2/services/BLZService](http://localhost:2000/axis2/services/BLZService)
  
@@ -53,13 +53,13 @@ This section explains how to run the example with `<serviceProxy>`
 
 1. Go to the `examples/internalProxy` directory
 
-2. Go to the `service-proxy.sh` file and change  below line to second line below
+2. Go to the `api-gateway.sh` file and change  below line to second line below
 
 ``` 
 java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies_soap.xml
 java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies_service.xml
 ```
-3. Execute `service-proxy.sh`
+3. Execute `api-gateway.sh`
 
 4. Execute `curl localhost:2000` in another console
 

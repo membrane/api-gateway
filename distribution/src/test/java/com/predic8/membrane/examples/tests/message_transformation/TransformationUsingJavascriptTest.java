@@ -30,7 +30,7 @@ public class TransformationUsingJavascriptTest extends DistributionExtractingTes
     @Test
     public void simpleTransformation() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
+        try(Process2 ignored = new Process2.Builder().in(baseDir).script("api-gateway").waitForMembrane().withWatcher(logger).start()) {
 
             // @formatter:off
             given()
@@ -52,7 +52,7 @@ public class TransformationUsingJavascriptTest extends DistributionExtractingTes
     @Test
     public void complexTransformation() throws Exception {
         BufferLogger logger = new BufferLogger();
-        try(Process2 ignored = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().withWatcher(logger).start()) {
+        try(Process2 ignored = new Process2.Builder().in(baseDir).script("api-gateway").waitForMembrane().withWatcher(logger).start()) {
 
             // @formatter:off
             given()

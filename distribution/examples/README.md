@@ -28,7 +28,7 @@
 | [json-protection](security/json-protection)                            | Validate JSON documents and limit document attributes.                                                                                                                 |
 | [login page](login)                                                    | Protect Web pages using a login page and passwords.                                                                                                                    |
 | [ntlm](ntlm)                                                           | Authentication against NTLM protected backends e.g. running on Microsoft IIS                                                                                           |
-| [oauth2](oauth2)                                                       | Please follow https://www.membrane-soa.org/service-proxy-doc/current/oauth2-password-flow-sample.htm                                                                   |
+| [oauth2](oauth2)                                                       | Please follow https://www.membrane-soa.org/api-gateway-doc/current/oauth2-password-flow-sample.htm                                                                   |
 | [openapi](openapi)                                                     | Load APIs from OpenAPI documents and validate requests and responses against OpenAPI.                                                                                  |                                                                 |
 | [rateLimiter](rateLimiter)                                             | The `RateLimiter` limits the number of requests in a given interval.                                                                                                   |
 | [SSL/TLS](ssl)                                                         | SSL for APIs and for the communication to backends                                                                                                                     |
@@ -71,7 +71,7 @@
 | Example                                                                | Description                                                                                                                                                            |
 |------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [custom-interceptor](custom-interceptor)                               | How to write custom interceptors in Java.                                                                                                                              |
-| [custom-websocket-interceptor](custom-websocket-interceptor)           | Please visit https://www.membrane-soa.org/service-proxy-doc/current/websockets/create-websocket-interceptor.htm to learn how to create custom WebSocket interceptors.  |
+| [custom-websocket-interceptor](custom-websocket-interceptor)           | Please visit https://www.membrane-soa.org/api-gateway-doc/current/websockets/create-websocket-interceptor.htm to learn how to create custom WebSocket interceptors.  |
 | [file-exchangestore](file-exchangestore)                               | Membrane uses exchange stores to save requests and responses on disc or memory.                                                                                        |
 
 

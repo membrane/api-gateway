@@ -156,7 +156,7 @@ var membrane = function() {
 		   ["Time", data.time],
 		   ["Method", data.method],
    		   ["Path", data.method==="GET"?createLink(fullPath, data.path):data.path],
-		   ["Proxy", createLink(relativeRootPath + '/admin/service-proxy/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
+		   ["Proxy", createLink(relativeRootPath + '/admin/api-gateway/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
 		   ["Client", createLink(relativeRootPath + '/admin/calls',  data.client, [['client', data.client]])],
 		   ["Content Type", data.reqContentType],
 		   ["Length", data.reqContentLength]
@@ -271,7 +271,7 @@ $(function() {
 		  "aoColumnDefs": [ 
 	           {
 	               "fnRender": function ( o, v ) {
-	            	   r = membrane.createLink(relativeRootPath + '/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
+	            	   r = membrane.createLink(relativeRootPath + '/admin/api-gateway/show', v, [['name',v+':'+o.aData.listenPort]]);
 	            	   if (!o.aData['active']) {
 	            	     error = o.aData['error'];
 	            	     if (!error)
@@ -355,7 +355,7 @@ $(function() {
 	           },
 	           {
 	               "fnRender": function ( o, v ) {
-	            	   return membrane.createLink(relativeRootPath + '/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
+	            	   return membrane.createLink(relativeRootPath + '/admin/api-gateway/show', v, [['name',v+':'+o.aData.listenPort]]);
 	               },
 	               "aTargets": [ 2 ]
 	           }

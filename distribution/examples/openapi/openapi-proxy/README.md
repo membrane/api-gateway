@@ -13,7 +13,7 @@ Make sure to use Membrane version 5 or newer.
 1. Go to the _examples/openapi/openapi-proxy_ directory and start Membrane:
 
 ```shell
-./service-proxy.sh
+./api-gateway.sh
 ```
 
 or:
@@ -100,7 +100,7 @@ The validator checks the request against the OpenAPI definition. Cause the value
 For more about the OpenAPI Validation features of Membrane have a look at:
 
 - [Simple Validation Example](../validation-simple)
-- [Extended Validation Example](git/predic8/service-proxy/distribution/examples/openapi/validation/)
+- [Extended Validation Example](git/predic8/api-gateway/distribution/examples/openapi/validation/)
 
 ---
 See:

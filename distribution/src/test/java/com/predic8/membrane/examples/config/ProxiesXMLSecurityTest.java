@@ -44,7 +44,7 @@ public class ProxiesXMLSecurityTest extends AbstractSampleMembraneStartStopTestc
 
         System.getProperties().setProperty(DISABLE_HOSTNAME_VERIFICATION, TRUE.toString());
 
-        process = new Process2.Builder().in(baseDir).script("service-proxy").parameters("-c conf/proxies-security.xml").waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("api-gateway").parameters("-c conf/proxies-security.xml").waitForMembrane().start();
     }
 
     @Test

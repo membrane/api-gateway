@@ -15,15 +15,15 @@
 --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>service-proxy-maven-plugin</artifactId>
+    <artifactId>api-gateway-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <name>${project.artifactId}</name>
     <description>A Maven plugin for the Membrane API Gateway.</description>
-    <url>http://membrane-soa.org/service-proxy/</url>
+    <url>http://membrane-soa.org/api-gateway/</url>
 
     <parent>
         <groupId>org.membrane-soa</groupId>
-        <artifactId>service-proxy-parent</artifactId>
+        <artifactId>api-gateway-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
         <version>5.4.2-SNAPSHOT</version>
     </parent>
@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>org.membrane-soa</groupId>
-            <artifactId>service-proxy-core</artifactId>
+            <artifactId>api-gateway-core</artifactId>
         </dependency>
     </dependencies>
 

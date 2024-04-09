@@ -42,7 +42,7 @@ import static org.apache.commons.text.StringEscapeUtils.*;
  * header, query parameters, etc. If the extension of a referenced template file is <i>.xml</i> it will use
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
- * Have a look at the samples in <a href="https://github.com/membrane/service-proxy/tree/master/distribution/examples">examples/template</a>.
+ * Have a look at the samples in <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples">examples/template</a>.
  * @topic 4. Interceptors/Features
  */
 

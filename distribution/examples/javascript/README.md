@@ -8,7 +8,7 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
 
 1. Take a look at [proxies.xml](proxies.xml). There you'll find the APIs with the `javascript`plugin.
 2. Open a commandline session or a terminal.
-3. Run `service-proxy.bat` or `./service-proxy.sh` in this folder
+3. Run `api-gateway.bat` or `./api-gateway.sh` in this folder
 4. Open a second terminal and run the commands:
 
    **Create JSON with Javascript:**
@@ -63,7 +63,7 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
    Greatings from Spring       
    ```
 
-   Then take a look at the output of the `service-proxy.sh/bat` script. You should see the output from the script, printing the request header fields.
+   Then take a look at the output of the `api-gateway.sh/bat` script. You should see the output from the script, printing the request header fields.
 
 
    ```
@@ -78,7 +78,7 @@ Javascript is a powerful tool to manipulate messages and to change the behaviour
 
 ---
 See: 
-- [javascript plugin](https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/javascript.htm) reference
+- [javascript plugin](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/javascript.htm) reference
 
 
 

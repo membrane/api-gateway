@@ -16,8 +16,8 @@ To run the example execute the following steps:
 
 2. Start Membrane:
 
-`service-proxy.sh` or 
-`service-proxy.bat`
+`api-gateway.sh` or 
+`api-gateway.bat`
 
 3. Send an order XML document to the API:
 

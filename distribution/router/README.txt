@@ -8,10 +8,10 @@ Running API Gateway
 Make sure you have installed Java 17 or higher. Then do the following:
 
 * Starting the Service Proxy (Windows)
-  Execute service-proxy.bat
+  Execute api-gateway.bat
 	
 * Starting the Service Proxy (Linux)
-  Execute service-proxy.sh
+  Execute api-gateway.sh
 	
 The Service Proxy by default uses the sample configuration conf/proxies.xml .
 
@@ -23,7 +23,7 @@ You can find the latest version at http://www.membrane-soa.org/downloads/ .
 
 Documentation
 -------------------------------------------------------------------------------
-The documentation is available at http://membrane-soa.org/service-proxy-doc/ .
+The documentation is available at http://membrane-soa.org/api-gateway-doc/ .
 Examples are found in examples/ .
 
 

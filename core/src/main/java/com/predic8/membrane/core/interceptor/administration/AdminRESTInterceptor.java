@@ -116,10 +116,10 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				gen.writeNumberField("count", p.getStatisticCollector().getCount());
 				gen.writeObjectFieldStart("actions");
 				if (!isReadOnly()) {
-					gen.writeStringField("delete", "/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
+					gen.writeStringField("delete", "/admin/api-gateway/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
 				}
 				if (!p.isActive())
-					gen.writeStringField("start", "/admin/service-proxy/start?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
+					gen.writeStringField("start", "/admin/api-gateway/start?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p), UTF_8));
 				gen.writeEndObject();
 				gen.writeEndObject();
 			}

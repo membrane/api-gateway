@@ -73,7 +73,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/service-proxy/show/?(\\?.*)?")
+	@Mapping("/admin/api-gateway/show/?(\\?.*)?")
 	public Response handleServiceProxyShowRequest(final Map<String, String> params, final String relativeRootPath)
 			throws Exception {
 		final StringWriter writer = new StringWriter();
@@ -155,7 +155,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/service-proxy/save/?(\\?.*)?")
+	@Mapping("/admin/api-gateway/save/?(\\?.*)?")
 	public Response handleServiceProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -194,7 +194,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/service-proxy/delete/?(\\?.*)?")
+	@Mapping("/admin/api-gateway/delete/?(\\?.*)?")
 	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
 			throws Exception {
 		if (readOnly)
@@ -207,7 +207,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@SuppressWarnings("unused")
-	@Mapping("/admin/service-proxy/start/?(\\?.*)?")
+	@Mapping("/admin/api-gateway/start/?(\\?.*)?")
 	public Response handleServiceProxyStartRequest(Map<String, String> params, String relativeRootPath)
 			throws Exception {
 		if (readOnly)
@@ -714,7 +714,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				if(!(router.getExchangeStore() instanceof LimitedMemoryExchangeStore))
 					h3().text("Messages").end();
 				if (router.getExchangeStore() instanceof LimitedMemoryExchangeStore) {
-					h3().text(getLimitedMemoryExchangeStoreMessageText()).a().href("https://www.membrane-soa.org/service-proxy-doc/current/configuration/reference/limitedMemoryExchangeStore.htm").text("(What is this?)").end(2);
+					h3().text(getLimitedMemoryExchangeStoreMessageText()).a().href("https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/limitedMemoryExchangeStore.htm").text("(What is this?)").end(2);
 				}
 			}
 

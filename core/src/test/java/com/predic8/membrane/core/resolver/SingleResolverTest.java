@@ -21,7 +21,7 @@ public class SingleResolverTest {
 
 	@Test
 	public void combineWithWindowsAbsolute() {
-		String parent = "C:/git/membrane/service-proxy/distribution/conf/proxies.xml";
+		String parent = "C:/git/membrane/api-gateway/distribution/conf/proxies.xml";
 		String absChild = "C:\\Desktop\\predic8.keystore";
 		assertEquals(absChild, ResolverMap.combine(parent, absChild).replaceAll("/", "\\\\"));
 	}

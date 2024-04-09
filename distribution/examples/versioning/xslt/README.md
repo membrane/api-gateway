@@ -35,7 +35,7 @@ This sample demonstrates how to rewrite SOAP message versions using `XSLT`.
     No endpoint for this version is available.
 
 
-4. Start Membrane by running `service-proxy.sh` or the `.bat` equivalent.
+4. Start Membrane by running `api-gateway.sh` or the `.bat` equivalent.
 
 
 5. Return to another terminal, send two requests, one for versions `1.1` and `2.0` respectively, 

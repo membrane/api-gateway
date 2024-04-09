@@ -9,10 +9,10 @@
     <version>1.0</version>
 
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.membrane-soa/membrane-service-proxy -->
+        <!-- https://mvnrepository.com/artifact/org.membrane-soa/membrane-api-gateway -->
         <dependency>
             <groupId>org.membrane-soa</groupId>
-            <artifactId>membrane-service-proxy</artifactId>
+            <artifactId>membrane-api-gateway</artifactId>
             <version>5.3.6-SNAPSHOT</version>
         </dependency>
     </dependencies>

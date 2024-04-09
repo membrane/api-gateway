@@ -35,7 +35,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 	@Test
 	public void doit() throws IOException, InterruptedException, TimeoutException {
 		File baseDir = getExampleDir("quickstart-soap");
-		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("api-gateway").waitForMembrane().start();
 		try {
 			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "proxies.xml"));
 			pxu.updateWith(
@@ -160,7 +160,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 
 			assertContains("Validation failed", postAndAssert(400, endpoint, invalidRequest));
 
-			assertContains("1 of 1 messages have been invalid", getAndAssert200("http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000"));
+			assertContains("1 of 1 messages have been invalid", getAndAssert200("http://localhost:9000/admin/api-gateway/show?name=BLZService%3A2000"));
 
 			assertContains("Target Namespace", getAndAssert200(endpoint));
 

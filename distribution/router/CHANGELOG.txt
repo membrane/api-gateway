@@ -71,7 +71,7 @@ Membrane Service Proxy Change Log
 * [feature] <fileExchangeStore maxDays="30" /> has a new attribute 'maxDays'
   which can be used to automatically delete old files after 30 days.
 
-* The Maven groupId was changed from 'org.membrane-soa.service-proxy' to
+* The Maven groupId was changed from 'org.membrane-soa.api-gateway' to
   'org.membrane-soa'.
 
 * [feature] In the <groovy> interceptor, you can use 'spring' to access the
@@ -223,7 +223,7 @@ Membrane Service Proxy Change Log
 
 * [bugfix] fixed blueprint local bean parsing. Therefore, the OSGi deployment
   tutorial on
-  https://membrane-soa.org/service-proxy-doc/4.0/deployment/osgi/servicemix-1.htm
+  https://membrane-soa.org/api-gateway-doc/4.0/deployment/osgi/servicemix-1.htm
   Part I (proxies.xml deployment in Karaf 3.0) now works again. Part II
   still needs some work
 
@@ -252,7 +252,7 @@ Membrane Service Proxy Change Log
 * [feature] added Blueprint support for the Membrane configuration language
   (defined by http://membrane-soa.org/schemas/proxies-1.xsd ) and replaced
   the old OSGi extender. See
-  https://github.com/membrane/service-proxy/tree/master/osgi-extender/src/main/xml
+  https://github.com/membrane/api-gateway/tree/master/osgi-extender/src/main/xml
   for sample configurations.
 
 * [removed feature] removed the Karaf Extender: it has become pointless with 
@@ -437,7 +437,7 @@ Membrane Service Proxy Change Log
 
 * renamed Maven modules
   com.predic8:membrane-esb* to
-  org.membrane-soa.service-proxy.service-proxy*
+  org.membrane-soa.api-gateway.api-gateway*
 
 * [bugfix] changed "Expect: 100-continue" handling to request the body from
   the client using "HTTP/1.1 100 Continue" only when needed. This allows

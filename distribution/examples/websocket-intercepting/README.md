@@ -16,7 +16,7 @@ https://tools.ietf.org/html/rfc6455
 
 To run the example execute the following steps:
 
-1. Start Membrane Service proxy by running the `service-proxy.[bat|sh]` in this folder
+1. Start Membrane Service proxy by running the `api-gateway.[bat|sh]` in this folder
    
 2. Look at the console window and wait until "Membrane ... up and running!". This window will remain open
    

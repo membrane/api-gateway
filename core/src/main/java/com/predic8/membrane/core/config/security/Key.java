@@ -36,7 +36,7 @@ public class Key {
     public static class Private extends Blob {
         /**
          * @description A file/resource containing the private key in PEM format.
-         * See <a href="https://www.membrane-soa.org/service-proxy-doc/current/configuration/location.htm">here</a> for a description of the format.
+         * See <a href="https://www.membrane-soa.org/api-gateway-doc/current/configuration/location.htm">here</a> for a description of the format.
          */
         public void setLocation(String location) {
             super.setLocation(location);
