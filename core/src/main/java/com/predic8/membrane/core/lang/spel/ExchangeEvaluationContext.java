@@ -55,7 +55,6 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
             path = request.getUri();
             method = request.getMethod();
             this.request = new SPelMessageWrapper(exc.getRequest());
-            exc.setResponse(Response.ok().build());
         }
 
         Response response = exc.getResponse();

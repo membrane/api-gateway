@@ -34,7 +34,7 @@ public class ExchangeEvaluationContextTest {
                 .header("shadowIng", "test")
                 .buildExchange();
 
-        exc.setResponse(Response.ok().build());
+        exc.setResponse(Response.accepted().build());
     }
 
     String keyExpression(String spel) {
@@ -64,7 +64,7 @@ public class ExchangeEvaluationContextTest {
 
     @Test
     void getStatusCode() {
-        assertEquals(200, new ExchangeEvaluationContext(exc, exc.getRequest()).getStatusCode());
+        assertEquals("202", keyExpression("statusCode"));
     }
 
     @Test
