@@ -33,6 +33,7 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private final SPeLablePropertyAware properties;
     private String path;
     private String method;
+    private int statusCode;
 
     private SPelMessageWrapper request;
     private SPelMessageWrapper response;
@@ -54,11 +55,13 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
             path = request.getUri();
             method = request.getMethod();
             this.request = new SPelMessageWrapper(exc.getRequest());
+            exc.setResponse(Response.ok().build());
         }
 
         Response response = exc.getResponse();
         if (response != null) {
             this.response = new SPelMessageWrapper(exc.getResponse());
+            this.statusCode = exc.getResponse().getStatusCode();
         }
 
         setRootObject(this);
@@ -92,6 +95,8 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     public String getMethod() {
         return method;
     }
+
+    public int getStatusCode() { return statusCode; }
 
     public SPelMessageWrapper getRequest() {
         return request;
