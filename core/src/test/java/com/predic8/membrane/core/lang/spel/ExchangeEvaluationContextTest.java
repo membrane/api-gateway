@@ -33,6 +33,8 @@ public class ExchangeEvaluationContextTest {
                 .header("shadow-ing", "nothappening")
                 .header("shadowIng", "test")
                 .buildExchange();
+
+        exc.setResponse(Response.accepted().build());
     }
 
     String keyExpression(String spel) {
@@ -58,6 +60,11 @@ public class ExchangeEvaluationContextTest {
     @Test
     void getMethod() {
         assertEquals("foo", keyExpression("headers.authentication"));
+    }
+
+    @Test
+    void getStatusCode() {
+        assertEquals("202", keyExpression("statusCode"));
     }
 
     @Test
