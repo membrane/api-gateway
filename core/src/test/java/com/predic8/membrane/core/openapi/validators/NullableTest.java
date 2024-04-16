@@ -75,7 +75,6 @@ protected String getOpenAPIFileName() {
         m.put("telefon",null);
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
-        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/telefon", e.getContext().getJSONpointer());

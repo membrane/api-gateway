@@ -171,6 +171,10 @@ public class Response extends Message {
 		return newInstance().status(200).header("Server", SERVER_HEADER).bodyEmpty();
 	}
 
+	public static ResponseBuilder accepted() {
+		return newInstance().status(202).header("Server", SERVER_HEADER).bodyEmpty();
+	}
+
 	public static ResponseBuilder noContent() {
 		return newInstance().status(204);
 	}
@@ -341,7 +345,7 @@ public class Response extends Message {
 		try {
 			line = readLine(in);
 		} catch (EOFWhileReadingLineException e) {
-			if (e.getLineSoFar().length() == 0)
+			if (e.getLineSoFar().isEmpty())
 				throw new NoResponseException(e);
 			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
 		}

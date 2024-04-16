@@ -146,7 +146,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean shouldValidate(OpenAPI api, String direction) {
+    public static boolean shouldValidate(OpenAPI api, String direction) {
         Map<String, Object> extenstions = api.getExtensions();
         if (extenstions == null)
             return false;
@@ -155,7 +155,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Boolean> getxValidation(Map<String, Object> extenstions) {
+    private static Map<String, Boolean> getxValidation(Map<String, Object> extenstions) {
         return (Map<String, Boolean>) extenstions.get(X_MEMBRANE_VALIDATION);
     }
 

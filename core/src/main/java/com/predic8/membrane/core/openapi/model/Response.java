@@ -21,7 +21,7 @@ import jakarta.mail.internet.*;
 
 import java.io.*;
 
-public class Response extends Message<Response> {
+public class Response<T extends Body> extends Message<T,Response<T>> {
 
     private final int statusCode;
 
@@ -34,21 +34,21 @@ public class Response extends Message<Response> {
         this.statusCode = statusCode;
     }
 
-    public static Response statusCode(int statusCode) {
-        return new Response(statusCode);
+    public static <U extends Body> Response<U> statusCode(int statusCode) {
+        return new Response<>(statusCode);
     }
 
-    public Response body(Body body) {
+    public Response<T> body(Body body) {
         this.body = body;
         return this;
     }
 
-    public Response body(InputStream inputStream) {
+    public Response<T> body(InputStream inputStream) {
         this.body = new InputStreamBody(inputStream);
         return this;
     }
 
-    public Response body(JsonNode n) {
+    public Response<T> body(JsonNode n) {
         this.body = new JsonBody(n);
         return this;
     }

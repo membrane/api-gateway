@@ -31,6 +31,7 @@ public class OpenAPISpec {
     public YesNoOpenAPIOption validateRequests = ASINOPENAPI;
     YesNoOpenAPIOption validateResponses = ASINOPENAPI;
     YesNoOpenAPIOption validationDetails = ASINOPENAPI;
+    YesNoOpenAPIOption validateSecurity = ASINOPENAPI;
     Rewrite rewrite = new Rewrite();
 
     public OpenAPISpec() {
@@ -112,6 +113,15 @@ public class OpenAPISpec {
 
     public YesNoOpenAPIOption getValidationDetails() {
         return validationDetails;
+    }
+
+    public YesNoOpenAPIOption getValidateSecurity() {
+        return validateSecurity;
+    }
+
+    @MCAttribute
+    public void setValidateSecurity(YesNoOpenAPIOption validateSecurity) {
+        this.validateSecurity = validateSecurity;
     }
 
     public enum YesNoOpenAPIOption {

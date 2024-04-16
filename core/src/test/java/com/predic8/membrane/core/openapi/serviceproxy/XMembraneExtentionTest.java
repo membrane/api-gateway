@@ -47,9 +47,6 @@ public class XMembraneExtentionTest {
 
     @Test
     public void ids() {
-
-        System.out.println("interceptor = " + interceptor.apis.keySet());
-
         interceptor.apis.get("extension-sample-1-4");
     }
 

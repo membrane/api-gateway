@@ -16,17 +16,23 @@
 
 package com.predic8.membrane.core.openapi.model;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.model.*;
 
 import java.io.*;
 
 public class JsonBody implements Body {
 
-    private JsonNode payload;
+    private static final ObjectReader m = new ObjectMapper().reader();
+
+    private final JsonNode payload;
 
     public JsonBody(JsonNode s) {
         payload=s;
+    }
+
+    public JsonBody(String s) throws JsonProcessingException {
+        payload = m.readTree(s);
     }
 
     public JsonNode getPayload() {

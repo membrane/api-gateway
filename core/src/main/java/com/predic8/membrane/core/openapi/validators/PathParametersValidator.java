@@ -34,9 +34,9 @@ public class PathParametersValidator {
         this.api = api;
     }
 
-    public ValidationErrors validatePathParameters(ValidationContext ctx, Request req, List<Parameter> schemaParameters) {
+    public ValidationErrors validatePathParameters(ValidationContext ctx, Request<?> req, List<Parameter> schemaParameters) {
 
-        if (schemaParameters == null || req.getPathParameters().size() == 0)
+        if (schemaParameters == null || req.getPathParameters().isEmpty())
             return null;
 
         schemaParameters.stream().map(this::resolveRefs).filter(this::isPathParameter).forEach(parameter -> {

@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -138,8 +139,8 @@ public class Utils {
         return !ve.isEmpty();
     }
 
-    public static Request getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
-        Request request = new Request(exc.getRequest().getMethod()).path(exc.getRequestURI());
+    public static Request<?> getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
+        var request = new Request<>(exc.getRequest().getMethod()).path(exc.getRequestURI());
         Map<String, String> headers = new HashMap<>();
         for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
             headers.put(header.getHeaderName().toString(), header.getValue());
@@ -160,8 +161,8 @@ public class Utils {
         return request;
     }
 
-    public static Response getOpenapiValidatorResponse(Exchange exc) throws ParseException, IOException {
-        Response response = Response.statusCode(exc.getResponse().getStatusCode()).mediaType(exc.getResponse().getHeader().getContentType());
+    public static <T extends Body> Response<T> getOpenapiValidatorResponse(Exchange exc) throws ParseException, IOException {
+        Response<T> response = (Response<T>) Response.statusCode(exc.getResponse().getStatusCode()).mediaType(exc.getResponse().getHeader().getContentType());
 
         if (!exc.getResponse().isBodyEmpty()) {
             response.body(exc.getResponse().getBodyAsStreamDecoded());

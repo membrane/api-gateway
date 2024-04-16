@@ -21,10 +21,10 @@ import com.predic8.membrane.core.security.*;
 
 import java.util.*;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.*;
 import static java.util.stream.Collectors.*;
 
-public class Request extends Message<Request> {
+public class Request<T extends Body> extends Message<T,Request<T>> {
 
     private final String method;
     private String path;
@@ -40,41 +40,41 @@ public class Request extends Message<Request> {
         this.method = method;
     }
 
-    public static Request get() {
-        return new Request("GET");
+    public static <T extends Body> Request<T> get() {
+        return new Request<>("GET");
     }
 
-    public static Request post() {
-        return new Request("POST");
+    public static <T extends Body> Request<T> post() {
+        return new Request<>("POST");
     }
 
-    public static Request put() {
-        return new Request("PUT");
+    public static <T extends Body> Request<T> put() {
+        return new Request<>("PUT");
     }
 
-    public static Request delete() {
-        return new Request("DELETE");
+    public static <T extends Body> Request<T> delete() {
+        return new Request<>("DELETE");
     }
 
-    public static Request patch() {
-        return new Request("PATCH");
+    public static <T extends Body> Request<T> patch() {
+        return new Request<>("PATCH");
     }
 
-    public static Request trace() {
-        return new Request("TRACE");
+    public static <T extends Body> Request<T> trace() {
+        return new Request<>("TRACE");
     }
 
-    public Request path(String path) {
+    public Request<T> path(String path) {
         this.path = path;
         return this;
     }
 
-    public Request securitySchemes(List<SecurityScheme> schemes) {
+    public Request<T> securitySchemes(List<SecurityScheme> schemes) {
         this.securitySchemes = schemes;
         return this;
     }
 
-    public Request scopes(String... scope) {
+    public Request<T> scopes(String... scope) {
         this.scopes = Arrays.stream(scope).collect(toSet());
         return this;
     }

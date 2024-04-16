@@ -31,7 +31,7 @@ public class Constants {
 	public static final String VERSION;
 
 	static {
-		String version = "5.3"; // fallback
+		String version = "5.4"; // fallback
 		try {
 			Properties p = new Properties(); // Production
 			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));

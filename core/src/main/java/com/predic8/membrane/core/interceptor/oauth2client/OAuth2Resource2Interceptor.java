@@ -34,11 +34,13 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRefresher;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
 import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URLEncoder;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
@@ -48,6 +50,8 @@ import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -121,8 +125,26 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         Session session = getSessionManager().getSession(exc);
 
+        if (isLogoutBackRequest(exc)) {
+            exc.setResponse(Response.redirect(afterLogoutUrl, false).status(303).build());
+
+            logOutSession(exc);
+
+            return RETURN;
+        }
         if (isLogoutRequest(exc)) {
-            exc.setResponse(Response.redirect(afterLogoutUrl, false).build());
+            String endSessionEndpoint = auth.getEndSessionEndpoint();
+            if (endSessionEndpoint != null) {
+                String redirectUri = logoutUrl;
+                redirectUri = replaceUrlPath(publicUrlManager.getPublicURL(exc), redirectUri + "/back");
+                String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(redirectUri, UTF_8);
+                OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
+                if (ap != null && ap.getIdToken() != null)
+                    uri += "&id_token_hint=" + ap.getIdToken();
+                exc.setResponse(Response.redirect(uri, false).status(303).build());
+            } else {
+                exc.setResponse(Response.redirect(afterLogoutUrl, false).status(303).build());
+            }
 
             logOutSession(exc);
 
@@ -190,6 +212,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
     }
 
+    private String replaceUrlPath(String url, String newPath) {
+        URI uri = router.getUriFactory().createWithoutException(url);
+        return uri.getScheme() + "://" + uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "") + newPath;
+    }
+
     private void handleOriginalRequest(Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
         String oa2redirect = params.get(OA2REDIRECT);
@@ -207,6 +234,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private boolean isLogoutRequest(Exchange exc) {
         return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl);
+    }
+    private boolean isLogoutBackRequest(Exchange exc) {
+        return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl + "/back");
     }
 
     public void logOutSession(Exchange exc) {
@@ -405,6 +435,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         return logoutUrl;
     }
 
+    /**
+     * @description Path (as seen by the user agent) to call to trigger a log out.
+     * If the Authorization Server supports <a href="https://openid.net/specs/openid-connect-rpinitiated-1_0.html">OpenID
+     * Connect RP-Initiated Logout 1.0</a>, the user logout ("single log out") will be triggered there as well.
+     */
     @MCAttribute
     public void setLogoutUrl(String logoutUrl) {
         this.logoutUrl = logoutUrl;

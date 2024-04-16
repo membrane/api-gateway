@@ -33,7 +33,6 @@ import org.junit.platform.suite.api.Suite;
         RegExReplaceInterceptorTest.class,
         AccessControlInterceptorIntegrationTest.class,
         LoadBalancingInterceptorTest.class,
-        REST2SOAPInterceptorIntegrationTest.class,
         InterceptorInvocationTest.class,
         ViaProxyTest.class,
         ProxySSLConnectionMethodTest.class,

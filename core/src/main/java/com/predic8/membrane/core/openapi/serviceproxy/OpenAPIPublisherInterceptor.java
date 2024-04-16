@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.URIFactory;
 import groovy.text.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
@@ -36,6 +37,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.lang.String.valueOf;
 
@@ -62,6 +64,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         name = "OpenAPI Publisher";
         this.apis = apis;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
+        checkServerPaths();
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
@@ -205,4 +208,27 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     public String getShortDescription() {
         return "Publishes the OpenAPI description and Swagger UI.";
     }
+
+    private void checkServerPaths() {
+        if (apis.size() <= 1)
+            return;
+
+        apis.values().stream()
+                .filter(this::hasPathMatchingAllRequests)
+                .forEach(apiRecord -> log.warn("API '" + apiRecord.api.getInfo().getTitle() + "' contains URLs with '/' matching all requests. This might cause routing to the wrong API!"));
+
+    }
+
+    private boolean hasPathMatchingAllRequests(OpenAPIRecord apiRecord) {
+        return apiRecord.api.getServers().stream()
+                .map(server -> {
+                    try {
+                        return getPathFromURL(new URIFactory(), server.getUrl());
+                    } catch (URISyntaxException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .anyMatch(serverUrl -> serverUrl == null || serverUrl.isEmpty() || serverUrl.equals("/"));
+    }
+
 }

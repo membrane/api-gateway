@@ -59,7 +59,6 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
     @Test
     void inHeaderWrongName() {
         ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER, "APIKEY"))));
-        System.out.println("errors = " + errors);
         assertEquals(1, errors.size());
         assertTrue(errors.get(0).getMessage().contains("api-key is APIKEY but should be X-API-KEY"));
     }
@@ -67,7 +66,6 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
     @Test
     void inHeaderWrongIn() {
         ValidationErrors errors = validator.validate(Request.get().path("/in-header").securitySchemes(List.of(new ApiKeySecurityScheme(QUERY, "X-API-KEY"))));
-        System.out.println("errors = " + errors);
         assertEquals(1, errors.size());
         assertEquals(403, errors.get(0).getContext().getStatusCode());
         assertTrue(errors.get(0).getMessage().contains("Api-key is in QUERY but should be in header"));

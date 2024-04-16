@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.model.*;
 import org.junit.jupiter.api.*;
@@ -35,7 +36,10 @@ public class ObjectTest extends AbstractValidatorTest{
     }
 
     @Test
-    public void numberAsObject() {
+    public void numberAsObject() throws JsonProcessingException {
+
+        Request.post().path("/object").body(new JsonBody(""));
+
         // Delete new JsonBody
         JsonNode object = getNumbers("object", new BigDecimal(7));
         ValidationErrors errors = validator.validate(Request.post().path("/object").body(new JsonBody(object)));
