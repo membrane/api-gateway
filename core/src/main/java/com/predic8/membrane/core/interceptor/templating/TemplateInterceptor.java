@@ -24,6 +24,7 @@ import com.predic8.membrane.core.resolver.*;
 import groovy.text.*;
 import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -88,17 +89,27 @@ public class TemplateInterceptor extends AbstractInterceptor{
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
         catch (TemplateExecutionException e) {
-            log.warn("Template Exception" + e);
-            log.warn("Cause: " + e.getCause());
-            exc.setResponse(createProblemDetails(500,"/gateway", e.getMessage()));
+            var map = getDetailsMap(e);
+            map.put("lineNumber", e.getLineNumber());
+            exc.setResponse(createProblemDetails(500,"/template", "Template execution: " + e.getMessage(),map,router.isProduction()));
         }
         catch (Exception e) {
-            exc.setResponse(createProblemDetails(500,"/gateway", e.getMessage()));
+            exc.setResponse(createProblemDetails(500,"/template", "Template execution: " + e.getMessage(), getDetailsMap(e),router.isProduction()));
         }
 
         // Setting Content-Type must come at the end, cause before we want to know what the original type was.
         msg.getHeader().setContentType(getContentType());
         return CONTINUE;
+    }
+
+    @NotNull
+    private static HashMap<String, Object> getDetailsMap(Exception e) {
+        log.warn("Exception" + e);
+        log.warn("Cause: " + e.getCause());
+        var map = new HashMap<String,Object>();
+        map.put("stackTrace", e.getStackTrace());
+        map.put("cause", e.getCause());
+        return map;
     }
 
     private String prettifyJson(String text) {

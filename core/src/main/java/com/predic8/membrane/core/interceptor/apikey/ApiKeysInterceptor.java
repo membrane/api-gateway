@@ -75,7 +75,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     public void problemJsonResponse(Exchange exc, int statusCode, String type, String title, String info) {
         log.warn(info);
-        exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
+        exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info),false));
     }
 
     public Set<String> getScopes(String key) throws UnauthorizedApiKeyException {

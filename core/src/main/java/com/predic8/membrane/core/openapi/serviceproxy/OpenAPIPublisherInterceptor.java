@@ -118,7 +118,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         Map<String, Object> details = new HashMap<>();
         details.put("message", "OpenAPI document with the id %s not found.".formatted(id));
         details.put("id", id);
-        exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "OpenAPI not found", details));
+        exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "OpenAPI not found", details,false));
         return RETURN;
     }
 
@@ -136,7 +136,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         if (!m.matches()) {
             Map<String, Object> details = new HashMap<>();
             details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>");
-            exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details));
+            exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details,false));
             return RETURN;
         }
 

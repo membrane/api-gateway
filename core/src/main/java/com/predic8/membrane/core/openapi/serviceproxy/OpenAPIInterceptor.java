@@ -62,7 +62,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             Map<String,Object> m = new HashMap<>();
             m.put("message","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
             m.put("path",basePath);
-            exc.setResponse(createProblemDetails(404, "/not-found", "No matching API found!",m));
+            exc.setResponse(createProblemDetails(404, "/not-found", "No matching API found!",m,false));
             return RETURN;
         }
 

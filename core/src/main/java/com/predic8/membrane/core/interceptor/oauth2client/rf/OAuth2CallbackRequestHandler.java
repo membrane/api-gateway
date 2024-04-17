@@ -120,7 +120,7 @@ public class OAuth2CallbackRequestHandler {
             Map<String, Object> json = exchangeCodeForToken(
                     tokenEndpoint, publicUrlManager.getPublicURL(exc), params);
 
-            String token = null;
+            String token;
             if (!json.containsKey("access_token")) {
                 if (!onlyRefreshToken)
                     throw new RuntimeException("No access_token received.");
@@ -175,7 +175,7 @@ public class OAuth2CallbackRequestHandler {
                 log.info("Error from Authorization Server: error="+error + (errorDescription != null ? " error_description=" + errorDescription.replaceAll("[\r\n]", " ") : ""));
                 throw new OAuth2Exception(error, errorDescription,
                     createProblemDetails(500, "/oauth2-error-from-authentication-server",
-                        "OAuth2 Error from Authentication Server", details));
+                        "OAuth2 Error from Authentication Server", details, false));
             }
 
             throw new RuntimeException("No code received.");

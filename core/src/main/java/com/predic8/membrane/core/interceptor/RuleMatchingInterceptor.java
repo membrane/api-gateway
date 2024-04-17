@@ -24,6 +24,7 @@ import org.slf4j.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+@SuppressWarnings("unused")
 @MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
@@ -45,7 +46,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		assignRule(exc, rule);
 
 		if (rule instanceof NullRule) {
-			exc.setResponse(createProblemDetails(400,"/gateway", "This request was not accepted by Membrane. Please check HTTP method and path."));
+			exc.setResponse(createProblemDetails(400,"/gateway", "This request was not accepted by Membrane. Please check HTTP method and path.",false));
 			return ABORT;
 		}
 

@@ -99,14 +99,19 @@ public class RateLimitInterceptor extends AbstractInterceptor {
                 return CONTINUE;
         } catch (SpelEvaluationException e) {
             log.error("Cannot evaluate keyExpression '{}' cause is {}",keyExpression,e.getMessage());
-            exc.setResponse(createProblemDetails(500, "/internal-error", "Internal Server Error"));
+            var details = new HashMap<String,Object>();
+            details.put("expression",keyExpression);
+            details.put("message",e.getMessage());
+            details.put("cause",e.getCause());
+            details.put("inserts", e.getInserts());
+            exc.setResponse(createProblemDetails(500, "/internal-error/rate-limit", "Cannot evaluate expression.",details,router.isProduction()));
             return RETURN;
         }
 
         Map<String,Object> details = new HashMap<>();
         details.put("message","The quota of the ratelimiter is exceeded. Try again in %s seconds.".formatted(strategy.getLimitReset(exc.getRemoteAddrIp())));
         log.info(getKey(exc) + " limit: " + getRequestLimit() + " duration: " + getRequestLimitDuration() + " is exceeded. (clientIp: " + exc.getRemoteAddrIp()+")");
-        exc.setResponse(createProblemDetails(429, "/ratelimiter/exceeded", "Rate limit is exceeded", details));
+        exc.setResponse(createProblemDetails(429, "/ratelimiter/exceeded", "Rate limit is exceeded", details,false));
         setHeaderRateLimitFieldsOnResponse(exc);
 
         return RETURN;
@@ -172,7 +177,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
             // 3 - 2 - 1 = 0 = First entry from the left
             // See tests
             String clientIp = getOneBeforeTrustworthyProxy(xForwardedFor, trustedProxyCount);
-            log.debug("Client ip is {}" + clientIp);
+            log.debug("Client ip is {}", clientIp);
             return clientIp;
         }
 
@@ -203,7 +208,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
      */
     private static List<String> getForwardedForList(Exchange exc) {
         List<String> xForwardedFor = splitStringByComma(exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_FOR));
-        if (xForwardedFor.size() > 0)
+        if (!xForwardedFor.isEmpty())
             xForwardedFor.remove(xForwardedFor.size() -1  );
         return xForwardedFor;
     }
