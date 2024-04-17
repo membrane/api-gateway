@@ -2,24 +2,24 @@
 
 This example shows how to use API keys with role-based access control (RBAC). An API key can have associated scopes(roles) that are matched against security definitions in OpenAPI documents.
 
-## Accessing the API
+## 1. Accessing the API
 1. **Navigate** to the `examples/security/api-key/apikey-openapi` directory.
 2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.bat` (Windows).
-3. Navigate to `http://localhost:2000/api-docs`.
+3. Open `http://localhost:2000/api-docs`.
 4. Click on `Fruit Shop API`
 5. Expand 'GET /products', click on `Try it out` and then on `execute`.
 6. Observe the error message `"Authentication by API key is required."`
 
-## Step 1: API Key 111 (No Scopes)
+## 2. Using an API Key (No Scopes)
 
 1. Click on "Authorize" in the Swagger UI.
 2. Enter `111` as API Key and click `Authorize`.
 3. Retry a call to `GET /products`. Now the access should be successful.
 4. Try POST, PUT, PATCH, or DELETE and observe the 403 status code. Endpoints with these methods require a special scope(role).
 
-## Step 2: API Key 222 (Write Scope)
+## 3. API Key with write Permission
 
-1. Authorize using API key `222`. This key has the "write" scope.
+1. Authorize using API key `222` in the upper right corner. This key has the "write" scope.
 2. Now attempt POST, PUT, PATCH or DELETE requests to see the expanded access.
 
 ## Configuration References
@@ -31,11 +31,11 @@ This example shows how to use API keys with role-based access control (RBAC). An
       <spring:property name="location" value="./demo-keys.txt" />
   </spring:bean>
   ```
-  This configures a Spring Bean which provides the API keys and associated scopes from the specified file `./demo-keys.txt` to all apiKeys plugins.
+  This configures a Spring Bean which provides the keys and associated scopes from the file `./demo-keys.txt` to all apiKeys plugins.
 
 - **Demo Keys File (`demo-keys.txt`):**
 
-  This file contains the actual API keys along with their associated scopes.
+  This file contains the API keys along with their associated scopes.
   ```
   # Simple key without any scope
   111
@@ -58,7 +58,7 @@ This example shows how to use API keys with role-based access control (RBAC). An
   To understand the `proxies.xml` configuration read [here](../simple/README.md)
 
 
-  - **OpenAPI YAML Configuration:**
+  - **OpenAPI Configuration:**
   
     - Global security:
       ```yaml
@@ -73,7 +73,7 @@ This example shows how to use API keys with role-based access control (RBAC). An
         - http:
           - write
       ```  
-      Now every `POST`, `PUT`, `PATCH` and `DELETE` endpoint requires a valid API Key with the associated Scope `write`.
+      Now `POST`, `PUT`, `PATCH` and `DELETE` endpoints require a valid API Key with the scope `write`.
     
     - Security Scheme:
       ```
