@@ -74,10 +74,11 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
         } catch (Exception e) {
-            log.warn("Error executing script: {}",e);
+            log.warn("Error executing script.",e);
             Map<String,Object> details = new HashMap<>();
             details.put("message","See logs for details.");
-            exc.setResponse(createProblemDetails(500, "/internal-error", "Internal Server Error", details));
+            details.put("stackTrace",e.getStackTrace());
+            exc.setResponse(createProblemDetails(500, "/internal-error/script-execution", "Error executing script: "+ e.getMessage(), details,router.isProduction()));
             return RETURN;
         }
 
@@ -138,7 +139,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            log.error("",e);
         }
     }
 

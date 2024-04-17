@@ -73,13 +73,12 @@ public class OpenAPIPublisher {
         if (!m.matches()) {
             Map<String, Object> details = new HashMap<>();
             details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>");
-            exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details));
+            exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details, false));
             return RETURN;
         }
 
         // /api-doc/ui/(.*)
         String id = m.group(1);
-
 
         OpenAPIRecord record = apis.get(id);
         if (record == null) {
@@ -129,7 +128,7 @@ public class OpenAPIPublisher {
         Map<String, Object> details = new HashMap<>();
         details.put("message", "OpenAPI document with the id %s not found.".formatted(id));
         details.put("id", id);
-        exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "OpenAPI not found", details));
+        exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "OpenAPI not found", details, false));
         return RETURN;
     }
 
