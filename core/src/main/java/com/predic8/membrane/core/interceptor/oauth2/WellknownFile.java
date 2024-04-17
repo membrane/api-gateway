@@ -174,7 +174,8 @@ public class WellknownFile {
     }
 
     private void writeEndSessionEndpoint() throws IOException {
-        writeSingleJsonField(END_SESSION_ENDPOINT, getEndSessionEndpoint());
+        if (getEndSessionEndpoint() != null)
+            writeSingleJsonField(END_SESSION_ENDPOINT, getEndSessionEndpoint());
     }
 
     private void writeSingleJsonField(String name, String value) throws IOException {
