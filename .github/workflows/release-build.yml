@@ -71,6 +71,7 @@ jobs:
         with:
           name: v${{ steps.get_version.outputs.VERSION }}
           tag: ${{ github.head_ref }}
+          commit: "master"
           prerelease: true
 #          makeLatest: true
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
