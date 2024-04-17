@@ -201,7 +201,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		return CONTINUE;
 	}
 
-	private String getPathQueryOrSetError(URIFactory factory, String destination, Exchange exc) throws URISyntaxException {
+	private String getPathQueryOrSetError(URIFactory factory, String destination, Exchange exc) {
 		String pathQuery;
 		try {
 			pathQuery = URLUtil.getPathQuery(factory, destination);
@@ -210,7 +210,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
 					createProblemDetails(
 							400,
 							"/uri-parser",
-							"This URL does not follow the URI specification. Confirm the validity of the provided URL.")
+							"This URL does not follow the URI specification. Confirm the validity of the provided URL.",
+							false)
 			);
 			return null;
 		}
