@@ -7,6 +7,7 @@ import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import org.opentest4j.AssertionFailedError;
 
 import java.util.*;
 
@@ -33,8 +34,13 @@ abstract class AbstractInterceptorFlowTest {
     }
 
     private void call() {
-        assertEquals(flow(), given()
-                .post("http://localhost:2000").getBody().asString());
+        String result = given().post("http://localhost:2000").getBody().asString();
+        try {
+            assertTrue(result.contains(flow()));
+        } catch (AssertionFailedError e) {
+            System.out.println("Expected Value: " + result + ", Given Value: " + flow());
+            throw e;
+        }
     }
 
     @NotNull

@@ -5,7 +5,7 @@ import com.predic8.membrane.core.interceptor.*;
 import java.util.*;
 
 
-public class TwoInterceptorFlowTest extends AbstractInterceptorFlowTest{
+public class TwoInterceptorFlowTest extends AbstractInterceptorFlowTest {
     @Override
     protected List<Interceptor> interceptors() {
         return List.of(new FlowTestInterceptor("a"), new FlowTestInterceptor("b"));
@@ -13,6 +13,6 @@ public class TwoInterceptorFlowTest extends AbstractInterceptorFlowTest{
 
     @Override
     protected String flow() {
-        return "abBA";
+        return ">a>b<b<a";
     }
 }

@@ -1,15 +1,15 @@
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
 
-import java.util.*;
+import java.util.List;
 
-
-public class RequestInterceptorFlowTest extends AbstractInterceptorFlowTest {
+public class FalseConditionalInterceptorFlowTest extends AbstractInterceptorFlowTest {
     @Override
     protected List<Interceptor> interceptors() {
 
-        RequestInterceptor ri = new RequestInterceptor();
+        ConditionalInterceptor ri = new ConditionalInterceptor();
+        ri.setTest("false");
         ri.getInterceptors().add(new FlowTestInterceptor("b"));
 
         return List.of(new FlowTestInterceptor("a"),
@@ -19,6 +19,6 @@ public class RequestInterceptorFlowTest extends AbstractInterceptorFlowTest {
 
     @Override
     protected String flow() {
-        return ">a>b>c<c<a";
+        return ">a>c<c<a";
     }
 }

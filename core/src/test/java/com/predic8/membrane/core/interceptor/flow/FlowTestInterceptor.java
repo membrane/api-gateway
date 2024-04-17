@@ -23,11 +23,15 @@ public class FlowTestInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
         addStringToBody(exc.getResponse(),"<" + name);
         return CONTINUE;
+    }
+
+    @Override
+    public void handleAbort(Exchange exc) {
+        exc.setProperty("status", "aborted");
     }
 
     private void addStringToBody(Message msg, String s) {

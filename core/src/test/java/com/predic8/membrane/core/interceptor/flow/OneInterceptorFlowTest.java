@@ -6,7 +6,7 @@ import java.util.*;
 
 
 
-public class OneInterceptorFlowTest extends AbstractInterceptorFlowTest{
+public class OneInterceptorFlowTest extends AbstractInterceptorFlowTest {
     @Override
     protected List<Interceptor> interceptors() {
         return List.of(new FlowTestInterceptor("a"));
@@ -14,6 +14,6 @@ public class OneInterceptorFlowTest extends AbstractInterceptorFlowTest{
 
     @Override
     protected String flow() {
-        return "aA";
+        return ">a<a";
     }
 }
