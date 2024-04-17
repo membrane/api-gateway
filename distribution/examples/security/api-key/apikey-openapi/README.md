@@ -5,29 +5,34 @@ This example shows how to use API keys with role-based access control (RBAC). An
 The Swagger UI is used as a client that authenticates with the backend.
 
 ## Accessing the API
+1. **Navigate** to the `examples/security/api-key/apikey-openapi` directory.
+2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.bat` (Windows).
+3. Navigate to `localhost:2000/api-docs`.
+4. Click on `Fruit Shop API`
+5. Different requests are available for execution. To execute a request, expand it and then click on `Try it out`.
 
-1. Navigate to `localhost:2000/api-docs`.
-2. Execute GET Requests without an API key to understand initial restrictions.
-3. Note the limited access to POST, PUT, PATCH, or DELETE requests.
+## Step 1: Request without an Api-Key
+1. Execute any GET request to identify the API's initial restrictions when accessed without an API key.
+2. Note that other requests like POST, PUT, PATCH, or DELETE are also restricted.
 
-## Step 1: API Key 111 (No Scopes)
+## Step 2: API Key 111 (No Scopes)
 
 1. Click "Authorize" in Swagger UI.
 2. Enter API key `111` and click "Authorize".
-3. Retry GET requests to observe the access granted.
-4. Note the continued restrictions on modifying requests.
+3. Retry any GET requests to observe the access granted.
+4. Notice that POST, PUT, PATCH, or DELETE requests are still restricted.
 
-## Step 2: API Key 222 (Write Scope)
+## Step 3: API Key 222 (Write Scope)
 
-1. Authorize as before, using the key `222` with "write" scope.
-2. Now execute POST, PUT, and PATCH requests successfully.
-3. Observe that DELETE requests are still restricted.
+1. Authorize using API key `222` with "write" scope.
+2. Now attempt POST, PUT, and PATCH requests to see the expanded access.
+3. Observe that DELETE requests remain restricted.
 
-## Step 3: API Key 333 (Write, Delete Scopes)
+## Step 4: API Key 333 (Write and Delete Scopes)
 
-1. Authorize as before, using the key `222` with "write" and "delete" scopes.
-2. Execute DELETE requests and observe the full access granted.
-3. Explore the API with complete functionality.
+1. Authorize using API key `333` with both "write" and "delete" scopes.
+2. Now, all types of requests, including DELETE, are accessible.
+3. Explore the full capabilities of the API.
 
 ## Configuration References
 
@@ -38,6 +43,19 @@ The Swagger UI is used as a client that authenticates with the backend.
       <spring:property name="location" value="./demo-keys.txt" />
   </spring:bean>
   ```
+  This configures a Spring Bean which provides the API keys and associated scopes from the specified file `./demo-keys.txt` to all apiKeys plugins.
+
+- **Demo Keys File (`demo-keys.txt`):**
+
+  This file contains the actual API keys along with their associated scopes.
+  ```
+  # Simple key without any scope
+  111
+  # Keys associated with roles/scopes
+  222: write
+  333: write,delete
+  ```
+  
 
 - **Proxies.xml Configuration:**
 
@@ -48,16 +66,6 @@ The Swagger UI is used as a client that authenticates with the backend.
               <headerExtractor />
           </apiKey>
       </api>
-  ```
-
-- **Demo Keys File (`demo-keys.txt`):**
-
-  ```
-  # Simple key without any scope
-  111
-  # Keys associated with roles/scopes
-  222: write
-  333: write,delete
   ```
 
 - **OpenAPI YAML Configuration:**
