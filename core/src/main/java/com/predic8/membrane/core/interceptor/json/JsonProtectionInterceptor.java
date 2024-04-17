@@ -37,6 +37,7 @@ import static java.util.EnumSet.*;
 /**
  * Enforces JSON restrictions in requests
  */
+@SuppressWarnings("unused")
 @MCElement(name = "jsonProtection")
 public class JsonProtectionInterceptor extends AbstractInterceptor {
 
@@ -89,7 +90,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                 throw new JsonProtectionException("Exceeded maxObjectSize.",
                                                     parser.currentLocation().getLineNr(),
                                                     parser.currentLocation().getColumnNr());
-            if (parser.getCurrentName().length() > maxKeyLength) {
+            if (parser.currentName().length() > maxKeyLength) {
                 throw new JsonProtectionException("Exceeded maxKeyLength.",
                                                     parser.currentLocation().getLineNr(),
                                                     parser.currentLocation().getColumnNr());
@@ -141,7 +142,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                 if (line != null) put("line", line);
                 if (col != null) put("column", col);
             }};
-            return createProblemDetails(400, "/security/json-validation", "JSON Protection Violation", details);
+            return createProblemDetails(400, "/security/json-validation", "JSON Protection Violation", details,false);
         }
         return Response.badRequest().build();
     }
@@ -192,7 +193,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                                                             parser.currentLocation().getLineNr(),
                                                             parser.currentLocation().getColumnNr());
                     contexts.remove(contexts.size() - 1);
-                    currentContext = contexts.size() == 0 ? null : contexts.get(contexts.size() - 1);
+                    currentContext = contexts.isEmpty() ? null : contexts.get(contexts.size() - 1);
                     break;
                 case ID_STRING:
                     if (parser.getValueAsString().length() > maxStringLength)

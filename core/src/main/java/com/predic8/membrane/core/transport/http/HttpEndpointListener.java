@@ -141,7 +141,7 @@ public class HttpEndpointListener extends Thread {
 				}
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
-				e.printStackTrace();
+				log.error("",e);
 			} catch (Exception e) {
 				log.error("", e);
 			} catch (Error e) {
@@ -266,7 +266,7 @@ public class HttpEndpointListener extends Thread {
 		else {
 			Map<String,Object> m = new HashMap<>();
 			m.put(DESCRIPTION,"There is a limit of X concurrent connections per client to avoid denial of service attacks.");
-			Response r = createProblemDetails(429,"/write-ratelimit-reached","Limit of concurrent connections per client is reached.",m);
+			Response r = createProblemDetails(429,"/write-ratelimit-reached","Limit of concurrent connections per client is reached.",m, false);
 			r.write(sourceSocket.getOutputStream(),false);
 		}
 		sourceSocket.getOutputStream().flush();
