@@ -95,9 +95,6 @@ public class OpenAPIRecordFactory {
                         Have a look at: ...
                             """, spec.location));
             }
-            if (root instanceof IllegalArgumentException) {
-                throw new IllegalArgumentException("Security validation requires request validation.");
-            }
 
             log.error("Cannot read OpenAPI specification from location " + spec.location);
             throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
@@ -176,7 +173,7 @@ public class OpenAPIRecordFactory {
     private Map<String, Object> updateExtension(Map<String, Object> extension, OpenAPISpec spec) {
 
         if(spec.validateSecurity == YES && spec.validateRequests == NO)
-            throw new IllegalArgumentException();
+            log.warn("Automatically enabled request validation; which is required by security validation.");
 
         if (spec.validationDetails != ASINOPENAPI)
             extension.put(VALIDATION_DETAILS, toYesNo(spec.validationDetails));
@@ -190,10 +187,8 @@ public class OpenAPIRecordFactory {
         if (spec.validateSecurity != ASINOPENAPI)
             extension.put(SECURITY, toYesNo(spec.validateSecurity));
 
-        if (spec.validateSecurity == YES)
-            extension.put(REQUESTS, true);
-
         extension.putIfAbsent(SECURITY, true);
+
         if (extension.get(SECURITY).equals(true))
             extension.put(REQUESTS, true);
 
