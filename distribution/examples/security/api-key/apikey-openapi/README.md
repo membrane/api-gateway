@@ -1,6 +1,8 @@
-# Swagger UI: API Key Authorization
+# Authorization with API Keys and OpenAPI
 
-Enhance security using API keys with role-based access control (RBAC).
+This example shows how to use API keys with role-based access control (RBAC). An API key can have associated scopes(roles) that are matched against security definitions in OpenAPI documents.
+
+The Swagger UI is used as a client that authenticates with the backend.
 
 ## Accessing the API
 
