@@ -1,17 +1,14 @@
-package com.predic8.membrane.core.interceptor.flow;
+package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class FlowTestInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(FlowTestInterceptor.class);
-
-    private String name;
+    private final String name;
 
     public FlowTestInterceptor(String name) {
         this.name = name;
@@ -31,6 +28,14 @@ public class FlowTestInterceptor extends AbstractInterceptor {
 
     @Override
     public void handleAbort(Exchange exc) {
+        Response msg;
+        if (exc.getResponse() != null) {
+            msg = exc.getResponse();
+        } else  {
+            msg = Response.ok().body(exc.getRequest().getBodyAsStringDecoded()).build();
+            exc.setResponse(msg);
+        }
+        addStringToBody(msg,"?" + name);
         exc.setProperty("status", "aborted");
     }
 

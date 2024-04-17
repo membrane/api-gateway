@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.interceptor.flow;
+package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;

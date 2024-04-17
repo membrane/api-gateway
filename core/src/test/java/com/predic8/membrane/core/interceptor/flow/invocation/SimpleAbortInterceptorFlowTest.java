@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.interceptor.flow;
+package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
@@ -18,6 +18,6 @@ public class SimpleAbortInterceptorFlowTest extends AbstractInterceptorFlowTest 
 
     @Override
     protected String flow() {
-        return "Internal Server Error";
+        return ">a?a";
     }
 }

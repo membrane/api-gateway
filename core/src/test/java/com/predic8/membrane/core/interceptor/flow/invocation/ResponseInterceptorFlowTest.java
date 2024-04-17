@@ -1,6 +1,8 @@
-package com.predic8.membrane.core.interceptor.flow;
+package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.flow.*;
+
 import java.util.List;
 
 public class ResponseInterceptorFlowTest extends AbstractInterceptorFlowTest {
@@ -12,7 +14,7 @@ public class ResponseInterceptorFlowTest extends AbstractInterceptorFlowTest {
 
         return List.of(new FlowTestInterceptor("a"),
                 ri,
-                new FlowTestInterceptor("b"));
+                new FlowTestInterceptor("c"));
     }
 
     @Override

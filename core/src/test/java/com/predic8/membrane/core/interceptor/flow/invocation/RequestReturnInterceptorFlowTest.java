@@ -1,25 +1,26 @@
-package com.predic8.membrane.core.interceptor.flow;
+package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 
 import java.util.List;
 
-public class ResponseReturnInterceptorFlowTest extends AbstractInterceptorFlowTest {
+public class RequestReturnInterceptorFlowTest extends AbstractInterceptorFlowTest {
     @Override
     protected List<Interceptor> interceptors() {
 
-        ResponseInterceptor rsi = new ResponseInterceptor();
+        RequestInterceptor rqi = new RequestInterceptor();
         ReturnInterceptor ri = new ReturnInterceptor();
-        rsi.getInterceptors().add(ri);
+        rqi.getInterceptors().add(ri);
 
         return List.of(new FlowTestInterceptor("a"),
-                rsi,
+                rqi,
                 new FlowTestInterceptor("b"));
     }
 
     @Override
     protected String flow() {
-        return ">a>b<b<a";
+        return ">a<a";
     }
 }
