@@ -2,30 +2,26 @@
 
 This example shows how to use API keys with role-based access control (RBAC). An API key can have associated scopes(roles) that are matched against security definitions in OpenAPI documents.
 
-The Swagger UI is used as a client that authenticates with the backend.
-
 ## Accessing the API
 1. **Navigate** to the `examples/security/api-key/apikey-openapi` directory.
 2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.bat` (Windows).
-3. Navigate to `localhost:2000/api-docs`.
+3. Navigate to `http://localhost:2000/api-docs`.
 4. Click on `Fruit Shop API`
-5. Different requests are available for execution. To execute a request, expand it and then click on `Try it out`.
+5. Expand 'GET /products', click on `Try it out` and then on `execute`.
+6. Observe the error message: ...
 
-## Step 1: Request without an Api-Key
-1. Execute any GET request to identify the API's initial restrictions when accessed without an API key.
-2. Note that other requests like POST, PUT, PATCH, or DELETE are also restricted.
+## Step 1: API Key 111 (No Scopes)
 
-## Step 2: API Key 111 (No Scopes)
-
-1. Click "Authorize" in Swagger UI.
-2. Enter API key `111` and click "Authorize".
-3. Retry any GET requests to observe the access granted.
-4. Notice that POST, PUT, PATCH, or DELETE requests are still restricted.
+1. Click on "Authorize" in the Swagger UI.
+2. Enter `111` as API Key and click `Authorize`.
+3. Retry a call to `GET /products`.
+4. Now the access should be successful.
+4. Try POST, PUT, PATCH, or DELETE and observe the 403 status code. Endpoints with these methods require a special scope(role).
 
 ## Step 3: API Key 222 (Write Scope)
 
-1. Authorize using API key `222` with "write" scope.
-2. Now attempt POST, PUT, and PATCH requests to see the expanded access.
+1. Authorize using API key `222`. This key has "write" scope.
+2. Now attempt POST, PUT, or PATCH requests to see the expanded access.
 3. Observe that DELETE requests remain restricted.
 
 ## Step 4: API Key 333 (Write and Delete Scopes)
