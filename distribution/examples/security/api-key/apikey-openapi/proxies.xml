@@ -1,0 +1,25 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">
+        <spring:property name="location" value="./demo-keys.txt" />
+    </spring:bean>
+
+    <router>
+        <api port="2000">
+            <openapi location="fruitshop-api-v2-openapi-3-security.yml" validateRequests="yes" validationDetails="yes"/>
+            <apiKey required = "false">
+                <headerExtractor name="X-Api-Key"/>
+            </apiKey>
+            <!--Swagger UI requires CORS but FruitShop does not use CORS, so we disable CORS.-->
+            <headerFilter>
+                <exclude>Origin</exclude>
+            </headerFilter>
+        </api>
+
+    </router>
+
+</spring:beans>
