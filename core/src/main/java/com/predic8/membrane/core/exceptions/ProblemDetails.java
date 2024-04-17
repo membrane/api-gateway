@@ -16,6 +16,7 @@ package com.predic8.membrane.core.exceptions;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
 import java.util.*;
 
@@ -23,15 +24,27 @@ import static com.predic8.membrane.core.http.MimeType.*;
 
 public class ProblemDetails {
 
+    private static final Logger log = LoggerFactory.getLogger(ProblemDetails.class.getName());
+
     public static final String DESCRIPTION = "description";
 
     private final static ObjectWriter om = new ObjectMapper().writerWithDefaultPrettyPrinter();
 
-    public static Response createProblemDetails(int statusCode, String type, String title) {
-        return createProblemDetails(statusCode,type,title,null);
+    public static Response createProblemDetails(int statusCode, String type, String title, boolean production) {
+        return createProblemDetails(statusCode,type,title,null,production);
     }
 
-    public static Response createProblemDetails(int statusCode, String type, String title, Map<String,Object> details) {
+    public static Response createProblemDetails(int statusCode, String type, String title, Map<String,Object> details, boolean production) {
+
+        if (production) {
+            String logKey = UUID.randomUUID().toString();
+            log.error("logKey={} statusCode={} type={} title={}\ndetails={}.", logKey, statusCode, type, title, details);
+            type = "/gateway";
+            title = "An error has happened. For security reasons no details are exposed to the client. Details can be found in the log using the log key: " + logKey;
+            statusCode = 500;
+            details = new HashMap<>();
+        }
+
         Map<String,Object> root = new LinkedHashMap<>();
         root.put("type","http://membrane-api.io/error" + type);
         root.put("title",title);
@@ -41,10 +54,6 @@ public class ProblemDetails {
         }
 
         return createMessage(statusCode, type, title, details, root);
-    }
-
-    public static Response createProblemDetailsForProduction(int statusCode, String type, String logKey) {
-        return createProblemDetails(statusCode, type,"An error has happened. For security reasons no details are exposed to the client. Details can be found in the log using the log key: " + logKey, null);
     }
 
     private static Response createMessage(int statusCode, String type, String title, Map<String, Object> details, Map<String, Object> root) {
@@ -59,7 +68,4 @@ public class ProblemDetails {
         }
         return builder.build();
     }
-
-
-
 }

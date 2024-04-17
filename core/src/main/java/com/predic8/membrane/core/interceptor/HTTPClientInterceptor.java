@@ -19,10 +19,8 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
 
 import java.net.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
@@ -36,10 +34,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  *              its outgoing HTTP connection that is different from the global
  *              configuration in the transport.
  */
+@SuppressWarnings("unused")
 @MCElement(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
-
-	private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
 
 	private static final String PROXIES_HINT = " String Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
@@ -71,14 +68,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	}
 
 	private void setErrorResponse(Exchange exc, String msg) {
-		if (router.isProduction()) {
-			String logKey = UUID.randomUUID().toString();
-			log.error("logKey={}\n{}\n.", logKey, msg);
-			exc.setResponse(createProblemDetailsForProduction(500,"/gateway",logKey));
-		} else {
-			log.error(msg);
-			exc.setResponse(createProblemDetails(502,"/gateway", msg));
-		}
+		exc.setResponse(createProblemDetails(502,"/gateway", msg,router.isProduction()));
 	}
 
 	private String getDestination(Exchange exc) {
