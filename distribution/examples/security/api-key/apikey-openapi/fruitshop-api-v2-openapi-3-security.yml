@@ -144,7 +144,7 @@ paths:
       operationId: deleteProduct
       security:
         - http:
-            - delete
+            - write
       responses:
         '200':
           $ref: "#/components/responses/Success"

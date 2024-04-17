@@ -8,27 +8,19 @@ This example shows how to use API keys with role-based access control (RBAC). An
 3. Navigate to `http://localhost:2000/api-docs`.
 4. Click on `Fruit Shop API`
 5. Expand 'GET /products', click on `Try it out` and then on `execute`.
-6. Observe the error message: ...
+6. Observe the error message `"Authentication by API key is required."`
 
 ## Step 1: API Key 111 (No Scopes)
 
 1. Click on "Authorize" in the Swagger UI.
 2. Enter `111` as API Key and click `Authorize`.
-3. Retry a call to `GET /products`.
-4. Now the access should be successful.
+3. Retry a call to `GET /products`. Now the access should be successful.
 4. Try POST, PUT, PATCH, or DELETE and observe the 403 status code. Endpoints with these methods require a special scope(role).
 
-## Step 3: API Key 222 (Write Scope)
+## Step 2: API Key 222 (Write Scope)
 
-1. Authorize using API key `222`. This key has "write" scope.
-2. Now attempt POST, PUT, or PATCH requests to see the expanded access.
-3. Observe that DELETE requests remain restricted.
-
-## Step 4: API Key 333 (Write and Delete Scopes)
-
-1. Authorize using API key `333` with both "write" and "delete" scopes.
-2. Now, all types of requests, including DELETE, are accessible.
-3. Explore the full capabilities of the API.
+1. Authorize using API key `222`. This key has the "write" scope.
+2. Now attempt POST, PUT, PATCH or DELETE requests to see the expanded access.
 
 ## Configuration References
 
@@ -49,7 +41,6 @@ This example shows how to use API keys with role-based access control (RBAC). An
   111
   # Keys associated with roles/scopes
   222: write
-  333: write,delete
   ```
   
 
@@ -64,24 +55,30 @@ This example shows how to use API keys with role-based access control (RBAC). An
       </api>
   ```
 
-- **OpenAPI YAML Configuration:**
+  To understand the `proxies.xml` configuration read [here](../simple/README.md)
 
-  Configuration for `POST`, `PUT` and `PATCH` endpoints:
-  ```yaml
-  security:
-    - http:
-      - write
-  ```  
-  Configuration for `DELETE` endpoints:
-  ```yaml
-  security:
-    - http:
-        - delete
-  ```
-  Security Scheme:
-  ```
-  securitySchemes:
-    http:
-      type: apiKey
-      in: header
-  ```
+
+  - **OpenAPI YAML Configuration:**
+  
+    - Global security:
+      ```yaml
+      security:
+        - http: []
+      ```
+      Now every endpoint requires a valid API Key (regardless of scope). 
+
+    - Configuration for `POST`, `PUT`, `PATCH` and `DELETE` endpoints:
+      ```yaml
+      security:
+        - http:
+          - write
+      ```  
+      Now every `POST`, `PUT`, `PATCH` and `DELETE` endpoint requires a valid API Key with the associated Scope `write`.
+    
+    - Security Scheme:
+      ```
+      securitySchemes:
+        http:
+          type: apiKey
+          in: header
+      ```
