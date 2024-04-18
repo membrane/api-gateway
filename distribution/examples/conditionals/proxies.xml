@@ -7,15 +7,18 @@
     <router>
 
         <api port="2005">
-            <if test="true" language="SpEL">
+            <request> <!-- Funktionert nicht wegen exception -->
+                <if test="request.getBodyAsStream().readAllBytes().length > 64" language="SpEL">
+                    <template>Body too large!</template>
+                    <return />
+                </if>
+            </request>
 
-                <return />
-            </if>
-
+            <template>Ok!</template>
             <return />
         </api>
 
-        <api port="2004"> <!-- Funktionert nicht -->
+        <api port="2004"> <!-- Funktionert nicht? -->
             <if test="headers.get['X-Test-Header'].contains('bar')" language="SpEL">
                 <template>baz</template>
                 <return />
