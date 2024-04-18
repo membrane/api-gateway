@@ -1,0 +1,66 @@
+# For IntelliJ Users: Make sure to highlight any line of the request you want to execute,
+# as the play button will execute the highlighted request, not the request the button is next to.
+
+POST / HTTP/2
+Host: localhost:2000
+Content-Type: application/json
+
+{"foo":  "bar"}
+###
+
+POST / HTTP/2
+Host: localhost:2000
+Content-Type: application/x-yaml
+
+foo:  bar
+###
+GET / HTTP/2
+Host: localhost:2001
+Content-Type: application/json
+
+{"foo":  "bar"}
+###
+
+POST / HTTP/2
+Host: localhost:2001
+Content-Type: text/plain
+
+foobar
+###
+
+###
+POST / HTTP/2
+Host: localhost:2002
+Content-Type: text/plain
+
+37
+###
+
+POST / HTTP/2
+Host: localhost:2002
+Content-Type: text/plain
+
+3.1415
+###
+
+GET / HTTP/2
+Host: localhost:2003
+
+###
+
+GET /?param1=value1 HTTP/2
+Host: localhost:2003
+
+###
+
+GET / HTTP/2
+Host: localhost:2004
+X-Test-Header: foo
+
+###
+
+GET / HTTP/2
+Host: localhost:2004
+X-Test-Header: foobar
+
+###

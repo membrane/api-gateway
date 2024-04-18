@@ -1,0 +1,95 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <api port="2005">
+            <if test="true" language="SpEL">
+
+                <return />
+            </if>
+
+            <return />
+        </api>
+
+        <api port="2004"> <!-- Funktionert nicht -->
+            <if test="headers.get['X-Test-Header'].contains('bar')" language="SpEL">
+                <template>baz</template>
+                <return />
+            </if>
+
+            <template>foo</template>
+            <return />
+        </api>
+
+        <api port="2003"> <!-- Funktionert nicht -->
+            <request>
+                <if test="getParams(exc) != null" language="SpEL">
+                    <template>Query Parameter Given!</template>
+                    <return />
+                </if>
+            </request>
+
+            <template>No Query Parameters!</template>
+            <return />
+        </api>
+
+        <api port="2002">
+            <request>
+                <!-- Exchange Property Interceptor? -->
+                <groovy>
+                    exc.setProperty("pi", exc.getRequest().getBodyAsStringDecoded())
+                </groovy>
+            </request>
+
+            <target url="service:Exchange property reader" />
+        </api>
+
+        <internalProxy name="Exchange property reader">
+            <if test="properties['pi'] == '3.1415'" language="SpEL">
+                <template>Property Value is Pi!</template>
+                <return />
+            </if>
+
+            <template>Wrong Property Value</template>
+            <return />
+        </internalProxy>
+
+        <api port="2001">
+            <request>
+                <if test="method == 'GET'" language="SpEL">
+                    <template>
+                        Request method was GET.
+                    </template>
+                </if>
+
+                <if test="method == 'POST'" language="SpEL">
+                    <template>
+                        Request method was POST.
+                    </template>
+                </if>
+            </request>
+            <return />
+        </api>
+
+        <api port="2000">
+            <request>
+                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
+                    <template>
+                        JSON Request!
+                    </template>
+                </if>
+
+                <template>
+                    Not a JSON Request.
+                </template>
+            </request>
+            <return />
+        </api>
+
+    </router>
+
+</spring:beans>
