@@ -5,7 +5,7 @@ Secure endpoints using API keys combined with role-based access control (RBAC).
 ## Running the Sample
 ***Note:*** *The requests are also available in the requests.http file.*
 
-1. **Navigate** to the `examples/security/api-key` directory.
+1. **Navigate** to the `examples/security/api-key/simple` directory.
 2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.bat` (Windows).
 3. **Test Mandatory API Key Authentication**:
     - Send a request without an API key to see access denial:
