@@ -1,0 +1,40 @@
+openapi: '3.0.2'
+info:
+  title: Error in Spec API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/
+paths:
+  /param-with-no-type:
+    get:
+      parameters:
+        - name: bar
+          in: query
+      responses:
+        200:
+          description: Ok
+  /unknown-type:
+    get:
+      description: No Response on Purpose!
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                description: Wrong type on purpose!
+                type: unknown # Ok!
+  /nowhere:
+    get:
+      description: No Response on Purpose!
+      responses:
+        200:
+          description: Ok
+          content:
+            application/json:
+              schema:
+                description: Reference into nowhere on purpose!
+                $ref: "#/components/schema/nowhere" # Ok!
+
+
+

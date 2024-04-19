@@ -16,21 +16,27 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.openapi.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
+
+import java.util.*;
 
 @SuppressWarnings("rawtypes")
 public class SchemaUtil {
 
     public static Schema getSchemaFromRef(OpenAPI api, Schema schema) {
 
-        // could be removed later. Only to debug.
-        if (schema.get$ref() == null)
-            return null;
+        Components components = api.getComponents();
+        if (components == null)
+            throw new OpenAPIParsingException("OpenAPI with title %s has no #/components field.");
+
+        Map<String, Schema> schemas = components.getSchemas();
+        if(schemas == null)
+            throw new OpenAPIParsingException("OpenAPI with title %s has no #/components/schemas field.");
 
         ObjectHolder<Schema> oh = new ObjectHolder<>();
-        api.getComponents().getSchemas().forEach((schemaName, refSchema) -> {
+        schemas.forEach((schemaName, refSchema) -> {
             if (schemaName.equals(getSchemaNameFromRef(schema))) {
                 oh.setValue(refSchema);
             }

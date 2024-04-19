@@ -13,39 +13,30 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2client.OriginalExchangeStore;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.TokenResponseHandler;
-import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2client.*;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
+import java.math.*;
+import java.security.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.Constants.USERAGENT;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
-import static com.predic8.membrane.core.http.Header.ACCEPT;
-import static com.predic8.membrane.core.http.Header.USER_AGENT;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.csrfTokenMatches;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.getSecurityTokenFromState;
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 
 public class OAuth2CallbackRequestHandler {
@@ -71,7 +62,7 @@ public class OAuth2CallbackRequestHandler {
             PublicUrlManager publicUrlManager,
             String callbackPath,
             boolean onlyRefreshToken
-            ) {
+    ) {
         this.uriFactory = uriFactory;
         this.auth = auth;
         this.originalExchangeStore = originalExchangeStore;
@@ -165,19 +156,14 @@ public class OAuth2CallbackRequestHandler {
         if (code == null) {
             String error = params.get("error");
             if (error != null) {
-                String errorDescription = params.get("error_description");
-
-                Map<String, Object> details = new HashMap<>();
-                details.put("error",  error);
-                if (errorDescription != null)
-                    details.put("error_description", errorDescription);
-
-                log.info("Error from Authorization Server: error="+error + (errorDescription != null ? " error_description=" + errorDescription.replaceAll("[\r\n]", " ") : ""));
-                throw new OAuth2Exception(error, errorDescription,
-                    createProblemDetails(500, "/oauth2-error-from-authentication-server",
-                        "OAuth2 Error from Authentication Server", details, false));
+                ProblemDetails pd = ProblemDetails.security(false)
+                        .statusCode(500)
+                        .addSubType("oauth2-error-from-authentication-server")
+                        .title("OAuth2 Error from Authentication Server");
+                pd.detail(params.get("error_description"));
+                pd.extension("error", error);
+                throw new OAuth2Exception(error, params.get("error_description"), pd.build());
             }
-
             throw new RuntimeException("No code received.");
         }
 
@@ -187,8 +173,8 @@ public class OAuth2CallbackRequestHandler {
                                 .header(ACCEPT, APPLICATION_JSON)
                                 .header(USER_AGENT, USERAGENT),
                         "code=" + code
-                                + "&redirect_uri=" + publicUrl
-                                + callbackPath + "&grant_type=authorization_code")
+                        + "&redirect_uri=" + publicUrl
+                        + callbackPath + "&grant_type=authorization_code")
                 .buildExchange();
 
         logHelper.handleRequest(e);
@@ -206,7 +192,8 @@ public class OAuth2CallbackRequestHandler {
             throw new RuntimeException("Token response is no JSON.");
         }
 
-        return new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<>(){});
+        return new ObjectMapper().readValue(response.getBodyAsStreamDecoded(), new TypeReference<>() {
+        });
     }
 
     private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws JsonProcessingException {

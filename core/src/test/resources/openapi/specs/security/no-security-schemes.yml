@@ -1,0 +1,16 @@
+openapi: '3.0.2'
+info:
+  title: Security Scheme Tests API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /no-scheme:
+    get:
+      security:
+        - unknown: []
+      responses:
+        '200':
+          description: OK
+
+components: {}

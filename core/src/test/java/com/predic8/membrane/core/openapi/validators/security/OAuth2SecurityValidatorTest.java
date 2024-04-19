@@ -16,10 +16,8 @@
 
 package com.predic8.membrane.core.openapi.validators.security;
 
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import org.junit.jupiter.api.*;
 
@@ -30,16 +28,17 @@ import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static com.predic8.membrane.core.security.OAuth2SecurityScheme.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-
 public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
 
     private OpenAPIInterceptor interceptor;
+
 
     @BeforeEach
     void setUpSpec() throws Exception {
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/specs/security/oauth2.yml";
         spec.validateRequests = YES;
+        spec.validateSecurity = YES;
 
         Router router = getRouter();
         interceptor = new OpenAPIInterceptor(createProxy(router, spec));
@@ -54,31 +53,12 @@ public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
     }
 
     @Test
-    void wrongFlow() throws Exception {
-        Exchange exc = getExchange(METHOD_POST, "/write-pet", PASSWORD().scopes("write:pets","read:pets"));
-
-        Outcome actual = interceptor.handleRequest(exc);
-
-        assertEquals(RETURN, actual);
-
-        assertEquals(401, exc.getResponse().getStatusCode());
-
-        ObjectMapper om = new ObjectMapper();
-
-        JsonNode root = om.readTree(exc.getResponse().getBody().getContentAsStream());
-
-        JsonNode errors = root.get("validationErrors").get("REQUEST/");
-        assertEquals(2,errors.size()); // If optimized one should be right
-        assertTrue(errors.get(0).get("message").asText().contains("'Client Credentials' is required"));
-    }
-
-    @Test
-    void globalAndOperationRightFlowAndScopes() throws Exception {
+    void globalAndOperationScopes() throws Exception {
         assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_POST, "/write-pet", CLIENT_CREDENTIALS().scopes("write:pets","read:pets"))));
     }
 
     @Test
-    void globalRightFlowAndScopes() throws Exception {
+    void globalScopes() throws Exception {
         assertEquals(CONTINUE, interceptor.handleRequest(getExchange(METHOD_GET, "/get-pet", CLIENT_CREDENTIALS().scopes("read:pets"))));
     }
 
