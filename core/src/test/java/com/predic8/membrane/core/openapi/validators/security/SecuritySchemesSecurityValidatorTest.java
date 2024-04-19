@@ -18,22 +18,20 @@ package com.predic8.membrane.core.openapi.validators.security;
 
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class AndOrSecurityValidatorTest extends AbstractValidatorTest {
+public class SecuritySchemesSecurityValidatorTest extends AbstractValidatorTest {
 
     @Override
     protected String getOpenAPIFileName() {
-        return "/openapi/specs/security/and-or.yml";
+        return "/openapi/specs/security/security-schemes.yml";
     }
 
     @BeforeEach
@@ -44,33 +42,25 @@ public class AndOrSecurityValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
-    void orBasic() {
-        assertEquals(0, validator.validate(Request.get().path("/one").securitySchemes(List.of(BASIC()))).size());
+    void orMultiple() {
+        ValidationErrors errors = validator.validate(Request.get().path("/multiple").securitySchemes(List.of(BASIC())));
+        System.out.println("errors = " + errors);
+        assertEquals(4, errors.size());
     }
 
     @Test
-    void orApiKey() {
-        assertEquals(0, validator.validate(Request.get().path("/one").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER,"X-API-KEY")))).size());
-    }
-
-    @Test
-    void orBothKey() {
-        var errors = validator.validate(Request.get().path("/one").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER,"X-API-KEY"), BASIC())));
-        assertEquals(0, errors.size());
-    }
-
-
-    @Test
-    void bothWithOneBasic() {
-        var errors = validator.validate(Request.get().path("/both").securitySchemes(List.of(BASIC())));
+    void orNoType() {
+        ValidationErrors errors = validator.validate(Request.get().path("/wrong-no-type").securitySchemes(List.of(BASIC())));
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).getMessage().contains("Authentication by API key is required"));
+        assertTrue(errors.get(0).getMessage().contains("problem"));
+        assertTrue(errors.get(0).getMessage().contains("configuration"));
     }
 
     @Test
-    void bothWithOneApiKey() {
-        var errors = validator.validate(Request.get().path("/both").securitySchemes(List.of(new ApiKeySecurityScheme(HEADER,"x-api-key"))));
+    void schemeDoesNotExist() {
+        ValidationErrors errors = validator.validate(Request.get().path("/scheme-does-not-exist").securitySchemes(List.of(BASIC())));
         assertEquals(1, errors.size());
-        assertTrue(errors.get(0).getMessage().contains("Caller ist not authenticated with HTTP and basic scheme"));
+        assertTrue(errors.get(0).getMessage().contains("problem"));
+        assertTrue(errors.get(0).getMessage().contains("configuration"));
     }
 }

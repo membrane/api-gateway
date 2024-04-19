@@ -23,6 +23,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.SECURITY;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_VALIDATION;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,6 +34,13 @@ public class ApiKeySecurityValidatorTest extends AbstractValidatorTest {
     @Override
     protected String getOpenAPIFileName() {
         return "/openapi/specs/security/api-key.yml";
+    }
+
+    @BeforeEach
+    void setup() {
+        var map = new HashMap<String,Boolean>();
+        map.put(SECURITY,true);
+        validator.getApi().addExtension(X_MEMBRANE_VALIDATION,map);
     }
 
     @Test

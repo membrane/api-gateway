@@ -1,0 +1,25 @@
+openapi: '3.0.2'
+info:
+  title: NPE Error Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/
+paths:
+  /users:
+    get:
+      tags:
+        - User
+      summary: Rückgabe der Nutzerdaten eines Users
+      operationId: getUser
+      security:
+        - openId:
+            - user_get
+      responses:
+        '200':
+          description: Ok
+
+components:
+  securitySchemes:
+    openId:
+      type: openIdConnect
+      openIdConnectUrl: /.well-known/openid-configuration
