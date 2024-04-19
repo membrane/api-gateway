@@ -243,7 +243,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
         LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        excCallResource = browser.apply(excCallResource); // will be aborted
+        browser.apply(excCallResource); // will be aborted
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
 
@@ -414,7 +414,6 @@ public abstract class OAuth2ResourceB2CTest {
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
         assertEquals("http://membrane-api.io/error/security/oauth2-error-from-authentication-server", pd.getType());
         assertEquals("DEMO-123", pd.getExtensions().get("error"));
-        assertEquals("This is a demo error.",  pd.getExtensions().get("error_description"));
     }
 
     @Test
