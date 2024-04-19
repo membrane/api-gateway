@@ -54,20 +54,24 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 			resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
 			log.error("",e);
-			setResponseToAccessDenied(exc);
+			setResponseWithAccessDeniedProblemDetails(exc);
+
 			return ABORT;
 		}
 
 		if (!resource.checkAccess(exc.getRemoteAddr(), exc.getRemoteAddrIp())) {
-			setResponseToAccessDenied(exc);
+			setResponseWithAccessDeniedProblemDetails(exc);
 			return ABORT;
 		}
 
 		return CONTINUE;
 	}
 
-	private void setResponseToAccessDenied(Exchange exc) {
-		exc.setResponse(createProblemDetails(401, "/authorization-denied", "Access Denied",false));
+	private static void setResponseWithAccessDeniedProblemDetails(Exchange exc) {
+		exc.setResponse(ProblemDetails.security(false)
+				.statusCode(401)
+				.addSubType("authorization-denied")
+				.title("Access Denied").build());
 	}
 
 	/**
