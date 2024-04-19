@@ -37,6 +37,7 @@ import static java.util.EnumSet.*;
 /**
  * Enforces JSON restrictions in requests
  */
+@SuppressWarnings("unused")
 @MCElement(name = "jsonProtection")
 public class JsonProtectionInterceptor extends AbstractInterceptor {
 

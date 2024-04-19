@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 public class ProblemDetails {
 
     private static final Logger log = LoggerFactory.getLogger(ProblemDetails.class.getName());
-
+  
     private static final ObjectMapper om = new ObjectMapper();
     private final static ObjectWriter ow = om.writerWithDefaultPrettyPrinter();
 

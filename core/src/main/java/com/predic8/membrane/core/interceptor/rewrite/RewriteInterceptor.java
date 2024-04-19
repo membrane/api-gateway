@@ -292,5 +292,4 @@ public class RewriteInterceptor extends AbstractInterceptor {
         }};
         return sw.toString();
     }
-
 }

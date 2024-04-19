@@ -24,6 +24,7 @@ import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+@SuppressWarnings("unused")
 @MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 

@@ -20,7 +20,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
 
 import java.net.*;
 

@@ -67,12 +67,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	private void setResponseToAccessDenied(Exchange exc) {
-		// Even in production let the caller know, that he need authentication
-		exc.setResponse(ProblemDetails.security(false)
-						.addSubType("authorization")
-						.title("Access Denied")
-						.statusCode(401)
-				.build());
+		exc.setResponse(createProblemDetails(401, "/authorization-denied", "Access Denied",false));
 	}
 
 	/**

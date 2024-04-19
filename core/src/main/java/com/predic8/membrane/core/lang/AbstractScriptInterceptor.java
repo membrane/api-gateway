@@ -138,7 +138,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            log.error("",e);
         }
     }
 

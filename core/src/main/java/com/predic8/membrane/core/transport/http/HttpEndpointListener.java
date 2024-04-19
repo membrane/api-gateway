@@ -140,7 +140,7 @@ public class HttpEndpointListener extends Thread {
 				}
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
-				e.printStackTrace();
+				log.error("",e);
 			} catch (Exception e) {
 				log.error("", e);
 			} catch (Error e) {

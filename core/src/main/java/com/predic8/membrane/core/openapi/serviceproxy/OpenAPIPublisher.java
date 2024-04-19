@@ -82,7 +82,6 @@ public class OpenAPIPublisher {
         // /api-doc/ui/(.*)
         String id = m.group(1);
 
-
         OpenAPIRecord record = apis.get(id);
         if (record == null) {
             return returnNoFound(exc, id);
