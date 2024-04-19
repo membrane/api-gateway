@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.beautifier.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -29,7 +30,6 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -49,8 +49,6 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 
 @MCElement(name="template", mixed = true)
 public class TemplateInterceptor extends AbstractInterceptor{
-
-    private static final Logger log = LoggerFactory.getLogger(TemplateInterceptor.class.getName());
 
     /**
      * @description Path of template file
@@ -88,12 +86,10 @@ public class TemplateInterceptor extends AbstractInterceptor{
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
         catch (TemplateExecutionException e) {
-            log.warn("Template Exception" + e);
-            log.warn("Cause: " + e.getCause());
-            exc.setResponse(createProblemDetails(500,"/gateway", e.getMessage()));
+            exc.setResponse(ProblemDetails.gateway( router.isProduction()).addSubType("template").exception(e).build());
         }
         catch (Exception e) {
-            exc.setResponse(createProblemDetails(500,"/gateway", e.getMessage()));
+            exc.setResponse(ProblemDetails.internal(router.isProduction()).exception(e).build());
         }
 
         // Setting Content-Type must come at the end, cause before we want to know what the original type was.

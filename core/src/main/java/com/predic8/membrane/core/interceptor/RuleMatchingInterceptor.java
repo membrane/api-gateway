@@ -15,13 +15,13 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="ruleMatching")
@@ -45,7 +45,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		assignRule(exc, rule);
 
 		if (rule instanceof NullRule) {
-			exc.setResponse(createProblemDetails(400,"/gateway", "This request was not accepted by Membrane. Please check HTTP method and path."));
+			exc.setResponse(ProblemDetails.user(router.isProduction())
+							.statusCode(404)
+							.title("Wrong path or method")
+							.detail("This request was not accepted by Membrane. Please check HTTP method and path.")
+					.build());
 			return ABORT;
 		}
 
@@ -168,6 +172,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return "RuleMatchingInterceptor";
 	}
 
+	@SuppressWarnings("unused")
 	public boolean isxForwardedForEnabled() {
 		return xForwardedForEnabled;
 	}
@@ -177,6 +182,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		this.xForwardedForEnabled = xForwardedForEnabled;
 	}
 
+	@SuppressWarnings("unused")
 	public int getMaxXForwardedForHeaders() {
 		return maxXForwardedForHeaders;
 	}

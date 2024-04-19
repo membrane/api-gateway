@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.google.common.io.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -29,7 +30,6 @@ import java.util.*;
 import static com.fasterxml.jackson.core.JsonParser.Feature.*;
 import static com.fasterxml.jackson.core.JsonTokenId.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
@@ -89,7 +89,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                 throw new JsonProtectionException("Exceeded maxObjectSize.",
                                                     parser.currentLocation().getLineNr(),
                                                     parser.currentLocation().getColumnNr());
-            if (parser.getCurrentName().length() > maxKeyLength) {
+            if (parser.currentName().length() > maxKeyLength) {
                 throw new JsonProtectionException("Exceeded maxKeyLength.",
                                                     parser.currentLocation().getLineNr(),
                                                     parser.currentLocation().getColumnNr());
@@ -136,12 +136,14 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     private Response createErrorResponse(String msg, Integer line, Integer col) {
         if (shouldProvideDetails()) {
-            Map<String, Object> details = new HashMap<>() {{
-                put("message", msg);
-                if (line != null) put("line", line);
-                if (col != null) put("column", col);
-            }};
-            return createProblemDetails(400, "/security/json-validation", "JSON Protection Violation", details);
+            ProblemDetails pd = ProblemDetails.security(false)
+                    .statusCode(400)
+                    .addSubType("json-validation")
+                    .title("JSON Protection Violation");
+            pd.detail(msg);
+            if (line != null) pd.extension("line", line);
+            if (col != null) pd.extension("column", col);
+            return pd.build();
         }
         return Response.badRequest().build();
     }
@@ -192,7 +194,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                                                             parser.currentLocation().getLineNr(),
                                                             parser.currentLocation().getColumnNr());
                     contexts.remove(contexts.size() - 1);
-                    currentContext = contexts.size() == 0 ? null : contexts.get(contexts.size() - 1);
+                    currentContext = contexts.isEmpty() ? null : contexts.get(contexts.size() - 1);
                     break;
                 case ID_STRING:
                     if (parser.getValueAsString().length() > maxStringLength)
@@ -225,6 +227,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                                                 parser.currentLocation().getColumnNr());
     }
 
+    @SuppressWarnings("unused")
     public int getMaxTokens() {
         return maxTokens;
     }
@@ -240,6 +243,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.reportError = reportError;
     }
 
+    @SuppressWarnings("unused")
     public Boolean getReportError() {
         return reportError;
     }
@@ -269,6 +273,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.maxSize = maxSize;
     }
 
+    @SuppressWarnings("unused")
     public int getMaxDepth() {
         return maxDepth;
     }
@@ -284,6 +289,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.maxDepth = maxDepth;
     }
 
+    @SuppressWarnings("unused")
     public int getMaxStringLength() {
         return maxStringLength;
     }
@@ -303,6 +309,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.maxStringLength = maxStringLength;
     }
 
+    @SuppressWarnings("unused")
     public int getMaxKeyLength() {
         return maxKeyLength;
     }
@@ -323,6 +330,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.maxKeyLength = maxKeyLength;
     }
 
+    @SuppressWarnings("unused")
     public int getMaxObjectSize() {
         return maxObjectSize;
     }
@@ -338,6 +346,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         this.maxObjectSize = maxObjectSize;
     }
 
+    @SuppressWarnings("unused")
     public int getMaxArraySize() {
         return maxArraySize;
     }

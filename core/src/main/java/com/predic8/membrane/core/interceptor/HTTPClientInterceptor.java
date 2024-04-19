@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -22,113 +23,105 @@ import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.net.*;
-import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web
- *              Server using the HTTP protocol. Usually it will be globally used
- *              inside the transport. However, it is also possible to use it
- *              inside a proxy to give the proxy an individual configuration for
- *              its outgoing HTTP connection that is different from the global
- *              configuration in the transport.
+ * Server using the HTTP protocol. Usually it will be globally used
+ * inside the transport. However, it is also possible to use it
+ * inside a proxy to give the proxy an individual configuration for
+ * its outgoing HTTP connection that is different from the global
+ * configuration in the transport.
  */
-@MCElement(name="httpClient")
+@MCElement(name = "httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
+    private static final String PROXIES_HINT = " String Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
-	private static final String PROXIES_HINT = " String Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
+    private boolean failOverOn5XX;
+    private boolean adjustHostHeader = true;
+    private HttpClientConfiguration httpClientConfig;
 
-	private boolean failOverOn5XX;
-	private boolean adjustHostHeader = true;
-	private HttpClientConfiguration httpClientConfig;
+    private HttpClient hc;
 
-	private HttpClient hc;
+    public HTTPClientInterceptor() {
+        name = "HTTPClient";
+        setFlow(REQUEST);
+    }
 
-	public HTTPClientInterceptor() {
-		name="HTTPClient";
-		setFlow(REQUEST);
-	}
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        exc.blockRequestIfNeeded();
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		exc.blockRequestIfNeeded();
+        try {
+            hc.call(exc, adjustHostHeader, failOverOn5XX);
+            return RETURN;
+        } catch (ConnectException e) {
+            setErrorResponse(exc, "Target %s is not reachable.".formatted(getDestination(exc)) + PROXIES_HINT);
+            return ABORT;
+        } catch (UnknownHostException e) {
+            setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName()) + PROXIES_HINT);
+            return ABORT;
+        }
+    }
 
-		try {
-			hc.call(exc, adjustHostHeader, failOverOn5XX);
-			return RETURN;
-		} catch (ConnectException e) {
-			setErrorResponse(exc, "Target %s is not reachable.".formatted(getDestination(exc)) + PROXIES_HINT);
-			return ABORT;
-		} catch (UnknownHostException e) {
-			setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName()) + PROXIES_HINT);
-			return ABORT;
-		}
-	}
+    private void setErrorResponse(Exchange exc, String msg) {
+        exc.setResponse(ProblemDetails.gateway(router.isProduction())
+                .statusCode(502)
+                .detail(msg)
+                .build());
+    }
 
-	private void setErrorResponse(Exchange exc, String msg) {
-		if (router.isProduction()) {
-			String logKey = UUID.randomUUID().toString();
-			log.error("logKey={}\n{}\n.", logKey, msg);
-			exc.setResponse(createProblemDetailsForProduction(500,"/gateway",logKey));
-		} else {
-			log.error(msg);
-			exc.setResponse(createProblemDetails(502,"/gateway", msg));
-		}
-	}
+    private String getDestination(Exchange exc) {
+        return exc.getDestinations().get(0);
+    }
 
-	private String getDestination(Exchange exc) {
-		return exc.getDestinations().get(0);
-	}
+    @Override
+    public void init(Router router) throws Exception {
+        super.init(router);
 
-	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-
-		hc = router.getHttpClientFactory().createClient(httpClientConfig);
-		hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
-	}
+        hc = router.getHttpClientFactory().createClient(httpClientConfig);
+        hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
+    }
 
 
-	public boolean isFailOverOn5XX() {
-		return failOverOn5XX;
-	}
+    public boolean isFailOverOn5XX() {
+        return failOverOn5XX;
+    }
 
-	/**
-	 * @description Whether to retry again (possibly the next node, when load
-	 *              balancing is active) after a HTTP status code
-	 *              500&lt;=<i>x</i>&lt;600 was received.
-	 * @default false
-	 */
-	@MCAttribute
-	public void setFailOverOn5XX(boolean failOverOn5XX) {
-		this.failOverOn5XX = failOverOn5XX;
-	}
+    /**
+     * @description Whether to retry again (possibly the next node, when load
+     * balancing is active) after a HTTP status code
+     * 500&lt;=<i>x</i>&lt;600 was received.
+     * @default false
+     */
+    @MCAttribute
+    public void setFailOverOn5XX(boolean failOverOn5XX) {
+        this.failOverOn5XX = failOverOn5XX;
+    }
 
-	public boolean isAdjustHostHeader() {
-		return adjustHostHeader;
-	}
+    public boolean isAdjustHostHeader() {
+        return adjustHostHeader;
+    }
 
-	/**
-	 * @description Whether the HTTP "Host" header should be set before the response will be forwarded to its destination.
-	 * @explanation Set this to <i>false</i>, if the incoming HTTP "Host" header should not be modified.
-	 * @default true
-	 */
-	@MCAttribute
-	public void setAdjustHostHeader(boolean adjustHostHeader) {
-		this.adjustHostHeader = adjustHostHeader;
-	}
+    /**
+     * @description Whether the HTTP "Host" header should be set before the response will be forwarded to its destination.
+     * @explanation Set this to <i>false</i>, if the incoming HTTP "Host" header should not be modified.
+     * @default true
+     */
+    @MCAttribute
+    public void setAdjustHostHeader(boolean adjustHostHeader) {
+        this.adjustHostHeader = adjustHostHeader;
+    }
 
-	public HttpClientConfiguration getHttpClientConfig() {
-		return httpClientConfig;
-	}
+    public HttpClientConfiguration getHttpClientConfig() {
+        return httpClientConfig;
+    }
 
-	@MCChildElement
-	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-		this.httpClientConfig = httpClientConfig;
-	}
+    @MCChildElement
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
+    }
 }

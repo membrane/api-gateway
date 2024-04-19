@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static java.lang.Boolean.*;
 
 public class HttpEndpointListener extends Thread {
@@ -264,10 +263,14 @@ public class HttpEndpointListener extends Thread {
 		if (sslProvider != null)
 			sourceSocket.getOutputStream().write(TLS_ALERT_INTERNAL_ERROR,0,TLS_ALERT_INTERNAL_ERROR.length);
 		else {
-			Map<String,Object> m = new HashMap<>();
-			m.put(DESCRIPTION,"There is a limit of X concurrent connections per client to avoid denial of service attacks.");
-			Response r = createProblemDetails(429,"/write-ratelimit-reached","Limit of concurrent connections per client is reached.",m);
-			r.write(sourceSocket.getOutputStream(),false);
+			ProblemDetails.user(false)
+					.statusCode(429)
+					.addSubType("rate-limit")
+					.addSubType("write-limit-reached")
+					.title("Limit of concurrent connections per client is reached.")
+					.detail("There is a limit of X concurrent connections per client to avoid denial of service attacks.")
+					.build()
+					.write(sourceSocket.getOutputStream(),false);
 		}
 		sourceSocket.getOutputStream().flush();
 	}

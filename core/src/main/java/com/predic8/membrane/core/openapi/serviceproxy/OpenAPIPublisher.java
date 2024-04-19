@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import groovy.text.StreamingTemplateEngine;
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_HTML_UTF8;
 import static com.predic8.membrane.core.http.Response.ok;
@@ -60,7 +60,7 @@ public class OpenAPIPublisher {
 
     protected Map<String, OpenAPIRecord> apis;
 
-    public OpenAPIPublisher (Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
+    public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
         this.apis = apis;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
@@ -71,9 +71,11 @@ public class OpenAPIPublisher {
 
         // No id specified
         if (!m.matches()) {
-            Map<String, Object> details = new HashMap<>();
-            details.put("message", "Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>");
-            exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "No OpenAPI document id", details));
+            exc.setResponse(ProblemDetails.openapi(false)
+                    .statusCode(404)
+                    .addSubType("wrong-id")
+                    .title("No OpenAPI document id")
+                    .detail("Please specify an id of an OpenAPI document. Path should match this pattern: /api-docs/ui/<<id>>").build());
             return RETURN;
         }
 
@@ -126,10 +128,11 @@ public class OpenAPIPublisher {
     }
 
     private Outcome returnNoFound(Exchange exc, String id) {
-        Map<String, Object> details = new HashMap<>();
-        details.put("message", "OpenAPI document with the id %s not found.".formatted(id));
-        details.put("id", id);
-        exc.setResponse(createProblemDetails(404, "/openapi/wrong-id", "OpenAPI not found", details));
+        exc.setResponse(ProblemDetails.openapi(false)
+                .statusCode(404)
+                .addSubType("wrong-id")
+                .title("OpenAPI not found.")
+                .detail("OpenAPI document with the id %s not found.".formatted(id)).build());
         return RETURN;
     }
 

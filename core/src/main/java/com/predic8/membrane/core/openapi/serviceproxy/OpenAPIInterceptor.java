@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
@@ -31,7 +32,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -62,10 +62,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         String basePath = getMatchingBasePath(exc);
         // No matching API found
         if (basePath == null) {
-            Map<String,Object> m = new HashMap<>();
-            m.put("message","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
-            m.put("path",basePath);
-            exc.setResponse(createProblemDetails(404, "/not-found", "No matching API found!",m));
+            exc.setResponse(ProblemDetails.user(false)
+                            .statusCode(404)
+                            .addSubType("not-found")
+                            .title("No matching API found!")
+                            .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
+                            .extension("path",exc.getOriginalRequestUri())
+                            .build());
             return RETURN;
         }
 
@@ -84,15 +87,20 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
             }
         } catch (OpenAPIParsingException e) {
-            log.error("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()));
-            log.error(e.getMessage(),e);
-            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(e)
+                    .build());
             return RETURN;
         }
         catch (Throwable t /* No Purpose! Catch absolutely all */) {
             log.error("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()));
             log.error(t.getMessage(),t);
-            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(t)
+                    .build());
+
             return RETURN;
         }
 
@@ -119,17 +127,18 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
             }
         } catch (OpenAPIParsingException e) {
-            log.error("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()));
-            log.error(e.getMessage(),e);
-            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(e)
+                    .build());
             return RETURN;
         }
-        catch (Throwable t /* No Purpose! Catch absolutely all */) {
-            log.error("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()));
-            log.error(t.getMessage(),t);
-            exc.setResponse(createProblemDetails(500,"/internal", "Internal error."));
+        catch (Throwable t /* On Purpose! Catch absolutely all */) {
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(t)
+                    .build());
             return RETURN;
-
         }
 
         return CONTINUE;
