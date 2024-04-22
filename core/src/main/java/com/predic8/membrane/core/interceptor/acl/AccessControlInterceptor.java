@@ -67,7 +67,11 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	private void setResponseToAccessDenied(Exchange exc) {
-		exc.setResponse(createProblemDetails(401, "/authorization-denied", "Access Denied",false));
+		exc.setResponse(ProblemDetails.security(false)
+				.statusCode(401)
+				.addSubType("authorization-denied")
+				.title("Access Denied")
+				.build());
 	}
 
 	/**

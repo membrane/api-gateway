@@ -127,6 +127,7 @@ public class ProblemDetails {
             log.warn("type={}\ntitle={}\n,detail={}\n,extension={},.", type, title, detail, extensions);
 //            root.put("exception", exception.printStackTrace(););
             if (exception != null) {
+                root.put("message",exception.getMessage());
                 root.put("stackTrace", exception.getStackTrace());
             }
             root.putAll(extensions);
