@@ -14,26 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.FixedStreamReader;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import org.apache.commons.text.*;
+import org.slf4j.*;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
@@ -62,6 +55,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		} catch (Exception e) {
 			log.error("",e);
 			setResponseToAccessDenied(exc);
+
 			return ABORT;
 		}
 
@@ -74,7 +68,11 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	private void setResponseToAccessDenied(Exchange exc) {
-		exc.setResponse(createProblemDetails(401, "/authorization-denied", "Access Denied",false));
+		exc.setResponse(ProblemDetails.security(false)
+				.statusCode(401)
+				.addSubType("authorization-denied")
+				.title("Access Denied")
+				.build());
 	}
 
 	/**

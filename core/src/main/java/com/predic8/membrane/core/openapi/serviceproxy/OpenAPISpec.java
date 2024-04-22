@@ -29,9 +29,9 @@ public class OpenAPISpec {
     public String location;
     public String dir;
     public YesNoOpenAPIOption validateRequests = ASINOPENAPI;
-    YesNoOpenAPIOption validateResponses = ASINOPENAPI;
-    YesNoOpenAPIOption validationDetails = ASINOPENAPI;
-    YesNoOpenAPIOption validateSecurity = ASINOPENAPI;
+    public YesNoOpenAPIOption validateResponses = ASINOPENAPI;
+    public YesNoOpenAPIOption validationDetails = ASINOPENAPI;
+    public YesNoOpenAPIOption validateSecurity = ASINOPENAPI;
     Rewrite rewrite = new Rewrite();
 
     public OpenAPISpec() {
@@ -115,6 +115,7 @@ public class OpenAPISpec {
         return validationDetails;
     }
 
+    @SuppressWarnings("unused")
     public YesNoOpenAPIOption getValidateSecurity() {
         return validateSecurity;
     }
