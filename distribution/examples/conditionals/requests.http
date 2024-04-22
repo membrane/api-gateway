@@ -60,7 +60,14 @@ X-Test-Header: foo
 ###
 
 GET / HTTP/2
-Host: localhost:2004
-X-Test-Header: foobar
+Host: localhost:2000
+X-Test-Header: foobatr
 
+###
+
+POST / HTTP/2
+Host: localhost:2000
+Content-Type: application/json
+
+4895724
 ###

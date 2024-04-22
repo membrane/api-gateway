@@ -17,11 +17,11 @@ import com.predic8.membrane.core.http.Header;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
 
-public class SpeLHeader implements SPeLablePropertyAware {
+public class SpELHeader implements SpELLablePropertyAware {
 
     private final Header header;
 
-    public SpeLHeader(Header header) {
+    public SpELHeader(Header header) {
         this.header = header;
     }
 

@@ -29,14 +29,14 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     private final Exchange exchange;
     private final Message message;
-    private final SPeLablePropertyAware headers;
-    private final SPeLablePropertyAware properties;
+    private final SpELLablePropertyAware headers;
+    private final SpELLablePropertyAware properties;
     private String path;
     private String method;
     private int statusCode;
 
-    private SPelMessageWrapper request;
-    private SPelMessageWrapper response;
+    private SpELMessageWrapper request;
+    private SpELMessageWrapper response;
 
     public ExchangeEvaluationContext(Exchange exc) {
         this(exc, exc.getRequest());
@@ -47,19 +47,19 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
         this.message = message;
         exchange = exc;
-        properties = new SPeLProperties(exc.getProperties());
-        headers = new SpeLHeader(message.getHeader());
+        properties = new SpELProperties(exc.getProperties());
+        headers = new SpELHeader(message.getHeader());
 
         Request request = exc.getRequest();
         if (request != null) {
             path = request.getUri();
             method = request.getMethod();
-            this.request = new SPelMessageWrapper(exc.getRequest());
+            this.request = new SpELMessageWrapper(exc.getRequest());
         }
 
         Response response = exc.getResponse();
         if (response != null) {
-            this.response = new SPelMessageWrapper(exc.getResponse());
+            this.response = new SpELMessageWrapper(exc.getResponse());
             this.statusCode = exc.getResponse().getStatusCode();
         }
 
@@ -71,11 +71,11 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     }
 
 
-    public SPeLablePropertyAware getProperties() {
+    public SpELLablePropertyAware getProperties() {
         return properties;
     }
 
-    public SPeLablePropertyAware getHeaders() {
+    public SpELLablePropertyAware getHeaders() {
         return headers;
     }
 
@@ -97,15 +97,15 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     public int getStatusCode() { return statusCode; }
 
-    public SPelMessageWrapper getRequest() {
+    public SpELMessageWrapper getRequest() {
         return request;
     }
 
-    public SPelMessageWrapper getResponse() {
+    public SpELMessageWrapper getResponse() {
         return response;
     }
 
-    public SPeLMap<String, Object> getJson() throws IOException {
-        return new SPeLMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
+    public SpELMap<String, Object> getJson() throws IOException {
+        return new SpELMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
     }
 }

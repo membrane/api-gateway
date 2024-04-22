@@ -20,7 +20,7 @@ import org.springframework.expression.TypedValue;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SPeLablePropertyAwareTest implements SPeLablePropertyAware {
+class SPeLablePropertyAwareTest implements SpELLablePropertyAware {
 
     @Test
     void convert() {

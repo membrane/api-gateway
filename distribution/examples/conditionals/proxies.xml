@@ -6,46 +6,40 @@
 
     <router>
 
-        <api port="2005">
-            <request> <!-- Funktionert nicht wegen exception -->
-                <if test="request.getBodyAsStream().readAllBytes().length > 64" language="SpEL">
-                    <template>Body too large!</template>
-                    <return />
-                </if>
-            </request>
-
-            <template>Ok!</template>
-            <return />
-        </api>
-
-        <api port="2004"> <!-- Funktionert nicht? -->
-            <if test="headers.get['X-Test-Header'].contains('bar')" language="SpEL">
-                <template>baz</template>
-                <return />
-            </if>
-
-            <template>foo</template>
-            <return />
-        </api>
-
-        <api port="2003"> <!-- Funktionert nicht -->
+        <api port="2000">
             <request>
-                <if test="getParams(exc) != null" language="SpEL">
-                    <template>Query Parameter Given!</template>
-                    <return />
-                </if>
-            </request>
-
-            <template>No Query Parameters!</template>
-            <return />
-        </api>
-
-        <api port="2002">
-            <request>
-                <!-- Exchange Property Interceptor? -->
                 <groovy>
                     exc.setProperty("pi", exc.getRequest().getBodyAsStringDecoded())
                 </groovy>
+
+                <if test="request.getBody.getLength gt 64" language="SpEL">
+                    <groovy>System.out.println("Body too large!")</groovy>
+                    <return />
+                </if>
+
+                <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">
+                    <groovy>System.out.println("X-Test-Header does contain bar!")</groovy>
+                    <return />
+                </if>
+
+                <!-- Funktionert nicht -->
+                <if test="getParams(exc) != null" language="SpEL">
+                    <groovy>System.out.println("Query Parameter Given!")</groovy>
+                    <return />
+                </if>
+
+                <if test="method == 'GET'" language="SpEL">
+                    <groovy>System.out.println("Request method was GET.")</groovy>
+                </if>
+
+                <if test="method == 'POST'" language="SpEL">
+                    <groovy>System.out.println("Request method was POST.")</groovy>
+                </if>
+
+                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
+                    <groovy>System.out.println("JSON Request!")</groovy>
+                </if>
+
             </request>
 
             <target url="service:Exchange property reader" />
@@ -60,38 +54,6 @@
             <template>Wrong Property Value</template>
             <return />
         </internalProxy>
-
-        <api port="2001">
-            <request>
-                <if test="method == 'GET'" language="SpEL">
-                    <template>
-                        Request method was GET.
-                    </template>
-                </if>
-
-                <if test="method == 'POST'" language="SpEL">
-                    <template>
-                        Request method was POST.
-                    </template>
-                </if>
-            </request>
-            <return />
-        </api>
-
-        <api port="2000">
-            <request>
-                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
-                    <template>
-                        JSON Request!
-                    </template>
-                </if>
-
-                <template>
-                    Not a JSON Request.
-                </template>
-            </request>
-            <return />
-        </api>
 
     </router>
 

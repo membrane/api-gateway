@@ -1,30 +1,42 @@
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
               xmlns:spring="http://www.springframework.org/schema/beans"
               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
 
         <api port="2000">
-            <openapi location="security-api-v1.yml"
-                     validateRequests="yes"
-                     validateResponses="no"
-                     validationDetails="yes" />
-<!--            <apiKey>-->
-<!--                <keys>-->
-<!--                    <secret value="demo-key-foobar" />-->
-<!--                </keys>-->
-<!--                <headerExtractor />-->
-<!--                <queryParamExtractor name="X-Api-Key" />-->
-<!--            </apiKey>-->
-            <target host="localhost" port="2001" />
+            <request>
+                <groovy>
+                    exc.setProperty("pi", exc.getRequest().getBodyAsStringDecoded())
+                </groovy>
+
+                <if test="request.getBody.getLength gt 64" language="SpEL">
+                    <groovy>System.out.println("Body too large!")</groovy>
+                    <return />
+                </if>
+
+                <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">
+                    <groovy>System.out.println("X-Test-Header does contain bar!")</groovy>
+                    <return />
+                </if>
+
+
+            </request>
+
+            <target url="service:Exchange property reader" />
         </api>
 
-        <api port="2001">
-            <template>Success!</template>
-            <return statusCode="200" />
-        </api>
+        <internalProxy name="Exchange property reader">
+            <if test="properties['pi'] == '3.1415'" language="SpEL">
+                <template>Property Value is Pi!</template>
+                <return />
+            </if>
+
+            <template>Wrong Property Value</template>
+            <return />
+        </internalProxy>
 
     </router>
 
