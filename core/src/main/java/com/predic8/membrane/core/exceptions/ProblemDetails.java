@@ -153,6 +153,9 @@ public class ProblemDetails {
 
     public static ProblemDetails parse(Response r) throws JsonProcessingException {
 
+        if (r.getHeader().getContentType() == null)
+            throw  new RuntimeException("No Content-Type in message with ProblemDetails!");
+
         if (!r.getHeader().getContentType().equals(APPLICATION_PROBLEM_JSON))
             throw new RuntimeException("Content-Type ist %s but should be %s.".formatted(r.getHeader().getContentType(),APPLICATION_PROBLEM_JSON));
 

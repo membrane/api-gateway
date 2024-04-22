@@ -54,12 +54,13 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 			resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
 			log.error("",e);
-			setResponseToAccessDenied(exc);
+			setResponseWithAccessDeniedProblemDetails(exc);
+
 			return ABORT;
 		}
 
 		if (!resource.checkAccess(exc.getRemoteAddr(), exc.getRemoteAddrIp())) {
-			setResponseToAccessDenied(exc);
+			setResponseWithAccessDeniedProblemDetails(exc);
 			return ABORT;
 		}
 
