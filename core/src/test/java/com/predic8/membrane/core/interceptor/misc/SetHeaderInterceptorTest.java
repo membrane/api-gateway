@@ -80,6 +80,14 @@ class SetHeaderInterceptorTest {
     }
 
     @Test
+    void getXApiKeyHeader() throws Exception {
+        exc.getRequest().getHeader().add("X-Api-Key","31415");
+        interceptor.setValue("${headers['X-Api-Key']}");
+        interceptor.handleRequest(exc);
+        assertEquals("31415", exc.getRequest().getHeader().getFirstValue("X-Api-Key"));
+    }
+
+    @Test
     void getExcProperty() throws Exception {
         interceptor.setValue("${properties['prop']}");
         interceptor.handleRequest(exc);

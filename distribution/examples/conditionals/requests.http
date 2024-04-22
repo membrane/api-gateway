@@ -61,7 +61,7 @@ X-Test-Header: foo
 
 GET / HTTP/2
 Host: localhost:2000
-X-Test-Header: foobatr
+X-Test-Header: foobar
 
 ###
 
