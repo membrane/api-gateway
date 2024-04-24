@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.json;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -230,30 +231,34 @@ public class JsonProtectionInterceptorTest {
     }
 
     private void send(String body, Outcome expectOut, Object ...parameters) throws Exception {
-        ObjectMapper om = new ObjectMapper();
-        Exchange e = new Request.Builder()
+        Exchange exc = new Request.Builder()
                 .post("/")
                 .contentType(APPLICATION_JSON)
                 .body(body)
                 .buildExchange();
 
         if (expectOut == CONTINUE) {
-            assertEquals(expectOut, jpiProd.handleRequest(e));
-            assertNull(e.getResponse());
+            assertEquals(expectOut, jpiProd.handleRequest(exc));
+            assertNull(exc.getResponse());
 
-            assertEquals(expectOut, jpiDev.handleRequest(e));
-            assertNull(e.getResponse());
+            assertEquals(expectOut, jpiDev.handleRequest(exc));
+            assertNull(exc.getResponse());
         } else {
-            assertEquals(expectOut, jpiProd.handleRequest(e));
-            assertEquals("", e.getResponse().getBodyAsStringDecoded());
+            assertEquals(expectOut, jpiProd.handleRequest(exc));
+            assertEquals("", exc.getResponse().getBodyAsStringDecoded());
 
-            assertEquals(expectOut, jpiDev.handleRequest(e));
-            JsonNode jn = om.readTree(e.getResponse().getBodyAsStringDecoded());
-            
-            assertTrue(jn.get("details").get("message").asText().contains(parameters[2].toString()));
-            assertEquals("JSON Protection Violation", jn.get("title").asText());
-            assertEquals(parameters[0],jn.get("details").get("line").asInt());
-            assertEquals(parameters[1], jn.get("details").get("column").asInt());
+            assertEquals(expectOut, jpiDev.handleRequest(exc));
+
+            System.out.println("exc.getResponse() = " + exc.getResponse());
+
+            ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
+
+            System.out.println("pd = " + pd);
+
+            assertTrue(pd.getDetail().contains(parameters[2].toString()));
+            assertEquals("JSON Protection Violation", pd.getTitle());
+            assertEquals(parameters[0],pd.getExtensions().get("line"));
+            assertEquals(parameters[1], pd.getExtensions().get("column"));
         }
     }
 }

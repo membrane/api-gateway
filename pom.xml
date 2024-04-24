@@ -344,7 +344,7 @@
 			<dependency>
 				<groupId>io.swagger</groupId>
 				<artifactId>swagger-parser</artifactId>
-				<version>1.0.69</version>
+				<version>1.0.70</version>
 			</dependency>
 			<dependency>
 				<groupId>io.swagger.parser.v3</groupId>
@@ -359,7 +359,7 @@
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
 				<artifactId>bcpkix-jdk18on</artifactId>
-				<version>1.78</version>
+				<version>1.78.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jetbrains</groupId>

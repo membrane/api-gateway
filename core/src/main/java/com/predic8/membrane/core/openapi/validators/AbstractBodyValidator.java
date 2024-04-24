@@ -21,10 +21,9 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.MEDIA_TYPE;
-import static com.predic8.membrane.core.util.MediaTypeUtil.getMostSpecificMediaType;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.util.MediaTypeUtil.*;
+import static java.lang.String.*;
 
 public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>> {
 

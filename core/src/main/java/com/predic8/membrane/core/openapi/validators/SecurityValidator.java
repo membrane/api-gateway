@@ -21,13 +21,13 @@ import com.predic8.membrane.core.security.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
 import static org.slf4j.LoggerFactory.*;
 
@@ -114,35 +114,58 @@ public class SecurityValidator {
 
         ValidationErrors errors = new ValidationErrors();
 
-        SecurityScheme schemeDefinition = api.getComponents().getSecuritySchemes().get(schemeName);
+        Map<String, SecurityScheme> securitySchemes = api.getComponents().getSecuritySchemes();
 
-        switch (schemeDefinition.getType()) {
-            case HTTP: {
-                ValidationErrors errorsInt = checkHttp(ctx, request, schemeDefinition);
-                if (!errorsInt.isEmpty()) return errorsInt;
-                break;
-            }
-            case APIKEY: {
-                errors.add(checkApiKey(ctx, request, schemeDefinition));
-                break;
-            }
-            case OAUTH2: {
-                errors.add(checkOAuth2(ctx, request, schemeDefinition));
-                break;
-            }
-            // Implement: ..."apiKey", "http", "mutualTLS", "oauth2", "openIdConnect". See:
-            //                APIKEY("apiKey"),
-            //                        HTTP("http"),
-            //                        OAUTH2("oauth2"),
-            //                        OPENIDCONNECT("openIdConnect"),
-            //                        MUTUALTLS("mutualTLS");
-            default: {
-                throw new RuntimeException("Should not happen");
-            }
+        if (securitySchemes == null) {
+            log.error("In OpenAPI with title '%s' there are no securitySchemes. Check the OpenAPI document!".formatted(getOpenAPITitle()));
+            return getValidationErrorsProblemServerSide(ctx);
         }
+
+        SecurityScheme schemeDefinition = securitySchemes.get(schemeName);
+
+        if (schemeDefinition == null) {
+            log.error("In OpenAPI with title '%s' there is no securityScheme '%s'. Check the OpenAPI document!".formatted(getOpenAPITitle(),schemeName));
+            return getValidationErrorsProblemServerSide(ctx);
+        }
+
+        // Type field on securityScheme not set
+        if (schemeDefinition.getType() == null) {
+            log.error("In OpenAPI with title '%s' the securityScheme '%s' has no type. Check the OpenAPI document!".formatted(api.getInfo().getTitle(),schemeName));
+            return getValidationErrorsProblemServerSide(ctx);
+        }
+
+        ValidationErrors errorsInt = checkSecuritySchemeType(ctx, request, schemeDefinition, errors);
+        assert errorsInt != null;
+        if (!errorsInt.isEmpty()) return errorsInt;
 
         errors.add(checkScopes(ctx, requirement, request, schemeName));
         return errors;
+    }
+
+    @NotNull
+    private static ValidationErrors getValidationErrorsProblemServerSide(ValidationContext ctx) {
+        return ValidationErrors.create(ctx, "There is a problem with the OpenAPI configuration at the server side.");
+    }
+
+    private String getOpenAPITitle() {
+        return api.getInfo().getTitle();
+    }
+
+    /**
+     * See <a href="https://spec.openapis.org/oas/v3.1.0#security-scheme-object">SecuritySchemes in OpenAPI Spec</a>
+     */
+    @Nullable
+    private ValidationErrors checkSecuritySchemeType(ValidationContext ctx, Request<?> request, SecurityScheme scheme, ValidationErrors errors) {
+        return switch (scheme.getType()) {
+            case HTTP -> checkHttp(ctx, request, scheme);
+            case APIKEY -> errors.add(checkApiKey(ctx, request, scheme));
+            /*
+             * In case of OAUTH2 or OPENIDCONNECT check for JWT or OAuth2 scheme.
+             * Cause of the nature of the OAuth2 flows we cannot check what flow it is.
+             */
+            case OAUTH2, OPENIDCONNECT -> checkOAuth2OrOpenIdConnectScheme(ctx, request);
+            case MUTUALTLS -> throw new RuntimeException("Security scheme mutualTLS is not implemented yet.");
+        };
     }
 
     private ValidationErrors checkScopes(ValidationContext ctx, SecurityRequirement requirement, Request<?> request, String schemeName) {
@@ -161,12 +184,6 @@ public class SecurityValidator {
                 log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
                 errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
             }
-
-
-//            if (request.getScopes() == null || !request.getScopes().contains(scope)) {
-//                log.info("Caller of {} {} ist not in scope {} required by OpenAPI definition.", ctx.getMethod(), ctx.getPath(), scope);
-//                errors.add(ctx, "Caller ist not in scope %s".formatted(scope));
-//            }
         }
         return errors;
     }
@@ -196,32 +213,11 @@ public class SecurityValidator {
         return errors;
     }
 
-    private ValidationErrors checkOAuth2(ValidationContext ctx, Request<?> request, SecurityScheme securityScheme) {
-
-        ValidationErrors errors = new ValidationErrors();
-
-        AtomicBoolean isSchemeAndFlowInRequest = new AtomicBoolean();
-
-        List<ValidationError> e = getSecuritySchemes(request, OAuth2SecurityScheme.class).map(scheme1 -> {
-            if (scheme1 instanceof OAuth2SecurityScheme oAuth2SecurityScheme) {
-
-                if (securityScheme.getFlows() != null) {
-                    if (securityScheme.getFlows().getClientCredentials() != null) {
-
-                        if (oAuth2SecurityScheme.flow == OAuth2SecurityScheme.Flow.CLIENT_CREDENTIALS)
-                            isSchemeAndFlowInRequest.set(true);
-                    }
-                }
-            }
-            return Optional.<ValidationError>empty();
-        }).flatMap(Optional::stream).toList();
-
-        if (!isSchemeAndFlowInRequest.get()) {
-            errors.add(ctx.statusCode(401), "OAuth2 authentication with one of the flows %s is required.".formatted(getFlowNames(securityScheme)));
+    private ValidationErrors checkOAuth2OrOpenIdConnectScheme(ValidationContext ctx, Request<?> request) {
+        if (securitySchemeIsNotPresent(request,OAuth2SecurityScheme.class) && securitySchemeIsNotPresent(request,JWTSecurityScheme.class)) {
+            return ValidationErrors.create(ctx.statusCode(401), "OAuth2 or JWT authentication is required.");
         }
-
-        errors.add(e);
-        return errors;
+        return ValidationErrors.empty();
     }
 
     private ValidationErrors checkApiKey(ValidationContext ctx, Request<?> request, SecurityScheme securityScheme) {
@@ -255,7 +251,11 @@ public class SecurityValidator {
         return errors;
     }
 
-    public Stream<com.predic8.membrane.core.security.SecurityScheme> getSecuritySchemes(Request<?> request, Class<? extends com.predic8.membrane.core.security.SecurityScheme> clazz) {
+    private boolean securitySchemeIsNotPresent(Request<?> request, Class<? extends com.predic8.membrane.core.security.SecurityScheme> clazz) {
+        return getSecuritySchemes(request, clazz).findFirst().isEmpty();
+    }
+
+    private Stream<com.predic8.membrane.core.security.SecurityScheme> getSecuritySchemes(Request<?> request, Class<? extends com.predic8.membrane.core.security.SecurityScheme> clazz) {
         if (request.getSecuritySchemes() == null)
             return Stream.empty();
 

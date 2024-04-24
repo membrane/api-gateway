@@ -17,6 +17,7 @@ import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
 import com.predic8.membrane.core.exchangestore.AbstractExchangeStoreTest;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
@@ -163,7 +164,9 @@ import org.junit.platform.suite.api.Suite;
 		BuiltInFunctionsTest.class,
 
 		AccessLogInterceptorTest.class,
-		MediaTypeUtilTest.class
+		MediaTypeUtilTest.class,
+		ProblemDetailsTest.class
+
 
 })
 @SelectPackages({"com.predic8.membrane.core.openapi"})

@@ -40,7 +40,7 @@ public class QueryParameterValidator extends AbstractParameterValidator{
         super(api, pathItem);
     }
 
-    ValidationErrors validateQueryParameters(ValidationContext ctx, Request request, Operation operation)  {
+    ValidationErrors validateQueryParameters(ValidationContext ctx, Request<?> request, Operation operation)  {
         Map<String, String> queryParams = getQueryParams(getQueryString(request));
         return getParametersOfType(operation, QueryParameter.class)
                 .map(param -> getErrors(ctx, queryParams, param))
@@ -55,7 +55,7 @@ public class QueryParameterValidator extends AbstractParameterValidator{
         return err;
     }
 
-    private static String getQueryString(Request request) {
+    private static String getQueryString(Request<?> request) {
         return (new URIFactory().createWithoutException(request.getPath())).getQuery();
     }
 
@@ -80,7 +80,7 @@ public class QueryParameterValidator extends AbstractParameterValidator{
             return emptyList();
 
         return api.getComponents().getSecuritySchemes().values().stream()
-                .filter(scheme -> scheme != null && scheme.getType().equals(APIKEY) && scheme.getIn().equals(QUERY))
+                .filter(scheme -> scheme != null && scheme.getType() != null && scheme.getType().equals(APIKEY) && scheme.getIn().equals(QUERY))
                 .map(SecurityScheme::getName)
                 .toList();
     }
