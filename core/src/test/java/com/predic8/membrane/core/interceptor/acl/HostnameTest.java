@@ -30,7 +30,7 @@ public class HostnameTest {
 		router = new Router();
 
 		h1 = new Hostname(router);
-		h1.setSchema("localhost");
+		h1.setSchema("^localhost$");
 
 		h2 = new Hostname(router);
 		h2.setSchema("local*");
