@@ -22,6 +22,24 @@
                     <return />
                 </if>
 
+                <!-- Funktionert nicht
+                <if test="getParams(exc) != null" language="SpEL">
+                    <groovy>System.out.println("Query Parameter Given!")</groovy>
+                    <return />
+                </if>
+                -->
+
+                <if test="method == 'GET'" language="SpEL">
+                    <groovy>System.out.println("Request method was GET.")</groovy>
+                </if>
+
+                <if test="method == 'POST'" language="SpEL">
+                    <groovy>System.out.println("Request method was POST.")</groovy>
+                </if>
+
+                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
+                    <groovy>System.out.println("JSON Request!")</groovy>
+                </if>
 
             </request>
 
