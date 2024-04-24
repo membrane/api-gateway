@@ -25,6 +25,7 @@ import com.predic8.membrane.core.resolver.*;
 import groovy.text.*;
 import org.apache.commons.io.*;
 import org.apache.commons.lang3.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
