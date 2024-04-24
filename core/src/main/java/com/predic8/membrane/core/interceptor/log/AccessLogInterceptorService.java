@@ -136,10 +136,14 @@ public class AccessLogInterceptorService {
 
     private String safe(Supplier<Object> access, String defaultValue) {
         try {
-            return String.valueOf(access.get());
+            return escapeQuotes(String.valueOf(access.get()));
         } catch (Exception e) {
             return defaultValue;
         }
+    }
+
+    static String escapeQuotes(String s) {
+        return s.replace("\"", "\\\"");
     }
 
     private Map<String, String> getAdditionalProvidedPattern(Exchange exc) {
