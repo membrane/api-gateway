@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.model.*;
 import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
@@ -39,7 +40,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     @SuppressWarnings("rawtypes")
     public SchemaValidator(OpenAPI api, Schema schema) {
         if (schema == null)
-            throw new RuntimeException("Should not happen!");
+            throw new OpenAPIParsingException("Could not parse OpenAPI");
 
         this.schema = schema;
         this.api = api;

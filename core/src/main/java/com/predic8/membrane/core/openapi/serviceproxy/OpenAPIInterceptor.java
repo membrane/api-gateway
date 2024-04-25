@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
@@ -24,13 +25,13 @@ import com.predic8.membrane.core.openapi.validators.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.servers.*;
 import jakarta.mail.internet.*;
+import org.slf4j.*;
 import redis.clients.jedis.*;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -42,6 +43,8 @@ import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Dire
 
 
 public class OpenAPIInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
 
     protected final APIProxy apiProxy;
 
@@ -59,10 +62,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         String basePath = getMatchingBasePath(exc);
         // No matching API found
         if (basePath == null) {
-            Map<String,Object> m = new HashMap<>();
-            m.put("message","There is no API on the path %s deployed. Please check the path.".formatted(basePath));
-            m.put("path",basePath);
-            exc.setResponse(createProblemDetails(404, "/not-found", "No matching API found!",m));
+            exc.setResponse(ProblemDetails.user(false)
+                            .statusCode(404)
+                            .addSubType("not-found")
+                            .title("No matching API found!")
+                            .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
+                            .extension("path",exc.getOriginalRequestUri())
+                            .build());
             return RETURN;
         }
 
@@ -73,11 +79,29 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (!hasProxyATargetElement())
             setDestinationsFromOpenAPI(rec, exc);
 
-        ValidationErrors errors = validateRequest(rec.api, exc);
+        try {
+            ValidationErrors errors = validateRequest(rec.api, exc);
 
-        if (!errors.isEmpty()) {
-            apiProxy.statisticCollector.collect(errors);
-            return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
+            if (!errors.isEmpty()) {
+                apiProxy.statisticCollector.collect(errors);
+                return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
+            }
+        } catch (OpenAPIParsingException e) {
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(e)
+                    .build());
+            return RETURN;
+        }
+        catch (Throwable t /* No Purpose! Catch absolutely all */) {
+            log.error("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()));
+            log.error(t.getMessage(),t);
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(t)
+                    .build());
+
+            return RETURN;
         }
 
         exc.setProperty("openApi", rec);
@@ -93,13 +117,30 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     public Outcome handleResponse(Exchange exc) throws Exception {
 
         OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty("openApi");
-        ValidationErrors errors = validateResponse(rec.api, exc);
 
-        if (errors != null && errors.hasErrors()) {
-            exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
-            apiProxy.statisticCollector.collect(errors);
-            return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
+        try {
+            ValidationErrors errors = validateResponse(rec.api, exc);
+
+            if (errors != null && errors.hasErrors()) {
+                exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
+                apiProxy.statisticCollector.collect(errors);
+                return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
+            }
+        } catch (OpenAPIParsingException e) {
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(e)
+                    .build());
+            return RETURN;
         }
+        catch (Throwable t /* On Purpose! Catch absolutely all */) {
+            exc.setResponse(ProblemDetails.internal(router.isProduction())
+                    .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
+                    .exception(t)
+                    .build());
+            return RETURN;
+        }
+
         return CONTINUE;
     }
 
@@ -147,16 +188,16 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean shouldValidate(OpenAPI api, String direction) {
-        Map<String, Object> extenstions = api.getExtensions();
-        if (extenstions == null)
+        Map<String, Object> extensions = api.getExtensions();
+        if (extensions == null)
             return false;
-        Map<String, Boolean> xValidation = getxValidation(extenstions);
+        Map<String, Boolean> xValidation = getxValidation(extensions);
         return xValidation != null && xValidation.get(direction);
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Boolean> getxValidation(Map<String, Object> extenstions) {
-        return (Map<String, Boolean>) extenstions.get(X_MEMBRANE_VALIDATION);
+    private static Map<String, Boolean> getxValidation(Map<String, Object> extensions) {
+        return (Map<String, Boolean>) extensions.get(X_MEMBRANE_VALIDATION);
     }
 
     protected void setDestinationsFromOpenAPI(OpenAPIRecord rec, Exchange exc) {

@@ -13,34 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
-import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
-import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.core.interceptor.apikey.stores.*;
 import com.predic8.membrane.core.security.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.util.Map.of;
-import static java.util.stream.Stream.ofNullable;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.stream.Stream.*;
 
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
-    private final Logger log = LoggerFactory.getLogger(ApiKeysInterceptor.class);
-
     public static final String SCOPES = "membrane-scopes";
-    public static final String TYPE_4XX = "/authorization-denied";
+    public static final String TYPE_4XX = "authorization-denied";
     public static final String TITLE_4XX = "Access Denied";
     private final List<ApiKeyStore> stores = new ArrayList<>();
     private final List<ApiKeyExtractor> extractors = new ArrayList<>();
@@ -70,9 +61,13 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         var key = getKey(exc);
-
         if (required && key.isEmpty()) {
-            problemJsonResponse(exc, 401, TYPE_4XX, TITLE_4XX, "Tried to access apiKey protected resource without key.");
+            exc.setResponse(ProblemDetails.security(false)
+                            .statusCode(401)
+                            .addSubType(TYPE_4XX)
+                            .title(TITLE_4XX)
+                    .detail("Tried to access apiKey protected resource without key.")
+                    .build());
             return RETURN;
         }
 
@@ -83,16 +78,16 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
             } catch (UnauthorizedApiKeyException e) {
                 if (!required) {return CONTINUE;}
-                problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid.");
+                exc.setResponse(ProblemDetails.security(false)
+                                .statusCode(403)
+                                .addSubType(TYPE_4XX)
+                                .title(TITLE_4XX)
+                                .detail("The provided API key is invalid.")
+                                .build());
                 return RETURN;
             }
         }
         return CONTINUE;
-    }
-
-    public void problemJsonResponse(Exchange exc, int statusCode, String type, String title, String info) {
-        log.warn(info);
-        exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
     }
 
     public Set<String> getScopes(String key) throws UnauthorizedApiKeyException {

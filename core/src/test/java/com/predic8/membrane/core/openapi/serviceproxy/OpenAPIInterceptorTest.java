@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
@@ -90,11 +91,12 @@ public class OpenAPIInterceptorTest {
         assertEquals(RETURN, interceptor3Server.handleRequest(exc));
 
         assertEquals(404, exc.getResponse().getStatusCode());
-        assertTrue(exc.getResponse().getHeader().getContentType().contains(APPLICATION_PROBLEM_JSON));
         exc.getResponse().getBody().getContent();
 
-        assertEquals("No matching API found!", getMapFromResponse(exc).get("title"));
-        assertEquals("http://membrane-api.io/error/not-found", getMapFromResponse(exc).get("type"));
+        ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
+
+        assertEquals("No matching API found!", pd.getTitle());
+        assertEquals("http://membrane-api.io/error/user/not-found", pd.getType());
     }
 
     @Test

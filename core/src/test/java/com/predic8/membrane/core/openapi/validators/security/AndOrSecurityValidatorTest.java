@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,6 +36,12 @@ public class AndOrSecurityValidatorTest extends AbstractValidatorTest {
         return "/openapi/specs/security/and-or.yml";
     }
 
+    @BeforeEach
+    void setup() {
+        var map = new HashMap<String,Boolean>();
+        map.put(SECURITY,true);
+        validator.getApi().addExtension(X_MEMBRANE_VALIDATION,map);
+    }
 
     @Test
     void orBasic() {

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -45,10 +46,8 @@ import java.util.concurrent.atomic.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
-import static com.predic8.membrane.core.http.Header.SET_COOKIE;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceB2CTest {
@@ -244,7 +243,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
         LOG.debug("getting " + excCallResource.getDestinations().get(0));
-        excCallResource = browser.apply(excCallResource); // will be aborted
+        browser.apply(excCallResource); // will be aborted
 
         browser.clearCookies(); // send the auth link to some helpless (other) user
 
@@ -411,11 +410,10 @@ public abstract class OAuth2ResourceB2CTest {
         errorDuringSignIn.set(true);
         Exchange exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
         exc = browser.apply(exc);
-        var body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
-        System.out.println(exc.getResponse().getBodyAsStringDecoded());
-        assertEquals("http://membrane-api.io/error/oauth2-error-from-authentication-server", body.get("type"));
-        assertEquals("DEMO-123", ((Map)body.get("details")).get("error"));
-        assertEquals("This is a demo error.", ((Map)body.get("details")).get("error_description"));
+
+        ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
+        assertEquals("http://membrane-api.io/error/security/oauth2-error-from-authentication-server", pd.getType());
+        assertEquals("DEMO-123", pd.getExtensions().get("error"));
     }
 
     @Test
