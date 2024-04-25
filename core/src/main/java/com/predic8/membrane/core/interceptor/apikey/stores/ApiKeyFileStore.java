@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import org.springframework.context.*;
 import org.springframework.context.event.*;
 
@@ -38,7 +39,7 @@ public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<Context
     @Override
     public void onApplicationEvent(ContextStartedEvent ignored) {
         try {
-            scopes = readKeyData(readFile(location));
+            scopes = readKeyData(readFile(location, new ResolverMap(), "."));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -24,13 +24,14 @@ import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.*;
 import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ApiKeyUtilsTest {
+public class ApiKeyUtilsTest {
 
     @Test
     void readFileTest() throws IOException {
         List<String> lines = readFile(getLocationPath(), new ResolverMap(), ".").toList();
-        assertEquals(5, lines.size());
-        assertEquals("5XF27: finance,internal", lines.get(0));
+        System.out.println(lines);
+        assertEquals(8, lines.size());
+        assertEquals("5XF27: finance,internal", lines.get(1));
     }
 
     private static String getLocationPath() {

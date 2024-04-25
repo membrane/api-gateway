@@ -30,6 +30,7 @@ import com.predic8.membrane.core.interceptor.acl.HostnameTest;
 import com.predic8.membrane.core.interceptor.acl.ParseTypeTest;
 import com.predic8.membrane.core.interceptor.acl.matchers.Cidr.IpRangeTest;
 import com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils;
+import com.predic8.membrane.core.interceptor.apikey.ApiKeyUtilsTest;
 import com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptorTest;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractorTest;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStoreTest;
@@ -105,6 +106,7 @@ import org.junit.platform.suite.api.Suite;
         AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class, IpRangeTest.class,
         DispatchingInterceptorTest.class,
         HostColonPortTest.class,
+		ApiKeyUtilsTest.class,
         HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
         ReadRulesWithInterceptorsConfigurationTest.class,
         RuleManagerTest.class, ProxyTest.class, ServiceProxyKeyTest.class,
