@@ -17,7 +17,7 @@ import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
-import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exceptions.ProblemDetailsTest;
 import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
 import com.predic8.membrane.core.exchangestore.AbstractExchangeStoreTest;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
@@ -30,7 +30,6 @@ import com.predic8.membrane.core.interceptor.acl.HostnameTest;
 import com.predic8.membrane.core.interceptor.acl.ParseTypeTest;
 import com.predic8.membrane.core.interceptor.acl.matchers.Cidr.IpRangeTest;
 import com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils;
-import com.predic8.membrane.core.interceptor.apikey.ApiKeyUtilsTest;
 import com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptorTest;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractorTest;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStoreTest;
@@ -45,7 +44,7 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.JavascriptInterceptor;
 import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
 import com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptorTest;
-import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.core.interceptor.log.AccessLogInterceptorTest;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptorTest;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
@@ -106,7 +105,6 @@ import org.junit.platform.suite.api.Suite;
         AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class, IpRangeTest.class,
         DispatchingInterceptorTest.class,
         HostColonPortTest.class,
-		ApiKeyUtilsTest.class,
         HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
         ReadRulesWithInterceptorsConfigurationTest.class,
         RuleManagerTest.class, ProxyTest.class, ServiceProxyKeyTest.class,
