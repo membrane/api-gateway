@@ -8,7 +8,7 @@
 
         <api port="2000">
             <request>
-                <groovy>
+            <!--    <groovy>
                     exc.setProperty("pi", exc.getRequest().getBodyAsStringDecoded())
                 </groovy>
 
@@ -20,7 +20,7 @@
                 <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">
                     <groovy>System.out.println("X-Test-Header does contain bar!")</groovy>
                     <return />
-                </if>
+                </if>-->
 
                 <!-- Funktionert nicht
                 <if test="getParams(exc) != null" language="SpEL">
@@ -29,7 +29,7 @@
                 </if>
                 -->
 
-                <if test="method == 'GET'" language="SpEL">
+      <!--          <if test="method == 'GET'" language="SpEL">
                     <groovy>System.out.println("Request method was GET.")</groovy>
                 </if>
 
@@ -39,21 +39,32 @@
 
                 <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
                     <groovy>System.out.println("JSON Request!")</groovy>
-                </if>
+                </if>-->
 
             </request>
+
+
+            <response>
+                <if test="true" language="SpEL">
+                    <groovy>System.out.println("sadasdas")
+                        exc.getResponse().setStatusCode(401)</groovy>
+                </if>
+            </response>
+
+
+
 
             <target url="service:Exchange property reader" />
         </api>
 
         <internalProxy name="Exchange property reader">
-            <if test="properties['pi'] == '3.1415'" language="SpEL">
+           <!-- <if test="properties['pi'] == '3.1415'" language="SpEL">
                 <template>Property Value is Pi!</template>
                 <return />
             </if>
-
+-->
             <template>Wrong Property Value</template>
-            <return />
+            <return statusCode="302"/>
         </internalProxy>
 
     </router>
