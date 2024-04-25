@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.core.interceptor.apikey.stores.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -27,7 +28,7 @@ class ApiKeyUtilsTest {
 
     @Test
     void readFileTest() throws IOException {
-        List<String> lines = readFile(getLocationPath()).toList();
+        List<String> lines = readFile(getLocationPath(), new ResolverMap(), ".").toList();
         assertEquals(5, lines.size());
         assertEquals("5XF27: finance,internal", lines.get(0));
     }
