@@ -104,7 +104,7 @@ public class ApiKeyFileStoreTest {
     private static void loadFromFile(ApiKeyFileStore store, String path) {
         store.setLocation(requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource(path)).getPath());
         //noinspection DataFlowIssue
-        store.onApplicationEvent(null);
+        store.init(null);
     }
 
     @Test

@@ -13,32 +13,33 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import org.springframework.context.*;
-import org.springframework.context.event.*;
 
-import java.io.*;
-import java.util.AbstractMap.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.*;
-import static java.util.Arrays.*;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.readFile;
+import static java.util.Arrays.stream;
+import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static java.util.Optional.*;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toMap;
 
 @MCElement(name = "keyFileStore", topLevel = false)
-public class ApiKeyFileStore implements ApiKeyStore, ApplicationListener<ContextStartedEvent> {
+public class ApiKeyFileStore implements ApiKeyStore {
 
     private String location;
     private Map<String, Optional<List<String>>> scopes;
 
     @Override
-    public void onApplicationEvent(ContextStartedEvent ctx) {
+    public void init(Router router) {
         try {
-            scopes = readKeyData(readFile(location, ctx.getApplicationContext().getBean(Router.class).getResolverMap(), "."));
+            scopes = readKeyData(readFile(location, router.getResolverMap(), router.getBaseLocation()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
