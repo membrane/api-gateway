@@ -165,7 +165,7 @@ public class APIProxyTest {
         Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
 
         assertNotNull(xValidation);
-        assertFalse((Boolean) xValidation.get("requests"));
+        assertTrue((Boolean) xValidation.get("requests"));
         assertTrue((Boolean) xValidation.get("responses"));
         assertNull(xValidation.get("details"));
     }
