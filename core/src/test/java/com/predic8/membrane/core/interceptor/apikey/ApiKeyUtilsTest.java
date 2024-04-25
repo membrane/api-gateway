@@ -29,7 +29,6 @@ public class ApiKeyUtilsTest {
     @Test
     void readFileTest() throws IOException {
         List<String> lines = readFile(getLocationPath(), new ResolverMap(), ".").toList();
-        System.out.println(lines);
         assertEquals(8, lines.size());
         assertEquals("5XF27: finance,internal", lines.get(1));
     }
