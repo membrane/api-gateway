@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.apikey.stores.inConfig;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
 
@@ -39,6 +40,10 @@ public class SimpleKeyStore implements ApiKeyStore {
         return keys;
     }
 
+
+    @Override
+    public void init(Router router) {
+    }
 
     @Override
     public Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {

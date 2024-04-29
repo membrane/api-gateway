@@ -31,8 +31,7 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.ASINOPENAPI;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
 import static java.lang.String.*;
@@ -72,7 +71,7 @@ public class OpenAPIRecordFactory {
         for (File file : openAPIFiles) {
             log.info("Parsing spec " + file);
             OpenAPIRecord rec = create(spec, file);
-            apiRecords.put(getUniqueId(apiRecords,rec), rec);
+            apiRecords.put(getUniqueId(apiRecords, rec), rec);
         }
     }
 
@@ -88,13 +87,13 @@ public class OpenAPIRecordFactory {
             Throwable root = ExceptionUtils.getRootCause(e);
             if (root instanceof UnknownHostException) {
                 throw new ConfigurationException(format("""
-                    Error accessing OpenAPI specification from location: %s
-                    
-                    The hostname cannot be resolved to an IP address. Maybe the internet
-                    is not reachable or a proxy server configuration is needed.
-                    
-                    Have a look at: ...
-                        """,spec.location));
+                        Error accessing OpenAPI specification from location: %s
+                                            
+                        The hostname cannot be resolved to an IP address. Maybe the internet
+                        is not reachable or a proxy server configuration is needed.
+                                            
+                        Have a look at: ...
+                            """, spec.location));
             }
 
             log.error("Cannot read OpenAPI specification from location " + spec.location);
@@ -114,25 +113,25 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec),spec);
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec), spec);
         setExtentsionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file),spec);
+        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file), spec);
         setExtentsionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPI getOpenAPI(Router router, OpenAPISpec spec) throws ResourceRetrievalException {
 
-            OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
-                    null, null).getOpenAPI();
-            if (openAPI != null)
-                return openAPI;
+        OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
+                null, null).getOpenAPI();
+        if (openAPI != null)
+            return openAPI;
 
-            throw new RuntimeException(); // Is handled and turned into a nice Exception further up
+        throw new RuntimeException(); // Is handled and turned into a nice Exception further up
     }
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
@@ -173,6 +172,9 @@ public class OpenAPIRecordFactory {
 
     private Map<String, Object> updateExtension(Map<String, Object> extension, OpenAPISpec spec) {
 
+        if(spec.validateSecurity == YES && spec.validateRequests == NO)
+            log.warn("Automatically enabled request validation; which is required by security validation.");
+
         if (spec.validationDetails != ASINOPENAPI)
             extension.put(VALIDATION_DETAILS, toYesNo(spec.validationDetails));
 
@@ -185,9 +187,14 @@ public class OpenAPIRecordFactory {
         if (spec.validateSecurity != ASINOPENAPI)
             extension.put(SECURITY, toYesNo(spec.validateSecurity));
 
+        extension.putIfAbsent(SECURITY, true);
+
+        if (extension.get(SECURITY).equals(true))
+            extension.put(REQUESTS, true);
+
         extension.putIfAbsent(REQUESTS, false);
         extension.putIfAbsent(RESPONSES, false);
-        extension.putIfAbsent(SECURITY, true);
+
 
         return extension;
     }
@@ -199,7 +206,7 @@ public class OpenAPIRecordFactory {
     private File[] getOpenAPIFiles(String directoryName) {
         File dir = new File(directoryName);
         if (!dir.exists() || !dir.isDirectory()) {
-            throw new ConfigurationException(format("Cannot open directory %s. Please check the OpenAPI configuration of your API.",dir.getAbsolutePath()));
+            throw new ConfigurationException(format("Cannot open directory %s. Please check the OpenAPI configuration of your API.", dir.getAbsolutePath()));
         }
         return dir.listFiles((d, name) -> name.endsWith(".yml") || name.endsWith(".yaml") || name.endsWith(".json"));
     }

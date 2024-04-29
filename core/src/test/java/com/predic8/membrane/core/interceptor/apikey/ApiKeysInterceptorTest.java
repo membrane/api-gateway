@@ -13,23 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.apikey.extractors.*;
-import com.predic8.membrane.core.interceptor.apikey.stores.*;
-import com.predic8.membrane.core.security.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;
+import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
+import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.core.security.SecurityScheme;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.*;
-import static java.util.List.*;
-import static java.util.Objects.*;
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
+import static java.util.List.of;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
-
 
 public class ApiKeysInterceptorTest {
     static final String keyHeader = "X-Api-Key";
@@ -46,13 +52,11 @@ public class ApiKeysInterceptorTest {
     static void setup() {
         store = new ApiKeyFileStore();
         store.setLocation(getKeyfilePath("apikeys/keys.txt"));
-        //noinspection DataFlowIssue
-        store.onApplicationEvent(null); // Call init()
+        store.init(new Router());
 
         mergeStore = new ApiKeyFileStore();
         mergeStore.setLocation(getKeyfilePath("apikeys/merge-keys.txt"));
-        //noinspection DataFlowIssue
-        mergeStore.onApplicationEvent(null); // Call init()
+        mergeStore.init(new Router());
 
         ahe = new ApiKeyHeaderExtractor();
         aqe = new ApiKeyQueryParamExtractor();
@@ -142,8 +146,7 @@ public class ApiKeysInterceptorTest {
     void handleDuplicateApiKeys() {
         var dupeStore = new ApiKeyFileStore();
         dupeStore.setLocation(getKeyfilePath("apikeys/duplicate-api-keys.txt"));
-        //noinspection DataFlowIssue
-        assertThrows(RuntimeException.class, () -> dupeStore.onApplicationEvent(null));
+        assertThrows(RuntimeException.class, () -> dupeStore.init(new Router()));
     }
 
     private static String getKeyfilePath(String name) {
