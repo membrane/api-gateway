@@ -169,7 +169,7 @@ import org.junit.platform.suite.api.Suite;
 
 
 })
-@SelectPackages({"com.predic8.membrane.core.openapi"})
+@SelectPackages({"com.predic8.membrane.core.openapi","com.predic8.membrane.core.interceptor.flow.invocation"})
 public class UnitTests {
     /*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

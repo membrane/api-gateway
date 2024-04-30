@@ -105,7 +105,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     }
 
     private HashMap<String, Object> getParametersForGroovy(Exchange exc, Message msg, Flow flow) {
-        return  new HashMap<>() {{
+        return new HashMap<>() {{
             put("Outcome", Outcome.class);
             put("RETURN", RETURN);
             put("CONTINUE", CONTINUE);
@@ -126,6 +126,9 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
         return handleInternal(exc, exc.getResponse(), RESPONSE);
     }
 
+    // avoids child interceptors being pushed to the stack twice
+    String uuid = "conditional-" + UUID.randomUUID();
+
     private Outcome handleInternal(Exchange exchange, Message msg, Flow flow) throws Exception {
 
         boolean result = testCondition(exchange, msg, flow);
@@ -135,14 +138,24 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
         if (result)
             switch (flow) {
                 case REQUEST -> {
+                    exchange.setProperty(uuid, true);
                     return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
                 }
-                case RESPONSE -> interceptorFlowController.invokeResponseHandlers(exchange);
+                // case RESPONSE -> interceptorFlowController.invokeResponseHandlers(exchange);
+                case RESPONSE -> {
+                    if (conditionWasFalseOrNotExecutedInRequestFlow(exchange))
+                        for (Interceptor i: getInterceptors()) {
+                            exchange.pushInterceptorToStack(i);
+                        }
+                }
             }
 
         return CONTINUE;
     }
 
+    private boolean conditionWasFalseOrNotExecutedInRequestFlow(Exchange exchange) {
+        return exchange.getProperty(uuid) == null;
+    }
 
 
     public LanguageType getLanguage() {
