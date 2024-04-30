@@ -30,6 +30,7 @@ abstract class AbstractInterceptorFlowTest {
         router.add(api);
         router.init();
         call();
+        router.shutdown();
     }
 
     private void call() {
