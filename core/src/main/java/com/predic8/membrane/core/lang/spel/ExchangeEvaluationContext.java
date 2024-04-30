@@ -17,13 +17,21 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.lang.spel.functions.BuildInFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
+import com.predic8.membrane.core.util.URIFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.expression.spel.support.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+
 public class ExchangeEvaluationContext extends StandardEvaluationContext {
+    private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class);
 
     private static  final ObjectMapper om = new ObjectMapper();
 
@@ -33,6 +41,7 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private final SpELLablePropertyAware properties;
     private String path;
     private String method;
+    private Map<String, String> params;
     private int statusCode;
 
     private SpELMessageWrapper request;
@@ -54,6 +63,11 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
         if (request != null) {
             path = request.getUri();
             method = request.getMethod();
+            try {
+                params = getParams(new URIFactory(), exc, ERROR);
+            } catch (Exception e) {
+                log.warn("Error parsing query parameters", e);
+            }
             this.request = new SpELMessageWrapper(exc.getRequest());
         }
 
