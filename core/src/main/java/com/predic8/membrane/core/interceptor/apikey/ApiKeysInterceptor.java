@@ -16,30 +16,26 @@ package com.predic8.membrane.core.interceptor.apikey;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.apikey.extractors.*;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
+import com.predic8.membrane.core.interceptor.apikey.extractors.LocationNameValue;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
-import com.predic8.membrane.core.security.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.security.ApiKeySecurityScheme;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.util.Map.of;
 import static java.util.stream.Stream.ofNullable;
 
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
-    private final Logger log = LoggerFactory.getLogger(ApiKeysInterceptor.class);
-
     public static final String SCOPES = "membrane-scopes";
-    public static final String TYPE_4XX = "/authorization-denied";
+    public static final String TYPE_4XX = "authorization-denied";
     public static final String TITLE_4XX = "Access Denied";
     private final List<ApiKeyStore> stores = new ArrayList<>();
     private final List<ApiKeyExtractor> extractors = new ArrayList<>();
@@ -48,14 +44,19 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        stores.forEach(apiKeyStore -> apiKeyStore.init(router));
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         var key = getKey(exc);
-
         if (required && key.isEmpty()) {
-            problemJsonResponse(exc, 401, TYPE_4XX, TITLE_4XX, "Tried to access apiKey protected resource without key.");
+            exc.setResponse(ProblemDetails.security(false)
+                            .statusCode(401)
+                            .addSubType(TYPE_4XX)
+                            .title(TITLE_4XX)
+                    .detail("Tried to access apiKey protected resource without key.")
+                    .build());
             return RETURN;
         }
 
@@ -66,16 +67,16 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
             } catch (UnauthorizedApiKeyException e) {
                 if (!required) {return CONTINUE;}
-                problemJsonResponse(exc, 403, TYPE_4XX, TITLE_4XX, "The provided API key is invalid.");
+                exc.setResponse(ProblemDetails.security(false)
+                                .statusCode(403)
+                                .addSubType(TYPE_4XX)
+                                .title(TITLE_4XX)
+                                .detail("The provided API key is invalid.")
+                                .build());
                 return RETURN;
             }
         }
         return CONTINUE;
-    }
-
-    public void problemJsonResponse(Exchange exc, int statusCode, String type, String title, String info) {
-        log.warn(info);
-        exc.setResponse(createProblemDetails(statusCode, type, title, of("error", info)));
     }
 
     public Set<String> getScopes(String key) throws UnauthorizedApiKeyException {

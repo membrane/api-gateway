@@ -13,25 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+
+import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.MessageUtil;
 public class RewriteInterceptorTest {
+
+	private final static ObjectMapper om = new ObjectMapper();
 
 	private RewriteInterceptor rewriter;
 	private Exchange exc;
@@ -93,13 +90,13 @@ public class RewriteInterceptorTest {
 
 		assertEquals(CONTINUE, di.handleRequest(exc));
 		assertEquals(RETURN, rewriter.handleRequest(exc));
-		assertEquals(
-			"""
-				{
-				  "type" : "http://membrane-api.io/error/uri-parser",
-				  "title" : "This URL does not follow the URI specification. Confirm the validity of the provided URL."
-				}""",
-				exc.getResponse().getBodyAsStringDecoded()
-		);
+
+		System.out.println("exc = " + exc.getResponse());
+
+		JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
+
+		assertEquals("http://membrane-api.io/error/user/path",json.get("type").asText());
+		assertEquals("The path does not follow the URI specification. Confirm the validity of the provided URL.",json.get("title").asText());
+		assertTrue(json.get("detail").asText().contains("http://www.predic8.de:80/buy/banana/%"));
 	}
 }

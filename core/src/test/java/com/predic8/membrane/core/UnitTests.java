@@ -17,6 +17,7 @@ import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
 import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
+import com.predic8.membrane.core.exceptions.ProblemDetailsTest;
 import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
 import com.predic8.membrane.core.exchangestore.AbstractExchangeStoreTest;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
@@ -43,7 +44,7 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.JavascriptInterceptor;
 import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
 import com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptorTest;
-import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.core.interceptor.log.AccessLogInterceptorTest;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptorTest;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
@@ -163,7 +164,9 @@ import org.junit.platform.suite.api.Suite;
 		BuiltInFunctionsTest.class,
 
 		AccessLogInterceptorTest.class,
-		MediaTypeUtilTest.class
+		MediaTypeUtilTest.class,
+		ProblemDetailsTest.class
+
 
 })
 @SelectPackages({"com.predic8.membrane.core.openapi","com.predic8.membrane.core.interceptor.flow.invocation"})

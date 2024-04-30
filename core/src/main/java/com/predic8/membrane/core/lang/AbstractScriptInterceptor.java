@@ -18,6 +18,7 @@ package com.predic8.membrane.core.lang;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -28,7 +29,6 @@ import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.createProblemDetails;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -74,10 +74,10 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
         } catch (Exception e) {
-            log.warn("Error executing script: {}",e);
-            Map<String,Object> details = new HashMap<>();
-            details.put("message","See logs for details.");
-            exc.setResponse(createProblemDetails(500, "/internal-error", "Internal Server Error", details));
+            exc.setResponse(ProblemDetails.internal( router.isProduction())
+                    .title("Error executing script.")
+                    .detail("See logs for details.")
+                    .build());
             return RETURN;
         }
 
@@ -138,7 +138,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            log.error("",e);
         }
     }
 
