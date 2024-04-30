@@ -14,18 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import java.util.EnumSet;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.*;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
@@ -43,14 +39,13 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		boolean logDebug = log.isDebugEnabled();
 
 		for (Interceptor i : getInterceptors()) {
 			EnumSet<Flow> f = i.getFlow();
-			if (!f.contains(REQUEST))
+			if (!f.contains(Flow.REQUEST))
 				continue;
 
-			if (logDebug)
+			if (log.isDebugEnabled())
 				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exc);
 
 			Outcome o = i.handleRequest(exc);
