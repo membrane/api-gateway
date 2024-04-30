@@ -16,21 +16,31 @@
 
 package com.predic8.membrane.core.openapi;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
+import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.openapi.validators.OperationValidator;
+import com.predic8.membrane.core.openapi.validators.PathParametersValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationContext;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.util.FileUtil;
+import com.predic8.membrane.core.util.URIFactory;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
+import static java.lang.String.format;
 
 public class OpenAPIValidator {
 

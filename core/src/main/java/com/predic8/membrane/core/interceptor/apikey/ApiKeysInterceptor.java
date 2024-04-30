@@ -13,19 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.apikey.extractors.*;
-import com.predic8.membrane.core.interceptor.apikey.stores.*;
-import com.predic8.membrane.core.security.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
+import com.predic8.membrane.core.interceptor.apikey.extractors.LocationNameValue;
+import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
+import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.core.security.ApiKeySecurityScheme;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.stream.Stream.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.util.stream.Stream.ofNullable;
 
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
@@ -39,6 +44,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
+        stores.forEach(apiKeyStore -> apiKeyStore.init(router));
     }
 
     @Override
