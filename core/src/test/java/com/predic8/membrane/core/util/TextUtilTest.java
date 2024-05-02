@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.regex.Pattern;
 
+import com.predic8.membrane.core.interceptor.log.AccessLogInterceptorService;
 import org.junit.jupiter.api.Test;
 
 public class TextUtilTest {
@@ -86,5 +87,10 @@ public class TextUtilTest {
 		assertEquals("aaa aaa",TextUtil.getLineFromMultilineString("""
                 aaa aaa
                 """, 1));
+	}
+
+	@Test
+	public void escapeQuoteSimple() {
+		assertEquals("Test text with \\\" quotes", escapeQuotes("Test text with \" quotes"));
 	}
 }

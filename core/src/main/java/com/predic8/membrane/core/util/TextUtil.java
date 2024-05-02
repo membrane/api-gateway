@@ -178,4 +178,7 @@ public class TextUtil {
 		return s.split("\n")[lineNumber-1];
 	}
 
+	public static String escapeQuotes(String s) {
+		return s.replace("\"", "\\\"");
+	}
 }

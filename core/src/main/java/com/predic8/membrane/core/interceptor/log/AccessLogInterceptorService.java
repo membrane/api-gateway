@@ -32,6 +32,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.util.TextUtil.escapeQuotes;
+
 public class AccessLogInterceptorService {
 
     private static final Logger log = LoggerFactory.getLogger(AccessLogInterceptor.class);
@@ -140,10 +142,6 @@ public class AccessLogInterceptorService {
         } catch (Exception e) {
             return defaultValue;
         }
-    }
-
-    static String escapeQuotes(String s) {
-        return s.replace("\"", "\\\"");
     }
 
     private Map<String, String> getAdditionalProvidedPattern(Exchange exc) {
