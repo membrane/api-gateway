@@ -1,6 +1,3 @@
-# For IntelliJ Users: Make sure to highlight any line of the request you want to execute,
-# as the play button will execute the highlighted request, not the request the button is next to.
-
 ### Will be detected as a JSON request.
 POST / HTTP/2
 Host: localhost:2000
@@ -8,38 +5,17 @@ Content-Type: application/json
 
 {"foo":  "bar"}
 
-###
-POST / HTTP/2
-Host: localhost:2000
-Content-Type: application/x-yaml
-
-foo:  bar
-
-###
-GET / HTTP/2
-Host: localhost:2001
-Content-Type: application/json
-
-{"foo":  "bar"}
-
-###
-POST / HTTP/2
-Host: localhost:2001
-Content-Type: text/plain
-
-foobar
-
-###
-GET / HTTP/2
-Host: localhost:2003
-
-###
+### Query parameter value will be checked.
 GET /?param1=value1 HTTP/2
-Host: localhost:2003
+Host: localhost:2000
 
 ###
+GET /?param1=value2 HTTP/2
+Host: localhost:2000
+
+### X-Test-Header will be examined for it containing 'bar'
 GET / HTTP/2
-Host: localhost:2004
+Host: localhost:2000
 X-Test-Header: foo
 
 ###
@@ -47,10 +23,9 @@ GET / HTTP/2
 Host: localhost:2000
 X-Test-Header: foobar
 
-###
+### Body will be detected to be larger than 64 characters.
 POST / HTTP/2
 Host: localhost:2000
-Content-Type: application/json
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.

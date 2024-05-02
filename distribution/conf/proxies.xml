@@ -12,8 +12,14 @@
                     <groovy>println("JSON Request!")</groovy>
                 </if>
 
-                <if test="request.getBody.getLength gt 64" language="SpEL">
-                    <groovy>println("Long body")</groovy>
+                <if test="method == 'POST'" language="SpEL">
+                    <groovy>println("Request method was POST.")</groovy>
+                </if>
+
+                <setHeader name="x-output" value="${params.toString}"  />
+
+                <if test="params['param1'] == 'value2'" language="SpEL">
+                    <groovy>println("Query Parameter Given!")</groovy>
                     <return />
                 </if>
 
@@ -22,25 +28,11 @@
                     <return />
                 </if>
 
-                <!--
-                <if test="getParams(exc) != null" language="SpEL">
-                    <groovy>println("Query Parameter Given!")</groovy>
+                <if test="request.getBody.getLength gt 64" language="SpEL">
+                    <groovy>println("Long body")</groovy>
                     <return />
                 </if>
-                -->
-                <!--
-                <if test="method == 'GET'" language="SpEL">
-                    <groovy>println("Request method was GET.")</groovy>
-                </if>
-
-                <if test="method == 'POST'" language="SpEL">
-                    <groovy>println("Request method was POST.")</groovy>
-                </if>
-
-               -->
-
             </request>
-
 
             <response>
                 <if test="statusCode == 302" language="SpEL">
@@ -48,8 +40,6 @@
                             exc.getResponse().setStatusCode(200)</groovy>
                 </if>
             </response>
-
-
 
             <template>Success</template>
             <return statusCode="302"/>

@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.lang.spel.functions.BuildInFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.spel.support.*;
@@ -39,9 +40,10 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private final Message message;
     private final SpELLablePropertyAware headers;
     private final SpELLablePropertyAware properties;
+    private SpELLablePropertyAware params;
     private String path;
     private String method;
-    private Map<String, String> params;
+
     private int statusCode;
 
     private SpELMessageWrapper request;
@@ -64,7 +66,7 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
             path = request.getUri();
             method = request.getMethod();
             try {
-                params = getParams(new URIFactory(), exc, ERROR);
+                params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exc, ERROR));
             } catch (Exception e) {
                 log.warn("Error parsing query parameters", e);
             }
@@ -91,6 +93,10 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     public SpELLablePropertyAware getHeaders() {
         return headers;
+    }
+
+    public SpELLablePropertyAware getParams() {
+        return params;
     }
 
     public Exchange getExchange() {
