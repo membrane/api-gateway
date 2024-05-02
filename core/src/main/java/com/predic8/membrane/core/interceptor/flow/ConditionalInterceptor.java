@@ -23,6 +23,7 @@ import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
+import org.springframework.expression.spel.SpelEvaluationException;
 import org.springframework.expression.spel.standard.*;
 
 import java.util.*;

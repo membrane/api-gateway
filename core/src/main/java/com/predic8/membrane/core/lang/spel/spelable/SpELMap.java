@@ -26,12 +26,9 @@ public class SpELMap<K, V> implements SpELLablePropertyAware {
     }
 
     @Override
-    public boolean canRead(EvaluationContext context, Object target, String name) {
-        return data.containsKey(name);
-    }
-
-    @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
-        return new TypedValue(data.get(name));
+        if (data.containsKey(target))
+            return new TypedValue(data.get(name));
+        else return new TypedValue("");
     }
 }
