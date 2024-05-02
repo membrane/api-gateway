@@ -46,6 +46,7 @@ class ConditionalEvaluationTestContext {
             exc.pushInterceptorToStack(mockInt);
             exc.setResponse(b.build());
             condInt.handleResponse(exc);
+            new InterceptorFlowController().invokeResponseHandlers(exc);
         } else {
             throw new IllegalStateException("Unexpected value: " + builder);
         }
