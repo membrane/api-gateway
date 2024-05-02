@@ -34,7 +34,8 @@ public class OpenIdConnectSecurityValidatorTest extends AbstractValidatorTest {
     @Test
     void simple() {
         ValidationErrors errors = validator.validate(Request.get().path("/users"));
-        System.out.println("errors = " + errors);
-        assertEquals(0, errors.size());
+        assertEquals(1, errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals("OAuth2 or JWT authentication is required.",e.getMessage());
     }
 }

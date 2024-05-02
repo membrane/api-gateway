@@ -44,7 +44,7 @@ public class OpenAPI31Test {
 
         exc.setRequest(new Request.Builder().method("GET").build());
 
-        interceptor = new OpenAPIInterceptor(createProxy(router, petstore_v3_1));
+        interceptor = new OpenAPIInterceptor(createProxy(router, petstore_v3_1), router);
         interceptor.init(router);
     }
 

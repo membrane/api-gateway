@@ -67,10 +67,11 @@ public class TutorialRestStepsTest extends AbstractSampleMembraneStartStopTestca
                     .contentType(APPLICATION_JSON)
                     .body("meta.count",greaterThan(10));
 
+        // Test <path>/shop</path>
         get("http://localhost:2001")
                 .then()
                 .assertThat()
-                    .statusCode(400);
+                    .statusCode(404);
     }
 
     @Test

@@ -32,6 +32,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.util.TextUtil.escapeQuotes;
+
 public class AccessLogInterceptorService {
 
     private static final Logger log = LoggerFactory.getLogger(AccessLogInterceptor.class);
@@ -136,7 +138,7 @@ public class AccessLogInterceptorService {
 
     private String safe(Supplier<Object> access, String defaultValue) {
         try {
-            return String.valueOf(access.get());
+            return escapeQuotes(String.valueOf(access.get()));
         } catch (Exception e) {
             return defaultValue;
         }

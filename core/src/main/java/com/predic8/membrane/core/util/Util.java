@@ -14,7 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.predic8.membrane.core.http.*;
 import jakarta.mail.internet.*;
 import org.slf4j.*;
