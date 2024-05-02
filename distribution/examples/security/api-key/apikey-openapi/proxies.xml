@@ -9,8 +9,9 @@
     </spring:bean>
 
     <router>
+
         <api port="2000">
-            <openapi location="fruitshop-api-v2-openapi-3-security.yml" validateRequests="yes" validationDetails="yes"/>
+            <openapi location="fruitshop-api-v2-openapi-3-security.yml" validateSecurity="yes" validationDetails="yes"/>
             <apiKey required = "false">
                 <headerExtractor name="X-Api-Key"/>
             </apiKey>
