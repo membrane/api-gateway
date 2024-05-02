@@ -61,9 +61,9 @@ public class OpenAPIInterceptorTest {
 
         exc.setRequest(new Request.Builder().method("GET").build());
 
-        interceptor1Server = new OpenAPIInterceptor(createProxy(router, specInfoServers));
+        interceptor1Server = new OpenAPIInterceptor(createProxy(router, specInfoServers), router);
         interceptor1Server.init(router);
-        interceptor3Server = new OpenAPIInterceptor(createProxy(router, specInfo3Servers));
+        interceptor3Server = new OpenAPIInterceptor(createProxy(router, specInfo3Servers), router);
         interceptor3Server.init(router);
     }
 
@@ -102,6 +102,8 @@ public class OpenAPIInterceptorTest {
     @Test
     public void destinations() throws Exception {
         exc.getRequest().setUri("/foo/boo");
+        exc.setOriginalRequestUri("/foo/boo");
+
         assertEquals(CONTINUE, interceptor3Server.handleRequest(exc));
         assertEquals(3, exc.getDestinations().size());
 
@@ -116,9 +118,10 @@ public class OpenAPIInterceptorTest {
     @Test
     public void destinationsTargetSet() throws Exception {
         exc.getRequest().setUri("/foo/boo");
+        exc.setOriginalRequestUri("/foo/boo");
         APIProxy proxy = createProxy(router, specInfo3Servers);
         proxy.getTarget().setHost("api.predic8.de");
-        assertEquals(CONTINUE, new OpenAPIInterceptor(proxy).handleRequest(exc));
+        assertEquals(CONTINUE, new OpenAPIInterceptor(proxy,router).handleRequest(exc));
         assertEquals(0, exc.getDestinations().size());
     }
 
@@ -137,7 +140,7 @@ public class OpenAPIInterceptorTest {
         exc.setOriginalRequestUri("/customers");
         exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
 
-        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers),router);
         interceptor.init(router);
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertEquals(400,exc.getResponse().getStatusCode());
@@ -168,7 +171,7 @@ public class OpenAPIInterceptorTest {
         exc.setOriginalRequestUri("/customers");
         exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
 
-        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, spec));
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, spec),router);
         interceptor.init(router);
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));

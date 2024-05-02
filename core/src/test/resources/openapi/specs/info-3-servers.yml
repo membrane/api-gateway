@@ -7,7 +7,7 @@ servers:
   - url: https://localhost:4000/foo
   - url: https://localhost:5000/foo
 paths:
-  /foo:
+  /boo:
     get:
       responses:
         '200':

@@ -41,7 +41,7 @@ public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {
         spec.validateSecurity = YES;
 
         Router router = getRouter();
-        interceptor = new OpenAPIInterceptor(createProxy(router, spec));
+        interceptor = new OpenAPIInterceptor(createProxy(router, spec),router);
         interceptor.init(router);
     }
 

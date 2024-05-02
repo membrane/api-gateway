@@ -75,14 +75,14 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        if (specs.size() > 0)
+        if (!specs.isEmpty())
             key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
         super.init();
         initOpenAPI();
     }
 
     private void initOpenAPI() throws IOException, ClassNotFoundException {
-        if (specs.size() == 0)
+        if (specs.isEmpty())
             return;
 
         apiRecords = new OpenAPIRecordFactory(router).create(specs);
@@ -93,7 +93,7 @@ public class APIProxy extends ServiceProxy {
         configureBasePaths();
 
         interceptors.add(new OpenAPIPublisherInterceptor(apiRecords));
-        interceptors.add(new OpenAPIInterceptor(this));
+        interceptors.add(new OpenAPIInterceptor(this, router));
     }
 
     /**
@@ -144,8 +144,7 @@ public class APIProxy extends ServiceProxy {
             try {
                 basePaths.put(UriUtil.getPathFromURL(router.getUriFactory(),server.getUrl()), record);
             } catch (URISyntaxException e) {
-                e.printStackTrace();
-                // @TODO
+                log.error("Cannot parse URL {}", server.getUrl());
                 throw new RuntimeException();
             }
         }));
