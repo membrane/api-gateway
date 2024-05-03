@@ -27,8 +27,12 @@ public class SpELHeader implements SpELLablePropertyAware {
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
-        if (header.contains(name))
-            return new TypedValue(header.getFirstValue(name));
-        else return new TypedValue("");
+        var v = header.getFirstValue(name);
+        if (v != null)
+            return new TypedValue(v);
+        v = header.getFirstValue(camelToKebab(name));
+        if (v != null)
+            return new TypedValue(v);
+        return new TypedValue("");
     }
 }

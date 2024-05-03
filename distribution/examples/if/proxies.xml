@@ -11,29 +11,20 @@
                 <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
                     <groovy>println("JSON Request!")</groovy>
                 </if>
-
                 <if test="method == 'POST'" language="SpEL">
                     <groovy>println("Request method was POST.")</groovy>
                 </if>
-
                 <setHeader name="x-output" value="${params.toString}"  />
-
                 <if test="params['param1'] == 'value2'" language="SpEL">
                     <groovy>println("Query Parameter Given!")</groovy>
-                    <return />
                 </if>
-
                 <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">
                     <groovy>println("X-Test-Header contains 'bar'")</groovy>
-                    <return />
                 </if>
-
                 <if test="request.getBody.getLength gt 64" language="SpEL">
                     <groovy>println("Long body")</groovy>
-                    <return />
                 </if>
             </request>
-
             <response>
                 <if test="statusCode == 302" language="SpEL">
                     <groovy>println("Status code changed")
