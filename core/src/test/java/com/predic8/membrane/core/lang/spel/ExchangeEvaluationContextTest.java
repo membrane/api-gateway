@@ -15,24 +15,32 @@ package com.predic8.membrane.core.lang.spel;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
 
+import java.net.*;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.http.MediaType.*;
 
 public class ExchangeEvaluationContextTest {
 
     Exchange exc;
 
     @BeforeEach
-    void setup() {
+    void setup() throws URISyntaxException {
         exc = new Request.Builder()
+                .method("POST")
+                .url(new URIFactory(), "/products?limit=10&offset=0")
+                .contentType(APPLICATION_JSON.toString())
                 .header("Authentication","foo")
-                .header("Content-Type", "application/json")
                 .header("shadow-ing", "nothappening")
                 .header("shadowIng", "test")
                 .buildExchange();
+
+        exc.setProperty("foo","1234");
 
         exc.setResponse(Response.accepted().build());
     }
@@ -43,13 +51,43 @@ public class ExchangeEvaluationContextTest {
     }
 
     @Test
+    void paramsSubscription() {
+        assertEquals("10", keyExpression("params['limit']"));
+    }
+
+    @Test
+    void paramsDot() {
+        assertEquals("10", keyExpression("params.limit"));
+    }
+
+    @Test
+    void paramsDotOffset() {
+        assertEquals("0", keyExpression("params.offset"));
+    }
+
+    @Test
+    void propertySubscription() {
+        assertEquals("1234", keyExpression("properties['foo']"));
+    }
+
+    @Test
+    void propertyDot() {
+        assertEquals("1234", keyExpression("properties.foo"));
+    }
+
+    @Test
     void hyphen() {
-        assertEquals("application/json", keyExpression("request.headers['content-type']"));
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("request.headers['content-type']"));
     }
 
     @Test
     void conversion() {
-        assertEquals("application/json", keyExpression("request.headers.contentType"));
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("request.headers.contentType"));
+    }
+
+    @Test
+    void headerCasing() {
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("request.headers['CoNtent-TyPE']"));
     }
 
     @Test

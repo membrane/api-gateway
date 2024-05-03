@@ -18,25 +18,25 @@ package com.predic8.membrane.core.lang.spel.spelable;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Message;
 
-public class SPelMessageWrapper {
+public class SpELMessageWrapper {
 
-    private SpeLHeader headers;
+    private SpELHeader headers;
     private AbstractBody body;
     private String version;
     private String errorMessage;
 
-    public SPelMessageWrapper(Message message) {
+    public SpELMessageWrapper(Message message) {
         if (message == null) {
             return;
         }
 
-        this.headers = new SpeLHeader(message.getHeader());
+        this.headers = new SpELHeader(message.getHeader());
         this.body = message.getBody();
         this.version = message.getVersion();
         this.errorMessage = message.getErrorMessage();
     }
 
-    public SpeLHeader getHeaders() {
+    public SpELHeader getHeaders() {
         return headers;
     }
 

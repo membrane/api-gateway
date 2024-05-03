@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel;
 
-import com.predic8.membrane.core.lang.spel.spelable.SPeLablePropertyAware;
+import com.predic8.membrane.core.lang.spel.spelable.SpELLablePropertyAware;
 import org.springframework.expression.AccessException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.PropertyAccessor;
@@ -23,18 +23,18 @@ public class AwareExchangePropertyAccessor implements PropertyAccessor {
     @Override
     public Class<?>[] getSpecificTargetClasses() {
         return new Class[] {
-                SPeLablePropertyAware.class
+                SpELLablePropertyAware.class
         };
     }
 
     @Override
     public boolean canRead(EvaluationContext context, Object target, String name) {
-        return ((SPeLablePropertyAware) target).canRead(context, target, name);
+        return ((SpELLablePropertyAware) target).canRead(context, target, name);
     }
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) throws AccessException {
-        return ((SPeLablePropertyAware) target).read(context, target, name);
+        return ((SpELLablePropertyAware) target).read(context, target, name);
     }
 
     @Override

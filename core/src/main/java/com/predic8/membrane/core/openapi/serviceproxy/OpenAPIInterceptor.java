@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Response;
@@ -48,8 +49,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     protected final APIProxy apiProxy;
 
-    public OpenAPIInterceptor(APIProxy apiProxy) {
+    public OpenAPIInterceptor(APIProxy apiProxy, Router router) {
         this.apiProxy = apiProxy;
+        this.router = router;
     }
 
 

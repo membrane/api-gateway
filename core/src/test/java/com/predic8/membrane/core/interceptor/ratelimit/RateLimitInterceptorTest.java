@@ -16,12 +16,12 @@ package com.predic8.membrane.core.interceptor.ratelimit;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
-import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -29,12 +29,11 @@ import org.junit.jupiter.params.provider.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
-import java.util.stream.IntStream;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor.*;
-import static java.lang.Long.parseLong;
+import static java.lang.Long.*;
 import static java.lang.Thread.*;
 import static java.time.Duration.*;
 import static java.util.stream.IntStream.*;
@@ -57,6 +56,8 @@ public class RateLimitInterceptorTest {
 	@ParameterizedTest
 	@ValueSource( strings = {"properties.a","path","json.foo","method","path + method","headers.host","exchange.remoteAddrIp"})
 	void simplePropertyExpression(String expression) throws Exception {
+
+		System.out.println("expression = " + expression);
 
 		Exchange exc1 = prepareRequest("aaa");
 		Exchange exc2 = prepareRequest("bbb");

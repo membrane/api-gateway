@@ -130,4 +130,17 @@ public class OpenAPISpec {
         NO,
         ASINOPENAPI
     }
+
+    @Override
+    public String toString() {
+        return "OpenAPISpec{" +
+               "location='" + location + '\'' +
+               ", dir='" + dir + '\'' +
+               ", validateRequests=" + validateRequests +
+               ", validateResponses=" + validateResponses +
+               ", validationDetails=" + validationDetails +
+               ", validateSecurity=" + validateSecurity +
+               ", rewrite=" + rewrite +
+               '}';
+    }
 }

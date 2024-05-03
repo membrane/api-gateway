@@ -26,6 +26,7 @@ import com.predic8.membrane.core.transport.http.AbortException;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static java.lang.Boolean.TRUE;
 
 /**
  * Controls the flow of an exchange through a chain of interceptors.
@@ -100,7 +101,7 @@ public class InterceptorFlowController {
 		for (Interceptor i : interceptors) {
 			EnumSet<Flow> f = i.getFlow();
 			if (f.contains(RESPONSE) && !f.contains(REQUEST)) {
-				exchange.pushInterceptorToStack(i);
+				pushToStack(exchange, i);
 				continue;
 			}
 
@@ -112,9 +113,19 @@ public class InterceptorFlowController {
 				return o;
 
 			if (f.contains(RESPONSE))
-				exchange.pushInterceptorToStack(i);
+				pushToStack(exchange, i);
 		}
 		return CONTINUE;
+	}
+
+	/**
+	 * Do not push interceptors on the stack that where nested inside
+	 * a RequestInterceptor.
+	 */
+	private static void pushToStack(Exchange exchange, Interceptor i) {
+		if (TRUE.equals(exchange.getProperty("requestOnly")))
+			return;
+		exchange.pushInterceptorToStack(i);
 	}
 
 	/**
