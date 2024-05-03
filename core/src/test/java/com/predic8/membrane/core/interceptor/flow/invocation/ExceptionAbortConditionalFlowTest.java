@@ -16,17 +16,28 @@
 
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 
-public class EchoInterceptor extends AbstractInterceptor {
+import java.util.*;
+
+public class ExceptionAbortConditionalFlowTest extends AbstractInterceptorFlowTest {
+    @Override
+    protected List<Interceptor> interceptors() {
+
+        ConditionalInterceptor ci = new ConditionalInterceptor();
+        ci.setTest("true");
+        ci.getInterceptors().add(new FlowTestInterceptor("c"));
+        ci.getInterceptors().add(new ExceptionTestInterceptor());
+
+        return List.of(new FlowTestInterceptor("a"),
+                ci,
+                new FlowTestInterceptor("b"));
+    }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-
-        exc.setResponse(Response.ok().body(exc.getRequest().getBody().getContent()).build());
-//        exc.getRequest().setBody(new Body("Leer".getBytes()));
-        return Outcome.RETURN;
+    protected String flow() {
+        return ">a>c?c?a";
     }
 }

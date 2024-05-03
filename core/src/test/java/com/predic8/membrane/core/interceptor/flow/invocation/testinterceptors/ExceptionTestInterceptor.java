@@ -14,21 +14,15 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.flow.invocation;
+package com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors;
 
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 
-import java.util.*;
-
-public class TwoInterceptorFlowTest extends AbstractInterceptorFlowTest {
-    @Override
-    protected List<Interceptor> interceptors() {
-        return List.of(new FlowTestInterceptor("a"), new FlowTestInterceptor("b"));
-    }
+public class ExceptionTestInterceptor extends AbstractInterceptor {
 
     @Override
-    protected String flow() {
-        return ">a>b<b<a";
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        throw new RuntimeException();
     }
 }

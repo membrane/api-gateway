@@ -13,25 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.spelable;
 
+import com.predic8.membrane.core.http.Header;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
 
-import java.util.Map;
+public class SpELHeader implements SpELLablePropertyAware {
 
-public class SPeLMap<K, V> implements SPeLablePropertyAware {
-    protected final Map<K, V> data;
+    private final Header header;
 
-    public SPeLMap(Map<K, V> data) {
-        this.data = data;
-    }
-
-    @Override
-    public boolean canRead(EvaluationContext context, Object target, String name) {
-        return data.containsKey(name);
+    public SpELHeader(Header header) {
+        this.header = header;
     }
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
-        return new TypedValue(data.get(name));
+        var v = header.getFirstValue(name);
+        if (v != null)
+            return new TypedValue(v);
+        v = header.getFirstValue(camelToKebab(name));
+        if (v != null)
+            return new TypedValue(v);
+        return new TypedValue("");
     }
 }

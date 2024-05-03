@@ -16,28 +16,38 @@
 
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
-import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 
-import java.util.List;
+import java.util.*;
 
-public class RequestReturnInterceptorFlowTest extends AbstractInterceptorFlowTest {
+public class ThreeConditionalInterceptorsFlowTest extends AbstractInterceptorFlowTest {
     @Override
     protected List<Interceptor> interceptors() {
 
-        RequestInterceptor rqi = new RequestInterceptor();
-        ReturnInterceptor ri = new ReturnInterceptor();
-        rqi.getInterceptors().add(ri);
+
+        ConditionalInterceptor ci1 = new ConditionalInterceptor();
+        ci1.setTest("true");
+        ci1.getInterceptors().add(new FlowTestInterceptor("c1"));
+
+        ConditionalInterceptor ci2 = new ConditionalInterceptor();
+        ci2.setTest("true");
+        ci2.getInterceptors().add(new FlowTestInterceptor("c2"));
+
+        ConditionalInterceptor ci3 = new ConditionalInterceptor();
+        ci3.setTest("true");
+        ci3.getInterceptors().add(new FlowTestInterceptor("c3"));
 
         return List.of(new FlowTestInterceptor("a"),
-                rqi,
-                new FlowTestInterceptor("b"));
+                ci1,
+                ci2,
+                ci3,
+                new FlowTestInterceptor("d"));
     }
 
     @Override
     protected String flow() {
-        return ">a<a";
+        return ">a>c1>c2>c3>d<d<c3<c2<c1<a";
     }
 }

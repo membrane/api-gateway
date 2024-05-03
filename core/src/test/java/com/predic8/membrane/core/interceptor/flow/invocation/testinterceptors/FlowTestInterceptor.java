@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.flow.invocation;
+package com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;

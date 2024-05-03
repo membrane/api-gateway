@@ -18,6 +18,7 @@ package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 
 import java.util.*;
 
@@ -40,6 +41,6 @@ public class ConditionalRequestInterceptorFlowTest extends AbstractInterceptorFl
 
     @Override
     protected String flow() {
-        return ">a>b>c<c<b<a";
+        return ">a>b>c<c<a";
     }
 }
