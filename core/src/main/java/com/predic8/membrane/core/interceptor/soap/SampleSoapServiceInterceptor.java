@@ -145,7 +145,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
             if (event.isStartElement()) {
                 StartElement startElement = event.asStartElement();
                 if ("address".equals(startElement.getName().getLocalPart())) {
-                    writer.add(fac.createStartElement("soap", "soap", "address"));
+                    writer.add(fac.createStartElement("s", "soap", "address"));
                     writer.add(fac.createAttribute("location", getSOAPAddress(exc)));
                 } else {
                     writer.add(event);
