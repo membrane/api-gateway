@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
+import com.predic8.membrane.core.Router;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -103,8 +104,7 @@ public class ApiKeyFileStoreTest {
 
     private static void loadFromFile(ApiKeyFileStore store, String path) {
         store.setLocation(requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource(path)).getPath());
-        //noinspection DataFlowIssue
-        store.onApplicationEvent(null);
+        store.init(new Router());
     }
 
     @Test

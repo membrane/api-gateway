@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import io.swagger.v3.oas.models.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -30,6 +31,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class APIProxyTest {
 
+    private static final String REQUESTS = "requests";
+    private static final String RESPONSES = "responses";
+    private static final String SECURITY = "security";
+    private static final String DETAILS = "details";
+
     Router router;
 
     @BeforeEach
@@ -39,166 +45,101 @@ public class APIProxyTest {
 
     @Test
     public void noOptionsNoExtensions() throws Exception {
-
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
-
-        APIProxy proxy = createProxy(router,spec);
-
-        assertEquals(1, proxy.apiRecords.size());
-        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
-
-        assertNotNull(api.getExtensions());
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
+        Map<String,Object> xValidation = getXValidation(getSpec("no-extensions.yml"));
         assertNotNull(xValidation);
-        assertFalse((Boolean) xValidation.get("requests"));
-        assertFalse((Boolean) xValidation.get("responses"));
-        assertTrue((Boolean) xValidation.get("details"));
+        assertFalse(isValidateRequests(xValidation));
+        assertFalse(isValidateResponses(xValidation));
+        assertFalse(isValidateSecurity(xValidation));
+        assertTrue(isDetails(xValidation));
     }
 
     @Test
     public void validationRequestNoExtensions() throws Exception {
-
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
+        OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateRequests = YES;
 
-        APIProxy proxy = createProxy(router,spec);
-
-        assertEquals(1, proxy.apiRecords.size());
-        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
-
-        assertNotNull(api.getExtensions());
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
+        Map<String,Object> xValidation = getXValidation(spec);
         assertNotNull(xValidation);
-        assertTrue((Boolean) xValidation.get("requests"));
-        assertFalse((Boolean) xValidation.get("responses"));
+        assertTrue(isValidateRequests(xValidation));
+        assertFalse(isValidateResponses(xValidation));
+        assertFalse(isValidateSecurity(xValidation));
+        assertTrue(isDetails(xValidation));
     }
 
     @Test
     public void validationResponsesNoExtensions() throws Exception {
-
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
+        OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateResponses = YES;
+        spec.validateSecurity = NO;
 
-        APIProxy proxy = createProxy(router,spec);
-
-        assertEquals(1, proxy.apiRecords.size());
-        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
-
-        assertNotNull(api.getExtensions());
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
+        Map<String,Object> xValidation = getXValidation(spec);
         assertNotNull(xValidation);
-        assertFalse((Boolean) xValidation.get("requests"));
-        assertTrue((Boolean) xValidation.get("responses"));
-
+        assertFalse(isValidateRequests(xValidation));
+        assertTrue(isValidateResponses(xValidation));
+        assertFalse(isValidateSecurity(xValidation));
+        assertTrue(isDetails(xValidation));
     }
 
     @Test
     public void validationAllNoExtensions() throws Exception {
-
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
+        OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateRequests = YES;
         spec.validateResponses = YES;
 
-        APIProxy proxy = createProxy(router,spec);
-
-        assertEquals(1, proxy.apiRecords.size());
-        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
-
-        assertNotNull(api.getExtensions());
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
+        Map<String,Object> xValidation = getXValidation(spec);
         assertNotNull(xValidation);
-        assertTrue((Boolean) xValidation.get("requests"));
-        assertTrue((Boolean) xValidation.get("responses"));
+        assertTrue(isValidateRequests(xValidation));
+        assertTrue(isValidateResponses(xValidation));
+        assertFalse(isValidateSecurity(xValidation));
+        assertTrue(isDetails(xValidation));
     }
 
     @Test
     public void requestsExtensions() throws Exception {
-
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/validate-requests-extensions.yml";
-
-        APIProxy proxy = createProxy(router,spec);
-
-        assertEquals(1, proxy.apiRecords.size());
-        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
-
-        assertNotNull(api.getExtensions());
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
+        Map<String,Object> xValidation = getXValidation(getSpec("validate-requests-extensions.yml"));
         assertNotNull(xValidation);
-        assertTrue((Boolean) xValidation.get("requests"));
-        assertFalse((Boolean) xValidation.get("responses"));
+        assertTrue(isValidateRequests(xValidation));
+        assertFalse(isValidateResponses(xValidation));
+        assertFalse(isValidateSecurity(xValidation));
+    }
+
+    @Test
+    public void securityExtension() throws Exception {
+        Map<String,Object> xValidation = getXValidation(getSpec("validate-only-security-extensions.yml"));
+        assertNotNull(xValidation);
+        assertTrue(isValidateRequests(xValidation));
+        assertFalse(isValidateResponses(xValidation));
+        assertTrue(isValidateSecurity(xValidation));
     }
 
     @Test
     public void responsesExtensions() throws Exception {
-
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/validate-responses-extensions.yml";
-
-        APIProxy proxy = createProxy(router,spec);
-
-        assertEquals(1, proxy.apiRecords.size());
-        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
-
-        assertNotNull(api.getExtensions());
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
+        Map<String,Object> xValidation = getXValidation(getSpec("/validate-responses-extensions.yml"));
         assertNotNull(xValidation);
-        assertTrue((Boolean) xValidation.get("requests"));
-        assertTrue((Boolean) xValidation.get("responses"));
-        assertNull(xValidation.get("details"));
+        assertFalse(isValidateRequests(xValidation));
+        assertTrue(isValidateResponses(xValidation));
+        assertFalse(isValidateSecurity(xValidation));
+        assertNull(xValidation.get(DETAILS));
     }
 
     @Test
     public void validationRequestNoDetailsNoExtensions() throws Exception {
-
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/no-extensions.yml";
+        OpenAPISpec spec = getSpec("no-extensions.yml");
         spec.validateRequests = YES;
         spec.validationDetails = NO;
 
-        APIProxy proxy = createProxy(router,spec);
-
-        assertEquals(1, proxy.apiRecords.size());
-        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
-
-        assertNotNull(api.getExtensions());
-
-        @SuppressWarnings("unchecked")
-        Map<String,Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
+        Map<String,Object> xValidation = getXValidation(spec);
         assertNotNull(xValidation);
-        assertTrue((Boolean) xValidation.get("requests"));
-        assertFalse((Boolean) xValidation.get("responses"));
-        assertFalse((Boolean) xValidation.get("details"));
+        assertTrue(isValidateRequests(xValidation));
+        assertFalse(isValidateResponses(xValidation));
+        assertFalse(isValidateSecurity(xValidation));
+        assertFalse(isDetails(xValidation));
     }
 
     @Test
     public void validationDetailsFalseExtensions() throws Exception {
 
-        OpenAPISpec spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/openapi-proxy/validation-details-false-extensions.yml";
+        OpenAPISpec spec = getSpec("validation-details-false-extensions.yml");
         spec.validateRequests = YES;
 
         APIProxy proxy = createProxy(router,spec);
@@ -210,11 +151,11 @@ public class APIProxyTest {
 
             @SuppressWarnings("unchecked")
             Map<String,Object> xValidation = (Map<String, Object>) rec.api.getExtensions().get(X_MEMBRANE_VALIDATION);
-
             assertNotNull(xValidation);
-            assertTrue((Boolean) xValidation.get("requests"));
-            assertFalse((Boolean) xValidation.get("responses"));
-            assertFalse((Boolean) xValidation.get("details"));
+            assertTrue(isValidateRequests(xValidation));
+            assertFalse(isValidateResponses(xValidation));
+            assertFalse(isValidateSecurity(xValidation));
+            assertFalse(isDetails(xValidation));
         }
     }
 
@@ -243,5 +184,42 @@ public class APIProxyTest {
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = location;
         return spec;
+    }
+
+    @NotNull
+    private OpenAPI getOpenAPI(OpenAPISpec spec) throws Exception {
+        APIProxy proxy = createProxy(router, spec);
+        assertEquals(1, proxy.apiRecords.size());
+        OpenAPI api = getSingleOpenAPIRecord(proxy.apiRecords).api;
+        assertNotNull(api.getExtensions());
+        return api;
+    }
+
+    private static Boolean isValidateSecurity(Map<String, Object> xValidation) {
+        return (Boolean) xValidation.get(SECURITY);
+    }
+
+    private static Boolean isDetails(Map<String, Object> xValidation) {
+        return (Boolean) xValidation.get(DETAILS);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getXValidation(OpenAPISpec spec) throws Exception {
+        return (Map<String, Object>) getOpenAPI(spec).getExtensions().get(X_MEMBRANE_VALIDATION);
+    }
+
+    private static Boolean isValidateResponses(Map<String, Object> xValidation) {
+        return (Boolean) xValidation.get(RESPONSES);
+    }
+
+    @NotNull
+    private static OpenAPISpec getSpec(String location) {
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.location = "src/test/resources/openapi/openapi-proxy/" + location;
+        return spec;
+    }
+
+    private static Boolean isValidateRequests(Map<String, Object> xValidation) {
+        return (Boolean) xValidation.get(REQUESTS);
     }
 }

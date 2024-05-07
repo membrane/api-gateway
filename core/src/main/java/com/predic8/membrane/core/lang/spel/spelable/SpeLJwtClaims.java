@@ -17,7 +17,7 @@ import org.jose4j.jwt.JwtClaims;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.TypedValue;
 
-public class SpeLJwtClaims implements SPeLablePropertyAware {
+public class SpeLJwtClaims implements SpELLablePropertyAware {
 
     private final JwtClaims claims;
 

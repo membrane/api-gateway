@@ -17,26 +17,37 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.lang.spel.functions.BuildInFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.expression.spel.support.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+
 public class ExchangeEvaluationContext extends StandardEvaluationContext {
+    private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class);
 
     private static  final ObjectMapper om = new ObjectMapper();
 
     private final Exchange exchange;
     private final Message message;
-    private final SPeLablePropertyAware headers;
-    private final SPeLablePropertyAware properties;
+    private final SpELLablePropertyAware headers;
+    private final SpELLablePropertyAware properties;
+    private SpELLablePropertyAware params;
     private String path;
     private String method;
+
     private int statusCode;
 
-    private SPelMessageWrapper request;
-    private SPelMessageWrapper response;
+    private SpELMessageWrapper request;
+    private SpELMessageWrapper response;
 
     public ExchangeEvaluationContext(Exchange exc) {
         this(exc, exc.getRequest());
@@ -47,19 +58,24 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
         this.message = message;
         exchange = exc;
-        properties = new SPeLProperties(exc.getProperties());
-        headers = new SpeLHeader(message.getHeader());
+        properties = new SpELProperties(exc.getProperties());
+        headers = new SpELHeader(message.getHeader());
 
         Request request = exc.getRequest();
         if (request != null) {
             path = request.getUri();
             method = request.getMethod();
-            this.request = new SPelMessageWrapper(exc.getRequest());
+            try {
+                params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exc, ERROR));
+            } catch (Exception e) {
+                log.warn("Error parsing query parameters", e);
+            }
+            this.request = new SpELMessageWrapper(exc.getRequest());
         }
 
         Response response = exc.getResponse();
         if (response != null) {
-            this.response = new SPelMessageWrapper(exc.getResponse());
+            this.response = new SpELMessageWrapper(exc.getResponse());
             this.statusCode = exc.getResponse().getStatusCode();
         }
 
@@ -71,12 +87,16 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
     }
 
 
-    public SPeLablePropertyAware getProperties() {
+    public SpELLablePropertyAware getProperties() {
         return properties;
     }
 
-    public SPeLablePropertyAware getHeaders() {
+    public SpELLablePropertyAware getHeaders() {
         return headers;
+    }
+
+    public SpELLablePropertyAware getParams() {
+        return params;
     }
 
     public Exchange getExchange() {
@@ -97,15 +117,15 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
 
     public int getStatusCode() { return statusCode; }
 
-    public SPelMessageWrapper getRequest() {
+    public SpELMessageWrapper getRequest() {
         return request;
     }
 
-    public SPelMessageWrapper getResponse() {
+    public SpELMessageWrapper getResponse() {
         return response;
     }
 
-    public SPeLMap<String, Object> getJson() throws IOException {
-        return new SPeLMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
+    public SpELMap<String, Object> getJson() throws IOException {
+        return new SpELMap<String, Object>(om.readValue(message.getBodyAsStreamDecoded(), Map.class));
     }
 }

@@ -28,11 +28,12 @@ import org.springframework.expression.spel.standard.*;
 import java.util.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.*;
-import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
+import static com.predic8.membrane.core.lang.ScriptingUtils.*;
+import static java.util.UUID.*;
 
 /**
  * @description <p>
@@ -62,7 +63,6 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
      */
     private Expression spelExpr;
 
-    // state
     private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
     private Function<Map<String, Object>, Boolean> condition;
 
@@ -97,15 +97,15 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
                 Boolean result = spelExpr.getValue(new ExchangeEvaluationContext(exc, msg), Boolean.class);
                 return result != null && result;
             }
+            default -> {
+                log.error("Should not happen!");
+                return false;
+            }
         }
-
-        log.error("Should not happen!");
-
-        return false;
     }
 
     private HashMap<String, Object> getParametersForGroovy(Exchange exc, Message msg, Flow flow) {
-        return  new HashMap<>() {{
+        return new HashMap<>() {{
             put("Outcome", Outcome.class);
             put("RETURN", RETURN);
             put("CONTINUE", CONTINUE);
@@ -126,24 +126,36 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
         return handleInternal(exc, exc.getResponse(), RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exchange, Message msg, Flow flow) throws Exception {
+    // Unique id of this interceptors instance.
+    // Avoids child interceptors being pushed to the stack twice
+    private final String uuid = "if-" + randomUUID();
 
-        boolean result = testCondition(exchange, msg, flow);
+    private Outcome handleInternal(Exchange exc, Message msg, Flow flow) throws Exception {
+
+        boolean result = testCondition(exc, msg, flow);
         if (log.isDebugEnabled())
             log.debug("Expression evaluated to " + result);
 
-        if (result)
+        if (result) {
             switch (flow) {
                 case REQUEST -> {
-                    return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
+                    exc.setProperty(uuid, true);
+                    return interceptorFlowController.invokeRequestHandlers(exc, getInterceptors());
                 }
-                case RESPONSE -> interceptorFlowController.invokeResponseHandlers(exchange);
+                case RESPONSE -> {
+                    if (conditionWasFalseOrNotExecutedInRequestFlow(exc))
+                        for (Interceptor i : getInterceptors()) {
+                            exc.pushInterceptorToStack(i);
+                        }
+                }
             }
-
+        }
         return CONTINUE;
     }
 
-
+    private boolean conditionWasFalseOrNotExecutedInRequestFlow(Exchange exchange) {
+        return exchange.getProperty(uuid) == null;
+    }
 
     public LanguageType getLanguage() {
         return language;

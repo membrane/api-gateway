@@ -24,15 +24,14 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class AbstractInterceptor implements Interceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(AbstractInterceptor.class.getName());
-
 	protected String name = this.getClass().getName();
 
-	private EnumSet<Flow> flow = Flow.Set.REQUEST_RESPONSE;
+	private EnumSet<Flow> flow = REQUEST_RESPONSE;
 
 	protected Router router;
 

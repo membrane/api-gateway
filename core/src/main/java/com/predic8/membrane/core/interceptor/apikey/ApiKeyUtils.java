@@ -13,13 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
+import com.predic8.membrane.core.resolver.ResolverMap;
+
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 public class ApiKeyUtils {
-    public static Stream<String> readFile(String location) throws IOException {
-        return Files.lines(Path.of(location));
+    public static Stream<String> readFile(String location, ResolverMap resolverMap, String baseLocation) throws IOException {
+        return new BufferedReader(
+                new InputStreamReader(
+                        resolverMap.resolve(ResolverMap.combine(baseLocation, location)),
+                        StandardCharsets.UTF_8
+                )
+        ).lines();
     }
 }

@@ -14,18 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import java.util.EnumSet;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
@@ -38,22 +33,30 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
 
 	public RequestInterceptor() {
 		name = "Request Interceptor";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		boolean logDebug = log.isDebugEnabled();
 
 		for (Interceptor i : getInterceptors()) {
-			EnumSet<Flow> f = i.getFlow();
-			if (!f.contains(REQUEST))
+			if (!i.getFlow().contains(Flow.REQUEST))
 				continue;
 
-			if (logDebug)
+			if (log.isDebugEnabled())
 				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exc);
 
-			Outcome o = i.handleRequest(exc);
+			// If nested interceptors are push to the stack make sure, that when they are popped
+			// they will not be executed in the response phase. See also ConditionalInterceptor (if-element)
+			exc.setProperty("requestOnly",true);
+			Outcome o;
+			try {
+				o = i.handleRequest(exc);
+			} finally {
+				// Reset the property for everything that is outside this request interceptor
+				exc.setProperty("requestOnly",false);
+			}
+
 			if (o != CONTINUE)
 				return o;
 		}

@@ -48,7 +48,7 @@ public class BasicAuthSecurityValidationTest {
         spec.location = "src/test/resources/openapi/specs/security/http-basic.yml";
         spec.validateRequests = YES;
 
-        oasInterceptor = new OpenAPIInterceptor(createProxy(router, spec));
+        oasInterceptor = new OpenAPIInterceptor(createProxy(router, spec),router);
         oasInterceptor.init(router);
 
         baInterceptor = new BasicAuthenticationInterceptor();

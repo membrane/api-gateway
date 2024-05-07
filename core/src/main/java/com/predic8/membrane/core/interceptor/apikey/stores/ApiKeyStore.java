@@ -13,9 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
+import com.predic8.membrane.core.Router;
+
 import java.util.List;
 import java.util.Optional;
 
 public interface ApiKeyStore {
+    void init(Router router);
     Optional<List<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException;
 }

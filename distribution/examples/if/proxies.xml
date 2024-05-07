@@ -1,0 +1,41 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <api port="2000">
+            <request>
+                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
+                    <groovy>println("JSON Request!")</groovy>
+                </if>
+                <if test="method == 'POST'" language="SpEL">
+                    <groovy>println("Request method was POST.")</groovy>
+                </if>
+                <setHeader name="x-output" value="${params.toString}"  />
+                <if test="params['param1'] == 'value2'" language="SpEL">
+                    <groovy>println("Query Parameter Given!")</groovy>
+                </if>
+                <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">
+                    <groovy>println("X-Test-Header contains 'bar'")</groovy>
+                </if>
+                <if test="request.getBody.getLength gt 64" language="SpEL">
+                    <groovy>println("Long body")</groovy>
+                </if>
+            </request>
+            <response>
+                <if test="statusCode == 302" language="SpEL">
+                    <groovy>println("Status code changed")
+                        exc.getResponse().setStatusCode(200)</groovy>
+                </if>
+            </response>
+
+            <template>Success</template>
+            <return statusCode="302"/>
+        </api>
+
+    </router>
+
+</spring:beans>
