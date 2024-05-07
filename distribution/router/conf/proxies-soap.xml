@@ -17,47 +17,48 @@
 	<router>
 
 		<!--
-			 The soapProxy uses information from the WSDL like servicename and 
-			 path for its configuration. 
+     The soapProxy uses information from the WSDL like servicename and
+     path for its configuration.
 
-			 Requests to the soapProxy are forwarded to the address taken from the WSDL.
-			 
-			 After starting open the following URLs in the browser:
-			 http://localhost:2000/blz-service
-			 http://localhost:2000/blz-service?wsdl
-			 http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000
+     Requests to the soapProxy are forwarded to the address taken from the WSDL.
 
-			 Documentation:
-			 https://membrane-soa.org/api-gateway-doc/current/configuration/reference/soapProxy.htm
+     After starting open the following URLs in the browser:
+     http://localhost:2000/city-service
+     http://localhost:2000/city-service?wsdl
+     http://localhost:9000/admin/service-proxy/show?name=CityService%3A2000
 
-		-->
-		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-			<path>/blz-service</path> 
+     Documentation:
+     https://membrane-soa.org/api-gateway-doc/current/configuration/reference/soapProxy.htm
+
+-->
+		<soapProxy port="2000" wsdl="https://www.predic8.de/city-service?wsdl">
+			<path>/city-service</path>
 			<validator /> <!-- Validate requests and responses against the WSDL documentation -->
 		</soapProxy>
 
 
 		<!--
              This configuration does the same as the one on top. Here the proxy is
-			 setup from basic components. Use the soapProxy for convenience and the
-			 serviceProxy for flexibility.
+             setup from basic components. Use the soapProxy for convenience and the
+             serviceProxy for flexibility.
 
-			 Open:
-			 - http://localhost:2001/blz-service
+             Open:
+             - http://localhost:2001/city-service
 
-		-->
-        <serviceProxy port="2001">
-            <rewriter>
-                <map from="^/blz-service(.*)" to="/axis2/services/BLZService$1" />
-            </rewriter>
+        -->
+		<serviceProxy port="2001">
+			<rewriter>
+				<map from="^/cities(.*)" to="/city-service$1" />
+			</rewriter>
 			<log/>
-            <webServiceExplorer wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl" />
-            <wsdlRewriter  />
-            <wsdlPublisher wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"/>
-            <validator wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"/>
-            <target host="www.thomas-bayer.com"/>
-        </serviceProxy>
-		
+			<webServiceExplorer wsdl="https://www.predic8.de/city-service?wsdl" />
+			<wsdlRewriter  />
+			<wsdlPublisher wsdl="https://www.predic8.de/city-service?wsdl"/>
+			<validator wsdl="https://www.predic8.de/city-service?wsdl"/>
+			<target host="www.predic8.de"/>
+		</serviceProxy>
+
+
 
 		<!-- 
 			 Administration UI
