@@ -262,10 +262,9 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 	@Override
 	public void init() throws Exception {
-		super.init();
-
-		if (wsdl == null)
+		if (wsdl == null) {
 			return;
+		}
 
 		resolverMap = router.getResolverMap();
 		if (httpClientConfig != null) {
@@ -276,6 +275,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 		}
 
 		configure();
+		super.init();
 	}
 
 	@SuppressWarnings("unchecked")
