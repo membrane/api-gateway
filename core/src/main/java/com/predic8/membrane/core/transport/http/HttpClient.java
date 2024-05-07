@@ -144,7 +144,7 @@ public class HttpClient implements AutoCloseable {
         }
 
         // Make sure if the request had no path and the destination has also no path
-        // to continure with no path. Maybe for STOMP?
+        // to continue with no path. Maybe for STOMP?
         if ("/".equals(originalUri) && req.getUri().isEmpty())
             req.setUri("/");
 
