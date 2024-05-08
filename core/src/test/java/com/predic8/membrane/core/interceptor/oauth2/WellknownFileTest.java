@@ -13,9 +13,13 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,63 +54,24 @@ public class WellknownFileTest {
         wkf.init(new HttpRouter());
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    public void testIssuer() {
-        assertEquals(ISSUER, wkf.getIssuer());
-    }
+    public void testJSONSerializationParts() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> jsonMap = mapper.readValue(wkf.getWellknown(), new TypeReference<>() {
+        });
 
-    @Test
-    public void testAuthorizationEndpoint() {
-        assertEquals(AUTH_ENDPOINT, wkf.getAuthorizationEndpoint());
-    }
-
-    @Test
-    public void testTokenEndpoint() {
-        assertEquals(TOKEN_ENDPOINT, wkf.getTokenEndpoint());
-    }
-
-    @Test
-    public void testUserinfoEndpoint() {
-        assertEquals(USERINFO_ENDPOINT, wkf.getUserinfoEndpoint());
-    }
-
-    @Test
-    public void testRevocationEndpoint() {
-        assertEquals(REVOCATION_ENDPOINT, wkf.getRevocationEndpoint());
-    }
-
-    @Test
-    public void testJwksUri() {
-        assertEquals(JWKS_URI, wkf.getJwksUri());
-    }
-
-    @Test
-    public void testSupportedResponseTypes() {
-        assertEquals("code token", wkf.getSupportedResponseTypes());
-    }
-
-    @Test
-    public void testSupportedSubjectTypes() {
-        assertEquals("public", wkf.getSupportedSubjectType());
-    }
-
-    @Test
-    public void testSupportedIdTokenSigningAlgValues() {
-        assertEquals("RS256", wkf.getSupportedIdTokenSigningAlgValues());
-    }
-
-    @Test
-    public void testSupportedScopes() {
-        assertEquals("openid email profile", wkf.getSupportedScopes());
-    }
-
-    @Test
-    public void testSupportedTokenEndpointAuthMethods() {
-        assertEquals("client_secret_post", wkf.getSupportedTokenEndpointAuthMethods());
-    }
-
-    @Test
-    public void testSupportedClaims() {
-        assertEquals("sub email username", wkf.getSupportedClaims());
+        assertEquals(ISSUER, jsonMap.get("issuer"));
+        assertEquals(AUTH_ENDPOINT, jsonMap.get("authorization_endpoint"));
+        assertEquals(TOKEN_ENDPOINT, jsonMap.get("token_endpoint"));
+        assertEquals(USERINFO_ENDPOINT, jsonMap.get("userinfo_endpoint"));
+        assertEquals(REVOCATION_ENDPOINT, jsonMap.get("revocation_endpoint"));
+        assertEquals(JWKS_URI, jsonMap.get("jwks_uri"));
+        assertEquals(Set.of("code", "token"), new HashSet<>((List<String>) jsonMap.get("response_types_supported")));
+        assertEquals(Set.of("public"), new HashSet<>((List<String>)jsonMap.get("subject_types_supported")));
+        assertEquals(Set.of("RS256"), new HashSet<>((List<String>)jsonMap.get("id_token_signing_alg_values_supported")));
+        assertEquals(Set.of("openid", "email", "profile"), new HashSet<>((List<String>)jsonMap.get("scopes_supported")));
+        assertEquals(Set.of("client_secret_post"), new HashSet<>((List<String>)jsonMap.get("token_endpoint_auth_methods_supported")));
+        assertEquals(Set.of("sub", "email", "username"), new HashSet<>((List<String>)jsonMap.get("claims_supported")));
     }
 }
