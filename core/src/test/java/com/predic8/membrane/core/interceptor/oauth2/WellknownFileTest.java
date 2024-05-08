@@ -54,12 +54,10 @@ public class WellknownFileTest {
         wkf.init(new HttpRouter());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testJSONSerializationParts() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> jsonMap = mapper.readValue(wkf.getWellknown(), new TypeReference<>() {
-        });
+        Map<String, Object> jsonMap = mapper.readValue(wkf.getWellknown(), new TypeReference<Map<String, Object>>() {});
 
         assertEquals(ISSUER, jsonMap.get("issuer"));
         assertEquals(AUTH_ENDPOINT, jsonMap.get("authorization_endpoint"));
