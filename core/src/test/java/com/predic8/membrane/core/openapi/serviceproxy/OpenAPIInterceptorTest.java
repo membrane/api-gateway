@@ -16,21 +16,26 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.URIFactory;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.util.JsonUtil.convert2JSON;
+import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getMapFromResponse;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIInterceptorTest {
@@ -214,5 +219,21 @@ public class OpenAPIInterceptorTest {
         assertEquals("Customer",m3.get("complexType"));
         assertEquals("integer",m3.get("schemaType"));
         assertTrue(((String)m3.get("message")).contains("maximum"));
+    }
+
+    @Test
+    public void testNoContentType() throws Exception {
+        Exchange exc = new Exchange(null);
+        exc.setOriginalRequestUri("/customers");
+        exc.setRequest(new Request.Builder().get("/customers").build());
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers),router);
+        interceptor.init(router);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(Response.ResponseBuilder.newInstance().status(200,"OK").body("foo").build());
+
+        interceptor.handleResponse(exc);
+        System.out.println(exc.getResponse().getHeader().toString());
     }
 }
