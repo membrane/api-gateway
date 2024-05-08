@@ -40,7 +40,7 @@ import static javax.xml.stream.XMLStreamConstants.*;
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     public static final Pattern WSDL_PATH_PARAM = Pattern.compile("(?i).*\\?.*wsdl.*");
-    public static final String CITY_SERVICE_NS = "https://predic8.de/city-service";
+    public static final String CITY_SERVICE_NS = "https://predic8.de/cities";
 
     public SampleSoapServiceInterceptor() {
         name = "SampleSoapService";
@@ -145,7 +145,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
             if (event.isStartElement()) {
                 StartElement startElement = event.asStartElement();
                 if ("address".equals(startElement.getName().getLocalPart())) {
-                    writer.add(fac.createStartElement("soap", "soap", "address"));
+                    writer.add(fac.createStartElement("s", "soap", "address"));
                     writer.add(fac.createAttribute("location", getSOAPAddress(exc)));
                 } else {
                     writer.add(event);
