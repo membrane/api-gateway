@@ -4,7 +4,9 @@ import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.validators.AbstractValidatorTest;
 import org.junit.jupiter.api.Test;
 
-public class NoContentTypeTest  extends AbstractValidatorTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class NoContentTypeTest extends AbstractValidatorTest {
 
 
     @Override
@@ -14,6 +16,6 @@ public class NoContentTypeTest  extends AbstractValidatorTest {
 
     @Test
     public void testNoContentType() {
-        System.out.println(validator.validate(Request.post().path("/boolean")));
+        assertEquals("POST /boolean : Request has a body, but no Content-Type header.", validator.validate(Request.post().body("foo").path("/boolean")).get(0).toString());
     }
 }
