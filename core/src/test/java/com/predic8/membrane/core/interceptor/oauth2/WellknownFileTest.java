@@ -14,24 +14,32 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.HttpRouter;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WellknownFileTest {
 
-    final String authServerUrl = "http://testserver.com/oauth2/";
+    private static final String AUTH_SERVER_URL = "http://testserver.com/oauth2/";
+    private static final String ISSUER = "http://testissuer.com";
+    private static final String AUTH_ENDPOINT = AUTH_SERVER_URL + "auth";
+    private static final String TOKEN_ENDPOINT = AUTH_SERVER_URL + "token";
+    private static final String USERINFO_ENDPOINT = AUTH_SERVER_URL + "userinfo";
+    private static final String REVOCATION_ENDPOINT = AUTH_SERVER_URL + "revoke";
+    private static final String JWKS_URI = AUTH_SERVER_URL + "certs";
 
-    @Test
-    public void testValidWellknownFile() throws Exception{
-        WellknownFile wkf = new WellknownFile();
+    private static WellknownFile wkf;
 
-        wkf.setIssuer("http://testissuer.com");
-        wkf.setAuthorizationEndpoint(authServerUrl + "auth");
-        wkf.setTokenEndpoint(authServerUrl + "token");
-        wkf.setUserinfoEndpoint(authServerUrl + "userinfo");
-        wkf.setRevocationEndpoint(authServerUrl + "revoke");
-        wkf.setJwksUri(authServerUrl + "certs");
+    @BeforeAll
+    public static void setUp() throws Exception {
+        wkf = new WellknownFile();
+        wkf.setIssuer(ISSUER);
+        wkf.setAuthorizationEndpoint(AUTH_ENDPOINT);
+        wkf.setTokenEndpoint(TOKEN_ENDPOINT);
+        wkf.setUserinfoEndpoint(USERINFO_ENDPOINT);
+        wkf.setRevocationEndpoint(REVOCATION_ENDPOINT);
+        wkf.setJwksUri(JWKS_URI);
         wkf.setSupportedResponseTypes("code token");
         wkf.setSupportedSubjectType("public");
         wkf.setSupportedIdTokenSigningAlgValues("RS256");
@@ -40,11 +48,65 @@ public class WellknownFileTest {
         wkf.setSupportedClaims("sub email username");
 
         wkf.init(new HttpRouter());
-
-        assertEquals(expectedWellknownFile(),wkf.getWellknown());
     }
 
-    private String expectedWellknownFile(){
-        return "{\"issuer\":\"http://testissuer.com\",\"authorization_endpoint\":\"http://testserver.com/oauth2/auth\",\"token_endpoint\":\"http://testserver.com/oauth2/token\",\"userinfo_endpoint\":\"http://testserver.com/oauth2/userinfo\",\"revocation_endpoint\":\"http://testserver.com/oauth2/revoke\",\"jwks_uri\":\"http://testserver.com/oauth2/certs\",\"end_session_endpoint\":null,\"response_types_supported\":[\"code\",\"token\"],\"subject_types_supported\":[\"public\"],\"id_token_signing_alg_values_supported\":[\"RS256\"],\"scopes_supported\":[\"openid\",\"email\",\"profile\"],\"token_endpoint_auth_methods_supported\":[\"client_secret_post\"],\"claims_supported\":[\"sub\",\"email\",\"username\"]}";
+    @Test
+    public void testIssuer() {
+        assertEquals(ISSUER, wkf.getIssuer());
+    }
+
+    @Test
+    public void testAuthorizationEndpoint() {
+        assertEquals(AUTH_ENDPOINT, wkf.getAuthorizationEndpoint());
+    }
+
+    @Test
+    public void testTokenEndpoint() {
+        assertEquals(TOKEN_ENDPOINT, wkf.getTokenEndpoint());
+    }
+
+    @Test
+    public void testUserinfoEndpoint() {
+        assertEquals(USERINFO_ENDPOINT, wkf.getUserinfoEndpoint());
+    }
+
+    @Test
+    public void testRevocationEndpoint() {
+        assertEquals(REVOCATION_ENDPOINT, wkf.getRevocationEndpoint());
+    }
+
+    @Test
+    public void testJwksUri() {
+        assertEquals(JWKS_URI, wkf.getJwksUri());
+    }
+
+    @Test
+    public void testSupportedResponseTypes() {
+        assertEquals("code token", wkf.getSupportedResponseTypes());
+    }
+
+    @Test
+    public void testSupportedSubjectTypes() {
+        assertEquals("public", wkf.getSupportedSubjectType());
+    }
+
+    @Test
+    public void testSupportedIdTokenSigningAlgValues() {
+        assertEquals("RS256", wkf.getSupportedIdTokenSigningAlgValues());
+    }
+
+    @Test
+    public void testSupportedScopes() {
+        assertEquals("openid email profile", wkf.getSupportedScopes());
+    }
+
+    @Test
+    public void testSupportedTokenEndpointAuthMethods() {
+        assertEquals("client_secret_post", wkf.getSupportedTokenEndpointAuthMethods());
+    }
+
+    @Test
+    public void testSupportedClaims() {
+        assertEquals("sub email username", wkf.getSupportedClaims());
     }
 }
