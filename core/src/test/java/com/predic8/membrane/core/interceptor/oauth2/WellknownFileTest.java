@@ -13,25 +13,37 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.HttpRouter;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WellknownFileTest {
 
-    final String authServerUrl = "http://testserver.com/oauth2/";
+    private static final String AUTH_SERVER_URL = "http://testserver.com/oauth2/";
+    private static final String ISSUER = "http://testissuer.com";
+    private static final String AUTH_ENDPOINT = AUTH_SERVER_URL + "auth";
+    private static final String TOKEN_ENDPOINT = AUTH_SERVER_URL + "token";
+    private static final String USERINFO_ENDPOINT = AUTH_SERVER_URL + "userinfo";
+    private static final String REVOCATION_ENDPOINT = AUTH_SERVER_URL + "revoke";
+    private static final String JWKS_URI = AUTH_SERVER_URL + "certs";
 
-    @Test
-    public void testValidWellknownFile() throws Exception{
-        WellknownFile wkf = new WellknownFile();
+    private static WellknownFile wkf;
 
-        wkf.setIssuer("http://testissuer.com");
-        wkf.setAuthorizationEndpoint(authServerUrl + "auth");
-        wkf.setTokenEndpoint(authServerUrl + "token");
-        wkf.setUserinfoEndpoint(authServerUrl + "userinfo");
-        wkf.setRevocationEndpoint(authServerUrl + "revoke");
-        wkf.setJwksUri(authServerUrl + "certs");
+    @BeforeAll
+    public static void setUp() throws Exception {
+        wkf = new WellknownFile();
+        wkf.setIssuer(ISSUER);
+        wkf.setAuthorizationEndpoint(AUTH_ENDPOINT);
+        wkf.setTokenEndpoint(TOKEN_ENDPOINT);
+        wkf.setUserinfoEndpoint(USERINFO_ENDPOINT);
+        wkf.setRevocationEndpoint(REVOCATION_ENDPOINT);
+        wkf.setJwksUri(JWKS_URI);
         wkf.setSupportedResponseTypes("code token");
         wkf.setSupportedSubjectType("public");
         wkf.setSupportedIdTokenSigningAlgValues("RS256");
@@ -40,11 +52,37 @@ public class WellknownFileTest {
         wkf.setSupportedClaims("sub email username");
 
         wkf.init(new HttpRouter());
-
-        assertEquals(expectedWellknownFile(),wkf.getWellknown());
     }
 
-    private String expectedWellknownFile(){
-        return "{\"issuer\":\"http://testissuer.com\",\"authorization_endpoint\":\"http://testserver.com/oauth2/auth\",\"token_endpoint\":\"http://testserver.com/oauth2/token\",\"userinfo_endpoint\":\"http://testserver.com/oauth2/userinfo\",\"revocation_endpoint\":\"http://testserver.com/oauth2/revoke\",\"jwks_uri\":\"http://testserver.com/oauth2/certs\",\"end_session_endpoint\":null,\"response_types_supported\":[\"code\",\"token\"],\"subject_types_supported\":[\"public\"],\"id_token_signing_alg_values_supported\":[\"RS256\"],\"scopes_supported\":[\"openid\",\"email\",\"profile\"],\"token_endpoint_auth_methods_supported\":[\"client_secret_post\"],\"claims_supported\":[\"sub\",\"email\",\"username\"]}";
+    @Test
+    public void testWellKnownSerialization() {
+        assertEquals("{\"issuer\":\"http://testissuer.com\",\"authorization_endpoint\":\"http://testserver.com/oauth2/auth\"" +
+                ",\"token_endpoint\":\"http://testserver.com/oauth2/token\",\"userinfo_endpoint\":\"http://testserver.com/oauth2/userinfo\"," +
+                "\"revocation_endpoint\":\"http://testserver.com/oauth2/revoke\",\"jwks_uri\":\"http://testserver.com/oauth2/certs\"," +
+                "\"response_types_supported\":[\"code\",\"token\"],\"subject_types_supported\":[\"public\"]," +
+                "\"id_token_signing_alg_values_supported\":[\"RS256\"],\"scopes_supported\":[\"openid\",\"email\",\"profile\"]," +
+                "\"token_endpoint_auth_methods_supported\":[\"client_secret_post\"],\"claims_supported\":[\"sub\",\"email\",\"username\"]}",
+                wkf.getWellknown());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testJSONSerializationParts() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> jsonMap = mapper.readValue(wkf.getWellknown(), new TypeReference<>() {
+        });
+
+        assertEquals(ISSUER, jsonMap.get("issuer"));
+        assertEquals(AUTH_ENDPOINT, jsonMap.get("authorization_endpoint"));
+        assertEquals(TOKEN_ENDPOINT, jsonMap.get("token_endpoint"));
+        assertEquals(USERINFO_ENDPOINT, jsonMap.get("userinfo_endpoint"));
+        assertEquals(REVOCATION_ENDPOINT, jsonMap.get("revocation_endpoint"));
+        assertEquals(JWKS_URI, jsonMap.get("jwks_uri"));
+        assertEquals(Set.of("code", "token"), new HashSet<>((List<String>) jsonMap.get("response_types_supported")));
+        assertEquals(Set.of("public"), new HashSet<>((List<String>)jsonMap.get("subject_types_supported")));
+        assertEquals(Set.of("RS256"), new HashSet<>((List<String>)jsonMap.get("id_token_signing_alg_values_supported")));
+        assertEquals(Set.of("openid", "email", "profile"), new HashSet<>((List<String>)jsonMap.get("scopes_supported")));
+        assertEquals(Set.of("client_secret_post"), new HashSet<>((List<String>)jsonMap.get("token_endpoint_auth_methods_supported")));
+        assertEquals(Set.of("sub", "email", "username"), new HashSet<>((List<String>)jsonMap.get("claims_supported")));
     }
 }
