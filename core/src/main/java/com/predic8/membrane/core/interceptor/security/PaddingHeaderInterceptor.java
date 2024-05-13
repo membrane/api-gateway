@@ -18,7 +18,7 @@ package com.predic8.membrane.core.interceptor.security;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
@@ -46,6 +46,11 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
     private void setInterceptorMeta() {
         name = "Padding Header";
         setFlow(of(REQUEST, RESPONSE));
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Generates a randomized header field that artificially pads the message to protect against padding oracle attacks like CVE-2013-3587";
     }
 
     @SuppressWarnings("unused")

@@ -14,28 +14,6 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import static com.predic8.membrane.core.Constants.WSDL_HTTP_NS;
-import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
-import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
-import static com.predic8.membrane.core.Constants.XSD_NS;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-
-import javax.xml.namespace.QName;
-
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -45,6 +23,16 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.namespace.QName;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
+
+import static com.predic8.membrane.core.Constants.*;
 
 /**
  * @description
@@ -175,53 +163,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	@Override
 	public String getShortDescription() {
 		return "Rewrites SOAP endpoint addresses and XML Schema locations in WSDL and XSD documents.";
-	}
-
-	@Override
-	public String getLongDescription() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getShortDescription());
-		sb.append("<br/>");
-		sb.append("The protocol, host and port of the incoming request will be used for the substitution");
-
-		if (protocol != null || port != null || host != null) {
-			sb.append(" except the following fixed values:");
-			StringWriter sw = new StringWriter();
-			new Html(sw){{
-				table();
-				thead();
-				tr();
-				th().text("Part").end();
-				th().text("Value").end();
-				end();
-				end();
-				tbody();
-				if (protocol != null) {
-					tr();
-					td().text("Protocol").end();
-					td().text(protocol).end();
-					end();
-				}
-				if (host != null) {
-					tr();
-					td().text("Host").end();
-					td().text(host).end();
-					end();
-				}
-				if (port != null) {
-					tr();
-					td().text("Port").end();
-					td().text(port).end();
-					end();
-				}
-				end();
-				end();
-			}};
-			sb.append(sw.toString());
-		} else {
-			sb.append(".");
-		}
-		return sb.toString();
 	}
 
 	public void setRewriteEndpoint(boolean rewriteEndpoint) {

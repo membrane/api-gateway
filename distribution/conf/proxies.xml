@@ -7,51 +7,100 @@
     <router>
 
         <api port="2000">
-            <request>
-                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
-                    <groovy>println("JSON Request!")</groovy>
-                </if>
-
-                <response>
-                    <groovy>println("JSON Response 2!")</groovy>
-                </response>
+            <openapi location="fruitshop-api.yml" />
+            <openapi location="security-api-v1.yml"
+            validateRequests="yes"
+            validateResponses="no"
+            validationDetails="yes" />
+            <log/>
+            <apiKey>
+                <keys>
+                    <secret value="demo-key-foobar" />
+                </keys>
+                <headerExtractor />
+                <queryParamExtractor name="X-Api-Key" />
+            </apiKey>
+            <request >
+                <clusterNotification validateSignature="true"
+                                     keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
             </request>
-            <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
-                <groovy>println("JSON Request 2!")</groovy>
-            </if>
-
-
-<!--                <if test="method == 'POST'" language="SpEL">-->
-<!--                    <groovy>println("Request method was POST.")</groovy>-->
-<!--                </if>-->
-
-<!--                <setHeader name="x-output" value="${params.toString}"  />-->
-
-<!--                <if test="params['param1'] == 'value2'" language="SpEL">-->
-<!--                    <groovy>println("Query Parameter Given!")</groovy>-->
-<!--                    <return />-->
-<!--                </if>-->
-
-<!--                <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">-->
-<!--                    <groovy>println("X-Test-Header contains 'bar'")</groovy>-->
-<!--                    <return />-->
-<!--                </if>-->
-
-<!--                <if test="request.getBody.getLength gt 64" language="SpEL">-->
-<!--                    <groovy>println("Long body")</groovy>-->
-<!--                    <return />-->
-<!--                </if>-->
-
-
-<!--            <response>-->
-<!--                <if test="statusCode == 302" language="SpEL">-->
-<!--                    <groovy>println("Status code changed")-->
-<!--                            exc.getResponse().setStatusCode(200)</groovy>-->
-<!--                </if>-->
-<!--            </response>-->
-
+            <target host="localhost" port="2001" />
+      </api>
             <template>Success</template>
             <return statusCode="302"/>
+        </api>
+
+        <api port="2003">
+            <switch>
+                <case xPath="//product" url="https://api.predic8.de/shop/v2/products" />
+                <case xPath="//vendor" url="https://api.predic8.de/shop/v2/vendors" />
+                <case xPath="//order" url="https://api.predic8.de/shop/v2/orders" />
+            </switch>
+        </api>
+
+        <api port="2004">
+            <response>
+                <counter name="Node 1" />
+                <transform xslt="../examples/xslt/customer2person.xsl" />
+            </response>
+            <target host="www.thomas-bayer.com" port="80" />
+        </api>
+
+        <api port="2005">
+            <statisticsCSV file="path" />
+            <wsdlRewriter />
+            <response>
+                <xmlContentFilter xPath="//book/reviews" />
+            </response>
+            <target host="www.membrane-soa.org" />
+        </api>
+
+        <api port="2006">
+            <formValidation>
+                <field name="name" regex="[a-zA-Z]+" />
+            </formValidation>
+            <rest2Soap>
+                <mapping regex="/bank/.*" soapAction=""
+                soapURI="/axis2/services/BLZService" requestXSLT="blz-request.xsl"
+                responseXSLT="blz-response.xsl" />
+                <mapping regex="/shop/.*" soapAction=""
+                soapURI="/axis2/services/ShopService" requestXSLT="shop-request.xsl"
+                responseXSLT="shop-response.xsl" />
+            </rest2Soap>
+        </api>
+
+        <soapProxy port="2007" wsdl="https://www.predic8.de/city-service?wsdl">
+            <validator />
+        </soapProxy>
+
+        <api port="2008">
+            <balancer>
+                <xmlSessionIdExtractor namespace="http://chat.predic8.com/"
+                                       localName="session" />
+                <clusters>
+                    <cluster name="Default">
+                        <node host="node1.predic8.com" port="8080" />
+                        <node host="node2.predic8.com" port="8090" />
+                        <node host="node3.predic8.com" port="8100" />
+                    </cluster>
+                </clusters>
+                <byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
+                                  retryTimeOnBusy="1000" />
+            </balancer>
+        </api>
+
+        <api port="2009">
+        </api>
+        <api port="2009">
+        </api>
+        <api port="2009">
+        </api>
+        <api port="2009">
+        </api>
+
+
+        <api port="9000">
+            <adminConsole />
         </api>
 
     </router>

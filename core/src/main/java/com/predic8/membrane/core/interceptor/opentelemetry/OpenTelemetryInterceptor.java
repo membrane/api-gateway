@@ -55,6 +55,22 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     public void init() throws Exception {
         otel = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
         tracer = otel.getTracer("MEMBRANE-TRACER");
+
+    }
+
+    public OpenTelemetryInterceptor() {
+        name = "OpenTelemetry Exporter";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Exports OpenTelemetry data to a specified collector.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return getShortDescription() + "<br/>" +
+                "Collector: " + exporter.getEndpointUrl();
     }
 
     @Override

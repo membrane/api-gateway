@@ -13,13 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
@@ -30,6 +23,12 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @description The index feature lists available proxys at a simple Web page.
@@ -72,8 +71,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 		ri.ssl = sp.getSslInboundContext() != null;// NOTE: when running as servlet, we have no idea what the protocol was
 		String protocol = ri.ssl ? "https" : "http";
 
-		String host = k.isHostWildcard() ? new HostColonPort(ri.ssl, exc.getRequest().getHeader().getHost()).host() : fullfillRegexp(ServiceProxyKey.createHostPattern(k.getHost()));
-		if (host == null || host.length() == 0)
+		String host = k.isHostWildcard() ? new HostColonPort(ri.ssl, exc.getRequest().getHeader().getHost()).host() : fulfillRegexp(ServiceProxyKey.createHostPattern(k.getHost()));
+		if (host == null || host.isEmpty())
 			host = exc.getHandler().getLocalAddress().getHostAddress();
 
 		int port = k.getPort();
@@ -84,7 +83,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 		if (!k.isUsePathPattern()) {
 			path = "/";
 		} else if (k.isPathRegExp()) {
-			path = fullfillRegexp(k.getPath());
+			path = fulfillRegexp(k.getPath());
 		} else {
 			path = "/" + StringUtils.removeStart(k.getPath(), "/");
 		}
@@ -102,7 +101,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 		return ri;
 	}
 
-	static String fullfillRegexp(String regex) {
+	static String fulfillRegexp(String regex) {
 		StringBuilder sb = new StringBuilder();
 		int p = 0, groupLevel = 0;
 		WHILE:
@@ -168,7 +167,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 							case '*':
 							case '+':
 							case '{':
-								return null; // meaningful characters we do not unterstand
+								return null; // meaningful characters we do not understand
 							case '\\':
 								return null; // TODO: \) \Q..\E
 							}
@@ -281,6 +280,11 @@ public class IndexInterceptor extends AbstractInterceptor {
 		};
 		exc.setResponse(Response.ok(sw.toString()).build());
 		return Outcome.RETURN;
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Index Interceptor";
 	}
 
 	@Override

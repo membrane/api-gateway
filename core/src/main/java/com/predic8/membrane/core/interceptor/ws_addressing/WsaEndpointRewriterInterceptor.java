@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
-import java.io.ByteArrayOutputStream;
-
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+
+import java.io.ByteArrayOutputStream;
 
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 	@Override

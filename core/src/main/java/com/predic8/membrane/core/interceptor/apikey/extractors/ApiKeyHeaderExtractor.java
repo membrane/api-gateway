@@ -45,4 +45,9 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
     public HeaderName getHeaderName() {
         return headerName;
     }
+
+    @Override
+    public String getDescription() {
+        return "Header Name: " + headerName + ". ";
+    }
 }
