@@ -54,6 +54,17 @@ public class WellknownFileTest {
         wkf.init(new HttpRouter());
     }
 
+    @Test
+    public void testWellKnownSerialization() {
+        assertEquals("{\"issuer\":\"http://testissuer.com\",\"authorization_endpoint\":\"http://testserver.com/oauth2/auth\"" +
+                ",\"token_endpoint\":\"http://testserver.com/oauth2/token\",\"userinfo_endpoint\":\"http://testserver.com/oauth2/userinfo\"," +
+                "\"revocation_endpoint\":\"http://testserver.com/oauth2/revoke\",\"jwks_uri\":\"http://testserver.com/oauth2/certs\"," +
+                "\"response_types_supported\":[\"code\",\"token\"],\"subject_types_supported\":[\"public\"]," +
+                "\"id_token_signing_alg_values_supported\":[\"RS256\"],\"scopes_supported\":[\"openid\",\"email\",\"profile\"]," +
+                "\"token_endpoint_auth_methods_supported\":[\"client_secret_post\"],\"claims_supported\":[\"sub\",\"email\",\"username\"]}",
+                wkf.getWellknown());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testJSONSerializationParts() throws Exception {
