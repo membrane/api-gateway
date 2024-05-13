@@ -60,9 +60,9 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 		var xff = getForwardedForList(exc);
 		if (useXForwardedForAsClientAddr && !xff.isEmpty()) {
-			var xLast = xff.get(xff.size()-1);
+			var xLast = xff.get(xff.size()-1).trim();
 			try {
-				remoteAddrIp = String.valueOf(InetAddress.getByName(xLast)).replace('/', ' ');
+				remoteAddrIp = InetAddress.getByName(xLast).getHostAddress();
 			} catch (UnknownHostException e) {
 				remoteAddr = xLast;
 			}
@@ -97,7 +97,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description whether to use the value of the last "X-Forwarded-For" header instead of the client IP address
+	 * @description whether to use the last value of the last "X-Forwarded-For" header instead of the remote IP address
 	 * @default false
 	 */
 	@MCAttribute

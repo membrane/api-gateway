@@ -11,16 +11,18 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.integration;
+package com.predic8.membrane.integration.ACL;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.interceptor.misc.SetHeaderInterceptor;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,12 +30,11 @@ import org.junit.jupiter.api.Test;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import static com.predic8.membrane.core.interceptor.acl.ParseType.*;
+import static com.predic8.membrane.core.interceptor.acl.ParseType.GLOB;
 import static java.util.regex.Pattern.compile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AccessControlInterceptorIntegrationTest {
-
+public class SimpleForwardingTest {
 	private static HttpRouter router;
 
 	private static final GetMethod GET = new GetMethod("http://localhost:5005");
@@ -51,63 +52,36 @@ public class AccessControlInterceptorIntegrationTest {
 	}
 
 	@Test
-	public void matchesHostname() throws Exception {
-		initRouter(getHostnameResource("local.*"));
+	public void matchesIp() throws Exception {
+		initRouter(getIpResource("10.10.10.10", GLOB));
 		assertEquals(200, getClient().executeMethod(GET));
 	}
 
 	@Test
-	public void notMatchesHostname() throws Exception {
-		initRouter(getHostnameResource("hostlocal"));
-		assertEquals(401, getClient().executeMethod(GET));
-	}
-
-	@Test
-	public void matchesGlobIp() throws Exception {
-		initRouter(getIpResource("127.0.0.*", GLOB));
-		assertEquals(200, getClient().executeMethod(GET));
-	}
-
-	@Test
-	public void notMatchesGlobIp() throws Exception {
-		initRouter(getIpResource("127.0.1.*", GLOB));
-		assertEquals(401, getClient().executeMethod(GET));
-	}
-
-	@Test
-	public void matchesRegexIp() throws Exception {
-		initRouter(getIpResource("127.0.0.(2|1)", REGEX));
-		assertEquals(200, getClient().executeMethod(GET));
-	}
-
-	@Test
-	public void notMatchesRegexIp() throws Exception {
-		initRouter(getIpResource("127.0.0.\\s", REGEX));
-		assertEquals(401, getClient().executeMethod(GET));
-	}
-
-	@Test
-	public void matchesCidrIp() throws Exception {
-		initRouter(getIpResource("127.0.0.0/20", CIDR));
-		assertEquals(200, getClient().executeMethod(GET));
-	}
-
-	@Test
-	public void notMatchesCidrIp() throws Exception {
-		initRouter(getIpResource("127.0.0.0/32", CIDR));
+	public void notmatchesIp() throws Exception {
+		initRouter(getIpResource("127.0.0.1", GLOB));
 		assertEquals(401, getClient().executeMethod(GET));
 	}
 
 	private void initRouter(Resource r) throws Exception {
+		router.addUserFeatureInterceptor(buildShi());
 		router.addUserFeatureInterceptor(buildAci(r));
 		router.init();
 	}
 
+	private static @NotNull SetHeaderInterceptor buildShi() {
+		return new SetHeaderInterceptor() {{
+			setName("X-Forwarded-For");
+			setValue("10.10.10.10, 127.0.0.1");
+		}};
+	}
+
 	private AccessControlInterceptor buildAci(Resource r) {
-		return new AccessControlInterceptorManualProxy(){{
+		return new ManualProxyTest(){{
 			setAccessControl(
 					new AccessControl(router) {{
 						addResource(r);
+						setUseXForwardedForAsClientAddr(true);
 					}}
 			);
 		}};
@@ -116,12 +90,6 @@ public class AccessControlInterceptorIntegrationTest {
 	private Resource getIpResource(String scheme, ParseType ptype) {
 		return getResource(new Ip(router) {{
 			setParseType(ptype);
-			setSchema(scheme);
-		}});
-	}
-
-	private Resource getHostnameResource(String scheme) {
-		return getResource(new Hostname(router) {{
 			setSchema(scheme);
 		}});
 	}

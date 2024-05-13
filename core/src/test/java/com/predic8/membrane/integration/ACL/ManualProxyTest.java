@@ -11,11 +11,11 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.integration;
+package com.predic8.membrane.integration.ACL;
 
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 
-public class AccessControlInterceptorManualProxy extends AccessControlInterceptor {
+public class ManualProxyTest extends AccessControlInterceptor {
     @Override
     public void init() throws Exception {}
 }
