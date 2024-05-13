@@ -25,8 +25,12 @@ import org.slf4j.*;
 
 import javax.xml.stream.*;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
 
 /**
  * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
@@ -42,6 +46,8 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private AccessControl accessControl;
 
+	private boolean useXForwardedForAsClientAddr = false;
+
 	public AccessControlInterceptor() {
 		setDisplayName("Access Control");
 		setFlow(REQUEST);
@@ -49,21 +55,32 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		var remoteAddr = exc.getRemoteAddr();
+		var remoteAddrIp = exc.getRemoteAddrIp();
+
+		var xff = getForwardedForList(exc);
+		if (useXForwardedForAsClientAddr && !xff.isEmpty()) {
+			var xLast = xff.get(xff.size()-1);
+			try {
+				remoteAddrIp = String.valueOf(InetAddress.getByName(xLast)).replace('/', ' ');
+			} catch (UnknownHostException e) {
+				remoteAddr = xLast;
+			}
+		}
+
 		Resource resource;
 		try {
 			resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
 			log.error("",e);
 			setResponseToAccessDenied(exc);
-
 			return ABORT;
 		}
 
-		if (!resource.checkAccess(exc.getRemoteAddr(), exc.getRemoteAddrIp())) {
+		if (!resource.checkAccess(remoteAddr, remoteAddrIp)) {
 			setResponseToAccessDenied(exc);
 			return ABORT;
 		}
-
 		return CONTINUE;
 	}
 
@@ -73,6 +90,19 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 				.addSubType("authorization-denied")
 				.title("Access Denied")
 				.build());
+	}
+
+	public boolean isUseXForwardedForAsClientAddr() {
+		return useXForwardedForAsClientAddr;
+	}
+
+	/**
+	 * @description whether to use the value of the last "X-Forwarded-For" header instead of the client IP address
+	 * @default false
+	 */
+	@MCAttribute
+	public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
+		this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
 	}
 
 	/**

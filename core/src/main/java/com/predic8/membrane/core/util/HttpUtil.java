@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -24,7 +25,9 @@ import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -36,6 +39,16 @@ public class HttpUtil {
 	static {
 		String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
 		MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
+	}
+
+	/**
+	 * Take out the last entry, because it was added by Membrane.
+	 */
+	public static List<String> getForwardedForList(Exchange exc) {
+		List<String> xForwardedFor = splitStringByComma(exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_FOR));
+		if (!xForwardedFor.isEmpty())
+			xForwardedFor.remove(xForwardedFor.size() -1  );
+		return xForwardedFor;
 	}
 
 	/*
