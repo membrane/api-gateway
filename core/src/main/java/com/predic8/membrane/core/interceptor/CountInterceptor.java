@@ -30,7 +30,6 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-// TODO Can be deleted?
 @MCElement(name="counter")
 public class CountInterceptor extends AbstractInterceptor {
 

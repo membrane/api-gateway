@@ -24,7 +24,6 @@ import com.predic8.membrane.core.http.Request;
 
 import java.io.IOException;
 
-// TODO Can be deleted?
 @MCElement(name="methodOverride")
 public class MethodOverrideInterceptor extends AbstractInterceptor {
 

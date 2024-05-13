@@ -19,7 +19,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 import java.io.ByteArrayOutputStream;
 
-// TODO Can be deleted?
 public class DecoupledEndpointRewriterInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
