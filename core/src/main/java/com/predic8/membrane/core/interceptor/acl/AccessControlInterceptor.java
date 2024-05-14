@@ -60,7 +60,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 		var xff = getForwardedForList(exc);
 		if (useXForwardedForAsClientAddr && !xff.isEmpty()) {
-			var xLast = xff.get(xff.size()-1).trim();
+			var xLast = xff.get(xff.size()-1);
 			try {
 				remoteAddrIp = InetAddress.getByName(xLast).getHostAddress();
 			} catch (UnknownHostException e) {
