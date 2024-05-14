@@ -31,4 +31,15 @@ public class RequestBuilderTest {
         Request req = new Request.Builder().authorization("alice","secret").build();
         assertEquals("Basic YWxpY2U6c2VjcmV0",req.getHeader().getAuthorization());
     }
+
+    @Test
+    void multiSameHeader() {
+        Request req = new Request.Builder()
+                .header("X-Test", "31415")
+                .header("X-Test", "27182").build();
+        assertEquals("""
+                X-Test: 31415\r
+                X-Test: 27182\r
+                """, req.getHeader().toString());
+    }
 }
