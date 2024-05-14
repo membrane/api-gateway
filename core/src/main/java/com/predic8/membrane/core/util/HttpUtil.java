@@ -29,6 +29,7 @@ import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Collections.emptyList;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class HttpUtil {
@@ -42,12 +43,18 @@ public class HttpUtil {
 	}
 
 	/**
-	 * Take out the last entry, because it was added by Membrane.
+	 * Take out the last entry added by Membrane.
 	 */
 	public static List<String> getForwardedForList(Exchange exc) {
-		List<String> xForwardedFor = splitStringByComma(exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_FOR));
-		if (!xForwardedFor.isEmpty())
-			xForwardedFor.remove(xForwardedFor.size() -1  );
+		String normalizedHeader = exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_FOR);
+		if (normalizedHeader == null) return emptyList();
+		List<String> xForwardedFor = new ArrayList<>(splitStringByComma(
+				normalizedHeader
+        ).stream().map(String::trim).toList());
+		int addrIdx = xForwardedFor.lastIndexOf(exc.getRemoteAddrIp());
+		if (!xForwardedFor.isEmpty() && addrIdx > -1) {
+			xForwardedFor.remove(addrIdx);
+		}
 		return xForwardedFor;
 	}
 
