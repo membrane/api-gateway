@@ -29,7 +29,6 @@ import com.predic8.membrane.integration.Http10Test;
 import com.predic8.membrane.integration.Http11Test;
 import com.predic8.membrane.integration.SessionManager;
 import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
@@ -49,6 +48,5 @@ import org.junit.platform.suite.api.Suite;
         ProxySSLTest.class,
         SessionManager.class,
 })
-@SelectPackages({"com.predic8.membrane.integration.ACL"})
 public class IntegrationTestsWithoutInternet {
 }
