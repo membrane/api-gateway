@@ -37,13 +37,14 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     @Override
     public void init(Router router) throws Exception {
         setFlow(Flow.Set.REQUEST);
-        name = "Token validator";
+        name = "OAuth2 Token Validator";
         client = router.getHttpClientFactory().createClient(null);
     }
 
     @Override
     public String getShortDescription() {
-        return "The token validator grants access to resources with valid access tokens.";
+        return "The token validator grants access to resources with valid access tokens. <br/>" +
+                "Endpoint: " + endpoint;
     }
 
     @Override

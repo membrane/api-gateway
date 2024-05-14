@@ -39,6 +39,15 @@ public class AccessLogInterceptor extends AbstractInterceptor {
 
     private AccessLogInterceptorService accessLogInterceptorService;
 
+    public AccessLogInterceptor() {
+        name = "Access Log";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "SpEL expression based exchange data logging through Log4j appender.";
+    }
+
     @Override
     public void init() throws Exception {
         super.init();

@@ -1,0 +1,196 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <fileExchangeStore id="es" dir="./exchanges"/>
+
+    <router>
+
+        <api port="2000" name="All Interceptors">
+
+            <openapi location="fruitshop-api.yml" />
+            <openapi location="security-api-v1.yml"
+                     validateRequests="yes"
+                     validateResponses="no"
+                     validationDetails="yes" />
+            <path isRegExp="true">/foo</path>
+            <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+            <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
+                <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
+            </jwtAuth>
+            <apiKey>
+                <keys>
+                    <secret value="demo-key-foobar" />
+                </keys>
+                <headerExtractor />
+                <queryParamExtractor name="X-Api-Key" />
+            </apiKey>
+            <ntlm user="X-Username" pass="X-Password" />
+            <login path="/login/" location="../examples/login/dialog">
+                <staticUserDataProvider>
+                    <user username="john" password="password" secret="abcdefghijklmnop" />
+                </staticUserDataProvider>
+                <totpTokenProvider />
+            </login>
+            <basicAuthentication>
+                <user name="admin" password="adminadmin" />
+                <user name="guest" password="guestguest" />
+            </basicAuthentication>
+            <tokenValidator endpoint="http://localhost:7007/oauth2/userinfo"/>
+            <accessControl file="../examples/acl/acl.xml" />
+            <oauth2Resource>
+                <membrane src="https://accounts.google.com"
+                clientId="INSERT_CLIENT_ID"
+                clientSecret="INSERT_CLIENT_SECRET"
+                scope="email profile"
+                subject="sub"/>
+            </oauth2Resource>
+            <oauth2authserver issuer="http://localhost:7000">
+
+                <!-- UserDataProvider is exchangeable, e.g. for a database table -->
+                <staticUserDataProvider>
+                    <user username="john" password="password" email="john@predic8.de" />
+                </staticUserDataProvider>
+
+                <staticClientList>
+                    <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2000/oauth2callback" />
+                </staticClientList>
+
+                <!-- Generates tokens in the given format -->
+                <bearerToken/>
+
+                <claims value="aud email iss sub username">
+
+                    <!-- Scopes are defined from the claims exposed above -->
+                    <scope id="username" claims="username"/>
+                    <scope id="profile" claims="username email"/>
+
+                </claims>
+            </oauth2authserver>
+            <xmlProtection />
+            <jsonProtection maxTokens="15"
+                            maxSize="110"
+                            maxDepth="3"
+                            maxStringLength="5"
+                            maxKeyLength="1"
+                            maxObjectSize="3"
+                            maxArraySize="3" />
+            <formValidation>
+                <field name="name" regex="[a-zA-Z]+" />
+            </formValidation>
+            <throttle delay="1000" maxThreads="5" busyDelay="3000"/>
+            <webSocket url="http://my.websocket.server:1234">
+                <wsStompReassembler>
+                    <!-- modify the exchange to have a "[MEMBRANE]:" prefix -->
+                    <groovy>
+                        def method = exc.getRequest().getMethod();
+                        def header = exc.getRequest().getHeader();
+                        def body = exc.getRequest().getBodyAsStringDecoded();
+                        if(exc.getRequest().getMethod() == "SEND")
+                        body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
+                        exc.setRequest(new Request.Builder().method(method).header(header).body(body).build());
+                    </groovy>
+                </wsStompReassembler>
+                <!-- logs the content of a WebSocket frame to the console  -->
+                <wsLog/>
+            </webSocket>
+            <swaggerRewriter swaggerJson="https://petstore.swagger.io/v2/swagger.json"/>
+            <log/>
+            <spdy />
+            <tcp />
+            <openTelemetry sampleRate="1.0">
+                <otlpExporter host="localhost" port="4317"/>
+            </openTelemetry>
+            <prometheus />
+
+            <statisticsCSV file="demofile" />
+            <wsdlRewriter />
+
+            <sampleSoapService />
+            <testService />
+            <wsdlPublisher wsdl="/WEB-INF/ArticleService.wsdl" />
+            <exchangeStore name="es" />
+            <if test="hasScopes({'admin', 'webmaster'})" language="SpEL">
+                <rewriter>
+                    <map from="^/store/(.*)" to="/shop/v2/$1" />
+                </rewriter>
+            </if>
+            <index />
+            <switch>
+                <case xPath="//product" url="https://api.predic8.de/shop/v2/products" />
+                <case xPath="//vendor" url="https://api.predic8.de/shop/v2/vendors" />
+                <case xPath="//order" url="https://api.predic8.de/shop/v2/orders" />
+            </switch>
+            <balancer>
+                <xmlSessionIdExtractor namespace="http://chat.predic8.com/"
+                                       localName="session" />
+                <clusters>
+                    <cluster name="Default">
+                        <node host="node1.predic8.com" port="8080" />
+                        <node host="node2.predic8.com" port="8090" />
+                        <node host="node3.predic8.com" port="8100" />
+                    </cluster>
+                </clusters>
+                <byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
+                                  retryTimeOnBusy="1000" />
+            </balancer>
+            <acmeHttpChallenge />
+            <headerFilter>
+                <include>Content.*</include>
+                <include>Location</include>
+                <exclude>.*</exclude>
+            </headerFilter>
+            <apiDocs />
+            <rest2Soap>
+                <mapping regex="/bank/.*" soapAction=""
+                         soapURI="/axis2/services/BLZService" requestXSLT="blz-request.xsl"
+                         responseXSLT="blz-response.xsl" />
+                <mapping regex="/shop/.*" soapAction=""
+                         soapURI="/axis2/services/ShopService" requestXSLT="shop-request.xsl"
+                         responseXSLT="shop-response.xsl" />
+            </rest2Soap>
+
+            <request >
+                <json2Xml/>
+                <xpathExtractor>
+                    <property name="fn" xpath="person/@firstname"/>
+                </xpathExtractor>
+                <clusterNotification validateSignature="true"
+                                     keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
+                <javascript>
+                    ({ id:7, city:"Berlin" })
+                </javascript>
+            </request>
+            <response>
+                <xml2Json/>
+                <counter name="Node 1" />
+                <transform xslt="../examples/xslt/customer2person.xsl" />
+                <soapStackTraceFilter />
+                <xmlContentFilter xPath="//book/reviews" />
+                <groovy>
+                    exc.getResponse().setBodyContent("Example".getBytes())
+                </groovy>
+            </response>
+            <template contentType="application/json" pretty="yes">
+                { "answer": ${params.answer} }
+            </template>
+            <return statusCode="200" />
+            <target host="localhost" port="2001" >
+                <ssl/>
+            </target>
+
+        </api>
+
+        <soapProxy port="2004" wsdl="https://www.predic8.de/city-service?wsdl">
+            <validator />
+        </soapProxy>
+
+        <api port="9000" name="Admin Console">
+            <adminConsole />
+        </api>
+
+    </router>
+
+</spring:beans>
