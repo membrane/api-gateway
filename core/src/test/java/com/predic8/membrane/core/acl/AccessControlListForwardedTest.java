@@ -43,13 +43,13 @@ public class AccessControlListForwardedTest extends ACLTest {
 
     @Test
     public void matchesIpWithHeader() throws Exception {
-        var aci = createIpACI("10.10.10.10", GLOB, false);
+        var aci = createIpACI("10.10.10.10", GLOB, false, true);
         assertEquals(CONTINUE, aci.handleRequest(exc));
     }
 
     @Test
     public void matchesIpFallbackToNoHeader() throws Exception {
-        var aci = createIpACI("127.0.0.1", GLOB, false);
+        var aci = createIpACI("127.0.0.1", GLOB, false, true);
         assertEquals(CONTINUE, aci.handleRequest(excNoHeader));
     }
 }

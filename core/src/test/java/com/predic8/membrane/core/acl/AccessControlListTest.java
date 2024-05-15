@@ -48,37 +48,37 @@ public class AccessControlListTest extends ACLTest {
 
     @Test
     public void matchesGlobIp() throws Exception {
-        var aci = createIpACI("127.0.0.*", GLOB, false);
+        var aci = createIpACI("127.0.0.*", GLOB, false, false);
         assertEquals(CONTINUE, aci.handleRequest(exc));
     }
 
     @Test
     public void notMatchesGlobIp() throws Exception {
-        var aci = createIpACI("128.0.1.*", GLOB, false);
+        var aci = createIpACI("128.0.1.*", GLOB, false, false);
         assertEquals(ABORT, aci.handleRequest(exc));
     }
 
     @Test
     public void matchesRegexIp() throws Exception {
-        var aci = createIpACI("127.0.0.(2|1)", REGEX, false);
+        var aci = createIpACI("127.0.0.(2|1)", REGEX, false, false);
         assertEquals(CONTINUE, aci.handleRequest(exc));
     }
 
     @Test
     public void notMatchesRegexIp() throws Exception {
-        var aci = createIpACI("127.0.0.\\s", REGEX, false);
+        var aci = createIpACI("127.0.0.\\s", REGEX, false, false);
         assertEquals(ABORT, aci.handleRequest(exc));
     }
 
     @Test
     public void matchesCidrIp() throws Exception {
-        var aci = createIpACI("127.0.0.0/20", CIDR, false);
+        var aci = createIpACI("127.0.0.0/20", CIDR, false, false);
         assertEquals(CONTINUE, aci.handleRequest(exc));
     }
 
     @Test
     public void notMatchesCidrIp() throws Exception {
-        var aci = createIpACI("127.0.0.0/32", CIDR, false);
+        var aci = createIpACI("127.0.0.0/32", CIDR, false, false);
         assertEquals(ABORT, aci.handleRequest(exc));
     }
 }
