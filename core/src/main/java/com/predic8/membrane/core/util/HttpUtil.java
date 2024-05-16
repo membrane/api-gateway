@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -24,8 +25,11 @@ import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.Util.splitStringByComma;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Collections.emptyList;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class HttpUtil {
@@ -36,6 +40,22 @@ public class HttpUtil {
 	static {
 		String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
 		MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
+	}
+
+	/**
+	 * Take out the last entry added by Membrane.
+	 */
+	public static List<String> getForwardedForList(Exchange exc) {
+		String normalizedHeader = exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_FOR);
+		if (normalizedHeader == null) return emptyList();
+		List<String> xForwardedFor = new ArrayList<>(splitStringByComma(
+				normalizedHeader
+        ).stream().map(String::trim).toList());
+		int addrIdx = xForwardedFor.lastIndexOf(exc.getRemoteAddrIp());
+		if (!xForwardedFor.isEmpty() && addrIdx > -1) {
+			xForwardedFor.remove(addrIdx);
+		}
+		return xForwardedFor;
 	}
 
 	/*

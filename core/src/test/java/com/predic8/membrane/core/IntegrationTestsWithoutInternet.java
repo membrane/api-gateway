@@ -15,7 +15,6 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.config.SpringReferencesTest;
-import com.predic8.membrane.core.http.MethodTest;
 import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;

@@ -232,8 +232,7 @@ public class RateLimitInterceptorTest {
 
 		Exchange exc = new Request.Builder().buildExchange();
 
-		// dummy is needed in the test cause Membrane sets itself into the list before calling the interceptor
-		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "171.1.1.2, dummy ");
+		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "171.1.1.2");
 
 		assertEquals("171.1.1.2",interceptor.getClientIp(exc));
 	}
@@ -247,7 +246,6 @@ public class RateLimitInterceptorTest {
 		Exchange exc = new Request.Builder().buildExchange();
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "171.1.1.2");
 		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "10.1.1.1");
-		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "dummy");
 
 		assertEquals("171.1.1.2",interceptor.getClientIp(exc));
 	}
@@ -259,7 +257,7 @@ public class RateLimitInterceptorTest {
 		interceptor.setTrustForwardedFor(true);
 
 		Exchange exc = new Request.Builder().buildExchange();
-		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "192.1.1.2,	10.1.1.1, 172.0.0.1, dummy");
+		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "192.1.1.2,	10.1.1.1, 172.0.0.1");
 
 		assertEquals("192.1.1.2",interceptor.getClientIp(exc));
 	}
@@ -271,7 +269,7 @@ public class RateLimitInterceptorTest {
 		interceptor.setTrustForwardedFor(true);
 
 		Exchange exc = new Request.Builder().buildExchange();
-		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "192.1.1.2,	1.1.1.2,	10.1.1.1, 172.0.0.1, dummy");
+		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "192.1.1.2,	1.1.1.2,	10.1.1.1, 172.0.0.1");
 
 		assertEquals("192.1.1.2",interceptor.getClientIp(exc));
 	}
@@ -292,7 +290,7 @@ public class RateLimitInterceptorTest {
 		interceptor.setTrustForwardedFor(true);
 
 		Exchange exc = new Request.Builder().buildExchange();
-		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8,10.0.0.1,dummy");
+		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8,10.0.0.1");
 
 		assertEquals("134.3.7.8",interceptor.getClientIp(exc));
 	}
@@ -303,7 +301,7 @@ public class RateLimitInterceptorTest {
 		interceptor.setTrustForwardedFor(true);
 
 		Exchange exc = new Request.Builder().buildExchange();
-		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8,10.0.0.1,172.0.0.1,dummy");
+		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8,10.0.0.1,172.0.0.1");
 
 		assertEquals("134.3.7.8",interceptor.getClientIp(exc));
 	}
@@ -315,7 +313,7 @@ public class RateLimitInterceptorTest {
 		interceptor.setTrustForwardedFor(true);
 
 		Exchange exc = new Request.Builder().buildExchange();
-		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8,dummy");
+		exc.getRequest().getHeader().add(X_FORWARDED_FOR, "	134.3.7.8");
 		exc.setRemoteAddrIp("192.168.2.1");
 
 		assertEquals("192.168.2.1",interceptor.getClientIp(exc));

@@ -13,14 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.util.regex.Pattern;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.util.TextUtil;
+
+import javax.xml.stream.XMLStreamReader;
 
 public abstract class AbstractClientAddress extends AbstractXmlElement {
 
@@ -35,7 +31,7 @@ public abstract class AbstractClientAddress extends AbstractXmlElement {
 	public abstract boolean matches(String hostname, String ip);
 
 	@Override
-	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
+	protected void parseCharacters(XMLStreamReader token) {
 		setSchema(token.getText());
 	}
 
@@ -48,8 +44,5 @@ public abstract class AbstractClientAddress extends AbstractXmlElement {
 		this.schema = schema;
 	}
 
-	public void init(Router router) {
-		// do nothing
-	}
-
+	public void init(Router router) {}
 }
