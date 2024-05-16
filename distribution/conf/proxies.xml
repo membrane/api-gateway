@@ -11,6 +11,10 @@
             <target url="https://api.predic8.de" />
         </api>
 
+        <api port="2001">
+            <target url="https://api.predic8.de" />
+        </api>
+
     </router>
 
 </spring:beans>
