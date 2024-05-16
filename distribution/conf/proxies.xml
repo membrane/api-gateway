@@ -7,38 +7,9 @@
     <router>
 
         <api port="2000">
-            <response>
-                <if test="statusCode matches '[45]\d\d'" language="spel">
-                    <template pretty="yes" contentType="application/json">
-                        {
-                            "type": "https://membrane-api.io/error/",
-                            "title": "${exc.response.statusMessage}",
-                            "status": ${exc.response.statusCode}
-                        }
-                    </template>
-                </if>
-            </response>
-            <target url="http://localhost:2001" />
+            <openapi location="./fruitshop-api.yml" />
+            <target url="https://api.predic8.de" />
         </api>
-
-        <api port="2001">
-            <return statusCode="405" />
-        </api>
-
-        <!-- Returns statusCode specified in URL e.g. 201 for "http://localhost:2000/201" -->
-        <internalProxy name="mock origin server">
-            <response>
-                <groovy>
-                    exc.setResponse(
-                        exc.response.fromStatusCode(
-                            Integer.parseInt(exc.request.uri.substring(1)),
-                            ""
-                        ).build()
-                    )
-                </groovy>
-            </response>
-            <return />
-        </internalProxy>
 
     </router>
 
