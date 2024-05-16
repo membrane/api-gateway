@@ -1,3 +1,5 @@
+// All requests will return 404
+
 ### Will be detected as a JSON request.
 POST / HTTP/2
 Host: localhost:2000
