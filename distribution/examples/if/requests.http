@@ -1,3 +1,5 @@
+// All requests will return 404
+
 ### Will be detected as a JSON request.
 POST / HTTP/2
 Host: localhost:2000
@@ -13,7 +15,7 @@ Host: localhost:2000
 GET /?param1=value2 HTTP/2
 Host: localhost:2000
 
-### X-Test-Header will be examined for it containing 'bar'
+### Does X-Test-Header contain 'bar'?
 GET / HTTP/2
 Host: localhost:2000
 X-Test-Header: foo

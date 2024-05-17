@@ -14,7 +14,6 @@
                 <if test="method == 'POST'" language="SpEL">
                     <groovy>println("Request method was POST.")</groovy>
                 </if>
-                <setHeader name="x-output" value="${params.toString}"  />
                 <if test="params['param1'] == 'value2'" language="SpEL">
                     <groovy>println("Query Parameter Given!")</groovy>
                 </if>
@@ -26,9 +25,18 @@
                 </if>
             </request>
             <response>
+                <if test="statusCode matches '[45]\d\d'" language="spel">
+                    <template pretty="yes" contentType="application/json">
+                        {
+                        "type": "https://membrane-api.io/error/",
+                        "title": "${exc.response.statusMessage}",
+                        "status": ${exc.response.statusCode}
+                        }
+                    </template>
+                </if>
                 <if test="statusCode == 302" language="SpEL">
                     <groovy>println("Status code changed")
-                        exc.getResponse().setStatusCode(200)</groovy>
+                        exc.getResponse().setStatusCode(404)</groovy>
                 </if>
             </response>
 

@@ -60,6 +60,18 @@ curl http://localhost:2000
 
 This should yield the same response as calling https://api.predic8.de does.
 
+### Changing the Configuration
+Bind a custom `proxies.xml` to Membrane container.
+ 
+**Windows/Linux:**
+```
+docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+```
+**Mac:**
+```
+docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
+```
+
 More about setting up [Membrane for Docker](https://membrane-api.io/deployment/#docker).
 
 ## Next Steps

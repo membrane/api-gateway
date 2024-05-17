@@ -7,51 +7,12 @@
     <router>
 
         <api port="2000">
-            <request>
-                <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
-                    <groovy>println("JSON Request!")</groovy>
-                </if>
+            <openapi location="./fruitshop-api.yml" />
+            <target url="https://api.predic8.de" />
+        </api>
 
-                <response>
-                    <groovy>println("JSON Response 2!")</groovy>
-                </response>
-            </request>
-            <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
-                <groovy>println("JSON Request 2!")</groovy>
-            </if>
-
-
-<!--                <if test="method == 'POST'" language="SpEL">-->
-<!--                    <groovy>println("Request method was POST.")</groovy>-->
-<!--                </if>-->
-
-<!--                <setHeader name="x-output" value="${params.toString}"  />-->
-
-<!--                <if test="params['param1'] == 'value2'" language="SpEL">-->
-<!--                    <groovy>println("Query Parameter Given!")</groovy>-->
-<!--                    <return />-->
-<!--                </if>-->
-
-<!--                <if test="headers['X-Test-Header'] matches '.*bar.*'" language="SpEL">-->
-<!--                    <groovy>println("X-Test-Header contains 'bar'")</groovy>-->
-<!--                    <return />-->
-<!--                </if>-->
-
-<!--                <if test="request.getBody.getLength gt 64" language="SpEL">-->
-<!--                    <groovy>println("Long body")</groovy>-->
-<!--                    <return />-->
-<!--                </if>-->
-
-
-<!--            <response>-->
-<!--                <if test="statusCode == 302" language="SpEL">-->
-<!--                    <groovy>println("Status code changed")-->
-<!--                            exc.getResponse().setStatusCode(200)</groovy>-->
-<!--                </if>-->
-<!--            </response>-->
-
-            <template>Success</template>
-            <return statusCode="302"/>
+        <api port="2001">
+            <target url="https://api.predic8.de" />
         </api>
 
     </router>

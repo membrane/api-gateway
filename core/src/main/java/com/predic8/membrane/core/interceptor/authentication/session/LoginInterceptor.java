@@ -280,4 +280,9 @@ public class LoginInterceptor extends AbstractInterceptor {
 	public void setMessage(String message) {
 		this.message = message;
 	}
+
+	@Override
+	public String getDisplayName() {
+		return "Login Interceptor";
+	}
 }

@@ -158,4 +158,5 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Logs access statistics into the CSV-based file " + StringEscapeUtils.escapeHtml4(fileName) + " .";
 	}
+
 }

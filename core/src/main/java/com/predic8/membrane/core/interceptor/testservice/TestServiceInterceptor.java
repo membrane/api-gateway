@@ -13,26 +13,38 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.testservice;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.WSDLInterceptor;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.URLUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
+import org.xml.sax.SAXParseException;
 
-import javax.xml.parsers.*;
-import java.net.*;
-import java.util.regex.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.Header.SERVER;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name="testService")
 public class TestServiceInterceptor extends AbstractInterceptor {
@@ -42,6 +54,15 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 	private static final Pattern RELATIVE_PATH_PATTERN = Pattern.compile("^./[^/?]*\\?");
 
 	private final WSDLInterceptor wi = new WSDLInterceptor();
+
+	public TestServiceInterceptor() {
+		name = "Test SOAP Service (Legacy)";
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Provides a SOAP service for testing or demonstration purposes. (Deprecated, use Sample Soap Service plugin instead.)";
+	}
 
 	@Override
 	public void init(final Router router) throws Exception {

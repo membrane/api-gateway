@@ -13,24 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import com.predic8.membrane.core.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Router;
-
-
-
+@SuppressWarnings("CallToPrintStackTrace")
 public class Hostname extends AbstractClientAddress {
 
-	private static Logger log = LoggerFactory.getLogger(Hostname.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Hostname.class.getName());
 
 	public static final String ELEMENT_NAME = "hostname";
 
-	private static  InetAddress localhostIp4 = initV4();
+	private static final InetAddress localhostIp4 = initV4();
 	private static InetAddress initV4() {
 		try {
 			//this should probably never fail... unless no network available.
@@ -69,10 +67,10 @@ public class Hostname extends AbstractClientAddress {
 	@Override
 	public boolean matches(String hostname, String ip) {
 		try {
-			if (schema.toString().equals("^localhost$")) {
+			if (schema.equals("^localhost$")) {
 				InetAddress ia = InetAddress.getByName(ip);
 				if (ia.equals(localhostIp4) || ia.equals(localhostIp6)) {
-					log.debug("Address to be matched : " + ia + " is being matched to :" + schema.toString());
+                    log.debug("Address to be matched : {} is being matched to :{}", ia, schema);
 					return true;
 				}
 			}
@@ -84,10 +82,10 @@ public class Hostname extends AbstractClientAddress {
 				}
 			}
 			String canonicalHostName = router.getDnsCache().getCanonicalHostName(InetAddress.getByName(ip));
-			log.debug("CanonicalHostname for " + hostname + " / " + ip + " is "  + canonicalHostName);
+            log.debug("CanonicalHostname for {} / {} is {}", hostname, ip, canonicalHostName);
 			return Pattern.compile(schema).matcher(canonicalHostName).matches();
 		} catch (UnknownHostException e) {
-			log.warn("Could not reverse lookup canonical hostname for " + hostname + " " + ip + ".", e);
+            log.warn("Could not reverse lookup canonical hostname for {} {}.", hostname, ip, e);
 			return false;
 		}
 	}
@@ -97,5 +95,4 @@ public class Hostname extends AbstractClientAddress {
 		super.init(router);
 		reverseDNS = router.getTransport().isReverseDNS();
 	}
-
 }

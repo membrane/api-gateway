@@ -18,11 +18,11 @@ import com.predic8.membrane.core.http.LargeBodyTest;
 import com.predic8.membrane.core.http.MethodTest;
 import com.predic8.membrane.core.interceptor.AdjustContentLengthIntegrationTest;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
-import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
 import com.predic8.membrane.core.rules.UnavailableSoapProxyTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
-import com.predic8.membrane.integration.*;
+import com.predic8.membrane.integration.ProxySSLConnectionMethodTest;
+import com.predic8.membrane.integration.SoapAndInternalProxyTest;
+import com.predic8.membrane.integration.ViaProxyTest;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
@@ -31,7 +31,6 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         MethodTest.class,
         RegExReplaceInterceptorTest.class,
-        AccessControlInterceptorIntegrationTest.class,
         LoadBalancingInterceptorTest.class,
         InterceptorInvocationTest.class,
         ViaProxyTest.class,

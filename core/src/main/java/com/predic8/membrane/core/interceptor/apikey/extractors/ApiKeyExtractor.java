@@ -19,4 +19,7 @@ import java.util.Optional;
 
 public interface ApiKeyExtractor {
     Optional<LocationNameValue> extract(Exchange exc);
+
+    String getDescription();
+
 }

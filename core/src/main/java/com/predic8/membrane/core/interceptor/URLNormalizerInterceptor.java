@@ -33,6 +33,15 @@ import com.predic8.membrane.core.exchange.Exchange;
 @MCElement(name="urlNormalizer")
 public class URLNormalizerInterceptor extends AbstractInterceptor {
 
+	public URLNormalizerInterceptor() {
+		name = "URL Path Normalizer";
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Replaces \"/./\" in the request URI's path by \"/\".";
+	}
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		String uri = exc.getRequestURI();

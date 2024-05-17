@@ -27,6 +27,7 @@ import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyExc
 import com.predic8.membrane.core.security.ApiKeySecurityScheme;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
@@ -40,6 +41,22 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     private final List<ApiKeyStore> stores = new ArrayList<>();
     private final List<ApiKeyExtractor> extractors = new ArrayList<>();
     private boolean required = true;
+
+    public ApiKeysInterceptor() {
+        name = "Api Key";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Secures access with ApiKeys and RBAC with Scopes. ";
+    }
+
+    @Override
+    public String getLongDescription() {
+        return getShortDescription() + "<br/>" +  extractors.stream()
+                .map(extractor -> extractor.getDescription() + "<br/>")
+                .collect(Collectors.joining());
+    }
 
     @Override
     public void init() {

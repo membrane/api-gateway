@@ -81,6 +81,15 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         addInterceptors();
     }
 
+    public ApiManagementInterceptor() {
+        name = "Api Management";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Perform validation, rate limiting and simple api-key protection on apis.";
+    }
+
     private void addInterceptors() {
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append("Api Management Interceptor");

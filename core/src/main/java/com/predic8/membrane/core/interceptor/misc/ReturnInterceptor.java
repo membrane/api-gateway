@@ -113,6 +113,6 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return format("Sends an response with a status code of %d and an content type of %s.", statusCode, contentType);
+        return (contentType != null) ? format("Sends a response with a status code of %d and a content type of %s.", statusCode, contentType) : format("Sends a response with a status code of %d.", statusCode);
     }
 }
