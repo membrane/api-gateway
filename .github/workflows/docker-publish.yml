@@ -8,6 +8,13 @@ name: Build Docker Image
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version Number of release to be created (e.g. 1.2.3)
+        type: string
+        default: ''
+        required: true
     
 env:
   REGISTRY: docker.io
