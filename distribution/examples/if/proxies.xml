@@ -14,7 +14,7 @@
                 <if test="method == 'POST'" language="SpEL">
                     <groovy>println("Request method was POST.")</groovy>
                 </if>
-                <setHeader name="x-output" value="${params.toString}"  />
+                <setHeader name="x-output" value="#{params.toString}"  />
                 <if test="params['param1'] == 'value2'" language="SpEL">
                     <groovy>println("Query Parameter Given!")</groovy>
                 </if>
