@@ -25,7 +25,7 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIProxyServiceKey.class.getName());
 
-    ArrayList<String> basePaths = new ArrayList<>();
+    private final ArrayList<String> basePaths = new ArrayList<>();
 
     public OpenAPIProxyServiceKey(String ip, String host, int port) {
         super(host, "*", null, port, ip);

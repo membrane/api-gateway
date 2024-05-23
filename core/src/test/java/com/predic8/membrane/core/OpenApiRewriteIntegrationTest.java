@@ -1,18 +1,16 @@
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.rules.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static io.restassured.RestAssured.given;
+import static java.util.Collections.singletonList;
 
 public class OpenApiRewriteIntegrationTest {
 
@@ -20,19 +18,34 @@ public class OpenApiRewriteIntegrationTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        OpenAPISpec s = new OpenAPISpec();
-        s.location = "src/test/resources/openapi/specs/oas_rewrite_integration_test.yml";
+        r.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
+        r.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());
+        r.init();
+    }
 
-        APIProxy oasProxy = createProxy(r, s);
-        OpenAPIInterceptor oai = new OpenAPIInterceptor(oasProxy, r);
-        oasProxy.getInterceptors().add(oai);
-        r.getRuleManager().addProxyAndOpenPortIfNew(oasProxy);
-
+    @NotNull
+    private static Rule getTargetProxy() throws Exception {
         Rule targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
         targetProxy.getInterceptors().add(new ReturnInterceptor());
-        r.getRuleManager().addProxyAndOpenPortIfNew(targetProxy);
+        targetProxy.init(r);
+        return targetProxy;
+    }
 
-        r.init();
+    @NotNull
+    private static APIProxy getApiProxy() throws Exception {
+        APIProxy proxy = new APIProxy();
+        proxy.init(r);
+        proxy.setSpecs(singletonList(getSpec()));
+        proxy.setKey(new OpenAPIProxyServiceKey(null,"*",2000));
+        proxy.getInterceptors().add(new OpenAPIInterceptor(proxy, r));
+        return proxy;
+    }
+
+    @NotNull
+    private static OpenAPISpec getSpec() {
+        OpenAPISpec s = new OpenAPISpec();
+        s.location = "src/test/resources/openapi/specs/rewrite-integration-test.yml";
+        return s;
     }
 
     // @formatter:off
@@ -40,7 +53,7 @@ public class OpenApiRewriteIntegrationTest {
     void simple()  {
         given()
         .when()
-            .get("http://localhost:2000/foo")
+            .get("http://localhost:2000/api/v2/foo")
         .then()
             .statusCode(200);
     }
