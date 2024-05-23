@@ -1,10 +1,11 @@
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.rules.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +36,12 @@ public class OpenApiRewriteIntegrationTest {
     private static APIProxy getApiProxy() throws Exception {
         APIProxy proxy = new APIProxy();
         proxy.init(r);
-        proxy.setSpecs(singletonList(getSpec()));
+        OpenAPISpec spec = getSpec();
+        Rewrite rw = new Rewrite();
+        rw.setUrl("/bar");
+        spec.setRewrite(rw);
+        spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
+        proxy.setSpecs(singletonList(spec));
         proxy.setKey(new OpenAPIProxyServiceKey(null,"*",2000));
         proxy.getInterceptors().add(new OpenAPIInterceptor(proxy, r));
         return proxy;
@@ -53,7 +59,7 @@ public class OpenApiRewriteIntegrationTest {
     void simple()  {
         given()
         .when()
-            .get("http://localhost:2000/api/v2/foo")
+            .get("http://localhost:2000/bar/foo")
         .then()
             .statusCode(200);
     }
