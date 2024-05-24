@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.openapi.validators.ValidationContext.Val
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class EnumTest extends AbstractValidatorTest {
+class EnumTest extends AbstractValidatorTest {
 
     @Override
     protected String getOpenAPIFileName() {
@@ -34,7 +34,7 @@ public class EnumTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void enumValid() {
+    void enumValid() {
 
         Map<String,String> m = new HashMap<>();
         m.put("state","amber");
@@ -44,7 +44,7 @@ public class EnumTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void enumInvalid() {
+    void enumInvalid() {
 
         Map<String,String> m = new HashMap<>();
         m.put("state","blue");

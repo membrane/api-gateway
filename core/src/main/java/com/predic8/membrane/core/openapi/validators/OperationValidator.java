@@ -23,7 +23,6 @@ import io.swagger.v3.oas.models.parameters.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.RESPONSES;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.SECURITY;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.shouldValidate;
 import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
@@ -52,13 +51,13 @@ public class OperationValidator {
             validatePathParameters(ctx, req, operation.getParameters());
 
             errors.add(new QueryParameterValidator(api,pathItem).validateQueryParameters(ctx, req, operation));
-            errors.add(new HeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
+            errors.add(new RequestHeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
             if (shouldValidate(api, SECURITY))
                 errors.add(new SecurityValidator(api).validateSecurity(ctx,req, operation));
 
             return errors.add(new RequestBodyValidator(api).validate(ctx.entityType(BODY).entity("REQUEST"), req, operation));
         } else {
-            return errors.add(new ResponseBodyValidator(api).validate(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
+                return errors.add(new ResponseBodyValidator(api).validate(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
         }
     }
 

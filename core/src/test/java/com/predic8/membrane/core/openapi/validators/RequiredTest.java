@@ -36,7 +36,7 @@ public class RequiredTest extends AbstractValidatorTest {
 
 
     @Test
-    public void normalValid() {
+    void normalValid() {
 
         Map<String,Integer> props = new HashMap<>();
         props.put("a",5);
@@ -51,7 +51,7 @@ public class RequiredTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void normalMissingRequiredInvalid() {
+    void normalMissingRequiredInvalid() {
 
         Map<String,Integer> props = new HashMap<>();
         props.put("a",5);
@@ -69,7 +69,7 @@ public class RequiredTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void normalMissingMoreRequiredInvalid() {
+    void normalMissingMoreRequiredInvalid() {
 
         Map<String,Integer> props = new HashMap<>();
         props.put("c",6);
@@ -86,7 +86,7 @@ public class RequiredTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void requestRequiredReadOnlyValid() {
+    void requestRequiredReadOnlyValid() {
 
         Map<String,Integer> props = new HashMap<>();
         props.put("b",3);
@@ -100,7 +100,7 @@ public class RequiredTest extends AbstractValidatorTest {
     }
 
     @Test
-    public void responseRequiredWriteOnlyValid() throws ParseException {
+    void responseRequiredWriteOnlyValid() throws ParseException {
 
         Map<String,Integer> props = new HashMap<>();
         props.put("b",3);

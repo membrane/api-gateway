@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.openapi.validators.ValidationContext.Val
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class StringTest extends AbstractValidatorTest {
+class StringTest extends AbstractValidatorTest {
 
     @Override
 protected String getOpenAPIFileName() {
@@ -33,13 +33,13 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void normal() {
+    void normal() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("normal","foo"))));
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void maxLength() {
+    void maxLength() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("maxLength","Müller-Meierddd"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -51,7 +51,7 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void minLength() {
+    void minLength() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("minLength","a"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -63,13 +63,13 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void uuidValid() {
+    void uuidValid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("uuid","B7AE38DD-7810-492E-B0BE-DF472F1343E0"))));
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void uuidInvalid() {
+    void uuidInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("uuid","B7AE38DD-7810-49E-B0BE-DF472F1343E0"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -78,13 +78,12 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void emailValid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("email","foo@bar"))));
-        assertEquals(0,errors.size());
+    void emailValid() {
+        assertEquals(0, validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("email","foo@bar")))).size());
     }
 
     @Test
-    public void emailInvalid() {
+    void emailInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("email","foo"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -93,13 +92,13 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void dateValid() {
+    void dateValid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("date","2022-11-19"))));
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void dateInvalid() {
+    void dateInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("date","2022-02-29"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -108,13 +107,13 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void dateTimeValid() {
+    void dateTimeValid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("date-time","2022-11-19T19:25:00"))));
         assertEquals(0,errors.size());
     }
 
     @Test
-    public void dateTimeInvalid() {
+    void dateTimeInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("date-time","2022-02-29"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -123,26 +122,17 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void uriValid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("uri","a:b"))));
-        assertEquals(0,errors.size());
-    }
-
-    /**
-     * What are invalid URIs?
-     */
-    @Test
-    public void uriInvalid() {
+    void uriValid() {
+        assertEquals(0, validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("uri","a:b")))).size());
     }
 
     @Test
-    public void regexValid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("regex","ABC12"))));
-        assertEquals(0,errors.size());
+    void regexValid() {
+        assertEquals(0, validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("regex","ABC12")))).size());
     }
 
     @Test
-    public void regexInvalid() {
+    void regexInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("regex","AA99"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -151,20 +141,18 @@ protected String getOpenAPIFileName() {
     }
 
     @Test
-    public void enumValid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("enum","Bonn"))));
-        assertEquals(0,errors.size());
+    void enumValid() {
+        assertEquals(0, validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("enum","Bonn")))).size());
     }
 
     @Test
-    public void enumInvalid() {
+    void enumInvalid() {
         ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("enum","Stuttgart"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/enum", e.getContext().getJSONpointer());
         assertTrue(e.getMessage().contains("enum"));
     }
-
 
     private JsonNode getStrings(String name, String value) {
         ObjectNode root = om.createObjectNode();

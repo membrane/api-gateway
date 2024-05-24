@@ -24,6 +24,7 @@ import io.swagger.v3.oas.models.responses.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static io.swagger.v3.oas.models.responses.ApiResponses.DEFAULT;
 import static java.lang.String.*;
 
 public class ResponseBodyValidator extends AbstractBodyValidator<Response<?>> {
@@ -68,12 +69,11 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response<?>> {
         }
 
         // Maybe there is a default-Response
-        if (!foundMatchingResponse) {
-            if (operation.getResponses().getDefault() != null) {
-                foundMatchingResponse = true;
-                errors.add(validateBody(ctx, operation.getResponses().getDefault(), response));
-            }
+        if (!foundMatchingResponse && operation.getResponses().get(DEFAULT) != null) {
+            foundMatchingResponse = true;
+            errors.add(validateBody(ctx, operation.getResponses().get(DEFAULT), response));
         }
+
 
         if (!foundMatchingResponse) {
             errors.add(ctx, format("Server returned a status code of %d but allowed are only %s",
@@ -107,8 +107,8 @@ public class ResponseBodyValidator extends AbstractBodyValidator<Response<?>> {
         operation.getResponses().forEach((statusCode, responseSpec) -> {
             if (!response.sameStatusCode(statusCode))
                 return;
-
             foundMatchingResponse.set(true);
+            errors.add(new ResponseHeaderValidator(api, responseSpec).validateHeaders(ctx, response));
             errors.add(validateBody(ctx, responseSpec, response));
         });
         return new Pair<>(foundMatchingResponse.get(), errors);

@@ -1,0 +1,13 @@
+openapi: '3.0.3'
+info:
+  title: Statuscodes API
+  version: '1.0'
+servers:
+  - url: https://api.predic8.de
+paths:
+  /no-content:
+    post:
+      responses:
+        '204':
+          description: OK
+

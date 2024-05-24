@@ -17,80 +17,78 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class UtilsTest {
+class UtilsTest {
 
     @Test
-    public void inputStreamToString() throws IOException {
+    void inputStreamToString() throws IOException {
         assertEquals("foo",Utils.inputStreamToString(Utils.stringToInputStream("foo")));
     }
 
     @Test
-    public void inputStreamToStringUmlauts() throws IOException {
+    void inputStreamToStringUmlauts() throws IOException {
         assertEquals("äöü",Utils.inputStreamToString(Utils.stringToInputStream("äöü")));
     }
 
     @Test
-    public void getRequestBodyFromRef() {
+    void getRequestBodyFromRef() {
         assertEquals("CustomerRequest",Utils.getComponentLocalNameFromRef("#/components/requestBodies/CustomerRequest"));
     }
 
     @Test
-    public void getSchemaTypeFromRef() {
+    void getSchemaTypeFromRef() {
         assertEquals("Customer",Utils.getComponentLocalNameFromRef("#/components/schemas/Customer"));
     }
 
     @Test
-    public void getPathFromURLHostAndPath() throws URISyntaxException {
+    void getPathFromURLHostAndPath() throws URISyntaxException {
         assertEquals("/foo", getPathFromURL("http://localhost/foo"));
     }
 
     @Test
-    public void getPathFromURLSchemeHostPath() throws URISyntaxException {
+    void getPathFromURLSchemeHostPath() throws URISyntaxException {
         assertEquals("/foo", getPathFromURL("http://localhost/foo"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPath() throws URISyntaxException {
+    void getPathFromURLHostToplevelPath() throws URISyntaxException {
         assertEquals("/foo", getPathFromURL("http://localhost.de/foo"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPortPath() throws URISyntaxException {
+    void getPathFromURLHostToplevelPortPath() throws URISyntaxException {
         assertEquals("/foo", getPathFromURL("http://localhost.de:3000/foo"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPortPathComponents() throws URISyntaxException {
+    void getPathFromURLHostToplevelPortPathComponents() throws URISyntaxException {
         assertEquals("/demo-api/v2/", getPathFromURL("http://localhost:3000/demo-api/v2/"));
     }
 
     @Test
-    public void getPathFromURLHostToplevelPortPathComponentsNoTrailingSlash() throws URISyntaxException {
+    void getPathFromURLHostToplevelPortPathComponentsNoTrailingSlash() throws URISyntaxException {
         assertEquals("/demo-api/v2", getPathFromURL("http://localhost:3000/demo-api/v2"));
     }
 
     @Test
-    public void getPathFromURLHTTPS() throws URISyntaxException {
+    void getPathFromURLHTTPS() throws URISyntaxException {
         assertEquals("/demo-api/v2", getPathFromURL("https://localhost:3000/demo-api/v2"));
     }
 
     @Test
-    public void getPathFromURLNoPath() throws URISyntaxException {
+    void getPathFromURLNoPath() throws URISyntaxException {
         assertEquals("", getPathFromURL("http://localhost:4567"));
     }
 
@@ -99,13 +97,13 @@ public class UtilsTest {
     }
     
     @Test
-    public void getMediaTypeFromContentTypeHeader() {
+    void getMediaTypeFromContentTypeHeader() {
         assertEquals(APPLICATION_JSON,    Utils.getMediaTypeFromContentTypeHeader("application/json; charset=utf-8"));
         assertEquals(APPLICATION_JSON,    Utils.getMediaTypeFromContentTypeHeader(APPLICATION_JSON));
     }
 
     @Test
-    public void isIp() {
+    void isIp() {
         assertTrue(Utils.isValidIp("10.0.0.0"));
         assertTrue(Utils.isValidIp("255.255.255.255"));
         assertFalse(Utils.isValidIp("255.255.255"));
@@ -114,36 +112,36 @@ public class UtilsTest {
     }
 
     @Test
-    public void getTypeNameFromSchemaRef() {
+    void getTypeNameFromSchemaRef() {
         assertEquals("Customer", Utils.getComponentLocalNameFromRef("#/components/schemas/Customer"));
     }
 
     @Test
-    public void uuidInvalid() {
+    void uuidInvalid() {
         assertFalse(isValidUUID(""));
         assertFalse(isValidUUID("9A991F7-0502-4E5E-83A2-F55B38E78192"));
         assertFalse(isValidUUID("9A991F71-0502-4E5E-83A2-F55B38E7819"));
     }
 
     @Test
-    public void uuidValid() {
+    void uuidValid() {
         assertTrue(isValidUUID("9A991F71-0502-4E5E-83A2-F55B38E78192"));
     }
 
     @Test
-    public void emailInvalid() {
+    void emailInvalid() {
         assertFalse(isValidEMail("foo"));
         assertFalse(isValidEMail("foo.bar"));
         assertFalse(isValidEMail("foo@bar@baz"));
     }
 
     @Test
-    public void emailValid() {
+    void emailValid() {
         assertTrue(isValidEMail("nobody@predic8.de"));
     }
 
     @Test
-    public void uriValid() {
+    void uriValid() {
         assertTrue(isValidUri("http://www.ics.uci.edu/pub/ietf/uri/#Related"));
         assertTrue(isValidUri("urn:bar"));
 
@@ -164,18 +162,18 @@ public class UtilsTest {
     }
 
     @Test
-    public void uriInvalid() {
+    void uriInvalid() {
         assertFalse(isValidUri("http"));
     }
 
     @Test
-    public void dateValid() {
+    void dateValid() {
         assertTrue(isValidDate("2022-11-19"));
         assertTrue(isValidDate("2022-12-31"));
     }
 
     @Test
-    public void dateInvalid() {
+    void dateInvalid() {
         assertFalse(isValidDate("2022-02-31"));
         assertFalse(isValidDate("2022-02-29"));
         assertFalse(isValidDate("2022-1-29"));
@@ -183,7 +181,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void dateTimeValid() {
+    void dateTimeValid() {
         assertTrue(isValidDateTime("2009-01-01T12:00:00+01:00"));
         assertTrue(isValidDateTime("2007-08-31T16:47+00:00"));
         assertTrue(isValidDateTime("2008-02-01T09:00:22"));
@@ -191,12 +189,12 @@ public class UtilsTest {
     }
 
     @Test
-    public void dateTimeInvalid() {
+    void dateTimeInvalid() {
         assertFalse(isValidDateTime("2008-02-01"));
     }
 
     @Test
-    public void normalizeForId() {
+    void normalizeForId() {
         assertEquals("a-b", Utils.normalizeForId("a b"));
         assertEquals("a-b", Utils.normalizeForId("a%b"));
         assertEquals("a-3b-c12", Utils.normalizeForId("a-+# 3b C12"));
@@ -207,14 +205,47 @@ public class UtilsTest {
         Exchange exc = new Exchange(null);
         Header header = new Header();
         header.setValue("X-Padding", "V0hQCMkJV4mKigp");
+        header.setContentType("text/xml");
         exc.setOriginalRequestUri("/foo");
         exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().method("POST").header(header).build());
-        Request request = Utils.getOpenapiValidatorRequest(exc);
+
+        var request = Utils.getOpenapiValidatorRequest(exc);
         assertEquals("/foo",request.getPath());
         assertEquals("POST", request.getMethod());
-        Map<String, String> expectedHeaders = new HashMap<>();
-        expectedHeaders.put("X-Padding", "V0hQCMkJV4mKigp");
-        assertEquals(request.getHeaders(), expectedHeaders);
+
+        assertEquals(2,request.getHeaders().size());
+        assertEquals("V0hQCMkJV4mKigp", request.getHeaders().get("X-Padding"));
+        assertEquals("text/xml", request.getHeaders().get("Content-Type"));
+
+        assertTrue(new ContentType("text/xml").match(request.getMediaType()));
+    }
+
+    @Test
+    void getOpenapiValidatorResponse() throws IOException, ParseException {
+
+        var json = new HashMap<String,Object>();
+        json.put("foo",2);
+
+        Exchange exc = new Exchange(null);
+        exc.setResponse(Response.ok().body(json).build());
+
+        var res = Utils.getOpenapiValidatorResponse(exc);
+        assertEquals(200,res.getStatusCode());
+        assertEquals("application/json",res.getHeaders().get("Content-Type"));
+    }
+
+    /**
+     * Test that a response with no content type e.g. a 204 No Content works
+     */
+    @Test
+    void getOpenapiValidatorResponseWithNoContentType() {
+        Exchange exc = new Exchange(null);
+        exc.setResponse(com.predic8.membrane.core.http.Response.noContent().build());
+
+        assertDoesNotThrow(() -> {
+            var res = Utils.getOpenapiValidatorResponse(exc);
+            assertNull(res.getMediaType());
+        });
     }
 
 }

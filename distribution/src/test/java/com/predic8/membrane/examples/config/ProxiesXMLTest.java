@@ -39,12 +39,12 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     void api_doc() {
         JSONAssert.assertEquals("""
                 {
-                  "fruitshop-v1-0" : {
+                  "fruitshop-v1-1" : {
                     "openapi" : "3.0.2",
                     "title" : "Fruit Shop API",
-                    "version" : "1.0",
-                    "openapi_link" : "/api-docs/fruitshop-v1-0",
-                    "ui_link" : "/api-docs/ui/fruitshop-v1-0"
+                    "version" : "1.1",
+                    "openapi_link" : "/api-docs/fruitshop-v1-1",
+                    "ui_link" : "/api-docs/ui/fruitshop-v1-1"
                   }
                 }
                 """, get(LOCALHOST_2000 + "/api-docs").asString(), true);
@@ -53,7 +53,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     @Test
     void rewrittenOpenAPIFromUI() {
         given()
-                .get("http://localhost:2000/api-docs/fruitshop-v1-0")
+                .get("http://localhost:2000/api-docs/fruitshop-v1-1")
         .then()
                 .body(containsString("http://localhost:2000/shop/v2"));
     }
@@ -78,7 +78,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    public void names() {
+    void names() {
         get(LOCALHOST_2000 + "/names/Pia")
                 .then()
                 .assertThat()
@@ -103,7 +103,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    public void groovy() {
+    void groovy() {
         AtomicBoolean headingFound = new AtomicBoolean();
         AtomicBoolean hostFound = new AtomicBoolean();
         process.addConsoleWatcher((error, line) -> {
@@ -123,7 +123,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    public void normalAPI() {
+    void normalAPI() {
        get(LOCALHOST_2000)
                .then().assertThat()
                .statusCode(200)

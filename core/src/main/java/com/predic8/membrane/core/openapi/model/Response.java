@@ -38,16 +38,19 @@ public class Response<T extends Body> extends Message<T,Response<T>> {
         return new Response<>(statusCode);
     }
 
+    @Override
     public Response<T> body(Body body) {
         this.body = body;
         return this;
     }
 
+    @Override
     public Response<T> body(InputStream inputStream) {
         this.body = new InputStreamBody(inputStream);
         return this;
     }
 
+    @Override
     public Response<T> body(JsonNode n) {
         this.body = new JsonBody(n);
         return this;

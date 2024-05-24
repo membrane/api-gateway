@@ -6,7 +6,6 @@ paths:
   /cities:
     parameters:
       - $ref: '#/components/parameters/X-Token'
-
     get:
       parameters:
         - in: header
@@ -21,8 +20,56 @@ paths:
       responses:
         '200':
           description: OK
-
+  /header-in-response:
+    get:
+      responses:
+        '200':
+          description: Ok
+          headers:
+            X-REQUIRED-STRING:
+              required: true
+              schema:
+                type: string
+            X-REQUIRED-INTEGER:
+              required: true
+              schema:
+                type: integer
+  /header-no-schema:
+    get:
+      responses:
+        '200':
+          description: No Content
+          headers:
+            X-NO-SCHEMA:
+              required: true
+  /response-ref:
+    get:
+      responses:
+        '200':
+          $ref: "#/components/responses/ResponseRef"
+  /header-ref:
+    get:
+      responses:
+        '200':
+          description: Ok
+          headers:
+            "X-HEADER-REF":
+              $ref: "#/components/headers/HeaderRef"
 components:
+  headers:
+    HeaderRef:
+      required: false
+      schema:
+        type: boolean
+  responses:
+    ResponseRef:
+      description: HeaderRef
+      headers:
+        X-REQUIRED:
+          required: true
+          schema:
+            type: string
+            pattern: "\\w*"
   parameters:
     X-Token:
       in: header
