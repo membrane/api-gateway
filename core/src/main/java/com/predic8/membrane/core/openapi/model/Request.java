@@ -40,6 +40,11 @@ public class Request<T extends Body> extends Message<T,Request<T>> {
         this.method = method;
     }
 
+    public Request(String method, String path) {
+        this.method = method;
+        this.path = path;
+    }
+
     public static <T extends Body> Request<T> get() {
         return new Request<>("GET");
     }

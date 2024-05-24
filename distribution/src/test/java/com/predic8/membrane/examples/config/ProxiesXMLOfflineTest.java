@@ -58,7 +58,7 @@ public class ProxiesXMLOfflineTest extends AbstractSampleMembraneStartStopTestca
     }
 
     @Test
-    public void port2000() {
+    void port2000() {
         get(LOCALHOST_2000)
                 .then().assertThat()
                 .contentType(APPLICATION_JSON)

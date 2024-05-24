@@ -78,7 +78,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    public void names() {
+    void names() {
         get(LOCALHOST_2000 + "/names/Pia")
                 .then()
                 .assertThat()
@@ -103,7 +103,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    public void groovy() {
+    void groovy() {
         AtomicBoolean headingFound = new AtomicBoolean();
         AtomicBoolean hostFound = new AtomicBoolean();
         process.addConsoleWatcher((error, line) -> {
@@ -123,7 +123,7 @@ public class ProxiesXMLTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    public void normalAPI() {
+    void normalAPI() {
        get(LOCALHOST_2000)
                .then().assertThat()
                .statusCode(200)
