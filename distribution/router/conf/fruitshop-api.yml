@@ -1,12 +1,12 @@
 openapi: '3.0.2'
 info:
   title: Fruit Shop API
-  version: '1.0'
+  version: '1.1'
   x-membrane-id: fruitshop
 servers:
   - url: https://api.predic8.de/shop/v2
 paths:
-  /products/:
+  /products:
     get:
       tags:
         - Shop
