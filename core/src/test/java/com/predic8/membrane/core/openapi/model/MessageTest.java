@@ -43,4 +43,9 @@ class MessageTest {
     void starTypeTest() {
         assertFalse(message.isOfMediaType("*/json"));
     }
+
+    @Test
+    void simple() {
+        assertEquals(new Message.Headers.HeaderKey("foo"),new Message.Headers.HeaderKey("Foo"));
+    }
 }

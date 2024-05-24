@@ -28,23 +28,19 @@ import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRe
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-public class HeaderParameterTest extends AbstractValidatorTest {
+class HeaderParameterTest extends AbstractValidatorTest {
 
     Exchange exc = new Exchange(null);
     Request request;
 
     @Override
-protected String getOpenAPIFileName() {
+    protected String getOpenAPIFileName() {
         return "/openapi/specs/header-params.yml";
     }
 
     @BeforeEach
-    public void setUp() {
-        try {
-            request = Request.get("/cities").build();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+    public void setUp() throws URISyntaxException {
+        request = Request.get("/cities").build();
         exc.setOriginalRequestUri("/cities");
         super.setUp();
     }
@@ -65,13 +61,18 @@ protected String getOpenAPIFileName() {
                 arguments(new Header() {{
                     setValue("X-Token", "1222");
                     setValue("X-Test", "V0hQCMkJV4mKigp"); // Should be ignored by validation
+                }}, 0),
+                // Casing
+                arguments(new Header() {{
+                    setValue("x-token", "1222");
+                    setValue("x-test", "V0hQCMkJV4mKigp"); // Should be ignored by validation
                 }}, 0)
         );
     }
 
     @ParameterizedTest
     @MethodSource("headerDataProvider")
-    public void headerParamTest(Header header, int expected) throws Exception {
+    void headerParamTest(Header header, int expected) throws Exception {
         request.setHeader(header);
         exc.setRequest(request);
 
@@ -83,6 +84,8 @@ protected String getOpenAPIFileName() {
             return;
 
         ValidationError ve = errors.get(0);
-        assertEquals(400,ve.getContext().getStatusCode());
+        assertEquals(400, ve.getContext().getStatusCode());
     }
+
+
 }

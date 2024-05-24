@@ -37,87 +37,87 @@ public class ReadRulesConfigurationTest {
 	}
 
 	@Test
-	public void testRulesSize() {
+	void testRulesSize() {
 		assertEquals(3, rules.size());
 	}
 
 	@Test
-	public void testProxyRuleListenPort() {
+	void testProxyRuleListenPort() {
 		assertEquals(3090, rules.get(0).getKey().getPort());
 	}
 
 	@Test
-	public void testProxyRuleBlockRequest() {
+	void testProxyRuleBlockRequest() {
 		assertTrue(rules.get(0).isBlockRequest());
 	}
 
 	@Test
-	public void testProxyRuleBlockResponse() {
+	void testProxyRuleBlockResponse() {
 		assertFalse(rules.get(0).isBlockResponse());
 	}
 
 	@Test
-	public void testServiceProxyListenPort() {
+	void testServiceProxyListenPort() {
 		assertEquals(3000, rules.get(1).getKey().getPort());
 	}
 
 	@Test
-	public void testServiceProxyTargetPort() {
+	void testServiceProxyTargetPort() {
 		assertEquals(80, ((ServiceProxy)rules.get(1)).getTargetPort());
 	}
 
 	@Test
-	public void testServiceProxyTargetHost() {
+	void testServiceProxyTargetHost() {
 		assertEquals("thomas-bayer.com", ((ServiceProxy)rules.get(1)).getTargetHost());
 	}
 
 	@Test
-	public void testServiceProxyDefaultMethod() {
+	void testServiceProxyDefaultMethod() {
 		assertEquals("*", rules.get(1).getKey().getMethod());
 	}
 
 	@Test
-	public void testTestServiceProxyDefaultHost() {
+	void testTestServiceProxyDefaultHost() {
 		assertEquals("*", rules.get(1).getKey().getHost());
 	}
 
 	@Test
-	public void testServiceProxyBlockRequest() {
+	void testServiceProxyBlockRequest() {
 		assertFalse(rules.get(1).isBlockRequest());
 	}
 
 	@Test
-	public void testServiceProxyBlockResponse() {
+	void testServiceProxyBlockResponse() {
 		assertTrue(rules.get(1).isBlockResponse());
 	}
 
 	@Test
-	public void testLocalServiceProxyListenPort() {
+	void testLocalServiceProxyListenPort() {
 		assertEquals(2000, rules.get(2).getKey().getPort());
 	}
 
 	@Test
-	public void testLocalServiceProxyTargetPort() {
+	void testLocalServiceProxyTargetPort() {
 		assertEquals(3011, ((ServiceProxy)rules.get(2)).getTargetPort());
 	}
 
 	@Test
-	public void testServiceProxyMethodSet() {
+	void testServiceProxyMethodSet() {
 		assertEquals("GET", rules.get(2).getKey().getMethod());
 	}
 
 	@Test
-	public void testServiceProxyHostSet() {
+	void testServiceProxyHostSet() {
 		assertEquals("localhost", rules.get(2).getKey().getHost());
 	}
 
 	@Test
-	public void testLocalServiceProxyInboundSSL() {
+	void testLocalServiceProxyInboundSSL() {
 		assertNull(rules.get(2).getSslInboundContext());
 	}
 
 	@Test
-	public void testLocalServiceProxyOutboundSSL() {
+	void testLocalServiceProxyOutboundSSL() {
 		assertNull(rules.get(2).getSslOutboundContext());
 	}
 

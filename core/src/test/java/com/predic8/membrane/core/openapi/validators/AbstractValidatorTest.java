@@ -26,6 +26,7 @@ import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.HashMap;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
@@ -39,16 +40,14 @@ public abstract class AbstractValidatorTest {
     protected OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws URISyntaxException {
 
         validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(getOpenAPIFileName())),null,new OpenAPISpec()));
         validator.getApi().setExtensions(new HashMap<>() {{
-            put(
-                    X_MEMBRANE_VALIDATION,
-                    new HashMap<>() {{
-                        put(SECURITY, true);
-                        put(REQUESTS, true);
-                    }});
+            put(X_MEMBRANE_VALIDATION, new HashMap<>() {{
+                put(SECURITY, true);
+                put(REQUESTS, true);
+            }});
         }});
     }
 

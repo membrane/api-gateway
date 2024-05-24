@@ -28,17 +28,53 @@ public abstract class Message<T extends Body, S extends Message<T,S>> {
 
     protected Body body = new NoBody();
     protected ContentType mediaType;
-    private Map<String,String> headers;
+    private final Headers headers = new Headers();
+
+    public static class Headers {
+
+        static class HeaderKey {
+
+            private final String key;
+
+            public HeaderKey(String key) {
+                this.key = key;
+            }
+
+            @Override
+            public int hashCode() {
+                return key.toLowerCase().hashCode();
+            }
+
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj)
+                    return true;
+                if (obj == null || getClass() != obj.getClass())
+                    return false;
+                return this.key.equalsIgnoreCase(((HeaderKey) obj).key);
+            }
+        }
+
+        private Map<HeaderKey,String> fields = new HashMap<>();
+
+        public void put(String key, String value) {
+            fields.put(new HeaderKey(key),value);
+        }
+
+        public String get(String key) {
+            return fields.get(new HeaderKey(key));
+        }
+
+        public int size() {
+            return fields.size();
+        }
+    }
 
     protected Message() {
     }
 
-    public Map<String, String> getHeaders() {
+    public Headers getHeaders() {
         return headers;
-    }
-
-    public void setHeaders(Map<String, String> headers) {
-        this.headers = headers;
     }
 
     protected Message(String mediaType) throws ParseException {
