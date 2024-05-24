@@ -77,9 +77,11 @@ public abstract class OAuth2ResourceB2CTest {
     private final String clientSecret = "3423233123123";
     private final String susiFlowId = "b2c_1_susi";
     private final String peFlowId = "b2c_1_profile_editing";
+    private final String pe2FlowId = "b2c_1_profile_editing2";
     private volatile int expiresIn;
     private final AtomicBoolean didLogIn = new AtomicBoolean();
-    private final AtomicBoolean errorDuringSignIn = new AtomicBoolean();
+    private final AtomicBoolean returnOAuth2ErrorFromSignIn = new AtomicBoolean();
+    private final AtomicBoolean abortSignIn = new AtomicBoolean();
 
     private String getServerAddress() {
         return "http://" + serverHost + ":" + serverPort + "/" + tenantId.toString();
@@ -93,7 +95,8 @@ public abstract class OAuth2ResourceB2CTest {
     public void init() throws Exception {
         expiresIn = 60;
         didLogIn.set(false);
-        errorDuringSignIn.set(false);
+        returnOAuth2ErrorFromSignIn.set(false);
+        abortSignIn.set(false);
         baseServerAddr = getServerAddress();
         issuer = baseServerAddr + "/v2.0/";
 
@@ -106,6 +109,7 @@ public abstract class OAuth2ResourceB2CTest {
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
         mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, susiFlowId), MANUAL);
         mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, peFlowId), MANUAL);
+        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(serverPort, pe2FlowId), MANUAL);
         mockAuthServer.start();
 
         oauth2Resource = new HttpRouter();
@@ -115,22 +119,24 @@ public abstract class OAuth2ResourceB2CTest {
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
 
         ServiceProxy sp1 = getConfiguredOAuth2Resource();
-        ServiceProxy sp2 = getFlowInitiatorServiceProxy();
-        sp1.init(oauth2Resource); // TODO backfired das sobald es keinen globalen oauth resource interceptor gibt?
-        ServiceProxy sp3 = getRequireAuthServiceProxy(api1Id, "/api/", ra -> {
+        ServiceProxy sp2 = getFlowInitiatorServiceProxy("/pe/", peFlowId, true);
+        ServiceProxy sp3 = getFlowInitiatorServiceProxy("/pe2/", pe2FlowId, false);
+        sp1.init(oauth2Resource);
+        ServiceProxy sp4 = getRequireAuthServiceProxy(api1Id, "/api/", ra -> {
             requireAuth = ra;
             ra.setScope("https://localhost/" + api1Id + "/Read");
         });
-        ServiceProxy sp4 = getRequireAuthServiceProxy(api1Id, "/api-no-auth-needed/", ra -> {
+        ServiceProxy sp5 = getRequireAuthServiceProxy(api1Id, "/api-no-auth-needed/", ra -> {
             ra.setRequired(false);
             ra.setScope("https://localhost/" + api1Id + "/Read");
         });
-        ServiceProxy sp5 = getRequireAuthServiceProxy(api1Id, "/api-no-redirect/", ra -> {
+        ServiceProxy sp6 = getRequireAuthServiceProxy(api1Id, "/api-no-redirect/", ra -> {
             ra.setErrorStatus(403);
             ra.setScope("https://localhost/" + api1Id + "/Read");
         });
-        ServiceProxy sp6 = getRequireAuthServiceProxy(api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + api2Id + "/Read"));
+        ServiceProxy sp7 = getRequireAuthServiceProxy(api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + api2Id + "/Read"));
 
+        oauth2Resource.getRuleManager().addProxy(sp7, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp6, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp5, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp4, MANUAL);
@@ -309,7 +315,129 @@ public abstract class OAuth2ResourceB2CTest {
         String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
         JwtClaims c2 = jc.processToClaims(a2);
         assertEquals(12, c2.getClaimsMap().size());
+        assertEquals("b2c_1_susi", c2.getClaimValue("tfp"));
     }
+
+    @Test
+    public void userFlowViaInitiatorTest() throws Exception {
+        JwtConsumer jc = new JwtConsumerBuilder()
+                .setRequireExpirationTime()
+                .setAllowedClockSkewInSeconds(30)
+                .setRequireSubject()
+                .setVerificationKey(rsaJsonWebKey.getRsaPublicKey())
+                .setExpectedAudience(true, api1Id).build();
+
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        exc = new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange();
+        exc = browser.apply(exc);
+
+        String a1 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        assertNull(a1);
+
+        exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
+        exc = browser.apply(exc);
+
+        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        JwtClaims c2 = jc.processToClaims(a2);
+        assertEquals(11, c2.getClaimsMap().size());
+        assertEquals("b2c_1_profile_editing", c2.getClaimValue("tfp"));
+    }
+
+    @Test
+    public void multipleUserFlowsTest() throws Exception {
+        JwtConsumer jc = new JwtConsumerBuilder()
+                .setRequireExpirationTime()
+                .setAllowedClockSkewInSeconds(30)
+                .setRequireSubject()
+                .setVerificationKey(rsaJsonWebKey.getRsaPublicKey())
+                .setExpectedAudience(true, api1Id).build();
+
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        exc = new Request.Builder().get(getClientAddress() + "/pe2/init").buildExchange();
+        exc = browser.apply(exc);
+
+        exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
+        exc = browser.apply(exc);
+
+        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        JwtClaims c2 = jc.processToClaims(a2);
+        assertEquals(11, c2.getClaimsMap().size());
+        assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
+    }
+
+    @Test
+    public void multipleUserFlowsWithErrorTest() throws Exception {
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        returnOAuth2ErrorFromSignIn.set(true);
+
+        exc = new Request.Builder().get(getClientAddress() + "/pe2/init").buildExchange();
+        exc = browser.apply(exc);
+
+        // here, an error is returned (as checked by {@link #errorDuringSignIn()}) and the user is logged out
+
+        exc = new Request.Builder().get(getClientAddress() + "/api-no-auth-needed/").buildExchange();
+        exc = browser.apply(exc);
+
+        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        assertEquals("null", a2); // no access token, because user is logged out.
+    }
+
+    @Test
+    public void stayLoggedInAfterProfileEditing2() throws Exception {
+        JwtConsumer jc = new JwtConsumerBuilder()
+                .setRequireExpirationTime()
+                .setAllowedClockSkewInSeconds(30)
+                .setRequireSubject()
+                .setVerificationKey(rsaJsonWebKey.getRsaPublicKey())
+                .setExpectedAudience(true, api1Id).build();
+
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        abortSignIn.set(true);
+
+        // /pe2/init keeps the user logged in while sending her to the AS
+        exc = new Request.Builder().get(getClientAddress() + "/pe2/init").buildExchange();
+        exc = browser.apply(exc);
+
+        assertEquals("signin aborted", exc.getResponse().getBodyAsStringDecoded());
+
+        exc = new Request.Builder().get(getClientAddress() + "/api-no-auth-needed/").buildExchange();
+        exc = browser.apply(exc);
+
+        // valid access token, since still logged in
+        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        JwtClaims c2 = jc.processToClaims(a2);
+        assertEquals(11, c2.getClaimsMap().size());
+        assertEquals("b2c_1_profile_editing2", c2.getClaimValue("tfp"));
+    }
+
+    @Test
+    public void notLoggedInAfterProfileEditing() throws Exception {
+        Exchange exc = new Request.Builder().get(getClientAddress() + "/init").buildExchange();
+        exc = browser.apply(exc);
+
+        abortSignIn.set(true);
+
+        // /pe/init logs the user out before sending her to the AS
+        exc = new Request.Builder().get(getClientAddress() + "/pe/init").buildExchange();
+        exc = browser.apply(exc);
+
+        assertEquals("signin aborted", exc.getResponse().getBodyAsStringDecoded());
+
+        exc = new Request.Builder().get(getClientAddress() + "/api-no-auth-needed/").buildExchange();
+        exc = browser.apply(exc);
+
+        String a2 = (String) om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class).get("accessToken");
+        assertEquals("null", a2); // no access token, because user is logged out.
+    }
+
 
     @Test
     public void loginParams() throws Exception {
@@ -407,7 +535,7 @@ public abstract class OAuth2ResourceB2CTest {
 
     @Test
     public void errorDuringSignIn() throws Exception {
-        errorDuringSignIn.set(true);
+        returnOAuth2ErrorFromSignIn.set(true);
         Exchange exc = new Request.Builder().get(getClientAddress() + "/api/").buildExchange();
         exc = browser.apply(exc);
 
@@ -507,7 +635,7 @@ public abstract class OAuth2ResourceB2CTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(port), null, 99999);
 
         Path path = new Path();
-        path.setValue("/" + tenantId + "/" + flowId);
+        path.setValue("/" + tenantId + "/" + flowId + "/");
         sp.setPath(path);
 
         WellknownFile wkf = new WellknownFile();
@@ -543,8 +671,12 @@ public abstract class OAuth2ResourceB2CTest {
                     String payload = "{ \"keys\":  [" + jwksResponse + "]}";
                     exc.setResponse(Response.ok(payload).contentType(APPLICATION_JSON).build());
                 } else if (exc.getRequestURI().contains("/authorize?")) {
+                    if (abortSignIn.get()) {
+                        exc.setResponse(Response.internalServerError().body("signin aborted").build());
+                        return Outcome.RETURN;
+                    }
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
-                    if (errorDuringSignIn.get()) {
+                    if (returnOAuth2ErrorFromSignIn.get()) {
                         exc.setResponse(Response.redirect(getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build());
                     } else {
                         didLogIn.set(true);
@@ -638,16 +770,17 @@ public abstract class OAuth2ResourceB2CTest {
         return sp;
     }
 
-    private ServiceProxy getFlowInitiatorServiceProxy() {
+    private ServiceProxy getFlowInitiatorServiceProxy(String path, String triggerFlow, boolean logoutBeforeFlow) {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort), null, 99999);
-        Path path = new Path();
-        path.setValue("/pe/");
-        sp.setPath(path);
+        Path p = new Path();
+        p.setValue(path);
+        sp.setPath(p);
 
         var flowInitiator = new FlowInitiator();
 
         flowInitiator.setDefaultFlow(susiFlowId);
-        flowInitiator.setTriggerFlow(peFlowId);
+        flowInitiator.setTriggerFlow(triggerFlow);
+        flowInitiator.setLogoutBeforeFlow(logoutBeforeFlow);
 
         var lp1 = new LoginParameter();
         lp1.setName("domain_hint");

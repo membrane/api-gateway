@@ -175,15 +175,20 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         accessTokenRefresher.refreshIfNeeded(session, exc);
 
-        if (session.isVerified()) {
-            applyBackendAuthorization(exc, session);
-            statistics.successfulRequest();
-            appendAccessTokenToRequest(exc);
-            return Outcome.CONTINUE;
-        }
 
         try {
-            if (handleRequest(exc, session)) {
+            boolean wasCallback = handleRequest(exc, session);
+
+            if (!wasCallback) {
+                if (session.isVerified()) {
+                    applyBackendAuthorization(exc, session);
+                    statistics.successfulRequest();
+                    appendAccessTokenToRequest(exc);
+                    return Outcome.CONTINUE;
+                }
+            }
+
+            if (wasCallback) {
                 if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
                     exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
                     appendAccessTokenToRequest(exc);
@@ -200,6 +205,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             log.debug("session present, but not verified, redirecting.");
             return respondWithRedirect(exc);
         } catch (OAuth2Exception e) {
+            session.clear();
             if (afterErrorUrl != null) {
                 FormPostGenerator fpg = new FormPostGenerator(afterErrorUrl).withParameter("error", e.getError());
                 if (e.getErrorDescription() != null)
@@ -287,8 +293,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                             && !"claims".equals(key);
                 })
                 .map(e ->
-            new LoginParameter(e.getKey(), e.getValue())
-        ).toList();
+                        new LoginParameter(e.getKey(), e.getValue())
+                ).toList();
 
         exc.setResponse(Response.redirect(auth.getLoginURL(state, publicUrlManager.getPublicURL(exc) + callbackPath, exc.getRequestURI()) + LoginParameter.copyLoginParameters(exc, combinedLoginParameters), false).build());
 
