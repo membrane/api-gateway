@@ -18,13 +18,19 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.openapi.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;
+import io.swagger.parser.*;
+import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.HashMap;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
 
 public abstract class AbstractValidatorTest {
 
@@ -33,8 +39,9 @@ public abstract class AbstractValidatorTest {
     protected OpenAPIValidator validator;
 
     @BeforeEach
-    public void setUp() {
-        validator = new OpenAPIValidator(new URIFactory(), getResourceAsStream(getOpenAPIFileName()));
+    void setUp() {
+
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(getOpenAPIFileName())),null,new OpenAPISpec()));
         validator.getApi().setExtensions(new HashMap<>() {{
             put(
                     X_MEMBRANE_VALIDATION,
