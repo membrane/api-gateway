@@ -13,28 +13,41 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.services.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.integration.*;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLUtil;
+import com.predic8.membrane.integration.Http11Test;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.Objects.*;
-import static org.apache.http.params.HttpProtocolParams.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.Header.SOAP_ACTION;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.NetworkUtil.getFreePortEqualAbove;
+import static java.util.Objects.requireNonNull;
+import static org.apache.http.params.HttpProtocolParams.PROTOCOL_VERSION;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LoadBalancingInterceptorTest {
 
@@ -47,13 +60,17 @@ public class LoadBalancingInterceptorTest {
 	private HttpRouter service2;
 	protected HttpRouter balancer;
 
-	@BeforeEach
-	public void setUp() throws Exception {
+	private int port2k;
+	private int port3k;
 
+    @BeforeEach
+	public void setUp() throws Exception {
+		port2k = getFreePortEqualAbove(2000);
+		port3k = getFreePortEqualAbove(3000);
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", 2000), "thomas-bayer.com", 80);
+				"POST", ".*", port2k), "thomas-bayer.com", 80);
 		sp1.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
@@ -68,7 +85,7 @@ public class LoadBalancingInterceptorTest {
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", 3000), "thomas-bayer.com", 80);
+				"POST", ".*", port3k), "thomas-bayer.com", 80);
 		sp2.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
@@ -90,8 +107,8 @@ public class LoadBalancingInterceptorTest {
 		enableFailOverOn5XX(balancer);
 		balancer.init();
 
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 2000);
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 3000);
+		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
+		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", port3k);
 
 		roundRobinStrategy = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();

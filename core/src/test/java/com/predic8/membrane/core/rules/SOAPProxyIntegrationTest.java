@@ -58,9 +58,9 @@ public class SOAPProxyIntegrationTest {
 	}
 
 	@Test
-	public void rewriteSimpleTest() throws Exception {
+	public void rewriteSimpleTest() {
 		when()
-			.get("http://localhost:2000/foo?wsdl")
+			.get("http://localhost:4000/foo?wsdl")
 		.then()
 			.contentType(TEXT_XML);
 	}
@@ -68,16 +68,16 @@ public class SOAPProxyIntegrationTest {
 	@Test
 	public void rewriteLocationTest() {
 		when()
-			.get("http://localhost:2001/foo?wsdl")
+			.get("http://localhost:4001/foo?wsdl")
 		.then()
-			.body(containsString("location=\"http://localhost:2001/foo\""));
+			.body(containsString("location=\"http://localhost:4001/foo\""));
 	}
 
 	@Test
 	public void rewriteHostInLocationTest() {
 		when()
-			.get("http://localhost:2002/baz?wsdl")
+			.get("http://localhost:4002/baz?wsdl")
 		.then()
-			.body(containsString("location=\"http://localhost:2001/baz\""));
+			.body(containsString("location=\"http://localhost:4001/baz\""));
 	}
 }

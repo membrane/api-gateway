@@ -53,18 +53,18 @@ public class UnavailableSoapProxyTest {
 		r.setRetryInit(true);
 
 		sp = new SOAPProxy();
-		sp.setPort(2000);
-		sp.setWsdl("http://localhost:2001?wsdl");
+		sp.setPort(8000);
+		sp.setWsdl("http://localhost:8001?wsdl");
 
 		sp3 = new ServiceProxy();
-		sp3.setPort(2000);
-		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
+		sp3.setPort(8000);
+		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 8001));
 		ValidatorInterceptor v = new ValidatorInterceptor();
-		v.setWsdl("http://localhost:2001?wsdl");
+		v.setWsdl("http://localhost:8001?wsdl");
 		sp3.getInterceptors().add(v);
 
 		SOAPProxy sp2 = new SOAPProxy();
-		sp2.setPort(2001);
+		sp2.setPort(8001);
 		sp2.setWsdl("http://localhost:4000?wsdl");
 		r2 = new Router();
 		r2.setHotDeploy(false);
