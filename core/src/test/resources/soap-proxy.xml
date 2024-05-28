@@ -6,15 +6,15 @@
 					    
 	<router>
 
-		<soapProxy port="4000" wsdl="http://localhost:3000/?wsdl"/>
+		<soapProxy port="2000" wsdl="http://localhost:3000/?wsdl"/>
 
-		<soapProxy port="4001" wsdl="http://localhost:3000/?wsdl">
+		<soapProxy port="2001" wsdl="http://localhost:3000/?wsdl">
 			<path>/foo</path>
 		</soapProxy>
 
-		<soapProxy port="4002" wsdl="http://localhost:3000/?wsdl">
+		<soapProxy port="2002" wsdl="http://localhost:3000/?wsdl">
 			<path>/baz</path>
-			<wsdlRewriter host="localhost" port="4001"/>
+			<wsdlRewriter host="localhost" port="2001"/>
 			<wsdlPublisher />
 		</soapProxy>
 	
