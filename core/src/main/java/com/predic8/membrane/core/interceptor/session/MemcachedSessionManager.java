@@ -173,4 +173,17 @@ public class MemcachedSessionManager extends SessionManager {
     public void setConnector(MemcachedConnector connector) {
         this.connector = connector;
     }
+
+    public String getCookiePrefix() {
+        return cookiePrefix;
+    }
+
+    /**
+     * Set this, if you are running multiple parallel Membrane instances.
+     * @default randomly chosen 8-character long string.
+     */
+    @MCAttribute
+    public void setCookiePrefix(String cookiePrefix) {
+        this.cookiePrefix = cookiePrefix;
+    }
 }
