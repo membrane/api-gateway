@@ -31,6 +31,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
 import static com.predic8.membrane.core.util.Util.*;
 import static java.lang.String.*;
 
@@ -202,17 +203,6 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         String ip = exc.getRemoteAddrIp();
         log.debug("Using ip {}",ip);
         return ip;
-    }
-
-    /**
-     * Take out the last entry, cause that was added by Membrane.
-     *
-     */
-    private static List<String> getForwardedForList(Exchange exc) {
-        List<String> xForwardedFor = splitStringByComma(exc.getRequest().getHeader().getNormalizedValue(X_FORWARDED_FOR));
-        if (!xForwardedFor.isEmpty())
-            xForwardedFor.remove(xForwardedFor.size() -1  );
-        return xForwardedFor;
     }
 
     protected static String getOneBeforeTrustworthyProxy(List<String> l, int count) {

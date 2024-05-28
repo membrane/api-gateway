@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
+import static com.predic8.membrane.core.util.NetworkUtil.getFreePortEqualAbove;
 import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,15 +44,20 @@ import com.predic8.membrane.core.rules.Rule;
 public class Http11Test {
 
 	private static HttpRouter router;
+	private static HttpRouter router2;
+	private static int port4k;
+	private static int port5k;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 5000), null, 0);
+		port4k = getFreePortEqualAbove(4000);
+		port5k = getFreePortEqualAbove(5000);
+		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
 		rule2.getInterceptors().add(new SampleSoapServiceInterceptor());
-		HttpRouter router2 = new HttpRouter();
+		router2 = new HttpRouter();
 		router2.getRuleManager().addProxyAndOpenPortIfNew(rule2);
 		router2.init();
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "localhost", 5000);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port4k), "localhost", port5k);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
@@ -59,6 +65,7 @@ public class Http11Test {
 
 	@AfterAll
 	public static void tearDown() throws Exception {
+		router2.shutdown();
 		router.shutdown();
 	}
 
@@ -78,7 +85,7 @@ public class Http11Test {
 		HttpClient client = new HttpClient();
 		if (useExpect100Continue)
 			initExpect100ContinueWithFastFail(client);
-		PostMethod post = new PostMethod("http://localhost:4000/");
+		PostMethod post = new PostMethod("http://localhost:%s/".formatted(port4k));
 		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
 
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
