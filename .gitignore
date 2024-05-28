@@ -65,6 +65,7 @@ _*.swp
 /distribution/membrane.log
 /distribution/derby.log
 /distribution/log.csv
+/distribution/conf/proxies.xml
 /distribution/examples/router/custom-interceptor/dist
 /distribution/examples/router/loadbalancer-session-3/build
 /distribution/examples/router/versioning/routing/build
