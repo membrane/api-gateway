@@ -27,6 +27,17 @@ import java.util.function.Consumer;
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 
+/**
+ * A locally running Membrane with various B2C features to test (1 ServiceProxy per feature). Primarily:
+ *
+ * <ul>
+ *     <li>an OAuth2Resource2 interceptor</li>
+ *     <li>two FlowInitiator interceptors (one with and one without 'logout-before-flow' enabled)</li>
+ *     <li>four RequireAuth interceptors in varying configurations</li>
+ * </ul>
+ *
+ * They all point back to the one oauth2resource2 interceptor instance managing sessions, token acquisitions and more.
+ */
 public class B2CMembrane {
     private final SessionManager sessionManager;
     private final B2CTestConfig tc;
@@ -50,31 +61,31 @@ public class B2CMembrane {
         oauth2Resource.setHotDeploy(false);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(tc.limit);
 
-        ServiceProxy sp1 = getConfiguredOAuth2Resource();
-        ServiceProxy sp2 = getFlowInitiatorServiceProxy("/pe/", tc.peFlowId, true);
-        ServiceProxy sp3 = getFlowInitiatorServiceProxy("/pe2/", tc.pe2FlowId, false);
-        sp1.init(oauth2Resource);
-        ServiceProxy sp4 = getRequireAuthServiceProxy(tc.api1Id, "/api/", ra -> {
+        ServiceProxy sp1_oauth2resource2 = createOAuth2Resource2ServiceProxy();
+        ServiceProxy sp2_flowInitiator_logoutBeforeFlow = createFlowInitiatorServiceProxy("/pe/", tc.peFlowId, true);
+        ServiceProxy sp3_flowInitiator_noLogout = createFlowInitiatorServiceProxy("/pe2/", tc.pe2FlowId, false);
+        sp1_oauth2resource2.init(oauth2Resource);
+        ServiceProxy sp4_requireAuth = createRequireAuthServiceProxy(tc.api1Id, "/api/", ra -> {
             requireAuth = ra;
             ra.setScope("https://localhost/" + tc.api1Id + "/Read");
         });
-        ServiceProxy sp5 = getRequireAuthServiceProxy(tc.api1Id, "/api-no-auth-needed/", ra -> {
+        ServiceProxy sp5_requireAuth_AuthNotRequired = createRequireAuthServiceProxy(tc.api1Id, "/api-no-auth-needed/", ra -> {
             ra.setRequired(false);
             ra.setScope("https://localhost/" + tc.api1Id + "/Read");
         });
-        ServiceProxy sp6 = getRequireAuthServiceProxy(tc.api1Id, "/api-no-redirect/", ra -> {
+        ServiceProxy sp6_requireAuth_ErrorStatus403 = createRequireAuthServiceProxy(tc.api1Id, "/api-no-redirect/", ra -> {
             ra.setErrorStatus(403);
             ra.setScope("https://localhost/" + tc.api1Id + "/Read");
         });
-        ServiceProxy sp7 = getRequireAuthServiceProxy(tc.api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + tc.api2Id + "/Read"));
+        ServiceProxy sp7_requireAuth = createRequireAuthServiceProxy(tc.api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + tc.api2Id + "/Read"));
 
-        oauth2Resource.getRuleManager().addProxy(sp7, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp6, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp5, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp4, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp3, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp2, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp1, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp7_requireAuth, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp6_requireAuth_ErrorStatus403, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp5_requireAuth_AuthNotRequired, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp4_requireAuth, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp3_flowInitiator_noLogout, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp2_flowInitiator_logoutBeforeFlow, MANUAL);
+        oauth2Resource.getRuleManager().addProxy(sp1_oauth2resource2, MANUAL);
         oauth2Resource.start();
 
     }
@@ -83,8 +94,7 @@ public class B2CMembrane {
         oauth2Resource.stop();
     }
 
-    private ServiceProxy getConfiguredOAuth2Resource() {
-
+    private ServiceProxy createOAuth2Resource2ServiceProxy() {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
 
         OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
@@ -92,31 +102,12 @@ public class B2CMembrane {
         if (sessionManager != null)
             oAuth2ResourceInterceptor.setSessionManager(sessionManager);
 
-        MembraneAuthorizationService auth = new MembraneAuthorizationService();
-        auth.setSrc("http://localhost:"+MockAuthorizationServer.SERVER_PORT +"/" + tc.tenantId.toString() + "/" + tc.susiFlowId + "/v2.0");
-        auth.setClientId(tc.clientId);
-        auth.setClientSecret(tc.clientSecret);
-        auth.setScope("openid profile offline_access");
-        auth.setSubject("sub");
-
-        oAuth2ResourceInterceptor.setAuthService(auth);
-
+        oAuth2ResourceInterceptor.setAuthService(createMembraneAuthorizationService());
         oAuth2ResourceInterceptor.setLogoutUrl("/logout");
         oAuth2ResourceInterceptor.setSkipUserInfo(true);
         oAuth2ResourceInterceptor.setAppendAccessTokenToRequest(true);
-        oAuth2Resource2Interceptor.setOnlyRefreshToken(true);
-
-        var withOutValue = new LoginParameter();
-        withOutValue.setName("login_hint");
-
-        var withValue = new LoginParameter();
-        withValue.setName("foo");
-        withValue.setValue("bar");
-
-        oAuth2ResourceInterceptor.setLoginParameters(List.of(
-                withOutValue,
-                withValue
-        ));
+        oAuth2ResourceInterceptor.setOnlyRefreshToken(true);
+        oAuth2ResourceInterceptor.setLoginParameters(createLoginParameters());
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
@@ -135,7 +126,31 @@ public class B2CMembrane {
         return sp;
     }
 
-    private ServiceProxy getFlowInitiatorServiceProxy(String path, String triggerFlow, boolean logoutBeforeFlow) {
+    private static @NotNull List<LoginParameter> createLoginParameters() {
+        var withOutValue = new LoginParameter();
+        withOutValue.setName("login_hint");
+
+        var withValue = new LoginParameter();
+        withValue.setName("foo");
+        withValue.setValue("bar");
+
+        return List.of(
+                withOutValue,
+                withValue
+        );
+    }
+
+    private @NotNull MembraneAuthorizationService createMembraneAuthorizationService() {
+        MembraneAuthorizationService auth = new MembraneAuthorizationService();
+        auth.setSrc("http://localhost:"+MockAuthorizationServer.SERVER_PORT +"/" + tc.tenantId.toString() + "/" + tc.susiFlowId + "/v2.0");
+        auth.setClientId(tc.clientId);
+        auth.setClientSecret(tc.clientSecret);
+        auth.setScope("openid profile offline_access");
+        auth.setSubject("sub");
+        return auth;
+    }
+
+    private ServiceProxy createFlowInitiatorServiceProxy(String path, String triggerFlow, boolean logoutBeforeFlow) {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
         Path p = new Path();
         p.setValue(path);
@@ -146,7 +161,17 @@ public class B2CMembrane {
         flowInitiator.setDefaultFlow(tc.susiFlowId);
         flowInitiator.setTriggerFlow(triggerFlow);
         flowInitiator.setLogoutBeforeFlow(logoutBeforeFlow);
+        flowInitiator.setLoginParameters(createLoginParameters2());
+        flowInitiator.setAfterLoginUrl("/");
+        flowInitiator.setOauth2(oAuth2Resource2Interceptor);
 
+        sp.getInterceptors().add(flowInitiator);
+        sp.getInterceptors().add(createTestResponseInterceptor());
+
+        return sp;
+    }
+
+    private static @NotNull List<LoginParameter> createLoginParameters2() {
         var lp1 = new LoginParameter();
         lp1.setName("domain_hint");
 
@@ -154,18 +179,9 @@ public class B2CMembrane {
         lp2.setName("fooflow");
         lp2.setValue("bar");
 
-        flowInitiator.setLoginParameters(List.of(
+        return List.of(
                 lp1, lp2
-        ));
-
-        flowInitiator.setAfterLoginUrl("/");
-
-        flowInitiator.setOauth2(oAuth2Resource2Interceptor);
-
-        sp.getInterceptors().add(flowInitiator);
-        sp.getInterceptors().add(createTestResponseInterceptor());
-
-        return sp;
+        );
     }
 
     @NotNull
@@ -188,7 +204,7 @@ public class B2CMembrane {
         };
     }
 
-    private ServiceProxy getRequireAuthServiceProxy(String expectedAudience, String path, Consumer<RequireAuth> requireAuthConfigurer) {
+    private ServiceProxy createRequireAuthServiceProxy(String expectedAudience, String path, Consumer<RequireAuth> requireAuthConfigurer) {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
 
         Path path2 = new Path();
