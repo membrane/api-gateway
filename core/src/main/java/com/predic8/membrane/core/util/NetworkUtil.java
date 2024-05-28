@@ -19,6 +19,15 @@ import java.net.*;
 
 public class NetworkUtil {
 
+    public static int getFreePortEqualAbove(int port) throws IOException {
+        for (int p = port; p <= 65535; p++) {
+            try (ServerSocket ignored = new ServerSocket(p)) {
+                return p;
+            } catch (Exception ignored) {}
+        }
+        throw new IOException("Could not find a free port");
+    }
+
     public static Pair<byte[],Integer> readUpTo1KbOfDataFrom(Socket sourceSocket, byte[] buffer) throws IOException {
         int available = sourceSocket.getInputStream().available();
         int offset = 0;

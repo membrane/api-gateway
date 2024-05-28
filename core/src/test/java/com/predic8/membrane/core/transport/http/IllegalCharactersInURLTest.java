@@ -32,6 +32,8 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.util.URIFactory;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -47,7 +49,7 @@ public class IllegalCharactersInURLTest {
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);
 		sp2.getInterceptors().add(new AbstractInterceptor() {
 			@Override
-			public Outcome handleRequest(Exchange exc) throws Exception {
+			public Outcome handleRequest(Exchange exc) {
 				assertEquals("/foo{}", exc.getRequestURI());
 				exc.setResponse(Response.ok().build());
 				return Outcome.RETURN;
@@ -58,12 +60,12 @@ public class IllegalCharactersInURLTest {
 	}
 
 	@AfterEach
-	public void uninit() {
-		r.stop();
+	public void uninit() throws IOException {
+		r.shutdown();
 	}
 
 	@Test
-	public void apacheHttpClient() throws Exception {
+	public void apacheHttpClient() {
 		assertThrows(IllegalArgumentException.class, () -> {
 			CloseableHttpClient hc = HttpClientBuilder.create().build();
 			HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
