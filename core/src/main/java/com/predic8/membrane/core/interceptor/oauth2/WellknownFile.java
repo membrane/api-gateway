@@ -262,7 +262,7 @@ public class WellknownFile {
         return supportedResponseTypes;
     }
 
-    public void setSupportedResponseTypes(Set<String> supportedResponseTypes) throws UnsupportedEncodingException {
+    public void setSupportedResponseTypes(Set<String> supportedResponseTypes) {
         StringBuilder builder = new StringBuilder();
         for(String resp : supportedResponseTypes)
             builder.append(" ").append(OAuth2Util.urlencode(resp));
@@ -277,7 +277,7 @@ public class WellknownFile {
         return supportedResponseModes;
     }
 
-    public void setSupportedResponseModes(Set<String> supportedResponseModes) throws UnsupportedEncodingException {
+    public void setSupportedResponseModes(Set<String> supportedResponseModes) {
         StringBuilder builder = new StringBuilder();
         for(String resp : supportedResponseModes)
             builder.append(" ").append(OAuth2Util.urlencode(resp));
