@@ -7,25 +7,25 @@
     <router>
 
         <api port="2000">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
-                <rewrite url="/foo" />
+            <openapi location="demo-api-v1.yml" validateRequests="yes">
+                <rewrite url="/bar" />
             </openapi>
         </api>
 
         <api port="2001">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
+            <openapi location="demo-api-v1.yml" validateRequests="yes">
                 <rewrite port="3000" />
             </openapi>
         </api>
 
         <api port="2002">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
+            <openapi location="demo-api-v1.yml" validateRequests="yes">
                 <rewrite host="predic8.de" />
             </openapi>
         </api>
 
         <api port="2003">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
+            <openapi location="demo-api-v1.yml" validateRequests="yes">
                 <rewrite host="predic8.de" port="3000" url="/foo"/>
             </openapi>
         </api>
