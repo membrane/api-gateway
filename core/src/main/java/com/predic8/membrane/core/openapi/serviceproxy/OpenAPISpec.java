@@ -32,9 +32,13 @@ public class OpenAPISpec {
     public YesNoOpenAPIOption validateResponses = ASINOPENAPI;
     public YesNoOpenAPIOption validationDetails = ASINOPENAPI;
     public YesNoOpenAPIOption validateSecurity = ASINOPENAPI;
-    Rewrite rewrite = new Rewrite();
+    private Rewrite rewrite = new Rewrite();
 
     public OpenAPISpec() {
+    }
+
+    public boolean hasRewrite() {
+        return rewrite != null;
     }
 
     @MCChildElement(order = 50)

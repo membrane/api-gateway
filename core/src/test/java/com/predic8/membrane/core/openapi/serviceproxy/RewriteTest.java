@@ -48,6 +48,7 @@ class RewriteTest {
         rewriteAll.host = "predic8.de";
         rewriteAll.port = 8080;
         rewriteAll.protocol = "https";
+        rewriteAll.url = "/foo";
 
         Router router = new Router();
         router.setUriFactory(new URIFactory());
@@ -74,6 +75,7 @@ class RewriteTest {
         rewrite.setProtocol("https");
         rewrite.setPort(443);
         rewrite.setHost("membrane-api.io");
+        rewrite.setUrl("/bar");
         spec.setRewrite(rewrite);
         return spec;
     }
@@ -94,6 +96,12 @@ class RewriteTest {
     void rewritePort() {
         assertEquals("8080", rewriteAll.rewritePort("80"));
         assertEquals("80", rewriteNothing.rewritePort("80"));
+    }
+
+    @Test
+    void rewritePath() {
+        assertEquals("/foo", rewriteAll.rewriteUrl("/shop/v2"));
+        assertEquals("/shop/v2", rewriteNothing.rewriteUrl("/shop/v2"));
     }
 
     /**
@@ -139,14 +147,15 @@ class RewriteTest {
     @Test
     void rewriteOpenAPIAccordingToRewrite3Servers() throws Exception {
         OpenAPIRecord rec = records.get("servers-3-api-v1-0");
-        rec.spec.rewrite.setHost("membrane-api.do");
-        rec.spec.rewrite.setPort(8443);
-        rec.spec.rewrite.setProtocol("https");
+        rec.spec.getRewrite().setHost("membrane-api.do");
+        rec.spec.getRewrite().setPort(8443);
+        rec.spec.getRewrite().setProtocol("https");
+        rec.spec.getRewrite().setUrl("/bar");
         JsonNode servers = rec.rewriteOpenAPI(get, new URIFactory()).get("servers");
         assertEquals(3,servers.size());
-        assertEquals("https://membrane-api.do:8443/foo",servers.get(0).get("url").asText());
-        assertEquals("https://membrane-api.do:8443/foo",servers.get(1).get("url").asText());
-        assertEquals("https://membrane-api.do:8443/foo",servers.get(2).get("url").asText());
+        assertEquals("https://membrane-api.do:8443/bar",servers.get(0).get("url").asText());
+        assertEquals("https://membrane-api.do:8443/bar",servers.get(1).get("url").asText());
+        assertEquals("https://membrane-api.do:8443/bar",servers.get(2).get("url").asText());
     }
 
     @Test

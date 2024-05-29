@@ -24,7 +24,6 @@ import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
-import java.io.*;
 import java.net.*;
 
 import static java.util.Objects.*;
@@ -41,7 +40,9 @@ public class Rewrite {
     String protocol;
     String host;
 
-    public JsonNode rewrite(OpenAPIRecord rec, Exchange exc, URIFactory uriFactory) throws URISyntaxException, IOException {
+    String url;
+
+    public JsonNode rewrite(OpenAPIRecord rec, Exchange exc, URIFactory uriFactory) throws URISyntaxException {
         if (rec.isVersion3()) {
             return rewriteOpenAPI3(exc, uriFactory, rec.node);
         }
@@ -61,10 +62,10 @@ public class Rewrite {
     }
 
     private void rewriteServerEntry(Exchange exc, URIFactory uriFactory, JsonNode server) throws URISyntaxException {
-        String url = server.get("url").asText();
-        String rewritten = rewriteUrl(exc, url, uriFactory);
+        String serverUrl = server.get("url").asText();
+        String rewritten = rewriteUrl(exc, serverUrl, uriFactory);
         ((ObjectNode) server).put("url", rewritten);
-        log.debug("Rewriting {} to {}", url, rewritten);
+        log.debug("Rewriting {} to {}", serverUrl, rewritten);
     }
 
     /**
@@ -77,7 +78,7 @@ public class Rewrite {
      * @throws URISyntaxException syntax error ín URL
      */
     protected String rewriteUrl(Exchange exc, String url, URIFactory uriFactory) throws URISyntaxException {
-        return UriUtil.rewrite(uriFactory, url, rewriteProtocol(exc.getInboundProtocol()), rewriteHost(exc.getOriginalHostHeaderHost()), rewritePort(exc.getOriginalHostHeaderPort()));
+        return UriUtil.rewrite(uriFactory, rewriteUrl(url), rewriteProtocol(exc.getInboundProtocol()), rewriteHost(exc.getOriginalHostHeaderHost()), rewritePort(exc.getOriginalHostHeaderPort()));
     }
 
     private JsonNode rewriteSwagger2(Exchange exc, JsonNode node) {
@@ -133,6 +134,10 @@ public class Rewrite {
         return requireNonNullElse(this.host, host);
     }
 
+    public String rewriteUrl(String url) {
+        return requireNonNullElse(this.url, url);
+    }
+
     /**
      * Rewrites the port if there was a value given.
      *
@@ -172,5 +177,14 @@ public class Rewrite {
     @MCAttribute()
     public void setHost(String host) {
         this.host = host;
+    }
+
+    @MCAttribute()
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
     }
 }

@@ -17,38 +17,42 @@
 package com.predic8.membrane.core.openapi;
 
 import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
+import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OpenAPIValidatorTest {
+class OpenAPIValidatorTest {
 
     OpenAPIValidator validator;
 
     @BeforeEach
     public void setUp() {
-        validator = new OpenAPIValidator(new URIFactory(),getResourceAsStream(this, "/openapi/specs/customers.yml"));
+        OpenAPIRecord rec = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this,"/openapi/specs/customers.yml")),null,new OpenAPISpec());
+        validator = new OpenAPIValidator(new URIFactory(), rec);
     }
 
     @Test
-    public void validateSimple() {
+    void validateSimple() {
         ValidationErrors errors = validator.validate(Request.get().path("/customers"));
         assertEquals(0, errors.size());
     }
 
     @Test
-    public void validateRightMethod() {
+    void validateRightMethod() {
         assertEquals(0,validator.validate(Request.get().path("/customers/7")).size());
     }
 
     @Test
-    public void wrongPath() {
+    void wrongPath() {
         ValidationErrors errors = validator.validate(Request.get().path("/foo"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
@@ -57,7 +61,7 @@ public class OpenAPIValidatorTest {
     }
 
     @Test
-    public void validateWrongMethod() {
+    void validateWrongMethod() {
         ValidationErrors errors = validator.validate(Request.patch().path("/customers/7"));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());

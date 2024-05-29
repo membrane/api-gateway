@@ -51,8 +51,6 @@ public class APIProxy extends ServiceProxy {
 
     protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
-    public APIProxy() {}
-
     @Override
     protected AbstractProxy getNewInstance() {
         return new APIProxy();
@@ -139,16 +137,20 @@ public class APIProxy extends ServiceProxy {
     }
 
     private Map<String, OpenAPIRecord> getOpenAPIMap() {
-        Map<String, OpenAPIRecord> basePaths = new HashMap<>();
-        apiRecords.forEach((id,record) -> record.api.getServers().forEach(server -> {
+        Map<String, OpenAPIRecord> paths = new HashMap<>();
+        apiRecords.forEach((id,rec) -> rec.api.getServers().forEach(server -> {
+            String url = server.getUrl();
+            if (rec.spec.getRewrite() != null && rec.spec.getRewrite().url != null) {
+                url = rec.spec.getRewrite().url;
+            }
             try {
-                basePaths.put(UriUtil.getPathFromURL(router.getUriFactory(),server.getUrl()), record);
+                paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
             } catch (URISyntaxException e) {
-                log.error("Cannot parse URL {}", server.getUrl());
+                log.error("Cannot parse URL {}", url);
                 throw new RuntimeException();
             }
         }));
-        return basePaths;
+        return paths;
     }
 
     public ValidationStatisticsCollector getValidationStatisticCollector() {

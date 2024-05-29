@@ -47,6 +47,7 @@ import org.junit.platform.suite.api.Suite;
         IllegalCharactersInURLTest.class,
         ProxySSLTest.class,
         SessionManager.class,
+        OpenApiRewriteIntegrationTest.class
 })
 public class IntegrationTestsWithoutInternet {
 }
