@@ -33,10 +33,9 @@ import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class OpenAPIInterceptorTest {
+class OpenAPIInterceptorTest {
 
     Router router;
-
     OpenAPISpec specInfoServers;
     OpenAPISpec specInfo3Servers;
     OpenAPISpec specCustomers;
@@ -68,25 +67,25 @@ public class OpenAPIInterceptorTest {
     }
 
     @Test
-    public void getMatchingBasePathOneServer() {
+    void getMatchingBasePathOneServer() {
         exc.getRequest().setUri("/base/v2/foo");
         assertEquals("/base/v2", interceptor1Server.getMatchingBasePath(exc));
     }
 
     @Test
-    public void getMatchingBasePathMultipleServers() {
+    void getMatchingBasePathMultipleServers() {
         exc.getRequest().setUri("/foo/boo");
         assertEquals("/foo", interceptor3Server.getMatchingBasePath(exc));
     }
 
     @Test
-    public void nonMatchingBasePathMultipleServers() {
+    void nonMatchingBasePathMultipleServers() {
         exc.getRequest().setUri("/goo/boo");
         assertNull(null, interceptor3Server.getMatchingBasePath(exc));
     }
 
     @Test
-    public void nonMatchingBasePathErrorMessage() throws Exception {
+    void nonMatchingBasePathErrorMessage() throws Exception {
         exc.getRequest().setUri("/goo/boo");
         assertEquals(RETURN, interceptor3Server.handleRequest(exc));
 
@@ -100,7 +99,7 @@ public class OpenAPIInterceptorTest {
     }
 
     @Test
-    public void destinations() throws Exception {
+    void destinations() throws Exception {
         exc.getRequest().setUri("/foo/boo");
         exc.setOriginalRequestUri("/foo/boo");
 
@@ -112,11 +111,13 @@ public class OpenAPIInterceptorTest {
         urls.add("https://localhost:4000/foo/boo");
         urls.add("https://localhost:5000/foo/boo");
 
+        System.out.println("exc = " + exc.getRequest().getHeader());
+
         assertEquals(urls, exc.getDestinations());
     }
 
     @Test
-    public void destinationsTargetSet() throws Exception {
+    void destinationsTargetSet() throws Exception {
         exc.getRequest().setUri("/foo/boo");
         exc.setOriginalRequestUri("/foo/boo");
         APIProxy proxy = createProxy(router, specInfo3Servers);
@@ -127,7 +128,7 @@ public class OpenAPIInterceptorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void validateRequest() throws Exception {
+    void validateRequest() throws Exception {
 
         specCustomers.validateRequests = YES;
 
@@ -151,7 +152,7 @@ public class OpenAPIInterceptorTest {
 
     @SuppressWarnings({"unchecked"})
     @Test
-    public void validateResponse() throws Exception {
+    void validateResponse() throws Exception {
         specCustomers.validateResponses = YES;
         Exchange exc = callPut(specCustomers);
         assertEquals("PUT", getMapFromResponse(exc).get("method"));
@@ -159,7 +160,7 @@ public class OpenAPIInterceptorTest {
     }
 
     @Test
-    public void validateResponseLessDetails() throws Exception {
+    void validateResponseLessDetails() throws Exception {
         specCustomers.validateResponses = YES;
         specCustomers.validationDetails = NO;
         assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("error"));

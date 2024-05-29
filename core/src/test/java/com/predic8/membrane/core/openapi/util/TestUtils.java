@@ -24,6 +24,8 @@ import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
+import io.swagger.parser.*;
+import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.ObjectMapperFactory;
 
 import java.io.ByteArrayInputStream;
@@ -31,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
 import static java.util.Collections.singletonList;
 
 public class TestUtils {
@@ -51,6 +54,10 @@ public class TestUtils {
      */
     public static JsonNode getYAMLResource(Object thisObj,String path) throws IOException {
         return omYaml.readTree(getResourceAsStream(thisObj,path));
+    }
+
+    public static OpenAPI parseOpenAPI(InputStream is) {
+        return new OpenAPIParser().readContents(readInputStream(is), null, null).getOpenAPI();
     }
 
     public static InputStream getResourceAsStream(Object obj, String fileName) {

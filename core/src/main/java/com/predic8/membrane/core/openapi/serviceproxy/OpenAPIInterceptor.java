@@ -19,7 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
@@ -27,7 +27,6 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.servers.*;
 import jakarta.mail.internet.*;
 import org.slf4j.*;
-import redis.clients.jedis.*;
 
 import java.io.*;
 import java.net.*;
@@ -53,7 +52,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         this.apiProxy = apiProxy;
         this.router = router;
     }
-
 
     public APIProxy getApiProxy() {
         return apiProxy;
@@ -82,7 +80,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             setDestinationsFromOpenAPI(rec, exc);
 
         try {
-            ValidationErrors errors = validateRequest(rec.api, exc);
+            ValidationErrors errors = validateRequest(rec, exc);
 
             if (!errors.isEmpty()) {
                 apiProxy.statisticCollector.collect(errors);
@@ -95,11 +93,12 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .build());
             return RETURN;
         }
-        catch (Throwable t /* No Purpose! Catch absolutely all */) {
-            log.error("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()));
+        catch (Throwable t /* On purpose! Catch absolutely all */) {
+            final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
+            log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()));
             log.error(t.getMessage(),t);
             exc.setResponse(ProblemDetails.internal(router.isProduction())
-                    .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
+                    .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
                     .build());
 
@@ -121,7 +120,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty("openApi");
 
         try {
-            ValidationErrors errors = validateResponse(rec.api, exc);
+            ValidationErrors errors = validateResponse(rec, exc);
 
             if (errors != null && errors.hasErrors()) {
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
@@ -155,19 +154,19 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return null;
     }
 
-    private ValidationErrors validateRequest(OpenAPI api, Exchange exc) throws IOException, ParseException {
+    private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
         ValidationErrors errors = new ValidationErrors();
-        if (!shouldValidate(api, REQUESTS))
+        if (!shouldValidate(rec.getApi(), REQUESTS))
             return errors;
 
-        return new OpenAPIValidator(router.getUriFactory(), api).validate(getOpenapiValidatorRequest(exc));
+        return new OpenAPIValidator(router.getUriFactory(), rec ).validate(getOpenapiValidatorRequest(exc));
     }
 
-    private ValidationErrors validateResponse(OpenAPI api, Exchange exc) throws IOException, ParseException {
+    private ValidationErrors validateResponse(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
         ValidationErrors errors = new ValidationErrors();
-        if (!shouldValidate(api, RESPONSES))
+        if (!shouldValidate(rec.getApi(), RESPONSES))
             return errors;
-        return new OpenAPIValidator(router.getUriFactory(), api).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
+        return new OpenAPIValidator(router.getUriFactory(), rec).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
     }
 
     public boolean validationDetails(OpenAPI api) {
@@ -206,9 +205,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         exc.getDestinations().clear();
         rec.api.getServers().forEach(server -> {
             URL url = getServerUrlFromOpenAPI(rec, server);
-
-            setHostHeader(exc, url); // @TODO Check
-
             exc.setProperty(SNI_SERVER_NAME, url.getHost());
             exc.getDestinations().add(getUrlWithoutPath(url) + exc.getRequest().getUri());
         });
@@ -262,10 +258,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         sb.append("</table>");
 
         return sb.toString();
-    }
-
-    private void setHostHeader(Exchange exc, URL url) {
-        exc.getRequest().getHeader().setHost(new HostAndPort(url.getHost(), url.getPort()).toString());
     }
 
     private Outcome returnErrors(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {

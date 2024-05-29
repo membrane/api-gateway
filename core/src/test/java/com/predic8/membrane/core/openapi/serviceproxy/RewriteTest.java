@@ -147,10 +147,12 @@ class RewriteTest {
     @Test
     void rewriteOpenAPIAccordingToRewrite3Servers() throws Exception {
         OpenAPIRecord rec = records.get("servers-3-api-v1-0");
+      
         rec.spec.rewrite.setHost("membrane-api.do");
         rec.spec.rewrite.setPort(8443);
         rec.spec.rewrite.setProtocol("https");
         rec.spec.rewrite.setUrl("/bar");
+
         JsonNode servers = rec.rewriteOpenAPI(get, new URIFactory()).get("servers");
         assertEquals(3,servers.size());
         assertEquals("https://membrane-api.do:8443/bar",servers.get(0).get("url").asText());

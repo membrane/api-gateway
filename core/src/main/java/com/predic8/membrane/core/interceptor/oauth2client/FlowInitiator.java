@@ -36,6 +36,7 @@ public class FlowInitiator extends AbstractInterceptor {
     private String afterLoginUrl;
     private OAuth2Resource2Interceptor oauth2;
     private List<LoginParameter> loginParameters = new ArrayList<>();
+    private boolean logoutBeforeFlow = true;
 
     public String getTriggerFlow() {
         return triggerFlow;
@@ -75,12 +76,15 @@ public class FlowInitiator extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        // remove session
-        exc.setResponse(Response.ok().build());
-        oauth2.logOutSession(exc);
-        List<HeaderField> values = exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"));
+        List<HeaderField> values = null;
+        if (logoutBeforeFlow) {
+            // remove session
+            exc.setResponse(Response.ok().build());
+            oauth2.logOutSession(exc);
+            values = exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"));
 
-        exc.getRequest().getHeader().removeFields("Cookie");
+            exc.getRequest().getHeader().removeFields("Cookie");
+        }
 
         var params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
         exc.setProperty("loginParameters", LoginParameter.mergeParams(params, loginParameters));
@@ -96,7 +100,9 @@ public class FlowInitiator extends AbstractInterceptor {
         session.put("triggerFlow", triggerFlow);
 
         oauth2.getSessionManager().postProcess(exc); // required to create a session cookie
-        values.forEach(header -> exc.getResponse().getHeader().add(header));
+        if (logoutBeforeFlow) {
+            values.forEach(header -> exc.getResponse().getHeader().add(header));
+        }
 
         // replace header
         String location = exc.getResponse().getHeader().getFirstValue("Location");
@@ -113,5 +119,14 @@ public class FlowInitiator extends AbstractInterceptor {
     @MCChildElement
     public void setLoginParameters(List<LoginParameter> loginParameters) {
         this.loginParameters = loginParameters;
+    }
+
+    public boolean isLogoutBeforeFlow() {
+        return logoutBeforeFlow;
+    }
+
+    @MCAttribute
+    public void setLogoutBeforeFlow(boolean logoutBeforeFlow) {
+        this.logoutBeforeFlow = logoutBeforeFlow;
     }
 }

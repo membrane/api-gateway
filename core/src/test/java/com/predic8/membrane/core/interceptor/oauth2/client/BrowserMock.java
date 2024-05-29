@@ -125,7 +125,7 @@ public class BrowserMock implements Function<Exchange, Exchange> {
                 LOG.debug("from " + domain + " got Set-Cookie: " + headerField.getValue());
 
                 String value = headerField.getValue().substring(0, headerField.getValue().indexOf(";"));
-                boolean expired = headerField.getValue().contains("1970");
+                boolean expired = headerField.getValue().contains("01 Jan 1970");
 
                 String key = value.substring(0, value.indexOf("=")).trim();
                 value = value.substring(value.indexOf("=") + 1).trim();

@@ -20,9 +20,7 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
-import org.slf4j.*;
 
-import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
@@ -53,8 +51,18 @@ public class OpenAPIRecord {
     public OpenAPIRecord(OpenAPI api, JsonNode node, OpenAPISpec spec) {
         this.api = api;
         this.node = node;
-        this.version = getOpenAPIVersion(node);
         this.spec = spec;
+
+        // If used without a node. Version is read from JSON cause JSON
+        // supports any version number like 3.1.0 or 3.0.9. For
+        // getSpecVerison() there are just a number of enum constants.
+        if (node != null) {
+            this.version = getOpenAPIVersion(node);
+        } else {
+            this.version = api.getSpecVersion().name();
+        }
+
+
     }
 
     public boolean isVersion2() {
@@ -65,8 +73,15 @@ public class OpenAPIRecord {
         return version.startsWith("3");
     }
 
-    public JsonNode rewriteOpenAPI(Exchange exc, URIFactory uriFactory) throws URISyntaxException, IOException {
-        return spec.rewrite.rewrite(this,exc,uriFactory);
+    public JsonNode rewriteOpenAPI(Exchange exc, URIFactory uriFactory) throws URISyntaxException {
+        return spec.getRewrite().rewrite(this,exc,uriFactory);
     }
 
+    public OpenAPI getApi() {
+        return api;
+    }
+
+    public OpenAPISpec getSpec() {
+        return spec;
+    }
 }
