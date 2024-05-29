@@ -40,7 +40,7 @@ public class Rewrite {
     String protocol;
     String host;
 
-    String url;
+    String basePath;
 
     public JsonNode rewrite(OpenAPIRecord rec, Exchange exc, URIFactory uriFactory) throws URISyntaxException {
         if (rec.isVersion3()) {
@@ -135,7 +135,7 @@ public class Rewrite {
     }
 
     public String rewriteUrl(String url) {
-        return requireNonNullElse(this.url, url);
+        return requireNonNullElse(this.basePath, url);
     }
 
     /**
@@ -180,11 +180,11 @@ public class Rewrite {
     }
 
     @MCAttribute()
-    public void setUrl(String url) {
-        this.url = url;
+    public void setBasePath(String basePath) {
+        this.basePath = basePath;
     }
 
-    public String getUrl() {
-        return url;
+    public String getBasePath() {
+        return basePath;
     }
 }

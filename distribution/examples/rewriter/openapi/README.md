@@ -13,13 +13,14 @@ Using the rewriter in the [OpenAPI](../../openapi) element, you can rewrite the 
     ```
 3. Execute `service-proxy.sh` or `service-proxy.bat`.
 4. Review the [proxies.xml](./proxies.xml) configuration. 
-    
     ```xml
     <api port="2000">
         <openapi location="demo-api-v1.yml" validateRequests="yes">
-            <rewrite baseUrl="predic8.de:3000/foo" />
+            <rewrite host="predic8.de" port="3000" basePath="/foo"/>
         </openapi>
-   </api>
+    </api>
     ```
     - Open [localhost:2000/api-docs](http://localhost:2000/api-docs) and click on `Demo API`.
-    - The base URL of the OpenAPI will be rewritten to `predic8.de:3000/foo`.
+    - The base path of the OpenAPI will be rewritten to `/foo`.
+    - The host will be rewritten to `predic8.de`.
+    - The port will be rewritten to `3000`.

@@ -48,7 +48,7 @@ class RewriteTest {
         rewriteAll.host = "predic8.de";
         rewriteAll.port = 8080;
         rewriteAll.protocol = "https";
-        rewriteAll.url = "/foo";
+        rewriteAll.basePath = "/foo";
 
         Router router = new Router();
         router.setUriFactory(new URIFactory());
@@ -75,7 +75,7 @@ class RewriteTest {
         rewrite.setProtocol("https");
         rewrite.setPort(443);
         rewrite.setHost("membrane-api.io");
-        rewrite.setUrl("/bar");
+        rewrite.setBasePath("/bar");
         spec.setRewrite(rewrite);
         return spec;
     }
@@ -150,7 +150,7 @@ class RewriteTest {
         rec.spec.getRewrite().setHost("membrane-api.do");
         rec.spec.getRewrite().setPort(8443);
         rec.spec.getRewrite().setProtocol("https");
-        rec.spec.getRewrite().setUrl("/bar");
+        rec.spec.getRewrite().setBasePath("/bar");
         JsonNode servers = rec.rewriteOpenAPI(get, new URIFactory()).get("servers");
         assertEquals(3,servers.size());
         assertEquals("https://membrane-api.do:8443/bar",servers.get(0).get("url").asText());

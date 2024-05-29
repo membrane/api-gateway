@@ -140,8 +140,8 @@ public class APIProxy extends ServiceProxy {
         Map<String, OpenAPIRecord> paths = new HashMap<>();
         apiRecords.forEach((id,rec) -> rec.api.getServers().forEach(server -> {
             String url = server.getUrl();
-            if (rec.spec.getRewrite() != null && rec.spec.getRewrite().url != null) {
-                url = rec.spec.getRewrite().url;
+            if (rec.spec.getRewrite() != null && rec.spec.getRewrite().basePath != null) {
+                url = rec.spec.getRewrite().basePath;
             }
             try {
                 paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
