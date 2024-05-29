@@ -8,7 +8,7 @@
 
         <api port="2000">
             <openapi location="demo-api-v1.yml" validateRequests="yes">
-                <rewrite baseUrl="predic8.de:3000/foo" />
+                <rewrite host="predic8.de" port="3000" basePath="/foo" />
             </openapi>
         </api>
 
