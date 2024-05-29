@@ -19,8 +19,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
+import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import org.apache.http.Header;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -28,18 +28,24 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.*;
-import org.junit.jupiter.api.Test;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -122,7 +128,7 @@ public class SessionManager {
         assertNotEquals(rememberThis,rememberThisFromServer);
         assertEquals("null", rememberThisFromServer);
 
-        httpRouter.stop();
+        httpRouter.shutdown();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -159,7 +165,7 @@ public class SessionManager {
 
         assertEquals("rememberThis",rememberThisFromServer);
 
-        httpRouter.stop();
+        httpRouter.shutdown();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -202,7 +208,7 @@ public class SessionManager {
             }
         }
 
-        httpRouter.stop();
+        httpRouter.shutdown();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -250,7 +256,7 @@ public class SessionManager {
             Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(secondExpires.split("=")[1]));
         }
 
-        httpRouter.stop();
+        httpRouter.shutdown();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -299,7 +305,7 @@ public class SessionManager {
         executor.shutdown();
         executor.awaitTermination(60, TimeUnit.SECONDS);
         client.close();
-        httpRouter.stop();
+        httpRouter.shutdown();
     }
 
     private Stream<Header> allSetCookieHeadersExceptFor1970Expire(CloseableHttpResponse resp) {
@@ -325,7 +331,7 @@ public class SessionManager {
 
         AbstractInterceptorWithSession result = new AbstractInterceptorWithSession() {
             @Override
-            protected Outcome handleRequestInternal(Exchange exc) throws Exception {
+            protected Outcome handleRequestInternal(Exchange exc) {
                 String rememberThis = exc.getRequest().getHeader().getFirstValue(REMEMBER_HEADER);
                 if(rememberThis == null)
                     exc.setResponse(Response.ok().header(REMEMBER_HEADER,getSessionManager().getSession(exc).get(REMEMBER_HEADER)).build());

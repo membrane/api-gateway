@@ -58,7 +58,7 @@ public class SOAPProxyIntegrationTest {
 	}
 
 	@Test
-	public void rewriteSimpleTest() throws Exception {
+	public void rewriteSimpleTest() {
 		when()
 			.get("http://localhost:2000/foo?wsdl")
 		.then()

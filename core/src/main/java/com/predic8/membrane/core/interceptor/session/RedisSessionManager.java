@@ -150,4 +150,18 @@ public class RedisSessionManager extends SessionManager{
     public void setConnector(RedisConnector connector) {
         this.connector = connector;
     }
+
+    public String getCookiePrefix() {
+        return cookieNamePrefix;
+    }
+
+    /**
+     * Set this, if you are running multiple parallel Membrane instances.
+     * @default randomly chosen 8-character long string.
+     */
+    @MCAttribute
+    public void setCookiePrefix(String cookiePrefix) {
+        this.cookieNamePrefix = cookiePrefix;
+    }
+
 }

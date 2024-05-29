@@ -36,16 +36,16 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 
-
 @SuppressWarnings("deprecation")
 public class Http10Test {
     private static HttpRouter router;
+	private static HttpRouter router2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
 		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
 		rule2.getInterceptors().add(new SampleSoapServiceInterceptor());
-        HttpRouter router2 = new HttpRouter();
+        router2 = new HttpRouter();
 		router2.getRuleManager().addProxyAndOpenPortIfNew(rule2);
 		router2.init();
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "localhost", 2000);
@@ -56,6 +56,7 @@ public class Http10Test {
 
 	@AfterAll
 	public static void tearDown() throws Exception {
+		router2.shutdown();
 		router.shutdown();
 	}
 

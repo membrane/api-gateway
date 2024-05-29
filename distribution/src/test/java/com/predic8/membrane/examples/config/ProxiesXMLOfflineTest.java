@@ -46,12 +46,12 @@ public class ProxiesXMLOfflineTest extends AbstractSampleMembraneStartStopTestca
     void api_doc() {
         JSONAssert.assertEquals("""
                 {
-                  "fruitshop-v1-0" : {
+                  "fruitshop-v1-1" : {
                     "openapi" : "3.0.2",
                     "title" : "Fruit Shop API",
-                    "version" : "1.0",
-                    "openapi_link" : "/api-docs/fruitshop-v1-0",
-                    "ui_link" : "/api-docs/ui/fruitshop-v1-0"
+                    "version" : "1.1",
+                    "openapi_link" : "/api-docs/fruitshop-v1-1",
+                    "ui_link" : "/api-docs/ui/fruitshop-v1-1"
                   }
                 }
                 """, get(LOCALHOST_2000 + "/api-doc").asString(), true);
