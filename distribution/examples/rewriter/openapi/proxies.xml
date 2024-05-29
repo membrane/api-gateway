@@ -8,25 +8,7 @@
 
         <api port="2000">
             <openapi location="demo-api-v1.yml" validateRequests="yes">
-                <rewrite url="/bar" />
-            </openapi>
-        </api>
-
-        <api port="2001">
-            <openapi location="demo-api-v1.yml" validateRequests="yes">
-                <rewrite port="3000" />
-            </openapi>
-        </api>
-
-        <api port="2002">
-            <openapi location="demo-api-v1.yml" validateRequests="yes">
-                <rewrite host="predic8.de" />
-            </openapi>
-        </api>
-
-        <api port="2003">
-            <openapi location="demo-api-v1.yml" validateRequests="yes">
-                <rewrite host="predic8.de" port="3000" url="/foo"/>
+                <rewrite baseUrl="predic8.de:3000/foo" />
             </openapi>
         </api>
 

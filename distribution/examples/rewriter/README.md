@@ -1,4 +1,4 @@
 # Rewriter
   
-- [rewrite using REGEX - example](./regex)
-- [OpenApi rewrite - example](./openapi)
+- [REGEX URL Rewriter](./regex)
+- [OpenAPI Base Path Rewriter](./openapi)
