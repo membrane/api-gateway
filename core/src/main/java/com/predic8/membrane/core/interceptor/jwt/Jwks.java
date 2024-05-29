@@ -23,11 +23,16 @@ import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.TextUtil;
+import com.predic8.membrane.core.util.TimerManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TimerTask;
 
 @MCElement(name="jwks")
 public class Jwks {
@@ -35,6 +40,12 @@ public class Jwks {
     List<Jwk> jwks;
     String jwksUris;
     AuthorizationService authorizationService;
+    int refreshSeconds;
+
+    private TimerManager timerManager;
+
+    private static final Logger log = LoggerFactory.getLogger(Jwks.class);
+    ObjectMapper mapper = new ObjectMapper();
 
     public List<Jwk> getJwks() {
         return jwks;
@@ -56,11 +67,37 @@ public class Jwks {
         return this;
     }
 
-    public void init(ResolverMap resolverMap, String baseLocation) {
-        if(jwksUris == null || jwksUris.isEmpty())
-            return;
+    public int getRefreshSeconds() {
+        return refreshSeconds;
+    }
 
-        ObjectMapper mapper = new ObjectMapper();
+    @MCAttribute
+    public void setRefreshSeconds(int refreshSeconds) {
+        this.refreshSeconds = refreshSeconds;
+    }
+
+
+    public void init(ResolverMap resolverMap, String baseLocation, TimerManager timerManager) {
+
+        if(jwksUris == null || jwksUris.isEmpty()) {
+            return;
+        }
+
+        fetchJwks(resolverMap, baseLocation);
+
+        if(refreshSeconds > 0) {
+            timerManager.schedulePeriodicTask(new TimerTask() {
+                @Override
+                public void run() {
+                    log.info("Refreshing JWKS");
+                    fetchJwks(resolverMap, baseLocation);
+                }
+            }, refreshSeconds * 1000L, "Fetch JWKS");
+        }
+    }
+
+    private void fetchJwks(ResolverMap resolverMap, String baseLocation) {
+        jwks = new ArrayList<>();
         for (String uri : jwksUris.split(" ")) {
             try {
                 for (Object jwkRaw : parseJwksUriIntoList(resolverMap, baseLocation, mapper, uri)) {
@@ -89,9 +126,9 @@ public class Jwks {
     public void setAuthorizationService(AuthorizationService authService) {
         authorizationService = authService;
     }
-
     @MCElement(name="jwk", mixed = true, topLevel = false, id="jwks-jwk")
     public static class Jwk extends Blob {
+
 
         String kid;
 
