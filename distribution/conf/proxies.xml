@@ -7,27 +7,12 @@
     <router>
 
         <api port="2000">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
-                <rewrite url="/foo" />
-            </openapi>
+            <openapi location="./fruitshop-api.yml" />
+            <target url="https://api.predic8.de" />
         </api>
 
         <api port="2001">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
-                <rewrite port="3000" />
-            </openapi>
-        </api>
-
-        <api port="2002">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
-                <rewrite host="predic8.de" />
-            </openapi>
-        </api>
-
-        <api port="2003">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
-                <rewrite host="predic8.de" port="3000" url="/foo"/>
-            </openapi>
+            <target url="https://api.predic8.de" />
         </api>
 
     </router>
