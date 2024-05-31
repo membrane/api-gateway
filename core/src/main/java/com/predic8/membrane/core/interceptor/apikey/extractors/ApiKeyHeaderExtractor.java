@@ -42,8 +42,8 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
         this.headerName = new HeaderName(headerName);
     }
 
-    public HeaderName getHeaderName() {
-        return headerName;
+    public String getHeaderName() {
+        return headerName.getName();
     }
 
     @Override
