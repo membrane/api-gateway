@@ -147,6 +147,58 @@ class ResponseHeaderTest extends AbstractValidatorTest {
         assertTrue(e.getMessage().contains("not a boolean"));
     }
 
+    @Test
+    void headerRequiredNotPresentMissingHeader() throws Exception {
+        Exchange exc = getExchange("/header-required-not-present");
+        exc.setResponse(Response.ok().build());
+        assertEquals(0, validator.validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc)).size());
+    }
+
+    @Test
+    void headerRequiredNotPresentWithHeaderOk() throws Exception {
+        Exchange exc = getExchange("/header-required-not-present");
+        exc.setResponse(Response.ok().header("X-BAZ","abc").build());
+        assertEquals(0, validator.validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc)).size());
+    }
+
+    @Test
+    void headerRequiredNotPresentWithHeaderTooLong() throws Exception {
+        Exchange exc = getExchange("/header-required-not-present");
+        exc.setResponse(Response.ok().header("X-BAZ","abcdef").build());
+        ValidationErrors errors = validator.validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
+        assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals(HEADER_PARAMETER,e.getContext().getValidatedEntityType());
+        assertEquals("X-BAZ", e.getContext().getValidatedEntity());
+        assertTrue(e.getMessage().contains("axLength"));
+    }
+
+    @Test
+    void headerRequiredFalseMissingHeader() throws Exception {
+        Exchange exc = getExchange("/header-required-false");
+        exc.setResponse(Response.ok().build());
+        assertEquals(0, validator.validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc)).size());
+    }
+
+    @Test
+    void headerRequiredFalseHeaderOk() throws Exception {
+        Exchange exc = getExchange("/header-required-false");
+        exc.setResponse(Response.ok().header("X-BAZ","abc").build());
+        assertEquals(0, validator.validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc)).size());
+    }
+
+    @Test
+    void headerRequiredFalseHeaderTooLong() throws Exception {
+        Exchange exc = getExchange("/header-required-false");
+        exc.setResponse(Response.ok().header("X-BAZ","abcdef").build());
+        ValidationErrors errors = validator.validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
+        assertEquals(1,errors.size());
+        ValidationError e = errors.get(0);
+        assertEquals(HEADER_PARAMETER,e.getContext().getValidatedEntityType());
+        assertEquals("X-BAZ", e.getContext().getValidatedEntity());
+        assertTrue(e.getMessage().contains("axLength"));
+    }
+
     private static Exchange getExchange(String path) throws URISyntaxException {
         Exchange exc = new Exchange(null);
         exc.setRequest(Request.get(path).build());

@@ -66,7 +66,7 @@ public class ResponseHeaderValidator {
                                 .entityType(HEADER_PARAMETER)
                         , value));
             }
-        } else if (headerSpec.getRequired()) {
+        } else if (headerSpec.getRequired() != null && headerSpec.getRequired()) {
             errors.add(ctx.entity(s).entityType(HEADER_PARAMETER), format("Missing required header %s.", s));
         }
     }
