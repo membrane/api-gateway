@@ -7,12 +7,9 @@
     <router>
 
         <api port="2000">
-            <openapi location="./fruitshop-api.yml" />
-            <target url="https://api.predic8.de" />
-        </api>
-
-        <api port="2001">
-            <target url="https://api.predic8.de" />
+            <openapi location="demo-api-v1.yml" validateRequests="yes">
+                <rewrite host="predic8.de" port="3000" basePath="/foo" />
+            </openapi>
         </api>
 
     </router>
