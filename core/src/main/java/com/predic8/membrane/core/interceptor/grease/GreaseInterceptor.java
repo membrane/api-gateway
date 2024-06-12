@@ -29,7 +29,7 @@ import static java.util.EnumSet.*;
 @MCElement(name = "grease")
 public class GreaseInterceptor extends AbstractInterceptor {
 
-    private final List<GreaseStrategy> strategies = new ArrayList<>();
+    private final List<Greaser> strategies = new ArrayList<>();
     private final Random random = new Random();
 
     static final String X_GREASE = "X-Grease";
@@ -46,10 +46,10 @@ public class GreaseInterceptor extends AbstractInterceptor {
             return msg;
         }
         strategies.stream()
-                .filter(s -> s.matchesContentType(msg))
+                .filter(strategy -> strategy.matchesContentType(msg))
                 .findFirst()
                 .map(strategy -> {
-                    msg.getHeader().add(X_GREASE, strategy.getGreaseChanges());
+                    msg.getHeader().add(X_GREASE, strategy.getGreaseChanges()); // TODO move into strategy
                     return strategy.apply(msg);
                 });
         return msg;
@@ -77,12 +77,12 @@ public class GreaseInterceptor extends AbstractInterceptor {
     }
 
     @MCChildElement
-    public void setStrategies(List<GreaseStrategy> strategies) {
+    public void setStrategies(List<Greaser> strategies) {
         this.strategies.addAll(strategies);
     }
 
     @SuppressWarnings("unused")
-    public List<GreaseStrategy> getStrategies() {
+    public List<Greaser> getStrategies() {
         return strategies;
     }
 

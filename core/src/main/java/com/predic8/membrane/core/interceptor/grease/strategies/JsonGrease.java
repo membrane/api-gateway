@@ -20,11 +20,11 @@ import java.util.function.Consumer;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
 
-@MCElement(name = "json", topLevel = false)
-public class JsonGrease extends GreaseStrategy {
+@MCElement(name = "json", topLevel = false) // TODO greaseJson?
+public class JsonGrease extends Greaser {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(GreaseStrategy.class);
+    private static final ObjectMapper om = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(JsonGrease.class);
 
     boolean shuffleFields = true;
     boolean addAdditionalFields = true;
@@ -36,14 +36,14 @@ public class JsonGrease extends GreaseStrategy {
     @Override
     public Message apply(Message msg) {
         try {
-            ObjectNode json = (ObjectNode) objectMapper.readTree(msg.getBody().getContentAsStream());
+            ObjectNode json = (ObjectNode) om.readTree(msg.getBody().getContentAsStream());
             if (addAdditionalFields) {
                 processJson(json, JsonGrease::injectField);
             }
             if (shuffleFields) {
                 processJson(json, JsonGrease::shuffleNodeFields);
             }
-            msg.setBody(new Body(objectMapper.writeValueAsBytes(json)));
+            msg.setBody(new Body(om.writeValueAsBytes(json)));
             return msg;
         } catch (IOException e) {
             log.info("Failed to read JSON body ", e);
@@ -86,7 +86,7 @@ public class JsonGrease extends GreaseStrategy {
         while (fields.equals(fieldsOrdered)) {
             Collections.shuffle(fields);
         }
-        ObjectNode shuffledNode = objectMapper.createObjectNode();
+        ObjectNode shuffledNode = om.createObjectNode();
         for (String field : fields) {
             shuffledNode.set(field, objectNode.get(field));
         }

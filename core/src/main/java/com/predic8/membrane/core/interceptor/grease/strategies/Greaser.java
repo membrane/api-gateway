@@ -18,13 +18,14 @@ import com.predic8.membrane.core.http.Message;
 
 import java.util.List;
 
-public abstract class GreaseStrategy {
+public abstract class Greaser {
 
-    protected List<String> contentTypes;
+    protected List<String> contentTypes; // raus aus der Strategie
 
     public abstract Message apply(Message body);
 
-    public boolean matchesContentType(Message msg) {
+    protected boolean matchesContentType(Message msg) {
+        // p8 MimeType isJson
         return contentTypes.contains(msg.getHeader().getContentType());
     }
 
