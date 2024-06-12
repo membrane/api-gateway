@@ -14,10 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.grease.strategies;
 
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Message;
 
-public interface GreaseStrategy {
-    AbstractBody apply(AbstractBody body); // Message
-    String getApplicableContentType();
-    String getGreaseChanges();
+import java.util.List;
+
+public abstract class GreaseStrategy {
+
+    protected List<String> contentTypes;
+
+    public abstract Message apply(Message body);
+
+    public boolean matchesContentType(Message msg) {
+        return contentTypes.contains(msg.getHeader().getContentType());
+    }
+
+    public abstract String getGreaseChanges();
 }

@@ -45,34 +45,25 @@ public class GreaseInterceptor extends AbstractInterceptor {
         if (!shallGrease()) {
             return msg;
         }
-        msg.setBody(strategies.stream()
-                .filter(s -> s.getApplicableContentType().equals(msg.getHeader().getContentType())) //
+        strategies.stream()
+                .filter(s -> s.matchesContentType(msg))
                 .findFirst()
                 .map(strategy -> {
                     msg.getHeader().add(X_GREASE, strategy.getGreaseChanges());
-                    return strategy.apply(msg.getBody());
-                })
-                .orElseGet(msg::getBody));
+                    return strategy.apply(msg);
+                });
         return msg;
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setRequest((Request)
-                handleInternal(
-                        exc.getRequest()
-                )
-        );
+        exc.setRequest((Request) handleInternal(exc.getRequest()));
         return CONTINUE;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        exc.setResponse((Response)
-                handleInternal(
-                        exc.getResponse()
-                )
-        );
+        exc.setResponse((Response) handleInternal(exc.getResponse()));
         return CONTINUE;
     }
 
@@ -90,6 +81,7 @@ public class GreaseInterceptor extends AbstractInterceptor {
         this.strategies.addAll(strategies);
     }
 
+    @SuppressWarnings("unused")
     public List<GreaseStrategy> getStrategies() {
         return strategies;
     }

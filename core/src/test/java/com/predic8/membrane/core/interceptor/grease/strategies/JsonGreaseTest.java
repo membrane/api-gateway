@@ -3,6 +3,9 @@ package com.predic8.membrane.core.interceptor.grease.strategies;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -14,14 +17,16 @@ public class JsonGreaseTest {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     JsonGrease jsonGrease = new JsonGrease();
-    String jsonString = "{\"name\":\"John\",\"age\":30,\"city\":\"New York\"}";
+    String jsonString = """
+            {"name":"John","age":30,"city":"New York"}""";
+    Message msg = new Request();
 
     @Test
     void testJsonGrease() throws Exception {
         ObjectNode originalObject = (ObjectNode) objectMapper.readTree(jsonString);
         ObjectNode copyObject = originalObject.deepCopy();
         assertEquals(copyObject.toString(), originalObject.toString());
-        originalObject = JsonGrease.shuffleObject(originalObject);
+        JsonGrease.processJson(originalObject, JsonGrease::shuffleNodeFields);
         assertNotEquals(copyObject.toString(), originalObject.toString());
     }
 
@@ -29,33 +34,38 @@ public class JsonGreaseTest {
     void testNoGrease() {
         jsonGrease.setAddAdditionalFields(false);
         jsonGrease.setShuffleFields(false);
-        Body body = new Body(jsonString.getBytes(StandardCharsets.UTF_8));
-        assertEquals(body.toString() , jsonGrease.apply(body).toString());
+        msg.setBody(new Body(getJsonBytes()));
+        assertEquals(jsonString, jsonGrease.apply(msg).getBody().toString());
     }
 
     @Test
     void testAdditionalFields() {
         jsonGrease.setAddAdditionalFields(true);
         jsonGrease.setShuffleFields(false);
-        Body body = new Body(jsonString.getBytes(StandardCharsets.UTF_8));
-        assertTrue(jsonGrease.apply(body).toString().contains("\"bar\":\"Field added by GreaseInterceptor\""));
+        msg.setBody(new Body(getJsonBytes()));
+        assertTrue(jsonGrease.apply(msg).getBody().toString().contains("\"grease\":\"Field added by Membrane's Grease plugin\""));
     }
+
 
     @Test
     void testShuffle() {
         jsonGrease.setShuffleFields(true);
         jsonGrease.setAddAdditionalFields(false);
-        Body body = new Body(jsonString.getBytes(StandardCharsets.UTF_8));
-        assertNotEquals(body.toString(), jsonGrease.apply(body).toString());
+        msg.setBody(new Body(getJsonBytes()));
+        assertNotEquals(jsonString, jsonGrease.apply(msg).getBody().toString());
     }
 
     @Test
     void testBoth() {
         jsonGrease.setAddAdditionalFields(true);
         jsonGrease.setShuffleFields(true);
-        Body body = new Body(jsonString.getBytes(StandardCharsets.UTF_8));
-        Body applied = jsonGrease.apply(body);
-        assertNotEquals(body.toString(), applied.toString());
-        assertTrue(applied.toString().contains("\"bar\":\"Field added by GreaseInterceptor\""));
+        msg.setBody(new Body(getJsonBytes()));
+        Message applied = jsonGrease.apply(msg);
+        assertNotEquals(jsonString, applied.getBody().toString());
+        assertTrue(applied.toString().contains("\"grease\":\"Field added by Membrane's Grease plugin\""));
+    }
+
+    private byte @NotNull [] getJsonBytes() {
+        return jsonString.getBytes(StandardCharsets.UTF_8);
     }
 }

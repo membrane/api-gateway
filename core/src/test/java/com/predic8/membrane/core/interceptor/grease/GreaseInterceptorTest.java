@@ -20,7 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 @SuppressWarnings("SameParameterValue")
 class GreaseInterceptorTest {
     private static GreaseInterceptor greaseInterceptor;
-    private static final String json = "{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}";
+    private static final String json = """
+            {"a":"1","b":"2","c":"3"}""";
 
     @BeforeEach
     void setup() {
