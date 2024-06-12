@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonGreaseTest {
@@ -35,6 +36,7 @@ public class JsonGreaseTest {
         jsonGrease.setAddAdditionalFields(false);
         jsonGrease.setShuffleFields(false);
         msg.setBody(new Body(getJsonBytes()));
+        msg.getHeader().setContentType(APPLICATION_JSON);
         assertEquals(jsonString, jsonGrease.apply(msg).getBody().toString());
     }
 
@@ -43,6 +45,7 @@ public class JsonGreaseTest {
         jsonGrease.setAddAdditionalFields(true);
         jsonGrease.setShuffleFields(false);
         msg.setBody(new Body(getJsonBytes()));
+        msg.getHeader().setContentType(APPLICATION_JSON);
         assertTrue(jsonGrease.apply(msg).getBody().toString().contains("\"grease\":\"Field added by Membrane's Grease plugin\""));
     }
 
@@ -52,6 +55,7 @@ public class JsonGreaseTest {
         jsonGrease.setShuffleFields(true);
         jsonGrease.setAddAdditionalFields(false);
         msg.setBody(new Body(getJsonBytes()));
+        msg.getHeader().setContentType(APPLICATION_JSON);
         assertNotEquals(jsonString, jsonGrease.apply(msg).getBody().toString());
     }
 
@@ -60,8 +64,9 @@ public class JsonGreaseTest {
         jsonGrease.setAddAdditionalFields(true);
         jsonGrease.setShuffleFields(true);
         msg.setBody(new Body(getJsonBytes()));
+        msg.getHeader().setContentType(APPLICATION_JSON);
         Message applied = jsonGrease.apply(msg);
-        assertNotEquals(jsonString, applied.getBody().toString());
+        assertNotEquals(jsonString, applied.getBodyAsStringDecoded());
         assertTrue(applied.toString().contains("\"grease\":\"Field added by Membrane's Grease plugin\""));
     }
 

@@ -31,8 +31,7 @@ public class GreaseInterceptor extends AbstractInterceptor {
 
     private final List<Greaser> strategies = new ArrayList<>();
     private final Random random = new Random();
-
-    static final String X_GREASE = "X-Grease";
+    public static final String X_GREASE = "X-Grease";
 
     private double rate;
 
@@ -45,14 +44,10 @@ public class GreaseInterceptor extends AbstractInterceptor {
         if (!shallGrease()) {
             return msg;
         }
-        strategies.stream()
-                .filter(strategy -> strategy.matchesContentType(msg))
-                .findFirst()
-                .map(strategy -> {
-                    msg.getHeader().add(X_GREASE, strategy.getGreaseChanges()); // TODO move into strategy
-                    return strategy.apply(msg);
-                });
-        return msg;
+        return strategies.stream().reduce(msg,
+                (m, strategy) -> strategy.apply(m),
+                (ignored, ret) -> ret
+        );
     }
 
     @Override

@@ -19,10 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
-
-@MCElement(name = "json", topLevel = false) // TODO greaseJson?
+@MCElement(name = "greaseJson", topLevel = false)
 public class JsonGrease extends Greaser {
 
     private static final ObjectMapper om = new ObjectMapper();
@@ -31,12 +28,8 @@ public class JsonGrease extends Greaser {
     boolean shuffleFields = true;
     boolean addAdditionalFields = true;
 
-    public JsonGrease() {
-        contentTypes = List.of(APPLICATION_JSON, APPLICATION_JSON_UTF8);
-    }
-
     @Override
-    public Message apply(Message msg) {
+    protected Message process(Message msg) {
         try {
             ObjectNode json = (ObjectNode) om.readTree(msg.getBody().getContentAsStream());
             if (addAdditionalFields) {
@@ -46,6 +39,7 @@ public class JsonGrease extends Greaser {
                 processJson(json, JsonGrease::shuffleNodeFields);
             }
             msg.setBody(new Body(om.writeValueAsBytes(json)));
+
             return msg;
         } catch (IOException e) {
             log.info("Failed to read JSON body ", e);
@@ -54,7 +48,12 @@ public class JsonGrease extends Greaser {
     }
 
     @Override
-    public String getGreaseChanges() {
+    protected boolean matchContentType(Message msg) {
+        return MimeType.isJson(MediaType.parseMediaType(msg.getHeader().getContentType()));
+    }
+
+    @Override
+    protected String getGreaseChanges() {
         return (shuffleFields ? "JSON fields shuffled" : "") +
                 (shuffleFields && addAdditionalFields ? ", " : "") +
                 (addAdditionalFields ? "Added random JSON fields" : "");

@@ -16,18 +16,21 @@ package com.predic8.membrane.core.interceptor.grease.strategies;
 
 import com.predic8.membrane.core.http.Message;
 
-import java.util.List;
+import static com.predic8.membrane.core.interceptor.grease.GreaseInterceptor.X_GREASE;
 
 public abstract class Greaser {
 
-    protected List<String> contentTypes; // raus aus der Strategie
-
-    public abstract Message apply(Message body);
-
-    protected boolean matchesContentType(Message msg) {
-        // p8 MimeType isJson
-        return contentTypes.contains(msg.getHeader().getContentType());
+    public Message apply(Message msg) {
+        if(!matchContentType(msg)) return msg;
+        msg.getHeader().add(X_GREASE, getGreaseChanges());
+        return process(msg);
     }
 
-    public abstract String getGreaseChanges();
+    protected abstract boolean matchContentType(Message msg);
+
+    protected abstract String getGreaseChanges();
+
+    // Internal logic of the Greaser
+    protected abstract Message process(Message msg);
+
 }
