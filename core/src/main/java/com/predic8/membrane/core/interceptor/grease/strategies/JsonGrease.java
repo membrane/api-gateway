@@ -8,8 +8,10 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.MimeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.util.ArrayList;

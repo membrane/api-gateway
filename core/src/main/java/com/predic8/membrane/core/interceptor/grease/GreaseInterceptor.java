@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
 
-@MCElement(name = "grease")
+@MCElement(name = "greaser")
 public class GreaseInterceptor extends AbstractInterceptor {
 
     private final List<Greaser> strategies = new ArrayList<>();
