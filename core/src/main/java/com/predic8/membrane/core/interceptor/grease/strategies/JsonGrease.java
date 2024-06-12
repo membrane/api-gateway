@@ -6,8 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,19 +23,21 @@ public class JsonGrease implements GreaseStrategy {
     boolean shuffleFields = true;
     boolean addAdditionalFields = true;
 
+
     @Override
-    public Body apply(Body body) {
+    public AbstractBody apply(AbstractBody body) {
         try {
             ObjectNode json = (ObjectNode) objectMapper.readTree(body.getContentAsStream());
             if (addAdditionalFields) {
-                json.put("foo", "Field added by GreaseInterceptor");
-                json.put("bar", "Field added by GreaseInterceptor");
+                // TODO add field on each level of JSON
+                json.put("grease", "Field added by Membrane's Grease plugin");
             }
             if (shuffleFields) {
                 json = (ObjectNode) shuffleJson(json);
             }
             return new Body(objectMapper.writeValueAsBytes(json));
         } catch (IOException e) {
+            // Log
             throw new RuntimeException(e);
         }
     }

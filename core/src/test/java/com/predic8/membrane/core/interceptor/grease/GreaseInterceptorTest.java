@@ -4,6 +4,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.grease.strategies.JsonGrease;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 @SuppressWarnings("SameParameterValue")
-public class GreaseInterceptorTest {
+class GreaseInterceptorTest {
     private static GreaseInterceptor greaseInterceptor;
     private static final String json = "{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}";
 
@@ -30,21 +31,21 @@ public class GreaseInterceptorTest {
 
     @Test
     void detectJsonContentType() throws Exception {
-        shuffleExchanges result = getDoShuffle();
-        assertNotEquals(json, result.requestExc().getRequest().getBodyAsStringDecoded());
-        assertNotEquals(json, result.responseExc().getResponse().getBodyAsStringDecoded());
+        var result = getDoShuffle();
+        assertNotEquals(json, result.first().getRequest().getBodyAsStringDecoded());
+        assertNotEquals(json, result.second().getResponse().getBodyAsStringDecoded());
     }
 
     @Test
     void correctChangeHeader() throws Exception {
-        shuffleExchanges result = getDoShuffle();
-        assertNotEquals("X-GREASE: JSON fields shuffled, Added random JSON fields", result.requestExc().getRequest().getHeader().getFirstValue(X_GREASE));
-        assertNotEquals(json, result.responseExc().getResponse().getHeader().getFirstValue(X_GREASE));
+        var result = getDoShuffle();
+        assertNotEquals("X-GREASE: JSON fields shuffled, Added random JSON fields", result.first().getRequest().getHeader().getFirstValue(X_GREASE));
+        assertNotEquals(json, result.second().getResponse().getHeader().getFirstValue(X_GREASE));
     }
 
     @Test
-    public void testRate() throws Exception {
-        Exchange requestExc = new Request.Builder().contentType("application/json").body(json).buildExchange();
+    void testRate() throws Exception {
+        Exchange requestExc = new Request.Builder().contentType(APPLICATION_JSON).body(json).buildExchange();
         greaseInterceptor.handleRequest(requestExc);
         // Test with rate = 1
         assertNotEquals(json, requestExc.getRequest().getBodyAsStringDecoded());
@@ -60,7 +61,7 @@ public class GreaseInterceptorTest {
     }
 
     @Test
-    public void testSetRate() {
+    void testSetRate() {
         greaseInterceptor.setRate(0.5);
         assertEquals(0.5, greaseInterceptor.getRate());
         greaseInterceptor.setRate(1.5);
@@ -71,17 +72,14 @@ public class GreaseInterceptorTest {
         assertEquals(0.0001, greaseInterceptor.getRate());
     }
 
-    private static @NotNull shuffleExchanges getDoShuffle() throws Exception {
+    private static @NotNull Pair<Exchange,Exchange> getDoShuffle() throws Exception {
         Exchange requestExc = new Request.Builder().contentType(APPLICATION_JSON).body(json).buildExchange();
         Exchange responseExc = new Exchange(null) {{
             setResponse(Response.ok().contentType(APPLICATION_JSON).body(json).build());
         }};
         greaseInterceptor.handleRequest(requestExc);
         greaseInterceptor.handleResponse(responseExc);
-        return new shuffleExchanges(requestExc, responseExc);
-    }
-
-    private record shuffleExchanges(Exchange requestExc, Exchange responseExc) {
+        return new Pair<>(requestExc, responseExc);
     }
 
     private double calculateRate(GreaseInterceptor interceptor, String json) throws Exception {
