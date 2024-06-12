@@ -19,4 +19,5 @@ import com.predic8.membrane.core.http.Body;
 public interface GreaseStrategy {
     Body apply(Body body);
     String getApplicableContentType();
+    String getGreaseChanges();
 }

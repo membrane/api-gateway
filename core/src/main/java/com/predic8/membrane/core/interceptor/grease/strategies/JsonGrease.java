@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.MimeType;
@@ -20,14 +21,21 @@ public class JsonGrease implements GreaseStrategy {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    boolean shuffleFields = true;
+    boolean addAdditionalFields = true;
+
     @Override
     public Body apply(Body body) {
         try {
-            return new Body(
-                    objectMapper.writeValueAsBytes(
-                            shuffleJson(objectMapper.readTree(body.getContentAsStream()))
-                    )
-            );
+            ObjectNode json = (ObjectNode) objectMapper.readTree(body.getContentAsStream());
+            if (addAdditionalFields) {
+                json.put("foo", "Field added by GreaseInterceptor");
+                json.put("bar", "Field added by GreaseInterceptor");
+            }
+            if (shuffleFields) {
+                json = (ObjectNode) shuffleJson(json);
+            }
+            return new Body(objectMapper.writeValueAsBytes(json));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -36,6 +44,13 @@ public class JsonGrease implements GreaseStrategy {
     @Override
     public String getApplicableContentType() {
         return APPLICATION_JSON;
+    }
+
+    @Override
+    public String getGreaseChanges() {
+        return (shuffleFields ? "JSON fields shuffled" : "") +
+                (shuffleFields && addAdditionalFields ? ", " : "") +
+                (addAdditionalFields ? "Added random JSON fields" : "");
     }
 
     static JsonNode shuffleJson(JsonNode node) {
@@ -65,5 +80,23 @@ public class JsonGrease implements GreaseStrategy {
         ArrayNode shuffledArray = objectMapper.createArrayNode();
         arrayNode.forEach(element -> shuffledArray.add(shuffleJson(element)));
         return shuffledArray;
+    }
+
+    @MCAttribute
+    public void setAddAdditionalFields(boolean addAdditionalFields) {
+        this.addAdditionalFields = addAdditionalFields;
+    }
+
+    @MCAttribute
+    public void setShuffleFields(boolean shuffleFields) {
+        this.shuffleFields = shuffleFields;
+    }
+
+    public boolean isAddAdditionalFields() {
+        return addAdditionalFields;
+    }
+
+    public boolean isShuffleFields() {
+        return shuffleFields;
     }
 }

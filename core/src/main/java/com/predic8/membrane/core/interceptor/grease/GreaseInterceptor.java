@@ -19,6 +19,9 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.grease.strategies.GreaseStrategy;
@@ -39,10 +42,10 @@ import static java.util.EnumSet.of;
 public class GreaseInterceptor extends AbstractInterceptor {
 
     private final List<GreaseStrategy> strategies = new ArrayList<>();
+    private final Random random = new Random();
 
     private static final Logger LOG = LoggerFactory.getLogger(GreaseInterceptor.class);
-
-    private final Random random = new Random();
+    static final String X_GREASE = "X-Grease";
 
     private double rate;
 
@@ -51,25 +54,26 @@ public class GreaseInterceptor extends AbstractInterceptor {
         setFlow(of(REQUEST, RESPONSE));
     }
 
-    private Body handleInternal(Body body, String contentType) throws Exception {
+    private Message handleInternal(Message msg, String contentType) {
         if (random.nextDouble() >= rate) {
-            return body;
+            return msg;
         }
-        return strategies.stream()
+        msg.setBody(strategies.stream()
                 .filter(s -> s.getApplicableContentType().equals(contentType))
                 .findFirst()
-                .map(strategy -> strategy.apply(body))
-                .orElseGet(() -> {
-                    LOG.info("No strategy found for content type: {}", contentType);
-                    return body;
-                });
+                .map(strategy -> {
+                    msg.getHeader().add(X_GREASE, strategy.getGreaseChanges());
+                    return strategy.apply((Body) msg.getBody());
+                })
+                .orElseGet(() -> ((Body) msg.getBody())));
+        return msg;
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.getRequest().setBody(
+        exc.setRequest((Request)
                 handleInternal(
-                        (Body) exc.getRequest().getBody(), exc.getRequest().getHeader().getContentType()
+                       exc.getRequest(), exc.getRequest().getHeader().getContentType()
                 )
         );
         return CONTINUE;
@@ -77,9 +81,9 @@ public class GreaseInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        exc.getResponse().setBody(
+        exc.setResponse((Response)
                 handleInternal(
-                        (Body) exc.getResponse().getBody(), exc.getResponse().getHeader().getContentType()
+                        exc.getResponse(), exc.getResponse().getHeader().getContentType()
                 )
         );
         return CONTINUE;
