@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.grease;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -26,6 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -39,13 +42,27 @@ public class GreaseInterceptor extends AbstractInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(GreaseInterceptor.class);
 
+    private final Random random = new Random();
+
+    private double rate;
+
     public GreaseInterceptor() {
         name = "Grease";
         setFlow(of(REQUEST, RESPONSE));
     }
 
     private Body handleInternal(Body body, String contentType) throws Exception {
-        return strategies.stream().filter(s -> s.getApplicableContentType().equals(contentType)).findFirst().get().apply(body);
+        if (random.nextDouble() >= rate) {
+            return body;
+        }
+        return strategies.stream()
+                .filter(s -> s.getApplicableContentType().equals(contentType))
+                .findFirst()
+                .map(strategy -> strategy.apply(body))
+                .orElseGet(() -> {
+                    LOG.info("No strategy found for content type: {}", contentType);
+                    return body;
+                });
     }
 
     @Override
@@ -66,6 +83,15 @@ public class GreaseInterceptor extends AbstractInterceptor {
                 )
         );
         return CONTINUE;
+    }
+
+    @MCAttribute
+    public void setRate(double rate) {
+        this.rate = Math.max(0, Math.min(1, rate));
+    }
+
+    public double getRate() {
+        return rate;
     }
 
     @MCChildElement
