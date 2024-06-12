@@ -55,6 +55,27 @@ paths:
           headers:
             "X-HEADER-REF":
               $ref: "#/components/headers/HeaderRef"
+  /header-required-not-present:
+    get:
+      responses:
+        '200':
+          description: Ok
+          headers:
+            "X-BAZ":
+              schema:
+                type: string
+                maxLength: 3
+  /header-required-false:
+    get:
+      responses:
+        '200':
+          description: Ok
+          headers:
+            "X-BAZ":
+              required: false
+              schema:
+                type: string
+                maxLength: 3
 components:
   headers:
     HeaderRef:
