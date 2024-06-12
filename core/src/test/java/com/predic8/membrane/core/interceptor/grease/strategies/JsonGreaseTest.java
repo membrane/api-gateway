@@ -21,7 +21,7 @@ public class JsonGreaseTest {
         ObjectNode originalObject = (ObjectNode) objectMapper.readTree(jsonString);
         ObjectNode copyObject = originalObject.deepCopy();
         assertEquals(copyObject.toString(), originalObject.toString());
-        originalObject = JsonGrease.shuffleObject(originalObject);
+        JsonGrease.processJson(originalObject, JsonGrease::shuffleNodeFields);
         assertNotEquals(copyObject.toString(), originalObject.toString());
     }
 
