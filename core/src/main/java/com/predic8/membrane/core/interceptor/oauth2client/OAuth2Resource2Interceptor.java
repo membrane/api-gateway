@@ -134,10 +134,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
         if (isLogoutRequest(exc)) {
             String endSessionEndpoint = auth.getEndSessionEndpoint();
-            if (endSessionEndpoint != null) {
+            if (endSessionEndpoint != null && session.getOAuth2Answer(OAUTH2_ANSWER) != null) {
                 String redirectUri = logoutUrl;
                 redirectUri = replaceUrlPath(publicUrlManager.getPublicURL(exc), redirectUri + "/back");
                 String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(redirectUri, UTF_8);
+
                 OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
                 if (ap != null && ap.getIdToken() != null)
                     uri += "&id_token_hint=" + ap.getIdToken();
