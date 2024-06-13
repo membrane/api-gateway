@@ -71,8 +71,8 @@ public class OpenAPIValidator {
     }
 
     private String getUrl() {
-        if (rec.getSpec().hasRewrite() && rec.getSpec().getRewrite().getUrl() != null)
-            return rec.getSpec().getRewrite().getUrl();
+        if (rec.getSpec().hasRewrite() && rec.getSpec().getRewrite().getBasePath() != null)
+            return rec.getSpec().getRewrite().getBasePath();
 
         return rec.getApi().getServers().get(0).getUrl();
     }

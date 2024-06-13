@@ -36,7 +36,7 @@ public class OpenApiRewriteIntegrationTest {
         APIProxy proxy = new APIProxy();
         OpenAPISpec spec = getSpec();
         Rewrite rw = new Rewrite();
-        rw.setUrl("/bar");
+        rw.setBasePath("/bar");
         spec.setRewrite(rw);
         spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
         proxy.setSpecs(singletonList(spec));
