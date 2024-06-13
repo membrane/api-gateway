@@ -33,7 +33,7 @@ public class GreaseInterceptor extends AbstractInterceptor {
     private final Random random = new Random();
     public static final String X_GREASE = "X-Grease";
 
-    private double rate;
+    private double rate = 1;
 
     public GreaseInterceptor() {
         name = "Grease";
