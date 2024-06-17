@@ -21,12 +21,12 @@ import static com.predic8.membrane.core.interceptor.grease.GreaseInterceptor.X_G
 public abstract class Greaser {
 
     public Message apply(Message msg) {
-        if(!matchContentType(msg)) return msg;
+        if(!isApplicable(msg)) return msg;
         msg.getHeader().add(X_GREASE, getGreaseChanges());
         return process(msg);
     }
 
-    protected abstract boolean matchContentType(Message msg);
+    protected abstract boolean isApplicable(Message msg);
 
     protected abstract String getGreaseChanges();
 

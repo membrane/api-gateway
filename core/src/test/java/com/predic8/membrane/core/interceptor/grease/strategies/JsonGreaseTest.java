@@ -19,7 +19,7 @@ public class JsonGreaseTest {
 
     JsonGrease jsonGrease = new JsonGrease();
     String jsonString = """
-            {"name":"John","age":30,"city":"New York"}""";
+            {"name":"John","age":30,"city":"New York","country":{"name":"USA","population":31415}}""";
     Message msg = new Request();
 
     @Test
@@ -33,7 +33,7 @@ public class JsonGreaseTest {
 
     @Test
     void testNoGrease() {
-        jsonGrease.setAddAdditionalFields(false);
+        jsonGrease.setAdditionalProperties(false);
         jsonGrease.setShuffleFields(false);
         msg.setBody(new Body(getJsonBytes()));
         msg.getHeader().setContentType(APPLICATION_JSON);
@@ -42,7 +42,7 @@ public class JsonGreaseTest {
 
     @Test
     void testAdditionalFields() {
-        jsonGrease.setAddAdditionalFields(true);
+        jsonGrease.setAdditionalProperties(true);
         jsonGrease.setShuffleFields(false);
         msg.setBody(new Body(getJsonBytes()));
         msg.getHeader().setContentType(APPLICATION_JSON);
@@ -53,7 +53,7 @@ public class JsonGreaseTest {
     @Test
     void testShuffle() {
         jsonGrease.setShuffleFields(true);
-        jsonGrease.setAddAdditionalFields(false);
+        jsonGrease.setAdditionalProperties(false);
         msg.setBody(new Body(getJsonBytes()));
         msg.getHeader().setContentType(APPLICATION_JSON);
         assertNotEquals(jsonString, jsonGrease.apply(msg).getBody().toString());
@@ -61,13 +61,25 @@ public class JsonGreaseTest {
 
     @Test
     void testBoth() {
-        jsonGrease.setAddAdditionalFields(true);
+        jsonGrease.setAdditionalProperties(true);
         jsonGrease.setShuffleFields(true);
         msg.setBody(new Body(getJsonBytes()));
         msg.getHeader().setContentType(APPLICATION_JSON);
         Message applied = jsonGrease.apply(msg);
         assertNotEquals(jsonString, applied.getBodyAsStringDecoded());
         assertTrue(applied.toString().contains("\"grease\":\"Field added by Membrane's Grease plugin\""));
+    }
+
+    @Test
+    void testFieldsValuesAfterProcessing() throws Exception {
+        jsonGrease.setAdditionalProperties(true);
+        jsonGrease.setShuffleFields(true);
+        msg.setBody(new Body(getJsonBytes()));
+        msg.getHeader().setContentType(APPLICATION_JSON);
+        Message applied = jsonGrease.apply(msg);
+        ObjectNode json = (ObjectNode) objectMapper.readTree(applied.getBodyAsStringDecoded());
+        assertEquals("New York", json.get("city").asText());
+        assertEquals(31415, json.get("country").get("population").asInt());
     }
 
     private byte @NotNull [] getJsonBytes() {

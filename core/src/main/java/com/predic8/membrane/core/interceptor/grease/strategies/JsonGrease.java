@@ -26,13 +26,13 @@ public class JsonGrease extends Greaser {
     private static final Logger log = LoggerFactory.getLogger(JsonGrease.class);
 
     boolean shuffleFields = true;
-    boolean addAdditionalFields = true;
+    boolean additionalProperties = true;
 
     @Override
     protected Message process(Message msg) {
         try {
             ObjectNode json = (ObjectNode) om.readTree(msg.getBody().getContentAsStream());
-            if (addAdditionalFields) {
+            if (additionalProperties) {
                 processJson(json, JsonGrease::injectField);
             }
             if (shuffleFields) {
@@ -48,15 +48,15 @@ public class JsonGrease extends Greaser {
     }
 
     @Override
-    protected boolean matchContentType(Message msg) {
+    protected boolean isApplicable(Message msg) {
         return MimeType.isJson(MediaType.parseMediaType(msg.getHeader().getContentType()));
     }
 
     @Override
     protected String getGreaseChanges() {
         return (shuffleFields ? "JSON fields shuffled" : "") +
-                (shuffleFields && addAdditionalFields ? ", " : "") +
-                (addAdditionalFields ? "Added random JSON fields" : "");
+                (shuffleFields && additionalProperties ? ", " : "") +
+                (additionalProperties ? "Added random JSON fields" : "");
     }
 
     static private void injectField(ObjectNode node) {
@@ -96,8 +96,8 @@ public class JsonGrease extends Greaser {
     }
 
     @MCAttribute
-    public void setAddAdditionalFields(boolean addAdditionalFields) {
-        this.addAdditionalFields = addAdditionalFields;
+    public void setAdditionalProperties(boolean additionalProperties) {
+        this.additionalProperties = additionalProperties;
     }
 
     @MCAttribute
@@ -106,8 +106,8 @@ public class JsonGrease extends Greaser {
     }
 
     @SuppressWarnings("unused")
-    public boolean isAddAdditionalFields() {
-        return addAdditionalFields;
+    public boolean isAdditionalProperties() {
+        return additionalProperties;
     }
 
     @SuppressWarnings("unused")

@@ -27,7 +27,8 @@ class GreaseInterceptorTest {
     void setup() {
         greaseInterceptor = new GreaseInterceptor();
         greaseInterceptor.setRate(1);
-        greaseInterceptor.setStrategies(List.of(new JsonGrease() {{setAddAdditionalFields(false);}}));
+        greaseInterceptor.setStrategies(List.of(new JsonGrease() {{
+            setAdditionalProperties(false);}}));
     }
 
     @Test
