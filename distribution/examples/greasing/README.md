@@ -21,16 +21,16 @@ Modify JSON documents by injecting random fields or shuffling field order withou
    </greaser>
 
    <template contentType="application/json">
-      {
-      "name": "John Doe",
-      "age": 30,
-      "email": "johndoe@example.com",
-      "address": {
-      "street": "123 Main St",
-      "city": "Anytown",
-      "state": "CA",
-      "zip": "12345"
-      }
+     { 
+       "name": "John Doe",
+       "age": 30,
+       "email": "johndoe@example.com",
+       "address": {
+         "street": "123 Main St",
+         "city": "Anytown",
+         "state": "CA",
+         "zip": "12345"
+        }
       }
    </template>
 </response>

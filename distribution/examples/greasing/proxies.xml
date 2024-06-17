@@ -9,7 +9,7 @@
         <api port="2000">
             <response>
                 <greaser>
-                    <greaseJson shuffleFields="true" addAdditionalFields="true" />
+                    <greaseJson shuffleFields="false" additionalProperties="false" />
                 </greaser>
 
                 <template contentType="application/json">
