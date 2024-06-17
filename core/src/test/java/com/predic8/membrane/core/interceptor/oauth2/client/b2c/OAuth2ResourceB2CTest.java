@@ -184,6 +184,23 @@ public abstract class OAuth2ResourceB2CTest {
     }
 
     @Test
+    public void staleSessionLogout() throws Exception {
+        var ili = browser.apply(new Request.Builder().get(tc.getClientAddress() + "/is-logged-in").buildExchange());
+
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+
+        // call to /logout uses cookieHandlingHttpClient: *NOT* following the redirect (which would auto-login again)
+        browser.applyWithoutRedirect(new Request.Builder()
+                .get(tc.getClientAddress() + "/logout").buildExchange());
+
+        ili = browser.apply(new Request.Builder().get(tc.getClientAddress() + "/is-logged-in").buildExchange());
+
+        assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
+
+        assertEquals(0, browser.getCookieCount());
+    }
+
+    @Test
     public void requestAuth() throws Exception {
         Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/api/init").buildExchange();
         exc = browser.apply(exc);

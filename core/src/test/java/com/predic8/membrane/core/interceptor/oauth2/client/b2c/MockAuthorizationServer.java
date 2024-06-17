@@ -108,6 +108,7 @@ public class MockAuthorizationServer {
 
             @Override
             public synchronized Outcome handleRequest(Exchange exc) throws Exception {
+                Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                 if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
                 } else if (exc.getRequestURI().equalsIgnoreCase(baseUri + "/discovery/v2.0/keys")) {
@@ -118,7 +119,6 @@ public class MockAuthorizationServer {
                         exc.setResponse(Response.internalServerError().body("signin aborted").build());
                         return Outcome.RETURN;
                     }
-                    Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     if (returnOAuth2ErrorFromSignIn.get()) {
                         exc.setResponse(Response.redirect(tc.getClientAddress() + "/oauth2callback?error=DEMO-123&error_description=This+is+a+demo+error.&state=" + params.get("state"), false).build());
                     } else {
@@ -127,6 +127,8 @@ public class MockAuthorizationServer {
                     }
                 } else if (exc.getRequestURI().contains("/token")) {
                     handleTokenRequest(flowId, exc);
+                } else if (exc.getRequestURI().contains("/logout")) {
+                    exc.setResponse(Response.redirect( params.get("post_logout_redirect_uri"), false).build());
                 }
 
                 if (exc.getResponse() == null)
@@ -215,7 +217,7 @@ public class MockAuthorizationServer {
         wkf.setIssuer(issuer);
         wkf.setAuthorizationEndpoint(baseServerAddr + oaPrefix + "/authorize");
         wkf.setTokenEndpoint(baseServerAddr + oaPrefix + "/token");
-        //wkf.setEndSessionEndpoint(baseServerAddr + oaPrefix + "/logout");
+        wkf.setEndSessionEndpoint(baseServerAddr + oaPrefix + "/logout");
         wkf.setJwksUri(baseServerAddr + "/" + flowId + "/discovery/v2.0/keys");
 
         wkf.setSupportedResponseTypes(ImmutableSet.of("code", "code id_token", "code token", "code id_token token", "id_token", "id_token token", "token", "token id_token"));
