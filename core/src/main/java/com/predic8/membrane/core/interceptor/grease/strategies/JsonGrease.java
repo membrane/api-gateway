@@ -38,7 +38,7 @@ public class JsonGrease extends Greaser {
             if (shuffleFields) {
                 processJson(json, JsonGrease::shuffleNodeFields);
             }
-            msg.setBody(new Body(om.writeValueAsBytes(json)));
+            msg.setBodyContent(om.writeValueAsBytes(json));
 
             return msg;
         } catch (IOException e) {

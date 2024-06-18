@@ -3,14 +3,26 @@
 Modify JSON documents by injecting random fields or shuffling field order without damaging the integrity of existing data.
 
 ## Running the Sample
-***Note:*** *The requests are also available in the requests.http file.*
+***Note:*** *The request is also available in the requests.http file.*
 
 1. **Navigate** to the `examples/greasing` directory.
 2. **Start** the API Gateway by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.bat` (Windows).
-3. **Access the greased API**:
-      ```
-      curl http://localhost:2000
-      ```
+3. **Access** the greased API:
+   ```
+   curl -v http://localhost:2000 \
+   -H "Content-Type: application/json" \
+   -d '{
+      "name": "John Doe",
+      "age": 30,
+      "address": {
+         "street": "123 Main St",
+         "city": "Anytown"
+      }
+   }'
+   ```
+4. **Observe** how the JSON from within the `proxies.xml` has been altered.
+   A header `X-Grease` will be visible as well now, containing a changelog of what has been modified.
+5. **Try it** yourself, use port `2001` and post any JSON document. 
 
 ## Understanding the Configuration
 
