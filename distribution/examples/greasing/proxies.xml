@@ -9,7 +9,7 @@
         <api port="2000">
             <response>
                 <greaser>
-                    <greaseJson shuffleFields="false" additionalProperties="false" />
+                    <greaseJson shuffleFields="true" additionalProperties="true" />
                 </greaser>
 
                 <template contentType="application/json">
@@ -29,6 +29,15 @@
             <return />
         </api>
 
+        <!-- Use this endpoint to try out your own JSON documents -->
+        <api port="2001">
+            <response>
+                <greaser>
+                    <greaseJson shuffleFields="true" additionalProperties="true" />
+                </greaser>
+            </response>
+            <return />
+        </api>
     </router>
 
 </spring:beans>
