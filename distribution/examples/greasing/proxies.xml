@@ -8,30 +8,7 @@
 
         <api port="2000">
             <response>
-                <greaser>
-                    <greaseJson shuffleFields="true" additionalProperties="true" />
-                </greaser>
-
-                <template contentType="application/json">
-                    {
-                        "name": "John Doe",
-                        "age": 30,
-                        "email": "johndoe@example.com",
-                        "address": {
-                            "street": "123 Main St",
-                            "city": "Anytown",
-                            "state": "CA",
-                            "zip": "12345"
-                        }
-                    }
-                </template>
-            </response>
-            <return />
-        </api>
-
-        <!-- Use this endpoint to try out your own JSON documents -->
-        <api port="2001">
-            <response>
+                <beautifier />
                 <greaser>
                     <greaseJson shuffleFields="true" additionalProperties="true" />
                 </greaser>
