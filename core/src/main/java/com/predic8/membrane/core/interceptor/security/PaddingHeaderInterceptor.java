@@ -36,7 +36,7 @@ import static java.util.EnumSet.of;
  */
 @MCElement(name = "paddingHeader")
 public class PaddingHeaderInterceptor extends AbstractInterceptor {
-    static final String LOOKUP_TABLE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _:;.,\\/\"'?!(){}[]@<>=-+*#$&`|~^%";
+    static final String LOOKUP_TABLE = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 _:;.,\\/'?!(){}[]@<>=-+*#$&`|~^%";
     static final String X_PADDING = "X-Padding";
     private int roundUp = 20;
     private int constant = 5;
