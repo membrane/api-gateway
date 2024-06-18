@@ -9,8 +9,22 @@
         <api port="2000">
             <response>
                 <greaser>
-                    <greaseJson shuffleFields="true" addAdditionalFields="true" />
+                    <greaseJson shuffleFields="false" additionalProperties="false" />
                 </greaser>
+
+                <template contentType="application/json">
+                    {
+                        "name": "John Doe",
+                        "age": 30,
+                        "email": "johndoe@example.com",
+                        "address": {
+                            "street": "123 Main St",
+                            "city": "Anytown",
+                            "state": "CA",
+                            "zip": "12345"
+                        }
+                    }
+                </template>
             </response>
             <return />
         </api>

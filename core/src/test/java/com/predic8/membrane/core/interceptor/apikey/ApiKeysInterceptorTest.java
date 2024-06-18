@@ -79,7 +79,6 @@ public class ApiKeysInterceptorTest {
         Exchange exc = new Request.Builder().header(keyHeader, apiKey).buildExchange();
         assertEquals(CONTINUE, akiWithProp.handleRequest(exc));
         assertEquals(Set.of("accounting", "management"), getScopes(exc));
-        
     }
 
     @SuppressWarnings("unchecked")
