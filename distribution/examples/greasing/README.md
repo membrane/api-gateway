@@ -28,10 +28,11 @@ Modify JSON documents by injecting random fields or shuffling field order withou
 
 ```xml
 <response>
+   <beautifier />
    <greaser>
       <greaseJson shuffleFields="true" additionalProperties="true" />
    </greaser>
 </response>
 <return />
 ```
-Greasing can be enabled by placing the `<greaser>` inside the configuration with a greasing module inside. In this example we utilize the `<greaseJson>` module, this will allow us to shuffle the JSON document's fields and inject additional properties.
+Greasing can be enabled by placing the `<greaser>` inside the configuration with a greasing module inside. In this example we utilize the `<greaseJson>` module, this will allow us to shuffle the JSON document's fields and inject additional properties. To make the outputted JSON easier to read, a `<beautifier />` is added after the greaser.
