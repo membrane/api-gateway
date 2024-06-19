@@ -16,9 +16,13 @@ package com.predic8.membrane.core.interceptor.opentelemetry.exporter;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporterBuilder;
+import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
+import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporterBuilder;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 
-import static io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter.builder;
+import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter.OtlpType.GRPC;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /*
@@ -28,14 +32,24 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class OtlpExporter implements OtelExporter {
     private String host = "localhost";
     private int port = 4317;
+    private OtlpType type = GRPC;
 
     public String getEndpointUrl() {
         return "http://" + getHost() + ":" + getPort();
     }
 
-    public OtlpGrpcSpanExporter get() {
-        return builder().setEndpoint(getEndpointUrl()).setTimeout(30, SECONDS).build();
+    public SpanExporter get() {
+        return type == GRPC ?
+                OtlpGrpcSpanExporter.builder()
+                        .setEndpoint(getEndpointUrl())
+                        .setTimeout(30, SECONDS).build()
+                : OtlpHttpSpanExporter.builder()
+                        .setEndpoint(getEndpointUrl())
+                        .setTimeout(30, SECONDS).build();
     }
+
+    @MCAttribute
+    public void setType(String type) {this.type = OtlpType.fromString(type);}
 
     @MCAttribute
     public void setHost(String host) {
@@ -55,5 +69,24 @@ public class OtlpExporter implements OtelExporter {
     @Override
     public int getPort() {
         return this.port;
+    }
+
+    public enum OtlpType {
+        HTTP,
+        GRPC;
+
+        @Override
+        public String toString() {
+            return name();
+        }
+
+        public static OtlpType fromString(String str) {
+            for (OtlpType type : OtlpType.values()) {
+                if (type.name().equalsIgnoreCase(str)) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Illegal type for OtlpExporter: " + str);
+        }
     }
 }
