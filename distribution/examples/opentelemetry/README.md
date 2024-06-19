@@ -40,7 +40,7 @@ Take a look at the `proxies.xml`.
       <dispatching />
       <reverseProxying />
       <openTelemetry sampleRate="1.0"> <!--globally registers OpenTelemetry for every api-->
-         <otlpExporter host="localhost" port="4317"/>
+         <otlpExporter host="localhost" port="4317" transport="grpc"/>
       </openTelemetry>
       <userFeature />
       <httpClient />
@@ -83,8 +83,14 @@ The `openTelemetry` plugin can be utilized in two ways: either in a global conte
 ```xml
 <api port="2000">
    <openTelemetry sampleRate="1.0">
-      <otlpExporter host="localhost" port="4317"/>
+      <otlpExporter host="localhost" port="4317" transport="grpc"/>
    </openTelemetry>
    <target host="localhost" port="3000"/>
 </api>
 ```
+
+**Note:**
+
+The OTLP Exporter is configured by default to use gRPC. You can omit the `transport` field in the configuration when using gRPC.
+
+To use HTTP, set the `transport` field to `http` and set the `port` to `4318`.
