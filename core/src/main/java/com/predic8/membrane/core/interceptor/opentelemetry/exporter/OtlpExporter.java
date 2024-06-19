@@ -30,20 +30,27 @@ import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpE
 @MCElement(name = "otlpExporter", topLevel = false)
 public class OtlpExporter implements OtelExporter {
 
-    private static final int DEFAULT_PORT = 4317;
-    private static final String DEFAULT_HOST = "localhost";
     private static final int TIMEOUT_SECONDS = 30;
-
-    private String host = DEFAULT_HOST;
-    private int port = DEFAULT_PORT;
+    private String host = "localhost";
+    private Integer port;
     private OtlpType transport = GRPC;
 
     public String getEndpointUrl() {
-        String endpoint = String.format("http://%s:%d", host, port);
+        String endpoint = String.format("http://%s:%d", host, getProtocolPort(port, transport));
         if (transport == OtlpType.HTTP) {
             endpoint += "/v1/traces";
         }
         return endpoint;
+    }
+
+    private int getProtocolPort(Integer port, OtlpType trans) {
+        if (port == null) {
+            return switch (trans) {
+                case HTTP -> 4318;
+                case GRPC -> 4317;
+            };
+        }
+        return port;
     }
 
     public SpanExporter get() {
