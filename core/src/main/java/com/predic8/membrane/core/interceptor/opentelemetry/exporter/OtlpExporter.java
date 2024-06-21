@@ -16,25 +16,64 @@ package com.predic8.membrane.core.interceptor.opentelemetry.exporter;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 
-import static io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter.builder;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.TimeUnit;
+
+import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter.OtlpType.GRPC;
 
 /*
  * Otlp Implementation for the OpenTelemetry protocol
  */
 @MCElement(name = "otlpExporter", topLevel = false)
 public class OtlpExporter implements OtelExporter {
+
+    private static final int TIMEOUT_SECONDS = 30;
     private String host = "localhost";
-    private int port = 4317;
+    private Integer port;
+    private OtlpType transport = GRPC;
 
     public String getEndpointUrl() {
-        return "http://" + getHost() + ":" + getPort();
+        String endpoint = String.format("http://%s:%d", host, getProtocolPort(port, transport));
+        if (transport == OtlpType.HTTP) {
+            endpoint += "/v1/traces";
+        }
+        return endpoint;
     }
 
-    public OtlpGrpcSpanExporter get() {
-        return builder().setEndpoint(getEndpointUrl()).setTimeout(30, SECONDS).build();
+    private int getProtocolPort(Integer port, OtlpType trans) {
+        if (port == null) {
+            return switch (trans) {
+                case HTTP -> 4318;
+                case GRPC -> 4317;
+            };
+        }
+        return port;
+    }
+
+    public SpanExporter get() {
+        String endpointUrl = getEndpointUrl();
+        return createSpanExporter(endpointUrl);
+    }
+
+    private SpanExporter createSpanExporter(String endpointUrl) {
+        return switch (transport) {
+            case GRPC -> OtlpGrpcSpanExporter.builder()
+                    .setEndpoint(endpointUrl)
+                    .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .build();
+            case HTTP -> OtlpHttpSpanExporter.builder()
+                    .setEndpoint(endpointUrl)
+                    .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .build();
+        };
+    }
+
+    @MCAttribute
+    public void setTransport(String transport) {
+        this.transport = OtlpType.fromString(transport);
     }
 
     @MCAttribute
@@ -49,11 +88,30 @@ public class OtlpExporter implements OtelExporter {
 
     @Override
     public String getHost() {
-        return this.host;
+        return host;
     }
 
     @Override
     public int getPort() {
-        return this.port;
+        return port;
+    }
+
+    public enum OtlpType {
+        HTTP,
+        GRPC;
+
+        @Override
+        public String toString() {
+            return name();
+        }
+
+        public static OtlpType fromString(String str) {
+            for (OtlpType type : OtlpType.values()) {
+                if (type.name().equalsIgnoreCase(str)) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Illegal type for OtlpExporter: " + str);
+        }
     }
 }

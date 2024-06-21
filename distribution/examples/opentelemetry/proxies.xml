@@ -12,7 +12,7 @@
             <dispatching />
             <reverseProxying />
             <openTelemetry sampleRate="1.0"> <!--globally registers OpenTelemetry for every api-->
-                <otlpExporter host="localhost" port="4317"/>
+                <otlpExporter host="localhost" port="4317" transport="grpc"/>
             </openTelemetry>
             <userFeature />
             <httpClient />
