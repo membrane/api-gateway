@@ -4,30 +4,30 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 
-@MCElement(name = "setHeader")
-public class SetHeaderInterceptor extends AbstractSetterInterceptor {
+@MCElement(name = "setProperty")
+public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
     protected boolean shouldSetValue(Exchange exchange, Message msg) {
         if (ifAbsent) {
-            return !msg.getHeader().contains(name);
+            return exchange.getProperty(name) == null;
         } else {
-            return msg.getHeader().contains(name);
+            return exchange.getProperty(name) != null;
         }
     }
 
     @Override
-    protected void setValue(Exchange ignored, Message msg, String eval) {
-        msg.getHeader().setValue(name, eval);
+    protected void setValue(Exchange exchange, Message ignored, String eval) {
+        exchange.setProperty(name, eval);
     }
 
     @Override
     public String getDisplayName() {
-        return "setHeader";
+        return "setProperty";
     }
 
     @Override
     public String getShortDescription() {
-        return String.format("Sets the value of the HTTP header '%s' to %s.", name, value);
+        return String.format("Sets the value of the exchange property '%s' to %s.", name, value);
     }
 }

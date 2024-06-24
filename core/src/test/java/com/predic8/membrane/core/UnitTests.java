@@ -46,6 +46,7 @@ import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorIntercepto
 import com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptorTest;
 import com.predic8.membrane.core.interceptor.log.AccessLogInterceptorTest;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptorTest;
+import com.predic8.membrane.core.interceptor.misc.SetHeaderInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
@@ -162,12 +163,10 @@ import org.junit.platform.suite.api.Suite;
 		ApiKeyUtils.class,
 		ReflectiveMethodHandlerTest.class,
 		BuiltInFunctionsTest.class,
-
 		AccessLogInterceptorTest.class,
 		MediaTypeUtilTest.class,
-		ProblemDetailsTest.class
-
-
+		ProblemDetailsTest.class,
+		SetHeaderInterceptor.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",
