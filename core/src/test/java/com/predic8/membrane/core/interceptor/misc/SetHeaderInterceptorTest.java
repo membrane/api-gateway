@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SetHeaderInterceptorTest {
 
     Exchange exc;
-    SetHeaderInterceptor interceptor = new SetHeaderInterceptor();
+    AbstractSetterInterceptor interceptor = new SetHeaderInterceptor();
     StandardEvaluationContext evalCtx;
 
     @BeforeEach
@@ -102,13 +102,13 @@ class SetHeaderInterceptorTest {
 
     @Test
     void computeSingeExpression() {
-        assertEquals("24", interceptor.evaluateSingeExpression(evalCtx,"1*2*3*4"));
+        assertEquals("24", interceptor.evaluateSingleExpression(evalCtx,"1*2*3*4"));
     }
 
     @Test
     void computeSingeExpressionWithCtx() {
         interceptor.setValue("foo ${bar} baz ${foo} coo ${2*3}/${'a'}");
-        assertEquals("bar", interceptor.evaluateSingeExpression(evalCtx,"bar"));
+        assertEquals("bar", interceptor.evaluateSingleExpression(evalCtx,"bar"));
     }
 
     @Test
@@ -184,7 +184,7 @@ class SetHeaderInterceptorTest {
         assertEquals("42", exc.getRequest().getHeader().getFirstValue("x-FoO"));
     }
 
-    class EvalContextValues {
+    static class EvalContextValues {
         public String getFoo() {
             return "foo";
         }
