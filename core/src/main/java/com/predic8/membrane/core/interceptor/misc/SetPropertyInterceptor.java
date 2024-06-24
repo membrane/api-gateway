@@ -8,7 +8,7 @@ import com.predic8.membrane.core.http.Message;
 public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
-    protected boolean shouldSetValue(Exchange exchange, Message msg) {
+    protected boolean shouldSetValue(Exchange exchange, Flow ignored) {
         if (ifAbsent) {
             return exchange.getProperty(name) == null;
         }
@@ -16,7 +16,7 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
     }
 
     @Override
-    protected void setValue(Exchange exchange, Message ignored, String eval) {
+    protected void setValue(Exchange exchange, Flow ignored, String eval) {
         exchange.setProperty(name, eval);
     }
 

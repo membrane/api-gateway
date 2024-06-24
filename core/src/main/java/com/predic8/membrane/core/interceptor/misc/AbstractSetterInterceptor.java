@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.misc;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -29,6 +28,8 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
@@ -41,16 +42,16 @@ public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
     protected String value;
     protected boolean ifAbsent;
 
-    private Outcome handleMessage(Exchange exchange, Message msg) {
-        if (shouldSetValue(exchange, msg)) {
-            setValue(exchange, msg, evaluateExpression(new ExchangeEvaluationContext(exchange, msg)));
+    private Outcome handleMessage(Exchange exchange, Message msg, Flow flow) {
+        if (shouldSetValue(exchange, flow)) {
+            setValue(exchange, flow, evaluateExpression(new ExchangeEvaluationContext(exchange, msg)));
         }
 
         return CONTINUE;
     }
 
-    protected abstract boolean shouldSetValue(Exchange exchange, Message msg);
-    protected abstract void setValue(Exchange exchange, Message msg, String evaluatedValue);
+    protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);
+    protected abstract void setValue(Exchange exchange, Flow flow, String evaluatedValue);
 
     protected String evaluateExpression(StandardEvaluationContext evalCtx) {
         return expressionPattern.matcher(value).replaceAll(m -> evaluateSingleExpression(evalCtx, m.group(1)));
@@ -67,12 +68,12 @@ public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return handleMessage(exc, exc.getRequest());
+        return handleMessage(exc, exc.getRequest(), REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return handleMessage(exc, exc.getResponse());
+        return handleMessage(exc, exc.getResponse(), RESPONSE);
     }
 
     @MCAttribute

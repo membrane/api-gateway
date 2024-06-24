@@ -8,16 +8,20 @@ import com.predic8.membrane.core.http.Message;
 public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
     @Override
-    protected boolean shouldSetValue(Exchange exchange, Message msg) {
+    protected boolean shouldSetValue(Exchange exc, Flow flow) {
         if (ifAbsent) {
-            return !msg.getHeader().contains(name);
+            return !msgFromExchange(exc).getHeader().contains(name);
         }
         return true;
     }
 
     @Override
-    protected void setValue(Exchange ignored, Message msg, String eval) {
-        msg.getHeader().setValue(name, eval);
+    protected void setValue(Exchange exc, Flow flow, String eval) {
+        msgFromExchange(exc).getHeader().setValue(name, eval);
+    }
+
+    private Message msgFromExchange(Exchange exc) {
+        return exc.getRequest() != null ? exc.getRequest() : exc.getResponse();
     }
 
     @Override
