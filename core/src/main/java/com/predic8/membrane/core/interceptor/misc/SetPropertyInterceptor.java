@@ -11,9 +11,8 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
     protected boolean shouldSetValue(Exchange exchange, Message msg) {
         if (ifAbsent) {
             return exchange.getProperty(name) == null;
-        } else {
-            return exchange.getProperty(name) != null;
         }
+        return true;
     }
 
     @Override

@@ -11,9 +11,8 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
     protected boolean shouldSetValue(Exchange exchange, Message msg) {
         if (ifAbsent) {
             return !msg.getHeader().contains(name);
-        } else {
-            return msg.getHeader().contains(name);
         }
+        return true;
     }
 
     @Override

@@ -39,7 +39,7 @@ public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
 
     protected String name;
     protected String value;
-    protected boolean ifAbsent = true;
+    protected boolean ifAbsent;
 
     private Outcome handleMessage(Exchange exchange, Message msg) {
         if (shouldSetValue(exchange, msg)) {
