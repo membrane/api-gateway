@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PaddingHeaderInterceptorTest {
 
-    public static final String HTTP_HEADER_SPECIAL_CHARS = " _:;.,\\/\"'?!(){}[]@<>=-+*#$&`|~^%";
+    public static final String HTTP_HEADER_SPECIAL_CHARS = " _:;.,\\/'?!(){}[]@<>=-+*#$&`|~^%";
     private PaddingHeaderInterceptor interceptor;
 
     @BeforeEach
@@ -33,7 +33,7 @@ public class PaddingHeaderInterceptorTest {
 
     @Test
     void testLookupTableLength() {
-        assertEquals(95, LOOKUP_TABLE.length());
+        assertEquals(94, LOOKUP_TABLE.length());
     }
 
     @Test
