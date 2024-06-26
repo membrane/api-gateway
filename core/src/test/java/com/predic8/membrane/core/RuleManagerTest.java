@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012, 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,28 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
+import com.predic8.membrane.core.rules.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import java.net.UnknownHostException;
 
+import static com.predic8.membrane.util.TestUtil.assembleExchange;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RuleManagerTest {
 
 	RuleManager manager;
-
 	Rule proxy3013;
-
 	Rule forwardBlz;
-
 	Rule forwardBlzPOST;
 
 	@BeforeEach
@@ -56,41 +48,41 @@ public class RuleManagerTest {
 	}
 
 	@Test
-	public void testGetRules() throws Exception {
+	public void testGetRules() {
 		assertFalse(manager.getRules().isEmpty());
 		assertEquals(3, manager.getRules().size());
 	}
 
 	@Test
-	public void testExists() throws Exception {
+	public void testExists() {
 		assertTrue(manager.exists(proxy3013.getKey()));
 	}
 
 	@Test
-	public void testGetMatchingRuleForwardBlz() throws Exception {
-		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, null));
+	public void testGetMatchingRuleForwardBlz() throws UnknownHostException {
+		assertEquals(forwardBlz, manager.getMatchingRule(assembleExchange("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, "127.0.0.1")));
 	}
 
 	@Test
-	public void testGetMatchingRuleForwardBlzPOST() throws Exception {
-		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, null));
+	public void testGetMatchingRuleForwardBlzPOST() throws UnknownHostException {
+		assertEquals(forwardBlz, manager.getMatchingRule(assembleExchange("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, "127.0.0.1")));
 	}
 
 	@Test
-	public void testRemoveRule() throws Exception {
+	public void testRemoveRule() {
 		manager.removeRule(proxy3013);
 		assertEquals(2, manager.getRules().size());
 		assertFalse(manager.getRules().contains(proxy3013));
 	}
 
 	@Test
-	public void testRemoveAllRules() throws Exception {
+	public void testRemoveAllRules() {
 		manager.removeAllRules();
 		assertTrue(manager.getRules().isEmpty());
 	}
 
 	@Test
-	public void testIsAnyRuleWithPort() throws Exception {
+	public void testIsAnyRuleWithPort() {
 		assertFalse(manager.isAnyRuleWithPort(1234));
 		assertTrue(manager.isAnyRuleWithPort(3013));
 		assertTrue(manager.isAnyRuleWithPort(3014));
@@ -98,15 +90,14 @@ public class RuleManagerTest {
 	}
 
 	@Test
-	public void testRuleUp() throws Exception {
+	public void testRuleUp() {
 		manager.ruleUp(forwardBlz);
 		assertEquals(forwardBlz, manager.getRules().get(0));
 	}
 
 	@Test
-	public void testRuleDown() throws Exception {
+	public void testRuleDown() {
 		manager.ruleDown(forwardBlz);
 		assertEquals(forwardBlz, manager.getRules().get(2));
 	}
-
 }

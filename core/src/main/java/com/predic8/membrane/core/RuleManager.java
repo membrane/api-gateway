@@ -24,7 +24,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.InternalProxy;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,7 +222,17 @@ public class RuleManager {
 		getExchangeStore().refreshExchangeStoreListeners();
 	}
 
-	public Rule getMatchingRule(String hostHeader, String method, String uri, String version, int port, String localIP) {
+	public Rule getMatchingRule(Exchange exc) {
+		Request request = exc.getRequest();
+		AbstractHttpHandler handler = exc.getHandler();
+
+		String hostHeader = request.getHeader().getHost();
+		String method = request.getMethod();
+		String uri = request.getUri();
+		String version = request.getVersion();
+		int port = handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
+		String localIP = handler.getLocalAddress().getHostAddress();
+
 		for (Rule rule : rules) {
 			RuleKey key = rule.getKey();
 
@@ -239,9 +252,11 @@ public class RuleManager {
 				continue;
 			if (key.isUsePathPattern() && !key.matchesPath(uri))
 				continue;
-			if (!key.complexMatch(hostHeader, method, uri, version, port, localIP))
+			if (!key.complexMatch(exc))
 				continue;
 
+			if (log.isDebugEnabled())
+				log.debug("Matching Rule found for RuleKey " + hostHeader + " " + method + " " + uri + " " + port + " " + localIP);
 			return rule;
 		}
 		return null;

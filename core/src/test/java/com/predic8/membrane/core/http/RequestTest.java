@@ -22,7 +22,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
-import static com.predic8.membrane.util.TestUTtil2.*;
+import static com.predic8.membrane.util.TestUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 

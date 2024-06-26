@@ -15,6 +15,7 @@ package com.predic8.membrane.core.rules;
 
 import java.util.regex.Pattern;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -136,8 +137,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 		return !"STOMP".equals(version);
 	}
 
-	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+	public boolean complexMatch(Exchange exc) {
 		return true;
 	}
-
 }

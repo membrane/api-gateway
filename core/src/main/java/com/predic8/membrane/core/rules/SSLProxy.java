@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
@@ -326,7 +327,7 @@ public class SSLProxy implements Rule {
         }
 
         @Override
-        public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+        public boolean complexMatch(Exchange exc) {
             return false;
         }
 

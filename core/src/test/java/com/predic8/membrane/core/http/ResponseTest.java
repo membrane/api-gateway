@@ -25,7 +25,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.util.TestUTtil2.*;
+import static com.predic8.membrane.util.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.*;
 

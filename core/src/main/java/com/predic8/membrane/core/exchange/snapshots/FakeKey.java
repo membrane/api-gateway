@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.exchange.snapshots;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.RuleKey;
 
 public class FakeKey implements RuleKey {
@@ -100,7 +101,7 @@ public class FakeKey implements RuleKey {
     }
 
     @Override
-    public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+    public boolean complexMatch(Exchange exc) {
         return false;
     }
 }
