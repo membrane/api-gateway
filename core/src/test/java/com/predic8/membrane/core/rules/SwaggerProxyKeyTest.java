@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011, 2015 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2011, 2015, 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.predic8.membrane.core.interceptor.swagger.SwaggerAdapter;
 import io.swagger.parser.SwaggerParser;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import static com.predic8.membrane.util.TestUtil.assembleExchange;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SwaggerProxyKeyTest {
 
@@ -48,30 +48,29 @@ public class SwaggerProxyKeyTest {
 		 */
 
 		// Ensure that /pet is supported via POST and PUT but not via GET, HEAD nor DELETE
-		assertFalse(key.complexMatch("", "GET", "/v2/pet", "", 0, ""));
-		assertTrue(key.complexMatch("", "POST", "/v2/pet", "", 0, ""));
-		assertFalse(key.complexMatch("", "HEAD", "/v2/pet", "", 0, ""));
-		assertTrue(key.complexMatch("", "PUT", "/v2/pet", "", 0, ""));
-		assertFalse(key.complexMatch("", "DELETE", "/v2/pet", "", 0, ""));
+		assertFalse(key.complexMatch(assembleExchange("", "GET", "/v2/pet", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "POST", "/v2/pet", "", 0, "")));
+		assertFalse(key.complexMatch(assembleExchange("", "HEAD", "/v2/pet", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "PUT", "/v2/pet", "", 0, "")));
+		assertFalse(key.complexMatch(assembleExchange("", "DELETE", "/v2/pet", "", 0, "")));
 
 		// Check that some of the simple Swagger API operations do exist
-		assertTrue(key.complexMatch("", "GET", "/v2/pet/findByStatus", "", 0, ""));
-		assertTrue(key.complexMatch("", "GET", "/v2/pet/findByTags", "", 0, ""));
-		assertTrue(key.complexMatch("", "GET", "/v2/store/inventory", "", 0, ""));
-		assertTrue(key.complexMatch("", "POST", "/v2/store/order", "", 0, ""));
-		assertTrue(key.complexMatch("", "POST", "/v2/user", "", 0, ""));
-		assertTrue(key.complexMatch("", "POST", "/v2/user/createWithArray", "", 0, ""));
-		assertTrue(key.complexMatch("", "POST", "/v2/user/createWithList", "", 0, ""));
-		assertTrue(key.complexMatch("", "GET", "/v2/user/login", "", 0, ""));
-		assertTrue(key.complexMatch("", "GET", "/v2/user/logout", "", 0, ""));
+		assertTrue(key.complexMatch(assembleExchange("", "GET", "/v2/pet/findByStatus", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "GET", "/v2/pet/findByTags", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "GET", "/v2/store/inventory", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "POST", "/v2/store/order", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "POST", "/v2/user", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "POST", "/v2/user/createWithArray", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "POST", "/v2/user/createWithList", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "GET", "/v2/user/login", "", 0, "")));
+		assertTrue(key.complexMatch(assembleExchange("", "GET", "/v2/user/logout", "", 0, "")));
 
 		// Check some paths with Path Template Matching
-		assertTrue(key.complexMatch("", "GET", "/v2/pet/123", "", 0, "")); // GET /pet/{petId}
-		assertTrue(key.complexMatch("", "POST", "/v2/pet/123", "", 0, "")); // POST /pet/{petId}
-		assertFalse(key.complexMatch("", "HEAD", "/v2/pet/123", "", 0, "")); // HEAD for /pet/{petId} doesn't exist
-		assertFalse(key.complexMatch("", "PUT", "/v2/pet/123", "", 0, "")); // PUT for /pet/{petId} doesn't exist
-		assertTrue(key.complexMatch("", "DELETE", "/v2/pet/123", "", 0, "")); // DELETE /pet/{petId}
-		assertTrue(key.complexMatch("", "POST", "/v2/pet/bello/uploadImage", "", 0, ""));
+		assertTrue(key.complexMatch(assembleExchange("", "GET", "/v2/pet/123", "", 0, ""))); // GET /pet/{petId}
+		assertTrue(key.complexMatch(assembleExchange("", "POST", "/v2/pet/123", "", 0, ""))); // POST /pet/{petId}
+		assertFalse(key.complexMatch(assembleExchange("", "HEAD", "/v2/pet/123", "", 0, ""))); // HEAD for /pet/{petId} doesn't exist
+		assertFalse(key.complexMatch(assembleExchange("", "PUT", "/v2/pet/123", "", 0, ""))); // PUT for /pet/{petId} doesn't exist
+		assertTrue(key.complexMatch(assembleExchange("", "DELETE", "/v2/pet/123", "", 0, ""))); // DELETE /pet/{petId}
+		assertTrue(key.complexMatch(assembleExchange("", "POST", "/v2/pet/bello/uploadImage", "", 0, "")));
 	}
-
 }

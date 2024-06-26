@@ -68,22 +68,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRule(Exchange exc) {
-		Request request = exc.getRequest();
-		AbstractHttpHandler handler = exc.getHandler();
-
-		// retrieve value to match
-		String hostHeader = request.getHeader().getHost();
-		String method = request.getMethod();
-		String uri = request.getUri();
-		String version = request.getVersion();
-		int port = handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
-		String localIP = handler.getLocalAddress().getHostAddress();
-
-		// match it
-		Rule rule = router.getRuleManager().getMatchingRule(hostHeader, method, uri, version, port, localIP);
+		Rule rule = router.getRuleManager().getMatchingRule(exc);
 		if (rule != null) {
-			if (log.isDebugEnabled())
-				log.debug("Matching Rule found for RuleKey " + hostHeader + " " + method + " " + uri + " " + port + " " + localIP);
 			return rule;
 		}
 

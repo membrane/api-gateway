@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2012, 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,25 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
 import java.net.InetAddress;
 
 public class FakeHttpHandler extends AbstractHttpHandler {
 
 	private final int port;
+	private InetAddress address;
 
 	public FakeHttpHandler(int port) {
 		super(null);
 		this.port = port;
 	}
 
+	public FakeHttpHandler(int port, InetAddress addr) {
+		super(null);
+		this.port = port;
+		this.address = addr;
+	}
+
 	@Override
-	public void shutdownInput() throws IOException {
+	public void shutdownInput() {
 	}
 
 	@Override
 	public InetAddress getLocalAddress() {
-		return null;
+		return address;
 	}
 
 	@Override

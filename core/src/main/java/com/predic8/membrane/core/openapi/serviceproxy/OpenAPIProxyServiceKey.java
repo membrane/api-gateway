@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.*;
 import org.slf4j.*;
 
@@ -43,7 +44,9 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
     }
 
     @Override
-    public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+    public boolean complexMatch(Exchange exc) {
+        var uri = exc.getRequest().getUri();
+
         for (String basePath : basePaths) {
             if (!uri.startsWith(basePath))
                 continue;

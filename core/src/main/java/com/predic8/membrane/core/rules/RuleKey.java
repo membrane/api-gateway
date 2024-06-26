@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.rules;
 
 
+import com.predic8.membrane.core.exchange.Exchange;
+
 public interface RuleKey {
 
 	/**
@@ -89,5 +91,5 @@ public interface RuleKey {
 
 	boolean matchesVersion(String version);
 
-	boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP);
+	boolean complexMatch(Exchange exc);
 }

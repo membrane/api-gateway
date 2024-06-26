@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.swagger.SwaggerCompatibleOpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
@@ -46,7 +47,10 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 	}
 
 	@Override
-	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+	public boolean complexMatch(Exchange exc) {
+		var uri = exc.getRequest().getUri();
+		var method = exc.getRequest().getMethod();
+
 		if (swagger.isNull()) {
 			log.error("Swagger specification is null!");
 			return false;
