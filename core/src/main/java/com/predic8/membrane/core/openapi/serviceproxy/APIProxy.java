@@ -73,8 +73,9 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        if (!specs.isEmpty())
-            key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
+        key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
+        if (test != null)
+            spelExpr = new SpelExpressionParser().parseExpression(test);
         super.init();
         initOpenAPI();
     }
