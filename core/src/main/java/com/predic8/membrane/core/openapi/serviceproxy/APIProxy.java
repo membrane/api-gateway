@@ -16,16 +16,24 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.rules.AbstractProxy;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.URI;
-import io.swagger.v3.oas.models.servers.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.URIFactory;
+import io.swagger.v3.oas.models.servers.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.expression.Expression;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 /**
@@ -44,6 +52,10 @@ public class APIProxy extends ServiceProxy {
     public static final String RESPONSES = "responses";
     public static final String SECURITY = "security";
     public static final String VALIDATION_DETAILS = "details";
+
+    private String test;
+
+    private Expression spelExpr;
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -73,8 +85,9 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        if (!specs.isEmpty())
-            key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
+        key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
+        if (test != null)
+            spelExpr = new SpelExpressionParser().parseExpression(test);
         super.init();
         initOpenAPI();
     }
@@ -132,6 +145,13 @@ public class APIProxy extends ServiceProxy {
         });
     }
 
+    public boolean testCondition(Exchange exc) {
+        if (spelExpr == null)
+            return true;
+        Boolean result = spelExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class);
+        return result != null && result;
+    }
+
     private void configureBasePaths() {
         ((OpenAPIProxyServiceKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
     }
@@ -160,4 +180,14 @@ public class APIProxy extends ServiceProxy {
     public Map<String, OpenAPIRecord> getBasePaths() {
         return basePaths;
     }
+
+    public String getTest() {
+        return test;
+    }
+
+    @MCAttribute
+    public void setTest(String test) {
+        this.test = test;
+    }
+
 }

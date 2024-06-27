@@ -45,8 +45,22 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
     @Override
     public boolean complexMatch(Exchange exc) {
-        var uri = exc.getRequest().getUri();
+        APIProxy apiProxy = (APIProxy) exc.getHandler()
+            .getTransport()
+            .getRouter()
+            .getRules()
+            .stream()
+            .filter(r -> r.getKey() == this)
+            .findFirst()
+            .orElseThrow();
 
+        if (!apiProxy.testCondition(exc))
+            return false;
+
+        if (apiProxy.specs.isEmpty())
+            return true;
+
+        var uri = exc.getRequest().getUri();
         for (String basePath : basePaths) {
             if (!uri.startsWith(basePath))
                 continue;
