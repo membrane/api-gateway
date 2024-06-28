@@ -13,16 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.UnknownHostException;
-import java.util.stream.*;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.util.TestUtil.assembleExchange;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.params.provider.Arguments.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.params.provider.Arguments.of;
 
 class OpenAPIProxyServiceKeyTest {
 
@@ -49,5 +51,4 @@ class OpenAPIProxyServiceKeyTest {
                 of("/apidoc",false)
                 );
     }
-
 }

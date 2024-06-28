@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
 
 import java.util.*;
@@ -45,21 +46,15 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
     @Override
     public boolean complexMatch(Exchange exc) {
-        APIProxy apiProxy = (APIProxy) exc.getHandler()
-            .getTransport()
-            .getRouter()
-            .getRules()
-            .stream()
-            .filter(r -> r.getKey() == this)
-            .findFirst()
-            .orElseThrow();
+        if (exc.getHandler().getTransport() != null) {
+            APIProxy apiProxy = (APIProxy) getRuleByKey(exc, this);
 
-        if (!apiProxy.testCondition(exc))
-            return false;
+            if (!apiProxy.testCondition(exc))
+                return false;
 
-        if (apiProxy.specs.isEmpty())
-            return true;
-
+            if (apiProxy.specs.isEmpty())
+                return true;
+        }
         var uri = exc.getRequest().getUri();
         for (String basePath : basePaths) {
             if (!uri.startsWith(basePath))
@@ -70,6 +65,17 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
         }
         return false;
+    }
+
+    static @NotNull Rule getRuleByKey(Exchange exc, AbstractRuleKey key) {
+        return exc.getHandler()
+                .getTransport()
+                .getRouter()
+                .getRules()
+                .stream()
+                .filter(r -> r.getKey() == key)
+                .findFirst()
+                .orElseThrow();
     }
 
     @Override

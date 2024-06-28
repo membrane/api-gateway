@@ -55,7 +55,7 @@ public class APIProxy extends ServiceProxy {
 
     private String test;
 
-    private Expression spelExpr;
+    private Expression testExpr;
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -87,7 +87,7 @@ public class APIProxy extends ServiceProxy {
     public void init() throws Exception {
         key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
         if (test != null)
-            spelExpr = new SpelExpressionParser().parseExpression(test);
+            testExpr = new SpelExpressionParser().parseExpression(test);
         super.init();
         initOpenAPI();
     }
@@ -146,9 +146,9 @@ public class APIProxy extends ServiceProxy {
     }
 
     public boolean testCondition(Exchange exc) {
-        if (spelExpr == null)
+        if (testExpr == null)
             return true;
-        Boolean result = spelExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class);
+        Boolean result = testExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class);
         return result != null && result;
     }
 
