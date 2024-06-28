@@ -13,18 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.security.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
+import com.predic8.membrane.core.security.ApiKeySecurityScheme;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.List;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
-import static java.util.List.*;
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.HEADER;
+import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BuiltInFunctionsTest {
@@ -36,6 +37,13 @@ public class BuiltInFunctionsTest {
         var exc = Request.get("foo").buildExchange();
         exc.setProperty(SECURITY_SCHEMES, List.of(new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test")));
         ctx = new ExchangeEvaluationContext(exc);
+    }
+
+    @Test
+    void testRate() throws Exception {
+        assertEquals(0.01, calculateRate(1), 0.02);
+        assertEquals(0.5, calculateRate(50), 0.02);
+        assertEquals(0.001, calculateRate(0.1), 0.002);
     }
 
     @Test
@@ -85,5 +93,15 @@ public class BuiltInFunctionsTest {
         var exc2 = Request.get("foo").buildExchange();
         ExchangeEvaluationContext ctxWithoutScopes = new ExchangeEvaluationContext(exc2);
         assertFalse(BuiltInFunctions.isBearerAuthorization(ctxWithoutScopes));
+    }
+
+    public double calculateRate(double weightInPercent) throws Exception {
+        int executedCount = 0;
+        for (int i = 0; i < 10000; i++) {
+            if (BuiltInFunctions.weight(weightInPercent, null)) {
+                executedCount++;
+            }
+        }
+        return ((double) executedCount / 10000);
     }
 }

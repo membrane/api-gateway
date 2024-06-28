@@ -22,11 +22,11 @@ import org.springframework.expression.MethodResolver;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-public class BuildInFunctionResolver implements MethodResolver {
+public class BuiltInFunctionResolver implements MethodResolver {
 
     private final ReflectiveMethodHandler functions;
 
-    public BuildInFunctionResolver() {
+    public BuiltInFunctionResolver() {
         super();
         functions = new ReflectiveMethodHandler(BuiltInFunctions.class);
     }

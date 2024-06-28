@@ -17,8 +17,7 @@ package com.predic8.membrane.core.lang.spel;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.predic8.membrane.core.lang.spel.functions.BuildInFunctionResolver;
+import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionResolver;
 import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
@@ -29,7 +28,6 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static com.predic8.membrane.core.util.URLParamUtil.getParams;
 
 public class ExchangeEvaluationContext extends StandardEvaluationContext {
     private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class);
@@ -83,7 +81,7 @@ public class ExchangeEvaluationContext extends StandardEvaluationContext {
         addPropertyAccessor(new AwareExchangePropertyAccessor());
 
         // Enables Membrane functions in SpEL scripts like 'hasScopes("admin")'
-        setMethodResolvers(List.of(new BuildInFunctionResolver()));
+        setMethodResolvers(List.of(new BuiltInFunctionResolver()));
     }
 
 
