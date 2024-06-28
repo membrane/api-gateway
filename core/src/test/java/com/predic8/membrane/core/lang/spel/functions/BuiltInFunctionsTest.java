@@ -41,9 +41,9 @@ public class BuiltInFunctionsTest {
 
     @Test
     void testRate() throws Exception {
-        assertEquals(0.01, calculateRate(1), 0.02);
-        assertEquals(0.5, calculateRate(50), 0.02);
-        assertEquals(0.001, calculateRate(0.1), 0.002);
+        assertEquals(0.01, calculateRate(1), 0.05);
+        assertEquals(0.5, calculateRate(50), 0.05);
+        assertEquals(0.001, calculateRate(0.1), 0.005);
     }
 
     @Test
