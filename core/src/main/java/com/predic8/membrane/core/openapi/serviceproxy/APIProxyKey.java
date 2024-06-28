@@ -16,21 +16,28 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.rules.*;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
+import org.springframework.expression.*;
+import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
 
-public class OpenAPIProxyServiceKey extends ServiceProxyKey {
+public class APIProxyKey extends ServiceProxyKey {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAPIProxyServiceKey.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(APIProxyKey.class.getName());
 
     private final ArrayList<String> basePaths = new ArrayList<>();
 
-    public OpenAPIProxyServiceKey(String ip, String host, int port) {
+    private Expression testExpr;
+
+    public APIProxyKey(String ip, String host, int port, String test) {
         super(host, "*", null, port, ip);
+
+        if (test != null)
+            testExpr = new SpelExpressionParser().parseExpression(test);
 
         // Add basePaths of OpenAPIPublisherInterceptor to accept them also
         basePaths.add(OpenAPIPublisherInterceptor.PATH);    // new path
@@ -46,15 +53,12 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
     @Override
     public boolean complexMatch(Exchange exc) {
-        if (exc.getHandler().getTransport() != null) {
-            APIProxy apiProxy = (APIProxy) getRuleByKey(exc, this);
+        if (!testCondition(exc))
+            return false;
 
-            if (!apiProxy.testCondition(exc))
-                return false;
+        if (basePaths.isEmpty())
+            return true;
 
-            if (apiProxy.specs.isEmpty())
-                return true;
-        }
         var uri = exc.getRequest().getUri();
         for (String basePath : basePaths) {
             if (!uri.startsWith(basePath))
@@ -67,15 +71,11 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
         return false;
     }
 
-    static @NotNull Rule getRuleByKey(Exchange exc, AbstractRuleKey key) {
-        return exc.getHandler()
-                .getTransport()
-                .getRouter()
-                .getRules()
-                .stream()
-                .filter(r -> r.getKey() == key)
-                .findFirst()
-                .orElseThrow();
+    private boolean testCondition(Exchange exc) {
+        if (testExpr == null)
+            return true;
+        Boolean result = testExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class);
+        return result != null && result;
     }
 
     @Override
@@ -85,5 +85,22 @@ public class OpenAPIProxyServiceKey extends ServiceProxyKey {
 
     void addBasePaths(ArrayList<String> paths) {
         basePaths.addAll(paths);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!super.equals(obj))
+            return false;
+        if (obj instanceof APIProxyKey other) {
+            if (!basePaths.equals(other.basePaths))
+                return false;
+            return testExpr.equals(other.testExpr);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode() + testExpr.hashCode() + basePaths.hashCode();
     }
 }

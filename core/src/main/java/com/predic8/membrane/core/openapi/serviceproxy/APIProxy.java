@@ -16,24 +16,16 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
-import com.predic8.membrane.core.openapi.util.UriUtil;
-import com.predic8.membrane.core.rules.AbstractProxy;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import io.swagger.v3.oas.models.servers.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.expression.Expression;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
+import com.predic8.membrane.core.util.*;
+import io.swagger.v3.oas.models.servers.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.io.*;
+import java.net.*;
 import java.util.*;
 
 /**
@@ -54,8 +46,6 @@ public class APIProxy extends ServiceProxy {
     public static final String VALIDATION_DETAILS = "details";
 
     private String test;
-
-    private Expression testExpr;
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -85,9 +75,7 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
-        if (test != null)
-            testExpr = new SpelExpressionParser().parseExpression(test);
+        key = new APIProxyKey(getIp(),getHost(),getPort(), test); // Must come before super.  init()
         super.init();
         initOpenAPI();
     }
@@ -145,15 +133,8 @@ public class APIProxy extends ServiceProxy {
         });
     }
 
-    public boolean testCondition(Exchange exc) {
-        if (testExpr == null)
-            return true;
-        Boolean result = testExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class);
-        return result != null && result;
-    }
-
     private void configureBasePaths() {
-        ((OpenAPIProxyServiceKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
+        ((APIProxyKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
     }
 
     private Map<String, OpenAPIRecord> getOpenAPIMap() {

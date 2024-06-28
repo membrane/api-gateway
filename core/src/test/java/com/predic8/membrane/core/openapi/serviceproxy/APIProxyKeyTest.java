@@ -26,13 +26,13 @@ import static com.predic8.membrane.util.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
-class OpenAPIProxyServiceKeyTest {
+class APIProxyKeyTest {
 
-    OpenAPIProxyServiceKey k1;
+    APIProxyKey k1;
 
     @BeforeEach
     void setup() {
-        k1 = new OpenAPIProxyServiceKey("","", 80);
+        k1 = new APIProxyKey("","", 80, null);
     }
 
     @DisplayName("Access old path /api-doc")
