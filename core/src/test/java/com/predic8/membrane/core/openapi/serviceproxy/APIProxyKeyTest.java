@@ -13,17 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.http.Request.Builder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey.additionalBasePaths;
 import static com.predic8.membrane.util.TestUtil.assembleExchange;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
 class APIProxyKeyTest {
@@ -32,7 +39,23 @@ class APIProxyKeyTest {
 
     @BeforeEach
     void setup() {
-        k1 = new APIProxyKey("","", 80, null);
+        k1 = new APIProxyKey("","", 80, null) {{
+            addBasePaths(new ArrayList<>(List.of("/bar")));
+        }};
+    }
+
+    @Test
+    void complexMatchExpressionTrueTest() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, "true");
+        var exc = new Builder().get("").buildExchange();
+        assertTrue(key.complexMatch(exc));
+    }
+
+    @Test
+    void complexMatchExpressionFalseTest() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, "1 == 2");
+        var exc = new Builder().get("").buildExchange();
+        assertFalse(key.complexMatch(exc));
     }
 
     @DisplayName("Access old path /api-doc")
@@ -40,6 +63,23 @@ class APIProxyKeyTest {
     @MethodSource("urls")
     void checkAcceptsPath(String url, boolean expected) throws UnknownHostException {
         assertEquals(expected, k1.complexMatch(assembleExchange("predic8.de","GET",url, "", 80, "192.168.0.1")));
+    }
+
+    @Test
+    public void noAdditionalPaths() {
+        ArrayList<String> basePaths = new ArrayList<>();
+        basePaths.add("/api-docs");
+        basePaths.add("/api-docs/ui");
+        basePaths.add("/api-doc");
+        basePaths.add("/api-doc/ui");
+        assertFalse(additionalBasePaths(basePaths));
+    }
+
+    @Test
+    public void additionalPaths() {
+        ArrayList<String> basePaths = new ArrayList<>();
+        basePaths.add("/foo-path");
+        assertTrue(additionalBasePaths(basePaths));
     }
 
     private static Stream<Arguments> urls() {

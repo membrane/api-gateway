@@ -25,6 +25,8 @@ import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
 
+import static java.util.Arrays.asList;
+
 public class APIProxyKey extends ServiceProxyKey {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxyKey.class.getName());
@@ -56,7 +58,7 @@ public class APIProxyKey extends ServiceProxyKey {
         if (!testCondition(exc))
             return false;
 
-        if (basePaths.isEmpty())
+        if (!additionalBasePaths(basePaths))
             return true;
 
         var uri = exc.getRequest().getUri();
@@ -69,6 +71,10 @@ public class APIProxyKey extends ServiceProxyKey {
 
         }
         return false;
+    }
+
+    static boolean additionalBasePaths(ArrayList<String> basePaths) {
+        return !basePaths.equals(asList("/api-docs", "/api-docs/ui", "/api-doc", "/api-doc/ui"));
     }
 
     private boolean testCondition(Exchange exc) {
