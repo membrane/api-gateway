@@ -11,7 +11,7 @@ homeSet() {
 
 terminate() {
 	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the MEMBRANE_HOME/examples/loadbalancer-session-3 directory"
+	echo "Please execute this script from the MEMBRANE_HOME/examples/loadbalancing/xml-session directory"
 	
 }
 
