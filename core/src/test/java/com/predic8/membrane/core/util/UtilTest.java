@@ -20,19 +20,22 @@ class UtilTest {
     }
 
     @Test
-    void testSetIfNull() {
+    void testSetIfNullCaseValueInitialNull() {
         TestObject testObject = new TestObject();
-
-        // Case where value is initially null
         setIfNull(testObject, TestObject::getValue, TestObject::setValue, "default");
         assertEquals("default", testObject.getValue());
+    }
 
-        // Case where value is not null
+    @Test
+    void testSetIfNullCaseValueNotNull() {
+        TestObject testObject = new TestObject();
         testObject.setValue("not null");
         setIfNull(testObject, TestObject::getValue, TestObject::setValue, "default");
         assertEquals("not null", testObject.getValue());
+    }
 
-        // Case where object itself is null
+    @Test
+    void testSetIObjectNull() {
         assertThrows(NullPointerException.class, () -> setIfNull(null, TestObject::getValue, TestObject::setValue, "default"));
     }
 }
