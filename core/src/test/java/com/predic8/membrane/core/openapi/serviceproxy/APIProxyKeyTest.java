@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey.additionalBasePaths;
 import static com.predic8.membrane.util.TestUtil.assembleExchange;
-import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
@@ -56,6 +55,20 @@ class APIProxyKeyTest {
         var key = new APIProxyKey("", "", 80, "1 == 2");
         var exc = new Builder().get("").buildExchange();
         assertFalse(key.complexMatch(exc));
+    }
+
+    @Test
+    void complexMatchExpressionHeaderTest() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, "headers['X-Custom-Header'] == 'foo'");
+        var exc = new Builder().get("").header("X-Custom-Header", "foo").buildExchange();
+        assertTrue(key.complexMatch(exc));
+    }
+
+    @Test
+    void complexMatchExpressionQueryParamTest() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, "params['foo'] == 'bar'");
+        var exc = new Builder().get("/baz?foo=bar").buildExchange();
+        assertTrue(key.complexMatch(exc));
     }
 
     @DisplayName("Access old path /api-doc")
