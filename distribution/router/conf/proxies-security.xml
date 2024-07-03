@@ -4,7 +4,7 @@
 	Start Membrane with:
 	./service-proxy.sh -c conf/proxies-security.xml
 	or
-    service-proxySSL.bat -c conf/proxies-security.xml
+    service-proxy.bat -c conf/proxies-security.xml
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
