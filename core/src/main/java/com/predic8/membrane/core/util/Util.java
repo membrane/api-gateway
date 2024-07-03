@@ -16,21 +16,26 @@ package com.predic8.membrane.core.util;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.predic8.membrane.core.http.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.http.Response;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 
 public class Util {
 
@@ -61,16 +66,16 @@ public class Util {
 			String name = null;
 			while (jp.nextToken() != null) {
 				switch (jp.getCurrentToken()) {
-				case FIELD_NAME:
-					name = jp.getCurrentName();
-					break;
-				case VALUE_STRING:
-					values.put(name, jp.getText());
-					break;
-				case VALUE_NUMBER_INT:
-					values.put(name, "" + jp.getLongValue());
-				default:
-					break;
+					case FIELD_NAME:
+						name = jp.getCurrentName();
+						break;
+					case VALUE_STRING:
+						values.put(name, jp.getText());
+						break;
+					case VALUE_NUMBER_INT:
+						values.put(name, "" + jp.getLongValue());
+					default:
+						break;
 				}
 			}
 		}
@@ -111,32 +116,10 @@ public class Util {
 	}
 
 	/**
-	 *
 	 * @param string String that might be separated by comma e.g. "a,b,c"
 	 * @return mutable list
 	 */
 	public static List<String> splitStringByComma(String string) {
 		return new ArrayList<>(Arrays.asList(string.split(",")));
-	}
-
-
-	/**
-	 * Sets a property on the given object to a default value if the current value is null.
-	 * This method handles potential null pointer exceptions that may occur when accessing the property.
-	 *
-	 * @param <T>          the type of the object containing the property
-	 * @param <U>          the type of the property value
-	 * @param object       the object containing the property
-	 * @param getter       a function to get the current value of the property
-	 * @param setter       a function to set the value of the property
-	 * @param defaultValue the default value to set if the property is null
-	 */
-	public static <T, U> void setIfNull(T object, Function<T, U> getter, BiConsumer<T, U> setter, U defaultValue) {
-		try {
-			if(getter.apply(object) == null)
-				setter.accept(object, defaultValue);
-		} catch (NullPointerException e) {
-			setter.accept(object, defaultValue);
-		}
 	}
 }

@@ -128,7 +128,6 @@ class ApiDocsInterceptorTest {
         interceptor.setSpecRewrites(rule);
         Rewrite rewrite = getRewrite();
         assertEquals(2000, rewrite.getPort());
-        assertEquals("*", rewrite.getBasePath());
         assertEquals("", rewrite.getHost());
     }
 

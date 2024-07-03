@@ -24,12 +24,13 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
-import static com.predic8.membrane.core.util.Util.setIfNull;
 import static java.lang.String.valueOf;
 
 @MCElement(name = "apiDocs")
@@ -76,8 +77,8 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         //noinspection OptionalGetWithoutIsPresent
         getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().forEach(spec -> {
             if (spec.getRewrite() != null) {
+                setPortIfNull(spec.getRewrite(), key.getPort());
                 setIfNull(spec.getRewrite(), Rewrite::getHost, Rewrite::setHost, key.getHost());
-                setIfNull(spec.getRewrite(), Rewrite::getPort, Rewrite::setPort, key.getPort());
                 setIfNull(spec.getRewrite(), Rewrite::getBasePath, Rewrite::setBasePath, key.getPath());
             } else {
                 spec.setRewrite(new Rewrite() {{
@@ -145,5 +146,20 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         sb.append("</table>");
 
         return sb.toString();
+    }
+
+    public static void setPortIfNull(Rewrite rewrite, int defaultValue) {
+        try {
+            rewrite.getPort();
+        } catch (NullPointerException e) {
+            rewrite.setPort(defaultValue);
+        }
+    }
+
+    public static <T, U> void setIfNull(T rewrite, Function<T, U> getter, BiConsumer<T, U> setter, U defaultValue) {
+        if(getter.apply(rewrite) != null) return;
+        if(!defaultValue.equals("*")) {
+            setter.accept(rewrite, defaultValue);
+        }
     }
 }
