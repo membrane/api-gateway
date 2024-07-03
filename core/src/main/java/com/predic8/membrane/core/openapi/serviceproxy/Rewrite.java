@@ -152,12 +152,12 @@ public class Rewrite {
     }
 
 
-    public Integer getPort() {
+    public int getPort() {
         return port;
     }
 
     @MCAttribute()
-    public void setPort(Integer port) {
+    public void setPort(int port) {
         this.port = port;
     }
 
