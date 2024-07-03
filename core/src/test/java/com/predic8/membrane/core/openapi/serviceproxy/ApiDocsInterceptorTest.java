@@ -33,10 +33,11 @@ import java.util.Optional;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.serviceproxy.ApiDocsInterceptor.getOpenAPIInterceptor;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ApiDocsInterceptorTest {
 
@@ -69,35 +70,35 @@ class ApiDocsInterceptorTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         router.stop();
     }
 
     @Test
-    public void initTest() throws Exception {
+    void initTest() throws Exception {
         assertEquals(RETURN, interceptor.handleRequest(exc));
     }
 
     @Test
-    public void getOpenApiInterceptorTest() {
-        assertEquals("OpenAPI", interceptor.getOpenAPIInterceptor(rule).get().getDisplayName());
-        assertEquals(Optional.empty(), interceptor.getOpenAPIInterceptor(new APIProxy()));
+    void getOpenApiInterceptorTest() {
+        assertEquals("OpenAPI", getOpenAPIInterceptor(rule).get().getDisplayName());
+        assertEquals(Optional.empty(), getOpenAPIInterceptor(new APIProxy()));
     }
 
     @Test
-    public void initializeRuleApiSpecsTest() {
-        assertEquals(interceptor.getOpenAPIInterceptor(rule).get().getApiProxy().apiRecords, interceptor.initializeRuleApiSpecs());
+    void initializeRuleApiSpecsTest() {
+        assertEquals(getOpenAPIInterceptor(rule).get().getApiProxy().apiRecords, interceptor.initializeRuleApiSpecs());
     }
 
     @Test
-    public void initializeEmptyRuleApiSpecsTest() throws Exception {
+    void initializeEmptyRuleApiSpecsTest() throws Exception {
         ApiDocsInterceptor adi = new ApiDocsInterceptor();
         adi.init(new Router());
         assertEquals(new HashMap<>(), adi.initializeRuleApiSpecs());
     }
 
     @Test
-    public void getHTMLOverview() throws Exception {
+    void getHTMLOverview() throws Exception {
         exc.getRequest().setUri("/api-docs");
         Header header = new Header();
         header.setAccept("html");
@@ -107,18 +108,46 @@ class ApiDocsInterceptorTest {
     }
 
     @Test
-    public void getSwaggerUI() throws Exception {
+    void getSwaggerUI() throws Exception {
         exc.getRequest().setUri("/api-docs/ui/fruit-shop-api-v2-0-0");
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Swagger"));
     }
 
     @Test
-    public void getSwaggerUIWrongId() throws Exception {
+    void getSwaggerUIWrongId() throws Exception {
         exc.getRequest().setUri("/api-docs/wrong-id");
         assertEquals(RETURN, interceptor.handleRequest(exc));
         assertEquals(404, exc.getResponse().getStatusCode());
         checkHasValidProblemJSON(exc);
+    }
+
+    @Test
+    void noRewriterSetSpecRewritesTest() {
+        assertThrows(NullPointerException.class, () -> getRewrite().getPort());
+        interceptor.setSpecRewrites(rule);
+        Rewrite rewrite = getRewrite();
+        assertEquals(2000, rewrite.getPort());
+        assertEquals("*", rewrite.getBasePath());
+        assertEquals("", rewrite.getHost());
+    }
+
+    @Test
+    void rewriterSetSpecRewritesTest() {
+        getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().get(0).setRewrite(new Rewrite() {{
+            setPort(3000);
+            setHost("localhost");
+            setBasePath("/foo");
+        }});
+        interceptor.setSpecRewrites(rule);
+        Rewrite rewrite = getRewrite();
+        assertEquals(3000, rewrite.getPort());
+        assertEquals("/foo", rewrite.getBasePath());
+        assertEquals("localhost", rewrite.getHost());
+    }
+
+    private Rewrite getRewrite() {
+        return getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().get(0).getRewrite();
     }
 
     private void checkHasValidProblemJSON(Exchange exc) throws IOException {

@@ -27,6 +27,8 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 
@@ -115,5 +117,14 @@ public class Util {
 	 */
 	public static List<String> splitStringByComma(String string) {
 		return new ArrayList<>(Arrays.asList(string.split(",")));
+	}
+
+	public static <T, U> void setIfNull(T object, Function<T, U> getter, BiConsumer<T, U> setter, U defaultValue) {
+		try {
+			if(getter.apply(object) == null)
+				setter.accept(object, defaultValue);
+		} catch (NullPointerException e) {
+			setter.accept(object, defaultValue);
+		}
 	}
 }
