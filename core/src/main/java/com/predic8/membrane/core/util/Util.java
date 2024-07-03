@@ -119,6 +119,18 @@ public class Util {
 		return new ArrayList<>(Arrays.asList(string.split(",")));
 	}
 
+
+	/**
+	 * Sets a property on the given object to a default value if the current value is null.
+	 * This method handles potential null pointer exceptions that may occur when accessing the property.
+	 *
+	 * @param <T>          the type of the object containing the property
+	 * @param <U>          the type of the property value
+	 * @param object       the object containing the property
+	 * @param getter       a function to get the current value of the property
+	 * @param setter       a function to set the value of the property
+	 * @param defaultValue the default value to set if the property is null
+	 */
 	public static <T, U> void setIfNull(T object, Function<T, U> getter, BiConsumer<T, U> setter, U defaultValue) {
 		try {
 			if(getter.apply(object) == null)
