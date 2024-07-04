@@ -7,12 +7,18 @@
     <router>
 
         <api port="2000">
-            <response>
-                <greaser>
-                    <greaseJson shuffleFields="true" addAdditionalFields="true" />
-                </greaser>
-            </response>
-            <return />
+            <apiDocs />
+        </api>
+
+        <api port="2001" host="sdnasndasdasdasdasdasd">
+
+            <openapi location="https://developer.lufthansa.com/swagger/export/21516">
+                <rewrite basePath="/foo" port="20000"/>
+            </openapi>
+        </api>
+
+        <api port="2003">
+            <openapi location="https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"/>
         </api>
 
     </router>
