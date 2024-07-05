@@ -7,12 +7,9 @@
     <router>
 
         <api port="2000">
-            <response>
-                <greaser>
-                    <greaseJson shuffleFields="true" addAdditionalFields="true" />
-                </greaser>
-            </response>
-            <return />
+            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
+                <rewrite host="predic8.de" port="3000" basePath="/foo" />
+            </openapi>
         </api>
 
     </router>
