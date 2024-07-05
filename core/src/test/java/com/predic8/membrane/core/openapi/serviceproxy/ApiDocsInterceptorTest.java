@@ -160,10 +160,35 @@ class ApiDocsInterceptorTest {
     }
 
     @Test
-    void setPortIfNull() {
-        var r = new Rewrite() {{setHost("localhost"); setBasePath("/foo");}};
-        assertEquals(null, r.getPort());
-        ApiDocsInterceptor.setPortIfNull(r, 5000);
-        assertEquals(5000, r.getPort());
+    void testSetPortIfNull() {
+        Rewrite rewrite = new Rewrite();
+
+        ApiDocsInterceptor.setIfNull(rewrite, Rewrite::getPort, Rewrite::setPort, 8080);
+        assertEquals(8080, rewrite.getPort());
+
+        ApiDocsInterceptor.setIfNull(rewrite, Rewrite::getPort, Rewrite::setPort, 9090);
+        assertEquals(8080, rewrite.getPort());
+    }
+
+    @Test
+    void testSetHostIfNull() {
+        Rewrite rewrite = new Rewrite();
+
+        ApiDocsInterceptor.setIfNull(rewrite, Rewrite::getHost, Rewrite::setHost, "localhost");
+        assertEquals("localhost", rewrite.getHost());
+
+        ApiDocsInterceptor.setIfNull(rewrite, Rewrite::getHost, Rewrite::setHost, "127.0.0.1");
+        assertEquals("localhost", rewrite.getHost());
+    }
+
+    @Test
+    void testSetBasePathIfNull() {
+        Rewrite rewrite = new Rewrite();
+
+        ApiDocsInterceptor.setIfNull(rewrite, Rewrite::getBasePath, Rewrite::setBasePath, "/api");
+        assertEquals("/api", rewrite.getBasePath());
+
+        ApiDocsInterceptor.setIfNull(rewrite, Rewrite::getBasePath, Rewrite::setBasePath, "/new-api");
+        assertEquals("/api", rewrite.getBasePath());
     }
 }
