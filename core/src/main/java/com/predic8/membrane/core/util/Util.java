@@ -16,19 +16,26 @@ package com.predic8.membrane.core.util;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
-import com.predic8.membrane.core.http.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.http.Response;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import javax.net.ssl.SSLSocket;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 
 public class Util {
 
@@ -59,16 +66,16 @@ public class Util {
 			String name = null;
 			while (jp.nextToken() != null) {
 				switch (jp.getCurrentToken()) {
-				case FIELD_NAME:
-					name = jp.getCurrentName();
-					break;
-				case VALUE_STRING:
-					values.put(name, jp.getText());
-					break;
-				case VALUE_NUMBER_INT:
-					values.put(name, "" + jp.getLongValue());
-				default:
-					break;
+					case FIELD_NAME:
+						name = jp.getCurrentName();
+						break;
+					case VALUE_STRING:
+						values.put(name, jp.getText());
+						break;
+					case VALUE_NUMBER_INT:
+						values.put(name, "" + jp.getLongValue());
+					default:
+						break;
 				}
 			}
 		}
@@ -109,7 +116,6 @@ public class Util {
 	}
 
 	/**
-	 *
 	 * @param string String that might be separated by comma e.g. "a,b,c"
 	 * @return mutable list
 	 */

@@ -21,9 +21,12 @@ import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.constraints.NotNull;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,6 +63,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     public Map<String, OpenAPIRecord> initializeRuleApiSpecs() {
         return router.getRuleManager().getRules().stream()
                 .filter(this::hasOpenAPIInterceptor)
+                .peek(this::setSpecRewrites)
                 .flatMap(this::getRecordEntryStreamOrEmpty)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
@@ -67,6 +71,24 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
                         (key1, ignored) -> key1, // If duplicate keys, keep the first one
                         LinkedHashMap::new
                 ));
+    }
+
+    protected void setSpecRewrites(Rule rule) {
+        var key = rule.getKey();
+        //noinspection OptionalGetWithoutIsPresent
+        getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().forEach(spec -> {
+            if (spec.getRewrite() != null) {
+                setIfNull(spec.getRewrite(), Rewrite::getPort, Rewrite::setPort, key.getPort());
+                setIfNull(spec.getRewrite(), Rewrite::getHost, Rewrite::setHost, key.getHost());
+                setIfNull(spec.getRewrite(), Rewrite::getBasePath, Rewrite::setBasePath, key.getPath());
+            } else {
+                spec.setRewrite(new Rewrite() {{
+                    setHost(key.getHost());
+                    setPort(key.getPort());
+                    setBasePath(key.getPath());
+                }});
+            }
+        });
     }
 
     private Stream<Map.Entry<String, OpenAPIRecord>> getRecordEntryStreamOrEmpty(Rule rule) {
@@ -84,7 +106,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         return rule.getInterceptors().stream().anyMatch(ic -> ic instanceof OpenAPIInterceptor);
     }
 
-    Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Rule rule) {
+    static Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Rule rule) {
         return rule.getInterceptors().stream()
                 .filter(ic -> ic instanceof OpenAPIInterceptor)
                 .map(ic -> (OpenAPIInterceptor) ic) // Previous line checks type, so cast should be fine
@@ -125,5 +147,12 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
         sb.append("</table>");
 
         return sb.toString();
+    }
+
+    public static <T, U> void setIfNull(T rewrite, Function<T, U> getter, BiConsumer<T, U> setter, U defaultValue) {
+        if(getter.apply(rewrite) != null) return;
+        if(!defaultValue.equals("*")) {
+            setter.accept(rewrite, defaultValue);
+        }
     }
 }
