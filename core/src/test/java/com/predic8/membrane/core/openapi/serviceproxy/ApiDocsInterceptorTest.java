@@ -162,7 +162,7 @@ class ApiDocsInterceptorTest {
     @Test
     void setPortIfNull() {
         var r = new Rewrite() {{setHost("localhost"); setBasePath("/foo");}};
-        assertThrows(NullPointerException.class, r::getPort);
+        assertEquals(null, r.getPort());
         ApiDocsInterceptor.setPortIfNull(r, 5000);
         assertEquals(5000, r.getPort());
     }

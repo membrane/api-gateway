@@ -150,11 +150,8 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     }
 
     public static void setPortIfNull(Rewrite rewrite, int defaultValue) {
-        try {
-            rewrite.getPort();
-        } catch (NullPointerException e) {
+        if (rewrite.getPort() == null)
             rewrite.setPort(defaultValue);
-        }
     }
 
     public static <T, U> void setIfNull(T rewrite, Function<T, U> getter, BiConsumer<T, U> setter, U defaultValue) {
