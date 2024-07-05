@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MockAuthorizationServer {
     public static final int SERVER_PORT = 1337;
 
-    private final Runnable onLogin;
+    private final Runnable onLogin, onLogout;
     private final B2CTestConfig tc;
     private final SecureRandom rand = new SecureRandom();
     private final ObjectMapper om = new ObjectMapper();
@@ -72,9 +72,10 @@ public class MockAuthorizationServer {
     public final AtomicBoolean abortSignIn = new AtomicBoolean();
     public volatile int expiresIn;
 
-    public MockAuthorizationServer(B2CTestConfig tc, Runnable onLogin) {
+    public MockAuthorizationServer(B2CTestConfig tc, Runnable onLogin, Runnable onLogout) {
         this.tc = tc;
         this.onLogin = onLogin;
+        this.onLogout = onLogout;
     }
 
     public void init() throws IOException, JoseException {
@@ -141,6 +142,7 @@ public class MockAuthorizationServer {
                 } else if (exc.getRequestURI().contains("/token")) {
                     handleTokenRequest(flowId, exc);
                 } else if (exc.getRequestURI().contains("/logout")) {
+                    onLogout.run();
                     exc.setResponse(Response.redirect( params.get("post_logout_redirect_uri"), false).build());
                 }
 

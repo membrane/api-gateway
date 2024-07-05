@@ -38,13 +38,15 @@ public abstract class OAuth2ResourceB2CTest {
     private final B2CTestConfig tc = new B2CTestConfig();
     private final ObjectMapper om = new ObjectMapper();
     private final AtomicBoolean didLogIn = new AtomicBoolean();
+    private final AtomicBoolean didLogOut = new AtomicBoolean();
     private final BrowserMock browser = new BrowserMock();
-    private final MockAuthorizationServer mockAuthorizationServer = new MockAuthorizationServer(tc, () -> didLogIn.set(true));
+    private final MockAuthorizationServer mockAuthorizationServer = new MockAuthorizationServer(tc, () -> didLogIn.set(true), () -> didLogOut.set(true));
     private final B2CMembrane b2cMembrane = new B2CMembrane(tc, createSessionManager());
 
     @BeforeEach
     public void init() throws Exception {
         didLogIn.set(false);
+        didLogOut.set(false);
         mockAuthorizationServer.resetBehavior();
 
         mockAuthorizationServer.init();
@@ -172,8 +174,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("true"));
 
-        // call to /logout uses cookieHandlingHttpClient: *NOT* following the redirect (which would auto-login again)
-        browser.applyWithoutRedirect(new Request.Builder()
+        browser.apply(new Request.Builder()
                 .get(tc.getClientAddress() + "/logout").buildExchange());
 
         ili = browser.apply(new Request.Builder().get(tc.getClientAddress() + "/is-logged-in").buildExchange());
@@ -181,6 +182,7 @@ public abstract class OAuth2ResourceB2CTest {
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
 
         assertEquals(0, browser.getCookieCount());
+        assertTrue(didLogOut.get());
     }
 
     @Test
