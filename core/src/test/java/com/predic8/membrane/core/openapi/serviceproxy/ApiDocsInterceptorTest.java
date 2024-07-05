@@ -158,4 +158,12 @@ class ApiDocsInterceptorTest {
         assertTrue(json.has("title"));
         assertTrue(json.has("type"));
     }
+
+    @Test
+    void setPortIfNull() {
+        var r = new Rewrite() {{setHost("localhost"); setBasePath("/foo");}};
+        assertThrows(NullPointerException.class, r::getPort);
+        ApiDocsInterceptor.setPortIfNull(r, 5000);
+        assertEquals(5000, r.getPort());
+    }
 }
