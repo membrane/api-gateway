@@ -19,8 +19,8 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.servers.*;
 import org.slf4j.*;
 
@@ -44,6 +44,8 @@ public class APIProxy extends ServiceProxy {
     public static final String RESPONSES = "responses";
     public static final String SECURITY = "security";
     public static final String VALIDATION_DETAILS = "details";
+
+    private String test;
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -73,8 +75,7 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        if (!specs.isEmpty())
-            key = new OpenAPIProxyServiceKey(getIp(),getHost(),getPort()); // Must come before super.  init()
+        key = new APIProxyKey(getIp(),getHost(),getPort(), test); // Must come before super.  init()
         super.init();
         initOpenAPI();
     }
@@ -133,7 +134,7 @@ public class APIProxy extends ServiceProxy {
     }
 
     private void configureBasePaths() {
-        ((OpenAPIProxyServiceKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
+        ((APIProxyKey) key).addBasePaths(new ArrayList<>(basePaths.keySet()));
     }
 
     private Map<String, OpenAPIRecord> getOpenAPIMap() {
@@ -160,4 +161,14 @@ public class APIProxy extends ServiceProxy {
     public Map<String, OpenAPIRecord> getBasePaths() {
         return basePaths;
     }
+
+    public String getTest() {
+        return test;
+    }
+
+    @MCAttribute
+    public void setTest(String test) {
+        this.test = test;
+    }
+
 }

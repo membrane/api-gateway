@@ -53,7 +53,7 @@ public class OpenApiRewriteIntegrationTest {
         spec.setRewrite(rw);
         spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
         proxy.setSpecs(singletonList(spec));
-        proxy.setKey(new OpenAPIProxyServiceKey(null, "*", 2000));
+        proxy.setKey(new APIProxyKey(null, "*", 2000, null));
         proxy.getInterceptors().add(new LogInterceptor());
         proxy.init(r);
         return proxy;
