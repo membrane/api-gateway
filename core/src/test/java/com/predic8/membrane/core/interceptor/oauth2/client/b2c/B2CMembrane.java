@@ -91,7 +91,9 @@ public class B2CMembrane {
             ra.setScope("https://localhost/" + tc.api1Id + "/Read");
         });
         ServiceProxy sp7_requireAuth = createRequireAuthServiceProxy(tc.api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + tc.api2Id + "/Read"));
+        ServiceProxy sp8_afterLogout = createAfterLogoutServiceProxy();
 
+        oauth2Resource.getRuleManager().addProxy(sp8_afterLogout, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp7_requireAuth, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp6_requireAuth_ErrorStatus403, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp5_requireAuth_AuthNotRequired, MANUAL);
@@ -121,6 +123,7 @@ public class B2CMembrane {
         oAuth2ResourceInterceptor.setAppendAccessTokenToRequest(true);
         oAuth2ResourceInterceptor.setOnlyRefreshToken(true);
         oAuth2ResourceInterceptor.setLoginParameters(createLoginParameters());
+        oAuth2ResourceInterceptor.setAfterLogoutUrl("/after-logout");
 
         sp.getInterceptors().add(new AbstractInterceptor() {
             @Override
@@ -180,6 +183,23 @@ public class B2CMembrane {
 
         sp.getInterceptors().add(flowInitiator);
         sp.getInterceptors().add(createTestResponseInterceptor());
+
+        return sp;
+    }
+
+    private ServiceProxy createAfterLogoutServiceProxy() {
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
+        Path p = new Path();
+        p.setValue("/after-logout");
+        sp.setPath(p);
+
+        sp.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                exc.setResponse(Response.ok().body("You have been logged out.").build());
+                return Outcome.RETURN;
+            }
+        });
 
         return sp;
     }
