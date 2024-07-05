@@ -11,7 +11,7 @@ homeSet() {
 
 terminate() {
 	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the MEMBRANE_HOME/examples/validation/json-schema directory"
+	echo "Please execute this script from the appropriate subfolder of MEMBRANE_HOME/examples/"
 	
 }
 
