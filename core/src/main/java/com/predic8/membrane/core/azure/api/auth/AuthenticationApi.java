@@ -62,7 +62,8 @@ public class AuthenticationApi {
         } catch (Exception e) {
             log.debug(e.getMessage());
             log.debug(exc.getRequest().toString());
-            log.debug(exc.getResponse().getHeader().toString(), responseBody);
+            log.debug(exc.getResponse().getHeader().toString());
+            log.debug(responseBody);
         }
         return "";
     }
