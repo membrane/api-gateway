@@ -52,16 +52,17 @@ public class AuthenticationApi {
     }
 
     public String accessToken() throws Exception {
-        var response = http.call(tokenExchange()).getResponse();
+        Exchange exc = tokenExchange();
+        var responseBody = http.call(exc).getResponse().getBodyAsStringDecoded();
         try {
             return new ObjectMapper()
-                    .readTree(response.getBodyAsStringDecoded())
+                    .readTree(responseBody)
                     .get("access_token")
                     .asText();
         } catch (Exception e) {
             log.debug(e.getMessage());
-            log.debug(tokenExchange().getRequest().toString());
-            log.debug(tokenExchange().getResponse().toString());
+            log.debug(exc.getRequest().toString());
+            log.debug(exc.getResponse().getHeader().toString(), responseBody);
         }
         return "";
     }
