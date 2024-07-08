@@ -17,7 +17,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.azure.AzureIdentity;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.openapi.serviceproxy.ApiDocsInterceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.URISyntaxException;
@@ -25,10 +28,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AuthenticationApi {
-
     private final HttpClient http;
     private final AzureIdentity config;
     private final Map<String, String> tokenPayload;
+
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationApi.class);
 
     public AuthenticationApi(HttpClient http, @Nullable AzureIdentity config) {
         this.http = http;
@@ -49,10 +53,17 @@ public class AuthenticationApi {
 
     public String accessToken() throws Exception {
         var response = http.call(tokenExchange()).getResponse();
-        return new ObjectMapper()
-                .readTree(response.getBodyAsStringDecoded())
-                .get("access_token")
-                .asText();
+        try {
+            return new ObjectMapper()
+                    .readTree(response.getBodyAsStringDecoded())
+                    .get("access_token")
+                    .asText();
+        } catch (Exception e) {
+            log.debug(e.getMessage());
+            log.debug(tokenExchange().getRequest().toString());
+            log.debug(tokenExchange().getResponse().toString());
+        }
+        return "";
     }
 
     private Exchange tokenExchange() throws URISyntaxException {
