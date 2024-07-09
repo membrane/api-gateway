@@ -21,123 +21,129 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRuleKey implements RuleKey {
 
-	private static Logger log = LoggerFactory.getLogger(AbstractRuleKey.class.getName());
+    private static Logger log = LoggerFactory.getLogger(AbstractRuleKey.class.getName());
 
-	/**
-	 * -1 is used as a wildcard. It is used by HttpServletHandler, since its port
-	 * is determined by the webserver and not by the proxies.xml
-	 */
-	protected int port;
+    /**
+     * -1 is used as a wildcard. It is used by HttpServletHandler, since its port
+     * is determined by the webserver and not by the proxies.xml
+     */
+    protected int port;
 
-	private String path;
+    private String path;
 
-	protected volatile Pattern pathPattern;
+    protected volatile Pattern pathPattern;
 
-	protected boolean pathRegExp = true;
+    protected boolean pathRegExp = true;
 
-	protected boolean usePathPattern;
+    protected boolean usePathPattern;
 
-	protected String ip;
+    protected String ip;
 
-	public AbstractRuleKey(int port, String ip) {
-		this.port = port;
-		this.ip = ip;
-	}
+    public AbstractRuleKey(int port, String ip) {
+        this.port = port;
+        this.ip = ip;
+    }
 
-	public String getHost() {
-		return "";
-	}
+    public String getHost() {
+        return "";
+    }
 
-	public String getMethod() {
-		return "";
-	}
+    public String getMethod() {
+        return "";
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public int getPort() {
+        return port;
+    }
 
-	public boolean isHostWildcard() {
+    public boolean isHostWildcard() {
 
-		return false;
-	}
+        return false;
+    }
 
-	public boolean isMethodWildcard() {
-		return false;
-	}
+    public boolean isMethodWildcard() {
+        return false;
+    }
 
-	public void setPort(int port) {
-		this.port = port;
-	}
+    public void setPort(int port) {
+        this.port = port;
+    }
 
-	public boolean isPathRegExp() {
-		return pathRegExp;
-	}
+    public boolean isPathRegExp() {
+        return pathRegExp;
+    }
 
-	public void setPathRegExp(boolean pathRegExp) {
-		this.pathRegExp = pathRegExp;
-	}
+    public void setPathRegExp(boolean pathRegExp) {
+        this.pathRegExp = pathRegExp;
+    }
 
-	public boolean isUsePathPattern() {
-		return usePathPattern;
-	}
+    public boolean isUsePathPattern() {
+        return usePathPattern;
+    }
 
-	public void setUsePathPattern(boolean usePathPattern) {
-		this.usePathPattern = usePathPattern;
-		pathPattern = null;
-	}
+    public void setUsePathPattern(boolean usePathPattern) {
+        this.usePathPattern = usePathPattern;
+        pathPattern = null;
+    }
 
-	public void setPath(String path) {
-		this.path = path;
-		pathPattern = null;
-	}
+    public void setPath(String path) {
+        this.path = path;
+        pathPattern = null;
+    }
 
-	public String getPath() {
-		return path;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	public boolean matchesPath(String path) {
-		if (isPathRegExp())
-			return matchesPathPattern(path);
-		return path.startsWith(getPath());
-	}
+    public boolean matchesPath(String path) {
+        if (isPathRegExp())
+            return matchesPathPattern(path);
+        return path.startsWith(getPath());
+    }
 
-	private boolean matchesPathPattern(String path) {
-		log.debug("matches path: " + path + " with path pattern: "
-				+ getPathPattern());
-		return getPathPattern().matcher(path).matches();
-	}
+    private boolean matchesPathPattern(String path) {
+        log.debug("matches path: " + path + " with path pattern: "
+                  + getPathPattern());
+        return getPathPattern().matcher(path).matches();
+    }
 
-	private Pattern getPathPattern() {
-		Pattern p = pathPattern;
-		if (p == null) {
-			synchronized (this) {
-				if (pathPattern == null)
-					p = pathPattern = Pattern.compile(path);
-			}
-		}
+    private Pattern getPathPattern() {
+        if (pathPattern != null)
+            return pathPattern;
 
-		return p;
-	}
+        synchronized (this) {
+            // Check again this time in synchronized block
+            if (pathPattern != null)
+                return pathPattern;
+            pathPattern = Pattern.compile(computePathPattern(path));
+        }
 
-	public String getIp() {
-		return ip;
-	}
+        return pathPattern;
+    }
 
-	public void setIp(String ip) {
-		this.ip = ip;
-	}
+    private String computePathPattern(String path) {
+        return path != null ? path : ".*";
+    }
 
-	@Override
-	public boolean matchesHostHeader(String hostHeader) {
-		return false;
-	}
+    public String getIp() {
+        return ip;
+    }
 
-	@Override
-	public boolean matchesVersion(String version) {
-		return !"STOMP".equals(version);
-	}
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
 
-	public boolean complexMatch(Exchange exc) {
-		return true;
-	}
+    @Override
+    public boolean matchesHostHeader(String hostHeader) {
+        return false;
+    }
+
+    @Override
+    public boolean matchesVersion(String version) {
+        return !"STOMP".equals(version);
+    }
+
+    public boolean complexMatch(Exchange exc) {
+        return true;
+    }
 }

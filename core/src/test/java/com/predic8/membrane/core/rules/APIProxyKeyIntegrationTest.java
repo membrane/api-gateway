@@ -34,14 +34,15 @@ public class APIProxyKeyIntegrationTest {
 
     @BeforeAll
     public static void setup() throws Exception {
-        Rule restrictedRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, "true"));}};
-        restrictedRule.getKey().setPath("/foo");
+        Rule restrictedRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, "/foo", "*", null, false));}};
         restrictedRule.getInterceptors().add(new TemplateInterceptor() {{setTextTemplate("Baz");}});
         restrictedRule.getInterceptors().add(new ReturnInterceptor());
+        restrictedRule.setName("Restricted Rule");
 
-        Rule fallthroughRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, "true"));}};
+        Rule fallthroughRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, null, "*", null, false));}};
         fallthroughRule.getInterceptors().add(new TemplateInterceptor() {{setTextTemplate("Foobar");}});
         fallthroughRule.getInterceptors().add(new ReturnInterceptor());
+        fallthroughRule.setName("Fall through Rule");
 
         router = new HttpRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(restrictedRule);
@@ -50,7 +51,7 @@ public class APIProxyKeyIntegrationTest {
     }
 
     @Test
-    public void apiProxyPathMatchTest() {
+    void apiProxyPathMatchTest() {
         when()
             .get("http://localhost:3000/foo")
         .then()
@@ -58,7 +59,7 @@ public class APIProxyKeyIntegrationTest {
     }
 
     @Test
-    public void apiProxyPathFallthroughTest() {
+    void apiProxyPathFallthroughTest() {
         when()
             .get("http://localhost:3000")
         .then()

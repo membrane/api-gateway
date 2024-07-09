@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey.additionalBasePaths;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey.areThereBasePathsFromOpenAPI;
 import static com.predic8.membrane.util.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -38,35 +38,35 @@ class APIProxyKeyTest {
 
     @BeforeEach
     void setup() {
-        k1 = new APIProxyKey("","", 80, null) {{
+        k1 = new APIProxyKey("","", 80, null, "*", null, false) {{
             addBasePaths(new ArrayList<>(List.of("/bar")));
         }};
     }
 
     @Test
     void complexMatchExpressionTrueTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, "true");
+        var key = new APIProxyKey("", "", 80, null,"*","true", false);
         var exc = new Builder().get("").buildExchange();
         assertTrue(key.complexMatch(exc));
     }
 
     @Test
     void complexMatchExpressionFalseTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, "1 == 2");
+        var key = new APIProxyKey("", "", 80, null,"*", "1 == 2", false);
         var exc = new Builder().get("").buildExchange();
         assertFalse(key.complexMatch(exc));
     }
 
     @Test
     void complexMatchExpressionHeaderTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, "headers['X-Custom-Header'] == 'foo'");
+        var key = new APIProxyKey("", "", 80, null,"*","headers['X-Custom-Header'] == 'foo'", false);
         var exc = new Builder().get("").header("X-Custom-Header", "foo").buildExchange();
         assertTrue(key.complexMatch(exc));
     }
 
     @Test
     void complexMatchExpressionQueryParamTest() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, "params['foo'] == 'bar'");
+        var key = new APIProxyKey("", "", 80, null,"*","params['foo'] == 'bar'", false);
         var exc = new Builder().get("/baz?foo=bar").buildExchange();
         assertTrue(key.complexMatch(exc));
     }
@@ -79,20 +79,20 @@ class APIProxyKeyTest {
     }
 
     @Test
-    public void noAdditionalPaths() {
+    void noAdditionalPaths() {
         ArrayList<String> basePaths = new ArrayList<>();
         basePaths.add("/api-docs");
         basePaths.add("/api-docs/ui");
         basePaths.add("/api-doc");
         basePaths.add("/api-doc/ui");
-        assertFalse(additionalBasePaths(basePaths));
+        assertFalse(areThereBasePathsFromOpenAPI(basePaths));
     }
 
     @Test
-    public void additionalPaths() {
+    void additionalPaths() {
         ArrayList<String> basePaths = new ArrayList<>();
         basePaths.add("/foo-path");
-        assertTrue(additionalBasePaths(basePaths));
+        assertTrue(areThereBasePathsFromOpenAPI(basePaths));
     }
 
     private static Stream<Arguments> urls() {

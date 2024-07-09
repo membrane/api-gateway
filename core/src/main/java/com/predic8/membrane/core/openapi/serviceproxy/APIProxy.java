@@ -75,8 +75,8 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        key = new APIProxyKey(getIp(),getHost(),getPort(), test); // Must come before super.  init()
         super.init();
+        key = new APIProxyKey(key, test, !specs.isEmpty());
         initOpenAPI();
     }
 

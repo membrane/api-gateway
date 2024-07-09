@@ -23,9 +23,9 @@ import org.slf4j.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
 
-import java.util.*;
+import java.util.ArrayList;
 
-import static java.util.Arrays.asList;
+import static java.util.Arrays.*;
 
 public class APIProxyKey extends ServiceProxyKey {
 
@@ -35,22 +35,30 @@ public class APIProxyKey extends ServiceProxyKey {
 
     private Expression testExpr;
 
-    public APIProxyKey(String ip, String host, int port, String test) {
-        super(host, "*", null, port, ip);
+    public APIProxyKey(RuleKey key, String test, boolean openAPI) {
+        this(key.getIp(), key.getHost(), key.getPort(), key.getPath(), key.getMethod(), test, openAPI);
 
+    }
+
+    public APIProxyKey(String ip, String host, int port, String path, String method, String test, boolean openAPI) {
+        super(host, method, path, port, ip);
+        init(test, openAPI);
+        setUsePathPattern(true);
+    }
+
+    protected void init(String test, boolean openAPI) {
         if (test != null)
             testExpr = new SpelExpressionParser().parseExpression(test);
+
+        if (!openAPI)
+            return;
 
         // Add basePaths of OpenAPIPublisherInterceptor to accept them also
         basePaths.add(OpenAPIPublisherInterceptor.PATH);    // new path
         basePaths.add(OpenAPIPublisherInterceptor.PATH_UI); // "
         basePaths.add("/api-doc");                          // old to stay compatible
         basePaths.add("/api-doc/ui");                       // "
-    }
 
-    @Override
-    public boolean isMethodWildcard() {
-        return true;
     }
 
     @Override
@@ -58,7 +66,7 @@ public class APIProxyKey extends ServiceProxyKey {
         if (!testCondition(exc))
             return false;
 
-        if (!additionalBasePaths(basePaths))
+        if (!areThereBasePathsFromOpenAPI(basePaths))
             return true;
 
         var uri = exc.getRequest().getUri();
@@ -73,8 +81,13 @@ public class APIProxyKey extends ServiceProxyKey {
         return false;
     }
 
-    static boolean additionalBasePaths(ArrayList<String> basePaths) {
-        return !basePaths.equals(asList("/api-docs", "/api-docs/ui", "/api-doc", "/api-doc/ui"));
+    /**
+     * Tests if the list of basePaths contains base paths from an OpenAPI document
+     *
+     * @param basePaths
+     */
+    static boolean areThereBasePathsFromOpenAPI(ArrayList<String> basePaths) {
+        return !basePaths.equals(asList("/api-docs", "/api-docs/ui", "/api-doc", "/api-doc/ui")); // TODO final
     }
 
     private boolean testCondition(Exchange exc) {
@@ -82,11 +95,6 @@ public class APIProxyKey extends ServiceProxyKey {
             return true;
         Boolean result = testExpr.getValue(new ExchangeEvaluationContext(exc, exc.getRequest()), Boolean.class);
         return result != null && result;
-    }
-
-    @Override
-    public String getPath() {
-        return "*";
     }
 
     void addBasePaths(ArrayList<String> paths) {
