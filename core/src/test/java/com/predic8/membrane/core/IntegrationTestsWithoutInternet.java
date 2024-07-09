@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
 import com.predic8.membrane.core.resolver.ResolverTest;
+import com.predic8.membrane.core.rules.APIProxyKeyIntegrationTest;
 import com.predic8.membrane.core.rules.ProxySSLTest;
 import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
 import com.predic8.membrane.core.transport.ExceptionHandlingTest;
@@ -47,7 +48,8 @@ import org.junit.platform.suite.api.Suite;
         IllegalCharactersInURLTest.class,
         ProxySSLTest.class,
         SessionManager.class,
-        OpenApiRewriteIntegrationTest.class
+        OpenApiRewriteIntegrationTest.class,
+        APIProxyKeyIntegrationTest.class
 })
 public class IntegrationTestsWithoutInternet {
 }
