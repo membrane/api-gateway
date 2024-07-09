@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey.areThereBasePathsFromOpenAPI;
 import static com.predic8.membrane.util.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
@@ -76,23 +75,6 @@ class APIProxyKeyTest {
     @MethodSource("urls")
     void checkAcceptsPath(String url, boolean expected) throws UnknownHostException {
         assertEquals(expected, k1.complexMatch(assembleExchange("predic8.de","GET",url, "", 80, "192.168.0.1")));
-    }
-
-    @Test
-    void noAdditionalPaths() {
-        ArrayList<String> basePaths = new ArrayList<>();
-        basePaths.add("/api-docs");
-        basePaths.add("/api-docs/ui");
-        basePaths.add("/api-doc");
-        basePaths.add("/api-doc/ui");
-        assertFalse(areThereBasePathsFromOpenAPI(basePaths));
-    }
-
-    @Test
-    void additionalPaths() {
-        ArrayList<String> basePaths = new ArrayList<>();
-        basePaths.add("/foo-path");
-        assertTrue(areThereBasePathsFromOpenAPI(basePaths));
     }
 
     private static Stream<Arguments> urls() {
