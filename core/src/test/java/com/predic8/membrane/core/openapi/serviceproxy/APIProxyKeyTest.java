@@ -37,7 +37,7 @@ class APIProxyKeyTest {
 
     @BeforeEach
     void setup() {
-        k1 = new APIProxyKey("","", 80, null, "*", null, false) {{
+        k1 = new APIProxyKey("","", 80, null, "*", null, true) {{
             addBasePaths(new ArrayList<>(List.of("/bar")));
         }};
     }
