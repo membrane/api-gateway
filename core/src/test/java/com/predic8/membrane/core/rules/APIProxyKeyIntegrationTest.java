@@ -16,19 +16,15 @@ package com.predic8.membrane.core.rules;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.containsString;
 
@@ -50,6 +46,7 @@ public class APIProxyKeyIntegrationTest {
         router = new HttpRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(restrictedRule);
         router.getRuleManager().addProxyAndOpenPortIfNew(fallthroughRule);
+        router.init();
     }
 
     @Test
@@ -68,13 +65,8 @@ public class APIProxyKeyIntegrationTest {
             .body(containsString("Foobar"));
     }
 
-    @BeforeEach
-    public void startRouter() throws Exception {
-        router.init();
-    }
-
-    @AfterEach
-    public void shutdownRouter() throws IOException {
+    @AfterAll
+    public static void shutdownRouter() throws IOException {
         router.shutdown();
     }
 }
