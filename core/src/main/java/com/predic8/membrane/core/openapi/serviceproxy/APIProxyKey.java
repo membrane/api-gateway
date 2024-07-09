@@ -66,7 +66,7 @@ public class APIProxyKey extends ServiceProxyKey {
         if (!testCondition(exc))
             return false;
 
-        if (!areThereBasePathsFromOpenAPI(basePaths))
+        if (basePaths.isEmpty())
             return true;
 
         var uri = exc.getRequest().getUri();
@@ -79,15 +79,6 @@ public class APIProxyKey extends ServiceProxyKey {
 
         }
         return false;
-    }
-
-    /**
-     * Tests if the list of basePaths contains base paths from an OpenAPI document
-     *
-     * @param basePaths
-     */
-    static boolean areThereBasePathsFromOpenAPI(ArrayList<String> basePaths) {
-        return !basePaths.equals(asList("/api-docs", "/api-docs/ui", "/api-doc", "/api-doc/ui")); // TODO final
     }
 
     private boolean testCondition(Exchange exc) {
