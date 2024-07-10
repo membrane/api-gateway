@@ -37,7 +37,6 @@ public class APIProxyKey extends ServiceProxyKey {
 
     public APIProxyKey(RuleKey key, String test, boolean openAPI) {
         this(key.getIp(), key.getHost(), key.getPort(), key.getPath(), key.getMethod(), test, openAPI);
-
     }
 
     public APIProxyKey(String ip, String host, int port, String path, String method, String test, boolean openAPI) {

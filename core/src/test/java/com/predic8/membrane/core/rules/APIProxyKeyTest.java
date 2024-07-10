@@ -28,7 +28,7 @@ import java.io.IOException;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class APIProxyKeyIntegrationTest {
+public class APIProxyKeyTest {
 
     private static Router router;
 
