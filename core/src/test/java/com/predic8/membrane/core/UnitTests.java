@@ -75,7 +75,9 @@ import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionsTest;
 import com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandlerTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.SingleResolverTest;
+import com.predic8.membrane.core.rules.APIProxyKeyTest;
 import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
 import com.predic8.membrane.core.transport.ExchangeTest;
@@ -157,7 +159,8 @@ import org.junit.platform.suite.api.Suite;
 		ExchangeEvaluationContextTest.class,
 		PaddingHeaderInterceptorTest.class,
 		CollectionsUtilTest.class,
-		ConditionalInterceptorGroovyTest.class, ConditionalInterceptorSpELTest.class,
+		ConditionalInterceptorGroovyTest.class,
+		ConditionalInterceptorSpELTest.class,
 		ApiKeysInterceptorTest.class,
 		ApiKeyFileStoreTest.class,
 		ApiKeyHeaderExtractorTest.class,
@@ -168,7 +171,8 @@ import org.junit.platform.suite.api.Suite;
 		MediaTypeUtilTest.class,
 		ProblemDetailsTest.class,
 		SetHeaderInterceptor.class,
-		SetPropertyInterceptor.class
+		SetPropertyInterceptor.class,
+		APIProxyKeyTest.class,
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",

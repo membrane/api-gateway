@@ -13,26 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.Rule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
 
-import javax.validation.constraints.NotNull;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.function.*;
+import java.util.regex.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
-import static java.lang.String.valueOf;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.*;
+import static java.lang.String.*;
 
 @MCElement(name = "apiDocs")
 public class ApiDocsInterceptor extends AbstractInterceptor {
@@ -103,12 +96,12 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     }
 
     private boolean hasOpenAPIInterceptor(Rule rule) {
-        return rule.getInterceptors().stream().anyMatch(ic -> ic instanceof OpenAPIInterceptor);
+        return rule.getInterceptors().stream().anyMatch(OpenAPIInterceptor.class::isInstance);
     }
 
     static Optional<OpenAPIInterceptor> getOpenAPIInterceptor(Rule rule) {
         return rule.getInterceptors().stream()
-                .filter(ic -> ic instanceof OpenAPIInterceptor)
+                .filter(OpenAPIInterceptor.class::isInstance)
                 .map(ic -> (OpenAPIInterceptor) ic) // Previous line checks type, so cast should be fine
                 .findFirst();
     }
@@ -151,6 +144,8 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     public static <T, U> void setIfNull(T rewrite, Function<T, U> getter, BiConsumer<T, U> setter, U defaultValue) {
         if(getter.apply(rewrite) != null) return;
+        if(defaultValue == null)
+            return;
         if(!defaultValue.equals("*")) {
             setter.accept(rewrite, defaultValue);
         }
