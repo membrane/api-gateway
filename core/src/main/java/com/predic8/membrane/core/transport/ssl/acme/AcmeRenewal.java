@@ -22,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -109,7 +111,9 @@ public class AcmeRenewal {
             asse.archiveOAL(hosts);
 
         } catch (Exception e) {
-            client.setOALError(hosts, new AcmeErrorLog(e.getClass().getName() + " " + e.getMessage(), e instanceof FatalAcmeException, new DateTime()));
+            StringWriter sw = new StringWriter();
+            e.printStackTrace(new PrintWriter(sw));
+            client.setOALError(hosts, new AcmeErrorLog(sw.toString(), e instanceof FatalAcmeException, new DateTime()));
             throw e;
         }
     }

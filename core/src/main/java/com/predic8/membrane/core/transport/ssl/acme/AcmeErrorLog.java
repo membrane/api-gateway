@@ -22,6 +22,9 @@ public class AcmeErrorLog {
     boolean fatal;
     DateTime time;
 
+    public AcmeErrorLog() {
+    }
+
     public AcmeErrorLog(String message, boolean fatal, DateTime time) {
         this.message = message;
         this.fatal = fatal;
