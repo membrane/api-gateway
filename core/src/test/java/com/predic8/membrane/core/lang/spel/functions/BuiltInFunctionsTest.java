@@ -97,11 +97,11 @@ public class BuiltInFunctionsTest {
 
     public double calculateRate(double weightInPercent) throws Exception {
         int executedCount = 0;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1000000; i++) {
             if (BuiltInFunctions.weight(weightInPercent, null)) {
                 executedCount++;
             }
         }
-        return ((double) executedCount / 10000);
+        return ((double) executedCount / 1000000);
     }
 }
