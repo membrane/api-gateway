@@ -19,15 +19,16 @@ import com.predic8.membrane.core.security.SecurityScheme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.interceptor.apikey.ApiKeysInterceptor.SCOPES;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 
 /**
  * This class's public methods are automatically registered in the SpEL context by the BuiltInFunctionResolver.
@@ -38,11 +39,10 @@ import static java.util.Optional.ofNullable;
  * The ExchangeEvaluationContext provides a specialized Membrane SpEL context, enabling access to the Exchange and other relevant data.
  */
 public class BuiltInFunctions {
-    private static final Random rand = new Random();
     private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class.getName());
 
     public static boolean weight(double weightInPercent, ExchangeEvaluationContext ignored) {
-        return Math.max(0, Math.min(1, weightInPercent / 100.0)) > rand.nextDouble();
+        return Math.max(0, Math.min(1, weightInPercent / 100.0)) > ThreadLocalRandom.current().nextDouble();
     }
 
     public static boolean isLoggedIn(String beanName, ExchangeEvaluationContext ctx) {
