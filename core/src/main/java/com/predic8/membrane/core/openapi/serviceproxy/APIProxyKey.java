@@ -23,9 +23,7 @@ import org.slf4j.*;
 import org.springframework.expression.*;
 import org.springframework.expression.spel.standard.*;
 
-import java.util.ArrayList;
-
-import static java.util.Arrays.*;
+import java.util.*;
 
 public class APIProxyKey extends ServiceProxyKey {
 
