@@ -31,7 +31,7 @@ import static com.predic8.membrane.util.TestUtil.assembleExchange;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
-class APIProxyKeyTest {
+class APIProxyKeyComplexMatchTest {
 
     APIProxyKey k1;
 
