@@ -51,6 +51,14 @@ public class APIProxyKeyTest {
     }
 
     @Test
+    void apiProxyPathSubpathTest() {
+        when()
+            .get("http://localhost:3000/foo/bar")
+        .then()
+            .body(containsString("Baz"));
+    }
+
+    @Test
     void apiProxyPathMatchTest() {
         when()
             .get("http://localhost:3000/foo")
