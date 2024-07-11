@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -32,26 +33,10 @@ public class APIProxyKeyTest {
 
     private static Router router;
 
-    @BeforeAll
-    public static void setup() throws Exception {
-        Rule restrictedRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, "/foo", "*", null, false));}};
-        restrictedRule.getInterceptors().add(new TemplateInterceptor() {{setTextTemplate("Baz");}});
-        restrictedRule.getInterceptors().add(new ReturnInterceptor());
-        restrictedRule.setName("Restricted Rule");
-
-        Rule fallthroughRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, null, "*", null, false));}};
-        fallthroughRule.getInterceptors().add(new TemplateInterceptor() {{setTextTemplate("Foobar");}});
-        fallthroughRule.getInterceptors().add(new ReturnInterceptor());
-        fallthroughRule.setName("Fall through Rule");
-
-        router = new HttpRouter();
-        router.getRuleManager().addProxyAndOpenPortIfNew(restrictedRule);
-        router.getRuleManager().addProxyAndOpenPortIfNew(fallthroughRule);
-        router.init();
-    }
-
     @Test
-    void apiProxyPathSubpathTest() {
+    void apiProxyPathSubpathTest() throws Exception {
+        registerRule("/foo", "Baz");
+        router.init();
         when()
             .get("http://localhost:3000/foo/bar")
         .then()
@@ -59,7 +44,9 @@ public class APIProxyKeyTest {
     }
 
     @Test
-    void apiProxyPathMatchTest() {
+    void apiProxyPathMatchTest() throws Exception {
+        registerRule("/foo", "Baz");
+        router.init();
         when()
             .get("http://localhost:3000/foo")
         .then()
@@ -67,11 +54,29 @@ public class APIProxyKeyTest {
     }
 
     @Test
-    void apiProxyPathFallthroughTest() {
+    void apiProxyPathFallthroughTest() throws Exception {
+        registerRule("/foo", "Baz");
+        registerRule(null, "Foobar");
+        router.init();
         when()
             .get("http://localhost:3000")
         .then()
             .body(containsString("Foobar"));
+    }
+
+    private static @NotNull void registerRule(String path, String body) throws IOException, ClassNotFoundException {
+        router.getRuleManager().addProxyAndOpenPortIfNew(new APIProxy() {{
+            setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, path, "*", null, false));
+            getInterceptors().add(new TemplateInterceptor() {{
+                setTextTemplate(body);
+            }});
+            getInterceptors().add(new ReturnInterceptor());
+        }});
+    }
+
+    @BeforeAll
+    public static void setup() throws Exception {
+        router = new HttpRouter();
     }
 
     @AfterAll
