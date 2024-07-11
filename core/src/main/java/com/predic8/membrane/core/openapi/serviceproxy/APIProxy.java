@@ -75,7 +75,9 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        key = new APIProxyKey(key, test, !specs.isEmpty());
+        boolean pathRegExp = key.isPathRegExp();
+        key = new APIProxyKey((APIProxyKey) key, test, !specs.isEmpty());
+        key.setPathRegExp(pathRegExp);
         super.init();
         initOpenAPI();
     }

@@ -15,6 +15,7 @@ package com.predic8.membrane.core.rules;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
@@ -34,8 +35,18 @@ public class APIProxyKeyTest {
     private static Router router;
 
     @Test
+    void serviceProxyPathSubpathTest() throws Exception {
+        registerServiceProxy("/foo", "Baz");
+        router.init();
+        when()
+                .get("http://localhost:3000/foo/bar")
+                .then()
+                .body(containsString("Baz"));
+    }
+
+    @Test
     void apiProxyPathSubpathTest() throws Exception {
-        registerRule("/foo", "Baz");
+        registerApiProxy("/foo", "Baz");
         router.init();
         when()
             .get("http://localhost:3000/foo/bar")
@@ -45,7 +56,7 @@ public class APIProxyKeyTest {
 
     @Test
     void apiProxyPathMatchTest() throws Exception {
-        registerRule("/foo", "Baz");
+        registerApiProxy("/foo", "Baz");
         router.init();
         when()
             .get("http://localhost:3000/foo")
@@ -55,8 +66,8 @@ public class APIProxyKeyTest {
 
     @Test
     void apiProxyPathFallthroughTest() throws Exception {
-        registerRule("/foo", "Baz");
-        registerRule(null, "Foobar");
+        registerApiProxy("/foo", "Baz");
+        registerApiProxy(null, "Foobar");
         router.init();
         when()
             .get("http://localhost:3000")
@@ -64,12 +75,30 @@ public class APIProxyKeyTest {
             .body(containsString("Foobar"));
     }
 
-    private static @NotNull void registerRule(String path, String body) throws IOException, ClassNotFoundException {
+    private static @NotNull void registerApiProxy(String path, String body) throws IOException, ClassNotFoundException {
         router.getRuleManager().addProxyAndOpenPortIfNew(new APIProxy() {{
             setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, path, "*", null, false));
             getInterceptors().add(new TemplateInterceptor() {{
                 setTextTemplate(body);
             }});
+            Path p = new Path();
+            p.setValue(path);
+            p.setRegExp(false);
+            setPath(p);
+            getInterceptors().add(new ReturnInterceptor());
+        }});
+    }
+
+    private static @NotNull void registerServiceProxy(String path, String body) throws IOException, ClassNotFoundException {
+        router.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy() {{
+            setKey(new ServiceProxyKey("localhost","*", path, 3000, "127.0.0.1"));
+            getInterceptors().add(new TemplateInterceptor() {{
+                setTextTemplate(body);
+            }});
+            Path p = new Path();
+            p.setValue(path);
+            p.setRegExp(false);
+            setPath(p);
             getInterceptors().add(new ReturnInterceptor());
         }});
     }

@@ -28,6 +28,15 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	private boolean isHostWildCard = true;
 	private Pattern hostPattern;
 
+	public ServiceProxyKey(ServiceProxyKey key) {
+		super(key);
+		method = key.getMethod();
+		host = key.getHost();
+		isHostWildCard = key.isHostWildcard();
+		hostPattern = key.getHostPattern();
+	}
+
+
 	public ServiceProxyKey(int port) {
 		this(port, null);
 	}
@@ -176,9 +185,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 		}
 		regex.append(")");
 
-		String r = regex.toString();
-
-		return r;
+		return regex.toString();
 	}
 
 	@Override

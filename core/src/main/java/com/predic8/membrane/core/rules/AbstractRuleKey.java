@@ -44,6 +44,15 @@ public abstract class AbstractRuleKey implements RuleKey {
         this.ip = ip;
     }
 
+    public AbstractRuleKey(AbstractRuleKey key) {
+        port = key.getPort();
+        path = key.getPath();
+        pathPattern = key.getPathPattern();
+        pathRegExp = key.getPathRegExp();
+        usePathPattern = key.isUsePathPattern();
+        ip = key.getIp();
+    }
+
     public String getHost() {
         return "";
     }
@@ -70,6 +79,10 @@ public abstract class AbstractRuleKey implements RuleKey {
     }
 
     public boolean isPathRegExp() {
+        return pathRegExp;
+    }
+
+    public boolean getPathRegExp() {
         return pathRegExp;
     }
 
