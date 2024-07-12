@@ -40,9 +40,11 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        if(!initialized) {
-            ruleApiSpecs = initializeRuleApiSpecs();
-            initialized = true;
+        synchronized(this) {
+            if (!initialized) {
+                ruleApiSpecs = initializeRuleApiSpecs();
+                initialized = true;
+            }
         }
         var publisher = new OpenAPIPublisher(ruleApiSpecs);
 

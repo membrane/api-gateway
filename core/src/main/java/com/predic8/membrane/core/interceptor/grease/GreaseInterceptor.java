@@ -24,6 +24,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.lang.Double.parseDouble;
 import static java.util.EnumSet.*;
 
 @MCElement(name = "greaser")
@@ -63,8 +64,8 @@ public class GreaseInterceptor extends AbstractInterceptor {
     }
 
     @MCAttribute
-    public void setRate(double rate) {
-        this.rate = Math.max(0, Math.min(1, rate));
+    public void setRate(String rate) {
+        this.rate = Math.max(0, Math.min(1, parseDouble(rate)));
     }
 
     public double getRate() {
