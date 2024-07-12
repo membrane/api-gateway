@@ -75,9 +75,7 @@ public class APIProxy extends ServiceProxy {
 
     @Override
     public void init() throws Exception {
-        boolean pathRegExp = key.isPathRegExp();
-        key = new APIProxyKey((APIProxyKey) key, test, !specs.isEmpty());
-        key.setPathRegExp(pathRegExp);
+        key = new APIProxyKey(key, test, !specs.isEmpty());
         super.init();
         initOpenAPI();
     }
@@ -150,7 +148,7 @@ public class APIProxy extends ServiceProxy {
                 paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
             } catch (URISyntaxException e) {
                 log.error("Cannot parse URL {}", url);
-                throw new RuntimeException();
+                throw new RuntimeException("Cannot parse URL %s".formatted(url));
             }
         }));
         return paths;
