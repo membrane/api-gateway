@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static java.lang.String.valueOf;
 
@@ -55,15 +56,13 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
     @Override
     public void init() throws JsonProcessingException {
         synchronized(this) {
-            JsonNode apisJsonMeta = om.readTree(APIS_JSON_META);
-
-            List<JsonNode> apis = router.getRuleManager().getRules().stream()
-                    .filter(APIProxy.class::isInstance)
-                    .map(r -> jsonNodeFromApiProxy((APIProxy) r)).toList();
-
             ObjectNode apisJsonNode = om.createObjectNode();
-            apisJsonNode.set("meta", apisJsonMeta);
-            apisJsonNode.putArray("apis").addAll(apis);
+            apisJsonNode.set("meta", om.readTree(APIS_JSON_META));
+            apisJsonNode.putArray("apis").addAll(
+                    router.getRuleManager().getRules().stream()
+                            .filter(APIProxy.class::isInstance)
+                            .map(r -> jsonNodeFromApiProxy((APIProxy) r)).toList()
+            );
             apisJson = om.writeValueAsBytes(apisJsonNode);
         }
     }
@@ -77,7 +76,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         exc.setResponse(new ResponseBuilder().body(apisJson).build());
-        return CONTINUE;
+        return RETURN;
     }
 
     @Override
