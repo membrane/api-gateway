@@ -39,7 +39,7 @@ class GreaseInterceptorTest {
     @BeforeEach
     void setup() {
         greaseInterceptor = new GreaseInterceptor();
-        greaseInterceptor.setRate(1);
+        greaseInterceptor.setRate("1");
         greaseInterceptor.setStrategies(List.of(new JsonGrease() {{
             setAdditionalProperties(false);}}));
     }
@@ -65,25 +65,25 @@ class GreaseInterceptorTest {
         // Test with rate = 1
         assertNotEquals(json, requestExc.getRequest().getBodyAsStringDecoded());
 
-        greaseInterceptor.setRate(0.1);
+        greaseInterceptor.setRate("0.1");
         assertEquals(0.1, calculateRate(greaseInterceptor, json), 0.02);
 
-        greaseInterceptor.setRate(0.5);
+        greaseInterceptor.setRate("0.5");
         assertEquals(0.5, calculateRate(greaseInterceptor, json), 0.02);
 
-        greaseInterceptor.setRate(0.01);
+        greaseInterceptor.setRate("0.01");
         assertEquals(0.01, calculateRate(greaseInterceptor, json), 0.02);
     }
 
     @Test
     void testSetRate() {
-        greaseInterceptor.setRate(0.5);
+        greaseInterceptor.setRate("0.5");
         assertEquals(0.5, greaseInterceptor.getRate());
-        greaseInterceptor.setRate(1.5);
+        greaseInterceptor.setRate("1.5");
         assertEquals(1.0, greaseInterceptor.getRate());
-        greaseInterceptor.setRate(-0.5);
+        greaseInterceptor.setRate("-0.5");
         assertEquals(0.0, greaseInterceptor.getRate());
-        greaseInterceptor.setRate(0.0001);
+        greaseInterceptor.setRate("0.0001");
         assertEquals(0.0001, greaseInterceptor.getRate());
     }
 
