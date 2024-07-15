@@ -4,7 +4,7 @@ This tutorial shows how to use Membrane API Gateway to validate Json Web Tokens 
 
 Membrane API Gateway protects the Backend API.
 
-![Overview](https://www.membrane-api.io/security/azure-ad-jwt/00-overview.png)
+![Overview](./images/00-overview.png)
 
 1. The client retrieves the token from Azure AD.
 2. The JWT is issued by Azure AD and returned to the client
@@ -26,7 +26,7 @@ Both the Client and the Backend are registered in Azure AD with an "App registra
 5. Choose ``New registration``.
 6. Enter a name (e.g. ``Demo Backend``) and click ``Register``.
 
-   ![Backend Registration](https://www.membrane-api.io/security/azure-ad-jwt/01-backend-registration.png)
+   ![Backend Registration](./images/01-backend-registration.png)
 
 7. Next to *Application ID URI*, click on ``Add an Application ID URI``.
 8. Next to *Application ID URI*, click on ``Set``.
@@ -47,7 +47,7 @@ There are several possibilities of getting a valid token. For this demo, we use 
 1. Open https://aad.portal.azure.com/#view/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/~/RegisteredApps .
 2. Choose ``New registration``.
 3. Enter a name (e.g. ``Demo Client``) and click ``Register``.
-   ![Client Registration](https://www.membrane-api.io/security/azure-ad-jwt/03-client-registration.png)
+   ![Client Registration](./images/03-client-registration.png)
 
 4. Take note of your ``Application (client) ID``.
 5. Next to *Client credentials*, click on ``Add a certificate or secret``.
@@ -58,11 +58,11 @@ There are several possibilities of getting a valid token. For this demo, we use 
 9. Take note of the ``Value``, also known as the ``client secret``.
 10. Click on ``API permissions``.
 11. Click on ``Add a permission``.
-    ![Adding a permission](https://www.membrane-api.io/security/azure-ad-jwt/05-client-permission-granting.png)
+    ![Adding a permission](./images/05-client-permission-granting.png)
 13. Below ``My APIs``, choose ``Demo Backend``.
-    ![Adding a permission](https://www.membrane-api.io/security/azure-ad-jwt/06-client-permission-granting2.png)
+    ![Adding a permission](./images/06-client-permission-granting2.png)
 14. Select the ``ReadWrite`` permission.
-    ![Adding a permission](https://www.membrane-api.io/security/azure-ad-jwt/07-client-permission-granting3.png)
+    ![Adding a permission](./images/07-client-permission-granting3.png)
 15. Click on ``Add permission``.
 
 ### 2.b. Get a token
