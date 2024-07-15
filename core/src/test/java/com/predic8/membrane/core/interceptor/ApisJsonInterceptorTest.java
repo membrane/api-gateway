@@ -33,7 +33,6 @@ import static org.mockito.Mockito.when;
 
 class ApisJsonInterceptorTest {
     private ApisJsonInterceptor interceptor;
-    private static final ObjectMapper OM = new ObjectMapper();
     private static final String RESPONSE_JSON = "{\"aid\":\"example.com:1234\",\"name\":\"API Collection\",\"description\":\"API Collection Description\",\"url\":\"http://example.com/apis.json\",\"created\":\"2024-07-15\",\"modified\":\"2024-07-15\",\"specificationVersion\":\"0.18\",\"apis\":[{\"aid\":\"example.com:/\",\"name\":\":80\",\"description\":\"N/A (Available only internally in APIProxy)\",\"humanUrl\":\"WIP\",\"baseUrl\":\"/\",\"image\":\"N/A (Available only internally in APIProxy)\",\"version\":\"N/A (Available only internally in APIProxy)\"}]}";
 
     @BeforeEach
