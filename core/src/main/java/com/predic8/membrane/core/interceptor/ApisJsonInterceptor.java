@@ -17,30 +17,25 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.rules.Rule;
+import io.swagger.v3.oas.models.OpenAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.PATH;
 import static java.lang.String.valueOf;
+import static java.text.DateFormat.getDateTimeInstance;
 
 @MCElement(name = "APIsJSON")
 public class ApisJsonInterceptor extends AbstractInterceptor {
@@ -48,35 +43,95 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ApisJsonInterceptor.class);
 
     private static final ObjectMapper om = new ObjectMapper();
-    private static final String APIS_JSON_META = """
-    {"aid": "APIs.json"}""";
+    private static final String YYYY_MM_DD = "yyyy-MM-dd";
+    private static final String SPECIFICATION_VERSION = "0.18";
+    private byte[] apisJson;
 
-    private static byte[] apisJson;
+    private String rootDomain;
+    private String collectionId;
+    private String collectionName;
+    private String description;
+    private String apisJsonUrl;
+    private Date created;
+    private Date modified;
 
     @Override
-    public void init() throws JsonProcessingException {
+    public void init(Router router) throws JsonProcessingException {
         synchronized(this) {
-            ObjectNode apisJsonNode = om.createObjectNode();
-            apisJsonNode.set("meta", om.readTree(APIS_JSON_META));
-            apisJsonNode.putArray("apis").addAll(
-                    router.getRuleManager().getRules().stream()
-                            .filter(APIProxy.class::isInstance)
-                            .map(r -> jsonNodeFromApiProxy((APIProxy) r)).toList()
-            );
-            apisJson = om.writeValueAsBytes(apisJsonNode);
+            if (apisJson == null) {
+                ObjectNode apisJsonNode = om.createObjectNode();
+                apisJsonNode.put("aid", rootDomain + ":" + collectionId);
+                apisJsonNode.put("name", collectionName);
+                apisJsonNode.put("description", description);
+                apisJsonNode.put("url", apisJsonUrl);
+                apisJsonNode.put("created", new SimpleDateFormat(YYYY_MM_DD).format(created));
+                apisJsonNode.put("modified", new SimpleDateFormat(YYYY_MM_DD).format(modified));
+                apisJsonNode.put("specificationVersion", SPECIFICATION_VERSION);
+                apisJsonNode.putArray("apis").addAll(
+                        router.getRuleManager().getRules().stream()
+                                .filter(APIProxy.class::isInstance)
+                                .map(r -> jsonNodeFromApiProxy((APIProxy) r)).toList()
+                );
+                apisJson = om.writeValueAsBytes(apisJsonNode);
+            }
         }
     }
 
-    public static JsonNode jsonNodeFromApiProxy(APIProxy api) {
+    JsonNode jsonNodeFromApiProxy(APIProxy api) {
         ObjectNode apiJson = om.createObjectNode();
+        apiJson.put("aid", rootDomain + ":" + safePathAsString(api.getPath()));
         apiJson.put("name", api.getName());
+        apiJson.put("description", "N/A (Available only internally in APIProxy)");
+        apiJson.put("humanUrl", "WIP");
+        apiJson.put("baseUrl", safePathAsString(api.getPath()));
+        apiJson.put("image", "N/A (Available only internally in APIProxy)");
+        apiJson.put("version", "N/A (Available only internally in APIProxy)");
         return apiJson;
+    }
+
+    String safePathAsString(Path path) {
+        return (path != null) ? path.getValue() : "/";
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(new ResponseBuilder().body(apisJson).build());
+        exc.setResponse(new ResponseBuilder().body(apisJson).contentType(APPLICATION_JSON).build());
         return RETURN;
+    }
+
+    @MCAttribute
+    public void setRootDomain(String rootDomain) {
+        this.rootDomain = rootDomain;
+    }
+
+    @MCAttribute
+    public void setCollectionId(String collectionId) {
+        this.collectionId = collectionId;
+    }
+
+    @MCAttribute(attributeName = "name")
+    public void setCollectionName(String collectionName) {
+        this.collectionName = collectionName;
+    }
+
+    @MCAttribute
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @MCAttribute(attributeName = "url")
+    public void setApisJsonUrl(String apisJsonUrl) {
+        this.apisJsonUrl = apisJsonUrl;
+    }
+
+    @MCAttribute
+    public void setCreated(String created) throws ParseException {
+        this.created = new SimpleDateFormat(YYYY_MM_DD).parse(created);
+    }
+
+    @MCAttribute
+    public void setModified(String modified) throws ParseException {
+        this.modified = new SimpleDateFormat(YYYY_MM_DD).parse(modified);
     }
 
     @Override
