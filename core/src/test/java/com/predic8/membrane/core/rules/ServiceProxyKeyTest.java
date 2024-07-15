@@ -31,6 +31,26 @@ public class ServiceProxyKeyTest {
 	}
 
 	@Test
+	void createHostPatternWildcard() {
+		assertEquals("(\\Qmembrane\\E.+)", ServiceProxyKey.createHostPattern("membrane*"));
+	}
+
+	@Test
+	void createHostPatternSpaceAtStart() {
+		assertEquals("(\\Qmembrane\\E)", ServiceProxyKey.createHostPattern("     membrane"));
+	}
+
+	@Test
+	void createHostPatternOnlySpaces() {
+		assertEquals("()", ServiceProxyKey.createHostPattern("         "));
+	}
+
+	@Test
+	void createHostPatternSpaceAtEnd() {
+		assertEquals("(\\Qfoo\\E)", ServiceProxyKey.createHostPattern("foo "));
+	}
+
+	@Test
 	void createHostPatternMultiHost() {
 		assertEquals("(\\Qfoo\\E)|(\\Qbar\\E)|(\\Qbaz\\E)", ServiceProxyKey.createHostPattern("foo bar baz"));
 	}
