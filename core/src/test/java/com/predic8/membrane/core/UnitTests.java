@@ -75,7 +75,6 @@ import com.predic8.membrane.core.lang.spel.functions.BuiltInFunctionsTest;
 import com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandlerTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.SingleResolverTest;
 import com.predic8.membrane.core.rules.APIProxyKeyTest;
 import com.predic8.membrane.core.rules.ProxyRuleTest;
