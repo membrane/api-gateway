@@ -21,6 +21,7 @@ import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request.Builder;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,11 +33,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ApisJsonInterceptorTest {
-    private ApisJsonInterceptor interceptor;
     private static final String RESPONSE_JSON = "{\"aid\":\"example.com:1234\",\"name\":\"API Collection\",\"description\":\"API Collection Description\",\"url\":\"http://example.com/apis.json\",\"created\":\"2024-07-15\",\"modified\":\"2024-07-15\",\"specificationVersion\":\"0.18\",\"apis\":[{\"aid\":\"example.com:/\",\"name\":\":80\",\"description\":\"N/A (Available only internally in APIProxy)\",\"humanUrl\":\"WIP\",\"baseUrl\":\"/\",\"image\":\"N/A (Available only internally in APIProxy)\",\"version\":\"N/A (Available only internally in APIProxy)\"}]}";
+    private static ApisJsonInterceptor interceptor;
 
-    @BeforeEach
-    void setUp() throws ParseException {
+    @BeforeAll
+    static void setUp() throws ParseException {
         interceptor = new ApisJsonInterceptor() {{
             setRootDomain("example.com");
             setCollectionId("1234");
