@@ -133,53 +133,51 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	public static String createHostPattern(String host) {
 		StringBuilder regex = new StringBuilder();
 		boolean quoted = false;
-		boolean started = false;
+		boolean notWhitespace = false;
 		regex.append("(");
-		for (int i = 0; i < host.length(); i++) {
-			char c = host.charAt(i);
+		for (char c : host.toCharArray()) {
 			switch (c) {
-			case ' ':
-				if (!started)
+				case ' ':
+					if (!notWhitespace) {
+						continue;
+					}
+					if (quoted) {
+						regex.append("\\E");
+						quoted = false;
+					}
+					notWhitespace = false;
+					regex.append(")|(");
 					break;
-				if (quoted) {
-					regex.append("\\E");
-					quoted = false;
-				}
-				started = false;
-				regex.append(")|(");
-				break;
-			case '*':
-				if (quoted) {
-					regex.append("\\E");
-					quoted = false;
-				}
-				regex.append(".+");
-				started = true;
-				break;
-			default:
-				if (!quoted) {
-					regex.append("\\Q");
-					quoted = true;
-					started = true;
-				}
-				if (c == '\\')
-					regex.append('\\');
-				regex.append(c);
+				case '*':
+					if (quoted) {
+						regex.append("\\E");
+						quoted = false;
+					}
+					regex.append(".*");
+					notWhitespace = true;
+					break;
+				default:
+					if (!quoted) {
+						regex.append("\\Q");
+						quoted = true;
+						notWhitespace = true;
+					}
+					if (c == '\\')
+						regex.append('\\');
+					regex.append(c);
+					break;
 			}
 		}
 		if (quoted) {
 			regex.append("\\E");
-			quoted = false;
 		}
-		if (!started && regex.length() > 1) {
-			regex.delete(regex.length()-3, regex.length());
+		if (!notWhitespace && regex.length() > 1) {
+			regex.setLength(regex.length() - 3);
 		}
 		regex.append(")");
-
-		String r = regex.toString();
-
-		return r;
+		return regex.toString();
 	}
+
 
 	@Override
 	public boolean matchesHostHeader(String hostHeader) {
