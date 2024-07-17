@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -248,34 +249,35 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
         sb.append("<table>");
         sb.append("<thead><th>API</th><th>Base Paths</th><th>Properties</th></thead>");
-        apiProxy.getBasePaths().entrySet().stream()
-                .collect(groupingBy(Map.Entry::getValue, mapping(Map.Entry::getKey, toList())))
-                .forEach((value, keys) -> {
-                    sb.append("<tr>");
-                    sb.append("<td>");
-                    sb.append(value.api.getInfo().getTitle());
-                    sb.append("</td>");
-                    sb.append("<td>");
-                    keys.stream().sorted().forEach(keyList -> sb.append(keyList).append("<br />"));
-                    sb.append("</td>");
-                    sb.append("<td>");
-                    sb.append("<b>SwaggerUI: </b>");
-                    sb.append("<a href='").append(buildSwaggerUrl(value.api)).append("'>").append(buildSwaggerUrl(value.api)).append("</a>");
-                    sb.append("<br /> <br />");
-                    sb.append("<b> Validation Configuration: </b>");
-                    sb.append("<br />");
-                    if (value.api.getExtensions() != null && value.api.getExtensions().get(X_MEMBRANE_VALIDATION) != null) {
-                        //noinspection unchecked
-                        sb.append(buildValidationPropertiesDescription((Map<String, Object>) value.api.getExtensions().get(X_MEMBRANE_VALIDATION)));
-                    }
-                    sb.append("<br />");
-                    sb.append("<b>Server: </b>");
-                    value.getApi().getServers().stream()
-                            .sorted(comparing(Server::getUrl))
-                            .forEach(s -> sb.append("<br /> - <a href='").append(s.getUrl()).append("'>").append(s.getUrl()).append("</a>"));
-                    sb.append("</td>");
-                    sb.append("</tr>");
-                });
+        for (Map.Entry<OpenAPIRecord, List<String>> entry : apiProxy.getBasePaths().entrySet().stream()
+                .collect(groupingBy(Map.Entry::getValue, mapping(Map.Entry::getKey, toList()))).entrySet()) {
+            OpenAPIRecord value = entry.getKey();
+            List<String> keys = entry.getValue();
+            sb.append("<tr>");
+            sb.append("<td>");
+            sb.append(value.api.getInfo().getTitle());
+            sb.append("</td>");
+            sb.append("<td>");
+            keys.stream().sorted().forEach(keyList -> sb.append(keyList).append("<br />"));
+            sb.append("</td>");
+            sb.append("<td>");
+            sb.append("<b>SwaggerUI: </b>");
+            sb.append("<a href='").append(buildSwaggerUrl(value.api)).append("'>").append(buildSwaggerUrl(value.api)).append("</a>");
+            sb.append("<br /> <br />");
+            sb.append("<b> Validation Configuration: </b>");
+            sb.append("<br />");
+            if (value.api.getExtensions() != null && value.api.getExtensions().get(X_MEMBRANE_VALIDATION) != null) {
+                //noinspection unchecked
+                sb.append(buildValidationPropertiesDescription((Map<String, Object>) value.api.getExtensions().get(X_MEMBRANE_VALIDATION)));
+            }
+            sb.append("<br />");
+            sb.append("<b>Server: </b>");
+            value.getApi().getServers().stream()
+                    .sorted(comparing(Server::getUrl))
+                    .forEach(s -> sb.append("<br /> - <a href='").append(s.getUrl()).append("'>").append(s.getUrl()).append("</a>"));
+            sb.append("</td>");
+            sb.append("</tr>");
+        }
         sb.append("</table>");
 
         return sb.toString();
@@ -313,7 +315,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             - Requests: %s<br />
             - Responses: %s<br />
             - Details: %s<br />
-            """.formatted(props.get("security"), props.get("responses"), props.get("details"), props.get("requests"));
+            """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
     }
 
     private Outcome returnErrors(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
