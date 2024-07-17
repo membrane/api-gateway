@@ -25,6 +25,8 @@ import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
 
+import static java.util.Optional.ofNullable;
+
 public class APIProxyKey extends ServiceProxyKey {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxyKey.class.getName());
@@ -88,6 +90,28 @@ public class APIProxyKey extends ServiceProxyKey {
     void addBasePaths(ArrayList<String> paths) {
         basePaths.addAll(paths);
     }
+
+    public String getKeyId() {
+        return (
+                getMethod() + "-"
+                + ofNullable(getIp()).orElse("0.0.0.0") + "-"
+                + getHost()
+                + getPort()
+                + getPath() + "-"
+                + (testExpr == null ? "true" : testExpr.getExpressionString())
+        );
+    }
+
+    /*public String getKeyId() {
+        return String.valueOf((
+                getMethod() + "-"
+                + ofNullable(getIp()).orElse("0.0.0.0") + "-"
+                + getHost()
+                + getPort()
+                + getPath() + "-"
+                + (testExpr == null ? "true" : testExpr.getExpressionString())
+        ).hashCode());
+    }*/
 
     @Override
     public boolean equals(Object obj) {

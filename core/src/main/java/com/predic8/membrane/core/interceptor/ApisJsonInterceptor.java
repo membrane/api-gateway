@@ -24,6 +24,7 @@ import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy.ApiDescription;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.lang.String.valueOf;
 import static java.text.DateFormat.getDateTimeInstance;
+import static java.util.Optional.ofNullable;
 
 @MCElement(name = "APIsJSON")
 public class ApisJsonInterceptor extends AbstractInterceptor {
@@ -47,50 +49,44 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
     private static final String SPECIFICATION_VERSION = "0.18";
     private byte[] apisJson;
 
-    private String rootDomain;
-    private String collectionId;
-    private String collectionName;
-    private String description;
-    private String apisJsonUrl;
-    private Date created;
-    private Date modified;
+    private String rootDomain = "membrane";
+    private String collectionId = "apis";
+    private String collectionName = "APIs";
+    private String description = "APIs.json Document";
+    private String apisJsonUrl = "http://localhost/apis.json"; // TODO Maybe use string template to replace during exchange??
+    private Date created = new Date();
+    private Date modified = new Date();
 
     @Override
     public void init(Router router) throws JsonProcessingException {
-        synchronized(this) {
-            if (apisJson == null) {
-                ObjectNode apisJsonNode = om.createObjectNode();
-                apisJsonNode.put("aid", rootDomain + ":" + collectionId);
-                apisJsonNode.put("name", collectionName);
-                apisJsonNode.put("description", description);
-                apisJsonNode.put("url", apisJsonUrl);
-                apisJsonNode.put("created", new SimpleDateFormat(YYYY_MM_DD).format(created));
-                apisJsonNode.put("modified", new SimpleDateFormat(YYYY_MM_DD).format(modified));
-                apisJsonNode.put("specificationVersion", SPECIFICATION_VERSION);
-                apisJsonNode.putArray("apis").addAll(
-                        router.getRuleManager().getRules().stream()
-                                .filter(APIProxy.class::isInstance)
-                                .map(r -> jsonNodeFromApiProxy((APIProxy) r)).toList()
-                );
-                apisJson = om.writeValueAsBytes(apisJsonNode);
-            }
+        if (apisJson != null) {
+            return;
         }
+        ObjectNode apis = om.createObjectNode();
+        apis.put("aid", rootDomain + ":" + collectionId);
+        apis.put("name", collectionName);
+        apis.put("description", description);
+        apis.put("url", apisJsonUrl);
+        apis.put("created", new SimpleDateFormat(YYYY_MM_DD).format(created));
+        apis.put("modified", new SimpleDateFormat(YYYY_MM_DD).format(modified));
+        apis.put("specificationVersion", SPECIFICATION_VERSION);
+        apis.putArray("apis").addAll(
+                router.getRuleManager().getRules().stream()
+                        .filter(APIProxy.class::isInstance)
+                        .map(r -> jsonNodeFromApiProxy((APIProxy) r)).toList()
+        );
+        apisJson = om.writeValueAsBytes(apis);
     }
 
     JsonNode jsonNodeFromApiProxy(APIProxy api) {
         ObjectNode apiJson = om.createObjectNode();
-        apiJson.put("aid", rootDomain + ":" + safePathAsString(api.getPath()));
+        apiJson.put("aid", rootDomain + ":" + ((APIProxyKey) api.getKey()).getKeyId());
         apiJson.put("name", api.getName());
-        apiJson.put("description", "N/A (Available only internally in APIProxy)");
+        apiJson.put("description", ofNullable(api.getDescription()).map(ApiDescription::getContent).orElse("API"));
         apiJson.put("humanUrl", "WIP");
-        apiJson.put("baseUrl", safePathAsString(api.getPath()));
-        apiJson.put("image", "N/A (Available only internally in APIProxy)");
+        apiJson.put("baseUrl", ofNullable(api.getPath()).map(Path::getValue).orElse("/"));
         apiJson.put("version", "N/A (Available only internally in APIProxy)");
         return apiJson;
-    }
-
-    String safePathAsString(Path path) {
-        return (path != null) ? path.getValue() : "/";
     }
 
     @Override
