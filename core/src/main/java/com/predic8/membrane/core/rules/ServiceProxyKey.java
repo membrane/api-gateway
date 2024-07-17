@@ -21,114 +21,125 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ServiceProxyKey extends AbstractRuleKey {
-	private static Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
 
-	private String method = "*";
-	private String host = "*";
-	private boolean isHostWildCard = true;
-	private Pattern hostPattern;
+    private String method = "*";
+    private String host = "*";
+    private boolean isHostWildCard = true;
+    private Pattern hostPattern;
 
-	public ServiceProxyKey(int port) {
-		this(port, null);
-	}
+    public ServiceProxyKey(RuleKey key) {
+        super(key);
+        method = key.getMethod();
+        host = key.getHost();
 
-	public ServiceProxyKey(int port, String ip) {
-		super(port, ip);
-	}
+        if (key instanceof AbstractRuleKey arKey) {
+            isHostWildCard = arKey.isHostWildcard();
+        }
 
-	public ServiceProxyKey(String host, String method, String path, int port) {
-		this(host, method, path, port, null);
-	}
-
-	public ServiceProxyKey(String host, String method, String path, int port, String ip) {
-		super(port, ip);
-		setHost(host);
-		setPath(path);
-		this.method = method;
-	}
-
-	@Override
-	public String getMethod() {
-		return method;
-	}
-
-	public void setMethod(String method) {
-		this.method = method;
-	}
-
-	@Override
-	public boolean isMethodWildcard() {
-		return "*".equals(method.trim());
-	}
-
-	@Override
-	public boolean isHostWildcard() {
-		return isHostWildCard;
-	}
-
-	@Override
-	public String toString() {
-		return    ( host.equals("*") ? "" : host+" " )
-				+ ( method.equals("*") ? "" : method+" " )
-				+ StringUtils.defaultIfEmpty(getPath(), "")
-				+ ":" + port;
-	}
+        if (key instanceof ServiceProxyKey spKey) {
+            hostPattern = spKey.getHostPattern();
+        }
+    }
 
 
+    public ServiceProxyKey(int port) {
+        this(port, null);
+    }
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((host == null) ? 0 : host.hashCode());
-		result = prime * result + ((method == null) ? 0 : method.hashCode());
-		result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
-		return result;
-	}
+    public ServiceProxyKey(int port, String ip) {
+        super(port, ip);
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (!super.equals(obj))
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		ServiceProxyKey other = (ServiceProxyKey) obj;
-		if (host == null) {
-			if (other.host != null)
-				return false;
-		} else if (!host.equals(other.host))
-			return false;
-		if (method == null) {
-			if (other.method != null)
-				return false;
-		} else if (!method.equals(other.method))
-			return false;
-		if (getPath() == null) {
-			if (other.getPath() != null)
-				return false;
-		} else if (!getPath().equals(other.getPath()))
-			return false;
-		return true;
-	}
+    public ServiceProxyKey(String host, String method, String path, int port) {
+        this(host, method, path, port, null);
+    }
 
-	@Override
-	public String getHost() {
-		return host;
-	}
+    public ServiceProxyKey(String host, String method, String path, int port, String ip) {
+        super(port, ip);
+        setHost(host);
+        setPath(path);
+        this.method = method;
+    }
 
-	public void setHost(String host) {
-		this.host = host.trim();
-		this.isHostWildCard = "*".equals(this.host);
-		if (!isHostWildCard) {
-			String pattern = createHostPattern(this.host);
-			log.debug("Created host pattern match: " + pattern);
-			this.hostPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-		} else {
-			this.hostPattern = null;
-		}
-	}
+    @Override
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    @Override
+    public boolean isMethodWildcard() {
+        return "*".equals(method.trim());
+    }
+
+    @Override
+    public boolean isHostWildcard() {
+        return isHostWildCard;
+    }
+
+    @Override
+    public String toString() {
+        return (host.equals("*") ? "" : host + " ")
+               + (method.equals("*") ? "" : method + " ")
+               + StringUtils.defaultIfEmpty(getPath(), "")
+               + ":" + port;
+    }
+
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((host == null) ? 0 : host.hashCode());
+        result = prime * result + ((method == null) ? 0 : method.hashCode());
+        result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (!super.equals(obj))
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        ServiceProxyKey other = (ServiceProxyKey) obj;
+        if (host == null) {
+            if (other.host != null)
+                return false;
+        } else if (!host.equals(other.host))
+            return false;
+        if (method == null) {
+            if (other.method != null)
+                return false;
+        } else if (!method.equals(other.method))
+            return false;
+        if (getPath() == null) {
+            return other.getPath() == null;
+        } else return getPath().equals(other.getPath());
+    }
+
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host.trim();
+        this.isHostWildCard = "*".equals(this.host);
+        if (!isHostWildCard) {
+            String pattern = createHostPattern(this.host);
+            log.debug("Created host pattern match: {}", pattern);
+            this.hostPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+        } else {
+            this.hostPattern = null;
+        }
+    }
 
 	public static String createHostPattern(String host) {
 		StringBuilder regex = new StringBuilder();
@@ -153,7 +164,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 						regex.append("\\E");
 						quoted = false;
 					}
-					regex.append(".*");
+					regex.append(".+");
 					notWhitespace = true;
 					break;
 				default:
@@ -179,25 +190,25 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	}
 
 
-	@Override
-	public boolean matchesHostHeader(String hostHeader) {
-		if (isHostWildCard)
-			return true;
+    @Override
+    public boolean matchesHostHeader(String hostHeader) {
+        if (isHostWildCard)
+            return true;
 
-		if (hostHeader == null)
-			return false;
+        if (hostHeader == null)
+            return false;
 
-		String requestHost = hostHeader.split(":")[0];
+        String requestHost = hostHeader.split(":")[0];
 
-		log.debug("Rule host: " + host + ";  Request host: " + requestHost);
+        log.debug("Rule host: {} Request host: {}", host, requestHost);
 
-		return hostPattern.matcher(requestHost).matches();
-	}
+        return hostPattern.matcher(requestHost).matches();
+    }
 
-	/**
-	 * The pattern used to match the host name, or null if any host name matches.
-	 */
-	public Pattern getHostPattern() {
-		return hostPattern;
-	}
+    /**
+     * The pattern used to match the host name, or null if any host name matches.
+     */
+    public Pattern getHostPattern() {
+        return hostPattern;
+    }
 }

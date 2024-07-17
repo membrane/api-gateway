@@ -148,7 +148,7 @@ public class APIProxy extends ServiceProxy {
                 paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
             } catch (URISyntaxException e) {
                 log.error("Cannot parse URL {}", url);
-                throw new RuntimeException();
+                throw new RuntimeException("Cannot parse URL %s".formatted(url));
             }
         }));
         return paths;

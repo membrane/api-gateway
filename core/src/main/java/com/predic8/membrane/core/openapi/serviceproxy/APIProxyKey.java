@@ -34,7 +34,9 @@ public class APIProxyKey extends ServiceProxyKey {
     private Expression testExpr;
 
     public APIProxyKey(RuleKey key, String test, boolean openAPI) {
-        this(key.getIp(), key.getHost(), key.getPort(), key.getPath(), key.getMethod(), test, openAPI);
+        super(key);
+        init(test, openAPI);
+        setUsePathPattern(true);
     }
 
     public APIProxyKey(String ip, String host, int port, String path, String method, String test, boolean openAPI) {
@@ -71,7 +73,7 @@ public class APIProxyKey extends ServiceProxyKey {
             if (!uri.startsWith(basePath))
                 continue;
 
-            log.debug("Rule matches " + uri);
+            log.debug("Rule matches {}", uri);
             return true;
 
         }
