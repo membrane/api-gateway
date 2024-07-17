@@ -315,6 +315,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             - Requests: %s<br />
             - Responses: %s<br />
             - Details: %s<br />
+            For in-depth explanation of these properties visit <a href="https://www.membrane-api.io/openapi/configuration-and-validation/index.html#validation"> here </a><br />
             """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
     }
 
