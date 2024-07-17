@@ -26,7 +26,42 @@ import com.predic8.membrane.core.http.Request;
 public class ServiceProxyKeyTest {
 
 	@Test
-	public void testSimpleConstructor() throws Exception {
+	void createHostPatternSimple() {
+		assertEquals("(\\Qmembrane\\E)", ServiceProxyKey.createHostPattern("membrane"));
+	}
+
+	@Test
+	void createHostPatternWildcard() {
+		assertEquals("(\\Qmembrane\\E.+)", ServiceProxyKey.createHostPattern("membrane*"));
+	}
+
+	@Test
+	void createHostPatternSpaceAtStart() {
+		assertEquals("(\\Qmembrane\\E)", ServiceProxyKey.createHostPattern("     membrane"));
+	}
+
+	@Test
+	void createHostPatternOnlySpaces() {
+		assertEquals("()", ServiceProxyKey.createHostPattern("         "));
+	}
+
+	@Test
+	void createHostPatternSpaceAtEnd() {
+		assertEquals("(\\Qfoo\\E)", ServiceProxyKey.createHostPattern("foo "));
+	}
+
+	@Test
+	void createHostPatternMultiHost() {
+		assertEquals("(\\Qfoo\\E)|(\\Qbar\\E)|(\\Qbaz\\E)", ServiceProxyKey.createHostPattern("foo bar baz"));
+	}
+
+	@Test
+	void createHostPatternMultiHostSpecialChars() {
+		assertEquals("(\\Q\\\\foo\\E)|(\\Q(bar)\\E)|(\\Qbaz!\\E)", ServiceProxyKey.createHostPattern("\\foo (bar) baz!"));
+	}
+
+	@Test
+	void testSimpleConstructor() {
 		ServiceProxyKey key = new ServiceProxyKey(3000);
 		assertEquals(3000, key.getPort());
 		assertEquals("*", key.getMethod());
@@ -38,7 +73,7 @@ public class ServiceProxyKeyTest {
 	}
 
 	@Test
-	public void testNoRegExpMatchesPath() throws Exception {
+	void testNoRegExpMatchesPath() {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, "/axis2/services", 3000);
 		key.setPathRegExp(false);
 
@@ -47,21 +82,21 @@ public class ServiceProxyKeyTest {
 	}
 
 	@Test
-	public void testRegularExpressionMatchesPath() throws Exception {
+	void testRegularExpressionMatchesPath() {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
-		assertFalse(key.matchesPath("/axis2/services/FooService/Bla")); //???
+		assertFalse(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
 
 	@Test
-	public void testRegularExpressionMatchesPathAnyURI() throws Exception {
+	void testRegularExpressionMatchesPathAnyURI() {
 		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertTrue(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
 
 	@Test
-	public void testHostMatch() {
+	void testHostMatch() {
 		testHostMatch("localhost", "localhost");
 		testHostMatch("foo.predic8.de", "foo.predic8.de");
 		testHostMatch(" foo.predic8.de ", "foo.predic8.de");

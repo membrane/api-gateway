@@ -192,6 +192,54 @@ public class ServiceProxyKey extends AbstractRuleKey {
 
         return regex.toString();
     }
+	public static String createHostPattern(String host) {
+		StringBuilder regex = new StringBuilder();
+		boolean quoted = false;
+		boolean notWhitespace = false;
+		regex.append("(");
+		for (char c : host.toCharArray()) {
+			switch (c) {
+				case ' ':
+					if (!notWhitespace) {
+						continue;
+					}
+					if (quoted) {
+						regex.append("\\E");
+						quoted = false;
+					}
+					notWhitespace = false;
+					regex.append(")|(");
+					break;
+				case '*':
+					if (quoted) {
+						regex.append("\\E");
+						quoted = false;
+					}
+					regex.append(".*");
+					notWhitespace = true;
+					break;
+				default:
+					if (!quoted) {
+						regex.append("\\Q");
+						quoted = true;
+						notWhitespace = true;
+					}
+					if (c == '\\')
+						regex.append('\\');
+					regex.append(c);
+					break;
+			}
+		}
+		if (quoted) {
+			regex.append("\\E");
+		}
+		if (!notWhitespace && regex.length() > 1) {
+			regex.setLength(regex.length() - 3);
+		}
+		regex.append(")");
+		return regex.toString();
+	}
+
 
     @Override
     public boolean matchesHostHeader(String hostHeader) {
