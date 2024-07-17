@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ServiceProxyKey extends AbstractRuleKey {
-    private static Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
 
     private String method = "*";
     private String host = "*";
@@ -120,11 +120,8 @@ public class ServiceProxyKey extends AbstractRuleKey {
         } else if (!method.equals(other.method))
             return false;
         if (getPath() == null) {
-            if (other.getPath() != null)
-                return false;
-        } else if (!getPath().equals(other.getPath()))
-            return false;
-        return true;
+            return other.getPath() == null;
+        } else return getPath().equals(other.getPath());
     }
 
     @Override
@@ -144,54 +141,6 @@ public class ServiceProxyKey extends AbstractRuleKey {
         }
     }
 
-    public static String createHostPattern(String host) {
-        StringBuilder regex = new StringBuilder();
-        boolean quoted = false;
-        boolean started = false;
-        regex.append("(");
-        for (int i = 0; i < host.length(); i++) {
-            char c = host.charAt(i);
-            switch (c) {
-                case ' ':
-                    if (!started)
-                        break;
-                    if (quoted) {
-                        regex.append("\\E");
-                        quoted = false;
-                    }
-                    started = false;
-                    regex.append(")|(");
-                    break;
-                case '*':
-                    if (quoted) {
-                        regex.append("\\E");
-                        quoted = false;
-                    }
-                    regex.append(".+");
-                    started = true;
-                    break;
-                default:
-                    if (!quoted) {
-                        regex.append("\\Q");
-                        quoted = true;
-                        started = true;
-                    }
-                    if (c == '\\')
-                        regex.append('\\');
-                    regex.append(c);
-            }
-        }
-        if (quoted) {
-            regex.append("\\E");
-            quoted = false;
-        }
-        if (!started && regex.length() > 1) {
-            regex.delete(regex.length() - 3, regex.length());
-        }
-        regex.append(")");
-
-        return regex.toString();
-    }
 	public static String createHostPattern(String host) {
 		StringBuilder regex = new StringBuilder();
 		boolean quoted = false;
@@ -215,7 +164,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 						regex.append("\\E");
 						quoted = false;
 					}
-					regex.append(".*");
+					regex.append(".+");
 					notWhitespace = true;
 					break;
 				default:
