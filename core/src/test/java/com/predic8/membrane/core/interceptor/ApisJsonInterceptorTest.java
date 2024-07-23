@@ -63,12 +63,6 @@ class ApisJsonInterceptorTest {
     }
 
     @Test
-    void safePathAsStringTest() {
-        assertEquals("/foo", interceptor.safePathAsString(new Path(false, "/foo")));
-        assertEquals("/", interceptor.safePathAsString(null));
-    }
-
-    @Test
     void jsonNodeFromApiProxyTest() {
         APIProxy apiProxy = new APIProxy() {{
             setPath(new Path(false, "/baz"));

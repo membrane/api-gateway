@@ -25,7 +25,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy.ApiDescription;
-import io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.core.rules.Rule;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,14 +54,24 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
     private String collectionId = "apis";
     private String collectionName = "APIs";
     private String description = "APIs.json Document";
-    private String apisJsonUrl = "http://localhost/apis.json"; // TODO Maybe use string template to replace during exchange??
+    private String apisJsonUrl;
     private Date created = new Date();
     private Date modified = new Date();
 
     @Override
-    public void init(Router router) throws JsonProcessingException {
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        if (apisJson == null)
+            initJson(router, exc);
+        exc.setResponse(new ResponseBuilder().body(apisJson).contentType(APPLICATION_JSON).build());
+        return RETURN;
+    }
+
+    public void initJson(Router router, Exchange exc) throws JsonProcessingException {
         if (apisJson != null) {
             return;
+        }
+        if (apisJsonUrl == null) {
+            apisJsonUrl = getProtocol(exc.getRule()) + exc.getRequest().getHeader().getHost() + exc.getRequest().getUri();
         }
         ObjectNode apis = om.createObjectNode();
         apis.put("aid", rootDomain + ":" + collectionId);
@@ -71,28 +82,51 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         apis.put("modified", new SimpleDateFormat(YYYY_MM_DD).format(modified));
         apis.put("specificationVersion", SPECIFICATION_VERSION);
         apis.putArray("apis").addAll(
-                router.getRuleManager().getRules().stream()
+                (router.getRuleManager().getRules().stream()
                         .filter(APIProxy.class::isInstance)
-                        .map(r -> jsonNodeFromApiProxy((APIProxy) r)).toList()
+                        .<JsonNode>mapMulti((rule, sink) -> {
+                            var r = ((APIProxy) rule);
+                            if (r.getApiRecords().isEmpty())
+                                sink.accept(jsonNodeFromApiProxy(r, null, null));
+                            else
+                                r.getApiRecords().forEach((id, rec) -> sink.accept(jsonNodeFromApiProxy(r, id, rec)));
+                        }).toList())
         );
         apisJson = om.writeValueAsBytes(apis);
     }
 
-    JsonNode jsonNodeFromApiProxy(APIProxy api) {
+    JsonNode jsonNodeFromApiProxy(APIProxy api, String recordId, OpenAPIRecord apiRecord) {
         ObjectNode apiJson = om.createObjectNode();
-        apiJson.put("aid", rootDomain + ":" + ((APIProxyKey) api.getKey()).getKeyId());
-        apiJson.put("name", api.getName());
-        apiJson.put("description", ofNullable(api.getDescription()).map(ApiDescription::getContent).orElse("API"));
-        apiJson.put("humanUrl", "WIP");
-        apiJson.put("baseUrl", ofNullable(api.getPath()).map(Path::getValue).orElse("/"));
-        apiJson.put("version", "N/A (Available only internally in APIProxy)");
+        apiJson.put("aid", customIdOrBuildDefault(api, recordId));
+        apiJson.put("name", (apiRecord != null) ? apiRecord.getApi().getInfo().getTitle() : api.getName());
+        apiJson.put("description", (apiRecord != null && apiRecord.getApi().getInfo().getDescription() != null)
+                ? apiRecord.getApi().getInfo().getDescription()
+                : ofNullable(api.getDescription()).map(ApiDescription::getContent).orElse("API"));
+        apiJson.put("humanUrl", getProtocol(api) + getHost(api) + ((apiRecord != null) ? "/api-docs/ui/" + recordId : "/api-docs"));
+        apiJson.put("baseUrl", getProtocol(api) + getHost(api) + ofNullable(api.getPath()).map(Path::getValue).orElse("/"));
+        if (apiRecord != null)
+            apiJson.put("version", apiRecord.getApi().getInfo().getVersion());
         return apiJson;
     }
 
-    @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(new ResponseBuilder().body(apisJson).contentType(APPLICATION_JSON).build());
-        return RETURN;
+    private static String getHost(APIProxy api) {
+        String hostname = (Objects.equals(api.getKey().getHost(), "*")) ? "localhost" : api.getKey().getHost();
+
+        return hostname + ((api.getPort() == 80 || api.getPort() == 443) ? "" : ":" + api.getPort());
+    }
+
+    private String customIdOrBuildDefault(APIProxy api, String recordId) {
+        if (api.getId() != null)
+            return api.getId();
+        return (recordId != null) ? rootDomain + ":" + recordId : buildDefaultAPIProxyId(api);
+    }
+
+    private String buildDefaultAPIProxyId(APIProxy api) {
+        return rootDomain + ":" + ((APIProxyKey) api.getKey()).getKeyId();
+    }
+
+    private static @NotNull String getProtocol(Rule rule) {
+        return (rule.getSslInboundContext() != null ? "https" : "http") + "://";
     }
 
     @MCAttribute
