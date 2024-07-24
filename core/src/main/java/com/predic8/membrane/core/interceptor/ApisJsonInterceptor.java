@@ -99,7 +99,8 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         ObjectNode apiJson = om.createObjectNode();
         apiJson.put("aid", customIdOrBuildDefault(api, recordId));
         apiJson.put("name", (apiRecord != null) ? apiRecord.getApi().getInfo().getTitle() : api.getName());
-        apiJson.put("description", (apiRecord != null && apiRecord.getApi().getInfo().getDescription() != null)
+        apiJson.put("description", (apiRecord != null && api.getDescription() == null
+                && apiRecord.getApi().getInfo().getDescription() != null)
                 ? apiRecord.getApi().getInfo().getDescription()
                 : ofNullable(api.getDescription()).map(ApiDescription::getContent).orElse("API"));
         apiJson.put("humanUrl", getProtocol(api) + getHost(api) + ((apiRecord != null) ? "/api-docs/ui/" + recordId : "/api-docs"));
