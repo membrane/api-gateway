@@ -104,17 +104,6 @@ public class APIProxyKey extends ServiceProxyKey {
         );
     }
 
-    /*public String getKeyId() {
-        return String.valueOf((
-                getMethod() + "-"
-                + ofNullable(getIp()).orElse("0.0.0.0") + "-"
-                + getHost()
-                + getPort()
-                + getPath() + "-"
-                + (testExpr == null ? "true" : testExpr.getExpressionString())
-        ).hashCode());
-    }*/
-
     @Override
     public boolean equals(Object obj) {
         if (!super.equals(obj))
