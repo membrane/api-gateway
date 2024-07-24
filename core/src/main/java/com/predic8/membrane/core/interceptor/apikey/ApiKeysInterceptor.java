@@ -48,7 +48,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Secures access with ApiKeys and RBAC with Scopes. ";
+        return required ? "Secures access with api keys and RBAC with scopes. "
+               : "Warning: Required is set to <code>false</code>, scopes will be extracted but any api key, even missing ones, will be accepted.";
     }
 
     @Override
