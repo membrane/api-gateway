@@ -28,15 +28,21 @@ import static org.hamcrest.CoreMatchers.containsString;
 public class SOAPProxyIntegrationTest {
 
 	private static Router router;
+	private static Router targetRouter;
 
 	@BeforeAll
 	public static void setup() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
 		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
 
-		Router targetRouter = new HttpRouter();
+		targetRouter = new HttpRouter();
 		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		targetRouter.init();
+	}
+
+	@AfterAll
+	public static void teardown() throws IOException {
+		targetRouter.shutdown();
 	}
 
 	@BeforeEach

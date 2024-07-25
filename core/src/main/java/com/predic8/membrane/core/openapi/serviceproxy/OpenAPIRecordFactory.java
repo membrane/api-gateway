@@ -114,13 +114,13 @@ public class OpenAPIRecordFactory {
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
         OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec), spec);
-        setExtentsionOnAPI(spec, record.api);
+        setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
         OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file), spec);
-        setExtentsionOnAPI(spec, record.api);
+        setExtensionOnAPI(spec, record.api);
         return record;
     }
 
@@ -151,14 +151,14 @@ public class OpenAPIRecordFactory {
         return omYaml.readTree(file);
     }
 
-    private void setExtentsionOnAPI(OpenAPISpec spec, OpenAPI api) {
+    private void setExtensionOnAPI(OpenAPISpec spec, OpenAPI api) {
         if (api.getExtensions() == null) {
             api.setExtensions(new HashMap<>());
         }
         api.getExtensions().put(X_MEMBRANE_VALIDATION, updateExtension(getXValidationExtension(api), spec));
     }
 
-    private Map<String, Object> getXValidationExtension(OpenAPI api) {
+    public static Map<String, Object> getXValidationExtension(OpenAPI api) {
         if (api.getExtensions().get(X_MEMBRANE_VALIDATION) != null)
             //noinspection unchecked
             return (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
