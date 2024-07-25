@@ -15,10 +15,12 @@ package com.predic8.membrane.core.rules;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,24 +36,38 @@ public class APIProxyKeyTest {
 
     @BeforeAll
     public static void setup() throws Exception {
-        Rule restrictedRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, "/foo", "*", null, false));}};
-        restrictedRule.getInterceptors().add(new TemplateInterceptor() {{setTextTemplate("Baz");}});
-        restrictedRule.getInterceptors().add(new ReturnInterceptor());
-        restrictedRule.setName("Restricted Rule");
-
-        Rule fallthroughRule = new APIProxy() {{setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, null, "*", null, false));}};
-        fallthroughRule.getInterceptors().add(new TemplateInterceptor() {{setTextTemplate("Foobar");}});
-        fallthroughRule.getInterceptors().add(new ReturnInterceptor());
-        fallthroughRule.setName("Fall through Rule");
-
         router = new HttpRouter();
-        router.getRuleManager().addProxyAndOpenPortIfNew(restrictedRule);
-        router.getRuleManager().addProxyAndOpenPortIfNew(fallthroughRule);
-        router.init();
+    }
+
+    @AfterAll
+    public static void shutdownRouter() throws IOException {
+        router.shutdown();
     }
 
     @Test
-    void apiProxyPathMatchTest() {
+    void serviceProxyPathSubpathTest() throws Exception {
+        registerApiProxy("/foo", "Baz");
+        router.init();
+        when()
+                .get("http://localhost:3000/foo/bar")
+                .then()
+                .body(containsString("Baz"));
+    }
+
+    @Test
+    void apiProxyPathSubpathTest() throws Exception {
+        registerApiProxy("/foo", "Baz");
+        router.init();
+        when()
+            .get("http://localhost:3000/foo/bar")
+        .then()
+            .body(containsString("Baz"));
+    }
+
+    @Test
+    void apiProxyPathMatchTest() throws Exception {
+        registerApiProxy("/foo", "Baz");
+        router.init();
         when()
             .get("http://localhost:3000/foo")
         .then()
@@ -59,15 +75,31 @@ public class APIProxyKeyTest {
     }
 
     @Test
-    void apiProxyPathFallthroughTest() {
+    void apiProxyPathFallthroughTest() throws Exception {
+        registerApiProxy("/foo", "Baz");
+        registerApiProxy(null, "Foobar");
+        router.init();
         when()
             .get("http://localhost:3000")
         .then()
             .body(containsString("Foobar"));
     }
 
-    @AfterAll
-    public static void shutdownRouter() throws IOException {
-        router.shutdown();
+    private static void registerApiProxy(String path, String body) throws IOException, ClassNotFoundException {
+        router.getRuleManager().addProxyAndOpenPortIfNew(new APIProxy() {{
+            setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, path, "*", null, false));
+            getInterceptors().add(new TemplateInterceptor() {{
+                setTextTemplate(body);
+            }});
+            if (path != null) {
+                Path p = new Path();
+                p.setValue(path);
+                p.setRegExp(false);
+                setPath(p);
+            }
+            getInterceptors().add(new ReturnInterceptor());
+        }});
     }
+
+
 }

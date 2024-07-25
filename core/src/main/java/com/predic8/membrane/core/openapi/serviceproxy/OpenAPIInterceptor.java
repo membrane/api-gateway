@@ -16,30 +16,40 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.servers.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.rules.RuleKey;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.parseSwaggersInfoServer;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.RESPONSE;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.*;
 
 
 public class OpenAPIInterceptor extends AbstractInterceptor {
@@ -238,26 +248,75 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         StringBuilder sb = new StringBuilder();
 
         sb.append("<table>");
-        sb.append("<thead><th>API</th><th>Base Path</th><th>Validation</th></thead>");
-
-        for (Map.Entry<String, OpenAPIRecord> entry : apiProxy.getBasePaths().entrySet()) {
+        sb.append("<thead><th>API</th><th>Base Paths</th><th>Properties</th></thead>");
+        for (Map.Entry<OpenAPIRecord, List<String>> entry : apiProxy.getBasePaths().entrySet().stream()
+                .collect(groupingBy(Map.Entry::getValue, mapping(Map.Entry::getKey, toList()))).entrySet()) {
+            OpenAPIRecord value = entry.getKey();
+            List<String> keys = entry.getValue();
             sb.append("<tr>");
             sb.append("<td>");
-            sb.append(entry.getValue().api.getInfo().getTitle());
+            sb.append(value.api.getInfo().getTitle());
             sb.append("</td>");
             sb.append("<td>");
-            sb.append(entry.getKey());
+            keys.stream().sorted().forEach(keyList -> sb.append(keyList).append("<br />"));
             sb.append("</td>");
             sb.append("<td>");
-            if (entry.getValue().api.getExtensions() != null && entry.getValue().api.getExtensions().get(X_MEMBRANE_VALIDATION) != null) {
-                sb.append(entry.getValue().api.getExtensions().get(X_MEMBRANE_VALIDATION));
+            sb.append("<b>SwaggerUI: </b>");
+            sb.append("<a href='").append(buildSwaggerUrl(value.api)).append("'>").append(buildSwaggerUrl(value.api)).append("</a>");
+            sb.append("<br /> <br />");
+            sb.append("<b> Validation Configuration: </b>");
+            sb.append("<br />");
+            if (value.api.getExtensions() != null && value.api.getExtensions().get(X_MEMBRANE_VALIDATION) != null) {
+                //noinspection unchecked
+                sb.append(buildValidationPropertiesDescription((Map<String, Object>) value.api.getExtensions().get(X_MEMBRANE_VALIDATION)));
             }
+            sb.append("<br />");
+            sb.append("<b>Server: </b>");
+            value.getApi().getServers().stream()
+                    .sorted(comparing(Server::getUrl))
+                    .forEach(s -> sb.append("<br /> - <a href='").append(s.getUrl()).append("'>").append(s.getUrl()).append("</a>"));
             sb.append("</td>");
             sb.append("</tr>");
         }
         sb.append("</table>");
 
         return sb.toString();
+    }
+
+    public String buildSwaggerUrl(OpenAPI api) {
+        String protocol = "";
+        String host = !Objects.equals(getKey().getHost(), "*") ? getKey().getHost() : "localhost";
+        if(!(host.contains("http://") || host.contains("https://"))) {
+            protocol = router.getParentProxy(this).getSslInboundContext() != null ? "https://" : "http://";
+        }
+        String path = getKey().getPath() != null ? getKey().getPath() : "";
+        int port = getKey().getPort();
+
+        return "%s%s:%d%s%s".formatted(protocol, host, port, path, getSwaggerPath(api));
+    }
+
+    private String getSwaggerPath(OpenAPI api) {
+        //noinspection OptionalGetWithoutIsPresent
+        return "/api-docs/ui/" + apiProxy.apiRecords.entrySet().stream()
+                .filter(d -> d.getValue().api == api)
+                .findFirst()
+                .get()
+                .getKey();
+    }
+
+
+    private RuleKey getKey() {
+        return router.getParentProxy(this).getKey();
+    }
+
+    private String buildValidationPropertiesDescription(Map<String, Object> props) {
+        return """
+            - Security: %s<br />
+            - Requests: %s<br />
+            - Responses: %s<br />
+            - Details: %s<br />
+            For in-depth explanation of these properties visit <a href="https://www.membrane-api.io/openapi/configuration-and-validation/index.html#validation"> here </a><br />
+            """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
     }
 
     private Outcome returnErrors(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {

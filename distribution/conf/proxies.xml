@@ -7,9 +7,10 @@
     <router>
 
         <api port="2000">
-            <openapi location="../examples/rewriter/openapi/demo-api-v1.yml" validateRequests="yes">
-                <rewrite host="predic8.de" port="3000" basePath="/foo"/>
-            </openapi>
+            <path>/shop/v2</path>
+            <target host="api.predic8.de">
+                <ssl/>
+            </target>
         </api>
 
     </router>

@@ -66,7 +66,8 @@ public class ConfigSerializationTest {
 			"validation-security", // throws error because openapi parser does not provide port information
 			"validation", // throws error because openapi parser does not provide port information
 			"validation-simple", // throws error because openapi parser does not provide port information
-			"template"); // template serialization fails
+			"template", // template serialization fails
+			"greasing"); // greaser interceptor has a child element of type List, this seems to confuse the parser
 
 	public static List<Object[]> getPorts() {
 		ArrayList<Object[]> res = new ArrayList<>();

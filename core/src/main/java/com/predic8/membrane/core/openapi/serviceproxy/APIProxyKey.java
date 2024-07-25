@@ -25,6 +25,8 @@ import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
 
+import static java.util.Optional.ofNullable;
+
 public class APIProxyKey extends ServiceProxyKey {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxyKey.class.getName());
@@ -34,7 +36,9 @@ public class APIProxyKey extends ServiceProxyKey {
     private Expression testExpr;
 
     public APIProxyKey(RuleKey key, String test, boolean openAPI) {
-        this(key.getIp(), key.getHost(), key.getPort(), key.getPath(), key.getMethod(), test, openAPI);
+        super(key);
+        init(test, openAPI);
+        setUsePathPattern(true);
     }
 
     public APIProxyKey(String ip, String host, int port, String path, String method, String test, boolean openAPI) {
@@ -71,7 +75,7 @@ public class APIProxyKey extends ServiceProxyKey {
             if (!uri.startsWith(basePath))
                 continue;
 
-            log.debug("Rule matches " + uri);
+            log.debug("Rule matches {}", uri);
             return true;
 
         }
@@ -87,6 +91,17 @@ public class APIProxyKey extends ServiceProxyKey {
 
     void addBasePaths(ArrayList<String> paths) {
         basePaths.addAll(paths);
+    }
+
+    public String getKeyId() {
+        return (
+                getMethod() + "-"
+                + ofNullable(getIp()).orElse("0.0.0.0") + "-"
+                + getHost()
+                + getPort()
+                + getPath() + "-"
+                + (testExpr == null ? "true" : testExpr.getExpressionString())
+        );
     }
 
     @Override

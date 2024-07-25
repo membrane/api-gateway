@@ -46,6 +46,8 @@ public class APIProxy extends ServiceProxy {
     public static final String VALIDATION_DETAILS = "details";
 
     private String test;
+    private String id;
+    private ApiDescription description;
 
     protected Map<String,OpenAPIRecord> apiRecords = new LinkedHashMap<>();
 
@@ -148,7 +150,7 @@ public class APIProxy extends ServiceProxy {
                 paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
             } catch (URISyntaxException e) {
                 log.error("Cannot parse URL {}", url);
-                throw new RuntimeException();
+                throw new RuntimeException("Cannot parse URL %s".formatted(url));
             }
         }));
         return paths;
@@ -156,6 +158,10 @@ public class APIProxy extends ServiceProxy {
 
     public ValidationStatisticsCollector getValidationStatisticCollector() {
         return statisticCollector;
+    }
+
+    public Map<String, OpenAPIRecord> getApiRecords() {
+        return apiRecords;
     }
 
     public Map<String, OpenAPIRecord> getBasePaths() {
@@ -171,4 +177,35 @@ public class APIProxy extends ServiceProxy {
         this.test = test;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public ApiDescription getDescription() {
+        return description;
+    }
+
+    @MCAttribute
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @MCChildElement
+    public void setDescription(ApiDescription description) {
+        this.description = description;
+    }
+
+    @MCElement(name = "description", topLevel = false, mixed = true)
+    public static class ApiDescription {
+        private String content;
+
+        @MCTextContent
+        public void setContent(String content) {
+            this.content = content;
+        }
+
+        public String getContent() {
+            return content;
+        }
+    }
 }
