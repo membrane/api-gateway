@@ -82,7 +82,7 @@
 		<slf4j.version>2.0.13</slf4j.version>
 		<log4j.version>2.23.1</log4j.version>
 		<junit.version>5.10.0</junit.version>
-		<groovy.version>4.0.21</groovy.version>
+		<groovy.version>4.0.22</groovy.version>
 	</properties>
 
 
