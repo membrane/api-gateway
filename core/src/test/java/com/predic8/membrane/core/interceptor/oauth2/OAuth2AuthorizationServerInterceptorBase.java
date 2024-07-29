@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import org.junit.jupiter.api.*;
@@ -170,6 +171,8 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             Callable<Exchange> preparedExchange,
             int expectedStatusCode,
             ExceptionThrowingConsumer<Exchange> postprocessing) throws Exception {
+        if (testName.contains("Revocation") && oasi.getWellknownFile().getRevocationEndpoint() == null)
+            return; // only run this test, if OASI supports revocation
         preprocessing.run();
         exc = preparedExchange.call();
         OAuth2TestUtil.makeExchangeValid(exc);
@@ -235,11 +238,16 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                 return "";
             }
         };
+        configureOASI(oasi);
         setOasiUserDataProvider();
         setOasiClientList();
         setOasiClaimList();
         setOasiProperties();
         oasi.init(router);
+    }
+
+    public void configureOASI(OAuth2AuthorizationServerInterceptor oasi) {
+        // do nothing
     }
 
     private void setOasiProperties() {

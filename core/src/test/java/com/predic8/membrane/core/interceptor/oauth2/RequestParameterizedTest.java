@@ -44,8 +44,17 @@ public abstract class RequestParameterizedTest {
 
     @BeforeEach
     public void setUp() throws Exception{
-        oasit = new OAuth2AuthorizationServerInterceptorNormalTest();
+        oasit = new OAuth2AuthorizationServerInterceptorNormalTest() {
+            @Override
+            public void configureOASI(OAuth2AuthorizationServerInterceptor oasi) {
+                RequestParameterizedTest.this.configureOASI(oasi);
+            }
+        };
         oasit.setUp();
+    }
+
+    public void configureOASI(OAuth2AuthorizationServerInterceptor oasi) {
+        // do nothing
     }
 
     @ParameterizedTest

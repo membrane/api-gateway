@@ -15,7 +15,9 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
 import com.predic8.membrane.core.rules.NullRule;
+import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
 
@@ -41,5 +43,16 @@ public class OAuth2TestUtil {
     public static void makeExchangeValid(Exchange exc) throws Exception {
         exc.setOriginalRequestUri(exc.getRequest().getUri());
         exc.setRule(new NullRule());
+    }
+
+    public static void configureJWT(OAuth2AuthorizationServerInterceptor oasi) {
+        try {
+            oasi.setTokenGenerator(new BearerJwtTokenGenerator());
+            OAuth2AuthorizationServerInterceptor.RefreshTokenConfig refreshTokenConfig = new OAuth2AuthorizationServerInterceptor.RefreshTokenConfig();
+            refreshTokenConfig.setTokenGenerator(new BearerJwtTokenGenerator());
+            oasi.setRefreshTokenConfig(refreshTokenConfig);
+        } catch (JoseException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

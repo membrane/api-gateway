@@ -101,4 +101,9 @@ public class BearerTokenGenerator implements TokenGenerator {
             throw new NoSuchElementException("ClientSecret doesn't match");
         tokenToUser.remove(token);
     }
+
+    @Override
+    public boolean supportsRevocation() {
+        return true;
+    }
 }
