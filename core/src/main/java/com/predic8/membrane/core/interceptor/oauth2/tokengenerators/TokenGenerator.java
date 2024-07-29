@@ -13,9 +13,13 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
+import com.predic8.membrane.core.Router;
+
 import java.util.NoSuchElementException;
 
 public interface TokenGenerator {
+    public void init(Router router) throws Exception;
+
     String getTokenType();
     String getToken(String username, String clientId, String clientSecret);
     String getUsername(String token) throws NoSuchElementException;

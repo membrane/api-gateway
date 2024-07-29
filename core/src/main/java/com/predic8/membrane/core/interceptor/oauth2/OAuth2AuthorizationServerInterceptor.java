@@ -82,6 +82,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         if (refreshTokenConfig != null)
             refreshTokenGenerator = refreshTokenConfig.tokenGenerator;
 
+        tokenGenerator.init(router);
+        refreshTokenGenerator.init(router);
+
         addSupportedAuthorizationGrants();
         getWellknownFile().init(router,this);
         getConsentPageFile().init(router,getConsentFile());

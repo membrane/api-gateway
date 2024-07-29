@@ -46,13 +46,9 @@ public class OAuth2TestUtil {
     }
 
     public static void configureJWT(OAuth2AuthorizationServerInterceptor oasi) {
-        try {
-            oasi.setTokenGenerator(new BearerJwtTokenGenerator());
-            OAuth2AuthorizationServerInterceptor.RefreshTokenConfig refreshTokenConfig = new OAuth2AuthorizationServerInterceptor.RefreshTokenConfig();
-            refreshTokenConfig.setTokenGenerator(new BearerJwtTokenGenerator());
-            oasi.setRefreshTokenConfig(refreshTokenConfig);
-        } catch (JoseException e) {
-            throw new RuntimeException(e);
-        }
+        oasi.setTokenGenerator(new BearerJwtTokenGenerator());
+        OAuth2AuthorizationServerInterceptor.RefreshTokenConfig refreshTokenConfig = new OAuth2AuthorizationServerInterceptor.RefreshTokenConfig();
+        refreshTokenConfig.setTokenGenerator(new BearerJwtTokenGenerator());
+        oasi.setRefreshTokenConfig(refreshTokenConfig);
     }
 }
