@@ -40,6 +40,9 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
                 testGoodGrantedAuthCode(),
                 testGoodTokenRequest(),
                 testGoodUserinfoRequest(),
+                testGoodRefreshRequest(),
+                testBadRefreshWithAccessTokenRequest(),
+                testBadUserInfoWithRefreshTokenRequest(),
                 testGoodRevocationRequest());
     }
 
@@ -49,6 +52,18 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
 
     private static Object[] testGoodUserinfoRequest() {
         return new Object[]{"testGoodUserinfoRequest", runUntilGoodTokenRequest(),getMockUserinfoRequest(),200,userinfoRequestPostprocessing()};
+    }
+
+    private static Object[] testGoodRefreshRequest() {
+        return new Object[]{"testGoodRefreshRequest", runUntilGoodTokenRequest(),getMockRefreshRequest(),200,refreshTokenRequestPostprocessing()};
+    }
+
+    private static Object[] testBadRefreshWithAccessTokenRequest() {
+        return new Object[]{"testBadRefreshWithAccessTokenRequest", runUntilGoodTokenRequest(),getMockInvalidRefreshWithAccessTokenRequest(),400,noPostprocessing()};
+    }
+
+    private static Object[] testBadUserInfoWithRefreshTokenRequest() {
+        return new Object[]{"testBadUserInfoWithRefreshTokenRequest", runUntilGoodTokenRequest(),getMockInvalidUserinfoWithRefreshTokenRequest(),401,noPostprocessing()};
     }
 
     private static Object[] testGoodTokenRequest() {

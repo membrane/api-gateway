@@ -26,4 +26,9 @@ public interface TokenGenerator {
     String getClientId(String token) throws NoSuchElementException;
     void invalidateToken(String token, String clientId, String clientSecret)throws NoSuchElementException;
     boolean supportsRevocation();
+
+    /**
+     * @return token expiration in seconds, or 0 if there is no expiration
+     */
+    long getExpiration();
 }

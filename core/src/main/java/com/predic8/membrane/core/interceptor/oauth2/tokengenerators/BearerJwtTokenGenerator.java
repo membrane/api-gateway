@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
@@ -33,14 +34,17 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     private RsaJsonWebKey rsaJsonWebKey;
 
     private JwtSessionManager.Jwk jwk;
+    private long expiration;
+    private boolean warningGeneratedKey = true;
 
     public void init(Router router) throws Exception {
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
-            LOG.warn("bearerJwtToken uses a generated key ('" +
-                    rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE)+
-                    "'). Sessions of this instance will not be compatible with sessions of other (e.g. restarted)"+
-                    "instances. To solve this, write the JWK into a file and reference it using <bearerJwtToken><jwk location=\"...\">.");
+            if (warningGeneratedKey)
+                LOG.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
+                        "with sessions of other (e.g. restarted)instances. To solve this, write the JWK into a file and " +
+                        "reference it using <bearerJwtToken><jwk location=\"...\">.",
+                        rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
         }
@@ -64,6 +68,8 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         JwtClaims claims = new JwtClaims();
         claims.setSubject(username);
         claims.setClaim("clientId", clientId);
+        if (expiration != 0)
+            claims.setExpirationTimeMinutesInTheFuture(expiration / 60.0f);
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
         jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
@@ -88,7 +94,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         try {
             return verify(token).getSubject();
         } catch (MalformedClaimException | InvalidJwtException e) {
-            throw new RuntimeException(e);
+            throw new NoSuchElementException(e);
         }
     }
 
@@ -97,7 +103,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         try {
             return verify(token).getClaimValue("clientId", String.class);
         } catch (MalformedClaimException | InvalidJwtException e) {
-            throw new RuntimeException(e);
+            throw new NoSuchElementException(e);
         }
     }
 
@@ -110,6 +116,20 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     @Override
     public boolean supportsRevocation() {
         return false;
+    }
+
+    @Override
+    public long getExpiration() {
+        return expiration;
+    }
+
+    /**
+     * @description Token expiration in seconds (or 0 to use no token expiration).
+     * @default 0
+     */
+    @MCAttribute
+    public void setExpiration(long expiration) {
+        this.expiration = expiration;
     }
 
     public JwtSessionManager.Jwk getJwk() {
@@ -126,4 +146,11 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
 
     }
 
+    public boolean isWarningGeneratedKey() {
+        return warningGeneratedKey;
+    }
+
+    public void setWarningGeneratedKey(boolean warningGeneratedKey) {
+        this.warningGeneratedKey = warningGeneratedKey;
+    }
 }

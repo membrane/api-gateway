@@ -45,6 +45,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     static String afterCodeGenerationCode;
     static String afterTokenGenerationToken;
     static String afterTokenGenerationTokenType;
+    static String afterTokenGenerationRefreshToken;
 
     static ExceptionThrowingConsumer<Exchange> noPostprocessing() {
         return exchange -> {};
@@ -115,6 +116,17 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
             afterTokenGenerationToken = json.get("access_token");
             afterTokenGenerationTokenType = json.get("token_type");
+            afterTokenGenerationRefreshToken = json.get("refresh_token");
+        };
+    }
+
+    static ExceptionThrowingConsumer<Exchange> refreshTokenRequestPostprocessing() {
+        return exc -> {
+            System.out.println(exc.getResponse());
+            HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
+            afterTokenGenerationToken = json.get("access_token");
+            afterTokenGenerationTokenType = json.get("token_type");
+            afterTokenGenerationRefreshToken = json.get("refresh_token");
         };
     }
 
@@ -124,6 +136,41 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                 .header("Authorization", afterTokenGenerationTokenType + " " + afterTokenGenerationToken)
                 .header("User-Agent", USERAGENT)
                 .header(ACCEPT, APPLICATION_JSON)
+                .buildExchange();
+    }
+
+    public static Callable<Exchange> getMockInvalidUserinfoWithRefreshTokenRequest() {
+        return () -> new Request.Builder()
+                .get(mas.getUserInfoEndpoint())
+                .header("Authorization", afterTokenGenerationTokenType + " " + afterTokenGenerationRefreshToken)
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .buildExchange();
+    }
+
+    public static Callable<Exchange> getMockRefreshRequest() {
+        return () -> new Request.Builder()
+                .post(mas.getTokenEndpoint())
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                .body("refresh_token=" + afterTokenGenerationRefreshToken
+                        + "&client_id=" + mas.getClientId()
+                        + "&client_secret=" + mas.getClientSecret()
+                        + "&grant_type=refresh_token")
+                .buildExchange();
+    }
+
+    public static Callable<Exchange> getMockInvalidRefreshWithAccessTokenRequest() {
+        return () -> new Request.Builder()
+                .post(mas.getTokenEndpoint())
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                .body("refresh_token=" + afterTokenGenerationToken
+                        + "&client_id=" + mas.getClientId()
+                        + "&client_secret=" + mas.getClientSecret()
+                        + "&grant_type=refresh_token")
                 .buildExchange();
     }
 

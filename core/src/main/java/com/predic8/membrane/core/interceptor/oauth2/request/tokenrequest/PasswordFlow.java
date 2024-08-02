@@ -57,6 +57,7 @@ public class PasswordFlow extends TokenRequest {
 
         scope = getScope();
         token = createTokenForVerifiedUserAndClient();
+        expiration = authServer.getTokenGenerator().getExpiration();
         refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
 
         SessionManager.Session session = createSessionForAuthorizedUserWithParams();
@@ -81,6 +82,7 @@ public class PasswordFlow extends TokenRequest {
         }
 
         refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret());
+        authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
 
         if (authServer.isIssueNonSpecIdTokens() && OAuth2Util.isOpenIdScope(scope)) {
             idToken = createSignedIdToken(session, client.getClientId(), client);

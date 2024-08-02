@@ -29,6 +29,7 @@ public abstract class TokenRequest extends ParameterizedRequest {
     protected String token;
     protected String idToken;
     protected String refreshToken;
+    protected long expiration;
 
     public TokenRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
@@ -41,7 +42,8 @@ public abstract class TokenRequest extends ParameterizedRequest {
             gen.writeStartObject();
             gen.writeObjectField("access_token", token);
             gen.writeObjectField("token_type", authServer.getTokenGenerator().getTokenType());
-            //gen.writeObjectField("expires_in", "null"); // TODO is optional but maybe useful?
+            if (expiration != 0)
+                gen.writeObjectField("expires_in", expiration);
             if(scope != null && !scope.isEmpty())
                 gen.writeObjectField(ParamNames.SCOPE, scope);
             if (idToken != null && !idToken.isEmpty())

@@ -112,4 +112,9 @@ public class BearerTokenGenerator implements TokenGenerator {
     public boolean supportsRevocation() {
         return true;
     }
+
+    @Override
+    public long getExpiration() {
+        return 0;
+    }
 }
