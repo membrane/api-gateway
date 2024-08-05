@@ -6,20 +6,12 @@
 
     <router>
 
-<!--        <serviceProxy port="2000">-->
-<!--            <path>/shop/v2</path>-->
-<!--            <target host="api.predic8.de">-->
-<!--                <ssl/>-->
-<!--            </target>-->
-<!--        </serviceProxy>-->
-
         <api port="2000">
             <path>/shop/v2</path>
             <target host="api.predic8.de">
                 <ssl/>
             </target>
         </api>
-
 
     </router>
 
