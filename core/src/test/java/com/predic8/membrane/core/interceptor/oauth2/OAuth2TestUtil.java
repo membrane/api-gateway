@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
 import com.predic8.membrane.core.rules.NullRule;
-import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
 
@@ -45,7 +44,7 @@ public class OAuth2TestUtil {
         exc.setRule(new NullRule());
     }
 
-    public static void configureJWT(OAuth2AuthorizationServerInterceptor oasi) {
+    public static void useJWTForAccessTokensAndRefreshTokens(OAuth2AuthorizationServerInterceptor oasi) {
         BearerJwtTokenGenerator tokenGenerator = new BearerJwtTokenGenerator();
         tokenGenerator.setWarningGeneratedKey(false);
         oasi.setTokenGenerator(tokenGenerator);
