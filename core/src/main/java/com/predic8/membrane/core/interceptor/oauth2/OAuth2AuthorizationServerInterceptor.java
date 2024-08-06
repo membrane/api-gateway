@@ -79,6 +79,12 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         if (basePath.endsWith("/"))
             throw new RuntimeException("When <oauth2AuthorizationServer> is nested in a <serviceProxy> with a <path>, the path should not end in a '/'.");
 
+        if (refreshTokenConfig != null)
+            refreshTokenGenerator = refreshTokenConfig.tokenGenerator;
+
+        tokenGenerator.init(router);
+        refreshTokenGenerator.init(router);
+
         addSupportedAuthorizationGrants();
         getWellknownFile().init(router,this);
         getConsentPageFile().init(router,getConsentFile());
@@ -282,7 +288,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     @Required
-    @MCChildElement(order = 6)
+    @MCChildElement(order = 7)
     public void setClaimList(ClaimList claimList) {
         this.claimList = claimList;
     }
@@ -373,6 +379,34 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setIssueNonSpecRefreshTokens(boolean issueNonSpecRefreshTokens) {
         this.issueNonSpecRefreshTokens = issueNonSpecRefreshTokens;
+    }
+
+
+    @MCElement(name="refresh")
+    public static class RefreshTokenConfig {
+
+        TokenGenerator tokenGenerator = new BearerTokenGenerator();
+
+        public TokenGenerator getTokenGenerator() {
+            return tokenGenerator;
+        }
+
+        @MCChildElement(order = 5)
+        public void setTokenGenerator(TokenGenerator tokenGenerator) {
+            this.tokenGenerator = tokenGenerator;
+        }
+
+    }
+
+    private RefreshTokenConfig refreshTokenConfig = null;
+
+    public RefreshTokenConfig getRefreshTokenConfig() {
+        return refreshTokenConfig;
+    }
+
+    @MCChildElement(order=6)
+    public void setRefreshTokenConfig(RefreshTokenConfig refreshTokenConfig) {
+        this.refreshTokenConfig = refreshTokenConfig;
     }
 
     public String computeBasePath() {

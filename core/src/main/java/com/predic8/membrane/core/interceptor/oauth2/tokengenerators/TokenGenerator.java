@@ -13,12 +13,51 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
+import com.predic8.membrane.core.Router;
+
 import java.util.NoSuchElementException;
 
 public interface TokenGenerator {
+    public void init(Router router) throws Exception;
+
+    /**
+     * @return the token type used, probably "Bearer".
+     */
     String getTokenType();
+
+    /**
+     * @return a new token for the specified user and client.
+     */
     String getToken(String username, String clientId, String clientSecret);
+
+    /**
+     * Checks the token for validity. Returns the username the token was generated for.
+     * @param token The token.
+     * @return The username.
+     * @throws NoSuchElementException if the token is not valid or no username is contained in the token.
+     */
     String getUsername(String token) throws NoSuchElementException;
+
+    /**
+     * Checks the token for validity. Returns the clientId the token was generated for.
+     * @param token The token.
+     * @return The clientId.
+     * @throws NoSuchElementException if the token is not valid or no clientId is contained in the token.
+     */
     String getClientId(String token) throws NoSuchElementException;
+
+    /**
+     * Revokes a token.
+     */
     void invalidateToken(String token, String clientId, String clientSecret)throws NoSuchElementException;
+
+    /**
+     * @return whether this token manager supports revocation (also known as "invalidation")
+     */
+    boolean supportsRevocation();
+
+    /**
+     * @return token expiration in seconds, or 0 if there is no expiration
+     */
+    long getExpiration();
 }

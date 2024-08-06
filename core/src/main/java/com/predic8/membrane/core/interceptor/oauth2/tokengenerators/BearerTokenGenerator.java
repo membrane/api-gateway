@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -63,6 +64,11 @@ public class BearerTokenGenerator implements TokenGenerator {
     private final ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<>();
 
     @Override
+    public void init(Router router) throws Exception {
+        // nothing to do
+    }
+
+    @Override
     public String getTokenType() {
         return "Bearer";
     }
@@ -100,5 +106,15 @@ public class BearerTokenGenerator implements TokenGenerator {
         if(!clientSecret.equals(user.getClientSecret()))
             throw new NoSuchElementException("ClientSecret doesn't match");
         tokenToUser.remove(token);
+    }
+
+    @Override
+    public boolean supportsRevocation() {
+        return true;
+    }
+
+    @Override
+    public long getExpiration() {
+        return 0;
     }
 }

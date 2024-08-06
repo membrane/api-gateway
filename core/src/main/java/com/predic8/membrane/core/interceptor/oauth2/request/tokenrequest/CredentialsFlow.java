@@ -54,6 +54,7 @@ public class CredentialsFlow extends TokenRequest {
         scope = getScope();
         
         token = createTokenForVerifiedClient();
+        expiration = authServer.getTokenGenerator().getExpiration();
 
         SessionManager.Session session = createSessionForAuthorizedClientWithParams();
         synchronized(session) {
@@ -76,8 +77,10 @@ public class CredentialsFlow extends TokenRequest {
         
         authServer.getSessionFinder().addSessionForToken(token,session);
 
-        if (authServer.isIssueNonSpecRefreshTokens())
+        if (authServer.isIssueNonSpecRefreshTokens()) {
             refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret());
+            authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
+        }
 
         if (authServer.isIssueNonSpecIdTokens() && OAuth2Util.isOpenIdScope(scope))
             idToken = createSignedIdToken(session, client.getClientId(), client);
