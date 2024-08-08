@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
@@ -78,6 +79,11 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         startMembraneScope(exc, getExtractContext(exc), getSpanName(exc)); // Params in Methode
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderTags(exc.getRequest().getHeader(), span);
+        if (exc.getRule() instanceof APIProxy a) {
+            var specs = a.getSpecs();
+        }
+        span.setAttribute("openapi.title", exc.getRequest().get);
+        span.setAttribute("openapi.version", hf.getValue());
 
 //        span.addEvent("Request", of(
 //                stringKey("Request Header"), exc.getRequest().getHeader().toString()
