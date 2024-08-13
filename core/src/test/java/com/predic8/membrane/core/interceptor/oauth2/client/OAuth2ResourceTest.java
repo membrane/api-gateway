@@ -13,28 +13,43 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
-import com.predic8.membrane.core.interceptor.oauth2client.*;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
+import com.predic8.membrane.core.interceptor.oauth2.WellknownFile;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.LoginParameter;
+import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLParamUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.math.*;
-import java.security.*;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
@@ -167,7 +182,7 @@ public abstract class OAuth2ResourceTest {
                     ref.set(exc.getOriginalRequestUri());
                     state.set(1);
                     exc.setResponse(Response.internalServerError().body("").build());
-                    return Outcome.RETURN;
+                    return RETURN;
                 }
 
                 return super.handleRequest(exc);
@@ -196,9 +211,9 @@ public abstract class OAuth2ResourceTest {
             public Outcome handleRequest(Exchange exc) throws Exception {
                 if (blocked.get()) {
                     exc.setResponse(Response.ok("Login aborted").build());
-                    return Outcome.RETURN;
+                    return RETURN;
                 }
-                return Outcome.CONTINUE;
+                return CONTINUE;
             }
         });
 
@@ -312,7 +327,7 @@ public abstract class OAuth2ResourceTest {
 
                 if (exc.getResponse() == null)
                     exc.setResponse(Response.notFound().build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
 
@@ -351,12 +366,12 @@ public abstract class OAuth2ResourceTest {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
                 if (!exc.getRequest().getUri().contains("is-logged-in"))
-                    return Outcome.CONTINUE;
+                    return CONTINUE;
 
                 boolean isLoggedIn = oAuth2ResourceInterceptor.getSessionManager().getSession(exc).isVerified();
 
-                exc.setResponse(Response.ok("{\"success\":" + isLoggedIn + "}").header(Header.CONTENT_TYPE, APPLICATION_JSON).build());
-                return Outcome.RETURN;
+                exc.setResponse(Response.ok("{\"success\":" + isLoggedIn + "}").header(CONTENT_TYPE, APPLICATION_JSON).build());
+                return RETURN;
             }
         });
         sp.getInterceptors().add(oAuth2ResourceInterceptor);
@@ -373,7 +388,7 @@ public abstract class OAuth2ResourceTest {
                 );
 
                 exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
         return sp;

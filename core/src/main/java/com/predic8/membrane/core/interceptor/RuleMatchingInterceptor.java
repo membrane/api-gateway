@@ -14,15 +14,23 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.transport.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
+import com.predic8.membrane.core.rules.NullRule;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.Rule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @SuppressWarnings("unused")
 @MCElement(name="ruleMatching")
@@ -98,24 +106,24 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private void insertXForwardedFor(AbstractExchange exc) {
 		Header h = exc.getRequest().getHeader();
-		if (h.getNumberOf(Header.X_FORWARDED_FOR) > maxXForwardedForHeaders) {
+		if (h.getNumberOf(X_FORWARDED_FOR) > maxXForwardedForHeaders) {
 			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_FOR + " flood: " + r.getStartLine() +
+			throw new RuntimeException("Request caused " + X_FORWARDED_FOR + " flood: " + r.getStartLine() +
 					r.getHeader().toString());
 		}
 		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
 
-		if (h.getNumberOf(Header.X_FORWARDED_PROTO) > maxXForwardedForHeaders) {
+		if (h.getNumberOf(X_FORWARDED_PROTO) > maxXForwardedForHeaders) {
 			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_PROTO + " flood: " + r.getStartLine() +
+			throw new RuntimeException("Request caused " + X_FORWARDED_PROTO + " flood: " + r.getStartLine() +
 					r.getHeader().toString());
 		}
 		h.setXForwardedProto(getXForwardedProtoHeaderValue(exc));
 
 
-		if (h.getNumberOf(Header.X_FORWARDED_HOST) > maxXForwardedForHeaders) {
+		if (h.getNumberOf(X_FORWARDED_HOST) > maxXForwardedForHeaders) {
 			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_HOST + " flood: " + r.getStartLine() +
+			throw new RuntimeException("Request caused " + X_FORWARDED_HOST + " flood: " + r.getStartLine() +
 					r.getHeader().toString());
 		}
 		h.setXForwardedHost(getXForwardedHostHeaderValue(exc));

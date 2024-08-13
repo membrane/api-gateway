@@ -14,30 +14,37 @@
 
 package com.predic8.membrane.core.interceptor.ratelimit;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.jose4j.jwt.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.URIFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jose4j.jwt.JwtClaims;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor.*;
-import static java.lang.Long.*;
-import static java.lang.Thread.*;
-import static java.time.Duration.*;
-import static java.util.stream.IntStream.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.lang.Long.parseLong;
+import static java.lang.Thread.sleep;
+import static java.time.Duration.ofSeconds;
+import static java.util.stream.IntStream.range;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RateLimitInterceptorTest {
 

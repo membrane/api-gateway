@@ -14,29 +14,34 @@
 
 package com.predic8.membrane.core.transport.http2;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.HeaderField;
+import com.google.common.collect.ImmutableList;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.interceptor.InterceptorFlowController;
+import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http2.frame.*;
-import com.predic8.membrane.core.util.*;
-import com.twitter.hpack.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.transport.http2.frame.Frame;
+import com.predic8.membrane.core.transport.http2.frame.RstStreamFrame;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.twitter.hpack.Encoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import javax.net.ssl.SSLException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
-import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.*;
-import static com.predic8.membrane.core.transport.http2.frame.Error.*;
+import static com.predic8.membrane.core.transport.http.AbstractHttpHandler.generateErrorResponse;
+import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_INTERNAL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
-import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
+import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_STREAM;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class Http2ExchangeHandler implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Http2ExchangeHandler.class.getName());
