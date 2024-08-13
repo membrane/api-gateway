@@ -15,14 +15,20 @@
 package com.predic8.membrane.core.interceptor.opentelemetry.exporter;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.interceptor.Header;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter.OtlpType.GRPC;
+import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter.OtlpType.*;
+import static java.lang.String.format;
 
 /*
  * Otlp Implementation for the OpenTelemetry protocol
@@ -34,10 +40,11 @@ public class OtlpExporter implements OtelExporter {
     private String host = "localhost";
     private Integer port;
     private OtlpType transport = GRPC;
+    private final List<Header> headers = new ArrayList<>();
 
     public String getEndpointUrl() {
-        String endpoint = String.format("http://%s:%d", host, getProtocolPort(port, transport));
-        if (transport == OtlpType.HTTP) {
+        String endpoint = format("%s://%s:%d", transport.toString().toLowerCase(), host, getProtocolPort(port, transport));
+        if (transport == HTTP || transport == HTTPS) {
             endpoint += "/v1/traces";
         }
         return endpoint;
@@ -46,7 +53,7 @@ public class OtlpExporter implements OtelExporter {
     private int getProtocolPort(Integer port, OtlpType trans) {
         if (port == null) {
             return switch (trans) {
-                case HTTP -> 4318;
+                case HTTP, HTTPS -> 4318;
                 case GRPC -> 4317;
             };
         }
@@ -55,20 +62,43 @@ public class OtlpExporter implements OtelExporter {
 
     public SpanExporter get() {
         String endpointUrl = getEndpointUrl();
-        return createSpanExporter(endpointUrl);
+        return createSpanExporter(endpointUrl, headers.stream().map(Header::asHeaderField).toList());
     }
 
-    private SpanExporter createSpanExporter(String endpointUrl) {
-        return switch (transport) {
-            case GRPC -> OtlpGrpcSpanExporter.builder()
-                    .setEndpoint(endpointUrl)
-                    .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .build();
-            case HTTP -> OtlpHttpSpanExporter.builder()
-                    .setEndpoint(endpointUrl)
-                    .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .build();
-        };
+    private SpanExporter createSpanExporter(String endpointUrl, List<HeaderField> headers) {
+        switch (transport) {
+            case GRPC -> {
+                return buildGrpcExporter(endpointUrl);
+            }
+            case HTTP, HTTPS -> {
+                return buildHttpExporter(endpointUrl, headers);
+            }
+            default -> throw new IllegalArgumentException("Unsupported transport type");
+        }
+    }
+
+    private OtlpGrpcSpanExporter buildGrpcExporter(String endpointUrl) {
+        return OtlpGrpcSpanExporter.builder()
+                .setEndpoint(endpointUrl)
+                .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .build();
+    }
+
+    private OtlpHttpSpanExporter buildHttpExporter(String endpointUrl, List<HeaderField> headers) {
+        var builder = OtlpHttpSpanExporter.builder()
+                .setEndpoint(endpointUrl)
+                .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        for (HeaderField header : headers) {
+            builder.addHeader(header.getHeaderName().toString(), header.getValue());
+        }
+
+        return builder.build();
+    }
+
+    @MCChildElement
+    public void setHeaders(List<Header> headers) {
+        this.headers.addAll(headers);
     }
 
     @MCAttribute
@@ -96,8 +126,13 @@ public class OtlpExporter implements OtelExporter {
         return port;
     }
 
+    public List<Header> getHeaders() {
+        return headers;
+    }
+
     public enum OtlpType {
         HTTP,
+        HTTPS,
         GRPC;
 
         @Override
