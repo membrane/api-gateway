@@ -29,12 +29,12 @@
         <dependency>
             <groupId>org.membrane-soa</groupId>
             <artifactId>service-proxy-core</artifactId>
-            <version>5.5.5-SNAPSHOT</version>
+            <version>5.6.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.32</version>
+            <version>1.18.34</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
