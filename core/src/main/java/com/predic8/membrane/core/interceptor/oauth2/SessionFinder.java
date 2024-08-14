@@ -21,6 +21,7 @@ public class SessionFinder {
 
     private ConcurrentHashMap<String, SessionManager.Session> authCodesToSession = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, SessionManager.Session> tokensToSession = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String, SessionManager.Session> refreshTokensToSession = new ConcurrentHashMap<>();
 
     public void addSessionForCode(String code, SessionManager.Session session){
         synchronized (authCodesToSession) {
@@ -31,6 +32,12 @@ public class SessionFinder {
     public void addSessionForToken(String token, SessionManager.Session session){
         synchronized (tokensToSession){
             tokensToSession.put(token,session);
+        }
+    }
+
+    public void addSessionForRefreshToken(String refreshToken, SessionManager.Session session){
+        synchronized (refreshTokensToSession) {
+            refreshTokensToSession.put(refreshToken, session);
         }
     }
 
@@ -55,6 +62,12 @@ public class SessionFinder {
     public SessionManager.Session getSessionForToken(String token){
         synchronized(tokensToSession){
             return tokensToSession.get(token);
+        }
+    }
+
+    public SessionManager.Session getSessionForRefreshToken(String refreshToken){
+        synchronized(refreshTokensToSession){
+            return refreshTokensToSession.get(refreshToken);
         }
     }
 

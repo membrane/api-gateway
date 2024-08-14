@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import org.junit.jupiter.api.*;
@@ -44,6 +45,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     static String afterCodeGenerationCode;
     static String afterTokenGenerationToken;
     static String afterTokenGenerationTokenType;
+    static String afterTokenGenerationRefreshToken;
 
     static ExceptionThrowingConsumer<Exchange> noPostprocessing() {
         return exchange -> {};
@@ -114,6 +116,17 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
             afterTokenGenerationToken = json.get("access_token");
             afterTokenGenerationTokenType = json.get("token_type");
+            afterTokenGenerationRefreshToken = json.get("refresh_token");
+        };
+    }
+
+    static ExceptionThrowingConsumer<Exchange> refreshTokenRequestPostprocessing() {
+        return exc -> {
+            System.out.println(exc.getResponse());
+            HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
+            afterTokenGenerationToken = json.get("access_token");
+            afterTokenGenerationTokenType = json.get("token_type");
+            afterTokenGenerationRefreshToken = json.get("refresh_token");
         };
     }
 
@@ -123,6 +136,41 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                 .header("Authorization", afterTokenGenerationTokenType + " " + afterTokenGenerationToken)
                 .header("User-Agent", USERAGENT)
                 .header(ACCEPT, APPLICATION_JSON)
+                .buildExchange();
+    }
+
+    public static Callable<Exchange> getMockInvalidUserinfoWithRefreshTokenRequest() {
+        return () -> new Request.Builder()
+                .get(mas.getUserInfoEndpoint())
+                .header("Authorization", afterTokenGenerationTokenType + " " + afterTokenGenerationRefreshToken)
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .buildExchange();
+    }
+
+    public static Callable<Exchange> getMockRefreshRequest() {
+        return () -> new Request.Builder()
+                .post(mas.getTokenEndpoint())
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                .body("refresh_token=" + afterTokenGenerationRefreshToken
+                        + "&client_id=" + mas.getClientId()
+                        + "&client_secret=" + mas.getClientSecret()
+                        + "&grant_type=refresh_token")
+                .buildExchange();
+    }
+
+    public static Callable<Exchange> getMockInvalidRefreshWithAccessTokenRequest() {
+        return () -> new Request.Builder()
+                .post(mas.getTokenEndpoint())
+                .header("User-Agent", USERAGENT)
+                .header(ACCEPT, APPLICATION_JSON)
+                .header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
+                .body("refresh_token=" + afterTokenGenerationToken
+                        + "&client_id=" + mas.getClientId()
+                        + "&client_secret=" + mas.getClientSecret()
+                        + "&grant_type=refresh_token")
                 .buildExchange();
     }
 
@@ -170,6 +218,8 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             Callable<Exchange> preparedExchange,
             int expectedStatusCode,
             ExceptionThrowingConsumer<Exchange> postprocessing) throws Exception {
+        if (testName.contains("Revocation") && oasi.getWellknownFile().getRevocationEndpoint() == null)
+            return; // only run this test, if OASI supports revocation
         preprocessing.run();
         exc = preparedExchange.call();
         OAuth2TestUtil.makeExchangeValid(exc);
@@ -235,11 +285,16 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
                 return "";
             }
         };
+        configureOASI(oasi);
         setOasiUserDataProvider();
         setOasiClientList();
         setOasiClaimList();
         setOasiProperties();
         oasi.init(router);
+    }
+
+    public void configureOASI(OAuth2AuthorizationServerInterceptor oasi) {
+        // do nothing
     }
 
     private void setOasiProperties() {

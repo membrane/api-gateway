@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.config.Path;
@@ -22,7 +21,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request.Builder;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
@@ -34,12 +32,12 @@ import static org.mockito.Mockito.when;
 
 class ApisJsonInterceptorTest {
     private static final String RESPONSE_JSON = """
-        {"aid":"example.com:1234","name":"API Collection","description":"API Collection Description","url":"http://example.com/apis.json","created":"2024-07-15","modified":"2024-07-15","specificationVersion":"0.18","apis": [{"aid":"example.com:/","name":":80","description":"N/A (Available only internally in APIProxy)","humanUrl":"WIP","baseUrl":"/","image":"N/A (Available only internally in APIProxy)","version":"N/A (Available only internally in APIProxy)"}]}""";
-    private static ApisJsonInterceptor interceptor;
+        {"aid":"example.com:1234","name":"API Collection","description":"API Collection Description","url":"http://example.com/apis.json","created":"2024-07-15","modified":"2024-07-15","specificationVersion":"0.18","apis":[{"aid":"example.com:*-0.0.0.0-*80/baz-true","name":"Demo API","description":"API","humanUrl":"http://localhost/api-docs","baseUrl":"http://localhost/baz"}]}""";
+    private static ApisJsonInterceptor aji;
 
     @BeforeAll
     static void setUp() throws ParseException {
-        interceptor = new ApisJsonInterceptor() {{
+        aji = new ApisJsonInterceptor() {{
             setRootDomain("example.com");
             setCollectionId("1234");
             setCollectionName("API Collection");
@@ -55,28 +53,34 @@ class ApisJsonInterceptorTest {
         Exchange exc = new Builder().buildExchange();
         Router r = mock(Router.class);
         RuleManager rm = mock(RuleManager.class);
-        when(r.getRuleManager()).thenReturn(rm);
-        when(rm.getRules()).thenReturn(List.of(new APIProxy()));
-        interceptor.init(r);
-        interceptor.handleRequest(exc);
-        assertEquals(RESPONSE_JSON, exc.getResponse().getBodyAsStringDecoded());
-    }
-
-    @Test
-    void jsonNodeFromApiProxyTest() {
         APIProxy apiProxy = new APIProxy() {{
             setPath(new Path(false, "/baz"));
             setName("Demo API");
         }};
+        apiProxy.init();
 
-        JsonNode apiNode = interceptor.jsonNodeFromApiProxy(apiProxy);
+        when(r.getRuleManager()).thenReturn(rm);
+        when(rm.getRules()).thenReturn(List.of(apiProxy));
 
-        assertEquals("example.com" + ":/baz", apiNode.get("aid").asText());
+        aji.initJson(r, exc);
+        aji.handleRequest(exc);
+
+        assertEquals(RESPONSE_JSON, exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void jsonNodeFromApiProxyTest() throws Exception {
+        APIProxy apiProxy = new APIProxy() {{
+            setPath(new Path(false, "/baz"));
+            setName("Demo API");
+        }};
+        apiProxy.init();
+        JsonNode apiNode = aji.jsonNodeFromApiProxy(apiProxy, null, null);
+
+        assertEquals("example.com:*-0.0.0.0-*80/baz-true", apiNode.get("aid").asText());
         assertEquals("Demo API", apiNode.get("name").asText());
-        assertEquals("N/A (Available only internally in APIProxy)", apiNode.get("description").asText());
-        assertEquals("WIP", apiNode.get("humanUrl").asText());
-        assertEquals("/baz", apiNode.get("baseUrl").asText());
-        assertEquals("N/A (Available only internally in APIProxy)", apiNode.get("image").asText());
-        assertEquals("N/A (Available only internally in APIProxy)", apiNode.get("version").asText());
+        assertEquals("API", apiNode.get("description").asText());
+        assertEquals("http://localhost/api-docs", apiNode.get("humanUrl").asText());
+        assertEquals("http://localhost/baz", apiNode.get("baseUrl").asText());
     }
 }

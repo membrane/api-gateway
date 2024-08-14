@@ -26,14 +26,22 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses({AuthWithoutSessionOpenidRequestTest.class,
+@SelectClasses({
+        AuthWithoutSessionOpenidRequestTest.class,
+        AuthWithoutSessionOpenidRequestJWTTest.class,
         AuthWithSessionRequestTest.class,
+        AuthWithSessionRequestJWTTest.class,
         AuthWithoutSessionRequestTest.class,
+        AuthWithoutSessionRequestJWTTest.class,
         ClaimsParameterTest.class,
         EmptyEndpointTest.class,
+        EmptyEndpointJWTTest.class,
         EmptyEndpointOpenidTest.class,
+        EmptyEndpointOpenidJWTTest.class,
         OAuth2AuthorizationServerInterceptorNormalTest.class,
+        OAuth2AuthorizationServerInterceptorNormalJWTTest.class,
         OAuth2AuthorizationServerInterceptorOpenidTest.class,
+        OAuth2AuthorizationServerInterceptorOpenidJWTTest.class,
         InMemSMOAuth2R2Test.class,
         JwtSMOAuth2R2Test.class,
         SyncSMOAuth2R2Test.class,
@@ -41,9 +49,13 @@ import org.junit.platform.suite.api.Suite;
         JwtB2CResourceTest.class,
         SyncB2CResourceTest.class,
         PasswordGrantTest.class,
+        PasswordGrantJWTTest.class,
         RevocationRequestTest.class,
+        RevocationRequestJWTTest.class,
         TokenRequestTest.class,
+        TokenRequestJWTTest.class,
         UserinfoRequestTest.class,
+        UserinfoRequestJWTTest.class,
         WellknownFileTest.class})
 public class OAuth2UnitTests {
 }

@@ -91,7 +91,7 @@ public class WellknownFile {
         setAuthorizationEndpoint(baseOauth2Url() + "auth");
         setTokenEndpoint(baseOauth2Url() + "token");
         setUserinfoEndpoint(baseOauth2Url() + "userinfo");
-        setRevocationEndpoint(baseOauth2Url() + "revoke");
+        setRevocationEndpoint(oasi.getTokenGenerator().supportsRevocation() ? baseOauth2Url() + "revoke" : null);
         setJwksUri(baseOauth2Url() + "certs");
         setSupportedResponseTypes(oasi.getSupportedAuthorizationGrants());
         setSupportedResponseModes("query fragment");
@@ -183,7 +183,9 @@ public class WellknownFile {
     }
 
     private void writeRevocationEndpoint() throws IOException {
-        writeSingleJsonField(REVOCATION_ENDPOINT, getRevocationEndpoint());
+        String revocationEndpoint1 = getRevocationEndpoint();
+        if (revocationEndpoint1 != null)
+            writeSingleJsonField(REVOCATION_ENDPOINT, revocationEndpoint1);
     }
 
     private void writeUserinfoEndpoint() throws IOException {

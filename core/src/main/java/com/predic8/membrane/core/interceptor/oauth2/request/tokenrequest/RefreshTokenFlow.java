@@ -61,7 +61,8 @@ public class RefreshTokenFlow extends TokenRequest {
         params.put(ParamNames.USERNAME,username);
 
         try {
-            authServer.getRefreshTokenGenerator().invalidateToken(getRefreshToken(), getClientId(), getClientSecret());
+            if (authServer.getRefreshTokenGenerator().supportsRevocation())
+                authServer.getRefreshTokenGenerator().invalidateToken(getRefreshToken(), getClientId(), getClientSecret());
         }catch(NoSuchElementException ex){
             return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_grant");
         }
@@ -84,13 +85,15 @@ public class RefreshTokenFlow extends TokenRequest {
         
         scope = getScope();
         token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret());
+        expiration = authServer.getTokenGenerator().getExpiration();
         refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
 
-        SessionManager.Session session = getSessionForAuthorizedUserWithParams();
+        SessionManager.Session session = authServer.getSessionFinder().getSessionForRefreshToken(getRefreshToken());
         synchronized(session) {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
         }
-        authServer.getSessionFinder().addSessionForToken(token,session);
+        authServer.getSessionFinder().addSessionForToken(token, session);
+        authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
         if (OAuth2Util.isOpenIdScope(scope)) {
             idToken = createSignedIdToken(session, username, client);
         }
