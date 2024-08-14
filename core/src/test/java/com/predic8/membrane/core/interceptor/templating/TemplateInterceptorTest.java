@@ -157,7 +157,7 @@ B: <%= params.b %>
     }
 
     @Test
-    public void xmlFromFileTest() throws Exception {
+    void xmlFromFileTest() throws Exception {
         setAndHandleRequest("./project_template.xml");
         assertEquals("minister", evaluateXPathAndReturnFirstNode(createXPathExpression("/project/part[2]/title")).trim());
     }
@@ -172,7 +172,7 @@ B: <%= params.b %>
     }
 
     @Test
-    public void nonXmlTemplateListTest() throws Exception {
+    void nonXmlTemplateListTest() throws Exception {
         setAndHandleRequest("./template_test.json");
 
         assertEquals("food1",
@@ -184,7 +184,7 @@ B: <%= params.b %>
     }
 
     @Test
-    public void initTest() {
+    void initTest() {
         assertThrows(IllegalStateException.class, () -> {
             ti.setLocation("./template_test.json");
             ti.setTextTemplate("${minister}");
@@ -193,7 +193,7 @@ B: <%= params.b %>
     }
 
     @Test
-    public void notFoundTemplateException() {
+    void notFoundTemplateException() {
         assertThrows(ResourceRetrievalException.class, () -> {
             ti.setLocation("./not_existent_file");
             ti.init(router);
@@ -201,7 +201,7 @@ B: <%= params.b %>
     }
 
     @Test
-    public void innerTagTest() throws Exception {
+    void innerTagTest() throws Exception {
         ti.setTextTemplate("${title}");
         ti.init(router);
         ti.handleRequest(exc);
@@ -226,6 +226,24 @@ B: <%= params.b %>
     void contentTypeTestNoXml() throws Exception {
         setAndHandleRequest("./template_test.json");
         assertEquals("text/plain",exc.getRequest().getHeader().getContentType());
+    }
+
+    @Test
+    void testPrettify() {
+        String inputJson = "\t{\n\n\t\t\"name\":\"John\"\t\t,\"age\":30}";
+        String expectedPrettyJson = """
+                {
+                  "name" : "John",
+                  "age" : 30
+                }""";
+        String result = ti.prettifyJson(inputJson);
+        assertEquals(expectedPrettyJson, result);
+    }
+
+    @Test
+    void testPrettifyWithInvalidJson() {
+        String invalidJson = "{name:\"John\",age:30}";
+        assertEquals(invalidJson, ti.prettifyJson(invalidJson));
     }
 
     private void setAndHandleRequest(String location) throws Exception {
