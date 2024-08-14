@@ -44,7 +44,7 @@ public class OpenTelemetryTest extends AbstractSampleMembraneStartStopTestcase {
     }
 
     @Test
-    public void getTraceIds() {
+    void getTraceIds() {
         // @formatter:off
         given()
                 .get("http://localhost:2000")

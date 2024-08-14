@@ -15,14 +15,20 @@
 package com.predic8.membrane.core.interceptor.opentelemetry.exporter;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.interceptor.addHeader;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter.OtlpType.GRPC;
+import static com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter.OtlpType.*;
+import static java.lang.String.format;
 
 /*
  * Otlp Implementation for the OpenTelemetry protocol
@@ -34,10 +40,13 @@ public class OtlpExporter implements OtelExporter {
     private String host = "localhost";
     private Integer port;
     private OtlpType transport = GRPC;
+    private final List<addHeader> headers = new ArrayList<>();
+
+    private boolean secured = false;
 
     public String getEndpointUrl() {
-        String endpoint = String.format("http://%s:%d", host, getProtocolPort(port, transport));
-        if (transport == OtlpType.HTTP) {
+        String endpoint = format("%s://%s:%d", isSecured() ? "https" : "http", host, getProtocolPort(port, transport));
+        if (transport == HTTP) {
             endpoint += "/v1/traces";
         }
         return endpoint;
@@ -55,25 +64,54 @@ public class OtlpExporter implements OtelExporter {
 
     public SpanExporter get() {
         String endpointUrl = getEndpointUrl();
-        return createSpanExporter(endpointUrl);
+        return createSpanExporter(endpointUrl, headers.stream().map(addHeader::asHeaderField).toList());
     }
 
-    private SpanExporter createSpanExporter(String endpointUrl) {
-        return switch (transport) {
-            case GRPC -> OtlpGrpcSpanExporter.builder()
-                    .setEndpoint(endpointUrl)
-                    .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .build();
-            case HTTP -> OtlpHttpSpanExporter.builder()
-                    .setEndpoint(endpointUrl)
-                    .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-                    .build();
-        };
+    private SpanExporter createSpanExporter(String endpointUrl, List<HeaderField> headers) {
+        switch (transport) {
+            case GRPC -> {
+                return buildGrpcExporter(endpointUrl);
+            }
+            case HTTP -> {
+                return buildHttpExporter(endpointUrl, headers);
+            }
+            default -> throw new IllegalArgumentException("Unsupported transport type");
+        }
+    }
+
+    private OtlpGrpcSpanExporter buildGrpcExporter(String endpointUrl) {
+        return OtlpGrpcSpanExporter.builder()
+                .setEndpoint(endpointUrl)
+                .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .build();
+    }
+
+    private OtlpHttpSpanExporter buildHttpExporter(String endpointUrl, List<HeaderField> headers) {
+        var builder = OtlpHttpSpanExporter.builder()
+                .setEndpoint(endpointUrl)
+                .setTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+        for (HeaderField header : headers) {
+            builder.addHeader(header.getHeaderName().toString(), header.getValue());
+        }
+
+        return builder.build();
+    }
+
+    @MCChildElement
+    public void setHeaders(List<addHeader> headers) {
+        this.headers.addAll(headers);
     }
 
     @MCAttribute
     public void setTransport(String transport) {
         this.transport = OtlpType.fromString(transport);
+    }
+
+    @SuppressWarnings("unused")
+    @MCAttribute
+    public void setSecured(boolean secured) {
+        this.secured = secured;
     }
 
     @MCAttribute
@@ -94,6 +132,14 @@ public class OtlpExporter implements OtelExporter {
     @Override
     public int getPort() {
         return port;
+    }
+
+    public List<addHeader> getHeaders() {
+        return headers;
+    }
+
+    public boolean isSecured() {
+        return secured;
     }
 
     public enum OtlpType {
