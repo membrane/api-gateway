@@ -108,6 +108,7 @@ public class OtlpExporter implements OtelExporter {
         this.transport = OtlpType.fromString(transport);
     }
 
+    @SuppressWarnings("unused")
     @MCAttribute
     public void setSecured(boolean secured) {
         this.secured = secured;
