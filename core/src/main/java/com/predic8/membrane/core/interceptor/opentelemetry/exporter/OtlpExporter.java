@@ -42,9 +42,11 @@ public class OtlpExporter implements OtelExporter {
     private OtlpType transport = GRPC;
     private final List<Header> headers = new ArrayList<>();
 
+    private boolean secured = false;
+
     public String getEndpointUrl() {
-        String endpoint = format("%s://%s:%d", transport.toString().toLowerCase(), host, getProtocolPort(port, transport));
-        if (transport == HTTP || transport == HTTPS) {
+        String endpoint = format("%s://%s:%d", isSecured() ? "https" : "http", host, getProtocolPort(port, transport));
+        if (transport == HTTP) {
             endpoint += "/v1/traces";
         }
         return endpoint;
@@ -53,7 +55,7 @@ public class OtlpExporter implements OtelExporter {
     private int getProtocolPort(Integer port, OtlpType trans) {
         if (port == null) {
             return switch (trans) {
-                case HTTP, HTTPS -> 4318;
+                case HTTP -> 4318;
                 case GRPC -> 4317;
             };
         }
@@ -70,7 +72,7 @@ public class OtlpExporter implements OtelExporter {
             case GRPC -> {
                 return buildGrpcExporter(endpointUrl);
             }
-            case HTTP, HTTPS -> {
+            case HTTP -> {
                 return buildHttpExporter(endpointUrl, headers);
             }
             default -> throw new IllegalArgumentException("Unsupported transport type");
@@ -107,6 +109,11 @@ public class OtlpExporter implements OtelExporter {
     }
 
     @MCAttribute
+    public void setSecured(boolean secured) {
+        this.secured = secured;
+    }
+
+    @MCAttribute
     public void setHost(String host) {
         this.host = host;
     }
@@ -130,9 +137,12 @@ public class OtlpExporter implements OtelExporter {
         return headers;
     }
 
+    public boolean isSecured() {
+        return secured;
+    }
+
     public enum OtlpType {
         HTTP,
-        HTTPS,
         GRPC;
 
         @Override
