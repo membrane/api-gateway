@@ -13,35 +13,24 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.client.BrowserMock;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.client.*;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.util.*;
+import org.jose4j.jwt.*;
+import org.jose4j.jwt.consumer.*;
+import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.http.Header.LOCATION;
-import static com.predic8.membrane.core.http.Header.SET_COOKIE;
+import static com.predic8.membrane.core.http.Header.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceB2CTest {
@@ -434,7 +423,7 @@ public abstract class OAuth2ResourceB2CTest {
 
         excCallResource = browser.applyWithoutRedirect(excCallResource);
         assertEquals(307, excCallResource.getResponse().getStatusCode());
-        assertTrue(excCallResource.getResponse().getHeader().getFirstValue(LOCATION).contains(
+        assertTrue(excCallResource.getResponse().getHeader().getFirstValue(Header.LOCATION).contains(
                 ":"+mockAuthorizationServer.getServerPort()+"/"));
         assertFalse(didLogIn.get());
     }

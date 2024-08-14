@@ -14,23 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.ws.relocator.Relocator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.ws.relocator.*;
+import org.slf4j.*;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 
-import static com.predic8.membrane.core.http.Header.DESTINATION;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.util.URLUtil.getPortFromURL;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.URLUtil.*;
 
 /**
  * @description Rewrites the scheme, hostname and port in the "Location" header in HTTP responses,
@@ -53,7 +48,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest() == null)
 			return CONTINUE;
-		String destination = exc.getRequest().getHeader().getFirstValue(DESTINATION);
+		String destination = exc.getRequest().getHeader().getFirstValue(Header.DESTINATION);
 		if (destination == null)
 			return CONTINUE;
 		if (!destination.contains("://"))
@@ -65,12 +60,12 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		if (exc.getDestinations().isEmpty()) {
 			// just remove the schema/hostname/port. this is illegal (by the spec),
 			// but most clients understand it
-			exc.getRequest().getHeader().setValue(DESTINATION, new URL(destination).getFile());
+			exc.getRequest().getHeader().setValue(Header.DESTINATION, new URL(destination).getFile());
 			return CONTINUE;
 		}
 		URL target = new URL(exc.getDestinations().get(0));
 		// rewrite to our schema, host and port
-		exc.getRequest().getHeader().setValue(DESTINATION,
+		exc.getRequest().getHeader().setValue(Header.DESTINATION,
 				Relocator.getNewLocation(destination, target.getProtocol(),
 						target.getHost(), getPortFromURL(target), exc.getHandler().getContextPath(exc)));
 		return CONTINUE;

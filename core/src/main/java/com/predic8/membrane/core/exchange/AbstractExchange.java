@@ -14,28 +14,19 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.model.IExchangeViewerListener;
-import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.DateFormat;
+import java.io.*;
+import java.net.*;
+import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.*;
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
 
 public abstract class AbstractExchange {
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
@@ -453,7 +444,7 @@ public abstract class AbstractExchange {
 	}
 
 	public String getPublicUrl(){
-		String xForwardedProto = getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
+		String xForwardedProto = getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
 		boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : getRule().getSslInboundContext() != null;
 		String publicURL = (isHTTPS ? "https://" : "http://") + getRequest().getHeader().getHost().replaceFirst(".*:", "");
 		RuleKey key = getRule().getKey();
