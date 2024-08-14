@@ -18,7 +18,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.interceptor.Header;
+import com.predic8.membrane.core.interceptor.addHeader;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -40,7 +40,7 @@ public class OtlpExporter implements OtelExporter {
     private String host = "localhost";
     private Integer port;
     private OtlpType transport = GRPC;
-    private final List<Header> headers = new ArrayList<>();
+    private final List<addHeader> headers = new ArrayList<>();
 
     private boolean secured = false;
 
@@ -64,7 +64,7 @@ public class OtlpExporter implements OtelExporter {
 
     public SpanExporter get() {
         String endpointUrl = getEndpointUrl();
-        return createSpanExporter(endpointUrl, headers.stream().map(Header::asHeaderField).toList());
+        return createSpanExporter(endpointUrl, headers.stream().map(addHeader::asHeaderField).toList());
     }
 
     private SpanExporter createSpanExporter(String endpointUrl, List<HeaderField> headers) {
@@ -99,7 +99,7 @@ public class OtlpExporter implements OtelExporter {
     }
 
     @MCChildElement
-    public void setHeaders(List<Header> headers) {
+    public void setHeaders(List<addHeader> headers) {
         this.headers.addAll(headers);
     }
 
@@ -134,7 +134,7 @@ public class OtlpExporter implements OtelExporter {
         return port;
     }
 
-    public List<Header> getHeaders() {
+    public List<addHeader> getHeaders() {
         return headers;
     }
 
