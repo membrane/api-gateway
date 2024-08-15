@@ -400,6 +400,9 @@
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
 					<archive>
+						<manifest>
+							<mainClass>com.predic8.membrane.core.Starter</mainClass>
+						</manifest>
 						<manifestEntries>
 							<Bundle-License>http://www.apache.org/licenses/LICENSE-2.0.html</Bundle-License>
 						</manifestEntries>
