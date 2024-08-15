@@ -23,6 +23,8 @@ import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.SpelCompilerMode;
+import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
@@ -35,7 +37,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public abstract class AbstractSetterInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractSetterInterceptor.class);
-    private static final ExpressionParser parser = new SpelExpressionParser();
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
+    private final ExpressionParser parser = new SpelExpressionParser(spelConfig);
     private final Pattern expressionPattern = Pattern.compile("\\$\\{(.*?)}");
 
     protected String name;

@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.SpelCompilerMode;
+import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
@@ -39,6 +41,7 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OAuth2PermissionCheckerInterceptor.class);
 
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
     String expression;
     ValueSource valueSource;
     Function<Object, Boolean> valueChecker;
@@ -105,7 +108,7 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
     }
 
     private Function<Object, Boolean> createChecker(String expr) {
-        ExpressionParser parser = new SpelExpressionParser();
+        ExpressionParser parser = new SpelExpressionParser(spelConfig);
         Expression exp = parser.parseExpression(expr);
 
         return param -> {

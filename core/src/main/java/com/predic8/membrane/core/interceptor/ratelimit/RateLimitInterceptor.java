@@ -69,6 +69,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
     private final RateLimitStrategy strategy;
 
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
     private String keyExpression;
     private Expression expression;
 
@@ -125,7 +126,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
         super.init();
         if (keyExpression == null || keyExpression.isBlank())
             return;
-        expression = new SpelExpressionParser().parseExpression(keyExpression);
+        expression = new SpelExpressionParser(spelConfig).parseExpression(keyExpression);
     }
 
     private String getKey(Exchange exc) {
