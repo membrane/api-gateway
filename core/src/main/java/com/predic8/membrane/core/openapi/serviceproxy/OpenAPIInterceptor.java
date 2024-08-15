@@ -55,7 +55,7 @@ import static java.util.stream.Collectors.*;
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
-    public static final String OPENAPI_RECORD = "openApi";
+    public static final String OPENAPI_RECORD = "OPENAPI_RECORD";
 
     protected final APIProxy apiProxy;
 
@@ -128,7 +128,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
 
-        OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty("openApi");
+        OpenAPIRecord rec = (OpenAPIRecord) exc.getProperty(OPENAPI_RECORD);
 
         try {
             ValidationErrors errors = validateResponse(rec, exc);

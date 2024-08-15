@@ -232,7 +232,15 @@ public abstract class AbstractExchange {
 	}
 
 	public Object getProperty(String key) {
-		return properties.get(key);
+        return properties.get(key);
+	}
+
+	public <T> T getProperty(String key, Class<T> clazz) {
+		Object value = properties.get(key);
+		if (clazz.isInstance(value)) {
+			return clazz.cast(value);
+		}
+		throw new ClassCastException("Property with key " + key + " is not of type " + clazz.getName());
 	}
 
 	public String getStringProperty(String key) {

@@ -37,6 +37,7 @@ import io.opentelemetry.context.Scope;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.OPENAPI_RECORD;
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
 import static io.opentelemetry.api.common.Attributes.of;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
@@ -101,8 +102,8 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         span.setStatus(getOtelStatusCode(exc));
         span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
         setSpanHttpHeaderAttributes(exc.getResponse().getHeader(), span);
-        if (exc.getRule() instanceof APIProxy api) {
-            setSpanOpenAPIAttributes(api, exc, span);
+        if (exc.getRule() instanceof APIProxy) {
+            setSpanOpenAPIAttributes(exc, span);
         }
 
         if (logBody) {
@@ -116,7 +117,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private static Span getExchangeSpan(Exchange exc) {
-        return ((Span) exc.getProperty("span"));
+        return exc.getProperty("span", Span.class);
     }
 
     private static void setSpanHttpHeaderAttributes(Header header, Span span) {
@@ -125,12 +126,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         }
     }
 
-    private void setSpanOpenAPIAttributes(Rule rule, Exchange exc, Span span) {
-        if (rule instanceof APIProxy) {
-            OpenAPIRecord record = (OpenAPIRecord) exc.getProperty(OPENAPI_RECORD);
-            if (record != null) {
-                span.setAttribute("openapi.title", record.getApi().getInfo().getTitle());
-            }
+    private void setSpanOpenAPIAttributes(Exchange exc, Span span) {
+        OpenAPIRecord record = exc.getProperty(OPENAPI_RECORD, OpenAPIRecord.class);
+        if (record != null) {
+            span.setAttribute("openapi.title", record.getApi().getInfo().getTitle());
         }
     }
 
