@@ -351,9 +351,9 @@ X-Forwarded-For: 203.0.113.195,2001:db8:85a3:8d3:1319:8a2e:370:7348,150.172.238.
 	 */
 
 	@NotNull
-	private static Exchange getExchange() {
+	private static Exchange getExchange() throws URISyntaxException {
 		final Exchange exc = new Exchange(null);
-		exc.setRequest(new Request.Builder().header("accept","*/*").build());
+		exc.setRequest(new Request.Builder().get("/").header("accept","*/*").build());
 		exc.setResponse(Response.ok().build());
 		exc.setRemoteAddrIp("192.168.1.100");
 		return exc;

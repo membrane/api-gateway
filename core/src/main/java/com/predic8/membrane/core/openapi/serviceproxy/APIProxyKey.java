@@ -21,6 +21,8 @@ import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.rules.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
+import org.springframework.expression.spel.SpelCompilerMode;
+import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
@@ -33,6 +35,7 @@ public class APIProxyKey extends ServiceProxyKey {
 
     private final ArrayList<String> basePaths = new ArrayList<>();
 
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
     private Expression testExpr;
 
     public APIProxyKey(RuleKey key, String test, boolean openAPI) {
@@ -49,7 +52,7 @@ public class APIProxyKey extends ServiceProxyKey {
 
     protected void init(String test, boolean openAPI) {
         if (test != null)
-            testExpr = new SpelExpressionParser().parseExpression(test);
+            testExpr = new SpelExpressionParser(spelConfig).parseExpression(test);
 
         if (!openAPI)
             return;

@@ -23,6 +23,8 @@ import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
+import org.springframework.expression.spel.SpelCompilerMode;
+import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
@@ -61,6 +63,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     /**
      * Spring Expression Language
      */
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
     private Expression spelExpr;
 
     private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
@@ -82,7 +85,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
         switch (language) {
             case GROOVY ->
                     condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, test);
-            case SPEL -> spelExpr = new SpelExpressionParser().parseExpression(test);
+            case SPEL -> spelExpr = new SpelExpressionParser(spelConfig).parseExpression(test);
 
         }
     }
