@@ -55,6 +55,7 @@ import static java.util.stream.Collectors.*;
 public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
+    public static final String OPENAPI_RECORD = "openApi";
 
     protected final APIProxy apiProxy;
 
@@ -115,7 +116,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
-        exc.setProperty("openApi", rec);
+        exc.setProperty(OPENAPI_RECORD, rec);
 
         return CONTINUE;
     }
