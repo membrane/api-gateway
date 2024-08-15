@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport;
 
 import java.util.Map;
 
+import com.predic8.membrane.core.http.xml.Request;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
@@ -25,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ExchangeTest {
 
 	@Test
-	public void testStringProperties() throws Exception {
+	void testStringProperties() {
 		Exchange exc = new Exchange(null);
 
 		exc.setProperty("Integer", 906090);
@@ -53,5 +54,13 @@ public class ExchangeTest {
 		exc.setOriginalHostHeader("localhost");
 		assertEquals("localhost",exc.getOriginalHostHeaderHost());
 		assertEquals("",exc.getOriginalHostHeaderPort());
+	}
+
+	@Test
+	void getProperty() {
+		Exchange exc = new Exchange(null);
+		exc.setProperty("foo", "10");
+		assertEquals("10",exc.getProperty("foo", String.class));
+		assertThrows(ClassCastException.class, () -> exc.getProperty("foo", Integer.class));
 	}
 }
