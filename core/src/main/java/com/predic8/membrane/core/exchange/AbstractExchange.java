@@ -27,6 +27,7 @@ import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.ExchangeState.*;
+import static java.lang.String.format;
 
 public abstract class AbstractExchange {
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
@@ -240,7 +241,7 @@ public abstract class AbstractExchange {
 		if (clazz.isInstance(value)) {
 			return clazz.cast(value);
 		}
-		throw new ClassCastException("Property with key " + key + " is not of type " + clazz.getName());
+		throw new ClassCastException(format("Property with key '%s' is not of type %s", key, clazz.getName()));
 	}
 
 	public String getStringProperty(String key) {
