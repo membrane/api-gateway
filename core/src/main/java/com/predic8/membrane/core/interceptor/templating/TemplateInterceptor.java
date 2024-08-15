@@ -97,7 +97,7 @@ public class TemplateInterceptor extends AbstractInterceptor{
         return CONTINUE;
     }
 
-    private String prettifyJson(String text) {
+    String prettifyJson(String text) {
         try {
             return jsonBeautifier.beautify(text);
         } catch (IOException e) {

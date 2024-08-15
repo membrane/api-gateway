@@ -24,6 +24,9 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import com.predic8.membrane.core.rules.Rule;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
@@ -34,6 +37,7 @@ import io.opentelemetry.context.Scope;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.setContextInHeader;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.OPENAPI_RECORD;
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
 import static io.opentelemetry.api.common.Attributes.of;
 import static io.opentelemetry.api.trace.SpanKind.INTERNAL;
@@ -77,7 +81,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         startMembraneScope(exc, getExtractContext(exc), getSpanName(exc)); // Params in Methode
         var span = getExchangeSpan(exc);
-        setSpanHttpHeaderTags(exc.getRequest().getHeader(), span);
+        setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
 
 //        span.addEvent("Request", of(
 //                stringKey("Request Header"), exc.getRequest().getHeader().toString()
@@ -97,7 +101,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         var span = getExchangeSpan(exc);
         span.setStatus(getOtelStatusCode(exc));
         span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
-        setSpanHttpHeaderTags(exc.getResponse().getHeader(), span);
+        setSpanHttpHeaderAttributes(exc.getResponse().getHeader(), span);
+        if (exc.getRule() instanceof APIProxy) {
+            setSpanOpenAPIAttributes(exc, span);
+        }
 
         if (logBody) {
             span.addEvent("Response", of(
@@ -110,12 +117,19 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private static Span getExchangeSpan(Exchange exc) {
-        return ((Span) exc.getProperty("span"));
+        return exc.getProperty("span", Span.class);
     }
 
-    private static void setSpanHttpHeaderTags(Header header, Span span) {
+    private static void setSpanHttpHeaderAttributes(Header header, Span span) {
         for (HeaderField hf : header.getAllHeaderFields()) {
             span.setAttribute("http.header." + hf.getHeaderName().toString(), hf.getValue());
+        }
+    }
+
+    private void setSpanOpenAPIAttributes(Exchange exc, Span span) {
+        OpenAPIRecord record = exc.getProperty(OPENAPI_RECORD, OpenAPIRecord.class);
+        if (record != null) {
+            span.setAttribute("openapi.title", record.getApi().getInfo().getTitle());
         }
     }
 
