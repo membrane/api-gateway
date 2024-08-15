@@ -14,27 +14,27 @@
 
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.beautifier.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.resolver.*;
-import groovy.text.*;
-import org.apache.commons.io.*;
-import org.apache.commons.lang3.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.ScriptingUtils;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import groovy.text.StreamingTemplateEngine;
+import groovy.text.Template;
+import groovy.text.TemplateExecutionException;
+import groovy.text.XmlTemplateEngine;
+import org.apache.commons.io.FilenameUtils;
 
-import java.io.*;
-import java.util.*;
+import java.io.InputStreamReader;
+import java.util.HashMap;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description Renders the body content of a message from a template. The template can
@@ -48,22 +48,7 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 
 
 @MCElement(name="template", mixed = true)
-public class TemplateInterceptor extends AbstractInterceptor{
-
-    /**
-     * @description Path of template file
-     */
-    private String location;
-
-    private String textTemplate;
-
-    private Template template;
-
-    private String contentType = TEXT_PLAIN;
-
-    private Boolean pretty = false;
-
-    private final JSONBeautifier jsonBeautifier = new JSONBeautifier();
+public class TemplateInterceptor extends StaticTextInterceptor{
 
     private boolean scriptAccessesJson;
 
@@ -95,14 +80,6 @@ public class TemplateInterceptor extends AbstractInterceptor{
         // Setting Content-Type must come at the end, cause before we want to know what the original type was.
         msg.getHeader().setContentType(getContentType());
         return CONTINUE;
-    }
-
-    String prettifyJson(String text) {
-        try {
-            return jsonBeautifier.beautify(text);
-        } catch (IOException e) {
-            return text;
-        }
     }
 
     @SuppressWarnings("RedundantThrows") // Declaration of exception is needed. However, Groovy does not declare it.
@@ -155,78 +132,11 @@ public class TemplateInterceptor extends AbstractInterceptor{
         throw new IllegalStateException("You have to set either ./@location or ./text()");
     }
 
-    public String getLocation() {
-        return location;
-    }
-
-    /**
-     * @description path of xml template file.
-     * @example template.xml
-     */
-    @MCAttribute
-    public void setLocation(String location){
-        this.location = location;
-    }
-
-    public String getTextTemplate() {
-        return textTemplate;
-    }
-
-    @MCTextContent
-    public void setTextTemplate(String textTemplate) throws IOException, ClassNotFoundException {
-        this.textTemplate = textTemplate;
-
-        if(textTemplate != null && !StringUtils.isBlank(textTemplate)){
-            template = new StreamingTemplateEngine().createTemplate(this.getTextTemplate());
-        }
-    }
-
     public Template getTemplate() {
         return template;
     }
 
     public void setTemplate(Template template) {
         this.template = template;
-    }
-
-
-    private String getName() {
-        return getClass().getAnnotation(MCElement.class).name();
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    /**
-     * @description content type for body
-     * @example application/json
-     */
-    @MCAttribute
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
-    public Boolean getPretty() {
-        return pretty;
-    }
-
-    /**
-     * @description Format JSON documents.
-     * @example yes
-     * @default no
-     */
-    @MCAttribute
-    public void setPretty(String pretty) {
-        this.pretty = Boolean.valueOf(pretty);
-    }
-
-    private String formatAsHtml(String plaintext) {
-        return String.join("<br />", escapeHtml4(plaintext).split("\n"));
-    }
-
-    @Override
-    public String getShortDescription() {
-        return formatAsHtml(textTemplate);
     }
 }
