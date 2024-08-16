@@ -52,6 +52,8 @@ public class TemplateInterceptor extends StaticTextInterceptor{
 
     private boolean scriptAccessesJson;
 
+    protected Template template;
+
     public TemplateInterceptor() {
         name = "Template";
     }

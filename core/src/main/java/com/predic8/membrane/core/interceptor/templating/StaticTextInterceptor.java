@@ -32,7 +32,9 @@ public class StaticTextInterceptor extends AbstractInterceptor {
 
     protected final JSONBeautifier jsonBeautifier = new JSONBeautifier();
 
-    public StaticTextInterceptor() {name = "Static";}
+    public StaticTextInterceptor() {
+        name = "Static";
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -51,15 +53,14 @@ public class StaticTextInterceptor extends AbstractInterceptor {
     }
 
     private byte @NotNull [] getTemplateBytes() {
-        if (pretty)
-            switch (contentType) {
-            case TEXT_PLAIN:
+        if (!pretty)
+            return textTemplate.getBytes(UTF_8);
 
-            }
-        if (isOfMediaType(APPLICATION_JSON,contentType) && pretty) {
-            return prettifyJson(textTemplate).getBytes(UTF_8);
-        }
-        return textTemplate.getBytes(UTF_8);
+        return switch (contentType) {
+            case APPLICATION_JSON -> prettifyJson(textTemplate).getBytes(UTF_8);
+            case TEXT_PLAIN -> textTemplate.getBytes(UTF_8); //TODO
+            default -> textTemplate.getBytes(UTF_8);
+        };
     }
 
     String prettifyJson(String text) {
@@ -69,7 +70,6 @@ public class StaticTextInterceptor extends AbstractInterceptor {
             return text;
         }
     }
-
 
     @Override
     public void init() throws Exception {
