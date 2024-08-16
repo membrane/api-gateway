@@ -48,7 +48,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 @MCElement(name="template", mixed = true)
-public class TemplateInterceptor extends StaticTextInterceptor{
+public class TemplateInterceptor extends StaticInterceptor {
 
     private boolean scriptAccessesJson;
 

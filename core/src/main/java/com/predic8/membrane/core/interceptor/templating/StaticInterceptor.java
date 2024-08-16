@@ -10,6 +10,8 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -20,7 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 @MCElement(name = "static", mixed = true)
-public class StaticTextInterceptor extends AbstractInterceptor {
+public class StaticInterceptor extends AbstractInterceptor {
 
     protected String location;
 
@@ -32,7 +34,9 @@ public class StaticTextInterceptor extends AbstractInterceptor {
 
     protected final JSONBeautifier jsonBeautifier = new JSONBeautifier();
 
-    public StaticTextInterceptor() {
+    protected static final Logger log = LoggerFactory.getLogger("StaticInterceptor");
+
+    public StaticInterceptor() {
         name = "Static";
     }
 
@@ -67,6 +71,7 @@ public class StaticTextInterceptor extends AbstractInterceptor {
         try {
             return TextUtil.formatXML(new StringReader(text));
         } catch (Exception e) {
+            log.warn("Failed to format XML", e);
             return text;
         }
     }
@@ -75,13 +80,31 @@ public class StaticTextInterceptor extends AbstractInterceptor {
         try {
             return jsonBeautifier.beautify(text);
         } catch (IOException e) {
+            log.warn("Failed to format JSON", e);
             return text;
         }
     }
 
-     private static String trimIndent(String multilineString) {
+    static String trimIndent(String multilineString) {
         String[] lines = multilineString.split("\n");
+        return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
+    }
 
+    private static StringBuilder trimLines(String[] lines, int minIndent) {
+        StringBuilder result = new StringBuilder();
+        for (String line : lines) {
+            if (!line.trim().isEmpty()) {
+                int currentIndent = line.length() - line.replaceFirst("^\\s+", "").length();
+                int effectiveIndent = currentIndent - minIndent;
+                result.append(" ".repeat(Math.max(effectiveIndent, 0))).append(line.trim()).append("\n");
+            } else {
+                result.append("\n");
+            }
+        }
+        return result;
+    }
+
+    private static int getMinIndent(String[] lines) {
         int minIndent = Integer.MAX_VALUE;
         for (String line : lines) {
             if (!line.trim().isEmpty()) {
@@ -89,16 +112,7 @@ public class StaticTextInterceptor extends AbstractInterceptor {
                 minIndent = Math.min(minIndent, leadingSpaces);
             }
         }
-
-        StringBuilder result = new StringBuilder();
-        for (String line : lines) {
-            if (line.length() >= minIndent) {
-                result.append(line.substring(minIndent));
-            }
-            result.append("\n");
-        }
-
-        return result.toString().trim();
+        return minIndent;
     }
 
 
