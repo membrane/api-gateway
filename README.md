@@ -13,7 +13,6 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 * [Message validation](distribution/examples/openapi/validation-simple) against OpenAPI and JSON Schema
 
 **API Security:**
-**API Security:**
 
 * [JSON Web Tokens](#json-web-tokens)
 * [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm)
