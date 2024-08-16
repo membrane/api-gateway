@@ -90,13 +90,11 @@ public class StaticInterceptor extends AbstractInterceptor {
         return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
     }
 
-    private static StringBuilder trimLines(String[] lines, int minIndent) {
+    static StringBuilder trimLines(String[] lines, int minIndent) {
         StringBuilder result = new StringBuilder();
         for (String line : lines) {
             if (!line.trim().isEmpty()) {
-                int currentIndent = line.length() - line.replaceFirst("^\\s+", "").length();
-                int effectiveIndent = currentIndent - minIndent;
-                result.append(" ".repeat(Math.max(effectiveIndent, 0))).append(line.trim()).append("\n");
+                result.append(" ".repeat(Math.max(getCurrentIndent(line) - minIndent, 0))).append(line.trim()).append("\n");
             } else {
                 result.append("\n");
             }
@@ -104,11 +102,15 @@ public class StaticInterceptor extends AbstractInterceptor {
         return result;
     }
 
-    private static int getMinIndent(String[] lines) {
+    static int getCurrentIndent(String line) {
+        return line.length() - line.replaceFirst("^\\s+", "").length();
+    }
+
+    static int getMinIndent(String[] lines) {
         int minIndent = Integer.MAX_VALUE;
         for (String line : lines) {
             if (!line.trim().isEmpty()) {
-                int leadingSpaces = line.length() - line.replaceFirst("^\\s+", "").length();
+                int leadingSpaces = getCurrentIndent(line);
                 minIndent = Math.min(minIndent, leadingSpaces);
             }
         }
