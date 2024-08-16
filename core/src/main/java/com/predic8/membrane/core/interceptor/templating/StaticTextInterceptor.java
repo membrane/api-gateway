@@ -8,11 +8,11 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.TextUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.StringReader;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -58,9 +58,17 @@ public class StaticTextInterceptor extends AbstractInterceptor {
 
         return switch (contentType) {
             case APPLICATION_JSON -> prettifyJson(textTemplate).getBytes(UTF_8);
-            case TEXT_PLAIN -> textTemplate.getBytes(UTF_8); //TODO
-            default -> textTemplate.getBytes(UTF_8);
+            case APPLICATION_XML, APPLICATION_SOAP, TEXT_HTML, TEXT_XML, TEXT_HTML_UTF8, TEXT_XML_UTF8 -> prettifyXML(textTemplate).getBytes(UTF_8);
+            default -> trimIndent(textTemplate).getBytes(UTF_8);
         };
+    }
+
+    private String prettifyXML(String text) {
+        try {
+            return TextUtil.formatXML(new StringReader(text));
+        } catch (Exception e) {
+            return text;
+        }
     }
 
     String prettifyJson(String text) {
@@ -71,22 +79,34 @@ public class StaticTextInterceptor extends AbstractInterceptor {
         }
     }
 
+     private static String trimIndent(String multilineString) {
+        String[] lines = multilineString.split("\n");
+
+        int minIndent = Integer.MAX_VALUE;
+        for (String line : lines) {
+            if (!line.trim().isEmpty()) {
+                int leadingSpaces = line.length() - line.replaceFirst("^\\s+", "").length();
+                minIndent = Math.min(minIndent, leadingSpaces);
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (String line : lines) {
+            if (line.length() >= minIndent) {
+                result.append(line.substring(minIndent));
+            }
+            result.append("\n");
+        }
+
+        return result.toString().trim();
+    }
+
+
     @Override
     public void init() throws Exception {
         if (this.getLocation() != null && (getTextTemplate() != null && !getTextTemplate().isBlank())) {
             throw new IllegalStateException("On <" + getName() + ">, ./text() and ./@location cannot be set at the same time.");
         }
-
-        if (location != null) {
-            try (InputStreamReader reader = new InputStreamReader(getRouter().getResolverMap()
-                    .resolve(ResolverMap.combine(router.getBaseLocation(), location)))) {
-
-                // @TODO If a file is XML or not is detected based on the Extension. That should
-                return;
-            }
-        }
-
-        throw new IllegalStateException("You have to set either ./@location or ./text()");
     }
 
     public String getLocation() {
