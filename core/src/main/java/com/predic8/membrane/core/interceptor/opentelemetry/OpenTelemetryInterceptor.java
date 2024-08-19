@@ -139,7 +139,9 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
             log.info("No OpenAPI to report to OpenTelemetry.");
             return;
         }
-        span.setAttribute("openapi.title", record.getApi().getInfo().getTitle());
+        if (record != null) {
+            span.setAttribute("openapi.title", record.getApi().getInfo().getTitle());
+        }
     }
 
     private String getSpanName(Exchange exc) {
