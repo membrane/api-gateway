@@ -136,7 +136,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         try {
             record = exc.getProperty(OPENAPI_RECORD, OpenAPIRecord.class);
         } catch (ClassCastException e) {
-            log.info("No OpenAPI to report to OpenTelemetry.");
+            log.debug("No OpenAPI to report to OpenTelemetry.");
             return;
         }
         if (record != null) {
