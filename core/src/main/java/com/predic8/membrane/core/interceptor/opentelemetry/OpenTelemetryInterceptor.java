@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtelExporter;
 import com.predic8.membrane.core.interceptor.opentelemetry.exporter.OtlpExporter;
@@ -33,6 +34,8 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.opentelemetry.HTTPTraceContextUtil.getContextFromRequestHeader;
@@ -54,6 +57,8 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     private Tracer tracer;
 
     private boolean logBody = false;
+
+    private static final Logger log = LoggerFactory.getLogger(OpenTelemetryInterceptor.class);
 
     @Override
     public void init() throws Exception {
@@ -127,10 +132,14 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private void setSpanOpenAPIAttributes(Exchange exc, Span span) {
-        OpenAPIRecord record = exc.getProperty(OPENAPI_RECORD, OpenAPIRecord.class);
-        if (record != null) {
-            span.setAttribute("openapi.title", record.getApi().getInfo().getTitle());
+        OpenAPIRecord record;
+        try {
+            record = exc.getProperty(OPENAPI_RECORD, OpenAPIRecord.class);
+        } catch (ClassCastException e) {
+            log.info("No OpenAPI to report to OpenTelemetry.");
+            return;
         }
+        span.setAttribute("openapi.title", record.getApi().getInfo().getTitle());
     }
 
     private String getSpanName(Exchange exc) {
