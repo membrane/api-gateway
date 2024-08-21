@@ -181,4 +181,62 @@ public class TextUtil {
 	public static String escapeQuotes(String s) {
 		return s.replace("\"", "\\\"");
 	}
+
+	/**
+	 * Adjusts the indentation of each line in a multiline string to match the minimum indentation found.
+	 *
+	 * @param multilineString The input multiline string to process.
+	 * @return A string with adjusted indentation.
+	 */
+	public static String unifyIndent(String multilineString) {
+		String[] lines = multilineString.split("\r?\n");
+		return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
+	}
+
+	/**
+	 * Trims excess indentation from each line in the input array, based on a specified minimum indent level.
+	 *
+	 * @param lines The array of lines to process.
+	 * @param minIndent The minimum indent level to maintain.
+	 * @return A StringBuilder containing lines with adjusted indentation.
+	 */
+	public static StringBuilder trimLines(String[] lines, int minIndent) {
+		StringBuilder result = new StringBuilder();
+		for (String line : lines) {
+			if (!line.trim().isEmpty()) {
+				result.append(" ".repeat(Math.max(getCurrentIndent(line) - minIndent, 0))).append(line.trim()).append("\n");
+			} else {
+				result.append("\n");
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Calculates the current indentation level (number of leading spaces) of a given line.
+	 *
+	 * @param line The line to calculate the indentation for.
+	 * @return The number of leading spaces in the line.
+	 */
+	public static int getCurrentIndent(String line) {
+		return line.length() - line.replaceFirst("^\\s+", "").length();
+	}
+
+	/**
+	 * Determines the minimum indentation level (number of leading spaces) across all non-empty lines in an array of lines.
+	 *
+	 * @param lines The array of lines to analyze.
+	 * @return The minimum indent level found among the lines.
+	 */
+	public static int getMinIndent(String[] lines) {
+		int minIndent = Integer.MAX_VALUE;
+		for (String line : lines) {
+			if (!line.trim().isEmpty()) {
+				int leadingSpaces = getCurrentIndent(line);
+				minIndent = Math.min(minIndent, leadingSpaces);
+			}
+		}
+		return minIndent;
+	}
+
 }

@@ -18,6 +18,7 @@ import java.io.StringReader;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.TextUtil.unifyIndent;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
@@ -63,7 +64,7 @@ public class StaticInterceptor extends AbstractInterceptor {
         return switch (contentType) {
             case APPLICATION_JSON -> prettifyJson(textTemplate).getBytes(UTF_8);
             case APPLICATION_XML, APPLICATION_SOAP, TEXT_HTML, TEXT_XML, TEXT_HTML_UTF8, TEXT_XML_UTF8 -> prettifyXML(textTemplate).getBytes(UTF_8);
-            default -> trimIndent(textTemplate).getBytes(UTF_8);
+            default -> unifyIndent(textTemplate).getBytes(UTF_8);
         };
     }
 
@@ -84,39 +85,6 @@ public class StaticInterceptor extends AbstractInterceptor {
             return text;
         }
     }
-
-    static String trimIndent(String multilineString) {
-        String[] lines = multilineString.split("\n");
-        return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
-    }
-
-    static StringBuilder trimLines(String[] lines, int minIndent) {
-        StringBuilder result = new StringBuilder();
-        for (String line : lines) {
-            if (!line.trim().isEmpty()) {
-                result.append(" ".repeat(Math.max(getCurrentIndent(line) - minIndent, 0))).append(line.trim()).append("\n");
-            } else {
-                result.append("\n");
-            }
-        }
-        return result;
-    }
-
-    static int getCurrentIndent(String line) {
-        return line.length() - line.replaceFirst("^\\s+", "").length();
-    }
-
-    static int getMinIndent(String[] lines) {
-        int minIndent = Integer.MAX_VALUE;
-        for (String line : lines) {
-            if (!line.trim().isEmpty()) {
-                int leadingSpaces = getCurrentIndent(line);
-                minIndent = Math.min(minIndent, leadingSpaces);
-            }
-        }
-        return minIndent;
-    }
-
 
     @Override
     public void init() throws Exception {

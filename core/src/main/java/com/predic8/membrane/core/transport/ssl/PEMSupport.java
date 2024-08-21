@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.util.TextUtil.unifyIndent;
+
 public abstract class PEMSupport {
 
     private static final Logger log = LoggerFactory.getLogger(PEMSupport.class.getName());
@@ -64,21 +66,8 @@ public abstract class PEMSupport {
             Security.addProvider(new BouncyCastleProvider());
         }
 
-        private String cleanupPEM(String pemBlock) {
-            String lines[] = pemBlock.split("\r?\n");
-            StringBuilder block = new StringBuilder();
-            for (String line : lines) {
-                String l = line.replaceAll("^\\s+", "");
-                if (l.length() > 0) {
-                    block.append(l);
-                    block.append("\n");
-                }
-            }
-            return block.toString();
-        }
-
         public X509Certificate parseCertificate(String pemBlock) throws IOException {
-            PEMParser p2 = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
+            PEMParser p2 = new PEMParser(new StringReader(unifyIndent(pemBlock)));
             Object o2 = p2.readObject();
             if (o2 == null)
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
@@ -94,7 +83,7 @@ public abstract class PEMSupport {
         }
         public List<X509Certificate> parseCertificates(String pemBlock) throws IOException {
             List<X509Certificate> res = new ArrayList<>();
-            PEMParser p2 = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
+            PEMParser p2 = new PEMParser(new StringReader(unifyIndent(pemBlock)));
             JcaX509CertificateConverter certconv = new JcaX509CertificateConverter().setProvider("BC");
             while(true) {
                 Object o2 = p2.readObject();
@@ -115,7 +104,7 @@ public abstract class PEMSupport {
         }
 
         public Key getPrivateKey(String pemBlock) throws IOException {
-            PEMParser p = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
+            PEMParser p = new PEMParser(new StringReader(unifyIndent(pemBlock)));
             Object o = p.readObject();
             if (o == null)
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
@@ -131,7 +120,7 @@ public abstract class PEMSupport {
         }
 
         public Object parseKey(String pemBlock) throws IOException {
-            PEMParser p = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
+            PEMParser p = new PEMParser(new StringReader(unifyIndent(pemBlock)));
             Object o = p.readObject();
             if (o == null) {
                 log.error("Could not read PEM file. Check the contents of PEM file or configuration. Content is {}", pemBlock);
