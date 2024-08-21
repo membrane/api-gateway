@@ -39,17 +39,22 @@ public class OtlpExporter implements OtelExporter {
     private static final int TIMEOUT_SECONDS = 30;
     private String host = "localhost";
     private Integer port;
+    private String path = "";
     private OtlpType transport = GRPC;
     private final List<addHeader> headers = new ArrayList<>();
 
     private boolean secured = false;
 
     public String getEndpointUrl() {
-        String endpoint = format("%s://%s:%d", isSecured() ? "https" : "http", host, getProtocolPort(port, transport));
-        if (transport == HTTP) {
-            endpoint += "/v1/traces";
+        return format("%s://%s:%d%s", isSecured() ? "https" : "http", host, getProtocolPort(port, transport), getPathExtension());
+    }
+
+    @SuppressWarnings("StringEquality")
+    private String getPathExtension() {
+        if (path == "" && transport == HTTP) {
+            return "/v1/traces";
         }
-        return endpoint;
+        return path;
     }
 
     private int getProtocolPort(Integer port, OtlpType trans) {
@@ -115,6 +120,9 @@ public class OtlpExporter implements OtelExporter {
     }
 
     @MCAttribute
+    public void setPath(String path) { this.path = path; }
+
+    @MCAttribute
     public void setHost(String host) {
         this.host = host;
     }
@@ -123,6 +131,8 @@ public class OtlpExporter implements OtelExporter {
     public void setPort(int port) {
         this.port = port;
     }
+
+    public String getPath() { return path; }
 
     @Override
     public String getHost() {
