@@ -21,15 +21,15 @@ import com.predic8.membrane.examples.util.Process2;
 
 import static com.predic8.membrane.test.AssertUtils.*;
 
-public class SSLServerApiWithTlsTest extends DistributionExtractingTestcase {
+public class SSLServerApiWithTlsPkcs12Test extends DistributionExtractingTestcase {
 
 	@Override
 	protected String getExampleDirName() {
-		return "ssl/api-with-tls";
+		return "ssl/api-with-tls-pkcs12";
 	}
 
 	@Test
-	public void test() throws Exception {
+	void test() throws Exception {
 		replaceInFile2("proxies.xml", "443", "3023");
 
 		try(Process2 ignored = startServiceProxyScript()) {

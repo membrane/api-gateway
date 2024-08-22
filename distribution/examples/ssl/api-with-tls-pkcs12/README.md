@@ -50,7 +50,7 @@ The output should look like this:
 < Content-Type: application/json
 < 
 {
-"success" : true
+"success" : truet
 }
 ```
 
@@ -61,10 +61,8 @@ Just put an SSL element into a proxy. See the [documentation](https://www.membra
 ```xml
 <serviceProxy port="443">
   <ssl>
-     <key>
-        <private location="<<your privateKey>>" />
-        <certificate location="<<your certificate>>" />
-     </key>
+    <keystore location="<<your keystore>>" password="<<your pwd>>" keyPassword="<<your pwd>>" />
+    <truststore location="<<your truststore>>" password="<<your pwd>>" />
   </ssl>
   <target host="localhost" port="2000"/>
 </serviceProxy>
