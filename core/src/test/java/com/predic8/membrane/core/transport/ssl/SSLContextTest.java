@@ -53,6 +53,11 @@ public class SSLContextTest {
 			return new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
 		}
 
+		private SSLContextBuilder byKeyAlias(String alias) {
+			sslParser.getKeyStore().setKeyAlias(alias);
+			return this;
+		}
+
 		private SSLContextBuilder needClientAuth() {
 			sslParser.setClientAuth("need");
 			return this;
@@ -75,6 +80,29 @@ public class SSLContextTest {
 
 	private SSLContextBuilder cb() {
 		return new SSLContextBuilder();
+	}
+
+	@Test
+	public void keyAliasSelectValid() throws Exception {
+		SSLContext server1 = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key1").build();
+		SSLContext client1 = cb().withTrustStore("classpath:/alias-truststore.p12").build();
+		testCombination(server1, client1);
+	}
+
+	@Test
+	public void keyAliasSelectWrongKey() throws Exception {
+		SSLContext server2 = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key2").build();
+		SSLContext client2 = cb().withTrustStore("classpath:/alias-truststore.p12").build();
+		testCombination(server2, client2);
+	}
+
+	@Test
+	public void keyAliasInvalid() throws Exception {
+		assertThrows(Exception.class, () -> {
+			SSLContext serverInvalid = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("invalid").build();
+			SSLContext clientInvalid = cb().withTrustStore("classpath:/alias-truststore.p12").build();
+			testCombination(serverInvalid, clientInvalid);
+		});
 	}
 
 	@Test
