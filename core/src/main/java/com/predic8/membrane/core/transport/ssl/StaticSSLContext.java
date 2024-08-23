@@ -85,8 +85,6 @@ public class StaticSSLContext extends SSLContext {
             KeyManagerFactory kmf = null;
             String keyStoreType = "PKCS12";
             if (sslParser.getKeyStore() != null) {
-                if (sslParser.getKeyStore().getKeyAlias() != null)
-                    throw new InvalidParameterException("keyAlias is not yet supported.");
                 char[] keyPass = "changeit".toCharArray();
                 if (sslParser.getKeyStore().getKeyPassword() != null)
                     keyPass = sslParser.getKeyStore().getKeyPassword().toCharArray();
@@ -101,7 +99,12 @@ public class StaticSSLContext extends SSLContext {
                 while (aliases.hasMoreElements()) {
                     String alias = aliases.nextElement();
                     if (ks.isKeyEntry(alias)) {
-                        // first key is used by the KeyManagerFactory
+                        if (sslParser.getKeyStore().getKeyAlias() != null) {
+                            String keyAlias = sslParser.getKeyStore().getKeyAlias();
+                            if (!alias.equals(keyAlias))
+                                continue;
+                        }
+
                         dnsNames = getDNSNames(ks.getCertificate(alias));
                         List<Certificate> certs = Arrays.asList(ks.getCertificateChain(alias));
                         validUntil = getMinimumValidity(certs);
