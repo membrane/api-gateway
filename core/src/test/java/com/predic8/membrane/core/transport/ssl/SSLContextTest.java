@@ -14,19 +14,34 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.security.KeyStore;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.security.TrustStore;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.platform.commons.util.UnrecoverableExceptions;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
+import javax.naming.InvalidNameException;
+import javax.net.ssl.SSLHandshakeException;
+import javax.security.auth.x500.X500Principal;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Optional;
 
-import static java.lang.String.format;
-import static org.junit.jupiter.api.AssertionFailureBuilder.assertionFailure;
+import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SSLContextTest {
 
@@ -49,7 +64,7 @@ public class SSLContextTest {
 			sslParser.setEndpointIdentificationAlgorithm("");
 		}
 
-		public SSLContext build() {
+		public StaticSSLContext build() {
 			return new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
 		}
 
@@ -83,26 +98,53 @@ public class SSLContextTest {
 	}
 
 	@Test
-	public void keyAliasSelectValid() throws Exception {
-		SSLContext server1 = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key1").build();
-		SSLContext client1 = cb().withTrustStore("classpath:/alias-truststore.p12").build();
-		testCombination(server1, client1);
+	public void keyAliasSelectPresent() throws Exception {
+        Optional<String> key1 = fetchKeyAlias(getAliasKeystoreByAlias("key1", router), "key1");
+		Optional<String> key2 = fetchKeyAlias(getAliasKeystoreByAlias("key2", router), "key2");
+		assertTrue(key1.isPresent());
+		assertTrue(key2.isPresent());
+		assertEquals("key1", key1.get());
+		assertEquals("key2", key2.get());
 	}
 
 	@Test
-	public void keyAliasSelectWrongKey() throws Exception {
-		SSLContext server2 = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key2").build();
-		SSLContext client2 = cb().withTrustStore("classpath:/alias-truststore.p12").build();
-		testCombination(server2, client2);
+	public void keyAliasDefaultFallback() throws Exception {
+		Optional<String> key1 = fetchKeyAlias(getAliasKeystoreByAlias("key1", router), null);
+		Optional<String> key2 = fetchKeyAlias(getAliasKeystoreByAlias("key2", router), null);
+		assertTrue(key1.isPresent());
+		assertTrue(key2.isPresent());
+		assertEquals("key1", key1.get());
+		assertEquals("key1", key2.get());
 	}
 
 	@Test
-	public void keyAliasInvalid() throws Exception {
-		assertThrows(Exception.class, () -> {
-			SSLContext serverInvalid = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("invalid").build();
-			SSLContext clientInvalid = cb().withTrustStore("classpath:/alias-truststore.p12").build();
-			testCombination(serverInvalid, clientInvalid);
-		});
+	public void keyAliasSelectNotPresent() throws Exception {
+		Optional<String> key = fetchKeyAlias(getAliasKeystoreByAlias("key3", router), "key3");
+		assertTrue(key.isEmpty());
+	}
+
+	@Test
+	void validX509ReturnsCN() throws InvalidNameException {
+		X509Certificate cert = mock(X509Certificate.class);
+		when(cert.getSubjectX500Principal()).thenReturn(new X500Principal("CN=John Doe, O=Example Org, C=US"));
+		Optional<String> result = getCommonName(cert);
+		assertTrue(result.isPresent());
+		assertEquals("John Doe", result.get());
+	}
+
+	@Test
+	void X509WithoutCNReturnsEmpty() throws InvalidNameException {
+		X509Certificate cert = mock(X509Certificate.class);
+		when(cert.getSubjectX500Principal()).thenReturn(new X500Principal("O=Example Org, C=US"));
+		Optional<String> result = getCommonName(cert);
+		assertTrue(result.isEmpty());
+	}
+
+	@Test
+	void nonX509ReturnsEmpty() throws InvalidNameException {
+		Certificate cert = mock(Certificate.class);
+		Optional<String> result = getCommonName(cert);
+		assertTrue(result.isEmpty());
 	}
 
 	@Test
@@ -139,22 +181,6 @@ public class SSLContextTest {
 		});
 	}
 
-	public static <T extends Throwable, S extends Throwable> void assertThrows2(Class<T> expectedType1, Class<S> expectedType2, Executable executable) {
-		try {
-			executable.execute();
-		} catch (Throwable actualException) {
-			if (expectedType1.isInstance(actualException)) {
-				return;
-			} else if (expectedType2.isInstance(actualException)) {
-				return;
-			} else {
-				UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
-				throw new RuntimeException("Unexpected exception type thrown");
-			}
-		}
-		throw new RuntimeException("Expected exception to be thrown, but nothing was thrown.");
-	}
-
 	@Test
 	public void serverAndClientCertificates() throws Exception {
 		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").withTrustStore("classpath:/ssl-rsa-pub2.keystore").needClientAuth().build();
@@ -171,6 +197,29 @@ public class SSLContextTest {
 		});
 	}
 
+	private static @NotNull java.security.KeyStore getAliasKeystoreByAlias(String alias, Router router) throws Exception {
+		return openKeyStore(new KeyStore() {{
+			setLocation("classpath:/alias-keystore.p12");
+			setKeyPassword("secret");
+			setKeyAlias(alias);
+		}}, "PKCS12", "secret".toCharArray(), router.getResolverMap(), router.getBaseLocation());
+	}
+
+	public static <T extends Throwable, S extends Throwable> void assertThrows2(Class<T> expectedType1, Class<S> expectedType2, Executable executable) {
+		try {
+			executable.execute();
+		} catch (Throwable actualException) {
+			if (expectedType1.isInstance(actualException)) {
+				return;
+			} else if (expectedType2.isInstance(actualException)) {
+				return;
+			} else {
+				UnrecoverableExceptions.rethrowIfUnrecoverable(actualException);
+				throw new RuntimeException("Unexpected exception type thrown");
+			}
+		}
+		throw new RuntimeException("Expected exception to be thrown, but nothing was thrown.");
+	}
 
 	private void testCombination(SSLContext server, final SSLContext client) throws Exception {
 		ServerSocket ss = server.createServerSocket(3020, 50, null);
@@ -202,5 +251,4 @@ public class SSLContextTest {
 		if (ex[0] != null)
 			throw ex[0];
 	}
-
 }
