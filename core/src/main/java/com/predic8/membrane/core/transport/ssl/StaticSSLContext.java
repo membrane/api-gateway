@@ -15,39 +15,34 @@
 package com.predic8.membrane.core.transport.ssl;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.Store;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.TrustManagerWrapper;
-import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.http2.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.crypto.Cipher;
-import javax.naming.InvalidNameException;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
+import javax.annotation.*;
+import javax.crypto.*;
+import javax.naming.*;
+import javax.naming.ldap.*;
 import javax.net.ssl.*;
-import javax.security.auth.x500.X500Principal;
-import javax.validation.constraints.NotNull;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import javax.validation.constraints.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.net.*;
+import java.security.Key;
+import java.security.KeyStore;
 import java.security.*;
-import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.security.cert.*;
+import java.util.Optional;
 import java.util.*;
 
 public class StaticSSLContext extends SSLContext {
 
     private static final String DEFAULT_CERTIFICATE_SHA256 = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
     private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
-    private static boolean default_certificate_warned = false;
+    private static boolean defaultCertificateWarned = false;
     private static boolean limitedStrength;
 
     static {
@@ -73,23 +68,20 @@ public class StaticSSLContext extends SSLContext {
     private String commonName;
 
     private javax.net.ssl.SSLContext sslc;
-    private long validFrom, validUntil;
+    private long validFrom;
+    private long validUntil;
 
 
     public StaticSSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
         this.sslParser = sslParser;
 
         try {
-            String algorihm = KeyManagerFactory.getDefaultAlgorithm();
-            if (sslParser.getAlgorithm() != null)
-                algorihm = sslParser.getAlgorithm();
+            String algorihm = getAlgorihm(sslParser);
 
             KeyManagerFactory kmf = null;
             String keyStoreType = "PKCS12";
             if (sslParser.getKeyStore() != null) {
-                char[] keyPass = "changeit".toCharArray();
-                if (sslParser.getKeyStore().getKeyPassword() != null)
-                    keyPass = sslParser.getKeyStore().getKeyPassword().toCharArray();
+                char[] keyPass = getKeyPass(sslParser);
 
                 if (sslParser.getKeyStore().getType() != null)
                     keyStoreType = sslParser.getKeyStore().getType();
@@ -97,6 +89,9 @@ public class StaticSSLContext extends SSLContext {
                 kmf = KeyManagerFactory.getInstance(algorihm);
                 kmf.init(ks, keyPass);
 
+                // If there is no certificate with that alias throw exception/log
+                // if sslParser.getKeyStore().getKeyAlias() != 00 => check If Alias exists: boolean containsCertificateWithAlias()
+                // if sslParser.getKeyStore().getKeyAlias() == null => getAliasOfFirstCertificateInStore
                 Optional<String> keyAlias = fetchKeyAlias(ks, sslParser.getKeyStore().getKeyAlias());
                 if (keyAlias.isPresent()) {
                     getCommonName(ks.getCertificate(keyAlias.get())).ifPresent(cn -> commonName = cn);
@@ -119,22 +114,18 @@ public class StaticSSLContext extends SSLContext {
 
                 for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
                     certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
-                if (certs.size() == 0)
+                if (certs.isEmpty())
                     throw new RuntimeException("At least one //ssl/key/certificate is required.");
                 dnsNames = getDNSNames(certs.get(0));
 
                 checkChainValidity(certs);
-                Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
-                Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+                Key k = getKey(sslParser, resourceResolver, baseLocation);
                 checkKeyMatchesCert(k, certs);
 
                 ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
 
                 kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                String keyPassword = "";
-                if (sslParser.getKey().getPassword() != null)
-                    keyPassword = sslParser.getKey().getPassword();
-                kmf.init(ks, keyPassword.toCharArray());
+                kmf.init(ks, getKeyPassword(sslParser));
                 validUntil = getMinimumValidity(certs);
                 validFrom = getValidFrom(certs);
             }
@@ -199,12 +190,46 @@ public class StaticSSLContext extends SSLContext {
         init(sslParser, sslc);
     }
 
+    private static Key getKey(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws IOException {
+        Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
+        Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+        return k;
+    }
+
+    private static char[] getKeyPassword(SSLParser sslParser) {
+        if (sslParser.getKey().getPassword() != null)
+            return sslParser.getKey().getPassword().toCharArray();
+        return "".toCharArray();
+    }
+
+    private static char @org.jetbrains.annotations.NotNull [] getKeyPass(SSLParser sslParser) {
+        char[] keyPass = "changeit".toCharArray();
+        if (sslParser.getKeyStore().getKeyPassword() != null)
+            keyPass = sslParser.getKeyStore().getKeyPassword().toCharArray();
+        return keyPass;
+    }
+
+    private static String getAlgorihm(SSLParser sslParser) {
+        String algorihm = KeyManagerFactory.getDefaultAlgorithm();
+        if (sslParser.getAlgorithm() != null)
+            algorihm = sslParser.getAlgorithm();
+        return algorihm;
+    }
+
     public StaticSSLContext(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
         this.sslParser = sslParser;
         this.sslc = sslc;
         init(sslParser, sslc);
     }
 
+    /**
+     * TODO: Util, javadoc, null => first
+     *
+     * @param ks
+     * @param requiredAlias
+     * @return
+     * @throws KeyStoreException
+     */
     static Optional<String> fetchKeyAlias(KeyStore ks, String requiredAlias) throws KeyStoreException {
         Enumeration<String> aliases = ks.aliases();
         while (aliases.hasMoreElements()) {
@@ -222,7 +247,15 @@ public class StaticSSLContext extends SSLContext {
         return Optional.empty();
     }
 
-    static Optional<String> getCommonName(Certificate certificate) throws InvalidNameException {
+    /**
+     * TODO: Util, javadoc,
+     *
+     * @param ks
+     * @param requiredAlias
+     * @return
+     * @throws KeyStoreException
+     */
+    static Optional<String> getCommonName(final Certificate certificate) throws InvalidNameException {
         if (certificate instanceof X509Certificate cert) {
             String dn = cert.getSubjectX500Principal().getName();
             LdapName lddn = new LdapName(dn);
@@ -235,8 +268,14 @@ public class StaticSSLContext extends SSLContext {
         return Optional.empty();
     }
 
+    /**
+     * TODO: doc/rename
+     * @param certificate
+     * @return
+     * @throws CertificateParsingException
+     */
     private List<String> getDNSNames(Certificate certificate) throws CertificateParsingException {
-        ArrayList<String> dnsNames = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
         if (certificate instanceof X509Certificate cert) {
             Collection<List<?>> subjectAlternativeNames = cert.getSubjectAlternativeNames();
             if (subjectAlternativeNames != null)
@@ -248,6 +287,11 @@ public class StaticSSLContext extends SSLContext {
         return dnsNames;
     }
 
+    /**
+     * TODO: Implement hash
+     * @param obj
+     * @return
+     */
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof StaticSSLContext))
@@ -256,7 +300,7 @@ public class StaticSSLContext extends SSLContext {
         return Objects.equal(sslParser, other.sslParser);
     }
 
-    static KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
+    static KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
         String type = store.getType();
         if (type == null)
             type = defaultType;
@@ -265,30 +309,62 @@ public class StaticSSLContext extends SSLContext {
             password = store.getPassword().toCharArray();
         if (password == null)
             throw new InvalidParameterException("Password for key store is not set.");
+        KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, type, password);
+        if (!defaultCertificateWarned && ks.getCertificate("membrane") != null) {
+            StringBuffer sb = getDigest(ks);
+            if (sb.toString().equals(DEFAULT_CERTIFICATE_SHA256)) {
+                log.warn("Using Membrane with the default certificate. This is highly discouraged! "
+                        + "Please run the generate-ssl-keys script in the conf directory.");
+                defaultCertificateWarned = true;
+            }
+        }
+        return ks;
+    }
+
+    /**
+     * TODO keystore Util
+     * @param store
+     * @param resourceResolver
+     * @param baseLocation
+     * @param type
+     * @param password
+     * @return
+     * @throws KeyStoreException
+     * @throws NoSuchProviderException
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     * @throws CertificateException
+     */
+    private static @org.jetbrains.annotations.NotNull KeyStore getAndLoadKeyStore(Store store, ResolverMap resourceResolver, String baseLocation, String type, char[] password) throws KeyStoreException, NoSuchProviderException, IOException, NoSuchAlgorithmException, CertificateException {
         KeyStore ks;
         if (store.getProvider() != null)
             ks = KeyStore.getInstance(type, store.getProvider());
         else
             ks = KeyStore.getInstance(type);
         ks.load(resourceResolver.resolve(ResolverMap.combine(baseLocation, store.getLocation())), password);
-        if (!default_certificate_warned && ks.getCertificate("membrane") != null) {
-            byte[] pkeEnc = ks.getCertificate("membrane").getEncoded();
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(pkeEnc);
-            byte[] mdbytes = md.digest();
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < mdbytes.length; i++) {
-                if (i > 0)
-                    sb.append(':');
-                sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
-            }
-            if (sb.toString().equals(DEFAULT_CERTIFICATE_SHA256)) {
-                log.warn("Using Membrane with the default certificate. This is highly discouraged! "
-                        + "Please run the generate-ssl-keys script in the conf directory.");
-                default_certificate_warned = true;
-            }
-        }
         return ks;
+    }
+
+    /**
+     * TODO: return String => KeyStoreUtil
+     * @param ks
+     * @return
+     * @throws CertificateEncodingException
+     * @throws KeyStoreException
+     * @throws NoSuchAlgorithmException
+     */
+    private static @org.jetbrains.annotations.NotNull StringBuffer getDigest(KeyStore ks) throws CertificateEncodingException, KeyStoreException, NoSuchAlgorithmException {
+        byte[] pkeEnc = ks.getCertificate("membrane").getEncoded();
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(pkeEnc);
+        byte[] mdbytes = md.digest();
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < mdbytes.length; i++) {
+            if (i > 0)
+                sb.append(':');
+            sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
+        }
+        return sb;
     }
 
     public void applyCiphers(SSLServerSocket sslServerSocket) {
