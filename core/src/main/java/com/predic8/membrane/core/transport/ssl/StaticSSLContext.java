@@ -25,12 +25,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import javax.crypto.Cipher;
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.net.ssl.*;
+import javax.security.auth.x500.X500Principal;
 import javax.validation.constraints.NotNull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -38,8 +41,6 @@ import java.net.Socket;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.security.interfaces.RSAPrivateCrtKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 
 public class StaticSSLContext extends SSLContext {
@@ -69,6 +70,7 @@ public class StaticSSLContext extends SSLContext {
 
     private final SSLParser sslParser;
     private List<String> dnsNames;
+    private String commonName;
 
     private javax.net.ssl.SSLContext sslc;
     private long validFrom, validUntil;
@@ -95,22 +97,15 @@ public class StaticSSLContext extends SSLContext {
                 kmf = KeyManagerFactory.getInstance(algorihm);
                 kmf.init(ks, keyPass);
 
-                Enumeration<String> aliases = ks.aliases();
-                while (aliases.hasMoreElements()) {
-                    String alias = aliases.nextElement();
-                    if (ks.isKeyEntry(alias)) {
-                        if (sslParser.getKeyStore().getKeyAlias() != null) {
-                            String keyAlias = sslParser.getKeyStore().getKeyAlias();
-                            if (!alias.equals(keyAlias))
-                                continue;
-                        }
-
-                        dnsNames = getDNSNames(ks.getCertificate(alias));
-                        List<Certificate> certs = Arrays.asList(ks.getCertificateChain(alias));
-                        validUntil = getMinimumValidity(certs);
-                        validFrom = getValidFrom(certs);
-                        break;
-                    }
+                Optional<String> keyAlias = fetchKeyAlias(ks, sslParser.getKeyStore().getKeyAlias());
+                if (keyAlias.isPresent()) {
+                    getCommonName(ks.getCertificate(keyAlias.get())).ifPresent(cn -> commonName = cn);
+                    dnsNames = getDNSNames(ks.getCertificate(keyAlias.get()));
+                    List<Certificate> certs = Arrays.asList(ks.getCertificateChain(keyAlias.get()));
+                    validUntil = getMinimumValidity(certs);
+                    validFrom = getValidFrom(certs);
+                } else {
+                  log.warn("Specified keystore does not contain key of alias '{}'", sslParser.getKeyStore().getKeyAlias());
                 }
             }
             if (sslParser.getKey() != null) {
@@ -210,12 +205,40 @@ public class StaticSSLContext extends SSLContext {
         init(sslParser, sslc);
     }
 
+    static Optional<String> fetchKeyAlias(KeyStore ks, String requiredAlias) throws KeyStoreException {
+        Enumeration<String> aliases = ks.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            if (ks.isKeyEntry(alias)) {
+                if (requiredAlias != null) {
+                    if (alias.equals(requiredAlias)) {
+                        return Optional.of(alias);
+                    }
+                } else {
+                    return Optional.of(alias);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    static Optional<String> getCommonName(Certificate certificate) throws InvalidNameException {
+        if (certificate instanceof X509Certificate cert) {
+            String dn = cert.getSubjectX500Principal().getName();
+            LdapName lddn = new LdapName(dn);
+            for (Rdn rdn : lddn.getRdns()) {
+                if (rdn.getType().equalsIgnoreCase("cn")) {
+                    return Optional.of(rdn.getValue().toString());
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private List<String> getDNSNames(Certificate certificate) throws CertificateParsingException {
         ArrayList<String> dnsNames = new ArrayList<>();
-        if (certificate instanceof X509Certificate) {
-            X509Certificate x = (X509Certificate) certificate;
-
-            Collection<List<?>> subjectAlternativeNames = x.getSubjectAlternativeNames();
+        if (certificate instanceof X509Certificate cert) {
+            Collection<List<?>> subjectAlternativeNames = cert.getSubjectAlternativeNames();
             if (subjectAlternativeNames != null)
                 for (List<?> l : subjectAlternativeNames) {
                     if (l.get(0) instanceof Integer && ((Integer)l.get(0) == 2))
@@ -233,7 +256,7 @@ public class StaticSSLContext extends SSLContext {
         return Objects.equal(sslParser, other.sslParser);
     }
 
-    private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
+    static KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
         String type = store.getType();
         if (type == null)
             type = defaultType;
@@ -421,5 +444,9 @@ public class StaticSSLContext extends SSLContext {
     @Override
     public long getValidUntil() {
         return validUntil;
+    }
+
+    public String getCommonName() {
+        return commonName;
     }
 }
