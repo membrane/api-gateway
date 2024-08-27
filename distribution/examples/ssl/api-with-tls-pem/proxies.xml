@@ -1,0 +1,32 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<api port="443">
+			<ssl>
+				<!-- Please replace key and certificate for production! -->
+				<key>
+					<private location="membrane-key.pem" />
+					<certificate location="membrane.pem" />
+				</key>
+			</ssl>
+			<target host="localhost" port="2000"/><!-- Route here to your target -->
+		</api>
+
+		<!-- Serves as a backend API mock -->
+		<api port="2000">
+			<response>
+				<template pretty="true" contentType="application/json">
+					{ "success": true }
+				</template>
+			</response>
+            <return statusCode="200"/>
+	    </api>
+		
+	</router>
+	
+</spring:beans>
