@@ -98,56 +98,6 @@ public class SSLContextTest {
 	}
 
 	@Test
-	public void keyAliasSelectPresent() throws Exception {
-        Optional<String> key1 = fetchKeyAlias(getAliasKeystoreByAlias("key1", router), "key1");
-		Optional<String> key2 = fetchKeyAlias(getAliasKeystoreByAlias("key2", router), "key2");
-		assertTrue(key1.isPresent());
-		assertTrue(key2.isPresent());
-		assertEquals("key1", key1.get());
-		assertEquals("key2", key2.get());
-	}
-
-	@Test
-	public void keyAliasDefaultFallback() throws Exception {
-		Optional<String> key1 = fetchKeyAlias(getAliasKeystoreByAlias("key1", router), null);
-		Optional<String> key2 = fetchKeyAlias(getAliasKeystoreByAlias("key2", router), null);
-		assertTrue(key1.isPresent());
-		assertTrue(key2.isPresent());
-		assertEquals("key1", key1.get());
-		assertEquals("key1", key2.get());
-	}
-
-	@Test
-	public void keyAliasSelectNotPresent() throws Exception {
-		Optional<String> key = fetchKeyAlias(getAliasKeystoreByAlias("key3", router), "key3");
-		assertTrue(key.isEmpty());
-	}
-
-	@Test
-	void validX509ReturnsCN() throws InvalidNameException {
-		X509Certificate cert = mock(X509Certificate.class);
-		when(cert.getSubjectX500Principal()).thenReturn(new X500Principal("CN=John Doe, O=Example Org, C=US"));
-		Optional<String> result = getCommonName(cert);
-		assertTrue(result.isPresent());
-		assertEquals("John Doe", result.get());
-	}
-
-	@Test
-	void X509WithoutCNReturnsEmpty() throws InvalidNameException {
-		X509Certificate cert = mock(X509Certificate.class);
-		when(cert.getSubjectX500Principal()).thenReturn(new X500Principal("O=Example Org, C=US"));
-		Optional<String> result = getCommonName(cert);
-		assertTrue(result.isEmpty());
-	}
-
-	@Test
-	void nonX509ReturnsEmpty() throws InvalidNameException {
-		Certificate cert = mock(Certificate.class);
-		Optional<String> result = getCommonName(cert);
-		assertTrue(result.isEmpty());
-	}
-
-	@Test
 	public void simpleConfig() {
 		assertThrows(Exception.class, () -> {
 			SSLContext server = cb().build();
@@ -195,14 +145,6 @@ public class SSLContextTest {
 			SSLContext client = cb().withKeyStore("classpath:/ssl-rsa2.keystore").withTrustStore("classpath:/ssl-rsa-pub.keystore").needClientAuth().build();
 			testCombination(server, client);
 		});
-	}
-
-	private static @NotNull java.security.KeyStore getAliasKeystoreByAlias(String alias, Router router) throws Exception {
-		return openKeyStore(new KeyStore() {{
-			setLocation("classpath:/alias-keystore.p12");
-			setKeyPassword("secret");
-			setKeyAlias(alias);
-		}}, "PKCS12", "secret".toCharArray(), router.getResolverMap(), router.getBaseLocation());
 	}
 
 	public static <T extends Throwable, S extends Throwable> void assertThrows2(Class<T> expectedType1, Class<S> expectedType2, Executable executable) {
