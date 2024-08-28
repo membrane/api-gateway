@@ -11,7 +11,6 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.core.transport.ssl;
 
 import com.predic8.membrane.core.HttpRouter;
@@ -19,29 +18,21 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.platform.commons.util.UnrecoverableExceptions;
 
-import javax.naming.InvalidNameException;
 import javax.net.ssl.SSLHandshakeException;
-import javax.security.auth.x500.X500Principal;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Optional;
 
-import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SSLContextTest {
 
