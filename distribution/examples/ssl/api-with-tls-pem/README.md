@@ -1,6 +1,6 @@
-# Protecting APIs with SSL/TLS
+# Protecting APIs with SSL/TLS (using PEM formatted files)
 
-This example describes how to secure an API with SSL/TLS.  
+This example describes how to secure an API with SSL/TLS using PEM formatted files for the key and the certificate.  
 
 
 ## Running the Example

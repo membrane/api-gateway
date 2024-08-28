@@ -1,6 +1,6 @@
-# Protecting APIs with SSL/TLS
+# Protecting APIs with SSL/TLS (using a keystore in the PKCS12 format)
 
-This example describes how to secure an API with SSL/TLS.  
+This example describes how to secure an API with SSL/TLS using a keystore in the PKCS12 format.  
 
 
 ## Running the Example
@@ -50,7 +50,7 @@ The output should look like this:
 < Content-Type: application/json
 < 
 {
-"success" : truet
+"success" : true
 }
 ```
 
