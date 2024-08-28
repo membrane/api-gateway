@@ -26,13 +26,14 @@ import com.predic8.membrane.core.util.TextUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @MCElement(name="jwks")
 public class Jwks {
 
-    List<Jwk> jwks;
+    List<Jwk> jwks = new ArrayList<>();
     String jwksUris;
     AuthorizationService authorizationService;
 

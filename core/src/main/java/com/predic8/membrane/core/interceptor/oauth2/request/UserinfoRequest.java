@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.request;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
