@@ -19,7 +19,8 @@ import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
 import com.predic8.membrane.examples.tests.openapi.APIProxyTest;
-import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsTest;
+import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPemTest;
+import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPkcs12Test;
 import com.predic8.membrane.examples.tests.ssl.ToBackendTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
@@ -43,7 +44,8 @@ import org.junit.platform.suite.api.Suite;
         LoggingTest.class,
         LoginTest.class,
         RewriterTest.class,
-        SSLServerApiWithTlsTest.class,
+        SSLServerApiWithTlsPkcs12Test.class,
+        SSLServerApiWithTlsPemTest.class,
         ToBackendTest.class,
         ThrottleTest.class,
         XSLTTest.class,
