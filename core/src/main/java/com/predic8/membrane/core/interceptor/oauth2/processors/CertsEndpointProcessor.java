@@ -23,7 +23,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
 
 public class CertsEndpointProcessor extends EndpointProcessor {
 
-    private JSONBeautifier jsonBeautifier = new JSONBeautifier();
+    private final JSONBeautifier jsonBeautifier = new JSONBeautifier();
 
     public CertsEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -36,11 +36,11 @@ public class CertsEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-        String accessTokenJWKIfAvaliable = authServer.getTokenGenerator().getJwkIfAvailable();
+        String accessTokenJWKIfAvailable = authServer.getTokenGenerator().getJwkIfAvailable();
         String idTokenJWK = authServer.getJwtGenerator().getJwk();
 
         String jwks = "{\"keys\": [ " + idTokenJWK +
-                (accessTokenJWKIfAvaliable != null ? "," + accessTokenJWKIfAvaliable : "") +
+                (accessTokenJWKIfAvailable != null ? "," + accessTokenJWKIfAvailable : "") +
                 "]}";
 
         exc.setResponse(Response.ok().contentType(APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(jwks)).build());
