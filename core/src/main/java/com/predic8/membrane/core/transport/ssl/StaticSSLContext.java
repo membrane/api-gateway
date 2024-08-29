@@ -19,6 +19,7 @@ import com.predic8.membrane.core.config.security.Store;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.TrustManagerWrapper;
 import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,11 +86,14 @@ public class StaticSSLContext extends SSLContext {
                 if (sslParser.getKeyStore().getType() != null)
                     keyStoreType = sslParser.getKeyStore().getType();
                 KeyStore ks = openKeyStore(sslParser.getKeyStore(), "PKCS12", keyPass, resourceResolver, baseLocation);
-                kmf = KeyManagerFactory.getInstance(algorihm);
-                kmf.init(ks, keyPass);
 
                 String paramAlias = sslParser.getKeyStore().getKeyAlias();
                 String keyAlias = (paramAlias != null) ? aliasOrThrow(ks, paramAlias) : firstAliasOrThrow(ks);
+
+                KeyStore filteredKeyStore = filterKeyStoreByAlias(ks, keyPass, keyAlias);
+
+                kmf = KeyManagerFactory.getInstance(algorihm);
+                kmf.init(filteredKeyStore, keyPass);
 
                 dnsNames = extractDnsNames(ks.getCertificate(keyAlias));
                 List<Certificate> certs = Arrays.asList(ks.getCertificateChain(keyAlias));
