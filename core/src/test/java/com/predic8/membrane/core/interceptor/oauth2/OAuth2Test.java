@@ -38,11 +38,11 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 class OAuth2Test {
@@ -55,6 +55,9 @@ class OAuth2Test {
 
     static Rule jwtAuthRule;
     static JwtAuthInterceptor jwtAuthInterceptor;
+
+    static String clientId = "abc";
+    static String clientSecret = "def";
 
     @BeforeAll
     static void startup() throws Exception {
@@ -102,13 +105,15 @@ class OAuth2Test {
         JSONObject jsonObject = new JSONObject(json);
         assertEquals("Bearer", jsonObject.getString("token_type"));
         assertNotNull(jsonObject.getString("access_token"));
-        assertEquals("foo", sendRequestToTarget(parseTokenRequestResponse(json)));
+        assertEquals("Ok", sendRequestToTarget(parseTokenRequestResponse(json)));
     }
 
     private static OAuth2AuthorizationServerInterceptor createOAuth2AuthServerInterceptor() {
         OAuth2AuthorizationServerInterceptor oAuth2AuthSI = new OAuth2AuthorizationServerInterceptor();
         oAuth2AuthSI.setIssuer("http://localhost:2000");
-        oAuth2AuthSI.setTokenGenerator(new BearerJwtTokenGenerator());
+        oAuth2AuthSI.setTokenGenerator(new BearerJwtTokenGenerator() {{
+            setExpiration(60);
+        }});
         oAuth2AuthSI.setRefreshTokenGenerator(new BearerTokenGenerator());
 
         oAuth2AuthSI.setUserDataProvider(new StaticUserDataProvider() {{
@@ -120,19 +125,11 @@ class OAuth2Test {
         }});
 
         oAuth2AuthSI.setClaimList(new ClaimList() {{
-            setValue("sub username");
-            setSupportedClaims(new HashSet<>() {{
-                add("username");
-                add("sub");
-            }});
+            setValue("username");
             setScopes(new ArrayList<>() {{
                 add(new Scope() {{
                     setId("username");
                     setClaims("username");
-                }});
-                add(new Scope() {{
-                    setId("sub");
-                    setClaims("sub");
                 }});
             }});
         }});
@@ -178,7 +175,7 @@ class OAuth2Test {
     }
 
     private static String createTokenRequestParameters() {
-        return "grant_type=client_credentials&client_id=abc&client_secret=def";
+        return "grant_type=client_credentials&client_id=" + clientId + "&client_secret=" + clientSecret;
     }
 
     private static String readResponse(HttpURLConnection connection) throws IOException {
