@@ -19,12 +19,42 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.util.Enumeration;
 import java.util.Optional;
 
 public class KeyStoreUtil {
+    /**
+     * Filters a KeyStore by a specific alias, creating a new KeyStore
+     * containing only the key and certificate chain associated with
+     * the provided alias.
+     *
+     * @param ks       the original KeyStore to filter
+     * @param keyPass  the password for accessing the key
+     * @param keyAlias the alias of the key to filter
+     * @return a new KeyStore containing only the key and certificate
+     * chain associated with the specified alias
+     * @throws KeyStoreException         if the KeyStore cannot be initialized
+     * @throws IOException               if there is an I/O error during the operation
+     * @throws NoSuchAlgorithmException  if the algorithm for recovering
+     *                                   the key cannot be found
+     * @throws CertificateException      if any of the certificates in the
+     *                                   chain are invalid
+     * @throws UnrecoverableKeyException if the key cannot be recovered
+     *                                   using the given password
+     */
+    public static KeyStore filterKeyStoreByAlias(KeyStore ks, char[] keyPass, String keyAlias) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
+        KeyStore filteredKeyStore = KeyStore.getInstance(ks.getType());
+        filteredKeyStore.load(null, keyPass);
+
+        Key key = ks.getKey(keyAlias, keyPass);
+        Certificate[] certificateChain = ks.getCertificateChain(keyAlias);
+        filteredKeyStore.setKeyEntry(keyAlias, key, keyPass, certificateChain);
+        return filteredKeyStore;
+    }
+
     /**
      * Generates an SHA-256 digest of the certificate associated with the given alias in the KeyStore.
      *

@@ -18,6 +18,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
+import org.apache.commons.lang3.NotImplementedException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -93,6 +94,47 @@ public class SSLContextTest {
 		assertThrows(Exception.class, () -> {
 			SSLContext server = cb().build();
 			SSLContext client = cb().build();
+			testCombination(server, client);
+		});
+	}
+
+	@Test
+	public void selectFirstKeyAndPass() throws Exception {
+		SSLContext server = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key1").build();
+		SSLContext client = cb().withTrustStore("classpath:/alias-truststore.p12").build();
+		testCombination(server, client);
+	}
+
+	@Test
+	public void selectFirstKeyTrustFail() {
+		assertThrows(SocketException.class, () -> {
+			SSLContext server = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key2").build();
+			SSLContext client = cb().withTrustStore("classpath:/alias-truststore.p12").build();
+			testCombination(server, client);
+		});
+	}
+
+	@Test
+	public void selectSecondKeyAndPass() throws Exception {
+		SSLContext server = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key2").build();
+		SSLContext client = cb().withTrustStore("classpath:/alias-truststore2.p12").build();
+		testCombination(server, client);
+	}
+
+	@Test
+	public void selectSecondKeyTrustFail() {
+		assertThrows(SocketException.class, () -> {
+			SSLContext server = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key1").build();
+			SSLContext client = cb().withTrustStore("classpath:/alias-truststore2.p12").build();
+			testCombination(server, client);
+		});
+	}
+
+	@Test
+	public void invalidAlias() {
+		assertThrows(RuntimeException.class, () -> {
+			SSLContext server = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key999").build();
+			SSLContext client = cb().withTrustStore("classpath:/alias-truststore.p12").build();
 			testCombination(server, client);
 		});
 	}
