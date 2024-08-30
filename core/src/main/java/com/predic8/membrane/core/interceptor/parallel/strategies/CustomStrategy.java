@@ -5,6 +5,7 @@ import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.parallel.CollectionStrategy;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.spel.SpelCompilerMode;
 import org.springframework.expression.spel.SpelParserConfiguration;
@@ -16,39 +17,45 @@ import java.util.List;
 public class CustomStrategy extends CollectionStrategy {
 
     private final Expression expr;
+    private final CustomStrategyEvaluationContext evalCtx = new CustomStrategyEvaluationContext();
 
     CustomStrategy(Expression expr) throws RuntimeException {
         this.expr = expr;
+        evalCtx.setRunningExchanges(runningExchanges);
+        evalCtx.setCompletedExchanges(completedExchanges);
     }
 
     @Override
     public void completeExchange(Exchange exc) {
         super.completeExchange(exc);
-        collectedExchange = expr.getValue(new CustomStrategyEvaluationContext(runningExchanges, completedExchanges, exc), Exchange.class);
+        evalCtx.setCurrentExchange(exc);
+        collectedExchange = expr.getValue(evalCtx, Exchange.class);
     }
 
     public static class CustomStrategyEvaluationContext extends StandardEvaluationContext {
 
-        private final List<Exchange> runningExchanges;
-        private final List<Exchange> completedExchanges;
-        private final Exchange currentExchange;
+        private List<Exchange> runningExchanges;
+        private List<Exchange> completedExchanges;
+        private Exchange currentExchange;
 
-        public CustomStrategyEvaluationContext(List<Exchange> runningExchanges, List<Exchange> completedExchanges, Exchange currentExchange) {
+        public CustomStrategyEvaluationContext() {
             super();
-            this.runningExchanges = runningExchanges;
-            this.completedExchanges = completedExchanges;
-            this.currentExchange = currentExchange;
             setRootObject(this);
         }
 
+        public void setRunningExchanges(List<Exchange> runningExchanges) {
+            this.runningExchanges = runningExchanges;}
+        public void setCompletedExchanges(List<Exchange> completedExchanges) {
+            this.completedExchanges = completedExchanges;
+        }
+        public void setCurrentExchange(Exchange currentExchange) {
+            this.currentExchange = currentExchange;}
         public List<Exchange> getRunningExchanges() {
             return runningExchanges;
         }
-
         public List<Exchange> getCompletedExchanges() {
             return completedExchanges;
         }
-
         public Exchange getCurrentExchange() {
             return currentExchange;
         }
