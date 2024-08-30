@@ -2,8 +2,6 @@ package com.predic8.membrane.core.interceptor.parallel;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +13,6 @@ public abstract class CollectionStrategy {
     protected Exchange collectedExchange;
 
     HttpClient client = new HttpClient();
-    Logger log = LoggerFactory.getLogger(CollectionStrategy.class);
 
     public Exchange handleExchanges(List<Exchange> exchanges) {
         runningExchanges = exchanges;
@@ -46,7 +43,6 @@ public abstract class CollectionStrategy {
 
     protected Exchange performCall(Exchange exchange) {
         try {
-            log.info("Sending request to %s".formatted(exchange.getDestinations().get(0)));
             return client.call(exchange);
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -20,8 +20,6 @@ public class ShadowingStrategy extends CollectionStrategy {
     ShadowingStrategy(String targetId, boolean logShadowResponse) throws RuntimeException {
         this.targetId = targetId;
         this.logShadowResponse = logShadowResponse;
-        if (targetId == null)
-            throw new RuntimeException("Missing parameter 'returnTarget' in <shadowing> element.");
     }
 
     @Override

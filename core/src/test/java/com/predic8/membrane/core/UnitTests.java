@@ -49,6 +49,7 @@ import com.predic8.membrane.core.interceptor.misc.ReturnInterceptorTest;
 import com.predic8.membrane.core.interceptor.misc.SetHeaderInterceptor;
 import com.predic8.membrane.core.interceptor.misc.SetPropertyInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2UnitTests;
+import com.predic8.membrane.core.interceptor.parallel.ParallelInterceptor;
 import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptorTest;
@@ -172,6 +173,7 @@ import org.junit.platform.suite.api.Suite;
 		SetHeaderInterceptor.class,
 		SetPropertyInterceptor.class,
 		APIProxyKeyTest.class,
+		ParallelInterceptor.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",

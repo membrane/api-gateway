@@ -9,8 +9,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.parallel.CollectionStrategy.CollectionStrategyElement;
 import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,16 +21,23 @@ public class ParallelInterceptor extends AbstractInterceptor {
 
     public static final String PARALLEL_TARGET_ID = "parallel_target_id";
     private List<Target> targets = new ArrayList<>();
-
     private CollectionStrategyElement strategy;
-
-    Logger log = LoggerFactory.getLogger(ParallelInterceptor.class);
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        String body = exc.getRequest().getBodyAsStringDecoded();
+        exc.setResponse(CompletableFuture.supplyAsync(() ->
+                strategy.getNewInstance().handleExchanges(duplicateExchangeByTargets(
+                        exc,
+                        exc.getRequest().getBodyAsStringDecoded(),
+                        targets
+                ))
+        ).join().getResponse());
+        return Outcome.RETURN;
+    }
+
+    static List<Exchange> duplicateExchangeByTargets(Exchange exc, String body, List<Target> targetList) {
         List<Exchange> exchanges = new ArrayList<>();
-        for (Target target : targets) {
+        for (Target target : targetList) {
             if(target.getPort() == -1)
                 target.setPort(target.getSslParser() != null ? 443 : 80);
             Exchange newExc = cloneExchange(exc, body);
@@ -40,19 +45,13 @@ public class ParallelInterceptor extends AbstractInterceptor {
             newExc.setProperty(PARALLEL_TARGET_ID, target.getId());
             exchanges.add(newExc);
         }
-
-        CollectionStrategy cs = strategy.getNewInstance();
-        CompletableFuture<Exchange> future = CompletableFuture.supplyAsync(() -> cs.handleExchanges(exchanges));
-
-        exc.setResponse(future.join().getResponse());
-        return Outcome.RETURN;
+        return exchanges;
     }
 
     static String getUrlFromTarget(Target target) {
         if (target.getUrl() != null) {
             return target.getUrl();
         }
-
         String protocol = (target.getSslParser() != null) ? "https://" : "http://";
         return String.format("%s%s:%d", protocol, target.getHost(), target.getPort());
     }
@@ -90,7 +89,6 @@ public class ParallelInterceptor extends AbstractInterceptor {
         for(HeaderField field: request.getHeader().getAllHeaderFields()) {
             cloned.getHeader().add(new HeaderField(field.getHeaderName().getName(), field.getValue()));
         }
-
         if (request.getBodyAsStringDecoded() != null)
             cloned.setBodyContent(body.getBytes());
 

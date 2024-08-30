@@ -1,0 +1,29 @@
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <api port="2000">
+            <parallel>
+                <shadowing returnTarget="primary" logShadowResponse="true"/>
+                <target url="https://api.predic8.de" id="primary" />
+                <target url="http://localhost:3000" id="secondary" />
+            </parallel>
+        </api>
+
+        <api port="3000">
+            <groovy>
+                sleep(2500)
+            </groovy>
+            <static>
+                This endpoint is called in the background.
+            </static>
+            <return />
+        </api>
+
+    </router>
+
+</spring:beans>

@@ -1,0 +1,46 @@
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <api port="2000">
+            <log />
+            <parallel>
+                <custom>
+                    currentExchange.getResponse().getHeader().getFirstValue("x-value") == "2" ? currentExchange : null
+                </custom>
+                <target url="http://localhost:3000" />
+                <target url="http://localhost:4000" />
+                <target url="http://localhost:5000" />
+            </parallel>
+        </api>
+
+        <api port="3000">
+            <setHeader name="x-value" value="1" />
+            <static>
+                1 und so
+            </static>
+            <return />
+        </api>
+
+        <api port="4000">
+            <setHeader name="x-value" value="2" />
+            <static>
+                2 und so
+            </static>
+            <return />
+        </api>
+
+        <api port="5000">
+            <setHeader name="x-value" value="3" />
+            <static>
+                3 und so
+            </static>
+            <return />
+        </api>
+    </router>
+
+</spring:beans>
