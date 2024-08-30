@@ -1,15 +1,21 @@
 package com.predic8.membrane.core.interceptor.parallel;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class CollectionStrategy {
 
-    protected static List<Exchange> runningExchanges = new ArrayList<>();
-    protected static List<Exchange> completedExchanges = new ArrayList<>();
-    protected static Exchange collectedExchange;
+    protected List<Exchange> runningExchanges = new ArrayList<>();
+    protected List<Exchange> completedExchanges = new ArrayList<>();
+    protected Exchange collectedExchange;
+
+    HttpClient client = new HttpClient();
+    Logger log = LoggerFactory.getLogger(CollectionStrategy.class);
 
     public Exchange handleExchanges(List<Exchange> exchanges) {
         runningExchanges = exchanges;
@@ -17,7 +23,10 @@ public abstract class CollectionStrategy {
         for (Exchange exchange : runningExchanges) {
             new Thread(() -> {
                 Exchange completedExchange = performCall(exchange);
-                completeExchange(completedExchange);
+                synchronized (this) {
+                    completeExchange(completedExchange);
+                    notifyAll();
+                }
             }).start();
         }
 
@@ -35,8 +44,14 @@ public abstract class CollectionStrategy {
         return collectedExchange;
     }
 
-    // Ja scheiﬂe nh
-    protected abstract Exchange performCall(Exchange exchange);
+    protected Exchange performCall(Exchange exchange) {
+        try {
+            log.info("Sending request to %s".formatted(exchange.getDestinations().get(0)));
+            return client.call(exchange);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Overridden method should call super, then perform resolution strategy.

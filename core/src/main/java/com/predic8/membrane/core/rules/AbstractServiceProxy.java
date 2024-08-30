@@ -36,6 +36,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		private int port = -1;
 		private String url;
 		private boolean adjustHostHeader = true;
+		private String id;
 
 		private SSLParser sslParser;
 
@@ -48,6 +49,18 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		public Target(String host, int port) {
 			setHost(host);
 			setPort(port);
+		}
+
+		/**
+		 * @description ID of the target. Can be used to identify multiple targets in a list (Used in combination with ParallelInterceptor and CollectionStrategy).
+		 */
+		@MCAttribute
+		public void setId(String id) {
+			this.id = id;
+		}
+
+		public String getId() {
+			return id;
 		}
 
 		public String getHost() {
