@@ -79,7 +79,7 @@
 		<javac.target>17</javac.target>
 		<jackson.version>2.17.2</jackson.version>
 		<spring.version>6.1.12</spring.version>
-		<slf4j.version>2.0.14</slf4j.version>
+		<slf4j.version>2.0.15</slf4j.version>
 		<log4j.version>2.23.1</log4j.version>
 		<junit.version>5.10.0</junit.version>
 		<groovy.version>4.0.22</groovy.version>
