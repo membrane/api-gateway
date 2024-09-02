@@ -1,7 +1,7 @@
 # Traffic Shadowing
 
+This example demonstrates the use of `the shadowing strategy` to send requests to multiple shadow hosts. A request is sent to the primary target, with additional requests concurrently sent to shadow hosts. The response from the primary target is returned immediately, while shadow requests are processed in the background.
 
-This example demonstrates the use of `the shadowing strategy` to send requests to multiple shadow hosts. A request is sent to the primary target, with additional requests concurrently sent to shadow hosts. The response from the primary target is returned immediately, while shadow requests are processed in the background, allowing for comparison or redundancy without delaying the main response.
 ## Running the Example
 
 1. Run `service-proxy.bat` or `service-proxy.sh`
@@ -31,11 +31,11 @@ This example demonstrates the use of `the shadowing strategy` to send requests t
    Content-Type: text/plain
    Content-Length: 72
    ```
-3. Additionally you can modify the `returnTarget` in `proxies.xml` and set it to `secondary`, which corresponds to the shadow host’s ID. This switch makes the shadow host the new primary target. When you repeat the request to [localhost:2000](http://localhost:2000), you'll notice that the response now takes about 5 seconds, while the shadow host's response is logged almost immediately.
+3. Additionally, you can modify the `returnTarget` in `proxies.xml` and set it to `secondary`, which corresponds to the shadow host’s ID. This switch makes the shadow host the new primary target. When you repeat the request to [localhost:2000](http://localhost:2000), you'll notice that the response now takes about 5 seconds, while the shadow host's response is logged almost immediately.
 
 ## Configuration
 
-Just declare the returnTarget of the desired endpoint. Additionally you can log the responses of the shadow hosts by setting `logShadowResponse` to `true`. 
+Just declare the returnTarget of the desired endpoint. You can log the responses of the shadow hosts by setting `logShadowResponse` to `true`. 
 
 ```xml
 <api port="2000">

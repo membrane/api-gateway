@@ -9,9 +9,28 @@
         <api port="2000">
             <log />
             <parallel>
-                <custom>
-                    currentExchange.getResponse().getHeader().getFirstValue("x-value") == "2" ? currentExchange : null
-                </custom>
+                <custom><![CDATA[
+                    // Initialize min_value if it doesn't exist
+                    if (vars["min_value"] == null) {
+                        vars["min_value"] = Integer.MAX_VALUE
+                    }
+
+                    // Get the current x-value from the response header and parse it as an integer
+                    def currentValue = Integer.parseInt(current.getResponse().getHeader().getFirstValue("x-value"))
+
+                    // Compare currentValue with min_value and update if necessary
+                    if (currentValue < vars["min_value"]) {
+                        vars["min_value"] = currentValue
+                        vars["min_value_exchange"] = current
+                    }
+
+                    // Return min_value when all exchanges have finished
+                    if (running.isEmpty()) {
+                        return vars["min_value_exchange"]
+                    } else {
+                        return null
+                    }
+                ]]></custom>
                 <target url="http://localhost:3000" />
                 <target url="http://localhost:4000" />
                 <target url="http://localhost:5000" />
@@ -21,7 +40,7 @@
         <api port="3000">
             <setHeader name="x-value" value="1" />
             <static>
-                1 und so
+                Number 1
             </static>
             <return />
         </api>
@@ -29,7 +48,7 @@
         <api port="4000">
             <setHeader name="x-value" value="2" />
             <static>
-                2 und so
+                Number 2
             </static>
             <return />
         </api>
@@ -37,7 +56,7 @@
         <api port="5000">
             <setHeader name="x-value" value="3" />
             <static>
-                3 und so
+                Number 3
             </static>
             <return />
         </api>

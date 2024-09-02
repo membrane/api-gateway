@@ -5,4 +5,4 @@ Using the `ParallelInterceptor` you can send requests to multiple targets. The r
 | Example                            | Description                                                                                                                                          |
 |------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Traffic Shadowing](shadowing)     | Declare a primary target. The response from this primary target is returned immediately, while requests to other targets are sent in the background. |
-| [Custom Strategy](custom-strategy) | Define a custom strategy using `SpEL`.                                                                                                               |
+| [Custom Strategy](custom-strategy) | Define a custom strategy using `SpEL` expressions.                                                                                                   |
