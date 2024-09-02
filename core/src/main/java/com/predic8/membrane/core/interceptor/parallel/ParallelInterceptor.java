@@ -7,7 +7,7 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.parallel.CollectionStrategy.CollectionStrategyElement;
+import com.predic8.membrane.core.interceptor.parallel.ParallelStrategy.InitializableParallelStrategyElement;
 import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
 
 import java.util.ArrayList;
@@ -21,7 +21,15 @@ public class ParallelInterceptor extends AbstractInterceptor {
 
     public static final String PARALLEL_TARGET_ID = "parallel_target_id";
     private List<Target> targets = new ArrayList<>();
-    private CollectionStrategyElement strategy;
+    private ParallelStrategy.ParallelStrategyElement strategy;
+
+    @Override
+    public void init() throws Exception {
+        super.init();
+        if (strategy instanceof InitializableParallelStrategyElement s) {
+            s.init(router);
+        }
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -67,11 +75,11 @@ public class ParallelInterceptor extends AbstractInterceptor {
     }
 
     @MCChildElement
-    public void setStrategy(CollectionStrategyElement strategy) {
+    public void setStrategy(ParallelStrategy.ParallelStrategyElement strategy) {
         this.strategy = strategy;
     }
 
-    public CollectionStrategyElement getStrategy() {
+    public ParallelStrategy.ParallelStrategyElement getStrategy() {
         return strategy;
     }
 

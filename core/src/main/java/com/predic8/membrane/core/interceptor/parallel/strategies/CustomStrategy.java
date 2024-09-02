@@ -3,79 +3,65 @@ package com.predic8.membrane.core.interceptor.parallel.strategies;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.parallel.CollectionStrategy;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
-import org.springframework.expression.spel.SpelCompilerMode;
-import org.springframework.expression.spel.SpelParserConfiguration;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
+import com.predic8.membrane.core.interceptor.parallel.ParallelStrategy;
+import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
-public class CustomStrategy extends CollectionStrategy {
+public class CustomStrategy extends ParallelStrategy {
 
-    private final Expression expr;
-    private final CustomStrategyEvaluationContext evalCtx = new CustomStrategyEvaluationContext();
+    private HashMap<String, Object> variableStorage = new HashMap<>();
+    private Function<Map<String, Object>, Object> condition;
+    private Router router;
 
-    CustomStrategy(Expression expr) throws RuntimeException {
-        this.expr = expr;
-        evalCtx.setRunningExchanges(runningExchanges);
-        evalCtx.setCompletedExchanges(completedExchanges);
+    CustomStrategy(Function<Map<String, Object>, Object> condition, Router router) throws RuntimeException {
+        this.condition = condition;
+        this.router = router;
     }
 
     @Override
     public void completeExchange(Exchange exc) {
         super.completeExchange(exc);
-        evalCtx.setCurrentExchange(exc);
-        collectedExchange = expr.getValue(evalCtx, Exchange.class);
+        collectedExchange = (Exchange) condition.apply(getParameters(runningExchanges, completedExchanges, exc, variableStorage));
     }
 
-    public static class CustomStrategyEvaluationContext extends StandardEvaluationContext {
-
-        private List<Exchange> runningExchanges;
-        private List<Exchange> completedExchanges;
-        private Exchange currentExchange;
-
-        public CustomStrategyEvaluationContext() {
-            super();
-            setRootObject(this);
-        }
-
-        public void setRunningExchanges(List<Exchange> runningExchanges) {
-            this.runningExchanges = runningExchanges;}
-        public void setCompletedExchanges(List<Exchange> completedExchanges) {
-            this.completedExchanges = completedExchanges;
-        }
-        public void setCurrentExchange(Exchange currentExchange) {
-            this.currentExchange = currentExchange;}
-        public List<Exchange> getRunningExchanges() {
-            return runningExchanges;
-        }
-        public List<Exchange> getCompletedExchanges() {
-            return completedExchanges;
-        }
-        public Exchange getCurrentExchange() {
-            return currentExchange;
-        }
+    private HashMap<String, Object> getParameters(List<Exchange> runningExchanges,
+                    List<Exchange> completedExchanges, Exchange currentExchange, Map<String, Object> variableStorage) {
+        return new HashMap<>() {{
+            put("spring", router.getBeanFactory());
+            put("current", currentExchange);
+            put("running", runningExchanges);
+            put("completed", completedExchanges);
+            put("vars", variableStorage);
+        }};
     }
 
     @MCElement(name = "custom", topLevel = false, mixed = true)
-    public static class CustomStrategyElement implements CollectionStrategyElement {
+    public static class CustomStrategyElement implements InitializableParallelStrategyElement {
 
-        private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
-        private Expression expression;
+        private String test;
+        private Router router;
 
         @Override
-        public CollectionStrategy getNewInstance() {
-            return new CustomStrategy(expression);
+        public void init(Router router) {
+            this.router = router;
+        }
+
+        @Override
+        public ParallelStrategy getNewInstance() {
+            return new CustomStrategy(new GroovyLanguageSupport().compileScript(router.getBackgroundInitializator(), null, test), router);
         }
 
         @Required
         @MCTextContent
-        public void setExpression(String expressionText) {
-            this.expression = new SpelExpressionParser(spelConfig).parseExpression(expressionText);
+        public void setTest(String test) {
+            this.test = test;
         }
+
     }
 }

@@ -4,13 +4,13 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.parallel.CollectionStrategy;
+import com.predic8.membrane.core.interceptor.parallel.ParallelStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.interceptor.parallel.ParallelInterceptor.PARALLEL_TARGET_ID;
 
-public class ShadowingStrategy extends CollectionStrategy {
+public class ShadowingStrategy extends ParallelStrategy {
 
     private final String targetId;
     private final boolean logShadowResponse;
@@ -33,14 +33,14 @@ public class ShadowingStrategy extends CollectionStrategy {
     }
 
     @MCElement(name = "shadowing", topLevel = false)
-    public static class ShadowingStrategyElement implements CollectionStrategyElement {
+    public static class ShadowingStrategyElement implements ParallelStrategyElement {
 
         private String returnTarget;
 
         private boolean logShadowResponse = false;
 
         @Override
-        public CollectionStrategy getNewInstance() {
+        public ParallelStrategy getNewInstance() {
             return new ShadowingStrategy(returnTarget, logShadowResponse);
         }
 

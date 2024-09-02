@@ -1,12 +1,13 @@
 package com.predic8.membrane.core.interceptor.parallel;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.http.HttpClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class CollectionStrategy {
+public abstract class ParallelStrategy {
 
     protected List<Exchange> runningExchanges = new ArrayList<>();
     protected List<Exchange> completedExchanges = new ArrayList<>();
@@ -64,7 +65,10 @@ public abstract class CollectionStrategy {
      * Is used to create fresh instances of the <code>CollectionStrategy</code> every exchange.
      * Implementing classes should be annotated as <code>@MCElement</code> appropriately.
      */
-    public interface CollectionStrategyElement {
-        CollectionStrategy getNewInstance();
+    public interface ParallelStrategyElement {
+        ParallelStrategy getNewInstance();
+    }
+    public interface InitializableParallelStrategyElement extends ParallelStrategyElement {
+        void init(Router router);
     }
 }
