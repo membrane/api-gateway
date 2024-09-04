@@ -41,13 +41,15 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
             @Override
             public void bodyComplete(AbstractBody body) {
-                if(exc.getProperty("shadow-request-send") == null) {
-                    cloneRequestAndSend(body);
-                    exc.setProperty("shadow-request-send", true);
-                }
+                cloneRequestAndSend(body);
             }
         });
         return CONTINUE;
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Sends requests to shadow hosts (processed in the background).";
     }
 
     public void cloneRequestAndSend(AbstractBody body) {
@@ -99,6 +101,16 @@ public class ShadowingInterceptor extends AbstractInterceptor {
         }
     }
 
+    /**
+     * Sets the list of shadow hosts to which requests will be cloned and sent.
+     * <p>
+     * Each target in the list represents a shadow host where the request will be forwarded.
+     * These shadow hosts are processed in the background, and if a response from any shadow host
+     * contains a 5XX status code, it will be logged.
+     * </p>
+     *
+     * @param targets a list of {@link Target} objects representing the shadow hosts.
+     */
     @MCChildElement
     public void setTargets(List<Target> targets) {
         this.targets = targets;
