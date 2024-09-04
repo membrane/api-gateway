@@ -114,7 +114,7 @@ public class APIProxyKey extends ServiceProxyKey {
         if (obj instanceof APIProxyKey other) {
             if (!basePaths.equals(other.basePaths))
                 return false;
-            return testExpr.equals(other.testExpr);
+            return Objects.equals(testExpr, other.testExpr);
         }
         return false;
     }
