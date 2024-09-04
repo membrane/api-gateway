@@ -53,34 +53,33 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     }
 
     public void cloneRequestAndSend(AbstractBody body) {
-        try (ExecutorService executor = newCachedThreadPool()) {
-            for (Target target : targets) {
-                Exchange exc;
-                try {
-                    exc = new Request.Builder()
-                            .body(body.getContent())
-                            .get(getDestFromTarget(target, router.getParentProxy(this).getKey().getPath()))
-                            .buildExchange();
-                } catch (Exception e) {
-                    log.error("Error creating request for target {}", target, e);
-                    continue;
-                }
-
-                executor.submit(() -> {
-                    try {
-                        Exchange res = performCall(exc);
-                        if (res.getResponse().getStatusCode() >= 500)
-                            log.info("{} returned StatusCode {}", res.getDestinations().get(0), res.getResponse().getStatusCode());
-                    } catch (Exception e) {
-                        log.error("Error performing call for target {}", target, e);
-                    }
-                });
+        ExecutorService executor = newCachedThreadPool();
+        for (Target target : targets) {
+            Exchange exc;
+            try {
+                exc = new Request.Builder()
+                        .body(body.getContent())
+                        .get(getDestFromTarget(target, router.getParentProxy(this).getKey().getPath()))
+                        .buildExchange();
+            } catch (Exception e) {
+                log.error("Error creating request for target {}", target, e);
+                continue;
             }
+
+            executor.submit(() -> {
+                try {
+                    Exchange res = performCall(exc);
+                    if (res.getResponse().getStatusCode() >= 500)
+                        log.info("{} returned StatusCode {}", res.getDestinations().get(0), res.getResponse().getStatusCode());
+                } catch (Exception e) {
+                    log.error("Error performing call for target {}", target, e);
+                }
+            });
         }
     }
 
 
-    private static String getDestFromTarget(Target t, String path) {
+    static String getDestFromTarget(Target t, String path) {
         return (t.getUrl() != null) ? t.getUrl() : extracted(t, path);
     }
 
@@ -90,10 +89,10 @@ public class ShadowingInterceptor extends AbstractInterceptor {
                 t.getHost() +
                 ":" +
                 t.getPort() +
-                ((path != null) ? path : "");
+                (path != null ? path : "");
     }
 
-    private static Exchange performCall(Exchange exchange) {
+    static Exchange performCall(Exchange exchange) {
         try {
             return client.call(exchange);
         } catch (Exception e) {
