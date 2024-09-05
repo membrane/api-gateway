@@ -33,18 +33,27 @@ public class ReplaceInterceptor extends AbstractInterceptor {
         return Configuration.defaultConfiguration().jsonProvider().toJson(document);
     }
 
+    /**
+     * Sets the JSONPath expression to identify the target node in the JSON structure.
+     *
+     * @param jsonPath the JSONPath expression (e.g., "$.person.name").
+     */
     @MCAttribute
     public void setJsonPath(String jsonPath) {
         this.jsonPath = jsonPath;
     }
 
+    /**
+     * Sets the replacement value for the node specified by the JSONPath.
+     *
+     * @param replacement the new value to replace the existing one.
+     */
     @MCAttribute
     public void setReplacement(String replacement) {
         this.replacement = replacement;
     }
 
     public String getJsonPath() {return jsonPath;}
-
 
     public String getReplacement() {return replacement;}
 
