@@ -9,23 +9,19 @@ The `Replace`plugin allows you to modify values in your JSON by using a `jsonPat
    ```shell
     curl localhost:2000 \
     -H "Content-Type: application/json" \
-    -d '{"shop": {"name": "MyShop", "location": "Berlin"}}'
+    -d '{"user": {"name": "Alice", "age": 22}}'
     ```
-3. Check the console, and you'll notice that the JSON with the name field set to `foo` is logged.
-    ```
-    [RouterThread /127.0.0.1:33632] INFO com.predic8.membrane.core.interceptor.LogInterceptor - Body:
-    [RouterThread /127.0.0.1:33632] INFO com.predic8.membrane.core.interceptor.LogInterceptor - {"shop":{"name":"foo","location":"Berlin"}}
-    [RouterThread /127.0.0.1:33632] INFO com.predic8.membrane.core.interceptor.LogInterceptor - ================
-    [RouterThread /127.0.0.1:33632] INFO com.predic8.membrane.core.interceptor.LogInterceptor - ==== Response ===
-    [RouterThread /127.0.0.1:33632] INFO com.predic8.membrane.core.interceptor.LogInterceptor - HTTP/1.1 200 Ok
-    ```
+   and take a look at the output:
+   ```json
+   {"user":{"name":"Bob","age":22}}
+   ```
 
 ## Configuration
 
 This configuration sets up an API that replaces the value of the `name` field under the `shop object` in the JSON body with "foo", before forwarding the request to a target service running on localhost at port 3000.
 ```xml
 <api port="2000">
-  <replace jsonPath="$.shop.name" with="foo" />
-  <target host="localhost" port="3000" />
+   <replace jsonPath="$.user.name" with="Bob" />
+   <target host="localhost" port="3000" />
 </api>
 ```

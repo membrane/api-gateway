@@ -7,7 +7,7 @@
     <router>
 
         <api port="2000">
-            <replace jsonPath="$.shop.name" replacement="foo" />
+            <replace jsonPath="$.user.name" with="Bob" />
             <target host="localhost" port="3000" />
         </api>
 
