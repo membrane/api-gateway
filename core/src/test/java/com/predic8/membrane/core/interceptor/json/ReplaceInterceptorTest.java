@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.json;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Stream;
 
@@ -14,26 +16,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ReplaceInterceptorTest {
 
-
-    private ReplaceInterceptor yourClassInstance;
+    private ReplaceInterceptor replaceInterceptor;
     private Exchange exc;
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        yourClassInstance = new ReplaceInterceptor();
+        replaceInterceptor = new ReplaceInterceptor();
         exc = Request.get("/foo").buildExchange();
     }
 
     @ParameterizedTest
     @MethodSource("jsonReplacementProvider")
-    void testReplaceWithJsonPath(String originalJson, String jsonPath, String replacement, String expectedJson) {
+    void testReplaceWithJsonPath(String originalJson, String jsonPath, String replacement, String expectedJson) throws IOException {
         exc.getRequest().setBodyContent(originalJson.getBytes());
         assertEquals(
-                expectedJson,
-                yourClassInstance.replaceWithJsonPath(
+                objectMapper.readTree(expectedJson),
+                objectMapper.readTree(replaceInterceptor.replaceWithJsonPath(
                         exc,
                         jsonPath,
-                        replacement
+                        replacement)
                 )
         );
     }
@@ -50,7 +52,10 @@ class ReplaceInterceptorTest {
                         "$.name",
                         "Jane",
                         """
-                        {"name":"Jane","age":30}
+                        {
+                            "name": "Jane",
+                            "age": 30
+                        }
                         """
                 ),
                 Arguments.of(
@@ -65,7 +70,12 @@ class ReplaceInterceptorTest {
                         "$.person.name",
                         "Jane",
                         """
-                        {"person":{"name":"Jane","age":30}}
+                        {
+                            "person": {
+                                "name": "Jane",
+                                "age": 30
+                            }
+                        }
                         """
                 ),
                 Arguments.of(
@@ -84,7 +94,16 @@ class ReplaceInterceptorTest {
                         "$.people[0].name",
                         "Jane",
                         """
-                        {"people":[{"name":"Jane"},{"name":"Doe"}]}
+                        {
+                            "people": [
+                                {
+                                    "name": "Jane"
+                                },
+                                {
+                                    "name": "Doe"
+                                }
+                            ]
+                        }
                         """
                 ),
                 Arguments.of(
@@ -105,7 +124,18 @@ class ReplaceInterceptorTest {
                         "$.family.parents[1].name",
                         "Jane",
                         """
-                        {"family":{"parents":[{"name":"John"},{"name":"Jane"}]}}
+                        {
+                            "family": {
+                                "parents": [
+                                    {
+                                        "name": "John"
+                                    },
+                                    {
+                                        "name": "Jane"
+                                    }
+                                ]
+                            }
+                        }
                         """
                 ),
                 Arguments.of(
@@ -126,7 +156,18 @@ class ReplaceInterceptorTest {
                         "$.employees[*].name",
                         "Jane",
                         """
-                        {"employees":[{"name":"Jane","role":"Manager"},{"name":"Jane","role":"Developer"}]}
+                        {
+                            "employees": [
+                                {
+                                    "name": "Jane",
+                                    "role": "Manager"
+                                },
+                                {
+                                    "name": "Jane",
+                                    "role": "Developer"
+                                }
+                            ]
+                        }
                         """
                 ),
                 Arguments.of(
@@ -153,10 +194,28 @@ class ReplaceInterceptorTest {
                         "$.company.employees[*].department.name",
                         "Operations",
                         """
-                        {"company":{"employees":[{"name":"John","department":{"name":"Operations"}},{"name":"Doe","department":{"name":"Operations"}}]}}
+                        {
+                            "company": {
+                                "employees": [
+                                    {
+                                        "name": "John",
+                                        "department": {
+                                            "name": "Operations"
+                                        }
+                                    },
+                                    {
+                                        "name": "Doe",
+                                        "department": {
+                                            "name": "Operations"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
                         """
                 )
         );
     }
+
 
 }
