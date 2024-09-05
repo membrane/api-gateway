@@ -1,4 +1,4 @@
-# Replace Interceptor
+# Replace Plugin
 
 The `Replace`plugin allows you to modify values in your JSON by using a `jsonPath` expression to target specific fields for replacement.
 ## Running the Example
@@ -7,7 +7,7 @@ The `Replace`plugin allows you to modify values in your JSON by using a `jsonPat
 2. Send a request using `curl`:
 
    ```shell
-    curl -X POST localhost:2000 \
+    curl localhost:2000 \
     -H "Content-Type: application/json" \
     -d '{"shop": {"name": "MyShop", "location": "Berlin"}}'
     ```
