@@ -8,12 +8,7 @@
 
         <api port="2000">
             <replace jsonPath="$.user.name" with="Bob" />
-            <target host="localhost" port="3000" />
-        </api>
-
-        <api port="3000">
-            <log headerOnly="false"/>
-            <return statusCode="200"/>
+            <return />
         </api>
 
     </router>

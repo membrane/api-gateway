@@ -22,6 +22,6 @@ This configuration sets up an API that replaces the value of the `name` field un
 ```xml
 <api port="2000">
    <replace jsonPath="$.user.name" with="Bob" />
-   <target host="localhost" port="3000" />
+   <return />
 </api>
 ```
