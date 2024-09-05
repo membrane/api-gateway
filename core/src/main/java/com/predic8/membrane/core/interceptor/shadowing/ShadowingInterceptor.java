@@ -3,10 +3,7 @@ package com.predic8.membrane.core.interceptor.shadowing;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.Chunk;
-import com.predic8.membrane.core.http.MessageObserver;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
@@ -81,7 +78,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
     static Exchange buildExchange(AbstractBody body, Exchange exchange, Target target) throws URISyntaxException, IOException {
         return new Request.Builder()
                 .body(body.getContent())
-                .header(exchange.getRequest().getHeader())
+                .header(new Header(exchange.getRequest().getHeader()))
                 .method(exchange.getRequest().getMethod())
                 .url(
                     new URIFactory(),
