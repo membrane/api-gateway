@@ -1,15 +1,12 @@
 package com.predic8.membrane.core.interceptor.shadowing;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.http.HttpHeaders;
-
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.*;
 
