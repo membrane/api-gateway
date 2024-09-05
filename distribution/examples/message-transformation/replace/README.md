@@ -1,6 +1,6 @@
 # Replace Interceptor
 
-This example shows how to use the ReplaceInterceptor to modify values in your JSON by applying a `jsonPath` expression.
+The `Replace`plugin allows you to modify values in your JSON by using a `jsonPath` expression to target specific fields for replacement.
 ## Running the Example
 
 1. Run `service-proxy.bat` or `service-proxy.sh`
@@ -25,7 +25,7 @@ This example shows how to use the ReplaceInterceptor to modify values in your JS
 This configuration sets up an API that replaces the value of the `name` field under the `shop object` in the JSON body with "foo", before forwarding the request to a target service running on localhost at port 3000.
 ```xml
 <api port="2000">
-  <replace jsonPath="$.shop.name" replacement="foo" />
+  <replace jsonPath="$.shop.name" with="foo" />
   <target host="localhost" port="3000" />
 </api>
 ```

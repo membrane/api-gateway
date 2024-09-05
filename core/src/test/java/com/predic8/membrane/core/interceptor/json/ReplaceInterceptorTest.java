@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,23 +18,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ReplaceInterceptorTest {
 
     private ReplaceInterceptor replaceInterceptor;
-    private Exchange exc;
+    private Message msg;
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() throws URISyntaxException {
         replaceInterceptor = new ReplaceInterceptor();
-        exc = Request.get("/foo").buildExchange();
+        msg = Request.get("/foo").buildExchange().getRequest();
     }
 
     @ParameterizedTest
     @MethodSource("jsonReplacementProvider")
     void testReplaceWithJsonPath(String originalJson, String jsonPath, String replacement, String expectedJson) throws IOException {
-        exc.getRequest().setBodyContent(originalJson.getBytes());
+        msg.setBodyContent(originalJson.getBytes());
         assertEquals(
                 objectMapper.readTree(expectedJson),
                 objectMapper.readTree(replaceInterceptor.replaceWithJsonPath(
-                        exc,
+                        msg,
                         jsonPath,
                         replacement)
                 )
