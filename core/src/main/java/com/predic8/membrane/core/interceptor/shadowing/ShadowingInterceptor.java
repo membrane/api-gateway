@@ -11,9 +11,12 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.URIFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -41,7 +44,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
             @Override
             public void bodyComplete(AbstractBody body) {
-                cloneRequestAndSend(body);
+                cloneRequestAndSend(body, exc);
             }
         });
         return CONTINUE;
@@ -52,15 +55,12 @@ public class ShadowingInterceptor extends AbstractInterceptor {
         return "Sends requests to shadow hosts (processed in the background).";
     }
 
-    public void cloneRequestAndSend(AbstractBody body) {
+    public void cloneRequestAndSend(AbstractBody body, Exchange exchange) {
         ExecutorService executor = newCachedThreadPool();
         for (Target target : targets) {
             Exchange exc;
             try {
-                exc = new Request.Builder()
-                        .body(body.getContent())
-                        .get(getDestFromTarget(target, router.getParentProxy(this).getKey().getPath()))
-                        .buildExchange();
+                exc = buildExchange(body, exchange, target);
             } catch (Exception e) {
                 log.error("Error creating request for target {}", target, e);
                 continue;
@@ -78,13 +78,28 @@ public class ShadowingInterceptor extends AbstractInterceptor {
         }
     }
 
+    static Exchange buildExchange(AbstractBody body, Exchange exchange, Target target) throws URISyntaxException, IOException {
+        return new Request.Builder()
+                .body(body.getContent())
+                .header(exchange.getRequest().getHeader())
+                .method(exchange.getRequest().getMethod())
+                .url(
+                    new URIFactory(),
+                    getDestFromTarget(
+                        target,
+                        exchange.getOriginalRequestUri()
+                    )
+                )
+                .buildExchange();
+    }
+
 
     static String getDestFromTarget(Target t, String path) {
-        return (t.getUrl() != null) ? t.getUrl() : extracted(t, path);
+        return (t.getUrl() != null) ? t.getUrl() : buildTargetUrl(t, path);
     }
 
     @SuppressWarnings("HttpUrlsUsage")
-    private static String extracted(Target t, String path) {
+    private static String buildTargetUrl(Target t, String path) {
         return ((t.getSslParser() != null) ? "https://" : "http://") +
                 t.getHost() +
                 ":" +
