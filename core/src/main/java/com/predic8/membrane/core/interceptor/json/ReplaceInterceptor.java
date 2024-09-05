@@ -1,19 +1,26 @@
 package com.predic8.membrane.core.interceptor.json;
 
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.spi.json.JsonOrgJsonProvider;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import static com.jayway.jsonpath.Configuration.defaultConfiguration;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @SuppressWarnings("unused")
-@MCElement(name="jsonPathReplacer")
+@MCElement(name="replace")
 public class ReplaceInterceptor extends AbstractInterceptor {
+
+    private static Logger log = LoggerFactory.getLogger(ReplaceInterceptor.class);
 
     private String jsonPath;
 
@@ -27,10 +34,12 @@ public class ReplaceInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    String replaceWithJsonPath(Exchange exc, String jsonPath, String replacement) {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(exc.getRequest().getBodyAsStringDecoded());
+     String replaceWithJsonPath(Exchange exc, String jsonPath, String replacement) {
+        log.info("TEST");
+         Configuration cfg = Configuration.builder().jsonProvider(new JsonOrgJsonProvider()).build();
+         Object document = cfg.jsonProvider().parse(exc.getRequest().getBodyAsStringDecoded());
         document = JsonPath.parse(document).set(jsonPath, replacement).json();
-        return Configuration.defaultConfiguration().jsonProvider().toJson(document);
+        return cfg.jsonProvider().toJson(document);
     }
 
     /**
