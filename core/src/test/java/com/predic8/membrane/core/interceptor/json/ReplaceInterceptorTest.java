@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ReplaceInterceptorTest {
+public class ReplaceInterceptorTest {
 
     private ReplaceInterceptor replaceInterceptor;
     private Exchange exc;

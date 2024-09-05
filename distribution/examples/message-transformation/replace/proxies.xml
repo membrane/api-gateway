@@ -1,0 +1,21 @@
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <api port="2000">
+            <replace jsonPath="$.shop.name" replacement="foo" />
+            <target host="localhost" port="3000" />
+        </api>
+
+        <api port="3000">
+            <log headerOnly="false"/>
+            <return statusCode="200"/>
+        </api>
+
+    </router>
+
+</spring:beans>
