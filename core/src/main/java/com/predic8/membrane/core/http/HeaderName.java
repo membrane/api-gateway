@@ -29,10 +29,6 @@ public class HeaderName {
 		this.name = name;
 	}
 
-	public HeaderName(HeaderName hn) {
-		this.name = hn.name;
-	}
-
 	@Override
 	public boolean equals(Object obj) {
 		return (this == obj) || (obj instanceof HeaderName hn) && (name.equalsIgnoreCase((hn.name)));
