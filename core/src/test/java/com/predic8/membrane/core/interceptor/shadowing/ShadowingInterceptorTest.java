@@ -21,9 +21,9 @@ import org.mockito.Mockito;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static org.mockito.ArgumentMatchers.any;
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -105,7 +105,7 @@ class ShadowingInterceptorTest {
      */
     @Test
     void testIfShadowTargetIsCalled() throws Exception {
-        getAndAssert200("http://localhost:2000");
+        given().when().get("http://localhost:2000").then().statusCode(200);
         verify(returnInterceptorMock, times(1)).handleRequest(any(Exchange.class));
     }
 
