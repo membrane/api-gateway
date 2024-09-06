@@ -32,15 +32,15 @@ class ShadowingInterceptorTest {
     Exchange exc;
     Header header;
 
-    static Router router;
-    static Router router2;
+    static Router interceptorRouter;
+    static Router shadowingRouter;
 
-    static Rule shadowingRule;
+    static Rule interceptorRule;
     static ShadowingInterceptor shadowingInterceptor;
 
     static ReturnInterceptor returnInterceptorMock;
 
-    static Rule staticRule;
+    static Rule shadowingRule;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -61,46 +61,50 @@ class ShadowingInterceptorTest {
 
     @BeforeAll
     static void startup() throws Exception {
-        router = new Router();
-        router.setHotDeploy(false);
-        router.setExchangeStore(new ForgetfulExchangeStore());
-        router.setTransport(new HttpTransport());
+        interceptorRouter = new Router();
+        interceptorRouter.setHotDeploy(false);
+        interceptorRouter.setExchangeStore(new ForgetfulExchangeStore());
+        interceptorRouter.setTransport(new HttpTransport());
 
-        shadowingRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), null, 0);
+        interceptorRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), null, 0);
         shadowingInterceptor = new ShadowingInterceptor();
         shadowingInterceptor.setTargets(List.of(new Target() {{
             setHost("localhost");
             setPort(3000);
         }}));
-        shadowingRule.setInterceptors(List.of(shadowingInterceptor, new ReturnInterceptor()));
+        interceptorRule.setInterceptors(List.of(shadowingInterceptor, new ReturnInterceptor()));
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(shadowingRule);
-        router.init();
-        router.start();
+        interceptorRouter.getRuleManager().addProxyAndOpenPortIfNew(interceptorRule);
+        interceptorRouter.init();
+        interceptorRouter.start();
 
-        router2 = new Router();
-        router2.setHotDeploy(false);
-        router2.setExchangeStore(new ForgetfulExchangeStore());
-        router2.setTransport(new HttpTransport());
+        shadowingRouter = new Router();
+        shadowingRouter.setHotDeploy(false);
+        shadowingRouter.setExchangeStore(new ForgetfulExchangeStore());
+        shadowingRouter.setTransport(new HttpTransport());
 
-        staticRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
+        shadowingRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
         returnInterceptorMock = Mockito.spy(new ReturnInterceptor());
         returnInterceptorMock.setStatusCode(200);
-        staticRule.setInterceptors(List.of(returnInterceptorMock));
+        shadowingRule.setInterceptors(List.of(returnInterceptorMock));
 
-        router2.getRuleManager().addProxyAndOpenPortIfNew(staticRule);
-        router2.init();
-        router2.start();
+        shadowingRouter.getRuleManager().addProxyAndOpenPortIfNew(shadowingRule);
+        shadowingRouter.init();
+        shadowingRouter.start();
     }
 
     @AfterAll
     static void shutdown() {
-        router2.stop();
-        router.stop();
+        shadowingRouter.stop();
+        interceptorRouter.stop();
     }
 
+    /**
+     * Verifies that the shadow target is called by sending a request through the router
+     * and ensures that the ReturnInterceptor's handleRequest() is invoked once.
+     */
     @Test
-    void interceptorTest() throws Exception {
+    void testIfShadowTargetIsCalled() throws Exception {
         getAndAssert200("http://localhost:2000");
         verify(returnInterceptorMock, times(1)).handleRequest(any(Exchange.class));
     }
