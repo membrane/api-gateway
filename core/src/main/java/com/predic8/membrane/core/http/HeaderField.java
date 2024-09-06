@@ -48,6 +48,7 @@ public class HeaderField {
 		headerName = element.headerName;
 		value = element.value;
 	}
+
 	public String getValue() {
 		return value;
 	}
