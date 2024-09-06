@@ -31,7 +31,8 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        Header header = new Header(exc.getRequest().getHeader());
+        // Copy the request headers to ensure we maintain original request details for use in the cloned requests.
+        Header copiedHeader = new Header(exc.getRequest().getHeader());
         exc.getRequest().getBody().getObservers().add(new MessageObserver() {
             @Override
             public void bodyRequested(AbstractBody body) {}
@@ -41,8 +42,8 @@ public class ShadowingInterceptor extends AbstractInterceptor {
             public void bodyChunk(byte[] buffer, int offset, int length) {}
 
             @Override
-            public void bodyComplete(AbstractBody body) {
-                cloneRequestAndSend(body, exc, header);
+            public void bodyComplete(AbstractBody completeBody) {
+                cloneRequestAndSend(completeBody, exc, copiedHeader);
             }
         });
         return CONTINUE;
@@ -53,39 +54,40 @@ public class ShadowingInterceptor extends AbstractInterceptor {
         return "Sends requests to shadow hosts (processed in the background).";
     }
 
-    public void cloneRequestAndSend(AbstractBody body, Exchange exchange, Header header) {
+    public void cloneRequestAndSend(AbstractBody completeBody, Exchange mainExchange, Header copiedHeader) {
         ExecutorService executor = newCachedThreadPool();
-        for (Target target : targets) {
-            Exchange exc;
+        for (Target shadowTarget : targets) {
+            Exchange newExchange;
             try {
-                exc = buildExchange(body, exchange, target, header);
+                newExchange = buildExchange(completeBody, mainExchange, shadowTarget, copiedHeader);
             } catch (Exception e) {
-                log.error("Error creating request for target {}", target, e);
+                log.error("Error creating request for target {}", shadowTarget, e);
                 continue;
             }
 
             executor.submit(() -> {
                 try {
-                    Exchange res = performCall(exc);
+                    Exchange res = performCall(newExchange);
                     if (res.getResponse().getStatusCode() >= 500)
                         log.info("{} returned StatusCode {}", res.getDestinations().get(0), res.getResponse().getStatusCode());
                 } catch (Exception e) {
-                    log.error("Error performing call for target {}", target, e);
+                    log.error("Error performing call for target {}", shadowTarget, e);
                 }
             });
         }
     }
 
-    static Exchange buildExchange(AbstractBody body, Exchange exchange, Target target, Header header) throws URISyntaxException, IOException {
+    static Exchange buildExchange(AbstractBody completeBody, Exchange mainExchange, Target shadowTarget, Header copiedHeader) throws URISyntaxException, IOException {
+        // Build the new Exchange object with the same body, method, and header but targeted at the shadow host.
         return new Request.Builder()
-                .body(body.getContent())
-                .header(header)
-                .method(exchange.getRequest().getMethod())
+                .body(completeBody.getContent())
+                .header(copiedHeader)
+                .method(mainExchange.getRequest().getMethod())
                 .url(
                     new URIFactory(),
                     getDestFromTarget(
-                        target,
-                        exchange.getOriginalRequestUri()
+                        shadowTarget,
+                        mainExchange.getOriginalRequestUri()
                     )
                 )
                 .buildExchange();
