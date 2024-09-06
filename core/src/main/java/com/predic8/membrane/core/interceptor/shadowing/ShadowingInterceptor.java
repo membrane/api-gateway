@@ -31,6 +31,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
+        Header header = new Header(exc.getRequest().getHeader());
         exc.getRequest().getBody().getObservers().add(new MessageObserver() {
             @Override
             public void bodyRequested(AbstractBody body) {}
@@ -41,7 +42,7 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
             @Override
             public void bodyComplete(AbstractBody body) {
-                cloneRequestAndSend(body, exc);
+                cloneRequestAndSend(body, exc, header);
             }
         });
         return CONTINUE;
@@ -52,12 +53,12 @@ public class ShadowingInterceptor extends AbstractInterceptor {
         return "Sends requests to shadow hosts (processed in the background).";
     }
 
-    public void cloneRequestAndSend(AbstractBody body, Exchange exchange) {
+    public void cloneRequestAndSend(AbstractBody body, Exchange exchange, Header header) {
         ExecutorService executor = newCachedThreadPool();
         for (Target target : targets) {
             Exchange exc;
             try {
-                exc = buildExchange(body, exchange, target);
+                exc = buildExchange(body, exchange, target, header);
             } catch (Exception e) {
                 log.error("Error creating request for target {}", target, e);
                 continue;
@@ -75,10 +76,10 @@ public class ShadowingInterceptor extends AbstractInterceptor {
         }
     }
 
-    static Exchange buildExchange(AbstractBody body, Exchange exchange, Target target) throws URISyntaxException, IOException {
+    static Exchange buildExchange(AbstractBody body, Exchange exchange, Target target, Header header) throws URISyntaxException, IOException {
         return new Request.Builder()
                 .body(body.getContent())
-                .header(new Header(exchange.getRequest().getHeader()))
+                .header(header)
                 .method(exchange.getRequest().getMethod())
                 .url(
                     new URIFactory(),

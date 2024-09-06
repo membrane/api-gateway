@@ -7,6 +7,7 @@ import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.misc.SetHeaderInterceptor;
 import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.List;
@@ -24,8 +26,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 class ShadowingInterceptorTest {
 
@@ -55,7 +56,8 @@ class ShadowingInterceptorTest {
                         .buildExchange(),
                 new Target() {{
                     setUrl("https://www.predic8.com:9000/foo");
-                }}
+                }},
+                header
         );
     }
 
@@ -72,7 +74,14 @@ class ShadowingInterceptorTest {
             setHost("localhost");
             setPort(3000);
         }}));
-        interceptorRule.setInterceptors(List.of(shadowingInterceptor, new ReturnInterceptor()));
+        interceptorRule.setInterceptors(List.of(
+                shadowingInterceptor,
+                new SetHeaderInterceptor() {{
+                    setName("foo");
+                    setValue("bar");
+                }},
+                new ReturnInterceptor()
+        ));
 
         interceptorRouter.getRuleManager().addProxyAndOpenPortIfNew(interceptorRule);
         interceptorRouter.init();
@@ -109,10 +118,24 @@ class ShadowingInterceptorTest {
         verify(returnInterceptorMock, times(1)).handleRequest(any(Exchange.class));
     }
 
+    /**
+     * Verifies that the shadow target is called and the ReturnInterceptor's
+     * handleRequest() is invoked with an Exchange object not containing the "foo" header.
+     */
+    @Test
+    void testIfShadowTargetHasFooHeader() throws Exception {
+        given().when().get("http://localhost:2000").then().statusCode(200);
+
+        ArgumentCaptor<Exchange> exchangeCaptor = ArgumentCaptor.forClass(Exchange.class);
+        verify(returnInterceptorMock, atLeastOnce()).handleRequest(exchangeCaptor.capture());
+
+        assertNull(exchangeCaptor.getValue().getRequest().getHeader().getFirstValue("foo"));
+    }
+
+
     @Test
     void buildExchangeTest() {
         assertNotNull(exc);
-        assertNotSame(header, exc.getRequest().getHeader());
         assertEquals("POST", exc.getRequest().getMethod());
         assertEquals("/foo", exc.getRequest().getUri());
         assertEquals("https://www.predic8.com:9000/foo", exc.getDestinations().get(0));
