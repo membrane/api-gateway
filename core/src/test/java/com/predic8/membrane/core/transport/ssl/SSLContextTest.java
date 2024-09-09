@@ -107,7 +107,7 @@ public class SSLContextTest {
 
 	@Test
 	public void selectFirstKeyTrustFail() {
-		assertThrows(SocketException.class, () -> {
+		assertThrows2(SocketException.class, SSLHandshakeException.class, () -> {
 			SSLContext server = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key2").build();
 			SSLContext client = cb().withTrustStore("classpath:/alias-truststore.p12").build();
 			testCombination(server, client);
@@ -123,7 +123,7 @@ public class SSLContextTest {
 
 	@Test
 	public void selectSecondKeyTrustFail() {
-		assertThrows(SocketException.class, () -> {
+		assertThrows2(SocketException.class, SSLHandshakeException.class, () -> {
 			SSLContext server = cb().withKeyStore("classpath:/alias-keystore.p12").byKeyAlias("key1").build();
 			SSLContext client = cb().withTrustStore("classpath:/alias-truststore2.p12").build();
 			testCombination(server, client);
