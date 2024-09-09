@@ -44,6 +44,7 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.javascript.JavascriptInterceptor;
 import com.predic8.membrane.core.interceptor.json.JsonPointerExtractorInterceptorTest;
 import com.predic8.membrane.core.interceptor.json.JsonProtectionInterceptorTest;
+import com.predic8.membrane.core.interceptor.json.ReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.log.AccessLogInterceptorTest;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptorTest;
 import com.predic8.membrane.core.interceptor.misc.SetHeaderInterceptor;
@@ -160,6 +161,7 @@ import org.junit.platform.suite.api.Suite;
 		CollectionsUtilTest.class,
 		ConditionalInterceptorGroovyTest.class,
 		ConditionalInterceptorSpELTest.class,
+		ReplaceInterceptorTest.class,
 		ApiKeysInterceptorTest.class,
 		ApiKeyFileStoreTest.class,
 		ApiKeyHeaderExtractorTest.class,

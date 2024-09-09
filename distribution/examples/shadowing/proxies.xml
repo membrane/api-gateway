@@ -1,0 +1,35 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+
+        <api port="2000">
+            <shadowing>
+                <target host="localhost" port="3000" />
+                <target host="localhost" port="3001" />
+                <target host="localhost" port="3002" />
+            </shadowing>
+            <target host="api.predic8.de" port="443">
+                <ssl/>
+            </target>
+        </api>
+
+        <api port="3000">
+            <log />
+            <return statusCode="200"/>
+        </api>
+        <api port="3001">
+            <log />
+            <return statusCode="201"/>
+        </api>
+        <api port="3002">
+            <log />
+            <return statusCode="202"/>
+        </api>
+
+    </router>
+
+</spring:beans>
