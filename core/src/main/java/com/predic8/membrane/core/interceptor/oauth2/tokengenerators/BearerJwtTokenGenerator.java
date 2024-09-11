@@ -54,8 +54,8 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
             rsaJsonWebKey = generateKey();
             if (warningGeneratedKey)
                 LOG.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
-                        "with sessions of other (e.g. restarted)instances. To solve this, write the JWK into a file and " +
-                        "reference it using <bearerJwtToken><jwk location=\"...\">.",
+                                "with sessions of other (e.g. restarted) instances. To solve this, write the JWK into a file and " +
+                                "reference it using <bearerJwtToken><jwk location=\"...\">.",
                         rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
@@ -86,6 +86,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         jws.setPayload(claims.toJson());
         jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+        jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
         try {
             return jws.getCompactSerialization();
         } catch (JoseException e) {
@@ -164,5 +165,10 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
 
     public void setWarningGeneratedKey(boolean warningGeneratedKey) {
         this.warningGeneratedKey = warningGeneratedKey;
+    }
+
+    @Override
+    public String getJwkIfAvailable() {
+        return rsaJsonWebKey.toJson();
     }
 }

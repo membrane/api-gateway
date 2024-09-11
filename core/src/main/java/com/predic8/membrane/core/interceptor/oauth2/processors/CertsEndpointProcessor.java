@@ -15,14 +15,15 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.beautifier.JSONBeautifier;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
+
 public class CertsEndpointProcessor extends EndpointProcessor {
 
-    private JSONBeautifier jsonBeautifier = new JSONBeautifier();
+    private final JSONBeautifier jsonBeautifier = new JSONBeautifier();
 
     public CertsEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -35,7 +36,14 @@ public class CertsEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-        exc.setResponse(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(authServer.getJwtGenerator().getJwk())).build());
+        String accessTokenJWKIfAvailable = authServer.getTokenGenerator().getJwkIfAvailable();
+        String idTokenJWK = authServer.getJwtGenerator().getJwk();
+
+        String jwks = "{\"keys\": [ " + idTokenJWK +
+                (accessTokenJWKIfAvailable != null ? "," + accessTokenJWKIfAvailable : "") +
+                "]}";
+
+        exc.setResponse(Response.ok().contentType(APPLICATION_JSON_UTF8).body(jsonBeautifier.beautify(jwks)).build());
         return Outcome.RETURN;
     }
 }

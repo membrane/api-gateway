@@ -41,7 +41,7 @@ import java.util.List;
 public class JwtGenerator {
 
     public String getJwk() {
-        return "{\"keys\": [ " + rsaJsonWebKey.toJson() + "]}";
+        return rsaJsonWebKey.toJson();
     }
 
     public static class Claim{

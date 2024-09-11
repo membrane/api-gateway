@@ -19,7 +19,6 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 

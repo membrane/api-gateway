@@ -17,12 +17,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithSessionRequest;
 import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithoutSessionRequest;
-import com.predic8.membrane.core.util.URLParamUtil;
-
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 
 public class AuthEndpointProcessor extends EndpointProcessor {
 

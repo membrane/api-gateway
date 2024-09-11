@@ -27,7 +27,6 @@ import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 
 import java.io.IOException;
-import java.lang.reflect.Executable;
 import java.util.ArrayList;
 
 import org.jose4j.lang.JoseException;
