@@ -53,7 +53,7 @@ import static java.util.UUID.*;
  */
 @MCElement(name = "if")
 public class ConditionalInterceptor extends AbstractFlowInterceptor {
-    private static final Logger log = LoggerFactory.getLogger(InterceptorFlowController.class);
+    private static final Logger log = LoggerFactory.getLogger(ConditionalInterceptor.class);
 
     // configuration
     private String test;
@@ -63,7 +63,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     /**
      * Spring Expression Language
      */
-    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.MIXED, this.getClass().getClassLoader());
     private Expression spelExpr;
 
     private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
