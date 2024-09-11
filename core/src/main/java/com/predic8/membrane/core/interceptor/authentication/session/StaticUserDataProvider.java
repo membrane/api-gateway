@@ -13,18 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.google.api.client.util.Base64;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCOtherAttributes;
 import com.predic8.membrane.core.Router;
 import org.apache.commons.codec.digest.Crypt;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -72,11 +67,12 @@ public class StaticUserDataProvider implements UserDataProvider {
 			String salt = userHashSplit[2];
 			try {
 				pw = createPasswdCompatibleHash(algo,postDataPassword,salt);
-			} catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
+			} catch (Exception e) {
 				throw new RuntimeException(e.getMessage());
 			}
-        }else
+		} else {
 			pw = postDataPassword;
+		}
 		String pw2;
 		pw2 = userAttributes.getPassword();
 		if (pw2 == null || !pw2.equals(pw))
@@ -85,18 +81,18 @@ public class StaticUserDataProvider implements UserDataProvider {
 	}
 
 	private boolean isHashedPassword(String postDataPassword) {
-		// TODO do a better check here
 		String[] split = postDataPassword.split(Pattern.quote("$"));
-		if(split.length != 4)
+		if (split.length != 4)
 			return false;
-		if(!split[0].isEmpty())
+		if (!split[0].isEmpty())
 			return false;
-		if(split[3].length() < 20)
+		if (split[3].length() < 20)
 			return false;
-		return true;
+		// Check if second part is a valid hex
+		return Pattern.matches("[a-fA-F0-9]{40}", split[2]);
 	}
 
-	private String createPasswdCompatibleHash(String algo, String password, String salt) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+	private String createPasswdCompatibleHash(String algo, String password, String salt) {
 		return Crypt.crypt(password, "$" + algo + "$" + salt);
 	}
 

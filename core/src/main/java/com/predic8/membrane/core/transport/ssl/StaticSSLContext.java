@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.google.common.base.Objects;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Store;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.TrustManagerWrapper;
 import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,26 +27,24 @@ import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 import javax.net.ssl.*;
 import javax.validation.constraints.NotNull;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.*;
-import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.security.interfaces.RSAPrivateCrtKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.cert.*;
 import java.util.*;
+
+import static com.predic8.membrane.core.security.KeyStoreUtil.*;
 
 public class StaticSSLContext extends SSLContext {
 
     private static final String DEFAULT_CERTIFICATE_SHA256 = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
     private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
-    private static boolean default_certificate_warned = false;
+    private static boolean defaultCertificateWarned = false;
     private static boolean limitedStrength;
 
     static {
@@ -69,46 +67,38 @@ public class StaticSSLContext extends SSLContext {
 
     private final SSLParser sslParser;
     private List<String> dnsNames;
-
     private javax.net.ssl.SSLContext sslc;
-    private long validFrom, validUntil;
+    private long validFrom;
+    private long validUntil;
 
 
     public StaticSSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
         this.sslParser = sslParser;
 
         try {
-            String algorihm = KeyManagerFactory.getDefaultAlgorithm();
-            if (sslParser.getAlgorithm() != null)
-                algorihm = sslParser.getAlgorithm();
+            String algorihm = getAlgorithm(sslParser);
 
             KeyManagerFactory kmf = null;
             String keyStoreType = "PKCS12";
             if (sslParser.getKeyStore() != null) {
-                if (sslParser.getKeyStore().getKeyAlias() != null)
-                    throw new InvalidParameterException("keyAlias is not yet supported.");
-                char[] keyPass = "changeit".toCharArray();
-                if (sslParser.getKeyStore().getKeyPassword() != null)
-                    keyPass = sslParser.getKeyStore().getKeyPassword().toCharArray();
+                char[] keyPass = getKeyPass(sslParser);
 
                 if (sslParser.getKeyStore().getType() != null)
                     keyStoreType = sslParser.getKeyStore().getType();
                 KeyStore ks = openKeyStore(sslParser.getKeyStore(), "PKCS12", keyPass, resourceResolver, baseLocation);
-                kmf = KeyManagerFactory.getInstance(algorihm);
-                kmf.init(ks, keyPass);
 
-                Enumeration<String> aliases = ks.aliases();
-                while (aliases.hasMoreElements()) {
-                    String alias = aliases.nextElement();
-                    if (ks.isKeyEntry(alias)) {
-                        // first key is used by the KeyManagerFactory
-                        dnsNames = getDNSNames(ks.getCertificate(alias));
-                        List<Certificate> certs = Arrays.asList(ks.getCertificateChain(alias));
-                        validUntil = getMinimumValidity(certs);
-                        validFrom = getValidFrom(certs);
-                        break;
-                    }
-                }
+                String paramAlias = sslParser.getKeyStore().getKeyAlias();
+                String keyAlias = (paramAlias != null) ? aliasOrThrow(ks, paramAlias) : firstAliasOrThrow(ks);
+
+                KeyStore filteredKeyStore = filterKeyStoreByAlias(ks, keyPass, keyAlias);
+
+                kmf = KeyManagerFactory.getInstance(algorihm);
+                kmf.init(filteredKeyStore, keyPass);
+
+                dnsNames = extractDnsNames(ks.getCertificate(keyAlias));
+                List<Certificate> certs = Arrays.asList(ks.getCertificateChain(keyAlias));
+                validUntil = getMinimumValidity(certs);
+                validFrom = getValidFrom(certs);
             }
             if (sslParser.getKey() != null) {
                 if (kmf != null)
@@ -121,22 +111,18 @@ public class StaticSSLContext extends SSLContext {
 
                 for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
                     certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
-                if (certs.size() == 0)
+                if (certs.isEmpty())
                     throw new RuntimeException("At least one //ssl/key/certificate is required.");
-                dnsNames = getDNSNames(certs.get(0));
+                dnsNames = extractDnsNames(certs.get(0));
 
                 checkChainValidity(certs);
-                Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
-                Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+                Key k = getKey(sslParser, resourceResolver, baseLocation);
                 checkKeyMatchesCert(k, certs);
 
                 ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
 
                 kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                String keyPassword = "";
-                if (sslParser.getKey().getPassword() != null)
-                    keyPassword = sslParser.getKey().getPassword();
-                kmf.init(ks, keyPassword.toCharArray());
+                kmf.init(ks, getKeyPassword(sslParser));
                 validUntil = getMinimumValidity(certs);
                 validFrom = getValidFrom(certs);
             }
@@ -201,36 +187,71 @@ public class StaticSSLContext extends SSLContext {
         init(sslParser, sslc);
     }
 
+    private static Key getKey(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws IOException {
+        Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
+        Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+        return k;
+    }
+
+    private static char[] getKeyPassword(SSLParser sslParser) {
+        if (sslParser.getKey().getPassword() != null)
+            return sslParser.getKey().getPassword().toCharArray();
+        return "".toCharArray();
+    }
+
+    private static char @org.jetbrains.annotations.NotNull [] getKeyPass(SSLParser sslParser) {
+        char[] keyPass = "changeit".toCharArray();
+        if (sslParser.getKeyStore().getKeyPassword() != null)
+            keyPass = sslParser.getKeyStore().getKeyPassword().toCharArray();
+        return keyPass;
+    }
+
+    private static String getAlgorithm(SSLParser sslParser) {
+        String algorihm = KeyManagerFactory.getDefaultAlgorithm();
+        if (sslParser.getAlgorithm() != null)
+            algorihm = sslParser.getAlgorithm();
+        return algorihm;
+    }
+
     public StaticSSLContext(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
         this.sslParser = sslParser;
         this.sslc = sslc;
         init(sslParser, sslc);
     }
 
-    private List<String> getDNSNames(Certificate certificate) throws CertificateParsingException {
-        ArrayList<String> dnsNames = new ArrayList<>();
-        if (certificate instanceof X509Certificate) {
-            X509Certificate x = (X509Certificate) certificate;
-
-            Collection<List<?>> subjectAlternativeNames = x.getSubjectAlternativeNames();
+    /**
+     * Retrieves the DNS names from the specified certificate.
+     *
+     * @param certificate the certificate from which to extract DNS names
+     * @return a list of DNS names found in the certificate
+     * @throws CertificateParsingException if there is an error parsing the certificate
+     */
+    private List<String> extractDnsNames(Certificate certificate) throws CertificateParsingException {
+        ArrayList<String> names = new ArrayList<>();
+        if (certificate instanceof X509Certificate cert) {
+            Collection<List<?>> subjectAlternativeNames = cert.getSubjectAlternativeNames();
             if (subjectAlternativeNames != null)
                 for (List<?> l : subjectAlternativeNames) {
-                    if (l.get(0) instanceof Integer && ((Integer)l.get(0) == 2))
-                        dnsNames.add(l.get(1).toString());
+                    if (l.get(0) instanceof Integer && ((Integer) l.get(0) == 2))
+                        names.add(l.get(1).toString());
                 }
         }
-        return dnsNames;
+        return names;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof StaticSSLContext))
+        if (!(obj instanceof StaticSSLContext other))
             return false;
-        StaticSSLContext other = (StaticSSLContext)obj;
-        return Objects.equal(sslParser, other.sslParser);
+        return sslParser.hashCode() == other.sslParser.hashCode();
     }
 
-    private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(sslParser, dnsNames, sslc, validFrom, validUntil);
+    }
+
+    public static KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
         String type = store.getType();
         if (type == null)
             type = defaultType;
@@ -239,27 +260,12 @@ public class StaticSSLContext extends SSLContext {
             password = store.getPassword().toCharArray();
         if (password == null)
             throw new InvalidParameterException("Password for key store is not set.");
-        KeyStore ks;
-        if (store.getProvider() != null)
-            ks = KeyStore.getInstance(type, store.getProvider());
-        else
-            ks = KeyStore.getInstance(type);
-        ks.load(resourceResolver.resolve(ResolverMap.combine(baseLocation, store.getLocation())), password);
-        if (!default_certificate_warned && ks.getCertificate("membrane") != null) {
-            byte[] pkeEnc = ks.getCertificate("membrane").getEncoded();
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(pkeEnc);
-            byte[] mdbytes = md.digest();
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < mdbytes.length; i++) {
-                if (i > 0)
-                    sb.append(':');
-                sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
-            }
-            if (sb.toString().equals(DEFAULT_CERTIFICATE_SHA256)) {
+        KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, type, password);
+        if (!defaultCertificateWarned && ks.getCertificate("membrane") != null) {
+            if (getDigest(ks, "membrane").equals(DEFAULT_CERTIFICATE_SHA256)) {
                 log.warn("Using Membrane with the default certificate. This is highly discouraged! "
                         + "Please run the generate-ssl-keys script in the conf directory.");
-                default_certificate_warned = true;
+                defaultCertificateWarned = true;
             }
         }
         return ks;

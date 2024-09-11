@@ -60,4 +60,10 @@ public interface TokenGenerator {
      * @return token expiration in seconds, or 0 if there is no expiration
      */
     long getExpiration();
+
+    /**
+     * @return the JWK representation of the key used to sign the tokens or null, if there is no such key (e.g. because
+     * the tokens are randomly generated strings)
+     */
+    String getJwkIfAvailable();
 }
