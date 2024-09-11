@@ -18,7 +18,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import org.junit.jupiter.api.*;

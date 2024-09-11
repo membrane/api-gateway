@@ -117,4 +117,9 @@ public class BearerTokenGenerator implements TokenGenerator {
     public long getExpiration() {
         return 0;
     }
+
+    @Override
+    public String getJwkIfAvailable() {
+        return null;
+    }
 }

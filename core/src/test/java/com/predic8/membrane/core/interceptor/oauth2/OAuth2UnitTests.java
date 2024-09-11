@@ -42,6 +42,7 @@ import org.junit.platform.suite.api.Suite;
         OAuth2AuthorizationServerInterceptorNormalJWTTest.class,
         OAuth2AuthorizationServerInterceptorOpenidTest.class,
         OAuth2AuthorizationServerInterceptorOpenidJWTTest.class,
+        OAuth2Test.class,
         InMemSMOAuth2R2Test.class,
         JwtSMOAuth2R2Test.class,
         SyncSMOAuth2R2Test.class,
