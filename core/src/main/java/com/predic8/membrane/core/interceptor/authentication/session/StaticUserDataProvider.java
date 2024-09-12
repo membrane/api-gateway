@@ -89,7 +89,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		if (split[3].length() < 20)
 			return false;
 		// Check if second part is a valid hex
-		return Pattern.matches("[a-fA-F0-9]{16,512}", split[2]);
+		return Pattern.matches("\\$([^$]+)\\$([^$]+)\\$.+", postDataPassword);
 	}
 
 	private String createPasswdCompatibleHash(String algo, String password, String salt) {
