@@ -17,7 +17,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>5.7.2-SNAPSHOT</version>
+	<version>5.7.3-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
 	<description>Membrane is an open source API Gateway written in Java that features:
 	- OpenAPI support with validation
@@ -376,10 +376,6 @@
 			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
 			<url>https://repository.springsource.com/maven/bundles/external</url>
 		</repository>
-		<repository>
-			<id>predic8-releases</id>
-			<url>https://repository.membrane-soa.org/content/groups/public</url>
-		</repository>
 	</repositories>
 
 
@@ -683,15 +679,4 @@
 			</distributionManagement>
 		</profile>
 	</profiles>
-
-	<distributionManagement>
-		<repository>
-			<id>predic8-releases</id>
-			<url>https://repository.membrane-soa.org/repository/releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>predic8-snapshots</id>
-			<url>https://repository.membrane-soa.org/repository/snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
 </project>

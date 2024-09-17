@@ -29,7 +29,7 @@
         <dependency>
             <groupId>org.membrane-soa</groupId>
             <artifactId>service-proxy-core</artifactId>
-            <version>5.7.2-SNAPSHOT</version>
+            <version>5.7.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -38,11 +38,4 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
-    <repositories>
-        <repository>
-            <id>predic8-releases</id>
-            <url>https://repository.membrane-soa.org/content/groups/public</url>
-        </repository>
-    </repositories>
 </project>
