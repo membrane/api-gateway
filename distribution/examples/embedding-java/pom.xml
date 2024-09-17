@@ -38,11 +38,4 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
-    <repositories>
-        <repository>
-            <id>predic8-releases</id>
-            <url>https://repository.membrane-soa.org/content/groups/public</url>
-        </repository>
-    </repositories>
 </project>
