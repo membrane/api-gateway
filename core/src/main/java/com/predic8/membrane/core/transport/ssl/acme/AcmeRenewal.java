@@ -39,7 +39,7 @@ import static com.predic8.membrane.core.transport.ssl.acme.Order.*;
 
 public class AcmeRenewal {
     private static final Logger LOG = LoggerFactory.getLogger(AcmeRenewal.class);
-    private static final long ERROR_WAIT_MILLISECONDS = 5 * 60 * 1000;
+    private static final long ERROR_WAIT_MILLISECONDS = 15 * 60 * 1000;
     private static final long LEASE_DURATION_MILLISECONDS = 5 * 60 * 1000;
     private static final long LEASE_RENEW_MILLISECONDS = 4 * 60 * 1000;
 
@@ -66,7 +66,7 @@ public class AcmeRenewal {
             } catch (Exception e) {
                 e.printStackTrace();
                 try {
-                    Thread.sleep(60 * 1000);
+                    Thread.sleep(ERROR_WAIT_MILLISECONDS);
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 }
