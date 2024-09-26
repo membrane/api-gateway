@@ -26,10 +26,16 @@ import com.predic8.membrane.core.security.*;
 import jakarta.mail.internet.*;
 
 import java.io.*;
+import java.net.URL;
 import java.time.*;
 import java.time.format.*;
 import java.util.*;
 import java.util.regex.*;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -200,8 +206,22 @@ public class Utils {
     }
 
     public static InputStream getResourceAsStream(Object obj, String fileName) {
-        return obj.getClass().getResourceAsStream(fileName);
+        try {
+            URL url = obj.getClass().getResource(fileName);
+            if (url == null) {
+                return null;
+            }
+
+            return new FileInputStream(new URI(url.toString()).getPath());
+        } catch (URISyntaxException | IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
+
+    /*public static InputStream getResourceAsStream(Object obj, String fileName) {
+        return obj.getClass().getResourceAsStream(fileName);
+    }*/
 
     public static byte[] createErrorMessage(String msg) {
         return String.format("{ \"error\": \"%s\" }",msg).getBytes();
