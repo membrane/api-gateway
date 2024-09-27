@@ -68,8 +68,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
-    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException, URISyntaxException {
-        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getFileResourceAsStream(this, filePath))));
+    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
+        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
     }
 
     @Override

@@ -251,15 +251,15 @@ class UtilsTest {
     }
 
     @Test
-    void getFileResourceAsStreamValidResource() throws IOException, URISyntaxException {
+    void getResourceAsStreamValidResource() throws IOException {
         assertEquals("baz",
                 new String(requireNonNull(
-                        getFileResourceAsStream(this, "/test/foo.bar")).readAllBytes(), StandardCharsets.UTF_8)
+                        getResourceAsStream(this, "/test/foo.bar")).readAllBytes(), StandardCharsets.UTF_8)
                 );
     }
 
     @Test
-    void getFileResourceAsStreamInvalidResource() throws IOException, URISyntaxException {
-        assertNull(getFileResourceAsStream(this, "/doesnot.exist"));
+    void getResourceAsStreamInvalidResource() {
+        assertThrows(FileNotFoundException.class, () -> getResourceAsStream(this, "/doesnot.exist"));
     }
 }

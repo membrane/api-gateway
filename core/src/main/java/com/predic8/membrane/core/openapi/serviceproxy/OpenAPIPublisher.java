@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
-import static com.predic8.membrane.core.openapi.util.Utils.getFileResourceAsStream;
+import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
 
 public class OpenAPIPublisher {
 
@@ -144,7 +144,7 @@ public class OpenAPIPublisher {
     }
 
     private Template createTemplate(String filePath) throws ClassNotFoundException, IOException, URISyntaxException {
-        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getFileResourceAsStream(this, filePath))));
+        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
     }
 
     private String renderOverviewTemplate(Router router) {
