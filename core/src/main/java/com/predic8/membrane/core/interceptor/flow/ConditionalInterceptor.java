@@ -63,6 +63,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     /**
      * Spring Expression Language
      * SpEL configuration with MIXED mode allows both interpreted and compiled expression evaluation.
+     * Compiled only did not work with jsonPath
      */
     private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.MIXED, this.getClass().getClassLoader());
     private Expression spelExpr;
