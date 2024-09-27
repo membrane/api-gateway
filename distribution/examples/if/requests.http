@@ -7,6 +7,20 @@ Content-Type: application/json
 
 {"foo":  "bar"}
 
+### Will be detected as a JSON request where the 'name' key is not null.
+POST / HTTP/2
+Host: localhost:2000
+Content-Type: application/json
+
+{"name": "bar"}
+
+### Will be detected as a JSON request where the 'name' key has the value 'foo'.
+POST / HTTP/2
+Host: localhost:2000
+Content-Type: application/json
+
+{"name": "foo"}
+
 ### Query parameter value will be checked.
 GET /?param1=value1 HTTP/2
 Host: localhost:2000
