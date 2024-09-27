@@ -60,7 +60,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     private final Template swaggerUiHtmlTemplate;
     private final Template apiOverviewHtmlTemplate;
 
-    public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
+    public OpenAPIPublisherInterceptor(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException, URISyntaxException {
         name = "OpenAPI Publisher";
         this.apis = apis;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
@@ -68,8 +68,8 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
     }
 
-    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
-        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(getResourceAsStream(this, filePath)));
+    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException, URISyntaxException {
+        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getFileResourceAsStream(this, filePath))));
     }
 
     @Override

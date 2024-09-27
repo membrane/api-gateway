@@ -28,8 +28,10 @@ import javax.xml.stream.*;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.TransformerException;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -39,7 +41,7 @@ import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
+import static com.predic8.membrane.core.openapi.util.Utils.getFileResourceAsStream;
 import static com.predic8.membrane.core.util.XMLUtil.xml2string;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
@@ -86,10 +88,10 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return ok(getSoapFault("Method Not Allowed", "405", "Use POST to access the service.")).contentType(APPLICATION_XML).build();
     }
 
-    private Response createWSDLResponse(Exchange exc) throws XMLStreamException {
+    private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException, URISyntaxException {
         return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
                    .body(setWsdlServer(
-                           getResourceAsStream(this,"/wsdl/city.wsdl"),exc)
+                           getFileResourceAsStream(this,"/wsdl/city.wsdl"),exc)
                    ).build();
     }
 
