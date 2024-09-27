@@ -82,7 +82,7 @@ public class APIProxy extends ServiceProxy {
         initOpenAPI();
     }
 
-    private void initOpenAPI() throws IOException, ClassNotFoundException {
+    private void initOpenAPI() throws IOException, ClassNotFoundException, URISyntaxException {
         if (specs.isEmpty())
             return;
 

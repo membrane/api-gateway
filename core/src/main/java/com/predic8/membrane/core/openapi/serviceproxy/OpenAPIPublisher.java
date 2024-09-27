@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,7 +43,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
-import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
+import static com.predic8.membrane.core.openapi.util.Utils.getFileResourceAsStream;
 
 public class OpenAPIPublisher {
 
@@ -60,7 +61,7 @@ public class OpenAPIPublisher {
 
     protected Map<String, OpenAPIRecord> apis;
 
-    public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException {
+    public OpenAPIPublisher(Map<String, OpenAPIRecord> apis) throws IOException, ClassNotFoundException, URISyntaxException {
         this.apis = apis;
         swaggerUiHtmlTemplate = createTemplate("/openapi/swagger-ui.html");
         apiOverviewHtmlTemplate = createTemplate("/openapi/overview.html");
@@ -142,8 +143,8 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
-        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(getResourceAsStream(this, filePath)));
+    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException, URISyntaxException {
+        return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getFileResourceAsStream(this, filePath))));
     }
 
     private String renderOverviewTemplate(Router router) {

@@ -24,10 +24,12 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static java.util.Objects.requireNonNull;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UtilsTest {
@@ -248,4 +250,16 @@ class UtilsTest {
         });
     }
 
+    @Test
+    void getFileResourceAsStreamValidResource() throws IOException, URISyntaxException {
+        assertEquals("baz",
+                new String(requireNonNull(
+                        getFileResourceAsStream(this, "/test/foo.bar")).readAllBytes(), StandardCharsets.UTF_8)
+                );
+    }
+
+    @Test
+    void getFileResourceAsStreamInvalidResource() throws IOException, URISyntaxException {
+        assertNull(getFileResourceAsStream(this, "/doesnot.exist"));
+    }
 }
