@@ -210,19 +210,27 @@ public class Utils {
         return s.replaceAll("\\W+","-").toLowerCase();
     }
 
-    // Uses wrapping in URI and FileInputStream because of:
-    // https://stackoverflow.com/questions/3263560/sysloader-getresource-problem-in-java
-    public static InputStream getFileResourceAsStream(Object obj, String fileName) throws FileNotFoundException, URISyntaxException {
+    /**
+     * Safe alternative of Class.getResourceAsStream() that can handle spaces in the base path.
+     * @param obj Object reference of caller. Usually set to `this` of the caller.
+     * @param location Location of the resource. E.g. /foo
+     * @return InputStream of resource.
+     * @throws FileNotFoundException when resource not found.
+     */
+    public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
         try {
-            URL url = obj.getClass().getResource(fileName);
+            URL url = obj.getClass().getResource(location);
             if (url == null) {
-                return null;
+                LOG.warn("Resource {} not found", location);
+                throw new FileNotFoundException(location);
             }
 
+            // Uses wrapping in URI and FileInputStream because of:
+            // https://stackoverflow.com/questions/3263560/sysloader-getresource-problem-in-java
             return new FileInputStream(new URI(url.toString()).getPath());
-        } catch (URISyntaxException | IOException e) {
-            LOG.warn(e.getMessage());
-            throw e;
+        } catch (URISyntaxException e) {
+            LOG.error(e.getMessage());
+            throw new RuntimeException(e);
         }
     }
 
