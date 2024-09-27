@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.lang.spel.ExchangeEvaluationContext;
 import com.predic8.membrane.core.security.SecurityScheme;
@@ -21,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -39,7 +42,17 @@ import static java.util.Objects.requireNonNull;
  * The ExchangeEvaluationContext provides a specialized Membrane SpEL context, enabling access to the Exchange and other relevant data.
  */
 public class BuiltInFunctions {
-    private static final Logger log = LoggerFactory.getLogger(ExchangeEvaluationContext.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(BuiltInFunctions.class);
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    public static Object jsonPath(String jsonPath, ExchangeEvaluationContext ctx) {
+        try {
+            return JsonPath.read(objectMapper.readValue(ctx.getMessage().getBodyAsStringDecoded(), Map.class), jsonPath);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
 
     public static boolean weight(double weightInPercent, ExchangeEvaluationContext ignored) {
         return Math.max(0, Math.min(1, weightInPercent / 100.0)) > ThreadLocalRandom.current().nextDouble();

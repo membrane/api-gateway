@@ -55,6 +55,7 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLSecurityTest.class,
 
        // Scripting
+        ConditionalInterceptorTest.class,
         GroovyTest.class,
         JavascriptTest.class,
 

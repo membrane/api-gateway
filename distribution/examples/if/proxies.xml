@@ -11,6 +11,12 @@
                 <if test="headers['Content-Type'] == 'application/json'" language="SpEL">
                     <groovy>println("JSON Request!")</groovy>
                 </if>
+                <if test="jsonPath('$.name') != null" language="SpEL">
+                    <groovy>println("The JSON request contains the key 'name', and it is not null.")</groovy>
+                </if>
+                <if test="jsonPath('$.name') == 'foo'" language="SpEL">
+                    <groovy>println("The JSON request contains the key 'name' with the value 'foo'.")</groovy>
+                </if>
                 <if test="method == 'POST'" language="SpEL">
                     <groovy>println("Request method was POST.")</groovy>
                 </if>
