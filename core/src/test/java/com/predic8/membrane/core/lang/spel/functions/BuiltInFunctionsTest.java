@@ -36,7 +36,8 @@ public class BuiltInFunctionsTest {
     static void init() throws URISyntaxException {
         var exc = Request.get("foo").buildExchange();
         exc.setProperty(SECURITY_SCHEMES, List.of(new ApiKeySecurityScheme(HEADER, "X-Api-Key").scopes("demo", "test")));
-        exc.getRequest().setBodyContent("{\"name\":\"John\"}".getBytes());
+        exc.getRequest().setBodyContent("""
+                {"name":"John"}""".getBytes());
         ctx = new ExchangeEvaluationContext(exc);
     }
 

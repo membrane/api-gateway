@@ -26,6 +26,8 @@ public class ConditionalInterceptorTest extends AbstractSampleMembraneStartStopT
     void testApi(String method, String headers, String body, String params, int expectedStatus, String expectedOutput) {
 
         ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+
+        //Captures System.out output to verify expected console output in the test.
         PrintStream originalOut = System.out;
         System.setOut(new PrintStream(outContent));
 
@@ -33,7 +35,7 @@ public class ConditionalInterceptorTest extends AbstractSampleMembraneStartStopT
             switch (method) {
                 case "GET":
                     given()
-                        .headers(parseHeaders(headers))
+                        .headers(parseHeader(headers))
                     .when()
                         .get("http://localhost:2000" + params)
                     .then()
@@ -42,7 +44,7 @@ public class ConditionalInterceptorTest extends AbstractSampleMembraneStartStopT
 
                 case "POST":
                     given()
-                        .headers(parseHeaders(headers))
+                        .headers(parseHeader(headers))
                         .body(body)
                     .when()
                         .post("http://localhost:2000" + params)
@@ -74,16 +76,11 @@ public class ConditionalInterceptorTest extends AbstractSampleMembraneStartStopT
         );
     }
 
-    private static Map<String, String> parseHeaders(String headers) {
-        Map<String, String> headerMap = new HashMap<>();
-        if (headers != null && !headers.isEmpty()) {
-            String[] headerArray = headers.split(", ");
-            for (String header : headerArray) {
-                String[] keyValue = header.split(":");
-                headerMap.put(keyValue[0], keyValue[1]);
-            }
-        }
-        return headerMap;
+    private static Map<String, String> parseHeader(String header) {
+        if(header.isEmpty()) return new HashMap<>();
+        String[] parts = header.split(":", 2);
+        return Map.of(parts[0], parts[1]);
     }
 
 }
+
