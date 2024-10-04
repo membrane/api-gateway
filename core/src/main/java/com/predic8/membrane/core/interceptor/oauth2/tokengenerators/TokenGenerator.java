@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
 import com.predic8.membrane.core.Router;
 
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 public interface TokenGenerator {
@@ -28,7 +29,7 @@ public interface TokenGenerator {
     /**
      * @return a new token for the specified user and client.
      */
-    String getToken(String username, String clientId, String clientSecret);
+    String getToken(String username, String clientId, String clientSecret, Map<String, Object> additionalClaims);
 
     /**
      * Checks the token for validity. Returns the username the token was generated for.

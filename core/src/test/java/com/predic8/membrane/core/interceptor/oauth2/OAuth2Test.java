@@ -117,7 +117,9 @@ class OAuth2Test {
         oAuth2AuthSI.setRefreshTokenGenerator(new BearerTokenGenerator());
 
         oAuth2AuthSI.setUserDataProvider(new StaticUserDataProvider() {{
-            setUsers(List.of(new StaticUserDataProvider.User("john", "password")));
+            User u = new User("john", "password");
+            u.getAttributes().put("aud", "demo1");
+            setUsers(List.of(u));
         }});
 
         oAuth2AuthSI.setClientList(new StaticClientList() {{
@@ -139,6 +141,7 @@ class OAuth2Test {
 
     private static JwtAuthInterceptor createJwtAuthInterceptor() {
         return new JwtAuthInterceptor() {{
+            setExpectedAud("demo1");
             setJwks(new Jwks() {{
                 setJwksUris("http://localhost:2000/oauth2/certs");
             }});
@@ -175,7 +178,7 @@ class OAuth2Test {
     }
 
     private static String createTokenRequestParameters() {
-        return "grant_type=client_credentials&client_id=" + clientId + "&client_secret=" + clientSecret;
+        return "grant_type=password&client_id=" + clientId + "&client_secret=" + clientSecret + "&username=john&password=password";
     }
 
     private static String readResponse(HttpURLConnection connection) throws IOException {

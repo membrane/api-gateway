@@ -66,7 +66,7 @@ public class TokenFlow extends OAuth2Flow {
 
     public String generateAccessToken(Client client) {
         synchronized (session) {
-            String token = authServer.getTokenGenerator().getToken(session.getUserName(), client.getClientId(), client.getClientSecret());
+            String token = authServer.getTokenGenerator().getToken(session.getUserName(), client.getClientId(), client.getClientSecret(), null);
             authServer.getSessionFinder().addSessionForToken(token,session);
             return token;
         }

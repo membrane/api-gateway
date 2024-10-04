@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
@@ -76,12 +75,14 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     }
 
     @Override
-    public String getToken(String username, String clientId, String clientSecret) {
+    public String getToken(String username, String clientId, String clientSecret, Map<String, Object> additionalClaims) {
         JwtClaims claims = new JwtClaims();
         claims.setSubject(username);
         claims.setClaim("clientId", clientId);
         if (expiration != 0)
             claims.setExpirationTimeMinutesInTheFuture(expiration / 60.0f);
+        if (additionalClaims != null)
+            additionalClaims.forEach(claims::setClaim);
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
         jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
