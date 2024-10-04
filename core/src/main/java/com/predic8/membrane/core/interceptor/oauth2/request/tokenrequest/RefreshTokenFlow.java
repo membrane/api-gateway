@@ -81,9 +81,9 @@ public class RefreshTokenFlow extends TokenRequest {
         }
         
         scope = getScope();
-        token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret());
+        token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret(), null);
         expiration = authServer.getTokenGenerator().getExpiration();
-        refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
+        refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret(), null);
 
         SessionManager.Session session = authServer.getSessionFinder().getSessionForRefreshToken(getRefreshToken());
         synchronized(session) {

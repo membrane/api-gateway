@@ -18,6 +18,7 @@ import com.predic8.membrane.core.Router;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,7 +75,7 @@ public class BearerTokenGenerator implements TokenGenerator {
     }
 
     @Override
-    public String getToken(String username, String clientId, String clientSecret) {
+    public String getToken(String username, String clientId, String clientSecret, Map<String, Object> additionalClaims) {
         String token = new BigInteger(130, random).toString(32);
         tokenToUser.put(token, new User(username, clientId, clientSecret));
         return token;
