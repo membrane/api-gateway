@@ -91,6 +91,11 @@ public class BearerTokenGenerator implements TokenGenerator {
     }
 
     @Override
+    public Map<String, Object> getAdditionalClaims(String token) throws NoSuchElementException {
+        return Map.of();
+    }
+
+    @Override
     public String getClientId(String token) throws NoSuchElementException {
         try {
             return tokenToUser.get(token).getClientId();
