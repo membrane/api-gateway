@@ -40,6 +40,14 @@ public interface TokenGenerator {
     String getUsername(String token) throws NoSuchElementException;
 
     /**
+     * Checks the token for validity. Returns the additional claims the token was generated for.
+     * @param token The token.
+     * @return The additional claims.
+     * @throws NoSuchElementException if the token is not valid.
+     */
+    Map<String, Object> getAdditionalClaims(String token) throws NoSuchElementException;
+
+    /**
      * Checks the token for validity. Returns the clientId the token was generated for.
      * @param token The token.
      * @return The clientId.

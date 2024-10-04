@@ -37,6 +37,9 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 @MCElement(name = "bearerJwtToken")
 public class BearerJwtTokenGenerator implements TokenGenerator {
@@ -110,6 +113,21 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         } catch (MalformedClaimException | InvalidJwtException e) {
             throw new NoSuchElementException(e);
         }
+    }
+
+    @Override
+    public Map<String, Object> getAdditionalClaims(String token) throws NoSuchElementException {
+        try {
+            return verify(token).getClaimsMap().entrySet().stream()
+                    .filter(e -> !isNormalClaim(e.getKey()))
+                    .collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        } catch (InvalidJwtException e) {
+            throw new NoSuchElementException(e);
+        }
+    }
+
+    private boolean isNormalClaim(String key) {
+        return "sub".equals(key) || "clientId".equals(key) || "exp".equals(key);
     }
 
     @Override

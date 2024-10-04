@@ -149,6 +149,18 @@ public abstract class ParameterizedRequest {
         return ImmutableMap.of();
     }
 
+    protected Map<String, Object> claimsMapForRefresh(Map<String, String> userParams) {
+        if (userParams.containsKey("aud"))
+            return ImmutableMap.of("i-aud", userParams.get("aud").split(" "));
+        return ImmutableMap.of();
+    }
+
+    protected Map<String, Object> claimsMapFromRefresh(Map<String, Object> refreshClaims) {
+        if (refreshClaims.containsKey("i-aud"))
+            return ImmutableMap.of("aud", refreshClaims.get("i-aud"));
+        return ImmutableMap.of();
+    }
+
     protected String createTokenForVerifiedClient(){
         return authServer.getTokenGenerator().getToken(getClientId(), getClientId(), getClientSecret(), null);
     }

@@ -41,8 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class OAuth2Test {
@@ -101,11 +100,32 @@ class OAuth2Test {
 
     @Test
     void testJwtAuthentication() throws Exception {
-        String json = getTokenRequestResponse();
+        String json = getTokenRequestResponse(createTokenRequestParameters());
         JSONObject jsonObject = new JSONObject(json);
         assertEquals("Bearer", jsonObject.getString("token_type"));
         assertNotNull(jsonObject.getString("access_token"));
-        assertEquals("Ok", sendRequestToTarget(parseTokenRequestResponse(json)));
+        assertEquals("Ok", sendRequestToTarget(parseTokenRequestResponse("access_token", json)));
+    }
+
+    @Test
+    void testJwtAuthenticationAfterRefresh() throws Exception {
+        String json = getTokenRequestResponse(createTokenRequestParameters());
+        JSONObject jsonObject = new JSONObject(json);
+
+        json = getTokenRequestResponse(createTokenRequestParametersAfterRefresh(jsonObject.getString("refresh_token")));
+        jsonObject = new JSONObject(json);
+        assertEquals("Bearer", jsonObject.getString("token_type"));
+        assertNotNull(jsonObject.getString("access_token"));
+        assertEquals("Ok", sendRequestToTarget(parseTokenRequestResponse("access_token", json)));
+    }
+
+    @Test
+    void testJwtAuthenticationFailingWithRefreshInsteadOfAccessToken() throws Exception {
+        String json = getTokenRequestResponse(createTokenRequestParameters());
+        JSONObject jsonObject = new JSONObject(json);
+        assertEquals("Bearer", jsonObject.getString("token_type"));
+        assertNotNull(jsonObject.getString("refresh_token"));
+        assertEquals("Bad Request", sendRequestToTarget(parseTokenRequestResponse("refresh_token", json)));
     }
 
     private static OAuth2AuthorizationServerInterceptor createOAuth2AuthServerInterceptor() {
@@ -114,7 +134,9 @@ class OAuth2Test {
         oAuth2AuthSI.setTokenGenerator(new BearerJwtTokenGenerator() {{
             setExpiration(60);
         }});
-        oAuth2AuthSI.setRefreshTokenGenerator(new BearerTokenGenerator());
+        oAuth2AuthSI.setRefreshTokenGenerator(new BearerJwtTokenGenerator() {{
+            setExpiration(60);
+        }});
 
         oAuth2AuthSI.setUserDataProvider(new StaticUserDataProvider() {{
             User u = new User("john", "password");
@@ -157,9 +179,9 @@ class OAuth2Test {
         return connection.getResponseMessage();
     }
 
-    private static String parseTokenRequestResponse(String tokenRequestResponse) {
+    private static String parseTokenRequestResponse(String key, String tokenRequestResponse) {
 
-        String temp = tokenRequestResponse.replaceFirst(Pattern.quote("{\"access_token\":\""),"");
+        String temp = tokenRequestResponse.replaceFirst(Pattern.quote("{\""+key+"\":\""),"");
         String token = temp.split(Pattern.quote("\""))[0];
 
         temp = temp.replaceFirst(Pattern.quote(token + "\",\"token_type\":\""),"");
@@ -168,17 +190,21 @@ class OAuth2Test {
         return tokenType + " " + token;
     }
 
-    private static String getTokenRequestResponse() throws IOException {
+    private static String getTokenRequestResponse(String data) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:2000/oauth2/token").openConnection();
         connection.setRequestMethod("POST");
 
-        sendPostData(connection, createTokenRequestParameters());
+        sendPostData(connection, data);
 
         return readResponse(connection);
     }
 
     private static String createTokenRequestParameters() {
         return "grant_type=password&client_id=" + clientId + "&client_secret=" + clientSecret + "&username=john&password=password";
+    }
+
+    private static String createTokenRequestParametersAfterRefresh(String refreshToken) {
+        return "grant_type=refresh_token&client_id=" + clientId + "&client_secret=" + clientSecret + "&refresh_token=" + refreshToken;
     }
 
     private static String readResponse(HttpURLConnection connection) throws IOException {
