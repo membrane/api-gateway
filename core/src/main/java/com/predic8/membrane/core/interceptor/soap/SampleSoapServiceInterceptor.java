@@ -28,8 +28,10 @@ import javax.xml.stream.*;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.TransformerException;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -86,7 +88,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return ok(getSoapFault("Method Not Allowed", "405", "Use POST to access the service.")).contentType(APPLICATION_XML).build();
     }
 
-    private Response createWSDLResponse(Exchange exc) throws XMLStreamException {
+    private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException {
         return ok().header(CONTENT_TYPE, TEXT_XML_UTF8)
                    .body(setWsdlServer(
                            getResourceAsStream(this,"/wsdl/city.wsdl"),exc)

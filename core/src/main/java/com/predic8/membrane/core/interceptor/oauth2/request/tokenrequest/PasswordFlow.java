@@ -53,9 +53,9 @@ public class PasswordFlow extends TokenRequest {
             return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","access_denied");
 
         scope = getScope();
-        token = createTokenForVerifiedUserAndClient();
+        token = createTokenForVerifiedUserAndClient(userParams);
         expiration = authServer.getTokenGenerator().getExpiration();
-        refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
+        refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret(), claimsMapForRefresh(userParams));
 
         SessionManager.Session session = createSessionForAuthorizedUserWithParams();
         synchronized(session) {
@@ -78,7 +78,7 @@ public class PasswordFlow extends TokenRequest {
 			return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant_type");
         }
 
-        refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret());
+        refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret(), claimsMapForRefresh(userParams));
         authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
 
         if (authServer.isIssueNonSpecIdTokens() && OAuth2Util.isOpenIdScope(scope)) {

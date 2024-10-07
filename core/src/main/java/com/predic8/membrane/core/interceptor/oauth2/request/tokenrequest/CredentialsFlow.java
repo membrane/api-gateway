@@ -77,7 +77,7 @@ public class CredentialsFlow extends TokenRequest {
         authServer.getSessionFinder().addSessionForToken(token,session);
 
         if (authServer.isIssueNonSpecRefreshTokens()) {
-            refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret());
+            refreshToken = authServer.getRefreshTokenGenerator().getToken(client.getClientId(), client.getClientId(), client.getClientSecret(), null);
             authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
         }
 

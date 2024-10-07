@@ -20,6 +20,7 @@ import com.predic8.membrane.core.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.URISyntaxException;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
@@ -31,7 +32,7 @@ public class XMembraneExtensionSecurityTest {
     OpenAPIPublisherInterceptor interceptor;
 
     @BeforeEach
-    void setUp() throws IOException, ClassNotFoundException {
+    void setUp() throws IOException, ClassNotFoundException, URISyntaxException {
         Router router = new Router();
         router.setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
@@ -40,7 +41,6 @@ public class XMembraneExtensionSecurityTest {
         Map<String,OpenAPIRecord> records = factory.create(Collections.singletonList(spec));
 
         interceptor = new OpenAPIPublisherInterceptor(records);
-
     }
 
     @Test

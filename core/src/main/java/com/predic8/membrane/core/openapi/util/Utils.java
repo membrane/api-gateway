@@ -16,28 +16,37 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.security.*;
-import jakarta.mail.internet.*;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.security.SecurityScheme;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.time.*;
-import java.time.format.*;
-import java.util.*;
-import java.util.regex.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.regex.Pattern.*;
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.regex.Pattern.compile;
 
 public class Utils {
 
-    private Utils() {}
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     //noinspection
     static final Pattern componentSchemaPattern = compile("#/components/\\w+/(.*)");
@@ -57,6 +66,8 @@ public class Utils {
     // DateTimeFormatter is thread safe!
     static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
     static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ISO_DATE_TIME;
+
+    private Utils() {}
 
     public static String getComponentLocalNameFromRef(String ref) {
         try {
@@ -199,8 +210,28 @@ public class Utils {
         return s.replaceAll("\\W+","-").toLowerCase();
     }
 
-    public static InputStream getResourceAsStream(Object obj, String fileName) {
-        return obj.getClass().getResourceAsStream(fileName);
+    /**
+     * Safe alternative of Class.getResourceAsStream() that can handle spaces in the base path.
+     * @param obj Object reference of caller. Usually set to `this` of the caller.
+     * @param location Location of the resource. E.g. /foo
+     * @return InputStream of resource.
+     * @throws FileNotFoundException when resource not found.
+     */
+    public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
+        try {
+            URL url = obj.getClass().getResource(location);
+            if (url == null) {
+                LOG.warn("Resource {} not found", location);
+                throw new FileNotFoundException(location);
+            }
+
+            // Uses wrapping in URI and FileInputStream because of:
+            // https://stackoverflow.com/questions/3263560/sysloader-getresource-problem-in-java
+            return new FileInputStream(new URI(url.toString()).getPath());
+        } catch (URISyntaxException e) {
+            LOG.error(e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     public static byte[] createErrorMessage(String msg) {

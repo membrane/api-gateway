@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.request;
 
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
@@ -138,12 +139,30 @@ public abstract class ParameterizedRequest {
         }
     }
 
-    protected String createTokenForVerifiedUserAndClient(){
-        return authServer.getTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
+    protected String createTokenForVerifiedUserAndClient(Map<String, String> userParams){
+        return authServer.getTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret(), claimsMap(userParams));
+    }
+
+    protected Map<String, Object> claimsMap(Map<String, String> userParams) {
+        if (userParams.containsKey("aud"))
+            return ImmutableMap.of("aud", userParams.get("aud").split(" "));
+        return ImmutableMap.of();
+    }
+
+    protected Map<String, Object> claimsMapForRefresh(Map<String, String> userParams) {
+        if (userParams.containsKey("aud"))
+            return ImmutableMap.of("i-aud", userParams.get("aud").split(" "));
+        return ImmutableMap.of();
+    }
+
+    protected Map<String, Object> claimsMapFromRefresh(Map<String, Object> refreshClaims) {
+        if (refreshClaims.containsKey("i-aud"))
+            return ImmutableMap.of("aud", refreshClaims.get("i-aud"));
+        return ImmutableMap.of();
     }
 
     protected String createTokenForVerifiedClient(){
-        return authServer.getTokenGenerator().getToken(getClientId(), getClientId(), getClientSecret());
+        return authServer.getTokenGenerator().getToken(getClientId(), getClientId(), getClientSecret(), null);
     }
 
     public String getPrompt() {

@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.jose4j.lang.JoseException;
@@ -49,8 +50,10 @@ public class RefreshTokenFlow extends TokenRequest {
             return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","unauthorized_client");
 
         String username;
+        Map<String, Object> additionalClaims;
         try {
             username = authServer.getRefreshTokenGenerator().getUsername(getRefreshToken());
+            additionalClaims = authServer.getRefreshTokenGenerator().getAdditionalClaims(getRefreshToken());
         }catch(NoSuchElementException ex){
             return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
         }
@@ -81,9 +84,9 @@ public class RefreshTokenFlow extends TokenRequest {
         }
         
         scope = getScope();
-        token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret());
+        token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret(), claimsMapFromRefresh(additionalClaims));
         expiration = authServer.getTokenGenerator().getExpiration();
-        refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
+        refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret(), additionalClaims);
 
         SessionManager.Session session = authServer.getSessionFinder().getSessionForRefreshToken(getRefreshToken());
         synchronized(session) {
