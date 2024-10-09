@@ -11,15 +11,18 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.http.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.predic8.membrane.core.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 
 
 /**
@@ -124,7 +127,7 @@ public class ProblemDetails {
             title = "An internal error occurred.";
             detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         } else {
-            log.warn("type={}\ntitle={}\n,detail={}\n,extension={},.", type, title, detail, extensions);
+            log.info("type={}\ntitle={}\n,detail={}\n,extension={},.", type, title, detail, extensions);
 //            root.put("exception", exception.printStackTrace(););
             if (exception != null) {
                 root.put("message",exception.getMessage());
