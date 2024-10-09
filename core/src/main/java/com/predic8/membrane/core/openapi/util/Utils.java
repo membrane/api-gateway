@@ -219,15 +219,13 @@ public class Utils {
      */
     public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
         try {
-            URL url = obj.getClass().getResource(location);
-            if (url == null) {
-                LOG.warn("Resource {} not found", location);
-                throw new FileNotFoundException(location);
+            InputStream inputStream = obj.getClass().getResourceAsStream(new URI(location).getPath());
+
+            if (inputStream == null) {
+                throw new FileNotFoundException("Resource " + location + " not found");
             }
 
-            // Uses wrapping in URI and FileInputStream because of:
-            // https://stackoverflow.com/questions/3263560/sysloader-getresource-problem-in-java
-            return new FileInputStream(new URI(url.toString()).getPath());
+            return inputStream;
         } catch (URISyntaxException e) {
             LOG.error(e.getMessage());
             throw new RuntimeException(e);
