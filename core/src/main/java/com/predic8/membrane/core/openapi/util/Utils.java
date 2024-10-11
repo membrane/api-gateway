@@ -28,9 +28,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
@@ -219,15 +221,27 @@ public class Utils {
      */
     public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
         try {
-            InputStream inputStream = obj.getClass().getResourceAsStream(new URI(location).getPath());
-
-            if (inputStream == null) {
-                throw new FileNotFoundException("Resource " + location + " not found");
+            InputStream is = obj.getClass().getResourceAsStream(location);
+            if (is != null) {
+                return is;
             }
 
-            return inputStream;
-        } catch (URISyntaxException e) {
-            LOG.error(e.getMessage());
+            URL url = obj.getClass().getResource(location);
+            if (url != null) {
+                return url.openStream();
+            }
+
+            String classpath = System.getProperty("java.class.path");
+            String[] classpathEntries = classpath.split(File.pathSeparator);
+            for (String entry : classpathEntries) {
+                Path filePath = Paths.get(entry).resolve(location.startsWith("/") ? location.substring(1) : location);
+                if (Files.exists(filePath)) {
+                    return Files.newInputStream(filePath);
+                }
+            }
+
+            throw new FileNotFoundException("Resource not found: " + location);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
