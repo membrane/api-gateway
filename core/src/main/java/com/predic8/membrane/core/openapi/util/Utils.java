@@ -71,7 +71,7 @@ public class Utils {
     // DateTimeFormatter is thread safe!
     static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
     static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ISO_DATE_TIME;
-    public static final String JAR_FILE = "jar:file:";
+    public static final String FILE = "file:";
 
     private Utils() {}
 
@@ -226,14 +226,10 @@ public class Utils {
     public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
         try {
             String jarPath = obj.getClass().getProtectionDomain().getCodeSource().getLocation().toString();
+            System.out.println("jarPath = " + jarPath);
             if (OSUtil.isWindows() && jarPath.contains(" ") && jarPath.endsWith(".jar")) {
-                URL jarUrl = obj.getClass().getResource(location);
-                if (jarUrl == null) {
-                    throw new FileNotFoundException(location);
-                }
-
-                if (jarPath.startsWith(JAR_FILE)) {
-                    jarPath = jarPath.substring(JAR_FILE.length(), jarPath.lastIndexOf('!'));
+                if (jarPath.startsWith(FILE)) {
+                    jarPath = jarPath.substring(FILE.length());
                 }
 
                 JarFile jarFile = new JarFile(jarPath);
