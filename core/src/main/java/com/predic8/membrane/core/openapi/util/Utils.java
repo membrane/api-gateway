@@ -225,13 +225,13 @@ public class Utils {
      */
     public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
         try {
-            if (OSUtil.isWindows() && location.contains(" ")) {
+            String jarPath = obj.getClass().getProtectionDomain().getCodeSource().getLocation().toString();
+            if (OSUtil.isWindows() && jarPath.contains(" ") && jarPath.endsWith(".jar")) {
                 URL jarUrl = obj.getClass().getResource(location);
                 if (jarUrl == null) {
                     throw new FileNotFoundException(location);
                 }
 
-                String jarPath = jarUrl.toString();
                 if (jarPath.startsWith(JAR_FILE)) {
                     jarPath = jarPath.substring(JAR_FILE.length(), jarPath.lastIndexOf('!'));
                 }
