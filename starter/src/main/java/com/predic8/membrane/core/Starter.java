@@ -57,8 +57,7 @@ public class Starter {
 	}
 
 	private static URLClassLoader getLoader() {
-		String home = System.getenv(MEMBRANE_HOME);
-		return ClassloaderUtil.getExternalClassloader("file:" + (home != null ? home.replace(" ", "%20") : null));
+        return ClassloaderUtil.getExternalClassloader("file:" + System.getenv(MEMBRANE_HOME));
 	}
 
 	private static int getJavaVersion() {
