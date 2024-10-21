@@ -216,40 +216,8 @@ public class Utils {
         return s.replaceAll("\\W+","-").toLowerCase();
     }
 
-    /**
-     * Safe alternative of Class.getResourceAsStream() that can handle spaces in the base path.
-     * @param obj Object reference of caller. Usually set to `this` of the caller.
-     * @param location Location of the resource. E.g. /foo
-     * @return InputStream of resource.
-     * @throws FileNotFoundException when resource not found.
-     */
     public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
-        try {
-            String jarPath = obj.getClass().getProtectionDomain().getCodeSource().getLocation().toString();
-            System.out.println("jarPath = " + jarPath);
-            if (OSUtil.isWindows() && jarPath.contains(" ") && jarPath.endsWith(".jar")) {
-                if (jarPath.startsWith(FILE)) {
-                    jarPath = jarPath.substring(FILE.length());
-                }
-
-                JarFile jarFile = new JarFile(jarPath);
-                ZipEntry entry = jarFile.getEntry(location);
-                InputStream inputStream;
-                if (entry != null) {
-                    inputStream = jarFile.getInputStream(entry);
-                } else {
-                    throw new FileNotFoundException("File "+ location + " not found in resources.");
-                }
-
-                jarFile.close();
-                return inputStream;
-            } else {
-                return obj.getClass().getResourceAsStream(location);
-            }
-        } catch (IOException e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException(e);
-        }
+        return obj.getClass().getResourceAsStream(location);
     }
 
     public static byte[] createErrorMessage(String msg) {

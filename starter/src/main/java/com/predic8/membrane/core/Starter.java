@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import java.lang.reflect.*;
 import java.net.*;
 
+import static com.predic8.membrane.core.Constants.MEMBRANE_HOME;
 import static java.lang.Integer.*;
 
 /**
@@ -56,7 +57,8 @@ public class Starter {
 	}
 
 	private static URLClassLoader getLoader() {
-		return ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMBRANE_HOME"));
+		String home = System.getenv(MEMBRANE_HOME);
+		return ClassloaderUtil.getExternalClassloader("file:" + (home != null ? home.replace(" ", "%20") : null));
 	}
 
 	private static int getJavaVersion() {
