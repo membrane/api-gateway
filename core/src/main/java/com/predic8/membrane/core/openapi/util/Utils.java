@@ -23,22 +23,27 @@ import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.security.SecurityScheme;
+import com.predic8.membrane.core.util.OSUtil;
 import jakarta.mail.internet.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.ResolverStyle;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -66,6 +71,7 @@ public class Utils {
     // DateTimeFormatter is thread safe!
     static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
     static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ISO_DATE_TIME;
+    public static final String FILE = "file:";
 
     private Utils() {}
 
@@ -210,26 +216,8 @@ public class Utils {
         return s.replaceAll("\\W+","-").toLowerCase();
     }
 
-    /**
-     * Safe alternative of Class.getResourceAsStream() that can handle spaces in the base path.
-     * @param obj Object reference of caller. Usually set to `this` of the caller.
-     * @param location Location of the resource. E.g. /foo
-     * @return InputStream of resource.
-     * @throws FileNotFoundException when resource not found.
-     */
     public static InputStream getResourceAsStream(Object obj, String location) throws FileNotFoundException {
-        try {
-            InputStream inputStream = obj.getClass().getResourceAsStream(new URI(location).getPath());
-
-            if (inputStream == null) {
-                throw new FileNotFoundException("Resource " + location + " not found");
-            }
-
-            return inputStream;
-        } catch (URISyntaxException e) {
-            LOG.error(e.getMessage());
-            throw new RuntimeException(e);
-        }
+        return obj.getClass().getResourceAsStream(location);
     }
 
     public static byte[] createErrorMessage(String msg) {
