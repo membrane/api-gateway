@@ -19,6 +19,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
+import java.net.URLDecoder;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class StateManager {
         if (state2 == null)
             throw new RuntimeException("No CSRF token.");
 
-        Map<String, String> param = URLParamUtil.parseQueryString(state2, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+        Map<String, String> param = URLParamUtil.parseQueryString(URLDecoder.decode(state2), URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
 
         if (!param.containsKey("security_token"))
             throw new RuntimeException("No CSRF token.");

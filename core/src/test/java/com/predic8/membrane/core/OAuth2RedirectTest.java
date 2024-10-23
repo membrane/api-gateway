@@ -25,16 +25,16 @@ import java.util.List;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
 import static com.predic8.membrane.core.interceptor.oauth2.client.b2c.MockAuthorizationServer.SERVER_PORT;
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OAuth2RedirectTest {
 
-    public static final B2CTestConfig TC = new B2CTestConfig();
+    static final B2CTestConfig TC = new B2CTestConfig();
     static Router membraneRouter;
     static Router nginxRouter;
 
     @BeforeAll
     static void setup() throws Exception {
-
         Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
         membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
@@ -56,8 +56,8 @@ public class OAuth2RedirectTest {
         mockAuthorizationServer.init();
 
         Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2001), null, 0);
-        nginxRule.getInterceptors().add(createConditionalIntercpetorWithGroovy("method == 'POST'", "exc.getResponse().setStatusCode(400)"));
-        nginxRule.getInterceptors().add(createConditionalIntercpetorWithGroovy("method == 'GET'", "exc.getResponse().setStatusCode(200)"));
+        nginxRule.getInterceptors().add(createConditionalIntercepetorWithGroovy("method == 'POST'", "exc.getResponse().setStatusCode(400)"));
+        nginxRule.getInterceptors().add(createConditionalIntercepetorWithGroovy("method == 'GET'", "exc.getResponse().setStatusCode(200)"));
         nginxRule.getInterceptors().add(new ReturnInterceptor());
 
         membraneRouter = new Router();
@@ -81,11 +81,11 @@ public class OAuth2RedirectTest {
                 .when()
                 .get(CLIENT_URL)
                 .then()
-                .statusCode(302)  // Expect a redirect to the auth server
+                .statusCode(307)  // Expect a redirect to the auth server
                 .extract().response();
-
+        
         String location = response.getHeader("Location");
-        assert location != null && location.startsWith(AUTH_SERVER_URL);
+        assertTrue(location != null && location.startsWith(AUTH_SERVER_URL));
 
         // Step 2: Simulate user authentication at the auth server
         Response authResponse = given()
@@ -93,15 +93,16 @@ public class OAuth2RedirectTest {
                 .when()
                 .get(location)
                 .then()
-                .statusCode(302)  // Expect a redirect back to the client
+                .statusCode(307)  // Expect a redirect back to the client
                 .extract().response();
 
         String clientRedirect = authResponse.getHeader("Location");
-        assert clientRedirect != null && clientRedirect.startsWith(CLIENT_URL);
+        assertTrue(clientRedirect != null && clientRedirect.startsWith(CLIENT_URL));
+
+        System.out.println("authResponse = " + authResponse.getHeaders());
 
         // Step 3: Follow the redirect back to the client
         given()
-                .cookie(authResponse.getDetailedCookie("SESSION"))  // Pass any session cookies
                 .when()
                 .get(clientRedirect)
                 .then()
@@ -123,7 +124,7 @@ public class OAuth2RedirectTest {
                 .extract().response();
 
         String location = response.getHeader("Location");
-        assert location != null && location.startsWith(AUTH_SERVER_URL);
+        assertTrue(location != null && location.startsWith(AUTH_SERVER_URL));
 
         // Step 2: Simulate user authentication at the auth server
         Response authResponse = given()
@@ -135,11 +136,10 @@ public class OAuth2RedirectTest {
                 .extract().response();
 
         String clientRedirect = authResponse.getHeader("Location");
-        assert clientRedirect != null && clientRedirect.startsWith(CLIENT_URL);
+        assertTrue(clientRedirect != null && clientRedirect.startsWith(CLIENT_URL));
 
         // Step 3: Follow the redirect back to the client
         Response clientResponse = given()
-                .cookie(authResponse.getDetailedCookie("SESSION"))
                 .when()
                 .get(clientRedirect)
                 .then()
@@ -155,7 +155,7 @@ public class OAuth2RedirectTest {
                 .statusCode(400);  // Expecting 400 as per your nginx rule
     }
 
-    private static ConditionalInterceptor createConditionalIntercpetorWithGroovy(String test, String groovy) {
+    private static ConditionalInterceptor createConditionalIntercepetorWithGroovy(String test, String groovy) {
         return new ConditionalInterceptor() {{
             setLanguage(SPEL);
             setTest(test);
