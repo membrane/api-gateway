@@ -26,10 +26,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
 import static io.restassured.RestAssured.given;
@@ -62,7 +60,8 @@ public class OAuth2RedirectTest {
         }});
         azureRule.getInterceptors().add(
             new OAuth2AuthorizationServerInterceptor() {{
-                setLoginViewDisabled(true);
+                setLocation("/home/christian/IdeaProjects/api-gateway/core/src/test/resources/oauth2/loginDialog/dialog");
+                setConsentFile("/home/christian/IdeaProjects/api-gateway/core/src/test/resources/oauth2/consentFile.json");
                 setTokenGenerator(new BearerTokenGenerator());
                 setIssuer("http://localhost:2002");
                 setUserDataProvider(
@@ -151,21 +150,32 @@ public class OAuth2RedirectTest {
         System.out.println("location = " + location);
         assertTrue(location != null && location.startsWith(AUTH_SERVER_URL));
 
-        // Step 2: Simulate user authentication at the auth server
-        Response authResponse = given()
+        // Step 2: Simulate user authentication at the auth server (Step 1)
+        Response formRequest = given()
                 .redirects().follow(false)
                 .cookies(response.getCookies())
-                .header(AUTHORIZATION, "Basic dXNlcjpwYXNzd29yZAo=")
                 .when()
                 .get(location)
+                .then()
+                //.statusCode(200)
+                .extract().response();
+
+        System.out.println("formRequest = " + formRequest.getBody().asPrettyString());
+
+        // Step 3: Simulate user authentication at the auth server (Step 2)
+        Response formResponse = given()
+                .redirects().follow(false)
+                .cookies(formRequest.getCookies())
+                .when()
+                .post(location)
                 .then()
                 .statusCode(307)  // Expect a redirect back to the client
                 .extract().response();
 
-        String clientRedirect = authResponse.getHeader("Location");
+        String clientRedirect = formResponse.getHeader("Location");
         assertTrue(clientRedirect != null && clientRedirect.startsWith(CLIENT_URL));
 
-        // Step 3: Follow the redirect back to the client
+        // Step 4: Follow the redirect back to the client
         Response clientResponse = given()
                 .cookies(response.getCookies())
                 .when()
@@ -174,7 +184,7 @@ public class OAuth2RedirectTest {
                 .statusCode(200)
                 .extract().response();  // Expect successful response
 
-        // Step 4: Make the authenticated POST request
+        // Step 5: Make the authenticated POST request
         given()
                 .cookie(clientResponse.getDetailedCookie("SESSION"))
                 .when()
