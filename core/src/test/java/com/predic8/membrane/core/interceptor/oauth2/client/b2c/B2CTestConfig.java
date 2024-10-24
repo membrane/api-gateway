@@ -28,7 +28,7 @@ public class B2CTestConfig {
     public final String api1Id = UUID.randomUUID().toString();
     public final String api2Id = UUID.randomUUID().toString();
     public final int limit = 500;
-    public final int clientPort = 2000;
+    public final int clientPort = 31337;
 
     public String getClientAddress() {
         return "http://localhost:" + clientPort;
