@@ -35,7 +35,7 @@ public class OAuth2RedirectTest {
 
     @BeforeAll
     static void setup() throws Exception {
-        Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
+        Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 31337), "localhost", 2001);
         membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
             setAuthService(new MembraneAuthorizationService() {{
@@ -73,6 +73,9 @@ public class OAuth2RedirectTest {
         nginxRouter.init();
     }
 
+    private static final String CLIENT_URL = "http://localhost:31337";
+    private static final String AUTH_SERVER_URL = "http://localhost:1337";
+
     @Test
     void testGet() {
         // Step 1: Initial request to the client
@@ -90,6 +93,7 @@ public class OAuth2RedirectTest {
         // Step 2: Simulate user authentication at the auth server
         Response authResponse = given()
                 .redirects().follow(false)
+                .cookies(response.getCookies())
                 .when()
                 .get(location)
                 .then()
@@ -99,52 +103,14 @@ public class OAuth2RedirectTest {
         String clientRedirect = authResponse.getHeader("Location");
         assertTrue(clientRedirect != null && clientRedirect.startsWith(CLIENT_URL));
 
-        System.out.println("authResponse = " + authResponse.getHeaders());
-
-        // Step 3: Follow the redirect back to the client
-        given()
-                .when()
-                .get(clientRedirect)
-                .then()
-                .statusCode(200);  // Expect successful response
-    }
-
-    private static final String CLIENT_URL = "http://localhost:2000";
-    private static final String AUTH_SERVER_URL = "http://localhost:1337";
-
-    @Test
-    void testPost() {
-        // Step 1: Initial request to the client
-        Response response = given()
-                .redirects().follow(false)
-                .when()
-                .get(CLIENT_URL)
-                .then()
-                .statusCode(307)
-                .extract().response();
-
-        String location = response.getHeader("Location");
-        assertTrue(location != null && location.startsWith(AUTH_SERVER_URL));
-
-        // Step 2: Simulate user authentication at the auth server
-        Response authResponse = given()
-                .redirects().follow(false)
-                .when()
-                .get(location)
-                .then()
-                .statusCode(307)
-                .extract().response();
-
-        String clientRedirect = authResponse.getHeader("Location");
-        assertTrue(clientRedirect != null && clientRedirect.startsWith(CLIENT_URL));
-
         // Step 3: Follow the redirect back to the client
         Response clientResponse = given()
+                .cookies(response.getCookies())
                 .when()
                 .get(clientRedirect)
                 .then()
                 .statusCode(200)
-                .extract().response();
+                .extract().response();  // Expect successful response
 
         // Step 4: Make the authenticated POST request
         given()
