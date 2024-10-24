@@ -1,12 +1,17 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.interceptor.LogInterceptor;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.ClaimList;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.StaticClientList;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
-import com.predic8.membrane.core.interceptor.oauth2.client.b2c.B2CTestConfig;
-import com.predic8.membrane.core.interceptor.oauth2.client.b2c.MockAuthorizationServer;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.interceptor.oauth2client.SessionOriginalExchangeStore;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
@@ -20,45 +25,89 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
-import static com.predic8.membrane.core.interceptor.oauth2.client.b2c.MockAuthorizationServer.SERVER_PORT;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OAuth2RedirectTest {
 
-    static final B2CTestConfig TC = new B2CTestConfig();
     static Router membraneRouter;
+    static Router azureRouter;
     static Router nginxRouter;
 
     @BeforeAll
     static void setup() throws Exception {
-        Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 31337), "localhost", 2001);
+        Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
         membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
             setAuthService(new MembraneAuthorizationService() {{
-                setSrc("http://localhost:"+ SERVER_PORT+"/"+TC.tenantId.toString()+"/"+TC.susiFlowId+"/v2.0");
-                setClientSecret(TC.clientSecret);
-                setClientId(TC.clientId);
-                setScope("openid profile offline_access");
+                setSrc("http://localhost:2002");
+                setClientId("abc");
+                setClientSecret("def");
+                setScope("openid profile");
                 setSubject("sub");
             }});
             setOriginalExchangeStore(new SessionOriginalExchangeStore());
         }});
 
-        MockAuthorizationServer mockAuthorizationServer = new MockAuthorizationServer(
-                TC,
-                () -> System.out.println("Login"),
-                () -> System.out.println("Logout")
+        Rule azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002),  "localhost", 80);
+        azureRule.getInterceptors().add(new LogInterceptor() {{
+            setLevel(DEBUG);
+        }});
+        azureRule.getInterceptors().add(
+            new OAuth2AuthorizationServerInterceptor() {{
+                setLoginViewDisabled(true);
+                setTokenGenerator(new BearerTokenGenerator());
+                setIssuer("http://localhost:2002");
+                setUserDataProvider(
+                    new StaticUserDataProvider() {{
+                        setUsers(List.of(new User() {{
+                            setUsername("user");
+                            setPassword("password");
+                        }}));
+                    }}
+                );
+                setClientList(
+                    new StaticClientList() {{
+                        setClients(List.of(new Client() {{
+                            setClientId("abc");
+                            setClientSecret("def");
+                            setCallbackUrl("http://localhost:2000/oauth2callback");
+                        }}));
+                    }}
+                );
+                setClaimList(new ClaimList() {{
+                    setValue("aud email iss sub username");
+                    setScopes(new ArrayList<>() {{
+                        add(new Scope() {{
+                            setId("username");
+                            setClaims("username");
+                        }});
+                        add(new Scope() {{
+                            setId("profile");
+                            setClaims("username email");
+                        }});
+                    }});
+                }});
+            }}
         );
-        mockAuthorizationServer.init();
 
-        Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2001), null, 0);
-        nginxRule.getInterceptors().add(createConditionalIntercepetorWithGroovy("method == 'POST'", "exc.getResponse().setStatusCode(400)"));
-        nginxRule.getInterceptors().add(createConditionalIntercepetorWithGroovy("method == 'GET'", "exc.getResponse().setStatusCode(200)"));
+        Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2001), "localhost", 80);
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithGroovy("method == 'POST'", "exc.getResponse().setStatusCode(400)"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithGroovy("method == 'GET'", "exc.getResponse().setStatusCode(200)"));
         nginxRule.getInterceptors().add(new ReturnInterceptor());
+
+        azureRouter = new Router();
+        azureRouter.setExchangeStore(new ForgetfulExchangeStore());
+        azureRouter.setTransport(new HttpTransport());
+        azureRouter.getRuleManager().addProxyAndOpenPortIfNew(azureRule);
+        azureRouter.init();
 
         membraneRouter = new Router();
         membraneRouter.setExchangeStore(new ForgetfulExchangeStore());
@@ -73,8 +122,19 @@ public class OAuth2RedirectTest {
         nginxRouter.init();
     }
 
-    private static final String CLIENT_URL = "http://localhost:31337";
-    private static final String AUTH_SERVER_URL = "http://localhost:1337";
+    private static final String CLIENT_URL = "http://localhost:2000";
+    private static final String AUTH_SERVER_URL = "http://localhost:2002";
+
+    @Test
+    void wart() throws InterruptedException {
+        Thread threde = new Thread(() -> {
+            try {
+                Thread.sleep(4573894);
+            } catch (Exception e) {}
+        });
+        threde.start();
+        threde.join();
+    }
 
     @Test
     void testGet() {
@@ -86,14 +146,16 @@ public class OAuth2RedirectTest {
                 .then()
                 .statusCode(307)  // Expect a redirect to the auth server
                 .extract().response();
-        
+
         String location = response.getHeader("Location");
+        System.out.println("location = " + location);
         assertTrue(location != null && location.startsWith(AUTH_SERVER_URL));
 
         // Step 2: Simulate user authentication at the auth server
         Response authResponse = given()
                 .redirects().follow(false)
                 .cookies(response.getCookies())
+                .header(AUTHORIZATION, "Basic dXNlcjpwYXNzd29yZAo=")
                 .when()
                 .get(location)
                 .then()
@@ -121,7 +183,7 @@ public class OAuth2RedirectTest {
                 .statusCode(400);  // Expecting 400 as per your nginx rule
     }
 
-    private static ConditionalInterceptor createConditionalIntercepetorWithGroovy(String test, String groovy) {
+    private static ConditionalInterceptor createConditionalInterceptorWithGroovy(String test, String groovy) {
         return new ConditionalInterceptor() {{
             setLanguage(SPEL);
             setTest(test);
@@ -134,6 +196,7 @@ public class OAuth2RedirectTest {
     @AfterAll
     public static void tearDown() throws IOException {
         membraneRouter.shutdown();
+        azureRouter.shutdown();
         nginxRouter.shutdown();
     }
 
