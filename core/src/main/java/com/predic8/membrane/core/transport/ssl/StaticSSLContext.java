@@ -280,6 +280,10 @@ public class StaticSSLContext extends SSLContext {
         }
     }
 
+    public SSLParser getSslParser() {
+        return sslParser;
+    }
+
     public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException {
         SSLServerSocketFactory sslssf = sslc.getServerSocketFactory();
         SSLServerSocket sslss = (SSLServerSocket) sslssf.createServerSocket(port, backlog, bindAddress);

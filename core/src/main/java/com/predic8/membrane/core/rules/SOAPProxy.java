@@ -54,6 +54,11 @@ import javax.xml.namespace.QName;
 
 import static com.predic8.membrane.core.Constants.*;
 
+//PV
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.RuleManager;
+import java.util.ArrayList;
+
 /**
  * @description <p>
  *              A SOAP proxy can be deployed on front of a SOAP Web Service. It conceals the server and offers the same
@@ -74,6 +79,10 @@ public class SOAPProxy extends AbstractServiceProxy {
 	protected String portName;
 	protected String targetPath;
 	protected HttpClientConfiguration httpClientConfig;
+
+	//PV
+        // List containing all service SOAPProxies defined in the WSDL
+	protected List<SOAPProxy> proxies = new ArrayList();
 
 	// set during initialization
 	protected ResolverMap resolverMap;
@@ -97,49 +106,27 @@ public class SOAPProxy extends AbstractServiceProxy {
 			Definitions definitions = wsdlParser.parse(ctx);
 
 			List<Service> services = definitions.getServices();
-			if (services.size() != 1)
-				throw new IllegalArgumentException("There are " + services.size() + " services defined in the WSDL, but exactly 1 is required for soapProxy.");
-			Service service = services.get(0);
+			/** PV
+                         * A WSDL has 1 or more services. Process the first service as usual.
+                         * Code isolated as 'configureSOAPProxy()' function because we might need it for other services.
+                         */
+			configureSOAPProxy(this, services.get(0), definitions, null);
 
-			if (StringUtils.isEmpty(name))
-				name = StringUtils.isEmpty(service.getName()) ? definitions.getName() : service.getName();
+			// Check if there are more services in the WSDL
+			if (services.size() > 1) {
+				// Already processed the first service
+				services.remove(0);
+			
+				for (Service service: services) {
+					// Create instance of ourselves (SOAPProxy)
+					SOAPProxy item = (SOAPProxy)getNewInstance();
+					item.key = new ServiceProxyKey(this.key);
+					item.key.setPath(null);
 
-				List<Port> ports = service.getPorts();
-				Port port = selectPort(ports, portName);
-
-				String location = port.getAddress().getLocation();
-				if (location == null)
-					throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
-				try {
-					URL url = new URL(location);
-					if (wsdl.startsWith("service:")) {
-						target.setUrl(wsdl.substring(0, wsdl.indexOf('/')));
-					} else {
-						target.setHost(url.getHost());
-						if (url.getPort() != -1)
-							target.setPort(url.getPort());
-						else
-							target.setPort(url.getDefaultPort());
-					}
-					if (key.getPath() == null) {
-						key.setUsePathPattern(true);
-						key.setPathRegExp(false);
-						key.setPath(url.getPath());
-					} else {
-						String query = "";
-						if(url.getQuery() != null){
-							query = "?" + url.getQuery();
-						}
-						targetPath = url.getPath()+ query;
-					}
-					if(location.startsWith("https")){
-						SSLParser sslOutboundParser = new SSLParser();
-						target.setSslParser(sslOutboundParser);
-					}
-					((ServiceProxyKey)key).setMethod("*");
-				} catch (MalformedURLException e) {
-					throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
+                                        // now process each service
+					configureSOAPProxy(item, service, definitions, this);
 				}
+			}
 		} catch (Exception e) {
 			Throwable f = e;
 			while (f.getCause() != null && ! (f instanceof ResourceRetrievalException))
@@ -156,6 +143,52 @@ public class SOAPProxy extends AbstractServiceProxy {
 				}
 			}
 			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
+		}
+	}
+
+	/** PV
+         * First call to this function is with the 'real' SOAPProxy object created by the Spring context. Possible next calls
+         * are for the other SOAPProxy objects created by services defined in the WSDL, with a reference to the 'real' SOAPProxy object.
+         */
+	private void configureSOAPProxy(SOAPProxy proxy, Service service, Definitions definitions, SOAPProxy firstRule) throws Exception {
+		if (StringUtils.isEmpty(proxy.name))
+			proxy.name = StringUtils.isEmpty(service.getName()) ? definitions.getName() : service.getName();
+
+		List<Port> ports = service.getPorts();
+		Port port = selectPort(ports, portName);
+
+		String location = port.getAddress().getLocation();
+		if (location == null)
+			throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
+		try {
+			URL url = new URL(location);
+			if (wsdl.startsWith("service:")) {
+				proxy.target.setUrl(wsdl.substring(0, wsdl.indexOf('/')));
+			} else {
+				proxy.target.setHost(url.getHost());
+				if (url.getPort() != -1)
+					proxy.target.setPort(url.getPort());
+				else
+					proxy.target.setPort(url.getDefaultPort());
+			}
+			if (proxy.key.getPath() == null) {
+				proxy.key.setUsePathPattern(true);
+				proxy.key.setPathRegExp(false);
+				proxy.key.setPath(url.getPath());
+			} else {
+				String query = "";
+				if(url.getQuery() != null){
+					query = "?" + url.getQuery();
+				}
+				proxy.targetPath = url.getPath()+ query;
+			}
+			if(location.startsWith("https")){
+				proxy.target.setSslParser(firstRule == null ? new SSLParser() : firstRule.getTargetSSL());
+			}
+			((ServiceProxyKey)proxy.key).setMethod("*");
+			proxies.add(proxy);
+		} catch (MalformedURLException e) {
+			throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
 		}
 	}
 
@@ -203,60 +236,64 @@ public class SOAPProxy extends AbstractServiceProxy {
 	public void configure() throws Exception {
 
 		parseWSDL();
-		// remove previously added interceptors
-		for(; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
-			interceptors.remove(0);
 
+		// Process each SOAPProxy as usual 
+		for (SOAPProxy proxy: proxies) {
+			// remove previously added interceptors
+			for(; proxy.automaticallyAddedInterceptorCount > 0; proxy.automaticallyAddedInterceptorCount--)
+				proxy.interceptors.remove(0);
 
-		// add interceptors (in reverse order) to position 0.
+			// add interceptors (in reverse order) to position 0.
 
-		WebServiceExplorerInterceptor sui = new WebServiceExplorerInterceptor();
-		sui.setWsdl(wsdl);
-		sui.setPortName(portName);
-		interceptors.add(0, sui);
-		automaticallyAddedInterceptorCount++;
+			WebServiceExplorerInterceptor sui = new WebServiceExplorerInterceptor();
+			sui.setWsdl(wsdl);
+			sui.setPortName(proxy.portName);
+			proxy.interceptors.add(0, sui);
+			proxy.automaticallyAddedInterceptorCount++;
 
-		boolean hasPublisher = getInterceptorOfType(WSDLPublisherInterceptor.class) != null;
-		if (!hasPublisher) {
-			WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
-			wp.setWsdl(wsdl);
-			interceptors.add(0, wp);
-			automaticallyAddedInterceptorCount++;
-		}
+			boolean hasPublisher = proxy.getInterceptorOfType(WSDLPublisherInterceptor.class) != null;
+			if (!hasPublisher) {
+				WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
+				wp.setWsdl(wsdl);
+				proxy.interceptors.add(0, wp);
+				proxy.automaticallyAddedInterceptorCount++;
+			}
 
-		WSDLInterceptor wsdlInterceptor = getInterceptorOfType(WSDLInterceptor.class);
-		boolean hasRewriter = wsdlInterceptor != null;
-		if (!hasRewriter) {
-			wsdlInterceptor = new WSDLInterceptor();
-			interceptors.add(0, wsdlInterceptor);
-			automaticallyAddedInterceptorCount++;
-		}
-		if (key.getPath() != null) {
-			final String keyPath = key.getPath();
-			final String name = URLUtil.getName(router.getUriFactory(), keyPath);
-			wsdlInterceptor.setPathRewriter(path2 -> {
-				try {
-					if (path2.contains("://")) {
-						return new URL(new URL(path2), keyPath).toString();
-					} else {
-						Matcher m = relativePathPattern.matcher(path2);
-						return m.replaceAll("./" + name + "?");
+			WSDLInterceptor wsdlInterceptor = proxy.getInterceptorOfType(WSDLInterceptor.class);
+			boolean hasRewriter = wsdlInterceptor != null;
+			if (!hasRewriter) {
+				wsdlInterceptor = new WSDLInterceptor();
+				proxy.interceptors.add(0, wsdlInterceptor);
+				proxy.automaticallyAddedInterceptorCount++;
+			}
+
+			if (proxy.key.getPath() != null) {
+				final String keyPath = proxy.key.getPath();
+				final String name = URLUtil.getName(router.getUriFactory(), keyPath);
+				wsdlInterceptor.setPathRewriter(path2 -> {
+					try {
+						if (path2.contains("://")) {
+							return new URL(new URL(path2), keyPath).toString();
+						} else {
+							Matcher m = relativePathPattern.matcher(path2);
+							return m.replaceAll("./" + name + "?");
+						}
+					} catch (MalformedURLException e) {
+						log.error("Cannot parse URL " + path2);
 					}
-				} catch (MalformedURLException e) {
-					log.error("Cannot parse URL " + path2);
-				}
-				return path2;
-			});
-		}
+					return path2;
+				});
+			}
 
-		if (hasRewriter && !hasPublisher)
-			log.warn("A <soapProxy> contains a <wsdlRewriter>, but no <wsdlPublisher>. Probably you want to insert a <wsdlPublisher> just after the <wsdlRewriter>. (Or, if this is a valid use case, please notify us at " + PRODUCT_CONTACT_EMAIL + ".)");
+			if (hasRewriter && !hasPublisher)
+				log.warn("A <soapProxy> contains a <wsdlRewriter>, but no <wsdlPublisher>. Probably you want to insert a <wsdlPublisher> just after the <wsdlRewriter>. (Or, if this is a valid use case, please notify us at " + PRODUCT_CONTACT_EMAIL + ".)");
 
-		if (targetPath != null) {
-			RewriteInterceptor ri = new RewriteInterceptor();
-			ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
-			interceptors.add(0, ri);
-			automaticallyAddedInterceptorCount++;
+			if (proxy.targetPath != null) {
+				RewriteInterceptor ri = new RewriteInterceptor();
+				ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(proxy.key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
+				proxy.interceptors.add(0, ri);
+				proxy.automaticallyAddedInterceptorCount++;
+			}
 		}
 	}
 
@@ -276,6 +313,24 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 		configure();
 		super.init();
+
+		/** PV
+                 * Here, the 'real' SOAPProxy is initialized, including its SSLContext. Since all other SOAPProxies
+                 * are in the same WSDL, they share the same endpoint. So, copy the SSLContext to all other proxies
+                 * and initialize.
+                 */
+                StaticSSLContext sslc = ((StaticSSLContext)getSslInboundContext());
+		SSLParser sslParser = sslc != null ? sslc.getSslParser() : this.target.getSslParser();
+
+		for (SOAPProxy proxy: proxies) {
+			if (proxy == this)
+				continue;
+			proxy.target.setSslParser(sslParser);
+			proxy.init(this.router);
+			proxy.initSsl();
+			// This can potentially cause ConcurrentModificationException
+			proxy.router.getRuleManager().addProxy(proxy, RuleManager.RuleDefinitionSource.SPRING);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
