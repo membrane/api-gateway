@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
+import com.predic8.membrane.core.oauth2.OAuth2RedirectTest;
 import com.predic8.membrane.core.resolver.ResolverTest;
 import com.predic8.membrane.core.rules.ProxySSLTest;
 import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;

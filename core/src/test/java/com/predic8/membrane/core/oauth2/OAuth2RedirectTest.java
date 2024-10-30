@@ -1,5 +1,6 @@
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.oauth2;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
@@ -27,16 +28,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
-import static io.restassured.RestAssured.given;
-import static org.apache.http.HttpHeaders.LOCATION;
-import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
-import static org.hamcrest.text.MatchesPattern.matchesPattern;
+import static com.predic8.membrane.core.oauth2.OAuth2AuthFlowClient.*;
 
 public class OAuth2RedirectTest {
 
@@ -46,186 +42,44 @@ public class OAuth2RedirectTest {
 
     @BeforeAll
     static void setup() throws Exception {
-        Rule azureRule = getAzureRule();
-        Rule membraneRule = getMembraneRule();
-        Rule nginxRule = getNginxRule();
-
-        azureRouter = startProxyRule(azureRule);
-        membraneRouter = startProxyRule(membraneRule);
-        nginxRouter = startProxyRule(nginxRule);
+        azureRouter = startProxyRule(getAzureRule());
+        membraneRouter = startProxyRule(getMembraneRule());
+        nginxRouter = startProxyRule(getNginxRule());
     }
 
-    private static final String CLIENT_URL = "http://localhost:2000";
-
-    private static final String AUTH_SERVER_URL = "http://localhost:2002";
-
-
-    // @formatter:off
     @Test
     void testGet() {
-        Map<String, String> cookies = new HashMap<>();
-        Map<String, String> memCookies = new HashMap<>();
-
         // Step 1: Initial request to the client
-        Response clientResponse = step1originalRequest(memCookies);
+        Response clientResponse = step1originalRequest();
 
         // Step 2: Send to authentication at OAuth2 server
-        Response formRedirect = step2sendAuthToOAuth2Server(cookies, clientResponse);
+        String loginLocation = step2sendAuthToOAuth2Server(clientResponse);
 
         // Step 3: Open login page
-        step3openLoginPage(cookies, formRedirect);
+        step3openLoginPage(loginLocation);
 
         // Step 4: Submit login
-        step4submitLogin(cookies, formRedirect);
+        step4submitLogin(loginLocation);
 
         // Step 5: Redirect to consent
-        Response consentRedirect = step5redirectToConsent(cookies);
+        String consentLocation = step5redirectToConsent();
 
         // Step 6: Open consent dialog
-        step6openConsentDialog(cookies, consentRedirect);
+        step6openConsentDialog(consentLocation);
 
         // Step 7: Submit consent
-        step7submitConsent(cookies, consentRedirect);
+        step7submitConsent(consentLocation);
 
         // Step 8: Redirect back to client
-        Response clientRedirect = step8redirectToClient(cookies);
+        String callbackUrl = step8redirectToClient();
 
         // Step 9: Exchange Code for Token
-        step9exchangeCodeForToken(memCookies, clientRedirect);
+        step9exchangeCodeForToken(callbackUrl);
 
         // Step 10: Make the authenticated POST request
-        step10makeAuthPostRequest(memCookies);
+        step10makeAuthPostRequest();
     }
 
-    private static void step10makeAuthPostRequest(Map<String,String> memCookies) {
-        given()
-            .cookies(memCookies)
-        .when()
-            .post(CLIENT_URL)
-        .then()
-            .body(equalToIgnoringCase("get"));
-    }
-
-    private static void step9exchangeCodeForToken(Map<String,String> memCookies, Response clientRedirect) {
-        given()
-            .redirects().follow(false)
-            .cookies(memCookies)
-        .when()
-            .post(clientRedirect.getHeader(LOCATION))
-        .then()
-            .statusCode(307)
-            .header(LOCATION, "/")
-            .extract().response();
-    }
-
-    private static Response step8redirectToClient(Map<String,String> cookies) {
-        return given()
-                    .redirects().follow(false)
-                    .cookies(cookies)
-                .when()
-                    .post(AUTH_SERVER_URL)
-                .then()
-                    .statusCode(307)
-                    .header(LOCATION, matchesPattern(CLIENT_URL + ".*"))
-                    .extract().response();
-    }
-
-    private static void step7submitConsent(Map<String,String> cookies, Response consentRedirect) {
-        given()
-            .redirects().follow(false)
-            .cookies(cookies)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .header("Accept-Charset", "UTF-8")
-            .formParam("consent", "Accept")
-        .when()
-            .post(AUTH_SERVER_URL + consentRedirect.getHeader(LOCATION))
-        .then()
-            .statusCode(200)
-            .header(LOCATION, "/")
-            .extract().response();
-    }
-
-    private static void step6openConsentDialog(Map<String,String> cookies, Response consentRedirect) {
-        given()
-            .redirects().follow(false)
-            .cookies(cookies)
-        .when()
-            .get(AUTH_SERVER_URL + consentRedirect.getHeader(LOCATION))
-        .then()
-            .statusCode(200)
-            .extract().response();
-    }
-
-    private static Response step5redirectToConsent(Map<String,String> cookies) {
-        return given()
-                    .redirects().follow(false)
-                    .cookies(cookies)
-                .when()
-                    .get(AUTH_SERVER_URL)
-                .then()
-                    .statusCode(307)
-                    .header(LOCATION, matchesPattern("/login/consent.*"))
-                    .extract().response();
-    }
-
-    private static void step4submitLogin(Map<String,String> cookies, Response formRedirect) {
-        given()
-            .redirects().follow(false)
-            .cookies(cookies)
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .header("Accept-Charset", "UTF-8")
-            .formParam("username", "user")
-            .formParam("password", "password")
-        .when()
-            .post(AUTH_SERVER_URL + formRedirect.getHeader(LOCATION))
-        .then()
-            .statusCode(200)
-            .header(LOCATION, "/")
-            .extract().response();
-    }
-
-    private static void step3openLoginPage(Map<String,String> cookies, Response formRedirect) {
-        given()
-            .redirects().follow(true)
-            .cookies(cookies)
-        .when()
-            .get(AUTH_SERVER_URL + formRedirect.getHeader(LOCATION))
-        .then()
-            .statusCode(200)
-            .extract().response();
-    }
-
-    private static @NotNull Response step2sendAuthToOAuth2Server(Map<String,String> cookies, Response response) {
-        Response formRedirect =
-            given()
-                .redirects().follow(false)
-                .cookies(cookies)
-                .urlEncodingEnabled(false)
-            .when()
-                .get(response.getHeader(LOCATION))
-            .then()
-                .statusCode(307)
-                .header(LOCATION, matchesPattern("/login.*"))
-                .extract().response();
-            cookies.putAll(formRedirect.getCookies());
-        return formRedirect;
-    }
-
-    private static @NotNull Response step1originalRequest(Map<String,String> memCookies) {
-        Response response =
-            given()
-                .redirects().follow(false)
-            .when()
-                .get(CLIENT_URL)
-            .then()
-                .statusCode(307)
-                .header(LOCATION, matchesPattern(AUTH_SERVER_URL + ".*"))
-                .extract().response();
-            memCookies.putAll(response.getCookies());
-        return response;
-    }
-
-    // @formatter:on
     private static ConditionalInterceptor createConditionalInterceptorWithReturnMessage(String test, String returnMessage) {
         return new ConditionalInterceptor() {{
             setLanguage(SPEL);
