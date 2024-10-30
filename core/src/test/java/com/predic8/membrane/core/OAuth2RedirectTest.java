@@ -26,10 +26,13 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
+import static io.restassured.RestAssured.config;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,7 +51,7 @@ public class OAuth2RedirectTest {
                 setSrc("http://localhost:2002");
                 setClientId("abc");
                 setClientSecret("def");
-                setScope("openid profile");
+                setScope("openid");
                 setSubject("sub");
             }});
             setOriginalExchangeStore(new SessionOriginalExchangeStore());
@@ -60,8 +63,8 @@ public class OAuth2RedirectTest {
         }});
         azureRule.getInterceptors().add(
             new OAuth2AuthorizationServerInterceptor() {{
-                setLocation("/home/christian/IdeaProjects/api-gateway/core/src/test/resources/oauth2/loginDialog/dialog");
-                setConsentFile("/home/christian/IdeaProjects/api-gateway/core/src/test/resources/oauth2/consentFile.json");
+                setLocation("/home/burchgart/IdeaProjects/api-gateway/core/src/test/resources/oauth2/loginDialog/dialog");
+                setConsentFile("/home/burchgart/IdeaProjects/api-gateway/core/src/test/resources/oauth2/consentFile.json");
                 setTokenGenerator(new BearerTokenGenerator());
                 setIssuer("http://localhost:2002");
                 setUserDataProvider(
@@ -137,60 +140,118 @@ public class OAuth2RedirectTest {
 
     @Test
     void testGet() {
+        Map<String, String> cookies = new HashMap<>();
+
         // Step 1: Initial request to the client
         Response response = given()
-                .redirects().follow(false)  // Don't automatically follow redirects
+                .redirects().follow(false)
                 .when()
                 .get(CLIENT_URL)
                 .then()
-                .statusCode(307)  // Expect a redirect to the auth server
+                .statusCode(307)
                 .extract().response();
+        //noinspection CollectionAddAllCanBeReplacedWithConstructor
+        cookies.putAll(response.getCookies());
 
         String location = response.getHeader("Location");
         System.out.println("location = " + location);
         assertTrue(location != null && location.startsWith(AUTH_SERVER_URL));
 
-        // Step 2: Simulate user authentication at the auth server (Step 1)
-        Response formRequest = given()
+        // Step 2: Simulate user authentication at the auth server
+        Response formRedirect = given()
                 .redirects().follow(false)
-                .cookies(response.getCookies())
+                .cookies(cookies)
                 .when()
                 .get(location)
                 .then()
-                //.statusCode(200)
+                .statusCode(307)
                 .extract().response();
+        cookies.putAll(formRedirect.getCookies());
 
-        System.out.println("formRequest = " + formRequest.getBody().asPrettyString());
+        String dialogLocation = formRedirect.getHeader("Location");
+        System.out.println("dialogLocation = " + dialogLocation);
+        assertTrue(dialogLocation != null && dialogLocation.startsWith("/"));
 
-        // Step 3: Simulate user authentication at the auth server (Step 2)
-        Response formResponse = given()
-                .redirects().follow(false)
-                .cookies(formRequest.getCookies())
+        // Step 3: Open login page
+        Response formRequest = given()
+                .redirects().follow(true)
+                .cookies(cookies)
                 .when()
-                .post(location)
-                .then()
-                .statusCode(307)  // Expect a redirect back to the client
-                .extract().response();
-
-        String clientRedirect = formResponse.getHeader("Location");
-        assertTrue(clientRedirect != null && clientRedirect.startsWith(CLIENT_URL));
-
-        // Step 4: Follow the redirect back to the client
-        Response clientResponse = given()
-                .cookies(response.getCookies())
-                .when()
-                .get(clientRedirect)
+                .get(AUTH_SERVER_URL + dialogLocation)
                 .then()
                 .statusCode(200)
-                .extract().response();  // Expect successful response
+                .extract().response();
+        cookies.putAll(formRequest.getCookies());
+
+        System.out.println("formRequest = " + formRequest.body().prettyPrint());
+
+        // Step 4: Submit login
+        Response formSubmit = given()
+                .redirects().follow(false)
+                .cookies(cookies)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Charset", "UTF-8")
+                .formParam("username", "user")
+                .formParam("password", "password")
+                .when()
+                .post(AUTH_SERVER_URL + dialogLocation)
+                .then()
+                .statusCode(200)
+                .extract().response();
+        cookies.putAll(formSubmit.getCookies());
+
+        System.out.println("formSubmit.prettyPrint() = " + formSubmit.prettyPrint());
+        String clientRedirect = formSubmit.getHeader("Location");
+        System.out.println("clientRedirect = " + clientRedirect);
+        assertTrue(clientRedirect != null && clientRedirect.startsWith(CLIENT_URL));
+
+        // Step 4: Submit login
+        Response formRedire = given()
+                .redirects().follow(false)
+                .cookies(cookies)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Charset", "UTF-8")
+                .formParam("username", "user")
+                .formParam("password", "password")
+                .when()
+                .post(AUTH_SERVER_URL)
+                .then()
+                .statusCode(307)
+                .extract().response();
+        cookies.putAll(formRedire.getCookies());
+
+        System.out.println("formSubmit.prettyPrint() = " + formRedire.prettyPrint());
+        String clientRedirect2 = formRedire.getHeader("Location");
+        System.out.println("clientRedirect = " + clientRedirect2);
+        //assertTrue(clientRedirect2 != null && clientRedirect2.startsWith(CLIENT_URL));
+
+        // Step 4.5: Submit login2
+        Response formRedire2 = given()
+                .redirects().follow(false)
+                .cookies(cookies)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Accept-Charset", "UTF-8")
+                .formParam("username", "user")
+                .formParam("password", "password")
+                .when()
+                .post(clientRedirect2)
+                .then()
+                .statusCode(307)
+                .extract().response();
+        cookies.putAll(formRedire2.getCookies());
+
+        System.out.println("formRedire2.prettyPrint() = " + formRedire.prettyPrint());
+        String clientRedirect3 = formRedire2.getHeader("Location");
+        System.out.println("clientRedirect3 = " + clientRedirect3);
+        assertTrue(clientRedirect3 != null && clientRedirect3.startsWith(CLIENT_URL));
 
         // Step 5: Make the authenticated POST request
         given()
-                .cookie(clientResponse.getDetailedCookie("SESSION"))
+                .cookies(cookies)
                 .when()
-                .post(CLIENT_URL)
+                .post(clientRedirect3)
                 .then()
-                .statusCode(400);  // Expecting 400 as per your nginx rule
+                .statusCode(400);
     }
 
     private static ConditionalInterceptor createConditionalInterceptorWithGroovy(String test, String groovy) {
