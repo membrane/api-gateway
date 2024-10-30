@@ -20,6 +20,7 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import io.restassured.response.Response;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,104 +40,25 @@ import static org.hamcrest.text.MatchesPattern.matchesPattern;
 
 public class OAuth2RedirectTest {
 
-    static Router membraneRouter;
     static Router azureRouter;
+    static Router membraneRouter;
     static Router nginxRouter;
 
     @BeforeAll
     static void setup() throws Exception {
-        Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
-        membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
-            setSessionManager(new InMemorySessionManager());
-            setAuthService(new MembraneAuthorizationService() {{
-                setSrc("http://localhost:2002");
-                setClientId("abc");
-                setClientSecret("def");
-                setScope("openid profile");
-            }});
-            setOriginalExchangeStore(new SessionOriginalExchangeStore());
-        }});
+        Rule azureRule = getAzureRule();
+        Rule membraneRule = getMembraneRule();
+        Rule nginxRule = getNginxRule();
 
-        Rule azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002),  "localhost", 80);
-        azureRule.getInterceptors().add(new LogInterceptor() {{
-            setLevel(DEBUG);
-        }});
-        azureRule.getInterceptors().add(
-            new OAuth2AuthorizationServerInterceptor() {{
-                setLocation("src/test/resources/openId/dialog");
-                setConsentFile("src/test/resources/openId/consentFile.json");
-                setTokenGenerator(new BearerTokenGenerator());
-                setIssuer("http://localhost:2002");
-                setUserDataProvider(
-                    new StaticUserDataProvider() {{
-                        setUsers(List.of(new User() {{
-                            setUsername("user");
-                            setPassword("password");
-                        }}));
-                    }}
-                );
-                setClientList(
-                    new StaticClientList() {{
-                        setClients(List.of(new Client() {{
-                            setClientId("abc");
-                            setClientSecret("def");
-                            setCallbackUrl("http://localhost:2000/oauth2callback");
-                        }}));
-                    }}
-                );
-                setClaimList(new ClaimList() {{
-                    setValue("aud email iss sub username");
-                    setScopes(new ArrayList<>() {{
-                        add(new Scope() {{
-                            setId("username");
-                            setClaims("username");
-                        }});
-                        add(new Scope() {{
-                            setId("profile");
-                            setClaims("username email");
-                        }});
-                    }});
-                }});
-            }}
-        );
-
-        Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST"));
-        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET"));
-        nginxRule.getInterceptors().add(new ReturnInterceptor());
-
-        azureRouter = new Router();
-        azureRouter.setExchangeStore(new ForgetfulExchangeStore());
-        azureRouter.setTransport(new HttpTransport());
-        azureRouter.getRuleManager().addProxyAndOpenPortIfNew(azureRule);
-        azureRouter.init();
-
-        membraneRouter = new Router();
-        membraneRouter.setExchangeStore(new ForgetfulExchangeStore());
-        membraneRouter.setTransport(new HttpTransport());
-        membraneRouter.getRuleManager().addProxyAndOpenPortIfNew(membraneRule);
-        membraneRouter.init();
-
-        nginxRouter = new Router();
-        nginxRouter.setExchangeStore(new ForgetfulExchangeStore());
-        nginxRouter.setTransport(new HttpTransport());
-        nginxRouter.getRuleManager().addProxyAndOpenPortIfNew(nginxRule);
-        nginxRouter.init();
+        azureRouter = startProxyRule(azureRule);
+        membraneRouter = startProxyRule(membraneRule);
+        nginxRouter = startProxyRule(nginxRule);
     }
 
     private static final String CLIENT_URL = "http://localhost:2000";
+
     private static final String AUTH_SERVER_URL = "http://localhost:2002";
 
-    @Test
-    void wart() throws InterruptedException {
-        Thread threde = new Thread(() -> {
-            try {
-                Thread.sleep(4573894);
-            } catch (Exception e) {}
-        });
-        threde.start();
-        threde.join();
-    }
 
     // @formatter:off
     @Test
@@ -145,19 +67,135 @@ public class OAuth2RedirectTest {
         Map<String, String> memCookies = new HashMap<>();
 
         // Step 1: Initial request to the client
-        Response response =
-            given()
-                .redirects().follow(false)
-            .when()
-                .get(CLIENT_URL)
-            .then()
-                .statusCode(307)
-                .header(LOCATION, matchesPattern(AUTH_SERVER_URL + ".*"))
-                .extract().response();
-        //noinspection CollectionAddAllCanBeReplacedWithConstructor
-        memCookies.putAll(response.getCookies());
+        Response clientResponse = step1originalRequest(memCookies);
 
         // Step 2: Send to authentication at OAuth2 server
+        Response formRedirect = step2sendAuthToOAuth2Server(cookies, clientResponse);
+
+        // Step 3: Open login page
+        step3openLoginPage(cookies, formRedirect);
+
+        // Step 4: Submit login
+        step4submitLogin(cookies, formRedirect);
+
+        // Step 5: Redirect to consent
+        Response consentRedirect = step5redirectToConsent(cookies);
+
+        // Step 6: Open consent dialog
+        step6openConsentDialog(cookies, consentRedirect);
+
+        // Step 7: Submit consent
+        step7submitConsent(cookies, consentRedirect);
+
+        // Step 8: Redirect back to client
+        Response clientRedirect = step8redirectToClient(cookies);
+
+        // Step 9: Exchange Code for Token
+        step9exchangeCodeForToken(memCookies, clientRedirect);
+
+        // Step 10: Make the authenticated POST request
+        step10makeAuthPostRequest(memCookies);
+    }
+
+    private static void step10makeAuthPostRequest(Map<String,String> memCookies) {
+        given()
+            .cookies(memCookies)
+        .when()
+            .post(CLIENT_URL)
+        .then()
+            .body(equalToIgnoringCase("get"));
+    }
+
+    private static void step9exchangeCodeForToken(Map<String,String> memCookies, Response clientRedirect) {
+        given()
+            .redirects().follow(false)
+            .cookies(memCookies)
+        .when()
+            .post(clientRedirect.getHeader(LOCATION))
+        .then()
+            .statusCode(307)
+            .header(LOCATION, "/")
+            .extract().response();
+    }
+
+    private static Response step8redirectToClient(Map<String,String> cookies) {
+        return given()
+                    .redirects().follow(false)
+                    .cookies(cookies)
+                .when()
+                    .post(AUTH_SERVER_URL)
+                .then()
+                    .statusCode(307)
+                    .header(LOCATION, matchesPattern(CLIENT_URL + ".*"))
+                    .extract().response();
+    }
+
+    private static void step7submitConsent(Map<String,String> cookies, Response consentRedirect) {
+        given()
+            .redirects().follow(false)
+            .cookies(cookies)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .header("Accept-Charset", "UTF-8")
+            .formParam("consent", "Accept")
+        .when()
+            .post(AUTH_SERVER_URL + consentRedirect.getHeader(LOCATION))
+        .then()
+            .statusCode(200)
+            .header(LOCATION, "/")
+            .extract().response();
+    }
+
+    private static void step6openConsentDialog(Map<String,String> cookies, Response consentRedirect) {
+        given()
+            .redirects().follow(false)
+            .cookies(cookies)
+        .when()
+            .get(AUTH_SERVER_URL + consentRedirect.getHeader(LOCATION))
+        .then()
+            .statusCode(200)
+            .extract().response();
+    }
+
+    private static Response step5redirectToConsent(Map<String,String> cookies) {
+        return given()
+                    .redirects().follow(false)
+                    .cookies(cookies)
+                .when()
+                    .get(AUTH_SERVER_URL)
+                .then()
+                    .statusCode(307)
+                    .header(LOCATION, matchesPattern("/login/consent.*"))
+                    .extract().response();
+    }
+
+    private static void step4submitLogin(Map<String,String> cookies, Response formRedirect) {
+        given()
+            .redirects().follow(false)
+            .cookies(cookies)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .header("Accept-Charset", "UTF-8")
+            .formParam("username", "user")
+            .formParam("password", "password")
+        .when()
+            .post(AUTH_SERVER_URL + formRedirect.getHeader(LOCATION))
+        .then()
+            .statusCode(200)
+            .header(LOCATION, "/")
+            .extract().response();
+    }
+
+    private static void step3openLoginPage(Map<String,String> cookies, Response formRedirect) {
+        given()
+            .redirects().follow(true)
+            .cookies(cookies)
+        .when()
+            .get(AUTH_SERVER_URL + formRedirect.getHeader(LOCATION))
+        .then()
+            .statusCode(200)
+            .extract().response();
+    }
+
+    private static @NotNull Response step2sendAuthToOAuth2Server(Map<String,String> cookies, Response response) {
         Response formRedirect =
             given()
                 .redirects().follow(false)
@@ -169,111 +207,25 @@ public class OAuth2RedirectTest {
                 .statusCode(307)
                 .header(LOCATION, matchesPattern("/login.*"))
                 .extract().response();
-        cookies.putAll(formRedirect.getCookies());
-
-        // Step 3: Open login page
-        Response formRequest =
-            given()
-                .redirects().follow(true)
-                .cookies(cookies)
-            .when()
-                .get(AUTH_SERVER_URL + formRedirect.getHeader(LOCATION))
-            .then()
-                .statusCode(200)
-                .extract().response();
-        cookies.putAll(formRequest.getCookies());
-
-        // Step 4: Submit login
-        Response formSubmit =
-            given()
-                .redirects().follow(false)
-                .cookies(cookies)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Accept-Charset", "UTF-8")
-                .formParam("username", "user")
-                .formParam("password", "password")
-            .when()
-                .post(AUTH_SERVER_URL + formRedirect.getHeader(LOCATION))
-            .then()
-                .statusCode(200)
-                .header(LOCATION, "/")
-                .extract().response();
-        cookies.putAll(formSubmit.getCookies());
-
-        // Step 5: Redirect to consent
-        Response consentRedirect =
-            given()
-                .redirects().follow(false)
-                .cookies(cookies)
-            .when()
-                .get(AUTH_SERVER_URL)
-            .then()
-                .statusCode(307)
-                .header(LOCATION, matchesPattern("/login/consent.*"))
-                .extract().response();
-        cookies.putAll(consentRedirect.getCookies());
-
-        // Step 6: Open consent dialog
-        Response consentDialog =
-            given()
-                .redirects().follow(false)
-                .cookies(cookies)
-            .when()
-                .get(AUTH_SERVER_URL + consentRedirect.getHeader(LOCATION))
-            .then()
-                .statusCode(200)
-                .extract().response();
-        cookies.putAll(consentDialog.getCookies());
-
-        // Step 7: Submit consent
-        Response consentSubmit =
-            given()
-                .redirects().follow(false)
-                .cookies(cookies)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Accept-Charset", "UTF-8")
-                .formParam("consent", "Accept")
-            .when()
-                .post(AUTH_SERVER_URL + consentRedirect.getHeader(LOCATION))
-            .then()
-                .statusCode(200)
-                .header(LOCATION, "/")
-                .extract().response();
-        cookies.putAll(consentSubmit.getCookies());
-
-        // Step 8: Redirect back to client
-        Response clientRedirect =
-            given()
-                .redirects().follow(false)
-                .cookies(cookies)
-            .when()
-                .post(AUTH_SERVER_URL)
-            .then()
-                .statusCode(307)
-                .header(LOCATION, matchesPattern(CLIENT_URL + ".*"))
-                .extract().response();
-
-        // Step 9: Exchange Code for Token
-        given()
-            .redirects().follow(false)
-            .cookies(memCookies)
-        .when()
-            .post(clientRedirect.getHeader(LOCATION))
-        .then()
-            .statusCode(307)
-            .header(LOCATION, "/")
-            .extract().response();
-
-        // Step 10: Make the authenticated POST request
-        given()
-            .cookies(memCookies)
-        .when()
-            .post(CLIENT_URL)
-        .then()
-            .body(equalToIgnoringCase("get"));
+            cookies.putAll(formRedirect.getCookies());
+        return formRedirect;
     }
-    // @formatter:on
 
+    private static @NotNull Response step1originalRequest(Map<String,String> memCookies) {
+        Response response =
+            given()
+                .redirects().follow(false)
+            .when()
+                .get(CLIENT_URL)
+            .then()
+                .statusCode(307)
+                .header(LOCATION, matchesPattern(AUTH_SERVER_URL + ".*"))
+                .extract().response();
+            memCookies.putAll(response.getCookies());
+        return response;
+    }
+
+    // @formatter:on
     private static ConditionalInterceptor createConditionalInterceptorWithReturnMessage(String test, String returnMessage) {
         return new ConditionalInterceptor() {{
             setLanguage(SPEL);
@@ -291,4 +243,75 @@ public class OAuth2RedirectTest {
         nginxRouter.shutdown();
     }
 
+    private static Router startProxyRule(Rule azureRule) throws Exception {
+        Router router = new Router();
+        router.setExchangeStore(new ForgetfulExchangeStore());
+        router.setTransport(new HttpTransport());
+        router.getRuleManager().addProxyAndOpenPortIfNew(azureRule);
+        router.init();
+        return router;
+    }
+
+    private static @NotNull Rule getNginxRule() {
+        Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST"));
+        nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET"));
+        nginxRule.getInterceptors().add(new ReturnInterceptor());
+        return nginxRule;
+    }
+
+    private static @NotNull Rule getMembraneRule() {
+        Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
+        membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
+            setSessionManager(new InMemorySessionManager());
+            setAuthService(new MembraneAuthorizationService() {{
+                setSrc("http://localhost:2002");
+                setClientId("abc");
+                setClientSecret("def");
+                setScope("openid profile");
+            }});
+            setOriginalExchangeStore(new SessionOriginalExchangeStore());
+        }});
+        return membraneRule;
+    }
+
+    private static @NotNull Rule getAzureRule() {
+        Rule azureRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2002), "localhost", 80);
+        azureRule.getInterceptors().add(new LogInterceptor() {{
+            setLevel(DEBUG);
+        }});
+        azureRule.getInterceptors().add(new OAuth2AuthorizationServerInterceptor() {{
+            setLocation("src/test/resources/openId/dialog");
+            setConsentFile("src/test/resources/openId/consentFile.json");
+            setTokenGenerator(new BearerTokenGenerator());
+            setIssuer("http://localhost:2002");
+            setUserDataProvider(new StaticUserDataProvider() {{
+                setUsers(List.of(new User() {{
+                    setUsername("user");
+                    setPassword("password");
+                }}));
+            }});
+            setClientList(new StaticClientList() {{
+                setClients(List.of(new Client() {{
+                    setClientId("abc");
+                    setClientSecret("def");
+                    setCallbackUrl("http://localhost:2000/oauth2callback");
+                }}));
+            }});
+            setClaimList(new ClaimList() {{
+                setValue("aud email iss sub username");
+                setScopes(new ArrayList<>() {{
+                    add(new Scope() {{
+                        setId("username");
+                        setClaims("username");
+                    }});
+                    add(new Scope() {{
+                        setId("profile");
+                        setClaims("username email");
+                    }});
+                }});
+            }});
+        }});
+        return azureRule;
+    }
 }
