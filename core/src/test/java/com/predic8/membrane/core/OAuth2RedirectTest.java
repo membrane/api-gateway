@@ -32,7 +32,6 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
-import static io.restassured.RestAssured.config;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,7 +50,7 @@ public class OAuth2RedirectTest {
                 setSrc("http://localhost:2002");
                 setClientId("abc");
                 setClientSecret("def");
-                setScope("openid");
+                setScope("profile openid");
                 setSubject("sub");
             }});
             setOriginalExchangeStore(new SessionOriginalExchangeStore());
