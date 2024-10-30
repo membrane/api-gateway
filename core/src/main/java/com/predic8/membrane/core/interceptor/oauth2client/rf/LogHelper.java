@@ -23,20 +23,20 @@ public class LogHelper {
     private LogInterceptor logi;
 
     public LogHelper() {
-        if (true) {
+        if (log.isDebugEnabled()) {
             logi = new LogInterceptor();
             logi.setBody(false);
         }
     }
 
     public void handleRequest(Exchange e) throws Exception {
-        if (true) {
+        if (log.isDebugEnabled()) {
             logi.handleRequest(e);
         }
     }
 
     public void handleResponse(Exchange e) throws Exception {
-        if (true) {
+        if (log.isDebugEnabled()) {
             logi.handleResponse(e);
         }
     }
