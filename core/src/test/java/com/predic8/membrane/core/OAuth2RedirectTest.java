@@ -63,8 +63,8 @@ public class OAuth2RedirectTest {
         }});
         azureRule.getInterceptors().add(
             new OAuth2AuthorizationServerInterceptor() {{
-                setLocation("/home/burchgart/IdeaProjects/api-gateway/core/src/test/resources/oauth2/loginDialog/dialog");
-                setConsentFile("/home/burchgart/IdeaProjects/api-gateway/core/src/test/resources/oauth2/consentFile.json");
+                setLocation("src/test/resources/oauth2/loginDialog/dialog");
+                setConsentFile("src/test/resources/oauth2/consentFile.json");
                 setTokenGenerator(new BearerTokenGenerator());
                 setIssuer("http://localhost:2002");
                 setUserDataProvider(
