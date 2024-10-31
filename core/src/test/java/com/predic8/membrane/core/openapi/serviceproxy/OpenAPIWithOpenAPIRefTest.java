@@ -28,7 +28,7 @@ public class OpenAPIWithOpenAPIRefTest {
         router.setUriFactory(new URIFactory());
 
         spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/openAPI-references.yml";
+        spec.location = "src/test/resources/openapi/specs/openApi-references.yml";
 
         interceptor = new OpenAPIInterceptor(createProxy(router, spec), router);
         interceptor.init(router);

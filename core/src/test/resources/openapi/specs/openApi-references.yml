@@ -1,4 +1,4 @@
-openapi: '3.0.2'
+openapi: '3.1.0'
 info:
   title: References Test with External API
   version: '1.0'
@@ -7,9 +7,9 @@ paths:
   /references/{rid}:
     get:
       parameters:
-        - $ref: './references.yml#/components/parameters/Rid'
+        - $ref: 'references.yml#/components/parameters/Rid'
         - $ref: '#/components/parameters/ImportedLimit'
-        - $ref: './references.yml#/components/parameters/Start'  
+        - $ref: 'references.yml#/components/parameters/Start'
 
       responses:
         '200':
@@ -17,7 +17,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './references.yml#/components/schemas/Customer'  
+                $ref: 'references.yml#/components/schemas/Customer'
 
   /body-ref:
     post:
@@ -25,7 +25,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: './references.yml#/components/schemas/Customer'
+              $ref: 'references.yml#/components/schemas/Customer'
       responses:
         '200':
           description: OK
@@ -36,7 +36,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CombinedCustomer' 
+              $ref: '#/components/schemas/CombinedCustomer'
       responses:
         '200':
           description: OK
@@ -44,13 +44,13 @@ paths:
   /all-refs:
     post:
       parameters:
-        - $ref: '#/components/parameters/ImportedRid'  
-        - $ref: './references.yml#/components/parameters/Limit'
+        - $ref: '#/components/parameters/ImportedRid'
+        - $ref: 'references.yml#/components/parameters/Limit'
       requestBody:
         content:
           application/json:
             schema:
-              $ref: './references.yml#/components/schemas/Customer'
+              $ref: 'references.yml#/components/schemas/Customer'
       responses:
         '200':
           description: OK
@@ -65,18 +65,18 @@ components:
       content:
         application/json:
           schema:
-            $ref: './references.yml#/components/schemas/Customer'
+            $ref: 'references.yml#/components/schemas/Customer'
 
   parameters:
     ImportedRid:
-      $ref: './references.yml#/components/parameters/Rid'  
+      $ref: 'references.yml#/components/parameters/Rid'
     ImportedLimit:
-      $ref: './references.yml#/components/parameters/Limit'  
+      $ref: 'references.yml#/components/parameters/Limit'
 
   schemas:
     CombinedCustomer:
       allOf:
-        - $ref: './references.yml#/components/schemas/Customer'  
+        - $ref: 'references.yml#/components/schemas/Customer'
         - type: object
           properties:
             additionalInfo:

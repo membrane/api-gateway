@@ -23,6 +23,7 @@ import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
+import io.swagger.v3.parser.core.models.ParseOptions;
 import org.apache.commons.lang3.exception.*;
 import org.slf4j.*;
 
@@ -125,9 +126,12 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPI getOpenAPI(Router router, OpenAPISpec spec) throws ResourceRetrievalException {
+        ParseOptions parseOptions = new ParseOptions();
+        parseOptions.setResolve(true);
+        parseOptions.setResolveFully(true);
 
-        OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
-                null, null).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIV3Parser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
+                null, parseOptions).getOpenAPI();
         if (openAPI != null)
             return openAPI;
 
