@@ -6,7 +6,11 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URIFactory;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,10 +20,11 @@ public class OpenAPIWithOpenAPIRefTest {
     OpenAPIInterceptor interceptor;
     OpenAPISpec spec;
     Exchange exc;
+    Router router;
 
     @BeforeEach
     public void setUp() throws Exception {
-        Router router = new Router();
+        router = new Router();
         router.setUriFactory(new URIFactory());
 
         spec = new OpenAPISpec();
@@ -29,51 +34,30 @@ public class OpenAPIWithOpenAPIRefTest {
         interceptor.init(router);
     }
 
-    @Test
-    void testGetReferences() throws Exception {
-        exc = new Exchange(null);
-        exc.setRequest(new Request.Builder()
-                .get("/references/123")
-                .header("Accept", "application/json")
-                .build());
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-        assertEquals(200, exc.getResponse().getStatusCode());
+    static Stream<Arguments> provideTestCases() {
+        return Stream.of(
+                Arguments.of("GET", "/references/123", "Accept", "application/json", null, 200),
+                Arguments.of("POST", "/body-ref", "Content-Type", "application/json", "{\"contract\": {\"details\": \"foo\"}}", 200),
+                Arguments.of("POST", "/combined-ref", "Content-Type", "application/json", "{\"contract\": {\"details\": \"foo\"}, \"additionalInfo\": \"bar\"}", 200),
+                Arguments.of("POST", "/all-refs?limit=10&rid=123", "Content-Type", "application/json", "{\"contract\": {\"details\": \"foo\"}}", 200)
+        );
     }
 
-    @Test
-    void testPostBodyRef() throws Exception {
+    @ParameterizedTest
+    @MethodSource("provideTestCases")
+    void testRequests(String method, String url, String headerName, String headerValue, String body, int expectedStatusCode) throws Exception {
         exc = new Exchange(null);
-        exc.setRequest(new Request.Builder()
-                .post("/body-ref")
-                .header("Content-Type", "application/json")
-                .body("{\"contract\": {\"details\": \"foo\"}}")
-                .build());
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-        assertEquals(200, exc.getResponse().getStatusCode());
-    }
+        Request.Builder requestBuilder = new Request.Builder()
+                .method(method)
+                .url(new URIFactory(), url)
+                .header(headerName, headerValue);
 
-    @Test
-    void testPostCombinedRef() throws Exception {
-        exc = new Exchange(null);
-        exc.setRequest(new Request.Builder()
-                .post("/combined-ref")
-                .header("Content-Type", "application/json")
-                .body("{\"contract\": {\"details\": \"foo\"}, \"additionalInfo\": \"bar\"}")
-                .build());
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-        assertEquals(200, exc.getResponse().getStatusCode());
-    }
+        if (body != null) {
+            requestBuilder.body(body);
+        }
 
-    @Test
-    void testPostAllRefs() throws Exception {
-        exc = new Exchange(null);
-        exc.setRequest(new Request.Builder()
-                .post("/all-refs?limit=10&rid=123")
-                .header("Content-Type", "application/json")
-                .body("{\"contract\": {\"details\": \"foo\"}}")
-                .build());
+        exc.setRequest(requestBuilder.build());
         assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals(expectedStatusCode, exc.getResponse().getStatusCode());
     }
-
 }
