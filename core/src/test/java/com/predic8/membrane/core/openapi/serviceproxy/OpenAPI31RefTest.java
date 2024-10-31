@@ -38,9 +38,11 @@ public class OpenAPI31RefTest {
         {
             "firstName": "John",
             "lastName": "Doe",
-            "contactDetails": {
-                "email": "john.doe@example.com",
-                "phoneNumber": "+1234567890"
+            "address": {
+                "street": "123 Elm Street",
+                "city": "Springfield",
+                "postalCode": "12345",
+                "country": "USA"
             }
         }
         """;
@@ -56,15 +58,19 @@ public class OpenAPI31RefTest {
         {
             "firstName": "Jane",
             "lastName": "Smith",
-            "contactDetails": {
-                "email": "jane.smith@example.com",
-                "phoneNumber": "+0987654321"
+            "address": {
+                "street": "456 Oak Avenue",
+                "city": "Metropolis",
+                "postalCode": "67890",
+                "country": "USA"
             },
-            "membershipLevel": "Gold"
+            "additionalInformation": "foo"
         }
         """;
-        assertEquals(0, validator.validate(
-                Request.post().path("/clients/with-person/").body(requestBody).mediaType(APPLICATION_JSON)
-        ).size());
+        ValidationErrors errors = validator.validate(
+                Request.post().path("/clients/with-person").body(requestBody).mediaType(APPLICATION_JSON)
+        );
+        System.out.println("errors = " + errors);
+        assertEquals(0, errors.size());
     }
 }

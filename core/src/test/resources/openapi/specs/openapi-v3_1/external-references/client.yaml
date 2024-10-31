@@ -74,6 +74,6 @@ components:
         - $ref: 'person/person.yaml#/components/schemas/Person'
         - type: object
           properties:
-            membershipLevel:
+            additionalInformation:
               type: string
-              description: The membership level of the client
+              description: Add additional Information
