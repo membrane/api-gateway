@@ -1,19 +1,15 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.openapi.OpenAPIValidator;
-import com.predic8.membrane.core.openapi.model.Request;
-import com.predic8.membrane.core.openapi.validators.ValidationErrors;
-import com.predic8.membrane.core.util.URIFactory;
-import io.swagger.v3.parser.OpenAPIV3Parser;
-import jakarta.mail.internet.ParseException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.openapi.*;
+import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.util.*;
+import io.swagger.v3.parser.*;
+import jakarta.mail.internet.*;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPI31RefTest {
 
@@ -26,6 +22,9 @@ public class OpenAPI31RefTest {
                 null,
                 new OpenAPISpec()
         );
+
+        System.out.println("openAPI = " + apiRecord.getApi());
+
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
@@ -57,10 +56,10 @@ public class OpenAPI31RefTest {
     @Test
     void validatePostClientWrongBody() throws ParseException {
         String requestBody = """
-        {
-            "firstName": 1.0,
-            "address": "foo"
-        }
+                            {
+                            "firstName": 1.0,
+                            "address": "foo"
+                        }
         """;
         ValidationErrors errors = validator.validate(Request.post().path("/clients").body(requestBody).mediaType(APPLICATION_JSON));
         assertEquals(2, errors.size());
