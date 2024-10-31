@@ -10,7 +10,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.test.AssertUtils.assertContains;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OpenAPI31RefTest {
 
@@ -28,8 +31,7 @@ public class OpenAPI31RefTest {
 
     @Test
     void validateGetClientById() {
-        ValidationErrors errors = validator.validate(Request.get().path("/clients/1"));
-        assertEquals(0, errors.size());
+        assertEquals(0, validator.validate(Request.get().path("/clients/1")).size());
     }
 
     @Test
@@ -46,10 +48,23 @@ public class OpenAPI31RefTest {
             }
         }
         """;
-        ValidationErrors errors = validator.validate(
-                Request.post().path("/clients").body(requestBody).mediaType(APPLICATION_JSON)
+        assertEquals(
+                0,
+                validator.validate(Request.post().path("/clients").body(requestBody).mediaType(APPLICATION_JSON)).size()
         );
-        assertEquals(0, errors.size());
+    }
+
+    @Test
+    void validatePostClientWrongBody() throws ParseException {
+        String requestBody = """
+        {
+            "firstName": 1.0,
+            "address": "foo"
+        }
+        """;
+        ValidationErrors errors = validator.validate(Request.post().path("/clients").body(requestBody).mediaType(APPLICATION_JSON));
+        assertEquals(2, errors.size());
+        System.out.println("errors = " + errors);
     }
 
     @Test
@@ -67,10 +82,9 @@ public class OpenAPI31RefTest {
             "additionalInformation": "foo"
         }
         """;
-        ValidationErrors errors = validator.validate(
-                Request.post().path("/clients/with-person").body(requestBody).mediaType(APPLICATION_JSON)
+        assertEquals(
+                0,
+                validator.validate(Request.post().path("/clients-with-person").body(requestBody).mediaType(APPLICATION_JSON)).size()
         );
-        System.out.println("errors = " + errors);
-        assertEquals(0, errors.size());
     }
 }

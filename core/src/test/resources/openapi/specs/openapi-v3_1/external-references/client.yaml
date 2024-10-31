@@ -47,7 +47,7 @@ paths:
         '201':
           description: Created
 
-  /clients/with-person:
+  /clients-with-person:
     post:
       requestBody:
         content:
