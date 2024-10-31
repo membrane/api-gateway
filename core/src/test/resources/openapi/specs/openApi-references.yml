@@ -1,14 +1,83 @@
-openapi: '3.0.1'
+openapi: '3.0.2'
 info:
-  title: API with API references
-  version: '1.0.0'
+  title: References Test with External API
+  version: '1.0'
 
 paths:
-  /foo:
+  /references/{rid}:
     get:
+      parameters:
+        - $ref: './references.yml#/components/parameters/Rid'
+        - $ref: '#/components/parameters/ImportedLimit'
+        - $ref: './references.yml#/components/parameters/Start'  
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './references.yml#/components/schemas/Customer'  
+
+  /body-ref:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './references.yml#/components/schemas/Customer'
       responses:
         '200':
           description: OK
 
-  /ref-request:
-    $ref: './references-request.yml#/paths/~1ref-request'
+  /combined-ref:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CombinedCustomer' 
+      responses:
+        '200':
+          description: OK
+
+  /all-refs:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/ImportedRid'  
+        - $ref: './references.yml#/components/parameters/Limit'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: './references.yml#/components/schemas/Customer'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CombinedCustomer'
+
+components:
+  requestBodies:
+    Customer:
+      content:
+        application/json:
+          schema:
+            $ref: './references.yml#/components/schemas/Customer'
+
+  parameters:
+    ImportedRid:
+      $ref: './references.yml#/components/parameters/Rid'  
+    ImportedLimit:
+      $ref: './references.yml#/components/parameters/Limit'  
+
+  schemas:
+    CombinedCustomer:
+      allOf:
+        - $ref: './references.yml#/components/schemas/Customer'  
+        - type: object
+          properties:
+            additionalInfo:
+              type: string
