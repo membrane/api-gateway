@@ -124,8 +124,7 @@ public class OpenAPIRecordFactory {
         return record;
     }
 
-    private OpenAPI getOpenAPI(OpenAPISpec spec) throws ResourceRetrievalException {
-
+    private OpenAPI getOpenAPI(OpenAPISpec spec) {
         OpenAPI openAPI = new OpenAPIV3Parser().read(spec.location);
 
         if (openAPI != null)

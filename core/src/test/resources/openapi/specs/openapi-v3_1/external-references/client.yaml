@@ -1,0 +1,79 @@
+openapi: '3.1.0'
+info:
+  title: Client API
+  version: '1.0'
+
+servers:
+  - url: 'http://localhost:2000'
+
+paths:
+  /clients/{clientId}:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: 'person/person.yaml#/components/schemas/Person'
+              examples:
+                example1:
+                  summary: Basic Person Example
+                  value:
+                    firstName: John
+                    lastName: Doe
+                    contactDetails:
+                      email: john.doe@example.com
+                      phoneNumber: "+1234567890"
+                example2:
+                  summary: Another Person Example
+                  value:
+                    firstName: Jane
+                    lastName: Smith
+                    contactDetails:
+                      email: jane.smith@example.com
+                      phoneNumber: "+0987654321"
+
+  /clients:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: 'person/person.yaml#/components/schemas/Person'
+      responses:
+        '201':
+          description: Created
+
+  /clients/with-person:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientWithPerson'
+      responses:
+        '201':
+          description: Created
+
+components:
+  parameters:
+    ClientId:
+      name: clientId
+      in: path
+      required: true
+      description: The unique ID of the client
+      schema:
+        type: string
+
+  schemas:
+    ClientWithPerson:
+      allOf:
+        - $ref: 'person/person.yaml#/components/schemas/Person'
+        - type: object
+          properties:
+            membershipLevel:
+              type: string
+              description: The membership level of the client

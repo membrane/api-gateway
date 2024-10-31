@@ -1,0 +1,28 @@
+openapi: '3.1.0'
+info:
+  title: Address API
+  version: '1.0'
+jsonSchemaDialect: 'https://json-schema.org/draft/2020-12/schema'
+
+components:
+  schemas:
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          description: The street name and number
+        city:
+          type: string
+          description: The city of the address
+        postalCode:
+          type: string
+          description: The postal code of the address
+        country:
+          type: string
+          description: The country of the address
+      required:
+        - street
+        - city
+        - postalCode
+        - country

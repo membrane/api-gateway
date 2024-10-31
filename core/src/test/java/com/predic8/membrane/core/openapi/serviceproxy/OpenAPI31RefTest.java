@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class OpenAPIWithOpenAPIRefTest {
+public class OpenAPI31RefTest {
 
     OpenAPIInterceptor interceptor;
     OpenAPISpec spec;
@@ -28,7 +28,7 @@ public class OpenAPIWithOpenAPIRefTest {
         router.setUriFactory(new URIFactory());
 
         spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/openApi-references.yml";
+        spec.location = "src/test/resources/openapi/specs/openapi-v3_1/external-references/client.yaml";
 
         interceptor = new OpenAPIInterceptor(createProxy(router, spec), router);
         interceptor.init(router);
@@ -36,10 +36,13 @@ public class OpenAPIWithOpenAPIRefTest {
 
     static Stream<Arguments> provideTestCases() {
         return Stream.of(
-                Arguments.of("GET", "/references/123", "Accept", "application/json", null, 200),
-                Arguments.of("POST", "/body-ref", "Content-Type", "application/json", "{\"contract\": {\"details\": \"foo\"}}", 200),
-                Arguments.of("POST", "/combined-ref", "Content-Type", "application/json", "{\"contract\": {\"details\": \"foo\"}, \"additionalInfo\": \"bar\"}", 200),
-                Arguments.of("POST", "/all-refs?limit=10&rid=123", "Content-Type", "application/json", "{\"contract\": {\"details\": \"foo\"}}", 200)
+                Arguments.of("GET", "/clients/123", "Accept", "application/json", null, 200),
+                Arguments.of("POST", "/clients", "Content-Type", "application/json",
+                        "{\"firstName\": \"John\", \"lastName\": \"Doe\", \"contactDetails\": {\"email\": \"john.doe@example.com\", \"phoneNumber\": \"+1234567890\"}}",
+                        201),
+                Arguments.of("POST", "/clients/with-person", "Content-Type", "application/json",
+                        "{\"firstName\": \"Jane\", \"lastName\": \"Smith\", \"contactDetails\": {\"email\": \"jane.smith@example.com\", \"phoneNumber\": \"+0987654321\"}, \"membershipLevel\": \"Gold\"}",
+                        201)
         );
     }
 
@@ -49,7 +52,7 @@ public class OpenAPIWithOpenAPIRefTest {
         exc = new Exchange(null);
         Request.Builder requestBuilder = new Request.Builder()
                 .method(method)
-                .url(new URIFactory(), url)
+                .url(new URIFactory(), "http://localhost:2000" + url)
                 .header(headerName, headerValue);
 
         if (body != null) {
