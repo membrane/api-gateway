@@ -1,66 +1,70 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.util.URIFactory;
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
-import java.util.stream.Stream;
-
-import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OpenAPI31RefTest {
 
-    OpenAPIInterceptor interceptor;
-    OpenAPISpec spec;
-    Exchange exc;
-    Router router;
+    OpenAPIValidator validator;
 
     @BeforeEach
-    public void setUp() throws Exception {
-        router = new Router();
-        router.setUriFactory(new URIFactory());
-
-        spec = new OpenAPISpec();
-        spec.location = "src/test/resources/openapi/specs/openapi-v3_1/external-references/client.yaml";
-
-        interceptor = new OpenAPIInterceptor(createProxy(router, spec), router);
-        interceptor.init(router);
-    }
-
-    static Stream<Arguments> provideTestCases() {
-        return Stream.of(
-                Arguments.of("GET", "/clients/123", "Accept", "application/json", null, 200),
-                Arguments.of("POST", "/clients", "Content-Type", "application/json",
-                        "{\"firstName\": \"John\", \"lastName\": \"Doe\", \"contactDetails\": {\"email\": \"john.doe@example.com\", \"phoneNumber\": \"+1234567890\"}}",
-                        201),
-                Arguments.of("POST", "/clients/with-person", "Content-Type", "application/json",
-                        "{\"firstName\": \"Jane\", \"lastName\": \"Smith\", \"contactDetails\": {\"email\": \"jane.smith@example.com\", \"phoneNumber\": \"+0987654321\"}, \"membershipLevel\": \"Gold\"}",
-                        201)
+    void setUp() {
+        OpenAPIRecord apiRecord = new OpenAPIRecord(
+                new OpenAPIV3Parser().read("src/test/resources/openapi/specs/openapi-v3_1/external-references/client.yaml"),
+                null,
+                new OpenAPISpec()
         );
+        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
-    @ParameterizedTest
-    @MethodSource("provideTestCases")
-    void testRequests(String method, String url, String headerName, String headerValue, String body, int expectedStatusCode) throws Exception {
-        exc = new Exchange(null);
-        Request.Builder requestBuilder = new Request.Builder()
-                .method(method)
-                .url(new URIFactory(), "http://localhost:2000" + url)
-                .header(headerName, headerValue);
+    @Test
+    void validateGetClientById() {
+        ValidationErrors errors = validator.validate(Request.get().path("/clients/1"));
+        assertEquals(0, errors.size());
+    }
 
-        if (body != null) {
-            requestBuilder.body(body);
+    @Test
+    void validatePostClient() throws ParseException {
+        String requestBody = """
+        {
+            "firstName": "John",
+            "lastName": "Doe",
+            "contactDetails": {
+                "email": "john.doe@example.com",
+                "phoneNumber": "+1234567890"
+            }
         }
+        """;
+        ValidationErrors errors = validator.validate(
+                Request.post().path("/clients").body(requestBody).mediaType(APPLICATION_JSON)
+        );
+        assertEquals(0, errors.size());
+    }
 
-        exc.setRequest(requestBuilder.build());
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exc));
-        assertEquals(expectedStatusCode, exc.getResponse().getStatusCode());
+    @Test
+    void validatePostClientWithPerson() throws ParseException {
+        String requestBody = """
+        {
+            "firstName": "Jane",
+            "lastName": "Smith",
+            "contactDetails": {
+                "email": "jane.smith@example.com",
+                "phoneNumber": "+0987654321"
+            },
+            "membershipLevel": "Gold"
+        }
+        """;
+        assertEquals(0, validator.validate(
+                Request.post().path("/clients/with-person/").body(requestBody).mediaType(APPLICATION_JSON)
+        ).size());
     }
 }
