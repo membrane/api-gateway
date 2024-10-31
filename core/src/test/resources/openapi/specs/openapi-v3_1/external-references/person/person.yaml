@@ -1,0 +1,22 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI 3.1
+  description: OpenAPI 3.1
+  version: 1.0.0
+servers:
+  - url: 'https://localhost'
+
+# No Path
+
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        name:
+          type: string
+          examples:
+            - Sam
+            - Joe
+            - Mike
+          example: Jay

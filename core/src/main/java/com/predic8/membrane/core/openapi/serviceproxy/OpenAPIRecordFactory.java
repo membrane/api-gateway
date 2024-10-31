@@ -23,7 +23,6 @@ import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.ParseOptions;
 import org.apache.commons.lang3.exception.*;
 import org.slf4j.*;
 
@@ -114,7 +113,7 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec), spec);
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), getSpec(router, spec), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
@@ -125,13 +124,10 @@ public class OpenAPIRecordFactory {
         return record;
     }
 
-    private OpenAPI getOpenAPI(Router router, OpenAPISpec spec) throws ResourceRetrievalException {
-        ParseOptions parseOptions = new ParseOptions();
-        parseOptions.setResolve(true);
-        parseOptions.setResolveFully(true);
+    private OpenAPI getOpenAPI(OpenAPISpec spec) throws ResourceRetrievalException {
 
-        OpenAPI openAPI = new OpenAPIV3Parser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
-                null, parseOptions).getOpenAPI();
+        OpenAPI openAPI = new OpenAPIV3Parser().read(spec.location);
+
         if (openAPI != null)
             return openAPI;
 

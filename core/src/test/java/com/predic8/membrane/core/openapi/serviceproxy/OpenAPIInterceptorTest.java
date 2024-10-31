@@ -196,6 +196,8 @@ class OpenAPIInterceptorTest {
 
         Map<String,Object> validationErrors = (Map<String, Object>) errors.get("validationErrors");
 
+        System.out.println("validationErrors = " + validationErrors);
+
         assertEquals(3,validationErrors.size());
 
         Map<String,Object> m1 = (Map<String, Object>) ((List)validationErrors.get( direction + "/BODY")).get(0);
