@@ -14,6 +14,11 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 
@@ -30,23 +35,43 @@ public class AdjustContentLengthIntegrationTest {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		router = Router.init("classpath:/adjustContentLength/xslt.proxies.xml");
+		router = new HttpRouter();
+		router.getRuleManager().addProxyAndOpenPortIfNew(createMonitorRule());
+		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
+		router.init();
+	}
+
+	private static ServiceProxy createMonitorRule() {
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 3000), "localhost", 4000);
+		rule.getInterceptors().add(new StaticInterceptor() {{
+			setTextTemplate("Ping Pong");
+		}});
+		return rule;
+	}
+
+	private static ServiceProxy createEndpointRule() {
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 4000), "localhost", 80);
+		rule.getInterceptors().add(new StaticInterceptor() {{
+			setTextTemplate("Pong");
+		}});
+		rule.getInterceptors().add(new ReturnInterceptor());
+		return rule;
 	}
 
 	@Test
 	public void testAdjustContentLength() throws Exception {
-		GetMethod direktRequest = getDirektRequest();
-		new HttpClient().executeMethod(direktRequest);
+		GetMethod directRequest = getDirectRequest();
+		new HttpClient().executeMethod(directRequest);
 
 		GetMethod monitoredRequest = getMonitoredRequest();
 		new HttpClient().executeMethod(monitoredRequest);
 
-		assertTrue(direktRequest.getResponseContentLength() == direktRequest
+		assertTrue(directRequest.getResponseContentLength() == directRequest
 				.getResponseBody().length);
 		assertTrue(monitoredRequest.getResponseContentLength() == monitoredRequest
 				.getResponseBody().length);
 
-		assertTrue(direktRequest.getResponseContentLength() != monitoredRequest
+		assertTrue(directRequest.getResponseContentLength() != monitoredRequest
 				.getResponseContentLength());
 
 	}
@@ -56,15 +81,13 @@ public class AdjustContentLengthIntegrationTest {
 		router.shutdown();
 	}
 
-	private GetMethod getDirektRequest() {
-		GetMethod get = new GetMethod(
-				"http://thomas-bayer.com/samples/sqlrest/CUSTOMER/7/");
-		return get;
+	private GetMethod getDirectRequest() {
+        return new GetMethod(
+                "http://localhost:4000/");
 	}
 
 	private GetMethod getMonitoredRequest() {
-		GetMethod get = new GetMethod(
-				"http://localhost:3010/samples/sqlrest/CUSTOMER/7/");
-		return get;
+        return new GetMethod(
+                "http://localhost:3000/");
 	}
 }
