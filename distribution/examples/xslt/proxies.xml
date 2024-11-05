@@ -10,7 +10,7 @@
 			<response>
 				<transform xslt="./reformat.xsl" />
 			</response>		
-			<target url="https://api.predic8.de/restnames/name.groovy?name=Pia" />
+			<target host="api.predic8.de" port="443" />
 		</serviceProxy>
 		
 	</router>
