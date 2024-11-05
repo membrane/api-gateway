@@ -25,8 +25,8 @@ First take a look at the proxies.xml file.
   <serviceProxy port="2000">
     <response>
       <transform xslt="./reformat.xsl" />
-    </response>		
-    <target url="https://api.predic8.de/restnames/name.groovy?name=Pia" />
+    </response>
+    <target host="api.predic8.de" port="443" />
   </serviceProxy>
 </router>
 ```
