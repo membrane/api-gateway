@@ -8,9 +8,9 @@
 
 		<serviceProxy port="2000">
 			<response>
-				<transform xslt="./customer2person.xsl" />
+				<transform xslt="./reformat.xsl" />
 			</response>		
-			<target host="www.thomas-bayer.com" port="80" />
+			<target url="https://api.predic8.de/restnames/name.groovy?name=Pia" />
 		</serviceProxy>
 		
 	</router>
