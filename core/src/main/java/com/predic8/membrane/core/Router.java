@@ -42,6 +42,7 @@ import java.net.*;
 import java.util.Timer;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
@@ -321,7 +322,44 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		synchronized (lock) {
 			running = true;
 		}
-		log.info(PRODUCT_NAME + " " + VERSION + " up and running!");
+
+		log.info("Started {} Rule{}:", ruleManager.getRules().size(), (ruleManager.getRules().size() > 1 ? "s" : ""));
+		ruleManager.getRules().forEach(rule ->
+				log.info("  {} {}{}{}", ruleDisplayName(rule), ruleCustomName(rule),rule.getKey(), additionalRuleInfo(rule))
+		);
+        log.info(PRODUCT_NAME + " {} up and running!", VERSION);
+	}
+
+	private String additionalRuleInfo(Rule rule) {
+		if (rule instanceof APIProxy a) {
+			List<OpenAPISpec> specs = a.getSpecs();
+			if (!specs.isEmpty()) {
+				return " using OpenAPI" + (specs.size() > 1 ? "s" : "") + " @ " + specs.stream().map(OpenAPISpec::getLocation).collect(Collectors.joining(", "));
+			}
+		} else if (rule instanceof SOAPProxy s) {
+			return " using WSDL @ " + s.getWsdl();
+		}
+		return "";
+	}
+
+	private String ruleCustomName(Rule rule) {
+		if (Objects.equals(rule.getName(), rule.getKey().toString())) {
+			return "";
+		}
+		return "\"" + rule.getName() + "\" ";
+	}
+
+	private String ruleDisplayName(Rule rule) {
+		if (rule instanceof APIProxy) {
+			return "API Proxy";
+		} else if (rule instanceof ServiceProxy) {
+			return "Service Proxy";
+		} else if (rule instanceof SOAPProxy) {
+			return "SOAP Proxy";
+		} else if (rule instanceof InternalProxy) {
+			return "Internal Proxy";
+		}
+		return "Proxy";
 	}
 
 	private void startJmx() {

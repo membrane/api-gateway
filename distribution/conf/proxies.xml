@@ -6,12 +6,27 @@
 
     <router>
 
-        <api port="2000">
+        <api port="2000" name="hello">
             <path>/shop/v2</path>
             <target host="api.predic8.de">
                 <ssl/>
             </target>
         </api>
+
+        <serviceProxy port="3000">
+            <target host="api.predic8.de">
+                <ssl/>
+            </target>
+        </serviceProxy>
+
+        <soapProxy port="4000" wsdl="https://www.predic8.de/city-service?wsdl">
+        </soapProxy>
+
+        <internalProxy name="wow">
+            <target host="api.predic8.de">
+                <ssl/>
+            </target>
+        </internalProxy>
 
     </router>
 
