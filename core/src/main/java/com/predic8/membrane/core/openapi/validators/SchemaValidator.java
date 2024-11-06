@@ -91,16 +91,18 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 return ValidationErrors.create(ctx,"Value is null and no type is set.");
             }
         } else {
-            if (
-                    (value == null || value instanceof  NullNode) &&
-                    (schema.getNullable() != null && schema.getNullable() ||  schema.getTypes().contains("null"))
-            ) return errors;
+            if ((value == null || value instanceof NullNode) && isNullable())
+                return errors;
         }
 
         errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
         errors.add(validateByType(ctx, value));
         return errors;
+    }
+
+    private boolean isNullable() {
+        return schema.getNullable() != null && schema.getNullable() || schema.getTypes().contains("null");
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
