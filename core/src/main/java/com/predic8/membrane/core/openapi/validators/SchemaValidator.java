@@ -25,6 +25,11 @@ import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
@@ -103,22 +108,39 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
 
-        if (schema.getType() == null) {
+        String type = schema.getType();
+        if (type == null && (schema.getTypes() == null || schema.getTypes().isEmpty())) {
             return null;
         }
 
+        if(type != null)
+            return validateSingleType(ctx, value, type);
+
+        List<String> types= new ArrayList<>(schema.getTypes());
+
+        ValidationErrors allErrors = types.stream()
+                .map(t -> validateSingleType(ctx, value, t))
+                .filter(Objects::nonNull)
+                .filter(ValidationErrors::hasErrors)
+                .collect(ValidationErrors::new, ValidationErrors::add, ValidationErrors::add);
+
+        ValidationErrors errors = allErrors.getErrors().size() == types.size() ? allErrors : null;
+        return errors;
+    }
+
+    private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
         try {
-            return switch (schema.getType()) {
+            return switch (type) {
                 case "number" -> new NumberValidator().validate(ctx, value);
                 case "integer" -> new IntegerValidator().validate(ctx, value);
                 case "string" -> new StringValidator(schema).validate(ctx, value);
                 case "boolean" -> new BooleanValidator().validate(ctx, value);
                 case "array" -> new ArrayValidator(api, schema).validate(ctx, value);
                 case "object" -> new ObjectValidator(api, schema).validate(ctx, value);
-                default -> throw new RuntimeException("Should not happen! " + schema.getType());
+                default -> throw new RuntimeException("Should not happen! " + type);
             };
         } catch (Exception e) {
-            return ValidationErrors.create(ctx, "%s is not of %s format.".formatted(value, schema.getType()));
+            return ValidationErrors.create(ctx, "%s is not of %s format.".formatted(value, type));
         }
     }
 
