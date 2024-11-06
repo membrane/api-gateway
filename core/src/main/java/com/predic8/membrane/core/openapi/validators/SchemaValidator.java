@@ -83,13 +83,17 @@ public class SchemaValidator implements IJSONSchemaValidator {
                     throw new RuntimeException("Should not happen!");
             }
 
-        if (schema.getType() == null) {
+
+        if ((value == null || value instanceof  NullNode) && isNullable())
+            return errors;
+
+/*        if (schema.getType() == null) {
             if ((value == null || value instanceof  NullNode) && isNullable())
                 return ValidationErrors.create(ctx,"Value is null and no type is set.");
         } else {
             if ((value == null || value instanceof NullNode) && isNullable())
                 return errors;
-        }
+        }*/
 
 
         errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
