@@ -32,8 +32,8 @@ public class FormValidationTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			getAndAssert(400, "http://localhost:2000/?name=Abcde0");
-			getAndAssert(200, "http://localhost:2000/?name=Abcde");
+			getAndAssert(400, "http://localhost:2000/?name=banana0");
+			getAndAssert(200, "http://localhost:2000/?name=banana");
 		}
 	}
 }

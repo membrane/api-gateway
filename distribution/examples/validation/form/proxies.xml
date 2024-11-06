@@ -10,7 +10,7 @@
 			<formValidation>
 				<field name="name" regex="[a-zA-Z]+" />
 			</formValidation>
-			<target host="www.thomas-bayer.com" />
+			<target url="https://api.predic8.de/shop/v2/products" />
 		</serviceProxy>
 		
 	</router>
