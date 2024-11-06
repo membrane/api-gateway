@@ -55,8 +55,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
         if (obj == null)
             return errors.add(ctx, "Got null to validate!");
 
-
-        Object value ;
+        Object value;
         try {
             value = resolveValueAndParseJSON(obj);
         } catch (IOException e) {
@@ -77,24 +76,23 @@ public class SchemaValidator implements IJSONSchemaValidator {
             errors.add(new NotValidator(api, schema).validate(ctx, obj));
 
         if (schema.get$ref() != null && !getSchemaNameFromRef(schema).equals(ctx.getComplexType())) {
-                ctx = ctx.complexType(getSchemaNameFromRef(schema));
-                schema = SchemaUtil.getSchemaFromRef(api, schema);
-                if (schema == null)
-                    throw new RuntimeException("Should not happen!");
-            }
+            ctx = ctx.complexType(getSchemaNameFromRef(schema));
+            schema = SchemaUtil.getSchemaFromRef(api, schema);
+            if (schema == null)
+                throw new RuntimeException("Should not happen!");
+        }
 
 
-        if ((value == null || value instanceof  NullNode) && isNullable())
-            return errors;
+//        if ((value == null || value instanceof  NullNode) && isNullable())
+//            return errors;
 
-/*        if (schema.getType() == null) {
-            if ((value == null || value instanceof  NullNode) && isNullable())
-                return ValidationErrors.create(ctx,"Value is null and no type is set.");
+        if (schemaHasNoTypeAndTypes(schema.getType())) {
+            if ((value == null || value instanceof NullNode) && isNullable())
+                return ValidationErrors.create(ctx, "Value is null and no type is set.");
         } else {
             if ((value == null || value instanceof NullNode) && isNullable())
                 return errors;
-        }*/
-
+        }
 
         errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
@@ -107,15 +105,19 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
-     String type = schema.getType();
-        if (type == null && (schema.getTypes() == null || schema.getTypes().isEmpty())) {
+        String type = schema.getType();
+
+        if (schemaHasNoTypeAndTypes(type)) {
             return null;
         }
+
+        // type in schema has only one type
         if (type != null)
             return validateSingleType(ctx, value, type);
+
+        // At that point: schema.types is used
+
         List<String> types = new ArrayList<>(schema.getTypes());
-        if(type != null &&!types.contains(type))
-            types.add(type);
 
         ValidationErrors allErrors = types.stream()
                 .map(t -> validateSingleType(ctx, value, t))
@@ -123,7 +125,17 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 .filter(ValidationErrors::hasErrors)
                 .collect(ValidationErrors::new, ValidationErrors::add, ValidationErrors::add);
 
-        return allErrors.getErrors().size() == types.size() ? allErrors : null;
+        //
+        if (allErrors.getErrors().size() == types.size()) {
+            return allErrors;
+        }
+        return null;
+
+
+    }
+
+    private boolean schemaHasNoTypeAndTypes(String type) {
+        return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
     }
 
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
@@ -144,12 +156,11 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     /**
      * Unwrap or read value in case of InputStream or Body objects
-     *
      */
     private Object resolveValueAndParseJSON(Object obj) throws IOException {
 
         if (obj instanceof Body)
-            return ((Body)obj).getJson();
+            return ((Body) obj).getJson();
 
         // Just temp to make sure there is no inputstream anymore! Can be deleted later!
         if (obj instanceof InputStream) {
