@@ -8,7 +8,8 @@ import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.util.URIFactory;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
@@ -25,20 +26,21 @@ public class MultipleTypesTest {
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
-    @Test
-    void testRequestBody() throws ParseException {
-        String requestBody = """
-        {
-            "name": 1.0
-        }
-        """;
+    @ParameterizedTest
+    @CsvSource({
+            "{\"name\": 1.0}, 2",
+            "{\"name\": \"string\"}, 0",
+            "{\"name\": 100}, 2",
+            "{\"name\": true}, 2",
+            "{\"name\": null}, 0"
+    })
+    void testRequestBody(String requestBody, int expectedErrorSize) throws ParseException {
+        ValidationErrors errors = validator.validate(
+                Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
+        );
 
-        ValidationErrors errors = validator.validate(Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON));
         System.out.println("errors = " + errors);
-        assertEquals(
-            0,
-            errors.size()
-    );
+        assertEquals(expectedErrorSize, errors.size());
     }
 
 }
