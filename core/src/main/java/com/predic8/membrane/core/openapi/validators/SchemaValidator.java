@@ -83,14 +83,14 @@ public class SchemaValidator implements IJSONSchemaValidator {
                     throw new RuntimeException("Should not happen!");
             }
 
-
-        if (schema.getType() == null && schema.getTypes().isEmpty()) {
-            if ((value == null || value instanceof  NullNode) && schema.getNullable())
+        if (schema.getType() == null) {
+            if ((value == null || value instanceof  NullNode) && isNullable())
                 return ValidationErrors.create(ctx,"Value is null and no type is set.");
         } else {
             if ((value == null || value instanceof NullNode) && isNullable())
                 return errors;
         }
+
 
         errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
@@ -99,16 +99,16 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     private boolean isNullable() {
-        return schema.getNullable() != null && schema.getNullable() || schema.getTypes().contains("null");
+        return (schema.getNullable() != null && schema.getNullable()) || schema.getTypes().contains("null");
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
-
-        String type = schema.getType();
+     String type = schema.getType();
         if (type == null && (schema.getTypes() == null || schema.getTypes().isEmpty())) {
             return null;
         }
-
+        if (type != null)
+            return validateSingleType(ctx, value, type);
         List<String> types = new ArrayList<>(schema.getTypes());
         if(type != null &&!types.contains(type))
             types.add(type);
