@@ -94,9 +94,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
             if (
                     (value == null || value instanceof  NullNode) &&
                     (schema.getNullable() != null && schema.getNullable() ||  schema.getTypes().contains("null"))
-            ) {
-                return errors;
-            }
+            ) return errors;
         }
 
         errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
@@ -112,10 +110,9 @@ public class SchemaValidator implements IJSONSchemaValidator {
             return null;
         }
 
-        if(type != null)
-            return validateSingleType(ctx, value, type);
-
-        List<String> types= new ArrayList<>(schema.getTypes());
+        List<String> types = new ArrayList<>(schema.getTypes());
+        if(type != null &&!types.contains(type))
+            types.add(type);
 
         ValidationErrors allErrors = types.stream()
                 .map(t -> validateSingleType(ctx, value, t))
