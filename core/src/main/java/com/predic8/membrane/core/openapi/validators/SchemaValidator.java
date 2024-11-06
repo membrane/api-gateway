@@ -91,7 +91,10 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 return ValidationErrors.create(ctx,"Value is null and no type is set.");
             }
         } else {
-            if ((value == null || value instanceof  NullNode) && schema.getNullable() != null && schema.getNullable()) {
+            if (
+                    (value == null || value instanceof  NullNode) &&
+                    (schema.getNullable() != null && schema.getNullable() ||  schema.getTypes().contains("null"))
+            ) {
                 return errors;
             }
         }
@@ -120,8 +123,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 .filter(ValidationErrors::hasErrors)
                 .collect(ValidationErrors::new, ValidationErrors::add, ValidationErrors::add);
 
-        ValidationErrors errors = allErrors.getErrors().size() == types.size() ? allErrors : null;
-        return errors;
+        return allErrors.getErrors().size() == types.size() ? allErrors : null;
     }
 
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
@@ -133,7 +135,6 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 case "boolean" -> new BooleanValidator().validate(ctx, value);
                 case "array" -> new ArrayValidator(api, schema).validate(ctx, value);
                 case "object" -> new ObjectValidator(api, schema).validate(ctx, value);
-                case "null" -> ValidationErrors.empty();
                 default -> throw new RuntimeException("Should not happen! " + type);
             };
         } catch (Exception e) {
