@@ -52,9 +52,9 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
         ValidationErrors errors = new ValidationErrors();
 
-        if (obj == null) {
+        if (obj == null)
             return errors.add(ctx, "Got null to validate!");
-        }
+
 
         Object value ;
         try {
@@ -64,43 +64,42 @@ public class SchemaValidator implements IJSONSchemaValidator {
             return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
         }
 
-        if (schema.getAllOf() != null) {
+        if (schema.getAllOf() != null)
             errors.add(new AllOfValidator(api, schema).validate(ctx, obj));
-        }
-        if (schema.getAnyOf() != null) {
-            errors.add(new AnyOfValidator(api, schema).validate(ctx, obj));
-        }
-        if (schema.getOneOf() != null) {
-            errors.add(new OneOfValidator(api, schema).validate(ctx, obj));
-        }
-        if (schema.getNot() != null) {
-            errors.add(new NotValidator(api, schema).validate(ctx, obj));
-        }
 
-        if (schema.get$ref() != null) {
-            if (!getSchemaNameFromRef(schema).equals(ctx.getComplexType())) {
+        if (schema.getAnyOf() != null)
+            errors.add(new AnyOfValidator(api, schema).validate(ctx, obj));
+
+        if (schema.getOneOf() != null)
+            errors.add(new OneOfValidator(api, schema).validate(ctx, obj));
+
+        if (schema.getNot() != null)
+            errors.add(new NotValidator(api, schema).validate(ctx, obj));
+
+        if (schema.get$ref() != null && !getSchemaNameFromRef(schema).equals(ctx.getComplexType())) {
                 ctx = ctx.complexType(getSchemaNameFromRef(schema));
                 schema = SchemaUtil.getSchemaFromRef(api, schema);
                 if (schema == null)
                     throw new RuntimeException("Should not happen!");
             }
-        }
+
 
         if (schema.getType() == null && schema.getTypes().isEmpty()) {
-            if ((value == null || value instanceof  NullNode) && schema.getNullable()) {
+            if ((value == null || value instanceof  NullNode) && schema.getNullable())
                 return ValidationErrors.create(ctx,"Value is null and no type is set.");
-            }
         } else {
-            if (
-                    (value == null || value instanceof  NullNode) &&
-                    (schema.getNullable() != null && schema.getNullable() ||  schema.getTypes().contains("null"))
-            ) return errors;
+            if ((value == null || value instanceof NullNode) && isNullable())
+                return errors;
         }
 
         errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
         errors.add(validateByType(ctx, value));
         return errors;
+    }
+
+    private boolean isNullable() {
+        return schema.getNullable() != null && schema.getNullable() || schema.getTypes().contains("null");
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
