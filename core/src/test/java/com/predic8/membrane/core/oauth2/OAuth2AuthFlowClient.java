@@ -13,7 +13,8 @@ import static org.hamcrest.text.MatchesPattern.matchesPattern;
 
 public class OAuth2AuthFlowClient {
 
-    private static final String CLIENT_URL = "http://localhost:2000";
+    private static final String CLIENT_BASE_URL = "http://localhost:2000";
+    private static final String CLIENT_URL = CLIENT_BASE_URL + "/a?b=c&d= ";
     private static final String AUTH_SERVER_URL = "http://localhost:2002";
 
     static Map<String, String> cookies = new HashMap<>();
@@ -123,7 +124,7 @@ public class OAuth2AuthFlowClient {
                 .post(AUTH_SERVER_URL)
             .then()
                 .statusCode(307)
-                .header(LOCATION, matchesPattern(CLIENT_URL + ".*"))
+                .header(LOCATION, matchesPattern(CLIENT_BASE_URL + ".*"))
                 .extract().response().getHeader(LOCATION);
     }
 
@@ -135,7 +136,7 @@ public class OAuth2AuthFlowClient {
             .post(location)
         .then()
             .statusCode(307)
-            .header(LOCATION, "/")
+            .header(LOCATION, "/a?b=c&d=%20")
             .extract().response();
     }
 
