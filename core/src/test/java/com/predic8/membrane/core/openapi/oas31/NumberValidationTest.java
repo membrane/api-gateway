@@ -37,7 +37,7 @@ public class NumberValidationTest {
 
                 Arguments.of("/integer", 42, 0),
                 Arguments.of("/integer", -1, 0),
-                Arguments.of("/integer", 123.456, 2)
+                Arguments.of("/integer", 123.456, 1)
         );
     }
 
