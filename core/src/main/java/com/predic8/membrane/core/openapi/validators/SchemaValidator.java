@@ -106,6 +106,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
+
         String type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {
