@@ -1,8 +1,11 @@
 package com.predic8.membrane.core.oauth2;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor;
 import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
@@ -29,16 +32,20 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
 import static com.predic8.membrane.core.oauth2.OAuth2AuthFlowClient.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OAuth2RedirectTest {
 
     static Router azureRouter;
     static Router membraneRouter;
     static Router nginxRouter;
+    static AtomicReference<String> firstUrlHit = new AtomicReference<>();
+    static AtomicReference<String> targetUrlHit = new AtomicReference<>();
 
     @BeforeAll
     static void setup() throws Exception {
@@ -78,6 +85,8 @@ public class OAuth2RedirectTest {
 
         // Step 10: Make the authenticated POST request
         step10makeAuthPostRequest();
+
+        assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
     }
 
     private static ConditionalInterceptor createConditionalInterceptorWithReturnMessage(String test, String returnMessage) {
@@ -108,6 +117,13 @@ public class OAuth2RedirectTest {
 
     private static @NotNull Rule getNginxRule() {
         Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
+        nginxRule.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                targetUrlHit.set(exc.getRequest().getUri());
+                return Outcome.CONTINUE;
+            }
+        });
         nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'POST'", "POST"));
         nginxRule.getInterceptors().add(createConditionalInterceptorWithReturnMessage("method == 'GET'", "GET"));
         nginxRule.getInterceptors().add(new ReturnInterceptor());
@@ -116,6 +132,14 @@ public class OAuth2RedirectTest {
 
     private static @NotNull Rule getMembraneRule() {
         Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
+        membraneRule.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                if (firstUrlHit.get() == null)
+                    firstUrlHit.set(exc.getRequest().getUri());
+                return Outcome.CONTINUE;
+            }
+        });
         membraneRule.getInterceptors().add(new OAuth2Resource2Interceptor() {{
             setSessionManager(new InMemorySessionManager());
             setAuthService(new MembraneAuthorizationService() {{
