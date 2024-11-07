@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
@@ -29,12 +30,21 @@ import static java.lang.String.*;
 @SuppressWarnings("rawtypes")
 public class ArrayValidator implements IJSONSchemaValidator {
 
-    private final Schema schema;
-    private final OpenAPI api;
+    private Schema schema;
+    private OpenAPI api;
+
+    public ArrayValidator() {}
 
     public ArrayValidator(OpenAPI api, Schema schema) {
         this.api = api;
         this.schema = schema;
+    }
+
+    public String isOfType(Object obj) {
+        if (obj instanceof ArrayNode) {
+            return "array";
+        }
+        return null;
     }
 
     @Override

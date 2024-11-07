@@ -46,7 +46,7 @@ public class MultipleTypesTest {
                 Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
         );
 
-        System.out.println("errors = " + errors);
+        //System.out.println("errors = " + errors);
         assertEquals(expectedErrorSize, errors.size());
     }
 

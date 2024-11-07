@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
@@ -120,19 +121,21 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     private @Nullable ValidationErrors getValidationErrors(List<String> types, ValidationContext ctx, Object value) {
-        ValidationErrors allErrors = new ValidationErrors();
-        for(String t : types) {
-            ValidationErrors errs = validateSingleType(ctx, value, t);
-            if (errs.isEmpty()) {
-                return null;
-            }
-            allErrors.add(errs);
-        }
-        return allErrors;
-    }
+        String t = getType(value);
 
-    private boolean schemaHasNoTypeAndTypes(String type) {
-        return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
+        if (t == "integer" && !types.contains(t) && types.contains("number")) t = "number";
+
+        t.isEmpty();
+        //TODO "null" behandeln
+        if (t == null || !types.contains(t)) {
+            ValidationErrors allErrors = new ValidationErrors();
+            for(String tp : types) {
+                allErrors.add(validateSingleType(ctx, value, tp));
+            }
+            return allErrors;
+        }
+        return validateSingleType(ctx, value, t);
+
     }
 
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
@@ -151,11 +154,19 @@ public class SchemaValidator implements IJSONSchemaValidator {
         }
     }
 
+    private boolean schemaHasNoTypeAndTypes(String type) {
+        return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
+    }
+
+    private List<Class<? extends IJSONSchemaValidator>> getValidatorClasses() {
+        // Order must be kept intact as: IntegerValidator NumberValidator StringValidator BooleanValidator ArrayValidator ObjectValidator
+        return List.of(IntegerValidator.class, NumberValidator.class, StringValidator.class, BooleanValidator.class, ArrayValidator.class, ObjectValidator.class);
+    }
+
     /**
      * Unwrap or read value in case of InputStream or Body objects
      */
     private Object resolveValueAndParseJSON(Object obj) throws IOException {
-
         if (obj instanceof Body)
             return ((Body) obj).getJson();
 
