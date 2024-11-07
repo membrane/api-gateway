@@ -28,10 +28,10 @@ public class MultipleTypesDocumentTest {
 
     static Stream<Arguments> requestBodyProvider() {
         return Stream.of(
-                Arguments.of("1.0", 2),
+                Arguments.of("1.0", 1),
                 Arguments.of("\"Bonn\"", 0),
-                Arguments.of("100", 2),
-                Arguments.of("true", 2),
+                Arguments.of("100", 1),
+                Arguments.of("true", 1),
                 Arguments.of("null", 0)
         );
     }
@@ -43,8 +43,6 @@ public class MultipleTypesDocumentTest {
         ValidationErrors errors = validator.validate(
                 Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
         );
-
-        //System.out.println("errors = " + errors);
         assertEquals(expectedErrorSize, errors.size());
     }
 

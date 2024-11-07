@@ -123,16 +123,16 @@ public class SchemaValidator implements IJSONSchemaValidator {
     private @Nullable ValidationErrors getValidationErrors(List<String> types, ValidationContext ctx, Object value) {
         String t = getType(value);
 
-        if (t == "integer" && !types.contains(t) && types.contains("number")) t = "number";
+        if (Objects.equals(t, "integer") && !types.contains(t) && types.contains("number")) t = "number";
 
-        t.isEmpty();
-        //TODO "null" behandeln
         if (t == null || !types.contains(t)) {
             ValidationErrors allErrors = new ValidationErrors();
             for(String tp : types) {
                 allErrors.add(validateSingleType(ctx, value, tp));
             }
-            return allErrors;
+            ValidationErrors errors = new ValidationErrors();
+            errors.add(new ValidationError("%s does not match one of these types: %s. Details: %s".formatted(value, types, allErrors.toString())));
+            return errors;
         }
         return validateSingleType(ctx, value, t);
 

@@ -9,7 +9,7 @@ paths:
         content:
           application/json:
             schema:
-              type: number
+              type: [number, null]
 
   /integer:
     post:
@@ -17,4 +17,4 @@ paths:
         content:
           application/json:
             schema:
-              type: integer
+              type: [integer, null]

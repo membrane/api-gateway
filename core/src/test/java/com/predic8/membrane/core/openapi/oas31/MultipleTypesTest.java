@@ -31,10 +31,10 @@ public class MultipleTypesTest {
 
     static Stream<Arguments> requestBodyProvider() {
         return Stream.of(
-                Arguments.of("{\"name\": 1.0}", 2),
+                Arguments.of("{\"name\": 1.0}", 1),
                 Arguments.of("{\"name\": \"string\"}", 0),
-                Arguments.of("{\"name\": 100}", 2),
-                Arguments.of("{\"name\": true}", 2),
+                Arguments.of("{\"name\": 100}", 1),
+                Arguments.of("{\"name\": true}", 1),
                 Arguments.of("{\"name\": null}", 0)
         );
     }
@@ -45,8 +45,6 @@ public class MultipleTypesTest {
         ValidationErrors errors = validator.validate(
                 Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
         );
-
-        //System.out.println("errors = " + errors);
         assertEquals(expectedErrorSize, errors.size());
     }
 

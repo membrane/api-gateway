@@ -42,8 +42,6 @@ public class MultipleTypesNestedTest {
         ValidationErrors errors = validator.validate(
                 Request.post().path("/nested").body(requestBody).mediaType(APPLICATION_JSON)
         );
-
-        System.out.println("errors = " + errors);
         assertEquals(expectedErrorSize, errors.size());
     }
 }
