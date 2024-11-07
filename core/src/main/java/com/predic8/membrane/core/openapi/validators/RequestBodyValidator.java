@@ -43,6 +43,10 @@ public class RequestBodyValidator extends AbstractBodyValidator<Request<? extend
     }
 
     ValidationErrors validate(ValidationContext ctx, Request<?> request, Operation operation) {
+        System.out.println("request = " + request);
+        System.out.println("operation = " + operation);
+
+
         ValidationErrors errors = new ValidationErrors();
         if (operation.getRequestBody() == null) {
             if (!request.hasBody())

@@ -1,19 +1,12 @@
 paths:
   /users:
     post:
-      summary: Benutzer erstellen
-      description: Endpunkt zum Anlegen eines neuen Benutzers
-      operationId: createUser
+      description: Demo
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              $ref: 'user-schema.yaml#/components/schemas/User'
+              $ref: '/openapi/specs/oas31/user-schema.yaml#/components/schemas/User'
       responses:
-        '201':
-          description: Benutzer erfolgreich erstellt
-          content:
-            application/json:
-              schema:
-                $ref: 'user-schema.yaml#/components/schemas/User'
+        '200':
+          description: Ok
