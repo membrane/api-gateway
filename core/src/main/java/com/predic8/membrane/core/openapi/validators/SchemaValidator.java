@@ -16,19 +16,23 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.model.Body;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 
 public class SchemaValidator implements IJSONSchemaValidator {
 
@@ -82,10 +86,6 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 throw new RuntimeException("Should not happen!");
         }
 
-
-//        if ((value == null || value instanceof  NullNode) && isNullable())
-//            return errors;
-
         if (schemaHasNoTypeAndTypes(schema.getType())) {
             if ((value == null || value instanceof NullNode) && isNullable())
                 return ValidationErrors.create(ctx, "Value is null and no type is set.");
@@ -116,22 +116,19 @@ public class SchemaValidator implements IJSONSchemaValidator {
             return validateSingleType(ctx, value, type);
 
         // At that point: schema.types is used
+        return getValidationErrors(new ArrayList<>(schema.getTypes()), ctx, value);
+    }
 
-        List<String> types = new ArrayList<>(schema.getTypes());
-
-        ValidationErrors allErrors = types.stream()
-                .map(t -> validateSingleType(ctx, value, t))
-                .filter(Objects::nonNull)
-                .filter(ValidationErrors::hasErrors)
-                .collect(ValidationErrors::new, ValidationErrors::add, ValidationErrors::add);
-
-        //
-        if (allErrors.getErrors().size() == types.size()) {
-            return allErrors;
+    private @Nullable ValidationErrors getValidationErrors(List<String> types, ValidationContext ctx, Object value) {
+        ValidationErrors allErrors = new ValidationErrors();
+        for(String t : types) {
+            ValidationErrors errs = validateSingleType(ctx, value, t);
+            if (errs.isEmpty()) {
+                return null;
+            }
+            allErrors.add(errs);
         }
-        return null;
-
-
+        return allErrors;
     }
 
     private boolean schemaHasNoTypeAndTypes(String type) {
