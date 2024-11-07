@@ -43,8 +43,6 @@ public class ExclusiveMinMaxTest {
         ValidationErrors errors = validator.validate(
                 Request.post().path("/range-check").body(requestBody).mediaType(APPLICATION_JSON)
         );
-
-        System.out.println("errors = " + errors);
         assertEquals(expectedErrorSize, errors.size());
     }
 }
