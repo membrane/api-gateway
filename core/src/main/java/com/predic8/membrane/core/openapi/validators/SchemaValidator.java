@@ -52,6 +52,11 @@ public class SchemaValidator implements IJSONSchemaValidator {
         this.api = api;
     }
 
+    // Not needed in SchemaValidator, but necessary for interface.
+    public String isOfType(Object obj) {
+        return null;
+    }
+
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
 
@@ -138,6 +143,24 @@ public class SchemaValidator implements IJSONSchemaValidator {
         return validateSingleType(ctx, value, t);
 
     }
+
+    private String getType(Object obj) {
+        return getValidatorClasses().stream()
+                .map(this::createValidatorInstance)
+                .map(validator -> validator.isOfType(obj))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private IJSONSchemaValidator createValidatorInstance(Class<? extends IJSONSchemaValidator> clazz) {
+        try {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create validator instance", e);
+        }
+    }
+
 
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
         try {
