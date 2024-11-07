@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: Benutzer-Management API
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      $ref: 'request-schema.yaml#/paths/~1users/post'
+
+    get:
+      summary: Liste alle Benutzer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: 'user-schema.yaml#/components/schemas/User'
