@@ -80,12 +80,9 @@ public class OAuth2RedirectTest {
         // Step 8: Redirect back to client
         String callbackUrl = step8redirectToClient();
 
-        // Step 9: Exchange Code for Token
+        // Step 9: Exchange Code for Token & continue original request.·
         step9exchangeCodeForToken(callbackUrl);
-
-        // Step 10: Make the authenticated POST request
-        step10makeAuthPostRequest();
-
+        
         assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
     }
 
