@@ -26,7 +26,9 @@ First take a look at the proxies.xml file.
     <response>
       <transform xslt="./reformat.xsl" />
     </response>
-    <target host="api.predic8.de" port="443" />
+    <target host="api.predic8.de" port="443">
+        <ssl />
+    </target>
   </serviceProxy>
 </router>
 ```
