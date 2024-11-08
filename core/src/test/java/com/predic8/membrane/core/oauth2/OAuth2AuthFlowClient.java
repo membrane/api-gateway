@@ -135,18 +135,8 @@ public class OAuth2AuthFlowClient {
         .when()
             .post(location)
         .then()
-            .statusCode(307)
-            .header(LOCATION, "/a?b=c&d=%20")
+            .statusCode(200)
             .extract().response();
-    }
-
-    static void step10makeAuthPostRequest() {
-        given()
-            .cookies(memCookies)
-        .when()
-            .post(CLIENT_URL)
-        .then()
-            .body(equalToIgnoringCase("get"));
     }
     // @formatter:on
 }

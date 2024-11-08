@@ -25,7 +25,9 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
 import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.*;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.*;
 
 import java.math.*;
@@ -197,9 +199,15 @@ public class OAuth2CallbackRequestHandler {
         });
     }
 
-    private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws JsonProcessingException {
+    private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
         if (originalRequest.getRequest().getMethod().equals("GET")) {
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
+            HttpClient hc = new HttpClient();
+            Exchange ogExc = (Exchange) originalRequest.toAbstractExchange();
+            System.out.println(ogExc.getDestinations());
+            hc.call(ogExc);
+            exc.setResponse(ogExc.getResponse());
+
+            //exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
         } else {
             String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
 
