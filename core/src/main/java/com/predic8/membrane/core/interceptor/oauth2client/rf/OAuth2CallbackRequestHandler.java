@@ -40,6 +40,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
+import static java.util.List.of;
 
 public class OAuth2CallbackRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(OAuth2CallbackRequestHandler.class);
@@ -209,7 +210,7 @@ public class OAuth2CallbackRequestHandler {
                 String delimiter = ogExc.getOriginalRequestUri().contains("?") ? "&" : "?";
 
                 String ogDest = ogExc.getDestinations().get(0);
-                ogExc.getRequest().setUri(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect);
+                ogExc.setDestinations(new ArrayList<>(of(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect)));
             }
             hc.call(ogExc);
             exc.setResponse(ogExc.getResponse());

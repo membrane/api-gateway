@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.interceptor.LogInterceptor.Level.DEBUG;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
 import static com.predic8.membrane.core.oauth2.OAuth2AuthFlowClient.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OAuth2RedirectTest {
 
@@ -102,7 +103,7 @@ public class OAuth2RedirectTest {
         // Step 9: Exchange Code for Token & continue original request.·
         OAuth2.step9exchangeCodeForToken(callbackUrl);
 
-        assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
+        assertTrue(targetUrlHit.get().startsWith(firstUrlHit.get() + "&oa2redirect"), "Check that URL survived encoding.");
     }
 
     private static ConditionalInterceptor createConditionalInterceptorWithReturnMessage(String test, String returnMessage) {
