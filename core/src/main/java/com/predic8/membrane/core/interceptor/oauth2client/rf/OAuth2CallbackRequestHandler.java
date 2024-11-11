@@ -202,21 +202,17 @@ public class OAuth2CallbackRequestHandler {
     private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
         try (HttpClient hc = new HttpClient()) {
             Exchange ogExc = (Exchange) originalRequest.toAbstractExchange();
-            if (originalRequest.getRequest().getMethod().equals("GET")) {
-                hc.call(ogExc);
-                exc.setResponse(ogExc.getResponse());
-
-                //exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
-            } else {
+            //exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
+            if (originalRequest.getRequest().getMethod().equals("POST")) {
                 String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
                 session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
                 String delimiter = ogExc.getOriginalRequestUri().contains("?") ? "&" : "?";
 
                 String ogDest = ogExc.getDestinations().get(0);
-                ogExc.setDestinations(List.of(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect));
-                hc.call(ogExc);
-                exc.setResponse(ogExc.getResponse());
+                ogExc.getRequest().setUri(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect);
             }
+            hc.call(ogExc);
+            exc.setResponse(ogExc.getResponse());
         }
     }
 }
