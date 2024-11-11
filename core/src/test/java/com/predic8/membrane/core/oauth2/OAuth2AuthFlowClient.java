@@ -26,7 +26,7 @@ public class OAuth2AuthFlowClient {
                 given()
                     .redirects().follow(false)
                 .when()
-                    .get(CLIENT_URL)
+                    .post(CLIENT_URL)
                 .then()
                     .statusCode(307)
                     .header(LOCATION, matchesPattern(AUTH_SERVER_URL + ".*"))
