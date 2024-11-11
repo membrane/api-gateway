@@ -201,10 +201,12 @@ public class OAuth2CallbackRequestHandler {
 
     private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
         if (originalRequest.getRequest().getMethod().equals("GET")) {
-            HttpClient hc = new HttpClient();
-            Exchange ogExc = (Exchange) originalRequest.toAbstractExchange();
-            System.out.println(ogExc.getDestinations());
-            hc.call(ogExc);
+            Exchange ogExc;
+            try (HttpClient hc = new HttpClient()) {
+                ogExc = (Exchange) originalRequest.toAbstractExchange();
+                System.out.println(ogExc.getDestinations());
+                hc.call(ogExc);
+            }
             exc.setResponse(ogExc.getResponse());
 
             //exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
