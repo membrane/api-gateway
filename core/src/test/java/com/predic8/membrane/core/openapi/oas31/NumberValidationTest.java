@@ -19,33 +19,35 @@ import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStre
 import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MultipleTypesTest {
+public class NumberValidationTest {
 
     OpenAPIValidator validator;
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types.yaml")),null, new OpenAPISpec());
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/number-validation.yaml")), null, new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
-    static Stream<Arguments> requestBodyProvider() {
+    static Stream<Arguments> responseProvider() {
         return Stream.of(
-                Arguments.of("{\"name\": 1.0}", 1),
-                Arguments.of("{\"name\": \"string\"}", 0),
-                Arguments.of("{\"name\": 100}", 1),
-                Arguments.of("{\"name\": true}", 1),
-                Arguments.of("{\"name\": null}", 0)
+                Arguments.of("/number", 123.45, 0),
+                Arguments.of("/number", 678, 0),
+                Arguments.of("/number", "invalid", 1),
+
+                Arguments.of("/integer", 42, 0),
+                Arguments.of("/integer", -1, 0),
+                Arguments.of("/integer", 123.456, 1)
         );
     }
 
     @ParameterizedTest
-    @MethodSource("requestBodyProvider")
-    void testRequestBody(String requestBody, int expectedErrorSize) throws ParseException {
+    @MethodSource("responseProvider")
+    void testNumberAndIntegerResponses(String path, Object responseBody, int expectedErrorSize) throws ParseException {
         ValidationErrors errors = validator.validate(
-                Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
+                Request.post().path(path).body(responseBody.toString()).mediaType(APPLICATION_JSON)
         );
+        System.out.println("errors = " + errors);
         assertEquals(expectedErrorSize, errors.size());
     }
-
 }

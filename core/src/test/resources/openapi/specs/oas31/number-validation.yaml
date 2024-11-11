@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: Number and Integer Responses API
+  version: 1.0.0
+paths:
+  /number:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: [number, null]
+
+  /integer:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: [integer, null]

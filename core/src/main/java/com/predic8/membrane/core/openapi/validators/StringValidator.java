@@ -31,10 +31,23 @@ public class StringValidator implements IJSONSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(StringValidator.class.getName());
 
-    private final Schema schema;
+    private Schema schema;
+
+    public StringValidator() {}
 
     public StringValidator(Schema schema) {
         this.schema = schema;
+    }
+
+    @Override
+    public String isOfType(Object obj) {
+        if (obj instanceof JsonNode node && JsonNodeType.STRING.equals(node.getNodeType())) {
+            return "string";
+        } else if(obj instanceof String) {
+            return "string";
+        } else {
+            return null;
+        }
     }
 
     @Override

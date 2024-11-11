@@ -16,34 +16,36 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MultipleTypesDocumentTest {
+public class SimpleReferenceTest {
 
     OpenAPIValidator validator;
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-document.yaml")),null, new OpenAPISpec());
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/simple-reference.yaml")), null, new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
     static Stream<Arguments> requestBodyProvider() {
         return Stream.of(
-                Arguments.of("1.0", 1),
-                Arguments.of("\"Bonn\"", 0),
-                Arguments.of("100", 1),
-                Arguments.of("true", 1),
-                Arguments.of("null", 0)
+                Arguments.of("{\"id\": 1, \"email\": \"max@example.com\", \"createdAt\": \"2023-01-01T12:00:00Z\"}", 0),
+
+                Arguments.of("{\"id\": 1}", 1),
+
+                Arguments.of("{\"id\": 2, \"email\": \"invalid-email\", \"createdAt\": \"2023-01-01T12:00:00Z\"}", 1),
+
+                Arguments.of("{\"id\": 3, \"email\": \"anna@example.com\", \"createdAt\": \"not-a-date-time\"}", 1),
+
+                Arguments.of("{\"id\": \"foo\", \"email\": \"bar\", \"createdAt\": \"baz\"}", 3)
         );
     }
 
     @ParameterizedTest
     @MethodSource("requestBodyProvider")
-    void testRequestBody(String requestBody, int expectedErrorSize) throws ParseException {
-        System.out.println("requestBody = " + requestBody);
+    void testUserSchemaValidation(String requestBody, int expectedErrorSize) throws ParseException {
         ValidationErrors errors = validator.validate(
-                Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
+                Request.post().path("/users").body(requestBody).mediaType(APPLICATION_JSON)
         );
         assertEquals(expectedErrorSize, errors.size());
     }
-
 }

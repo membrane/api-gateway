@@ -16,34 +16,32 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MultipleTypesDocumentTest {
+public class MultipleTypesNestedTest {
 
     OpenAPIValidator validator;
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-document.yaml")),null, new OpenAPISpec());
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-nested.yaml")), null, new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
     static Stream<Arguments> requestBodyProvider() {
         return Stream.of(
-                Arguments.of("1.0", 1),
-                Arguments.of("\"Bonn\"", 0),
-                Arguments.of("100", 1),
-                Arguments.of("true", 1),
-                Arguments.of("null", 0)
+            Arguments.of("{\"root-object\": {\"string-null-date-time\": \"2023-01-01T12:00:00Z\", \"boolean-null\": null}}", 0),
+            Arguments.of("{\"root-object\": {\"string-null-date-time\": null, \"boolean-null\": true}}", 0),
+            Arguments.of("{\"root-object\": {\"string-null-date-time\": null, \"boolean-null\": null}}", 0),
+            Arguments.of("{\"root-object\": {\"string-null-date-time\": \"foo\", \"boolean-null\": 123}}", 2),
+            Arguments.of("{\"root-object\": null}", 0)
         );
     }
 
     @ParameterizedTest
     @MethodSource("requestBodyProvider")
-    void testRequestBody(String requestBody, int expectedErrorSize) throws ParseException {
-        System.out.println("requestBody = " + requestBody);
+    void testNestedRequestBody(String requestBody, int expectedErrorSize) throws ParseException {
         ValidationErrors errors = validator.validate(
-                Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
+                Request.post().path("/nested").body(requestBody).mediaType(APPLICATION_JSON)
         );
         assertEquals(expectedErrorSize, errors.size());
     }
-
 }

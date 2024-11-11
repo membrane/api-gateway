@@ -42,8 +42,11 @@ public class ObjectValidator implements IJSONSchemaValidator {
 
     @SuppressWarnings("rawtypes")
     private Schema schema;
+    private JsonNode node;
 
-    final private OpenAPI api;
+    private OpenAPI api;
+
+    public ObjectValidator() {}
 
     @SuppressWarnings("rawtypes")
     public ObjectValidator(OpenAPI api, Schema schema) {
@@ -54,22 +57,24 @@ public class ObjectValidator implements IJSONSchemaValidator {
         }
     }
 
-    @Override
-    public ValidationErrors validate(ValidationContext ctx, Object obj) {
-        ctx = ctx.schemaType("object");
-
-        JsonNode node;
-        if (obj instanceof JsonNode) {
-            node = (JsonNode) obj;
+    public String isOfType(Object obj) {
+        if (obj instanceof JsonNode j) {
+            node = j;
         } else if (obj instanceof InputStream) {
             throw new RuntimeException("InputStream should not happen!");
         } else {
             log.warn("This should not happen. Please check.");
-            return ValidationErrors.create(ctx.statusCode(400), "Value cannot be read as object.");
+            throw new RuntimeException("Value cannot be read as object.");
         }
 
-        // Is it an object?
-        if (!(node instanceof ObjectNode)) {
+        return (node instanceof ObjectNode ? "object" : null);
+    }
+
+    @Override
+    public ValidationErrors validate(ValidationContext ctx, Object obj) {
+        ctx = ctx.schemaType("object");
+
+        if (isOfType(obj) == null) {
             return ValidationErrors.create(ctx.statusCode(400),format("Value %s is not an object.",node));
         }
 

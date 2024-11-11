@@ -16,19 +16,24 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.model.Body;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 
 public class SchemaValidator implements IJSONSchemaValidator {
 
@@ -45,6 +50,11 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
         this.schema = schema;
         this.api = api;
+    }
+
+    // Not needed in SchemaValidator, but necessary for interface.
+    public String isOfType(Object obj) {
+        return null;
     }
 
     @Override
@@ -82,10 +92,6 @@ public class SchemaValidator implements IJSONSchemaValidator {
                 throw new RuntimeException("Should not happen!");
         }
 
-
-//        if ((value == null || value instanceof  NullNode) && isNullable())
-//            return errors;
-
         if (schemaHasNoTypeAndTypes(schema.getType())) {
             if ((value == null || value instanceof NullNode) && isNullable())
                 return ValidationErrors.create(ctx, "Value is null and no type is set.");
@@ -105,6 +111,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
+
         String type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {
@@ -116,27 +123,44 @@ public class SchemaValidator implements IJSONSchemaValidator {
             return validateSingleType(ctx, value, type);
 
         // At that point: schema.types is used
+        return getValidationErrors(new ArrayList<>(schema.getTypes()), ctx, value);
+    }
 
-        List<String> types = new ArrayList<>(schema.getTypes());
+    private @Nullable ValidationErrors getValidationErrors(List<String> types, ValidationContext ctx, Object value) {
+        String t = getType(value);
 
-        ValidationErrors allErrors = types.stream()
-                .map(t -> validateSingleType(ctx, value, t))
-                .filter(Objects::nonNull)
-                .filter(ValidationErrors::hasErrors)
-                .collect(ValidationErrors::new, ValidationErrors::add, ValidationErrors::add);
+        if (Objects.equals(t, "integer") && !types.contains(t) && types.contains("number")) t = "number";
 
-        //
-        if (allErrors.getErrors().size() == types.size()) {
-            return allErrors;
+        if (t == null || !types.contains(t)) {
+            ValidationErrors allErrors = new ValidationErrors();
+            for(String tp : types) {
+                allErrors.add(validateSingleType(ctx, value, tp));
+            }
+            ValidationErrors errors = new ValidationErrors();
+            errors.add(new ValidationError("%s does not match one of these types: %s. Details: %s".formatted(value, types, allErrors.toString())));
+            return errors;
         }
-        return null;
-
+        return validateSingleType(ctx, value, t);
 
     }
 
-    private boolean schemaHasNoTypeAndTypes(String type) {
-        return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
+    private String getType(Object obj) {
+        return getValidatorClasses().stream()
+                .map(this::createValidatorInstance)
+                .map(validator -> validator.isOfType(obj))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
+
+    private IJSONSchemaValidator createValidatorInstance(Class<? extends IJSONSchemaValidator> clazz) {
+        try {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create validator instance", e);
+        }
+    }
+
 
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
         try {
@@ -154,11 +178,19 @@ public class SchemaValidator implements IJSONSchemaValidator {
         }
     }
 
+    private boolean schemaHasNoTypeAndTypes(String type) {
+        return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
+    }
+
+    private List<Class<? extends IJSONSchemaValidator>> getValidatorClasses() {
+        // Order must be kept intact as: IntegerValidator NumberValidator StringValidator BooleanValidator ArrayValidator ObjectValidator
+        return List.of(IntegerValidator.class, NumberValidator.class, StringValidator.class, BooleanValidator.class, ArrayValidator.class, ObjectValidator.class);
+    }
+
     /**
      * Unwrap or read value in case of InputStream or Body objects
      */
     private Object resolveValueAndParseJSON(Object obj) throws IOException {
-
         if (obj instanceof Body)
             return ((Body) obj).getJson();
 

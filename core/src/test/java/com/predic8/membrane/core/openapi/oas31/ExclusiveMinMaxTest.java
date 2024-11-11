@@ -16,34 +16,33 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MultipleTypesDocumentTest {
+public class ExclusiveMinMaxTest {
 
     OpenAPIValidator validator;
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-document.yaml")),null, new OpenAPISpec());
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/exclusive-min-max.yaml")), null, new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 
     static Stream<Arguments> requestBodyProvider() {
         return Stream.of(
-                Arguments.of("1.0", 1),
-                Arguments.of("\"Bonn\"", 0),
-                Arguments.of("100", 1),
-                Arguments.of("true", 1),
-                Arguments.of("null", 0)
+                Arguments.of("{\"value\": 9.99}", 1),
+                Arguments.of("{\"value\": 10.0}", 1),
+                Arguments.of("{\"value\": 10.01}", 0),
+                Arguments.of("{\"value\": 99.99}", 0),
+                Arguments.of("{\"value\": 100.0}", 1),
+                Arguments.of("{\"value\": 100.01}", 1)
         );
     }
 
     @ParameterizedTest
     @MethodSource("requestBodyProvider")
-    void testRequestBody(String requestBody, int expectedErrorSize) throws ParseException {
-        System.out.println("requestBody = " + requestBody);
+    void testExclusiveMinMax(String requestBody, int expectedErrorSize) throws ParseException {
         ValidationErrors errors = validator.validate(
-                Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
+                Request.post().path("/range-check").body(requestBody).mediaType(APPLICATION_JSON)
         );
         assertEquals(expectedErrorSize, errors.size());
     }
-
 }

@@ -24,6 +24,20 @@ import static java.lang.Double.*;
 
 public class NumberValidator implements IJSONSchemaValidator {
 
+    @Override
+    public String isOfType(Object obj) {
+        try {
+            if (obj instanceof JsonNode) {
+                new BigDecimal(((JsonNode) obj).asText());
+            } else if (obj instanceof String) {
+                parseDouble((String) obj);
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return "number";
+    }
+
     /**
      * Only check if obj can be converted to a number
      */
