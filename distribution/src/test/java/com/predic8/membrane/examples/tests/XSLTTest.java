@@ -21,9 +21,9 @@ import static com.predic8.membrane.test.AssertUtils.*;
 
 public class XSLTTest extends AbstractSampleMembraneStartStopTestcase {
 
-    public static final String PATH = "/samples/sqlrest/CUSTOMER/7/";
+    public static final String PATH = "/restnames/name.groovy?name=Pia";
     public static final String CUSTOMER_HOST_LOCAL = "http://localhost:2000";
-    public static final String CUSTOMER_HOST_REMOTE = "http://www.thomas-bayer.com";
+    public static final String CUSTOMER_HOST_REMOTE = "https://api.predic8.de";
 
     @Override
     protected String getExampleDirName() {
@@ -32,7 +32,7 @@ public class XSLTTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Test
     public void test() throws Exception {
-        assertContains("FIRSTNAME", getAndAssert200(CUSTOMER_HOST_REMOTE + PATH));
-        assertContains("first", getAndAssert200(CUSTOMER_HOST_LOCAL + PATH));
+        assertContains("<male>", getAndAssert200(CUSTOMER_HOST_REMOTE + PATH));
+        assertContainsNot("<male>", getAndAssert200(CUSTOMER_HOST_LOCAL + PATH));
     }
 }
