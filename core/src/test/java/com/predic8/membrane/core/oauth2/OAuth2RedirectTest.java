@@ -27,6 +27,7 @@ import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -47,8 +48,8 @@ public class OAuth2RedirectTest {
     static AtomicReference<String> firstUrlHit = new AtomicReference<>();
     static AtomicReference<String> targetUrlHit = new AtomicReference<>();
 
-    @BeforeAll
-    static void setup() throws Exception {
+    @BeforeEach
+    void init() throws Exception {
         azureRouter = startProxyRule(getAzureRule());
         membraneRouter = startProxyRule(getMembraneRule());
         nginxRouter = startProxyRule(getNginxRule());
@@ -56,33 +57,51 @@ public class OAuth2RedirectTest {
 
     @Test
     void testGet() {
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient();
         // Step 1: Initial request to the client
-        Response clientResponse = step1originalRequest();
-
+        Response clientResponse = OAuth2.step1originalRequestGET();
         // Step 2: Send to authentication at OAuth2 server
-        String loginLocation = step2sendAuthToOAuth2Server(clientResponse);
-
+        String loginLocation = OAuth2.step2sendAuthToOAuth2Server(clientResponse);
         // Step 3: Open login page
-        step3openLoginPage(loginLocation);
-
+        OAuth2.step3openLoginPage(loginLocation);
         // Step 4: Submit login
-        step4submitLogin(loginLocation);
-
+        OAuth2.step4submitLogin(loginLocation);
         // Step 5: Redirect to consent
-        String consentLocation = step5redirectToConsent();
-
+        String consentLocation = OAuth2.step5redirectToConsent();
         // Step 6: Open consent dialog
-        step6openConsentDialog(consentLocation);
-
+        OAuth2.step6openConsentDialog(consentLocation);
         // Step 7: Submit consent
-        step7submitConsent(consentLocation);
-
+        OAuth2.step7submitConsent(consentLocation);
         // Step 8: Redirect back to client
-        String callbackUrl = step8redirectToClient();
-
+        String callbackUrl = OAuth2.step8redirectToClient();
         // Step 9: Exchange Code for Token & continue original request.·
-        step9exchangeCodeForToken(callbackUrl);
-        
+        OAuth2.step9exchangeCodeForToken(callbackUrl);
+
+        assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
+    }
+
+    @Test
+    void testPost() {
+        OAuth2AuthFlowClient OAuth2 = new OAuth2AuthFlowClient();
+        // Step 1: Initial request to the client
+        Response clientResponse = OAuth2.step1originalRequestPOST();
+        // Step 2: Send to authentication at OAuth2 server
+        String loginLocation = OAuth2.step2sendAuthToOAuth2Server(clientResponse);
+        // Step 3: Open login page
+        OAuth2.step3openLoginPage(loginLocation);
+        // Step 4: Submit login
+        OAuth2.step4submitLogin(loginLocation);
+        // Step 5: Redirect to consent
+        String consentLocation = OAuth2.step5redirectToConsent();
+        // Step 6: Open consent dialog
+        OAuth2.step6openConsentDialog(consentLocation);
+        // Step 7: Submit consent
+        OAuth2.step7submitConsent(consentLocation);
+        // Step 8: Redirect back to client
+        String callbackUrl = OAuth2.step8redirectToClient();
+        // Step 9: Exchange Code for Token & continue original request.·
+        OAuth2.step9exchangeCodeForToken(callbackUrl);
+
         assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
     }
 

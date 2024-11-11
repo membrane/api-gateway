@@ -8,7 +8,6 @@ import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.apache.http.HttpHeaders.LOCATION;
-import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.hamcrest.text.MatchesPattern.matchesPattern;
 
 public class OAuth2AuthFlowClient {
@@ -17,11 +16,25 @@ public class OAuth2AuthFlowClient {
     private static final String CLIENT_URL = CLIENT_BASE_URL + "/a?b=c&d= ";
     private static final String AUTH_SERVER_URL = "http://localhost:2002";
 
-    static Map<String, String> cookies = new HashMap<>();
-    static Map<String, String> memCookies = new HashMap<>();
+    Map<String, String> cookies = new HashMap<>();
+    Map<String, String> memCookies = new HashMap<>();
 
     // @formatter:off
-    static @NotNull Response step1originalRequest() {
+    @NotNull Response step1originalRequestGET() {
+        Response response =
+                given()
+                    .redirects().follow(false)
+                .when()
+                    .get(CLIENT_URL)
+                .then()
+                    .statusCode(307)
+                    .header(LOCATION, matchesPattern(AUTH_SERVER_URL + ".*"))
+                    .extract().response();
+        memCookies.putAll(response.getCookies());
+        return response;
+    }
+
+    @NotNull Response step1originalRequestPOST() {
         Response response =
                 given()
                     .redirects().follow(false)
@@ -35,7 +48,7 @@ public class OAuth2AuthFlowClient {
         return response;
     }
 
-    static @NotNull String step2sendAuthToOAuth2Server(Response response) {
+    @NotNull String step2sendAuthToOAuth2Server(Response response) {
         Response formRedirect =
                 given()
                     .redirects().follow(false)
@@ -51,7 +64,7 @@ public class OAuth2AuthFlowClient {
         return formRedirect.getHeader(LOCATION);
     }
 
-    static void step3openLoginPage(String location) {
+    void step3openLoginPage(String location) {
         given()
             .redirects().follow(true)
             .cookies(cookies)
@@ -62,7 +75,7 @@ public class OAuth2AuthFlowClient {
             .extract().response();
     }
 
-    static void step4submitLogin(String location) {
+    void step4submitLogin(String location) {
         given()
             .redirects().follow(false)
             .cookies(cookies)
@@ -78,7 +91,7 @@ public class OAuth2AuthFlowClient {
             .extract().response();
     }
 
-    static String step5redirectToConsent() {
+    String step5redirectToConsent() {
         return given()
                 .redirects().follow(false)
                 .cookies(cookies)
@@ -90,7 +103,7 @@ public class OAuth2AuthFlowClient {
                 .extract().response().getHeader(LOCATION);
     }
 
-    static void step6openConsentDialog(String location) {
+    void step6openConsentDialog(String location) {
         given()
             .redirects().follow(false)
             .cookies(cookies)
@@ -101,7 +114,7 @@ public class OAuth2AuthFlowClient {
             .extract().response();
     }
 
-    static void step7submitConsent(String location) {
+    void step7submitConsent(String location) {
         given()
             .redirects().follow(false)
             .cookies(cookies)
@@ -116,7 +129,7 @@ public class OAuth2AuthFlowClient {
             .extract().response();
     }
 
-    static String step8redirectToClient() {
+    String step8redirectToClient() {
         return given()
                 .redirects().follow(false)
                 .cookies(cookies)
@@ -128,7 +141,7 @@ public class OAuth2AuthFlowClient {
                 .extract().response().getHeader(LOCATION);
     }
 
-    static void step9exchangeCodeForToken(String location) {
+    void step9exchangeCodeForToken(String location) {
         given()
             .redirects().follow(false)
             .cookies(memCookies)
