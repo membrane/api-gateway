@@ -123,6 +123,11 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                          .findFirst();
     }
 
+    /**
+     * @description Controls whether API key validation is enforced or optional
+     * @default true
+     * @example "false"
+     */
     @SuppressWarnings("SameParameterValue")
     @MCAttribute
     public void setRequired(boolean required) {
@@ -133,6 +138,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return required;
     }
 
+    /**
+     * @description List of API key stores to validate keys against
+     * @example <keys><key value="abc123"><scope>read</scope></key></keys>
+     */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
         this.stores.addAll(stores);
@@ -142,6 +151,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return stores;
     }
 
+    /**
+     * @description List of extractors that define where and how to extract API keys from requests
+     * @example <headerExtractor name="X-API-Key" />
+     */
     @MCChildElement(allowForeign = true, order = 1)
     public void setExtractors(List<ApiKeyExtractor> extractors) {
         this.extractors.addAll(extractors);
