@@ -212,12 +212,9 @@ public class OAuth2CallbackRequestHandler {
                 session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
                 String delimiter = ogExc.getOriginalRequestUri().contains("?") ? "&" : "?";
 
-                hc.call(ogExc);
                 String ogDest = ogExc.getDestinations().get(0);
-                ogExc.setOriginalRequestUri(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect);
-                ogExc.getRequest().setUri(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect);
                 ogExc.setDestinations(List.of(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect));
-                System.out.println("dest = " + ogExc.getDestinations());
+                hc.call(ogExc);
                 exc.setResponse(ogExc.getResponse());
             }
         }
