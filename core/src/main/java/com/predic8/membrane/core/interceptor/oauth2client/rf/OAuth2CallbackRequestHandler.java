@@ -200,23 +200,26 @@ public class OAuth2CallbackRequestHandler {
     }
 
     private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
-        if (originalRequest.getRequest().getMethod().equals("GET")) {
-            Exchange ogExc;
-            try (HttpClient hc = new HttpClient()) {
-                ogExc = (Exchange) originalRequest.toAbstractExchange();
-                System.out.println(ogExc.getDestinations());
+        try (HttpClient hc = new HttpClient()) {
+            Exchange ogExc = (Exchange) originalRequest.toAbstractExchange();
+            if (originalRequest.getRequest().getMethod().equals("GET")) {
                 hc.call(ogExc);
+                exc.setResponse(ogExc.getResponse());
+
+                //exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
+            } else {
+                String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
+                session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
+                String delimiter = ogExc.getOriginalRequestUri().contains("?") ? "&" : "?";
+
+                hc.call(ogExc);
+                String ogDest = ogExc.getDestinations().get(0);
+                ogExc.setOriginalRequestUri(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect);
+                ogExc.getRequest().setUri(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect);
+                ogExc.setDestinations(List.of(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect));
+                System.out.println("dest = " + ogExc.getDestinations());
+                exc.setResponse(ogExc.getResponse());
             }
-            exc.setResponse(ogExc.getResponse());
-
-            //exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
-        } else {
-            String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
-
-            session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
-
-            String delimiter = originalRequest.getOriginalRequestUri().contains("?") ? "&" : "?";
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
         }
     }
 }
