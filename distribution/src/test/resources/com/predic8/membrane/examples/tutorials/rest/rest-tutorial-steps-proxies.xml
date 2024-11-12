@@ -22,13 +22,13 @@
 
 		<api port="2002">
 			<path>/restnames</path>
-			<target url="http://www.thomas-bayer.com"/>
+			<target url="https://api.predic8.de"/>
 		</api>
 
 		<api port="2003">
 			<path>/restnames</path>
 			<xml2Json/>
-			<target url="http://www.thomas-bayer.com"/>
+			<target url="https://api.predic8.de"/>
 		</api>
 
 		<api port="2004">
@@ -38,7 +38,7 @@
 				<beautifier/>
 				<xml2Json/>
 			</response>
-			<target url="http://www.thomas-bayer.com"/>
+			<target url="https://api.predic8.de"/>
 		</api>
 
 		<api port="9000">
