@@ -16,6 +16,9 @@ package com.predic8.membrane.core.interceptor.apikey.stores.inConfig;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 
+/**
+ * @description Contains a scope for use in <secret value="...">...</secret> elements.
+ */
 @MCElement(name = "scope", topLevel = false, mixed = true)
 public class Scope {
 

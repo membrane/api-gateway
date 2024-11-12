@@ -30,6 +30,9 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * @description Loads api keys from a file. File has to be one key per line, blank lines for formatting are allowed. Optionally, a comma separated list of scopes after the key and a colon in between the two. Hash symbol can be used for comments at the end of each line, including empty lines.
+ */
 @MCElement(name = "keyFileStore", topLevel = false)
 public class ApiKeyFileStore implements ApiKeyStore {
 
@@ -93,13 +96,15 @@ public class ApiKeyFileStore implements ApiKeyStore {
         }
     }
 
-    public String getLocation() {
-        return this.location;
-    }
-
+    /**
+     * @description Path/URL to the api key file.
+     */
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;
     }
 
+    public String getLocation() {
+        return this.location;
+    }
 }

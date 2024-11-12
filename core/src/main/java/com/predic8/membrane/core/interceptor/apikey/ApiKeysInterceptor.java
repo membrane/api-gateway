@@ -33,6 +33,10 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.util.stream.Stream.ofNullable;
 
+/**
+ * @description Protects proxies using keys from files or inline configuration. Can source keys from headers or query parameters from clients. Supports additional scope verification by loading associated scopes into an Exchange property to be used with <code>hasScope</code> SpEL function.
+ * @topic 6. Security
+ */
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
     public static final String SCOPES = "membrane-scopes";
@@ -124,9 +128,9 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Controls whether API key validation is enforced or optional
+     * @description Controls whether API key validation is enforced or optional. Optional will still load scopes into Exchange property.
      * @default true
-     * @example "false"
+     * @example false
      */
     @SuppressWarnings("SameParameterValue")
     @MCAttribute
@@ -139,8 +143,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description List of API key stores to validate keys against
-     * @example <keys><key value="abc123"><scope>read</scope></key></keys>
+     * @description API key stores to validate keys against
      */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
@@ -152,8 +155,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description List of extractors that define where and how to extract API keys from requests
-     * @example <headerExtractor name="X-API-Key" />
+     * @description Extractors that define where and how to extract API keys from requests
+     * @default <headerExtractor /> (Using default header "X-Api-Key")
      */
     @MCChildElement(allowForeign = true, order = 1)
     public void setExtractors(List<ApiKeyExtractor> extractors) {
