@@ -46,33 +46,55 @@ public class NumberRestrictionValidator {
         if (obj instanceof BooleanNode)
             return null;
 
-        ValidationErrors errors = new ValidationErrors();
-
+        BigDecimal value;
         try {
-            if (obj instanceof JsonNode) {
-                // Not using double prevents from losing fractions
-                obj = new BigDecimal(((JsonNode) obj).asText());
-            } else if (obj instanceof String) {
-                obj = BigDecimal.valueOf(parseDouble((String) obj));
-            }
+            value = convertToBigDecimal(obj);
         } catch (NumberFormatException e) {
-            return errors;
+            // if value is not parsable as a number then a check of number restrictions is not needed
+            return null;
         }
 
-        BigDecimal value = (BigDecimal) obj;
-
-        validateMinimum(ctx, value, errors);
+        ValidationErrors errors = new ValidationErrors();
+        validateMinimum(ctx, value, errors); // @TODO
         validateMaximum(ctx, value, errors);
+        validateExclusiveMaximum(ctx, value, errors);
+        errors.add(validateMultipleOf(ctx, value));
+        return errors;
+    }
 
-        if (schema.getMultipleOf() != null) {
-            BigDecimal multiplesOf = schema.getMultipleOf();
-            BigDecimal[] remainder = value.divideAndRemainder(multiplesOf);
-            if (remainder[1].intValue() != 0) {
-                errors.add(ctx,String.format("Value %d is not a multiple of %d.",value.intValue(),multiplesOf.intValue()));
+    private ValidationErrors validateMultipleOf(ValidationContext ctx, BigDecimal value) {
+        if (schema.getMultipleOf() == null)
+            return null;
+
+        BigDecimal multiplesOf = schema.getMultipleOf();
+        BigDecimal[] remainder = value.divideAndRemainder(multiplesOf);
+        if (remainder[1].intValue() != 0) {
+            return ValidationErrors.create(ctx, String.format("Value %d is not a multiple of %d.", value.intValue(), multiplesOf.intValue()));
+        }
+
+        return null;
+    }
+
+    // TODO javadoc, test
+    private static BigDecimal convertToBigDecimal(Object obj) {
+        if (obj instanceof JsonNode) {
+            // Not using double prevents from losing fractions
+            obj = new BigDecimal(((JsonNode) obj).asText());
+        } else if (obj instanceof String) {
+            obj = BigDecimal.valueOf(parseDouble((String) obj));
+        }
+        return (BigDecimal) obj;
+    }
+
+    private void validateExclusiveMaximum(ValidationContext ctx, BigDecimal value, ValidationErrors errors) {
+        if (schema.getExclusiveMaximumValue() != null) {
+            if (schema.getExclusiveMaximumValue().compareTo(value) < 0) {
+                errors.add(new ValidationError(ctx, value + " is greater than the maximum of " + schema.getExclusiveMaximumValue()));
+            }
+            if (schema.getExclusiveMaximumValue().compareTo(value) == 0) {
+                errors.add(new ValidationError(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getExclusiveMaximumValue())));
             }
         }
-
-        return errors;
     }
 
     private void validateMaximum(ValidationContext ctx, BigDecimal value, ValidationErrors errors) {
@@ -82,15 +104,6 @@ public class NumberRestrictionValidator {
             }
             if (isExclusiveMaximum() && schema.getMaximum().compareTo(value) == 0) {
                 errors.add(new ValidationError(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getMaximum())));
-            }
-        }
-
-        if (schema.getExclusiveMaximumValue() != null) {
-            if (schema.getExclusiveMaximumValue().compareTo(value) < 0) {
-                errors.add(new ValidationError(ctx, value + " is greater than the maximum of " + schema.getExclusiveMaximumValue()));
-            }
-            if (schema.getExclusiveMaximumValue().compareTo(value) == 0) {
-                errors.add(new ValidationError(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getExclusiveMaximumValue())));
             }
         }
     }
@@ -105,6 +118,7 @@ public class NumberRestrictionValidator {
             }
         }
 
+        // TODO
         if(schema.getExclusiveMinimumValue() != null) {
            if (schema.getExclusiveMinimumValue().compareTo(value) > 0) {
                 errors.add(new ValidationError(ctx, value + " is smaller than the minimum of " + schema.getExclusiveMinimumValue()));
