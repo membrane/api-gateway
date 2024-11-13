@@ -28,20 +28,27 @@ public class RequestReferenceTest {
 
     static Stream<Arguments> createUserRequestProvider() {
         return Stream.of(
-                Arguments.of("{\"email\": \"max@example.com\", \"createdAt\": \"2024-01-01T12:00:00Z\"}", 0),
-                Arguments.of("{\"email\": \"max@example.com\", \"id\": 123, \"createdAt\": \"2024-01-01T12:00:00Z\"}", 0),
-                Arguments.of("{}", 1),
-                Arguments.of("{\"email\": \"invalid-email\"}", 1),
-                Arguments.of("{\"email\": \"max@example.com\", \"createdAt\": \"not-a-datetime\"}", 1),
-                Arguments.of("{\"id\": 123}", 1),
-                Arguments.of("{\"email\": \"max@example.com\", \"id\": \"not-a-number\"}", 1)
+                Arguments.of("""
+                        {"email": "max@example.com", "createdAt": "2024-01-01T12:00:00Z"}""", 0),
+                Arguments.of("""
+                        {"email": "max@example.com", "id": 123, "createdAt": "2024-01-01T12:00:00Z"}""", 0),
+                Arguments.of("""
+                        {}""", 1),
+                Arguments.of("""
+                        {"email": "invalid-email"}""", 1),
+                Arguments.of("""
+                        {"email": "max@example.com", "createdAt": "not-a-datetime"}""", 1),
+                Arguments.of("""
+                        {"id": 123}""", 1),
+                Arguments.of("""
+                        {"email": "max@example.com", "id": "not-a-number"}""", 1)
         );
     }
 
     @ParameterizedTest
     @MethodSource("createUserRequestProvider")
     void testUserCreationRequestValidation(String requestBody, int expectedErrorSize) throws ParseException {
-        ValidationErrors errors = validator.validate(
+         ValidationErrors errors = validator.validate(
                 Request.post().path("/users").body(requestBody).mediaType(APPLICATION_JSON)
         );
 
