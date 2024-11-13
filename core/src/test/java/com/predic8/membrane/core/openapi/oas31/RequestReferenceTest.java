@@ -41,7 +41,7 @@ public class RequestReferenceTest {
     @ParameterizedTest
     @MethodSource("createUserRequestProvider")
     void testUserCreationRequestValidation(String requestBody, int expectedErrorSize) throws ParseException {
-        ValidationErrors errors = validator.validate(
+         ValidationErrors errors = validator.validate(
                 Request.post().path("/users").body(requestBody).mediaType(APPLICATION_JSON)
         );
 
