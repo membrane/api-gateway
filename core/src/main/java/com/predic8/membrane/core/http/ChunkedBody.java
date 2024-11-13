@@ -72,7 +72,6 @@ public class ChunkedBody extends AbstractBody {
 		int chunkSize;
 		while ((chunkSize = readChunkSize(in)) > 0) {
 			byte[] bytes = ByteUtil.readByteArray(in, chunkSize);
-			//
 			Chunk chunk = new Chunk(bytes);
 			for (MessageObserver observer : observers)
 				observer.bodyChunk(chunk);
