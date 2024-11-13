@@ -53,7 +53,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     // Not needed in SchemaValidator, but necessary for interface.
-    public String isOfType(Object obj) {
+    public String canValidate(Object obj) {
         return null;
     }
 
@@ -123,31 +123,52 @@ public class SchemaValidator implements IJSONSchemaValidator {
             return validateSingleType(ctx, value, type);
 
         // At that point: schema.types is used
-        return getValidationErrors(new ArrayList<>(schema.getTypes()), ctx, value);
+        return validateMultipleTypes(new ArrayList<>(schema.getTypes()), ctx, value);
     }
 
-    private @Nullable ValidationErrors getValidationErrors(List<String> types, ValidationContext ctx, Object value) {
-        String t = getType(value);
+    private @Nullable ValidationErrors validateMultipleTypes(List<String> types, ValidationContext ctx, Object value) {
+        String typeOfValue = getTypeOfValue(types, value);
 
-        if (Objects.equals(t, "integer") && !types.contains(t) && types.contains("number")) t = "number";
+        ValidationErrors errors = getValidationErrors(types, ctx, value, typeOfValue);
+        if (errors != null) return errors;
 
-        if (t == null || !types.contains(t)) {
-            ValidationErrors allErrors = new ValidationErrors();
-            for(String tp : types) {
-                allErrors.add(validateSingleType(ctx, value, tp));
-            }
-            ValidationErrors errors = new ValidationErrors();
-            errors.add(new ValidationError("%s does not match one of these types: %s. Details: %s".formatted(value, types, allErrors.toString())));
-            return errors;
+        return validateSingleType(ctx, value, typeOfValue);
+
+    }
+
+    /**
+     * given types: [number,null]
+     *       value: "Manila"
+     *       typeOfValue: "string"
+     * @param types
+     * @param ctx
+     * @param value
+     * @param typeOfValue
+     * @return
+     */
+    private @Nullable ValidationErrors getValidationErrors(List<String> types, ValidationContext ctx, Object value, String typeOfValue) {
+        if (typeOfValue == null || !types.contains(typeOfValue)) {
+            return ValidationErrors.create(ctx,"%s is of type %s which does not match any of %s".formatted( value, typeOfValue, types));
         }
-        return validateSingleType(ctx, value, t);
-
+        return null;
     }
 
-    private String getType(Object obj) {
-        return getValidatorClasses().stream()
+    /**
+     *
+     * @param types Declared types in a schema like types: [integer,string,null]
+     * @param value value from the document that has to be validated
+     * @return name of the type that applies
+     */
+    private static @Nullable String getTypeOfValue(List<String> types, Object value) {
+        String typeOfValue = getType(value);
+        if (Objects.equals(typeOfValue, "integer") && !types.contains(typeOfValue) && types.contains(NUMBER))
+            return NUMBER;
+        return typeOfValue;
+    }
 
-                .map(validator -> validator.isOfType(obj))
+    private static String getType(Object obj) {
+        return getValidatorClasses().stream()
+                .map(validator -> validator.canValidate(obj))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
@@ -157,7 +178,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     private ValidationErrors validateSingleType(ValidationContext ctx, Object value, String type) {
         try {
             return switch (type) {
-                case "number" -> new NumberValidator().validate(ctx, value);
+                case NUMBER -> new NumberValidator().validate(ctx, value);
                 case "integer" -> new IntegerValidator().validate(ctx, value);
                 case "string" -> new StringValidator(schema).validate(ctx, value);
                 case "boolean" -> new BooleanValidator().validate(ctx, value);
@@ -174,8 +195,15 @@ public class SchemaValidator implements IJSONSchemaValidator {
         return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
     }
 
-    private List<IJSONSchemaValidator> getValidatorClasses() {
-        return List.of(new IntegerValidator(), new NumberValidator(), new StringValidator(null), new BooleanValidator(), new ArrayValidator(null, null), new ObjectValidator(null, null));
+    private static List<IJSONSchemaValidator> getValidatorClasses() {
+        return List.of(
+                new IntegerValidator(),
+                new NumberValidator(),
+                new StringValidator(null),
+                new BooleanValidator(),
+                new ArrayValidator(null, null),
+                new ObjectValidator(null, null)
+        );
     }
 
     /**

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.databind.node.*;
 public class BooleanValidator implements IJSONSchemaValidator {
 
     @Override
-    public String isOfType(Object obj) {
+    public String canValidate(Object obj) {
         String str = getStringValue(obj);
         if(obj instanceof BooleanNode || str.equals("true") || str.equals("false"))
             return "boolean";
@@ -46,12 +46,12 @@ public class BooleanValidator implements IJSONSchemaValidator {
     }
 
     private static String getStringValue(Object value) {
-        String str = "";
-        if (value instanceof TextNode) {
-            str = ((TextNode) value).asText();
-        } else if (value instanceof String) {
-            str = (String) value;
+        if (value instanceof TextNode tn) {
+            return  tn.asText();
         }
-        return str;
+        if (value instanceof String s) {
+            return s;
+        }
+        return "";
     }
 }

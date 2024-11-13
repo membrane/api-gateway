@@ -17,6 +17,9 @@
 package com.predic8.membrane.core.openapi.validators;
 
 interface IJSONSchemaValidator {
-    String isOfType(Object obj);
+
+    String NUMBER = "number";
+
+    String canValidate(Object obj);
     ValidationErrors validate(ValidationContext ctx, Object value);
 }

@@ -39,7 +39,7 @@ public class ArrayValidator implements IJSONSchemaValidator {
         this.schema = schema;
     }
 
-    public String isOfType(Object obj) {
+    public String canValidate(Object obj) {
         if (obj instanceof ArrayNode) {
             return "array";
         }

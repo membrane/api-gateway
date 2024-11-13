@@ -1,23 +1,20 @@
 package com.predic8.membrane.core.openapi.oas31;
 
-import com.predic8.membrane.core.openapi.OpenAPIValidator;
-import com.predic8.membrane.core.openapi.model.Request;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
-import com.predic8.membrane.core.openapi.validators.ValidationErrors;
-import com.predic8.membrane.core.util.URIFactory;
-import jakarta.mail.internet.ParseException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.predic8.membrane.core.openapi.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.util.*;
+import jakarta.mail.internet.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.util.stream.Stream;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
-import static com.predic8.membrane.core.openapi.util.TestUtils.parseOpenAPI;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.model.Request.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MultipleTypesTest {
 
@@ -43,7 +40,7 @@ public class MultipleTypesTest {
     @MethodSource("requestBodyProvider")
     void testRequestBody(String requestBody, int expectedErrorSize) throws ParseException {
         ValidationErrors errors = validator.validate(
-                Request.post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
+                post().path("/foo").body(requestBody).mediaType(APPLICATION_JSON)
         );
         assertEquals(expectedErrorSize, errors.size());
     }

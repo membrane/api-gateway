@@ -38,7 +38,7 @@ public class StringValidator implements IJSONSchemaValidator {
     }
 
     @Override
-    public String isOfType(Object obj) {
+    public String canValidate(Object obj) {
         if (obj instanceof JsonNode node && JsonNodeType.STRING.equals(node.getNodeType())) {
             return "string";
         } else if(obj instanceof String) {

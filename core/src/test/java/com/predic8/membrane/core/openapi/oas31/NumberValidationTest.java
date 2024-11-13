@@ -34,7 +34,6 @@ public class NumberValidationTest {
                 Arguments.of("/number", 123.45, 0),
                 Arguments.of("/number", 678, 0),
                 Arguments.of("/number", "invalid", 1),
-
                 Arguments.of("/integer", 42, 0),
                 Arguments.of("/integer", -1, 0),
                 Arguments.of("/integer", 123.456, 1)
@@ -47,7 +46,6 @@ public class NumberValidationTest {
         ValidationErrors errors = validator.validate(
                 Request.post().path(path).body(responseBody.toString()).mediaType(APPLICATION_JSON)
         );
-        System.out.println("errors = " + errors);
         assertEquals(expectedErrorSize, errors.size());
     }
 }

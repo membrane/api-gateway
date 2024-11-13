@@ -25,7 +25,7 @@ import static java.lang.Double.*;
 public class NumberValidator implements IJSONSchemaValidator {
 
     @Override
-    public String isOfType(Object obj) {
+    public String canValidate(Object obj) {
         try {
             if (obj instanceof JsonNode) {
                 new BigDecimal(((JsonNode) obj).asText());

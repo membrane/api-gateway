@@ -24,7 +24,7 @@ import static java.lang.Long.parseLong;
 public class IntegerValidator implements IJSONSchemaValidator {
 
     @Override
-    public String isOfType(Object obj) {
+    public String canValidate(Object obj) {
         if (obj instanceof JsonNode j) {
             obj = j.numberValue();
         }
@@ -34,7 +34,8 @@ public class IntegerValidator implements IJSONSchemaValidator {
                 parseLong(s);
                 return "integer";
             }
-            if (obj instanceof Integer) return "integer";
+            if (obj instanceof Integer)
+                return "integer";
             return null;
         } catch (Exception e) {
             return null;

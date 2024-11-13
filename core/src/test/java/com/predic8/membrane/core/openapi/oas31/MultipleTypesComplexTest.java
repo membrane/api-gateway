@@ -22,11 +22,12 @@ public class MultipleTypesComplexTest {
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), null, new OpenAPISpec());
-        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
+        validator = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/multiple-types-complex.yaml")), null, new OpenAPISpec()));
     }
 
     static Stream<Arguments> requestBodyProvider() {
+        // TODO multiline
         return Stream.of(
                 Arguments.of("{\"user\": {\"name\": \"John\", \"age\": null}, \"tags\": [{\"label\": \"tag1\", \"value\": 1}, {\"label\": null, \"value\": null}]}", 0),
                 Arguments.of("{\"user\": {\"name\": null, \"age\": 25}, \"tags\": null}", 0),

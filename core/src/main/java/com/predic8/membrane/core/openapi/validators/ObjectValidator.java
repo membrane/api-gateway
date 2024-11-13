@@ -18,7 +18,6 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
@@ -52,7 +51,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
         this.schema = schema;
     }
 
-    public String isOfType(Object obj) {
+    public String canValidate(Object obj) {
         if (obj instanceof JsonNode j) {
             node = j;
         } else if (obj instanceof InputStream) {
@@ -69,7 +68,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
         ctx = ctx.schemaType("object");
 
-        if (isOfType(obj) == null) {
+        if (canValidate(obj) == null) {
             return ValidationErrors.create(ctx.statusCode(400),format("Value %s is not an object.",node));
         }
 
