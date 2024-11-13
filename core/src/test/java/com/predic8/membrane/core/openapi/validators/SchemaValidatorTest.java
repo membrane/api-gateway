@@ -2,7 +2,6 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -20,13 +19,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SchemaValidatorTest {
 
-    static ArrayValidator arrayValidator;
-    static BooleanValidator booleanValidator;
-    static IntegerValidator integerValidator;
-    static NumberValidator numberValidator;
-    static ObjectValidator objectValidator;
+    private static final ObjectMapper mapper = new ObjectMapper();
 
-    static StringValidator stringValidator;
+    static IJSONSchemaValidator arrayValidator;
+    static IJSONSchemaValidator booleanValidator;
+    static IJSONSchemaValidator integerValidator;
+    static IJSONSchemaValidator numberValidator;
+    static IJSONSchemaValidator objectValidator;
+    static IJSONSchemaValidator stringValidator;
 
     @BeforeAll
     static void setUp() {
@@ -35,43 +35,67 @@ public class SchemaValidatorTest {
         integerValidator = new IntegerValidator();
         numberValidator = new NumberValidator();
         objectValidator = new ObjectValidator(null, null);
-
         stringValidator = new StringValidator(null);
     }
 
     @ParameterizedTest
-    @MethodSource("arrayValidatorTestCases")
-    void testCanValidateArray(Object input, String expected) {
-        String result = arrayValidator.canValidate(input);
-        assertEquals(expected, result);
-    }
-
-    @ParameterizedTest
-    @MethodSource("booleanValidatorTestCases")
-    void testCanValidateBoolean(Object input, String expected) {
-        assertEquals(expected, booleanValidator.canValidate(input));
-    }
-
-    @ParameterizedTest
-    @MethodSource("integerValidatorTestCases")
-    void testCanValidateInteger(Object input, String expected) {
-        assertEquals(expected, integerValidator.canValidate(input));
-    }
-
-    @ParameterizedTest
-    @MethodSource("numberValidatorTestCases")
-    void testCanValidateNumber(Object input, String expected) {
-        assertEquals(expected, numberValidator.canValidate(input));
-    }
-
-    @ParameterizedTest
-    @MethodSource("objectValidatorTestCases")
-    void testCanValidate(Object input, String expected) {
+    @MethodSource("validatorTestCases")
+    void testCanValidate(IJSONSchemaValidator validator, Object input, String expected) {
         if (input instanceof InputStream) {
-            assertThrows(RuntimeException.class, () -> objectValidator.canValidate(input), "InputStream should not happen!");
+            assertThrows(RuntimeException.class, () -> validator.canValidate(input), "InputStream should not happen!");
         } else {
-            assertEquals(expected, objectValidator.canValidate(input));
+            assertEquals(expected, validator.canValidate(input));
         }
+    }
+
+    private static Stream<Arguments> validatorTestCases() {
+        JsonNode nonArrayNode = mapper.createObjectNode().put("key", "value");
+        JsonNode stringNode = new TextNode("example");
+
+        return Stream.of(
+                // ArrayValidator test cases
+                Arguments.of(arrayValidator, mapper.createArrayNode(), "array"),
+                Arguments.of(arrayValidator, nonArrayNode, null),
+                Arguments.of(arrayValidator, "notAnArray", null),
+                Arguments.of(arrayValidator, null, null),
+
+                // BooleanValidator test cases
+                Arguments.of(booleanValidator, BooleanNode.TRUE, "boolean"),
+                Arguments.of(booleanValidator, "true", "boolean"),
+                Arguments.of(booleanValidator, "false", "boolean"),
+                Arguments.of(booleanValidator, "notABoolean", null),
+                Arguments.of(booleanValidator, nonArrayNode, null),
+                Arguments.of(booleanValidator, null, null),
+
+                // IntegerValidator test cases
+                Arguments.of(integerValidator, new IntNode(123), "integer"),
+                Arguments.of(integerValidator, "123", "integer"),
+                Arguments.of(integerValidator, "notAnInteger", null),
+                Arguments.of(integerValidator, 123, "integer"),
+                Arguments.of(integerValidator, 123.45, null),
+                Arguments.of(integerValidator, nonArrayNode, null),
+                Arguments.of(integerValidator, null, null),
+
+                // NumberValidator test cases
+                Arguments.of(numberValidator, new TextNode("123.45"), "number"),
+                Arguments.of(numberValidator, new TextNode("notANumber"), null),
+                Arguments.of(numberValidator, "456.78", "number"),
+                Arguments.of(numberValidator, "invalid", null),
+                Arguments.of(numberValidator, 123, "number"),
+                Arguments.of(numberValidator, null, null),
+
+                // ObjectValidator test cases
+                Arguments.of(objectValidator, mapper.createObjectNode(), "object"),
+                Arguments.of(objectValidator, stringNode, null),
+                Arguments.of(objectValidator, InputStream.nullInputStream(), null),
+
+                // StringValidator test cases
+                Arguments.of(stringValidator, stringNode, "string"),
+                Arguments.of(stringValidator, "example", "string"),
+                Arguments.of(stringValidator, mapper.createObjectNode().put("number", 123), null),
+                Arguments.of(stringValidator, null, null),
+                Arguments.of(stringValidator, 123, null)
+        );
     }
 
     @Test
@@ -79,96 +103,4 @@ public class SchemaValidatorTest {
         InputStream inputStream = InputStream.nullInputStream();
         assertThrows(RuntimeException.class, () -> objectValidator.canValidate(inputStream), "InputStream should not happen!");
     }
-
-    @ParameterizedTest
-    @MethodSource("stringValidatorTestCases")
-    void testCanValidateString(Object input, String expected) {
-        assertEquals(expected, stringValidator.canValidate(input));
-    }
-
-    private static Stream<Arguments> arrayValidatorTestCases() {
-        ObjectMapper mapper = new ObjectMapper();
-        ArrayNode arrayNode = mapper.createArrayNode();
-        JsonNode nonArrayNode = mapper.createObjectNode().put("key", "value");
-
-        return Stream.of(
-                Arguments.of(arrayNode, "array"),
-                Arguments.of(nonArrayNode, null),
-                Arguments.of("notAnArray", null),
-                Arguments.of(null, null)
-        );
-    }
-
-    private static Stream<Arguments> booleanValidatorTestCases() {
-        ObjectMapper mapper = new ObjectMapper();
-        BooleanNode booleanNode = BooleanNode.TRUE;
-        JsonNode nonBooleanNode = mapper.createObjectNode().put("key", "value");
-
-        return Stream.of(
-                Arguments.of(booleanNode, "boolean"),
-                Arguments.of("true", "boolean"),
-                Arguments.of("false", "boolean"),
-                Arguments.of("notABoolean", null),
-                Arguments.of(nonBooleanNode, null),
-                Arguments.of(null, null)
-        );
-    }
-
-    private static Stream<Arguments> integerValidatorTestCases() {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode intNode = new IntNode(123);
-        JsonNode nonIntNode = mapper.createObjectNode().put("key", "value");
-
-        return Stream.of(
-                Arguments.of(intNode, "integer"),
-                Arguments.of("123", "integer"),
-                Arguments.of("notAnInteger", null),
-                Arguments.of(123, "integer"),
-                Arguments.of(123.45, null),
-                Arguments.of(nonIntNode, null),
-                Arguments.of(null, null)
-        );
-    }
-
-    private static Stream<Arguments> numberValidatorTestCases() {
-        JsonNode validNumberNode = new TextNode("123.45");
-        JsonNode invalidNumberNode = new TextNode("notANumber");
-
-        return Stream.of(
-                Arguments.of(validNumberNode, "number"),
-                Arguments.of(invalidNumberNode, null),
-                Arguments.of("456.78", "number"),
-                Arguments.of("invalid", null),
-                Arguments.of(123, "number"),
-                Arguments.of(null, null)
-        );
-    }
-
-    private static Stream<Arguments> objectValidatorTestCases() {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode objectNode = mapper.createObjectNode();
-        JsonNode textNode = new TextNode("stringValue");
-        InputStream inputStream = InputStream.nullInputStream();
-
-        return Stream.of(
-                Arguments.of(objectNode, "object"),
-                Arguments.of(textNode, null),
-                Arguments.of(inputStream, null)
-        );
-    }
-
-    private static Stream<Arguments> stringValidatorTestCases() {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode stringNode = new TextNode("example");
-        JsonNode nonStringNode = mapper.createObjectNode().put("number", 123);
-
-        return Stream.of(
-                Arguments.of(stringNode, "string"),
-                Arguments.of("example", "string"),
-                Arguments.of(nonStringNode, null),
-                Arguments.of(null, null),
-                Arguments.of(123, null)
-        );
-    }
-
 }
