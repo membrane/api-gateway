@@ -22,6 +22,8 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorIntercept
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.schema.Schema;
+import com.predic8.schema.creator.*;
+import groovy.xml.*;
 import org.slf4j.*;
 
 import javax.xml.transform.*;
@@ -32,8 +34,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public abstract class  AbstractXMLSchemaValidator implements IValidator {
 	private static Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
@@ -114,13 +115,40 @@ public abstract class  AbstractXMLSchemaValidator implements IValidator {
 		List<Validator> validators = new ArrayList<>();
 		for (Schema schema : getSchemas()) {
 			log.debug("Creating validator for schema: " + schema);
-			StreamSource ss = new StreamSource(new StringReader(schema.getAsString()));
+
+			Writer writer = new StringWriter();
+			SchemaCreator sc = new SchemaCreator();
+			sc.setBuilder(new MarkupBuilder(writer));
+			schema.create(sc, new SchemaCreatorContext());
+
+			ByteArrayInputStream bais = new ByteArrayInputStream(writer.toString().getBytes());
+
+
+//			BOMInputStream bis = BOMInputStream.builder()
+//					.setInputStream(bais)
+//					//.setPath(Paths.get("MyFile. xml"))
+//					.setInclude(false)
+//					.get();
+//
+//			System.out.println("bis.getBOM() = " + bis.getBOM());
+
+			StreamSource ss = new StreamSource(bais);
+
+	//	StreamSource ss = new StreamSource(new StringReader(schema.getAsString()));
+
+//			byte[] str = IOUtils.toByteArray(bis);
+//			System.out.println("location = " + location);
+//			System.out.println("str = " + str[0]);
+//			System.out.println("str = " + str[1]);
+//			System.out.println("str = " + str[2]);
+			
 			ss.setSystemId(location);
 			sf.setResourceResolver(resourceResolver.toLSResourceResolver());
 			Validator validator = sf.newSchema(ss).newValidator();
 			validator.setResourceResolver(resourceResolver.toLSResourceResolver());
 			validator.setErrorHandler(new SchemaValidatorErrorHandler());
 			validators.add(validator);
+			System.out.println(" ======================================== " );
 		}
 		return validators;
 	}

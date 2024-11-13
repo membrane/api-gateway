@@ -36,27 +36,13 @@ public class ValidatorInterceptorXmlBomTest {
 
 	private Exchange exc;
 
-	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.xml";
-
-	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
-
-	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
+	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/xml-bom/ArticleService.xml";
 
 	@BeforeEach
 	public void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
-	}
-
-	@Test
-	public void testHandleRequestValidBLZMessage() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBank.xml"));
-	}
-
-	@Test
-	public void testHandleRequestInvalidBLZMessage() throws Exception {
-		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
 	}
 
 	@Test
@@ -96,26 +82,6 @@ public class ValidatorInterceptorXmlBomTest {
 		exc.setRequest(requestTB);
 		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml.gz")).header("Content-Encoding", "gzip").build());
 		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
-	}
-
-	@Test
-	public void testHandleRequestValidEmailMessage() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/validEmail.xml"));
-	}
-
-	@Test
-	public void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
-	}
-
-	@Test
-	public void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
-	}
-
-	@Test
-	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
 	@Test

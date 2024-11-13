@@ -6,6 +6,16 @@
 
     <router>
 
+        <serviceProxy port="8444">
+            <path>/vostra2-entw/services/strafregisterservice/v1</path>
+            <log/>
+            <xmlProtection removeDTD="false" maxElementNameLength="1000" maxAttibuteCount="1000" />
+            <validator wsdl="/Users/thomas/local/membrane/membrane-api-gateway-5.7.3/vostra2-strafregister-v1/vostra2_strafregisterService_v1_0.wsdl"/>
+            <target host="svcgw-esb-test.isc.ejpd.admin.ch" port="443">
+                <ssl/>
+            </target>
+        </serviceProxy>
+
         <api port="2000">
             <path>/shop/v2</path>
             <target host="api.predic8.de">
