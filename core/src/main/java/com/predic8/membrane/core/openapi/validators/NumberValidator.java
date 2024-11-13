@@ -26,6 +26,7 @@ public class NumberValidator implements IJSONSchemaValidator {
 
     @Override
     public String canValidate(Object obj) {
+        if(obj == null) return null;
         try {
             if (obj instanceof JsonNode jn) {
                 new BigDecimal((jn).asText());

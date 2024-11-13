@@ -25,6 +25,16 @@ interface IJSONSchemaValidator {
     String BOOLEAN = "boolean";
     String INTEGER = "integer";
 
+    /**
+     * Determines if the given object can be validated and returns its type as a string.
+     *
+     * <p>Each implementing class specifies the type it can validate. If the object is of a valid type,
+     * this method returns a string representing that type (e.g., "string" for a string object).
+     * If the object cannot be validated or is null, the method returns null.
+     *
+     * @param obj the object to be checked for validation
+     * @return the type name as a string if the object is valid, or null if it cannot be validated
+     */
     String canValidate(Object obj);
     ValidationErrors validate(ValidationContext ctx, Object value);
 }
