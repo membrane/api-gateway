@@ -129,7 +129,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
     private @Nullable ValidationErrors validateMultipleTypes(List<String> types, ValidationContext ctx, Object value) {
         String typeOfValue = getTypeOfValue(types, value);
 
-        ValidationErrors errors = getValidationErrors(types, ctx, value, typeOfValue);
+        ValidationErrors errors = getTypeNotMatchError(types, ctx, value, typeOfValue);
         if (errors != null) return errors;
 
         return validateSingleType(ctx, value, typeOfValue);
@@ -137,16 +137,17 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     /**
-     * given types: [number,null]
-     *       value: "Manila"
-     *       typeOfValue: "string"
-     * @param types
-     * @param ctx
-     * @param value
-     * @param typeOfValue
-     * @return
+     * <p>If the type of the value does not match any of the specified types, an error is created.
+     * For example, if the types are ["number", "null"] and the value is "Manila" (a string),
+     * a validation error is returned.
+     *
+     * @param types the list of allowed types in the schema, e.g., ["number", "null"]
+     * @param ctx the validation context
+     * @param value the value being validated
+     * @param typeOfValue the determined type of the value
+     * @return a ValidationErrors object if there is a type mismatch, or null if the type is valid
      */
-    private @Nullable ValidationErrors getValidationErrors(List<String> types, ValidationContext ctx, Object value, String typeOfValue) {
+    private @Nullable ValidationErrors getTypeNotMatchError(List<String> types, ValidationContext ctx, Object value, String typeOfValue) {
         if (typeOfValue == null || !types.contains(typeOfValue)) {
             return ValidationErrors.create(ctx,"%s is of type %s which does not match any of %s".formatted( value, typeOfValue, types));
         }
@@ -154,6 +155,10 @@ public class SchemaValidator implements IJSONSchemaValidator {
     }
 
     /**
+     * Determines the type of a value based on declared schema types.
+     *
+     * <p>Returns "number" if the value is an "integer" and "number" is allowed in the types,
+     * otherwise returns the value's original type.
      *
      * @param types Declared types in a schema like types: [integer,string,null]
      * @param value value from the document that has to be validated
@@ -161,7 +166,7 @@ public class SchemaValidator implements IJSONSchemaValidator {
      */
     private static @Nullable String getTypeOfValue(List<String> types, Object value) {
         String typeOfValue = getType(value);
-        if (Objects.equals(typeOfValue, "integer") && !types.contains(typeOfValue) && types.contains(NUMBER))
+        if (Objects.equals(typeOfValue, INTEGER) && !types.contains(typeOfValue) && types.contains(NUMBER))
             return NUMBER;
         return typeOfValue;
     }

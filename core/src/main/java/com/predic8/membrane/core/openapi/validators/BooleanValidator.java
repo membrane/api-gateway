@@ -24,7 +24,7 @@ public class BooleanValidator implements IJSONSchemaValidator {
     public String canValidate(Object obj) {
         String str = getStringValue(obj);
         if(obj instanceof BooleanNode || str.equals("true") || str.equals("false"))
-            return "boolean";
+            return BOOLEAN;
         return null;
     }
 

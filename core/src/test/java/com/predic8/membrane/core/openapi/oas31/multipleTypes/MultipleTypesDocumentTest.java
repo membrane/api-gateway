@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.openapi.oas31;
+package com.predic8.membrane.core.openapi.oas31.multipleTypes;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;

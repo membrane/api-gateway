@@ -16,14 +16,15 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.swagger.v3.oas.models.media.Schema;
 
-import java.math.*;
+import java.math.BigDecimal;
 
-import static java.lang.Double.parseDouble;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.util.Utils.convertToBigDecimal;
+import static java.lang.String.format;
 
 public class NumberRestrictionValidator {
 
@@ -55,9 +56,10 @@ public class NumberRestrictionValidator {
         }
 
         ValidationErrors errors = new ValidationErrors();
-        validateMinimum(ctx, value, errors); // @TODO
-        validateMaximum(ctx, value, errors);
-        validateExclusiveMaximum(ctx, value, errors);
+        errors.add(validateMinimum(ctx, value));
+        errors.add(validateExclusiveMinimum(ctx, value));
+        errors.add(validateMaximum(ctx, value));
+        errors.add(validateExclusiveMaximum(ctx, value));
         errors.add(validateMultipleOf(ctx, value));
         return errors;
     }
@@ -75,58 +77,52 @@ public class NumberRestrictionValidator {
         return null;
     }
 
-    // TODO javadoc, test
-    private static BigDecimal convertToBigDecimal(Object obj) {
-        if (obj instanceof JsonNode) {
-            // Not using double prevents from losing fractions
-            obj = new BigDecimal(((JsonNode) obj).asText());
-        } else if (obj instanceof String) {
-            obj = BigDecimal.valueOf(parseDouble((String) obj));
-        }
-        return (BigDecimal) obj;
-    }
-
-    private void validateExclusiveMaximum(ValidationContext ctx, BigDecimal value, ValidationErrors errors) {
+    private ValidationErrors validateExclusiveMaximum(ValidationContext ctx, BigDecimal value) {
         if (schema.getExclusiveMaximumValue() != null) {
             if (schema.getExclusiveMaximumValue().compareTo(value) < 0) {
-                errors.add(new ValidationError(ctx, value + " is greater than the maximum of " + schema.getExclusiveMaximumValue()));
+                return ValidationErrors.create(ctx, value + " is greater than the maximum of " + schema.getExclusiveMaximumValue());
             }
             if (schema.getExclusiveMaximumValue().compareTo(value) == 0) {
-                errors.add(new ValidationError(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getExclusiveMaximumValue())));
+                return ValidationErrors.create(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getExclusiveMaximumValue()));
             }
         }
+        return null;
     }
 
-    private void validateMaximum(ValidationContext ctx, BigDecimal value, ValidationErrors errors) {
+    private ValidationErrors validateMaximum(ValidationContext ctx, BigDecimal value) {
         if (schema.getMaximum() != null) {
             if (schema.getMaximum().compareTo(value) < 0) {
-                errors.add(new ValidationError(ctx, value + " is greater than the maximum of " + schema.getMaximum()));
+                return ValidationErrors.create(ctx, value + " is greater than the maximum of " + schema.getMaximum());
             }
             if (isExclusiveMaximum() && schema.getMaximum().compareTo(value) == 0) {
-                errors.add(new ValidationError(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getMaximum())));
+                return ValidationErrors.create(ctx, format("The value of %s should be less than the exclusive maximum %s.", value, schema.getMaximum()));
             }
         }
+        return null;
     }
 
-    private void validateMinimum(ValidationContext ctx, BigDecimal value, ValidationErrors errors) {
-        if (schema.getMinimum() != null) {
-            if (schema.getMinimum().compareTo(value) > 0) {
-                errors.add(new ValidationError(ctx, value + " is smaller than the minimum of " + schema.getMinimum()));
-            }
-            if (isExclusiveMinimum() && schema.getMinimum().compareTo(value) == 0) {
-                errors.add(new ValidationError(ctx, format("The value of %s should be greater than the exclusive minimum %s.", value, schema.getMinimum())));
-            }
-        }
-
-        // TODO
+    private ValidationErrors validateExclusiveMinimum(ValidationContext ctx, BigDecimal value) {
         if(schema.getExclusiveMinimumValue() != null) {
            if (schema.getExclusiveMinimumValue().compareTo(value) > 0) {
-                errors.add(new ValidationError(ctx, value + " is smaller than the minimum of " + schema.getExclusiveMinimumValue()));
+               return ValidationErrors.create(ctx, value + " is smaller than the minimum of " + schema.getExclusiveMinimumValue());
             }
             if (schema.getExclusiveMinimumValue().compareTo(value) == 0) {
-                errors.add(new ValidationError(ctx, format("The value of %s should be greater than the exclusive minimum. %s", value, schema.getExclusiveMinimumValue())));
+                return ValidationErrors.create(ctx, format("The value of %s should be greater than the exclusive minimum. %s", value, schema.getExclusiveMinimumValue()));
             }
         }
+        return null;
+    }
+
+    private ValidationErrors validateMinimum(ValidationContext ctx, BigDecimal value) {
+        if (schema.getMinimum() != null) {
+            if (schema.getMinimum().compareTo(value) > 0) {
+                return ValidationErrors.create(ctx, value + " is smaller than the minimum of " + schema.getMinimum());
+            }
+            if (isExclusiveMinimum() && schema.getMinimum().compareTo(value) == 0) {
+                return ValidationErrors.create(ctx, format("The value of %s should be greater than the exclusive minimum %s.", value, schema.getMinimum()));
+            }
+        }
+        return null;
     }
 
     private boolean isExclusiveMinimum() {

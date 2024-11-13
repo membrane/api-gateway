@@ -16,6 +16,8 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
@@ -23,6 +25,7 @@ import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -261,5 +264,24 @@ class UtilsTest {
     @Test
     void getResourceAsStreamInvalidResource() {
         assertThrows(FileNotFoundException.class, () -> getResourceAsStream(this, "/doesnot.exist"));
+    }
+
+    @Test
+    void testConvertToBigDecimal_withJsonNode() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree("\"123.45\"");
+        BigDecimal result = convertToBigDecimal(jsonNode);
+        assertEquals(new BigDecimal("123.45"), result);
+    }
+
+    @Test
+    void testConvertToBigDecimal_withString() {
+        BigDecimal result = convertToBigDecimal("678.90");
+        assertEquals(BigDecimal.valueOf(678.90), result);
+    }
+
+    @Test
+    void testConvertToBigDecimal_withInvalidString() {
+        assertThrows(NumberFormatException.class, () -> convertToBigDecimal("invalid"));
     }
 }

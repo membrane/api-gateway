@@ -62,7 +62,6 @@ protected String getOpenAPIFileName() {
         publicTransport.put("seats",45);
 
         ValidationErrors errors = validator.validate(Request.post().path("/public-transports").body(mapToJson(publicTransport)));
-        System.out.println("errors = " + errors);
         assertEquals(2,errors.size());
 
 

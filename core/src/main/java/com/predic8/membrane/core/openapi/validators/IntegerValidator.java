@@ -32,10 +32,10 @@ public class IntegerValidator implements IJSONSchemaValidator {
         try {
             if (obj instanceof String s) {
                 parseLong(s);
-                return "integer";
+                return INTEGER;
             }
             if (obj instanceof Integer)
-                return "integer";
+                return INTEGER;
             return null;
         } catch (Exception e) {
             return null;

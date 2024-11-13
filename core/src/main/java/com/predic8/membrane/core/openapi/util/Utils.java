@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.openapi.model.Body;
@@ -28,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -41,6 +43,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static java.lang.Double.parseDouble;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.regex.Pattern.compile;
 
@@ -137,6 +140,22 @@ public class Utils {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Converts an object to a BigDecimal.
+     * @param obj the object to be converted
+     * @return the converted BigDecimal
+     * @throws NumberFormatException if the conversion fails
+     */
+    public static BigDecimal convertToBigDecimal(Object obj) throws NumberFormatException {
+        if (obj instanceof JsonNode jn) {
+            // Not using double prevents from losing fractions
+            obj = new BigDecimal(jn.asText());
+        } else if (obj instanceof String s) {
+            obj = BigDecimal.valueOf(parseDouble(s));
+        }
+        return (BigDecimal) obj;
     }
 
     public static String joinByComma(Collection<String> l) {

@@ -27,15 +27,15 @@ public class NumberValidator implements IJSONSchemaValidator {
     @Override
     public String canValidate(Object obj) {
         try {
-            if (obj instanceof JsonNode) {
-                new BigDecimal(((JsonNode) obj).asText());
-            } else if (obj instanceof String) {
-                parseDouble((String) obj);
+            if (obj instanceof JsonNode jn) {
+                new BigDecimal((jn).asText());
+            } else if (obj instanceof String s) {
+                parseDouble(s);
             }
         } catch (NumberFormatException e) {
             return null;
         }
-        return "number";
+        return NUMBER;
     }
 
     /**

@@ -41,7 +41,7 @@ public class ArrayValidator implements IJSONSchemaValidator {
 
     public String canValidate(Object obj) {
         if (obj instanceof ArrayNode) {
-            return "array";
+            return ARRAY;
         }
         return null;
     }

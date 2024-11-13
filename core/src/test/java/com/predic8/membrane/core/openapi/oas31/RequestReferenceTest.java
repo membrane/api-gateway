@@ -27,28 +27,27 @@ public class RequestReferenceTest {
     }
 
     static Stream<Arguments> createUserRequestProvider() {
-        // @TODO Expected Error Messages
         return Stream.of(
                 Arguments.of("""
-                        {"email": "max@example.com", "createdAt": "2024-01-01T12:00:00Z"}""", 0),
+                        {"email": "max@example.com", "createdAt": "2024-01-01T12:00:00Z"}""", 0, ""),
                 Arguments.of("""
-                        {"email": "max@example.com", "id": 123, "createdAt": "2024-01-01T12:00:00Z"}""", 0),
+                        {"email": "max@example.com", "id": 123, "createdAt": "2024-01-01T12:00:00Z"}""", 0, ""),
                 Arguments.of("""
-                        {}""", 1),
+                        {}""", 1, "Required property email is missing."),
                 Arguments.of("""
-                        {"email": "invalid-email"}""", 1),
+                        {"email": "invalid-email"}""", 1, "The string 'invalid-email' is not a valid email."),
                 Arguments.of("""
-                        {"email": "max@example.com", "createdAt": "not-a-datetime"}""", 1),
+                        {"email": "max@example.com", "createdAt": "not-a-datetime"}""", 1, "The string 'not-a-datetime' is not a valid date-time according to ISO 8601."),
                 Arguments.of("""
-                        {"id": 123}""", 1),
+                        {"id": 123}""", 1, "Required property email is missing."),
                 Arguments.of("""
-                        {"email": "max@example.com", "id": "not-a-number"}""", 1)
+                        {"email": "max@example.com", "id": "not-a-number"}""", 1, "\"not-a-number\" is of type string which does not match any of [integer]")
         );
     }
 
     @ParameterizedTest
     @MethodSource("createUserRequestProvider")
-    void testUserCreationRequestValidation(String requestBody, int expectedErrorSize) throws ParseException {
+    void testUserCreationRequestValidation(String requestBody, int expectedErrorSize, String errMsg) throws ParseException {
          ValidationErrors errors = validator.validate(
                 Request.post().path("/users").body(requestBody).mediaType(APPLICATION_JSON)
         );
@@ -56,5 +55,7 @@ public class RequestReferenceTest {
         System.out.println("errors = " + errors);
 
         assertEquals(expectedErrorSize, errors.size());
+        if(errors.hasErrors())
+            assertEquals(errMsg, errors.getErrors().get(0).getMessage());
     }
 }

@@ -61,7 +61,7 @@ public class ObjectValidator implements IJSONSchemaValidator {
             throw new RuntimeException("Value cannot be read as object.");
         }
 
-        return (node instanceof ObjectNode ? "object" : null);
+        return (node instanceof ObjectNode ? OBJECT : null);
     }
 
     @Override
