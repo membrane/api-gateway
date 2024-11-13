@@ -33,14 +33,13 @@ public class ArrayValidator implements IJSONSchemaValidator {
     private final Schema schema;
     private final OpenAPI api;
 
-
     public ArrayValidator(OpenAPI api, Schema schema) {
         this.api = api;
         this.schema = schema;
     }
 
-    public String canValidate(Object obj) {
-        if (obj instanceof ArrayNode) {
+    public String canValidate(Object value) {
+        if (value instanceof ArrayNode) {
             return ARRAY;
         }
         return null;

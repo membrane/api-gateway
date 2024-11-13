@@ -25,35 +25,42 @@ import static java.lang.Double.*;
 public class NumberValidator implements IJSONSchemaValidator {
 
     @Override
-    public String canValidate(Object obj) {
-        if(obj == null) return null;
+    public String canValidate(Object value) {
         try {
-            if (obj instanceof JsonNode jn) {
-                new BigDecimal((jn).asText());
-            } else if (obj instanceof String s) {
-                parseDouble(s);
+            if (value instanceof Number) {
+                return NUMBER;
             }
-        } catch (NumberFormatException e) {
-            return null;
+            if (value instanceof JsonNode jn) {
+                new BigDecimal((jn).asText());
+                return NUMBER;
+            }
+            if (value instanceof String s) {
+                parseDouble(s);
+                return NUMBER;
+            }
+        } catch (NumberFormatException ignored) {
         }
-        return NUMBER;
+        return null;
     }
 
     /**
      * Only check if obj can be converted to a number
      */
     @Override
-    public ValidationErrors validate(ValidationContext ctx, Object obj) {
+    public ValidationErrors validate(ValidationContext ctx, Object value) {
         try {
-            if (obj instanceof JsonNode) {
+            if (value instanceof JsonNode jn) {
                 // Not using double prevents from losing fractions
-                new BigDecimal(((JsonNode) obj).asText());
-            } else if (obj instanceof String) {
-                parseDouble((String) obj);
+                new BigDecimal(jn.asText());
+                return null;
             }
-        } catch (NumberFormatException e) {
-            return ValidationErrors.create(ctx.schemaType("number"), String.format("%s is not a number.", obj));
+            if (value instanceof String s) {
+                parseDouble(s);
+                return null;
+            }
+        } catch (NumberFormatException ignored) {
+            return ValidationErrors.create(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
         }
-        return null;
+        throw new RuntimeException("Should never happen!");
     }
 }

@@ -1,21 +1,18 @@
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.io.InputStream;
-import java.util.stream.Stream;
+import java.io.*;
+import java.util.stream.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static com.fasterxml.jackson.databind.node.BooleanNode.*;
+import static com.predic8.membrane.core.openapi.validators.IJSONSchemaValidator.BOOLEAN;
+import static com.predic8.membrane.core.openapi.validators.IJSONSchemaValidator.NUMBER;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SchemaValidatorTest {
 
@@ -60,9 +57,9 @@ public class SchemaValidatorTest {
                 Arguments.of(arrayValidator, null, null),
 
                 // BooleanValidator test cases
-                Arguments.of(booleanValidator, BooleanNode.TRUE, "boolean"),
-                Arguments.of(booleanValidator, "true", "boolean"),
-                Arguments.of(booleanValidator, "false", "boolean"),
+                Arguments.of(booleanValidator, TRUE, BOOLEAN),
+                Arguments.of(booleanValidator, "true", BOOLEAN),
+                Arguments.of(booleanValidator, "false", BOOLEAN),
                 Arguments.of(booleanValidator, "notABoolean", null),
                 Arguments.of(booleanValidator, nonArrayNode, null),
                 Arguments.of(booleanValidator, null, null),
@@ -82,6 +79,9 @@ public class SchemaValidatorTest {
                 Arguments.of(numberValidator, "456.78", "number"),
                 Arguments.of(numberValidator, "invalid", null),
                 Arguments.of(numberValidator, 123, "number"),
+                Arguments.of(numberValidator, 3.142, NUMBER), // Float
+                Arguments.of(numberValidator, 382147189247.141592653589793, NUMBER), // Double
+                Arguments.of(numberValidator, 10_000_000_000L, NUMBER), // Double
                 Arguments.of(numberValidator, null, null),
 
                 // ObjectValidator test cases
@@ -100,7 +100,7 @@ public class SchemaValidatorTest {
 
     @Test
     void testCanValidateWithInputStream() {
-        InputStream inputStream = InputStream.nullInputStream();
-        assertThrows(RuntimeException.class, () -> objectValidator.canValidate(inputStream), "InputStream should not happen!");
+        assertThrows(RuntimeException.class, () ->
+                objectValidator.canValidate(InputStream.nullInputStream()), "InputStream should not happen!");
     }
 }

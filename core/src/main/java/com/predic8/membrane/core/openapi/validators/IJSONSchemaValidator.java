@@ -32,9 +32,16 @@ interface IJSONSchemaValidator {
      * this method returns a string representing that type (e.g., "string" for a string object).
      * If the object cannot be validated or is null, the method returns null.
      *
-     * @param obj the object to be checked for validation
+     * @param value the object to be checked for validation
      * @return the type name as a string if the object is valid, or null if it cannot be validated
      */
-    String canValidate(Object obj);
+    String canValidate(Object value);
+
+    /**
+     * Validates value against a schema definition
+     * @param ctx
+     * @param value
+     * @return Validation errors
+     */
     ValidationErrors validate(ValidationContext ctx, Object value);
 }
