@@ -16,12 +16,8 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.media.*;
-
-import java.io.*;
-import java.math.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.model.Body;
 
 import static java.lang.Long.parseLong;
 

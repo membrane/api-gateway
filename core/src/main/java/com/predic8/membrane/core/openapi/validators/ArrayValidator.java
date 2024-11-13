@@ -30,10 +30,9 @@ import static java.lang.String.*;
 @SuppressWarnings("rawtypes")
 public class ArrayValidator implements IJSONSchemaValidator {
 
-    private Schema schema;
-    private OpenAPI api;
+    private final Schema schema;
+    private final OpenAPI api;
 
-    public ArrayValidator() {}
 
     public ArrayValidator(OpenAPI api, Schema schema) {
         this.api = api;

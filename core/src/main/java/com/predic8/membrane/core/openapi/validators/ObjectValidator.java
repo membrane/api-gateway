@@ -44,17 +44,12 @@ public class ObjectValidator implements IJSONSchemaValidator {
     private Schema schema;
     private JsonNode node;
 
-    private OpenAPI api;
-
-    public ObjectValidator() {}
+    private final OpenAPI api;
 
     @SuppressWarnings("rawtypes")
     public ObjectValidator(OpenAPI api, Schema schema) {
         this.api = api;
         this.schema = schema;
-        if (schema.get$ref() != null) {
-            this.schema = getSchemaFromRef();
-        }
     }
 
     public String isOfType(Object obj) {
@@ -272,27 +267,6 @@ public class ObjectValidator implements IJSONSchemaValidator {
             return null;
 
         return ValidationErrors.create(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is write only. But the response contained the value %s.", propertyName, node.get(propertyName)));
-    }
-
-    @SuppressWarnings("rawtypes")
-    private Schema getSchemaFromRef() {
-
-        // could be removed later. Only to debug.
-        if (schema.get$ref() == null)
-            return null;
-
-        ObjectHolder<Schema> oh = new ObjectHolder<>();
-        api.getComponents().getSchemas().forEach((schemaName, refSchema) -> {
-            if (schemaName.equals(getSchemaNameFromRef())) {
-                oh.setValue(refSchema);
-            }
-
-        });
-        return oh.getValue();
-    }
-
-    private String getSchemaNameFromRef() {
-        return Utils.getComponentLocalNameFromRef(schema.get$ref());
     }
 
     @SuppressWarnings("rawtypes")

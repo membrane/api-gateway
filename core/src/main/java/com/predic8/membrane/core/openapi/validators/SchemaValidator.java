@@ -146,19 +146,11 @@ public class SchemaValidator implements IJSONSchemaValidator {
 
     private String getType(Object obj) {
         return getValidatorClasses().stream()
-                .map(this::createValidatorInstance)
+
                 .map(validator -> validator.isOfType(obj))
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-    }
-
-    private IJSONSchemaValidator createValidatorInstance(Class<? extends IJSONSchemaValidator> clazz) {
-        try {
-            return clazz.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create validator instance", e);
-        }
     }
 
 
@@ -182,9 +174,8 @@ public class SchemaValidator implements IJSONSchemaValidator {
         return type == null && (schema.getTypes() == null || schema.getTypes().isEmpty());
     }
 
-    private List<Class<? extends IJSONSchemaValidator>> getValidatorClasses() {
-        // Order must be kept intact as: IntegerValidator NumberValidator StringValidator BooleanValidator ArrayValidator ObjectValidator
-        return List.of(IntegerValidator.class, NumberValidator.class, StringValidator.class, BooleanValidator.class, ArrayValidator.class, ObjectValidator.class);
+    private List<IJSONSchemaValidator> getValidatorClasses() {
+        return List.of(new IntegerValidator(), new NumberValidator(), new StringValidator(null), new BooleanValidator(), new ArrayValidator(null, null), new ObjectValidator(null, null));
     }
 
     /**

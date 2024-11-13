@@ -31,9 +31,7 @@ public class StringValidator implements IJSONSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(StringValidator.class.getName());
 
-    private Schema schema;
-
-    public StringValidator() {}
+    private final Schema schema;
 
     public StringValidator(Schema schema) {
         this.schema = schema;
