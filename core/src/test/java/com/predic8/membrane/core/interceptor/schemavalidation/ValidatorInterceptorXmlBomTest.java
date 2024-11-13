@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class ValidatorInterceptorTest {
+public class ValidatorInterceptorXmlBomTest {
 
 	private Request requestTB;
 
@@ -36,12 +36,11 @@ public class ValidatorInterceptorTest {
 
 	private Exchange exc;
 
-	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/xml-bom/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.xml";
 
 	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
 
 	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
-
 
 	@BeforeEach
 	public void setUp() throws Exception {

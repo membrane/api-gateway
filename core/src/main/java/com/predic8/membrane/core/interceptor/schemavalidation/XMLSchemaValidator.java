@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
@@ -28,6 +27,7 @@ import javax.xml.validation.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.Constants.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
@@ -44,7 +44,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
 	@Override
 	protected List<Validator> createValidators() throws Exception {
-		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
+		SchemaFactory sf = SchemaFactory.newInstance(XSD_NS);
 		sf.setResourceResolver(resourceResolver.toLSResourceResolver());
 		List<Validator> validators = new ArrayList<>();
 		log.debug("Creating validator for schema: " + location);

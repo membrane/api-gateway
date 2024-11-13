@@ -14,33 +14,28 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.InputStream;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
+import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.schema.Schema;
+import org.slf4j.*;
 
-public abstract class AbstractXMLSchemaValidator implements IValidator {
+import javax.xml.transform.*;
+import javax.xml.transform.stream.*;
+import javax.xml.validation.*;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
+public abstract class  AbstractXMLSchemaValidator implements IValidator {
 	private static Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
 
 	private final ArrayBlockingQueue<List<Validator>> validators;
@@ -82,7 +77,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 						validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
 						if (handler.noErrors()) {
 							valid.incrementAndGet();
-							return Outcome.CONTINUE;
+							return CONTINUE;
 						}
 						exceptions.add(handler.getException());
 					} finally {
@@ -99,7 +94,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 		}
 		if (skipFaults && isFault(msg)) {
 			valid.incrementAndGet();
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 		if (failureHandler == FailureHandler.VOID) {
 			exc.setProperty("error", getErrorMsg(exceptions));
@@ -111,7 +106,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 			exc.getResponse().getHeader().add(Header.VALIDATION_ERROR_SOURCE, source);
 		}
 		invalid.incrementAndGet();
-		return Outcome.ABORT;
+		return ABORT;
 	}
 
 	protected List<Validator> createValidators() throws Exception {
