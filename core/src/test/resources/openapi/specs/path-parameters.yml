@@ -53,13 +53,18 @@ paths:
         schema:
           type: string
           format: uuid
-      - name: id2
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
+      - $ref: "#/components/parameters/ID2"
     get:
       responses:
         '200':
           description: OK
+
+components:
+  parameters:
+    ID2:
+      name: id2
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid

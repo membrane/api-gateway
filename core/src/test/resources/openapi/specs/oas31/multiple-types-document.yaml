@@ -1,0 +1,16 @@
+openapi: 3.1.0
+info:
+  title: Simple API
+  version: 1.0.0
+paths:
+  /foo:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: [string, null]
+
+      responses:
+        '200':
+          description: Ok
