@@ -14,21 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
+import org.apache.commons.io.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.MessageUtil;
 
 
 public class ValidatorInterceptorTest {
@@ -39,9 +36,9 @@ public class ValidatorInterceptorTest {
 
 	private Exchange exc;
 
-	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.wsdl";
 
-	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService-bom.wsdl";
 
 	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
 
@@ -61,7 +58,7 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidBLZMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
 	}
 
 	@Test
@@ -76,17 +73,17 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testHandleNonSOAPXMLMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/customer.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/customer.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidArticleMessageBOM() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequestInvalid-bom.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequestInvalid-bom.xml"));
 	}
 
 	@Test
@@ -110,23 +107,23 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
 	@Test
 	public void testSchemaValidation() throws Exception {
 		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/order.xml"));
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/invalid-order.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/invalid-order.xml"));
 	}
 
 	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {

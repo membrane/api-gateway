@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import org.apache.commons.io.input.*;
 import org.slf4j.*;
 import org.w3c.dom.ls.*;
 
@@ -28,10 +29,13 @@ public class LSInputImpl implements LSInput {
 	private String systemId;
 	private InputStream inputStream;
 
-	public LSInputImpl(String publicId, String systemId, InputStream inputStream) {
+	public LSInputImpl(String publicId, String systemId, InputStream inputStream) throws IOException {
 		this.publicId = publicId;
 		this.systemId = systemId;
-		this.inputStream = inputStream;
+		this.inputStream = BOMInputStream.builder()
+				.setInputStream(inputStream)
+				.setInclude(false)
+				.get();
 	}
 
 	@Override
@@ -82,9 +86,7 @@ public class LSInputImpl implements LSInput {
 	}
 
 	private String streamToString() throws IOException {
-		byte[] bytes = new byte[inputStream.available()];
-		inputStream.read(bytes);
-		return new String(bytes, UTF_8);
+		return new String(inputStream.readAllBytes(), UTF_8);
 	}
 
 	@Override
