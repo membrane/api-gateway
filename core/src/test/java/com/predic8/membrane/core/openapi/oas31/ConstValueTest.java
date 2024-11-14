@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.TestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,7 +39,7 @@ public class ConstValueTest {
     @MethodSource("jsonConstRequestBodyProvider")
     void testJsonConst(String requestBody, int expectedErrorSize) throws ParseException {
         ValidationErrors errors = validator.validate(
-                Request.post().path("/const-check").body(requestBody).mediaType(APPLICATION_JSON)
+                post().path("/const-check").body(requestBody).mediaType(APPLICATION_JSON)
         );
         assertEquals(expectedErrorSize, errors.size());
     }
