@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 
+import javax.xml.namespace.*;
 import java.io.*;
 import java.util.*;
 
@@ -58,6 +59,13 @@ public class Constants {
 	public static final String WSDL_SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";
 	public static final String WSDL_SOAP12_NS = "http://schemas.xmlsoap.org/wsdl/soap12/";
 	public static final String WSDL_HTTP_NS = "http://schemas.xmlsoap.org/wsdl/http/";
+
+	public static final QName WSDL11_ADDRESS_SOAP11 = new QName(WSDL_SOAP11_NS,
+			"address");
+	public static final QName WSDL11_ADDRESS_SOAP12 = new QName(WSDL_SOAP12_NS,
+			"address");
+	public static final QName WSDL11_ADDRESS_HTTP = new QName(WSDL_HTTP_NS, "address");
+
 	public static final String WADL_NS = "http://wadl.dev.java.net/2009/02";
 	public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
 

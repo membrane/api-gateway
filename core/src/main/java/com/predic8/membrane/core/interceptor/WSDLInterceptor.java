@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,172 +34,180 @@ import java.net.URL;
 import java.net.URLDecoder;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONSE;
 
 /**
- * @description
- * 		<p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
+ * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
  * @topic 8. SOAP based Web Services
  */
-@MCElement(name="wsdlRewriter")
+@MCElement(name = "wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());
+    public static final QName WSDL_11_SOAP_ADDRESS_QNAME = new QName(WSDL_SOAP11_NS, "address");
+    public static final QName WSDL_12_SOAP_ADDRESS_QNAME = new QName(WSDL_SOAP12_NS, "address");
+    public static final QName HTTP_SOAP_ADDRESS_QNAME = new QName(WSDL_HTTP_NS, "address");
+    public static final QName XSD_IMPORT_QNAME = new QName(XSD_NS, "import");
+    public static final QName XSD_INCLUDE_QNAME = new QName(XSD_NS, "include");
 
-	private String registryWSDLRegisterURL;
-	private boolean rewriteEndpoint = true;
-	private HttpClient hc;
+    private static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());
 
-	public WSDLInterceptor() {
-		name = "WSDL Rewriting Interceptor";
-		setFlow(Flow.Set.RESPONSE);
-	}
+    private String registryWSDLRegisterURL;
+    private boolean rewriteEndpoint = true;
+    private HttpClient hc;
 
-	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-		hc = router.getHttpClientFactory().createClient(null);
-	}
+    public WSDLInterceptor() {
+        name = "WSDL Rewriting Interceptor";
+        setFlow(RESPONSE);
+    }
 
-	@Override
-	protected void rewrite(Exchange exc) throws Exception, IOException {
+    @Override
+    public void init(Router router) throws Exception {
+        super.init(router);
+        hc = router.getHttpClientFactory().createClient(null);
+    }
 
-		log.debug("Changing endpoint address in WSDL");
+    @Override
+    protected void rewrite(Exchange exc) throws Exception {
 
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        log.debug("Changing endpoint address in WSDL");
 
-		Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-				exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
-				getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
-		if (rewriteEndpoint) {
-			relocator.getRelocatingAttributes().put(
-					new QName(WSDL_SOAP11_NS, "address"), "location");
-			relocator.getRelocatingAttributes().put(
-					new QName(WSDL_SOAP12_NS, "address"), "location");
-			relocator.getRelocatingAttributes().put(
-					new QName(WSDL_HTTP_NS, "address"), "location");
-		}
-		relocator.getRelocatingAttributes().put(new QName(XSD_NS, "import"),
-				"schemaLocation");
-		relocator.getRelocatingAttributes().put(new QName(XSD_NS, "include"),
-				"schemaLocation");
+        Relocator relocator = getRelocator(exc, stream);
 
-		relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
+        relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
 
-		if (relocator.isWsdlFound()) {
-			registerWSDL(exc);
-		}
-		exc.getResponse().setBodyContent(stream.toByteArray());
-	}
+        if (relocator.isWsdlFound()) {
+            registerWSDL(exc);
+        }
 
-	private void registerWSDL(Exchange exc) {
-		if (registryWSDLRegisterURL == null)
-			return;
+        exc.getResponse().setBodyContent(stream.toByteArray());
+    }
 
-		StringBuilder buf = new StringBuilder();
-		buf.append(registryWSDLRegisterURL);
-		buf.append("?wsdl=");
+    private @NotNull Relocator getRelocator(Exchange exc, OutputStream stream) throws Exception {
+        Relocator relocator = new Relocator(new OutputStreamWriter(stream,
+                exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
+                getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
 
-		try {
-			buf.append(URLDecoder.decode(getWSDLURL(exc), "US-ASCII"));
-		} catch (UnsupportedEncodingException e) {
-			// ignored
-		}
+        if (rewriteEndpoint) {
+            relocator.getRelocatingAttributes().put(WSDL_11_SOAP_ADDRESS_QNAME, "location");
+            relocator.getRelocatingAttributes().put(WSDL_12_SOAP_ADDRESS_QNAME, "location");
+            relocator.getRelocatingAttributes().put(HTTP_SOAP_ADDRESS_QNAME, "location");
+        }
 
-		callRegistry(buf.toString());
+        relocator.getRelocatingAttributes().put(XSD_IMPORT_QNAME, "schemaLocation");
+        relocator.getRelocatingAttributes().put(XSD_INCLUDE_QNAME, "schemaLocation");
+        return relocator;
+    }
 
-		log.debug(buf.toString());
-	}
+    private void registerWSDL(Exchange exc) {
+        if (registryWSDLRegisterURL == null)
+            return;
 
-	private void callRegistry(String uri) {
-		try {
-			Response res = hc.call(createExchange(uri)).getResponse();
-			if (res.getStatusCode() != 200)
-				log.warn("{}",res);
-		} catch (Exception e) {
-			log.error("", e);
-		}
-	}
+        StringBuilder buf = new StringBuilder();
+        buf.append(registryWSDLRegisterURL);
+        buf.append("?wsdl=");
 
-	private Exchange createExchange(String uri) throws MalformedURLException {
-		URL url = new URL(uri);
-		Request req = MessageUtil.getGetRequest(getCompletePath(url));
-		req.getHeader().setHost(url.getHost());
-		Exchange exc = new Exchange(null);
-		exc.setRequest(req);
-		exc.getDestinations().add(uri);
-		return exc;
-	}
+        try {
+            buf.append(URLDecoder.decode(getWSDLURL(exc), "US-ASCII"));
+        } catch (UnsupportedEncodingException e) {
+            // ignored
+        }
 
-	private String getCompletePath(URL url) {
-		if (url.getQuery() == null)
-			return url.getPath();
+        callRegistry(buf.toString());
 
-		return url.getPath() + "?" + url.getQuery();
-	}
+        log.debug(buf.toString());
+    }
 
-	private String getWSDLURL(Exchange exc) {
-		StringBuilder buf = new StringBuilder();
-		buf.append(getLocationProtocol());
-		buf.append("://");
-		buf.append(getLocationHost(exc));
-		if (getLocationPort(exc) != 80) {
-			buf.append(":");
-			buf.append(getLocationPort(exc));
-		}
-		buf.append("/");
-		buf.append(exc.getRequest().getUri());
-		return buf.toString();
-	}
+    private void callRegistry(String uri) {
+        try {
+            Response res = hc.call(createExchange(uri)).getResponse();
+            if (res.getStatusCode() != 200)
+                log.warn("{}", res);
+        } catch (Exception e) {
+            log.error("", e);
+        }
+    }
 
-	@MCAttribute
-	public void setRegistryWSDLRegisterURL(String registryWSDLRegisterURL) {
-		this.registryWSDLRegisterURL = registryWSDLRegisterURL;
-	}
+    private Exchange createExchange(String uri) throws MalformedURLException {
+        URL url = new URL(uri);
+        Request req = MessageUtil.getGetRequest(getCompletePath(url));
+        req.getHeader().setHost(url.getHost());
+        Exchange exc = new Exchange(null);
+        exc.setRequest(req);
+        exc.getDestinations().add(uri);
+        return exc;
+    }
 
-	public String getRegistryWSDLRegisterURL() {
-		return registryWSDLRegisterURL;
-	}
+    private String getCompletePath(URL url) {
+        if (url.getQuery() == null)
+            return url.getPath();
 
-	@Override
-	public String getShortDescription() {
-		return "Rewrites SOAP endpoint addresses and XML Schema locations in WSDL and XSD documents.";
-	}
+        return url.getPath() + "?" + url.getQuery();
+    }
 
-	public void setRewriteEndpoint(boolean rewriteEndpoint) {
-		this.rewriteEndpoint = rewriteEndpoint;
-	}
+    private String getWSDLURL(Exchange exc) {
+        StringBuilder buf = new StringBuilder();
+        buf.append(getLocationProtocol());
+        buf.append("://");
+        buf.append(getLocationHost(exc));
+        if (getLocationPort(exc) != 80) {
+            buf.append(":");
+            buf.append(getLocationPort(exc));
+        }
+        buf.append("/");
+        buf.append(exc.getRequest().getUri());
+        return buf.toString();
+    }
 
-	/**
-	 * @description The protocol the endpoint should be changed to.
-	 * @default Don't change the endpoint's protocol.
-	 * @example http
-	 */
-	@MCAttribute
-	@Override
-	public void setProtocol(String protocol) {
-		super.setProtocol(protocol);
-	}
+    @MCAttribute
+    public void setRegistryWSDLRegisterURL(String registryWSDLRegisterURL) {
+        this.registryWSDLRegisterURL = registryWSDLRegisterURL;
+    }
 
-	/**
-	 * @description The host the endpoint should be changed to.
-	 * @default Don't change the endpoint's host.
-	 * @example localhost
-	 */
-	@MCAttribute
-	@Override
-	public void setHost(String host) {
-		super.setHost(host);
-	}
+    public String getRegistryWSDLRegisterURL() {
+        return registryWSDLRegisterURL;
+    }
 
-	/**
-	 * @description The port the endpoint should be changed to.
-	 * @default Don't change the endpoint's port.
-	 * @example 4000
-	 */
-	@MCAttribute
-	@Override
-	public void setPort(String port) {
-		super.setPort(port);
-	}
+    @Override
+    public String getShortDescription() {
+        return "Rewrites SOAP endpoint addresses and XML Schema locations in WSDL and XSD documents.";
+    }
+
+    public void setRewriteEndpoint(boolean rewriteEndpoint) {
+        this.rewriteEndpoint = rewriteEndpoint;
+    }
+
+    /**
+     * @description The protocol the endpoint should be changed to.
+     * @default Don't change the endpoint's protocol.
+     * @example http
+     */
+    @MCAttribute
+    @Override
+    public void setProtocol(String protocol) {
+        super.setProtocol(protocol);
+    }
+
+    /**
+     * @description The host the endpoint should be changed to.
+     * @default Don't change the endpoint's host.
+     * @example localhost
+     */
+    @MCAttribute
+    @Override
+    public void setHost(String host) {
+        super.setHost(host);
+    }
+
+    /**
+     * @description The port the endpoint should be changed to.
+     * @default Don't change the endpoint's port.
+     * @example 4000
+     */
+    @MCAttribute
+    @Override
+    public void setPort(String port) {
+        super.setPort(port);
+    }
 }
