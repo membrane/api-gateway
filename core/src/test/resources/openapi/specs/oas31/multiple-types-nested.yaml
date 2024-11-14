@@ -1,0 +1,24 @@
+openapi: 3.1.0
+info:
+  title: Nested Types API
+  version: 1.0.0
+paths:
+  /nested:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                root-object:
+                  type: [object, null]
+                  properties:
+                    string-null-date-time:
+                      type: [string, null]
+                      format: date-time
+                    boolean-null:
+                      type: [boolean, null]
+      responses:
+        '200':
+          description: Ok
