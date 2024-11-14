@@ -59,9 +59,9 @@ public class WSDLInterceptorTest {
 	 *
 	 */
 	@Test
-	public void testProtocolSet() throws Exception {
+	void testProtocolSet() throws Exception {
 		interceptor.setProtocol("https");
-		assertEquals(interceptor.handleResponse(exc), CONTINUE);
+		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 
 		XMLEventReader parser = getParser();
 
@@ -76,8 +76,8 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	public void testProtocolDefault() throws Exception {
-		assertEquals(interceptor.handleResponse(exc), CONTINUE);
+	void testProtocolDefault() throws Exception {
+		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 
 		assertTrue(getLocationAttributeFor(
 				getElement(getParser(), WSDL11_ADDRESS_SOAP11)).startsWith("http://"));
@@ -88,43 +88,43 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	public void testPortEmpty() throws Exception {
+	void testPortEmpty() throws Exception {
 		interceptor.setPort("");
-		assertEquals(interceptor.handleResponse(exc), CONTINUE);
+		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertFalse(matchSoap11(".*:80.*"));
 		assertFalse(matchSoap12(".*:80.*"));
 		assertFalse(matchHttp(".*:80.*"));
 	}
 
 	@Test
-	public void testPortDefault() throws Exception {
-		assertEquals(interceptor.handleResponse(exc), CONTINUE);
+	void testPortDefault() throws Exception {
+		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11(".*:3011.*"));
 		assertTrue(matchSoap12(".*:3011.*"));
 		assertTrue(matchHttp(".*:3011.*"));
 	}
 
 	@Test
-	public void testPortSet() throws Exception {
+	void testPortSet() throws Exception {
 		interceptor.setPort("2000");
-		assertEquals(interceptor.handleResponse(exc), CONTINUE);
+		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11(".*:2000.*"));
 		assertTrue(matchSoap12(".*:2000.*"));
 		assertTrue(matchHttp(".*:2000.*"));
 	}
 
 	@Test
-	public void testHostSet() throws Exception {
+	void testHostSet() throws Exception {
 		interceptor.setHost("abc.com");
-		assertEquals(interceptor.handleResponse(exc), CONTINUE);
+		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11("http://abc.com.*"));
 		assertTrue(matchSoap12("http://abc.com.*"));
 		assertTrue(matchHttp("http://abc.com.*"));
 	}
 
 	@Test
-	public void testHostDefault() throws Exception {
-		assertEquals(interceptor.handleResponse(exc), CONTINUE);
+	void testHostDefault() throws Exception {
+		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11("http://thomas-bayer.com.*"));
 		assertTrue(matchSoap12("http://thomas-bayer.com.*"));
 		assertTrue(matchHttp("http://thomas-bayer.com.*"));
@@ -141,23 +141,20 @@ public class WSDLInterceptorTest {
 				new QName(XMLConstants.NULL_NS_URI, "location")).getValue();
 	}
 
-	private boolean matchSoap12(String pattern) throws XMLStreamException,
-	Exception {
+	private boolean matchSoap12(String pattern) throws Exception {
 		return match(pattern, WSDL11_ADDRESS_SOAP12);
 	}
 
-	private boolean matchSoap11(String pattern) throws XMLStreamException,
-	Exception {
+	private boolean matchSoap11(String pattern) throws Exception {
 		return match(pattern, WSDL11_ADDRESS_SOAP11);
 	}
 
-	private boolean matchHttp(String pattern) throws XMLStreamException,
-	Exception {
+	private boolean matchHttp(String pattern) throws Exception {
 		return match(pattern, WSDL11_ADDRESS_HTTP);
 	}
 
 	private boolean match(String pattern, QName addressElementName)
-			throws XMLStreamException, Exception {
+			throws Exception {
 		return Pattern
 				.compile(pattern)
 				.matcher(
