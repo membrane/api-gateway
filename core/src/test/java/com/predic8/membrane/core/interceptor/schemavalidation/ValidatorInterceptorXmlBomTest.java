@@ -30,64 +30,81 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ValidatorInterceptorXmlBomTest {
 
-	private Request requestTB;
+	public static final String XML_BOM = "/validation/xml-bom";
 
-	private Request requestXService;
+	public static final String ARTICLE_REQUEST_INVALID_XML_BOM = XML_BOM +  "/articleRequestInvalid-bom.xml";
+
+	public static final String ARTICLE_REQUEST_XML_BOM = XML_BOM + "/articleRequest.xml";
+	public static final String ARTICLE_RESPONSE_XML_BOM = XML_BOM + "/articleResponse.xml";
+	public static final String ORDER_BOM_XSD = XML_BOM + "/order-bom.xsd";
+	public static final String ORDER_BOM_XML = XML_BOM + "/order-bom.xml";
+
+	public static final String INVALID_ORDER_BOM_XSD = XML_BOM + "/invalid-order-bom.xml";
+
+	private Request requestTB;
 
 	private Exchange exc;
 
-	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/xml-bom/ArticleService.xml";
+
+
+	public static final String ARTICLE_SERVICE_WSDL_BOM = "src/test/resources/validation/xml-bom/ArticleService-bom.xml";
 
 	@BeforeEach
 	public void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
-		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
 		exc = new Exchange(null);
 	}
 
 	@Test
 	public void testHandleRequestValidArticleMessage() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest.xml"));
+		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL_BOM), ARTICLE_REQUEST_XML_BOM));
 	}
 
 	@Test
 	public void testHandleRequestValidArticleMessageBOM() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest-bom.xml"));
+		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL_BOM), ARTICLE_REQUEST_XML_BOM));
 	}
 
 	@Test
 	public void testHandleNonSOAPXMLMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/customer.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL_BOM), "/customer.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL_BOM), ARTICLE_REQUEST_INVALID_XML_BOM));
 	}
 
 	@Test
 	public void testHandleRequestInvalidArticleMessageBOM() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid-bom.xml"));
+
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL_BOM), ARTICLE_REQUEST_INVALID_XML_BOM));
 	}
 
 	@Test
 	public void testHandleResponseValidArticleMessage() throws Exception {
 		exc.setRequest(requestTB);
-		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml")).build());
-		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
+		exc.setResponse(Response.ok().body(getContent(ARTICLE_RESPONSE_XML_BOM)).build());
+		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL_BOM).handleResponse(exc));
 	}
 
 	@Test
 	public void testHandleResponseValidArticleMessageGzipped() throws Exception {
 		exc.setRequest(requestTB);
 		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml.gz")).header("Content-Encoding", "gzip").build());
-		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
+		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL_BOM).handleResponse(exc));
+	}
+
+	@Test
+	public void testSchemaValidation2() throws Exception {
+		assertEquals(CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/order.xml"));
+		assertEquals(Outcome.ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/invalid-order.xml"));
 	}
 
 	@Test
 	public void testSchemaValidation() throws Exception {
-		assertEquals(CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/order.xml"));
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/invalid-order.xml"));
+		assertEquals(CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor(ORDER_BOM_XSD), ORDER_BOM_XML));
+		assertEquals(ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor(ORDER_BOM_XSD), INVALID_ORDER_BOM_XSD));
 	}
 
 	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {

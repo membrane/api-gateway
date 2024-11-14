@@ -36,9 +36,9 @@ public class ValidatorInterceptorTest {
 
 	private Exchange exc;
 
-	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/xml-bom/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.xml";
 
-	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
+	public static final String BLZ_SERVICE_WSDL = "classpath:testSchemaValidation/validation/BLZService.xml";
 
 	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
 
@@ -82,7 +82,7 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidArticleMessageBOM() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid-bom.xml"));
+		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/xml-bom/articleRequestInvalid-bom.xml"));
 	}
 
 	@Test

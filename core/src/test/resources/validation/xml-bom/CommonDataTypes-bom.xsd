@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is JAX-WS RI 2.2.1-b01-. -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://predic8.com/common/1/" targetNamespace="http://predic8.com/common/1/">
     <xsd:annotation>
@@ -6,7 +6,7 @@
             Common datatypes that are used in different systems.
         </xsd:documentation>
     </xsd:annotation>
-    <xsd:include schemaLocation="CurrencyType.xsd"/>
+    <xsd:include schemaLocation="CurrencyType-bom.xsd"/>
     <xsd:simpleType name="IdentifierType">
         <xsd:annotation>
             <xsd:documentation>

@@ -31,6 +31,7 @@ public class FileSchemaResolver implements SchemaResolver {
 	ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<>();
 	ConcurrentHashMap<String, ExceptionThrowingConsumer<InputStream>> watchedFiles = new ConcurrentHashMap<>();
 	int fileWatchIntervalInSeconds = 1;
+
 	Runnable fileWatchJob = new Runnable() {
 		@Override
 		public void run() {
