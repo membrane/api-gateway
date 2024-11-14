@@ -10,8 +10,7 @@ import java.io.*;
 import java.util.stream.*;
 
 import static com.fasterxml.jackson.databind.node.BooleanNode.*;
-import static com.predic8.membrane.core.openapi.validators.IJSONSchemaValidator.BOOLEAN;
-import static com.predic8.membrane.core.openapi.validators.IJSONSchemaValidator.NUMBER;
+import static com.predic8.membrane.core.openapi.validators.IJSONSchemaValidator.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SchemaValidatorTest {
@@ -51,7 +50,7 @@ public class SchemaValidatorTest {
 
         return Stream.of(
                 // ArrayValidator test cases
-                Arguments.of(arrayValidator, mapper.createArrayNode(), "array"),
+                Arguments.of(arrayValidator, mapper.createArrayNode(), ARRAY),
                 Arguments.of(arrayValidator, nonArrayNode, null),
                 Arguments.of(arrayValidator, "notAnArray", null),
                 Arguments.of(arrayValidator, null, null),
@@ -65,20 +64,20 @@ public class SchemaValidatorTest {
                 Arguments.of(booleanValidator, null, null),
 
                 // IntegerValidator test cases
-                Arguments.of(integerValidator, new IntNode(123), "integer"),
-                Arguments.of(integerValidator, "123", "integer"),
+                Arguments.of(integerValidator, new IntNode(123), INTEGER),
+                Arguments.of(integerValidator, "123", INTEGER),
                 Arguments.of(integerValidator, "notAnInteger", null),
-                Arguments.of(integerValidator, 123, "integer"),
+                Arguments.of(integerValidator, 123, INTEGER),
                 Arguments.of(integerValidator, 123.45, null),
                 Arguments.of(integerValidator, nonArrayNode, null),
                 Arguments.of(integerValidator, null, null),
 
                 // NumberValidator test cases
-                Arguments.of(numberValidator, new TextNode("123.45"), "number"),
+                Arguments.of(numberValidator, new TextNode("123.45"), NUMBER),
                 Arguments.of(numberValidator, new TextNode("notANumber"), null),
-                Arguments.of(numberValidator, "456.78", "number"),
+                Arguments.of(numberValidator, "456.78", NUMBER),
                 Arguments.of(numberValidator, "invalid", null),
-                Arguments.of(numberValidator, 123, "number"),
+                Arguments.of(numberValidator, 123, NUMBER),
                 Arguments.of(numberValidator, 3.142, NUMBER), // Float
                 Arguments.of(numberValidator, 382147189247.141592653589793, NUMBER), // Double
                 Arguments.of(numberValidator, 10_000_000_000L, NUMBER), // Double
@@ -92,7 +91,7 @@ public class SchemaValidatorTest {
                 // StringValidator test cases
                 Arguments.of(stringValidator, stringNode, "string"),
                 Arguments.of(stringValidator, "example", "string"),
-                Arguments.of(stringValidator, mapper.createObjectNode().put("number", 123), null),
+                Arguments.of(stringValidator, mapper.createObjectNode().put(NUMBER, 123), null),
                 Arguments.of(stringValidator, null, null),
                 Arguments.of(stringValidator, 123, null)
         );
