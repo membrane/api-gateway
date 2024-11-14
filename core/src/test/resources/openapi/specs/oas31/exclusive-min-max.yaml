@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info:
+  title: Exclusive Minimum and Maximum API
+  version: 1.0.0
+paths:
+  /range-check:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                value:
+                  type: number
+                  exclusiveMinimum: 10
+                  exclusiveMaximum: 100
+      responses:
+        '200':
+          description: Ok

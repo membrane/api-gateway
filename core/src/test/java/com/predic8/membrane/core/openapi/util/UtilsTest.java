@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
@@ -23,13 +24,15 @@ import jakarta.mail.internet.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.math.*;
 import java.net.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.Objects.requireNonNull;
+import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class UtilsTest {
@@ -242,11 +245,10 @@ class UtilsTest {
     @Test
     void getOpenapiValidatorResponseWithNoContentType() {
         Exchange exc = new Exchange(null);
-        exc.setResponse(com.predic8.membrane.core.http.Response.noContent().build());
+        exc.setResponse(noContent().build());
 
         assertDoesNotThrow(() -> {
-            var res = Utils.getOpenapiValidatorResponse(exc);
-            assertNull(res.getMediaType());
+            assertNull(Utils.getOpenapiValidatorResponse(exc).getMediaType());
         });
     }
 
@@ -261,5 +263,20 @@ class UtilsTest {
     @Test
     void getResourceAsStreamInvalidResource() {
         assertThrows(FileNotFoundException.class, () -> getResourceAsStream(this, "/doesnot.exist"));
+    }
+
+    @Test
+    void testConvertToBigDecimal_withJsonNode() throws Exception {
+        assertEquals(new BigDecimal("123.45"), convertToBigDecimal(new ObjectMapper().readTree("\"123.45\"")));
+    }
+
+    @Test
+    void testConvertToBigDecimal_withString() {
+        assertEquals(BigDecimal.valueOf(678.90), convertToBigDecimal("678.90"));
+    }
+
+    @Test
+    void testConvertToBigDecimal_withInvalidString() {
+        assertThrows(NumberFormatException.class, () -> convertToBigDecimal("invalid"));
     }
 }
