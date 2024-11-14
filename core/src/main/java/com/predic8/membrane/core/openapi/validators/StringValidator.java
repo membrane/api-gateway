@@ -38,6 +38,17 @@ public class StringValidator implements IJSONSchemaValidator {
     }
 
     @Override
+    public String canValidate(Object obj) {
+        if (obj instanceof JsonNode node && JsonNodeType.STRING.equals(node.getNodeType())) {
+            return STRING;
+        } else if(obj instanceof String) {
+            return STRING;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
         ctx = ctx.schemaType("string");
 
@@ -55,8 +66,8 @@ public class StringValidator implements IJSONSchemaValidator {
                 return errors;
             }
             value = node.textValue();
-        } else if(obj instanceof String) {
-            value = (String) obj;
+        } else if(obj instanceof String s) {
+            value = s;
         } else {
             throw new RuntimeException("Should not happen! " + obj.getClass());
         }
@@ -103,16 +114,17 @@ public class StringValidator implements IJSONSchemaValidator {
             }
         }
 
-        if (schema.getEnum() != null) {
-            if (!schema.getEnum().contains(value)) {
-                errors.add(ctx,format("The string '%s' does not contain a value from the enum %s.",value,getEnumValues()));
-            }
+        if (schema.getConst() != null && !schema.getConst().equals(value)) {
+            errors.add(ctx,format("The string '%s' does not match the const %s.", value, schema.getConst()));
         }
-        if (schema.getPattern() != null) {
-            if (!matchRegexPattern(value)) {
+        else if (schema.getEnum() != null && !schema.getEnum().contains(value)) {
+            errors.add(ctx,format("The string '%s' does not contain a value from the enum %s.",value,getEnumValues()));
+        }
+
+        if (schema.getPattern() != null && !matchRegexPattern(value)) {
                 errors.add(ctx,format("The string '%s' does not match the regex pattern %s.",value,schema.getPattern()));
-            }
         }
+
         return errors;
     }
 
