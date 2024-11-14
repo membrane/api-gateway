@@ -43,11 +43,9 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONS
 @MCElement(name = "wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
-    public static final QName WSDL_11_SOAP_ADDRESS_QNAME = new QName(WSDL_SOAP11_NS, "address");
-    public static final QName WSDL_12_SOAP_ADDRESS_QNAME = new QName(WSDL_SOAP12_NS, "address");
-    public static final QName HTTP_SOAP_ADDRESS_QNAME = new QName(WSDL_HTTP_NS, "address");
     public static final QName XSD_IMPORT_QNAME = new QName(XSD_NS, "import");
     public static final QName XSD_INCLUDE_QNAME = new QName(XSD_NS, "include");
+    public static final String LOCATION = "location";
 
     private static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());
 
@@ -90,9 +88,9 @@ public class WSDLInterceptor extends RelocatingInterceptor {
                 getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
 
         if (rewriteEndpoint) {
-            relocator.getRelocatingAttributes().put(WSDL_11_SOAP_ADDRESS_QNAME, "location");
-            relocator.getRelocatingAttributes().put(WSDL_12_SOAP_ADDRESS_QNAME, "location");
-            relocator.getRelocatingAttributes().put(HTTP_SOAP_ADDRESS_QNAME, "location");
+            relocator.getRelocatingAttributes().put(WSDL11_ADDRESS_SOAP11, LOCATION);
+            relocator.getRelocatingAttributes().put(WSDL11_ADDRESS_SOAP12, LOCATION);
+            relocator.getRelocatingAttributes().put(WSDL11_ADDRESS_HTTP, LOCATION);
         }
 
         relocator.getRelocatingAttributes().put(XSD_IMPORT_QNAME, "schemaLocation");
