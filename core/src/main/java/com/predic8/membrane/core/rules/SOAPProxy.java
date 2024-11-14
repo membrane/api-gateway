@@ -26,12 +26,14 @@ import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.wsdl.*;
 import org.apache.commons.lang3.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
 
 import javax.xml.namespace.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.Constants.*;
 
@@ -122,15 +124,21 @@ public class SOAPProxy extends AbstractServiceProxy {
         }
     }
 
-    private static Service getService(Definitions definitions) {
+    private Service getService(Definitions definitions) {
         List<Service> services = definitions.getServices();
-
-
-
         if (services.size() == 1)
             return services.get(0);
 
-        throw new IllegalArgumentException("There are " + services.size() + " services defined in the WSDL, but exactly 1 is required for soapProxy.");
+        return services.stream()
+                .filter(s -> s.getName().equals(serviceName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No Service with the name %s found. Available Services: %s".formatted(serviceName, getServiceNames(services))));
+    }
+
+    private static @NotNull List<String> getServiceNames(List<Service> services) {
+        return services.stream()
+                .map(WSDLElement::getName)
+                .toList();
     }
 
     private void handleException(Exception e) throws ResourceRetrievalException, UnknownHostException, ConnectException {
