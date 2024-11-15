@@ -14,36 +14,26 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.github.fge.jackson.*;
+import com.github.fge.jsonschema.core.exceptions.*;
+import com.github.fge.jsonschema.core.report.*;
+import com.github.fge.jsonschema.main.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
+import com.predic8.membrane.core.resolver.*;
+
+import java.io.*;
 import java.nio.charset.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
+import static java.nio.charset.StandardCharsets.*;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.github.fge.jackson.JsonLoader;
-import com.github.fge.jsonschema.core.exceptions.ProcessingException;
-import com.github.fge.jsonschema.core.report.ProcessingMessage;
-import com.github.fge.jsonschema.core.report.ProcessingReport;
-import com.github.fge.jsonschema.main.JsonSchema;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
-import com.predic8.membrane.core.resolver.ResolverMap;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-public class JSONValidator implements IValidator {
+public class JSONValidator extends AbstractMessageValidator {
 
 	private JsonSchema schema;
 	private final ResolverMap resourceResolver;
@@ -57,14 +47,21 @@ public class JSONValidator implements IValidator {
 		this.resourceResolver = resourceResolver;
 		this.jsonSchema = jsonSchema;
 		this.failureHandler = failureHandler;
+	}
+
+	@Override
+	public void init() throws IOException {
 		createValidators();
 	}
 
-	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
-		return validateMessage(exc, msg.getBodyAsStreamDecoded(), Charset.forName(msg.getCharset()), source);
+	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+		return validateMessage(exc, msg, Charset.forName(msg.getCharset()));
 	}
 
-	public Outcome validateMessage(Exchange exc, InputStream body, Charset charset, String source) throws Exception {
+	public Outcome validateMessage(Exchange exc, Message msg, Charset charset) throws Exception {
+
+		InputStream body = msg.getBodyAsStreamDecoded();
+
 		List<String> errors = new ArrayList<>();
 		boolean success;
 		try {
@@ -84,7 +81,7 @@ public class JSONValidator implements IValidator {
 
 		if (failureHandler == FailureHandler.VOID) {
 			StringBuilder message = new StringBuilder();
-			message.append(source);
+			message.append(getSourceOfError(msg));
 			message.append(": ");
 			for (String error : errors) {
 				message.append(error);
@@ -99,7 +96,7 @@ public class JSONValidator implements IValidator {
 		JsonGenerator jg = new JsonFactory().createGenerator(baos);
 
 		jg.writeStartObject();
-		jg.writeStringField("source", source);
+		jg.writeStringField("source", getSourceOfError(msg));
 		jg.writeArrayFieldStart("errors");
 		for (String message : errors)
 			jg.writeString(message);

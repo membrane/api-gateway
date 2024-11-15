@@ -35,6 +35,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
 	public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);
+		init();
 	}
 
 	@Override
@@ -45,18 +46,26 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	@Override
 	protected List<Validator> createValidators() throws Exception {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
-		sf.setResourceResolver(resourceResolver.toLSResourceResolver());
+		sf.setResourceResolver(resolver.toLSResourceResolver());
 		List<Validator> validators = new ArrayList<>();
 		log.debug("Creating validator for schema: " + location);
-		StreamSource ss = new StreamSource(resourceResolver.resolve(location));
+		StreamSource ss = new StreamSource(resolver.resolve(location));
 		ss.setSystemId(location);
 		Validator validator = sf.newSchema(ss).newValidator();
-		validator.setResourceResolver(resourceResolver.toLSResourceResolver());
+		validator.setResourceResolver(resolver.toLSResourceResolver());
 		validator.setErrorHandler(new SchemaValidatorErrorHandler());
 		validators.add(validator);
 		return validators;
 	}
 
+	/**
+	 * Time is dependent on Source type. Messured on Mac M1 and 1_000_000 validations
+	 * StreamSource = 6.2s
+	 * DOMSource = 38.8s
+	 *
+	 * @param input
+	 * @return
+	 */
 	@Override
 	protected Source getMessageBody(InputStream input) {
 		return new StreamSource(input);

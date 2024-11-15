@@ -4,7 +4,20 @@
             <xsd:element name="getCity">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="name" type="xsd:string"></xsd:element>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getCityB">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name">
+                            <xsd:simpleType>
+                                <xsd:restriction base="xsd:string">
+                                    <xsd:maxLength value="5"/>
+                                </xsd:restriction>
+                            </xsd:simpleType>
+                        </xsd:element>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
@@ -21,16 +34,25 @@
     <wsdl:message name="City">
         <wsdl:part name="getCity" element="cs:getCity"></wsdl:part>
     </wsdl:message>
+    <wsdl:message name="CityB">
+        <wsdl:part name="getCityB" element="cs:getCityB"></wsdl:part>
+    </wsdl:message>
     <wsdl:message name="CityResponse">
         <wsdl:part name="getCityResponse" element="cs:getCityResponse"></wsdl:part>
     </wsdl:message>
-    <wsdl:portType name="CityPort">
+    <wsdl:portType name="CityPortA">
         <wsdl:operation name="getCity">
             <wsdl:input message="cs:City"></wsdl:input>
             <wsdl:output message="cs:CityResponse"></wsdl:output>
         </wsdl:operation>
     </wsdl:portType>
-    <wsdl:binding name="CitySoapBinding" type="cs:CityPort">
+    <wsdl:portType name="CityPortB">
+        <wsdl:operation name="getCityB">
+            <wsdl:input message="cs:CityB"></wsdl:input>
+            <wsdl:output message="cs:CityResponse"></wsdl:output>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="CitySoapBindingA" type="cs:CityPortA">
         <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"></s:binding>
         <wsdl:operation name="getCity">
             <s:operation soapAction="https://predic8.de/cities"></s:operation>
@@ -42,14 +64,26 @@
             </wsdl:output>
         </wsdl:operation>
     </wsdl:binding>
+    <wsdl:binding name="CitySoapBindingB" type="cs:CityPortB">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"></s:binding>
+        <wsdl:operation name="getCityB">
+            <s:operation soapAction="https://predic8.de/cities"></s:operation>
+            <wsdl:input>
+                <s:body use="literal" namespace="https://predic8.de/cities"></s:body>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal" namespace="https://predic8.de/cities"></s:body>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
     <wsdl:service name="CityServiceA">
-        <wsdl:port name="CityPort" binding="cs:CitySoapBinding">
+        <wsdl:port name="CityPort" binding="cs:CitySoapBindingA">
             <s:address location="http://localhost:2001/services/cities"/>
         </wsdl:port>
     </wsdl:service>
     <wsdl:service name="CityServiceB">
-        <wsdl:port name="CityPort" binding="cs:CitySoapBinding">
-            <s:address location="http://localhost:2001/services/cities"/>
+        <wsdl:port name="CityPort" binding="cs:CitySoapBindingB">
+            <s:address location="http://localhost:2001/city-service"/>
         </wsdl:port>
     </wsdl:service>
 </wsdl:definitions>

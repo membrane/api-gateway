@@ -1,28 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?><wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:cs="https://predic8.de/cities" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/" targetNamespace="https://predic8.de/cities" name="cities">
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:cs="https://predic8.de/cities"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://predic8.de/cities" name="cities">
     <wsdl:types>
         <xsd:schema targetNamespace="https://predic8.de/cities">
             <xsd:element name="getCity">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="name" type="xsd:string"></xsd:element>
+                        <xsd:element name="name" type="xsd:string"/>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
             <xsd:element name="getCityResponse">
                 <xsd:complexType>
                     <xsd:sequence>
-                        <xsd:element name="country" type="xsd:string"></xsd:element>
-                        <xsd:element name="population" type="xsd:integer"></xsd:element>
+                        <xsd:element name="country" type="xsd:string"/>
+                        <xsd:element name="population" type="xsd:integer"/>
                     </xsd:sequence>
                 </xsd:complexType>
             </xsd:element>
         </xsd:schema>
     </wsdl:types>
     <wsdl:message name="City">
-        <wsdl:part name="getCity" element="cs:getCity"></wsdl:part>
+        <wsdl:part name="getCity" element="cs:getCity"/>
     </wsdl:message>
     <wsdl:message name="CityResponse">
-        <wsdl:part name="getCityResponse" element="cs:getCityResponse"></wsdl:part>
+        <wsdl:part name="getCityResponse" element="cs:getCityResponse"/>
     </wsdl:message>
     <wsdl:portType name="CityPort">
         <wsdl:operation name="getCity">

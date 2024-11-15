@@ -69,16 +69,11 @@ public class Constants {
 
 	public static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 	public static final String SOAP12_NS = "http://www.w3.org/2003/05/soap-envelope";
-	public static final String SOAP11_VERION = "1.1";
-	public static final String SOAP12_VERION = "1.2";
 
-	public static final String PROTOCOL_SOAP11 = "SOAP11";
-
-	public static final String PROTOCOL_SOAP12 = "SOAP12";
+	public enum SoapVersion { SOAP11, SOAP12, SOAP20, UNKNOWN };
 
 	public static final String PRODUCT_NAME = "Membrane API Gateway";
-	public static final String PRODUCT_WEBSITE = "http://www.membrane-soa.org/api-gateway/";
-	public static final String PRODUCT_WEBSITE_DOC = "http://www.membrane-soa.org/api-gateway-doc/";
+
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
 
 	public static final String HTML_FOOTER =

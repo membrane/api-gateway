@@ -14,54 +14,166 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.ArrayList;
-
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.transform.Source;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.predic8.membrane.core.Constants.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.MessageUtil;
-import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.schema.Schema;
-import com.predic8.wsdl.Types;
-import com.predic8.wsdl.WSDLParser;
-import com.predic8.wsdl.WSDLParserContext;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.SOAPUtil.*;
+import com.predic8.schema.*;
+import com.predic8.wsdl.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
+
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.transform.*;
+import java.io.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.WSDLUtil.*;
+import static javax.xml.stream.XMLInputFactory.*;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
+
 	static Logger log = LoggerFactory.getLogger(WSDLValidator.class.getName());
 
-	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
+	/**
+	 * A WSDL can have several definition.service elements. The serviceName is the
+	 * name of the service against to validate
+	 */
+	private final String serviceName;
+
+	/**
+	 * List of toplevel soapElements that are valid for requests
+	 */
+	private Set<QName> requestElements = new HashSet<>();
+
+	/**
+	 * List of toplevel soapElements that are valid for responses
+	 */
+	private Set<QName> responseElements = new HashSet<>();
+
+	/**
+	 * Does WSDL supports SOAP Version 1.1?
+	 */
+	private boolean soap11;
+
+	/**
+	 * Does WSDL supports SOAP Version 1.1?
+	 */
+	private boolean soap12;
+
+	public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
 		super(resourceResolver, location, failureHandler, skipFaults);
+		this.serviceName = serviceName;
 	}
 
-	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
-		super(resourceResolver, location, failureHandler);
+	@Override
+	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+		SOAPAnalysisResult result =  SOAPUtil.analyseSOAPMessage(xmlInputFactory, xopr, msg);
+
+		if (result.version() == SoapVersion.SOAP11 && !soap11) {
+			exc.setResponse(createErrorResponse("SOAP version 1.1 is not valid"));
+			return ABORT;
+		}
+		if (result.version() == SoapVersion.SOAP12 && !soap12) {
+			exc.setResponse(createErrorResponse("SOAP version 1.2 is not valid"));
+			return ABORT;
+		}
+
+		if (serviceName != null) {
+			if (msg instanceof Request && !isPossibleRequestElement(result.soapElement())) {
+				exc.setResponse(createErrorResponse("%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements)));
+				return ABORT;
+			}
+			if (msg instanceof Response && !isPossibleResponseElement(result.soapElement())) {
+				exc.setResponse(createErrorResponse("%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), requestElements)));
+				return ABORT;
+			}
+		}
+		return super.validateMessage(exc, msg);
+	}
+
+	private boolean isPossibleRequestElement(javax.xml.namespace.QName name) {
+		return isPossibleSOAPElement(requestElements, name);
+	}
+
+	private boolean isPossibleResponseElement(javax.xml.namespace.QName name) {
+		return isPossibleSOAPElement(responseElements, name);
+	}
+
+	private boolean isPossibleSOAPElement(Set<QName> elementNames, QName name) {
+		return elementNames.stream().anyMatch(qn -> qn.equals(name));
 	}
 
 	@Override
 	protected List<Schema> getSchemas() {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(location);
+
+		Definitions definitions = parseWsdl(ctx);
+		readPossibleToplevelSOAPElements(definitions);
+		return getSchemas(definitions);
+	}
+
+	private Definitions parseWsdl(WSDLParserContext ctx) {
+		Definitions definitions;
 		try {
-			WSDLParser wsdlParser = new WSDLParser();
-			//System.out.println("Resolver----" + resourceResolver);
-			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver().toExternalResolver());
-			List<Schema> schemaList = new ArrayList<>();
-			for (Types t : wsdlParser.parse(ctx).getTypes())
-				schemaList.addAll(t.getSchemas());
-			return schemaList;
-		} catch (RuntimeException e) {
-			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
+			definitions = getWsdlParser().parse(ctx);
 		}
+		catch (NoSuchElementException e) {
+			log.error(e.getMessage());
+			throw new RuntimeException();
+		}
+		catch (RuntimeException e) {
+			if (e.getCause() instanceof ResourceRetrievalException re) {
+				String msg = "Could not read WSDL from %s or its dependent XML Schemas.".formatted(location);
+				log.error(msg);
+				throw new IllegalStateException(msg, e);
+			}
+			log.error("Error downloading WSDL from {}.", location);
+			throw e;
+		}
+		return definitions;
+	}
+
+	private static @NotNull List<Schema> getSchemas(Definitions definitions) {
+		return definitions.getTypes().stream().map(Types::getSchemas).flatMap(List::stream).toList();
+	}
+
+	private void readPossibleToplevelSOAPElements(Definitions definitions) {
+
+		if (serviceName != null) {
+			Service service = WSDLUtil.getService(definitions, serviceName);
+			determinePossibleSoapVersions(service);
+			requestElements = getPossibleSOAPElements(service, Direction.REQUEST);
+			responseElements = getPossibleSOAPElements(service, Direction.RESPONSE);
+			return;
+		}
+
+		// No service is specified, so we take the first one
+		determinePossibleSoapVersions(definitions.getServices().get(0));
+
+	}
+
+	private void determinePossibleSoapVersions(Service service) {
+		service.getPorts().forEach(port -> {
+			switch (getSOAPVersion(port)) {
+				case SOAP11: soap11 = true; break;
+				case SOAP12: soap12 = true; break;
+			}
+		});
+	}
+
+	private @NotNull WSDLParser getWsdlParser() {
+		WSDLParser parser = new WSDLParser();
+		parser.setResourceResolver(resolver.toExternalResolver().toExternalResolver());
+		return parser;
 	}
 
 	@Override
@@ -76,13 +188,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
 	@Override
 	protected boolean isFault(Message msg) {
-		return SOAPUtil.isFault(xmlInputFactory, xopr, msg);
+		return SOAPUtil.analyseSOAPMessage(xmlInputFactory, xopr, msg).isFault();
 	}
 
 	@Override

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.*;
 
 import static java.nio.charset.StandardCharsets.*;
 
-public class SchematronValidator implements IValidator {
+public class SchematronValidator extends AbstractMessageValidator {
 	private static final Logger log = LoggerFactory.getLogger(SchematronValidator.class.getName());
 
 	private final ArrayBlockingQueue<Transformer> transformers;
@@ -81,7 +81,12 @@ public class SchematronValidator implements IValidator {
 	}
 
 	@Override
-	public Outcome validateMessage(Exchange exc, Message msg, String source) {
+	public void init() throws Exception {
+
+	}
+
+	@Override
+	public Outcome validateMessage(Exchange exc, Message msg) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
@@ -104,7 +109,7 @@ public class SchematronValidator implements IValidator {
 				if (event.isStartElement()) {
 					StartElement startElement = (StartElement)event;
 					if (startElement.getName().getLocalPart().equals("failed-assert")) {
-						setErrorMessage(exc, new String(result, UTF_8), false, source);
+						setErrorMessage(exc, new String(result, UTF_8), false,getSourceOfError(msg) );
 						invalid.incrementAndGet();
 						return Outcome.ABORT;
 					}
@@ -112,12 +117,12 @@ public class SchematronValidator implements IValidator {
 			}
 
 		} catch (TransformerException e) {
-			setErrorMessage(exc, e.getMessage(), true, source);
+			setErrorMessage(exc, e.getMessage(), true, getSourceOfError(msg));
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		} catch (Exception e) {
 			log.error("", e);
-			setErrorMessage(exc, "internal error", true, source);
+			setErrorMessage(exc, "internal error", true, getSourceOfError(msg));
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		}

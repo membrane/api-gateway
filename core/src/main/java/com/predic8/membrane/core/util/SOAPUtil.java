@@ -14,21 +14,19 @@
 
 package com.predic8.membrane.core.util;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.multipart.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import static com.predic8.membrane.core.Constants.*;
 
 public class SOAPUtil {
 	private static final Logger log = LoggerFactory.getLogger(SOAPUtil.class.getName());
+	public static final SOAPAnalysisResult NO_SOAP_RESULT = new SOAPAnalysisResult(false, false, null, null);
 
 	public static boolean isSOAP(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
 		try {
@@ -41,9 +39,9 @@ public class SOAPUtil {
 				XMLEvent event = parser.nextEvent();
 				if (event.isStartElement()) {
 					QName name = ((StartElement) event).getName();
-					return (Constants.SOAP11_NS.equals(name.getNamespaceURI())
-							|| Constants.SOAP12_NS.equals(name.getNamespaceURI())) &&
-							"Envelope".equals(name.getLocalPart());
+					return (isSOAP11Element(name)
+							|| isSOAP12Element(name)) &&
+						   "Envelope".equals(name.getLocalPart());
 				}
 			}
 		} catch (Exception e) {
@@ -52,9 +50,9 @@ public class SOAPUtil {
 		return false;
 	}
 
+	public record SOAPAnalysisResult(boolean isSOAP, boolean isFault, SoapVersion version, QName soapElement) {}
 
-	public static boolean isFault(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
-		int state = 0;
+	public static SOAPAnalysisResult analyseSOAPMessage(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
 		/*
 		 * 0: waiting for "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
 		 * 1: waiting for "<soapenv:Body>" (skipping any "<soapenv:Header>")
@@ -63,32 +61,23 @@ public class SOAPUtil {
 		try {
 			XMLEventReader parser;
 			synchronized (xmlInputFactory) {
-				parser = xmlInputFactory.createXMLEventReader(xopr
-						.reconstituteIfNecessary(msg));
+				parser = xmlInputFactory.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 			}
 
+			SoapVersion version = null;
+			int state = 0;
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
 				if (event.isStartElement()) {
 					QName name = ((StartElement) event).getName();
-					if (!Constants.SOAP11_NS.equals(name.getNamespaceURI())
-							&& !Constants.SOAP12_NS.equals(name
-									.getNamespaceURI()))
-						return false;
+
+					if (state < 2 && !isSOAP11Element(name) && !isSOAP12Element(name)) {
+						return NO_SOAP_RESULT;
+					}
 
 					if ("Header".equals(name.getLocalPart())) {
 						// skip header
-						int stack = 0;
-						while (parser.hasNext()) {
-							event = parser.nextEvent();
-							if (event.isStartElement())
-								stack++;
-							if (event.isEndElement())
-								if (stack == 0)
-									break;
-								else
-									stack--;
-						}
+						readUntilEndTag(parser);
 						continue;
 					}
 
@@ -98,23 +87,68 @@ public class SOAPUtil {
 						case 1 -> expected = "Body";
 						case 2 -> expected = "Fault";
 						default -> {
-							return false;
+							return NO_SOAP_RESULT;
 						}
 					}
+
+					if ("Envelope".equals(name.getLocalPart())) {
+						state = 1;
+						version = getSOAPVersion(name);
+						continue;
+					}
+
 					if (expected.equals(name.getLocalPart())) {
-						if (state == 2)
-							return true;
-						else
-							state++;
-					} else
-						return false;
+						switch (state) {
+							case 0  -> version = getSOAPVersion(name);
+							case 2  -> {
+								return new SOAPAnalysisResult(true, true, version,null);
+							}
+							default -> state++;
+						}
+					} else {
+						if (state == 2) {
+							return new SOAPAnalysisResult(true, false, version,name);
+						}
+						return NO_SOAP_RESULT;
+					}
 				}
 				if (event.isEndElement())
-					return false;
+					return NO_SOAP_RESULT;;
 			}
 		} catch (Exception e) {
 			log.warn("Ignoring exception: ", e);
 		}
-		return false;
+		return NO_SOAP_RESULT;
+	}
+
+	private static SoapVersion getSOAPVersion(QName name) {
+		return switch (name.getNamespaceURI()) {
+			case SOAP11_NS -> SoapVersion.SOAP11;
+			case SOAP12_NS -> SoapVersion.SOAP12;
+			default -> SoapVersion.UNKNOWN;
+		};
+	}
+
+	public static boolean isSOAP12Element(QName name) {
+		return SOAP12_NS.equals(name.getNamespaceURI());
+	}
+
+	public static boolean isSOAP11Element(QName name) {
+		return SOAP11_NS.equals(name.getNamespaceURI());
+	}
+
+	private static void readUntilEndTag(XMLEventReader parser) throws XMLStreamException {
+		XMLEvent event;
+		int stack = 0;
+		while (parser.hasNext()) {
+			event = parser.nextEvent();
+			if (event.isStartElement())
+				stack++;
+			if (event.isEndElement())
+				if (stack == 0)
+					break;
+				else
+					stack--;
+		}
 	}
 }

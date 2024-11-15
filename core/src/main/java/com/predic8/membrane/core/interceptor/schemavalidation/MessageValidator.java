@@ -15,17 +15,17 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-public interface IValidator {
-	/**
-	 * @param source "request" or "response"
-	 */
-	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception;
+public interface MessageValidator {
 
-	public long getValid();
+	Outcome validateMessage(Exchange exc, Message msg) throws Exception;
 
-	public long getInvalid();
+	void init() throws Exception;
+
+	long getValid();
+
+	long getInvalid();
 
 }

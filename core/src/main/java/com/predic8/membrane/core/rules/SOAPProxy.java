@@ -26,14 +26,13 @@ import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.wsdl.*;
 import org.apache.commons.lang3.*;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.xml.namespace.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
-import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.Constants.*;
 
@@ -132,7 +131,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         return services.stream()
                 .filter(s -> s.getName().equals(serviceName))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No Service with the name %s found. Available Services: %s".formatted(serviceName, getServiceNames(services))));
+                .orElseThrow(() -> new IllegalArgumentException("No service with name %s found in the WSDL. Available services are: %s".formatted(serviceName, getServiceNames(services))));
     }
 
     private static @NotNull List<String> getServiceNames(List<Service> services) {

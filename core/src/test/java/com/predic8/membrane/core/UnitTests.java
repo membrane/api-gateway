@@ -70,6 +70,7 @@ import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
+		XMLUtilTest.class,
         HttpUtilTest.class,
 		RequestTest.class,
 		RequestBuilderTest.class,
@@ -77,7 +78,10 @@ import org.junit.platform.suite.api.*;
 		ResponseBuilderTest.class,
 		BasicAuthenticationInterceptorTest.class,
 		StaticUserDataProviderTest.class,
-        MagicTest.class, WSDLInterceptorTest.class,
+        MagicTest.class,
+		WSDLUtilTest.class,
+		WSDLValidatorTest.class,
+		WSDLInterceptorTest.class,
         AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class, IpRangeTest.class,
         DispatchingInterceptorTest.class,
         HostColonPortTest.class,

@@ -13,17 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.IOException;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import org.junit.jupiter.api.*;
 
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
+import java.io.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
-import com.predic8.membrane.core.resolver.ResolverMap;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.apache.commons.io.IOUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JSONSchemaValidationTest {
 
@@ -33,10 +32,11 @@ public class JSONSchemaValidationTest {
             sb.append(message);
             sb.append("\n");
         };
-		JSONValidator jsonValidator = new JSONValidator(new ResolverMap(), schema, fh);
-		Request request = new Request.Builder().body(IOUtils.toByteArray(getClass().getResourceAsStream(json))).build();
+		JSONValidator validator = new JSONValidator(new ResolverMap(), schema, fh);
+		validator.init();
+		Request request = new Request.Builder().body(toByteArray(getClass().getResourceAsStream(json))).build();
 		Exchange exchange = new Exchange(null);
-		jsonValidator.validateMessage(exchange, request, "request");
+		validator.validateMessage(exchange, request);
 		if (success)
 			assertTrue(sb.length() == 0, sb.toString());
 		else
