@@ -11,6 +11,7 @@ import static com.predic8.membrane.core.Constants.SoapVersion.*;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
 import static com.predic8.membrane.core.util.WSDLUtil.Direction.*;
+import static com.predic8.membrane.core.util.XMLUtil.groovyToJavaxQName;
 
 public class WSDLUtil {
 
@@ -19,9 +20,9 @@ public class WSDLUtil {
     /**
      * Searches a service in a WSDL. Does not consider namespaces
      *
-     * @param definitions
+     * @param definitions Parsed WSDL
      * @param serviceName local name component of the attribute definitions.service.@name
-     * @return
+     * @return Service
      */
     public static Service getService(Definitions definitions, String serviceName) {
         List<Service> services = definitions.getServices().stream().filter(s -> s.getName().equals(serviceName)).toList();
@@ -33,9 +34,15 @@ public class WSDLUtil {
         return services.get(0);
     }
 
-    public enum Direction {REQUEST, RESPONSE}
+    public static Set<PortType> getPortTypes(Service service) {
+        Set<PortType> portTypes = new HashSet<>();
+        service.getPorts().forEach(port -> {
+            portTypes.add(port.getBinding().getPortType());
+        });
+        return portTypes;
+    }
 
-    ;
+    public enum Direction {REQUEST, RESPONSE}
 
     /**
      * A schema can have lots of toplevel elements but not all elements are valid toplevel elements in SOAP requests.
@@ -46,26 +53,25 @@ public class WSDLUtil {
      * @return Set of elements that are allowed in this service as soap elements
      */
     public static Set<QName> getPossibleSOAPElements(Service service, Direction direction) {
+        return getPossibleSOAPElements(service.getPorts().get(0).getBinding().getPortType(), direction);
+    }
+
+    public static Set<QName> getPossibleSOAPElements(PortType portType, Direction direction) {
         Set<QName> elements = new HashSet<>();
 
-        // @TODO Only for one port!
-        List<Operation> operations = service.getPorts().get(0).getBinding().getPortType().getOperations();
-
-        operations.forEach(operation -> {
-            AbstractPortTypeMessage message = getMessage(direction, operation);
+        portType.getOperations().forEach(op -> {
+            AbstractPortTypeMessage msg = getMessage(direction, op);
 
             // Does the Operation have an input/output message according to the direction parameter?
-            if (message == null)
+            if (msg == null)
                 return;
 
-            List<Part> parts = message.getMessage().getParts();
-            parts.forEach(part -> {
-                elements.add(XMLUtil.groovyToJavaxQName(part.getElement().getQname()));
-            });
+            msg.getMessage().getParts().forEach(part -> elements.add(groovyToJavaxQName(part.getElement().getQname())));
         });
 
         return elements;
     }
+
 
     /**
      * SOAP version of a WSDL port

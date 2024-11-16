@@ -113,7 +113,7 @@ public class SOAPUtil {
 					}
 				}
 				if (event.isEndElement())
-					return NO_SOAP_RESULT;;
+					return NO_SOAP_RESULT;
 			}
 		} catch (Exception e) {
 			log.warn("Ignoring exception: ", e);

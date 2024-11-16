@@ -38,9 +38,9 @@ public class JSONSchemaValidationTest {
 		Exchange exchange = new Exchange(null);
 		validator.validateMessage(exchange, request);
 		if (success)
-			assertTrue(sb.length() == 0, sb.toString());
+            assertEquals(0, sb.length(), sb.toString());
 		else
-			assertTrue(sb.length() != 0, "No error occurred, but expected one.");
+            assertFalse(sb.isEmpty(), "No error occurred, but expected one.");
 	}
 
 	@Test

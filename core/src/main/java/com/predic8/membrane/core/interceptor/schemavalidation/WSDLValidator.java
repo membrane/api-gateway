@@ -59,6 +59,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	private Set<QName> responseElements = new HashSet<>();
 
 	/**
+	 * There might be additional toplevel Elements in a schema that are not used in
+	 * a WSDL message. This field controls if it is checked if an element can be used as
+	 * a request or response message
+	 */
+	private boolean checkIfSOAPElementIsUsedAsAWSDLMessage;
+
+	/**
 	 * Does WSDL supports SOAP Version 1.1?
 	 */
 	private boolean soap11;
@@ -86,7 +93,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			return ABORT;
 		}
 
-		if (serviceName != null) {
+		if (checkIfSOAPElementIsUsedAsAWSDLMessage) {
 			if (msg instanceof Request && !isPossibleRequestElement(result.soapElement())) {
 				exc.setResponse(createErrorResponse("%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements)));
 				return ABORT;
@@ -149,6 +156,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	private void readPossibleToplevelSOAPElements(Definitions definitions) {
 
 		if (serviceName != null) {
+			checkIfSOAPElementIsUsedAsAWSDLMessage = true;
 			Service service = WSDLUtil.getService(definitions, serviceName);
 			determinePossibleSoapVersions(service);
 			requestElements = getPossibleSOAPElements(service, Direction.REQUEST);
@@ -156,9 +164,21 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			return;
 		}
 
-		// No service is specified, so we take the first one
-		determinePossibleSoapVersions(definitions.getServices().get(0));
+		// WSDL without a service element
+		if (definitions.getServices().isEmpty()) {
+			checkIfSOAPElementIsUsedAsAWSDLMessage = true;
+			// No binding information so allow all SOAP versions
+			soap11 = true;
+			soap12 = true;
+			definitions.getPortTypes().forEach(portType -> {
+				requestElements.addAll(getPossibleSOAPElements(portType, Direction.REQUEST));
+				responseElements.addAll(getPossibleSOAPElements(portType, Direction.RESPONSE));
+			});
+			return;
+		}
 
+		// Check what SOAP versions are declared in the WSDL
+		definitions.getServices().forEach(this::determinePossibleSoapVersions);
 	}
 
 	private void determinePossibleSoapVersions(Service service) {

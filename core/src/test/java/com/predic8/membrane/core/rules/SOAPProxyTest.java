@@ -19,7 +19,7 @@ public class SOAPProxyTest {
     SOAPProxy proxy;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
 
         proxy = new SOAPProxy();
         proxy.setPort(2000);
