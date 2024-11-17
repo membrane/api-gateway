@@ -75,7 +75,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	 */
 	private boolean soap12;
 
-	public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
+	public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) {
 		super(resourceResolver, location, failureHandler, skipFaults);
 		this.serviceName = serviceName;
 	}
@@ -141,7 +141,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			if (e.getCause() instanceof ResourceRetrievalException re) {
 				String msg = "Could not read WSDL from %s or its dependent XML Schemas.".formatted(location);
 				log.error(msg);
-				throw new IllegalStateException(msg, e);
+				throw new IllegalStateException(msg, re);
 			}
 			log.error("Error downloading WSDL from {}.", location);
 			throw e;
@@ -206,7 +206,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 		return HttpUtil.createSOAPValidationErrorResponse(message);
 	}
 
-	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);

@@ -70,7 +70,7 @@ public class Constants {
 	public static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 	public static final String SOAP12_NS = "http://www.w3.org/2003/05/soap-envelope";
 
-	public enum SoapVersion { SOAP11, SOAP12, SOAP20, UNKNOWN };
+	public enum SoapVersion { SOAP11, SOAP12, SOAP20, UNKNOWN }
 
 	public static final String PRODUCT_NAME = "Membrane API Gateway";
 

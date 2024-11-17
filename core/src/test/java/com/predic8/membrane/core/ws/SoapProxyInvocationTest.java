@@ -7,7 +7,6 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
 import io.restassured.response.*;
 import org.junit.jupiter.api.*;
@@ -27,6 +26,7 @@ public class SoapProxyInvocationTest {
     static Exchange last;
 
     static SOAPProxy soapProxy;
+    static SOAPProxy aServiceProxy;
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -45,12 +45,16 @@ public class SoapProxyInvocationTest {
         soapProxy.setWsdl("classpath:/ws/cities.wsdl");
         soapProxy.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                System.out.println("exc.getDestinations() = " + exc.getDestinations());
+            public Outcome handleRequest(Exchange exc) {
                 last = exc;
                 return CONTINUE;
             }
         });
+
+        aServiceProxy = new SOAPProxy();
+        aServiceProxy.setPort(2000);
+        aServiceProxy.setWsdl("classpath:/ws/two-separated-services.wsdl");
+        aServiceProxy.setServiceName("ServiceA");
 
         ValidatorInterceptor e = new ValidatorInterceptor();
         e.setWsdl("classpath:/ws/cities-2-services.wsdl");
@@ -61,6 +65,8 @@ public class SoapProxyInvocationTest {
         soapProxy.getInterceptors().add(ri);
 
         gw.getRuleManager().addProxyAndOpenPortIfNew(soapProxy);
+        gw.getRuleManager().addProxyAndOpenPortIfNew(aServiceProxy);
+        gw.init();
     }
 
     @AfterAll
@@ -69,40 +75,58 @@ public class SoapProxyInvocationTest {
         n1.shutdown();
     }
 
-    @Disabled
     @Test
-    void WSDLRewriting() throws Exception {
+    void WSDLRewriting() {
         // @formatter:off
-        given()
-            .get("http://localhost:2000/?wsdl")
-        .then()
-            .statusCode(200)
+        ValidatableResponse res = given()
+            .get("http://localhost:2000/services/cities?wsdl")
+        .then();
+
+            res.statusCode(200)
             .contentType(TEXT_XML)
-            .body("definitions.service.port.address.@location", equalTo("http://localhost:2000/"));
+            .body("definitions.service.port.address.@location", equalTo("http://localhost:2000/services/cities"));
         // @formatter:on
     }
 
-    @Disabled
     @Test
     void callService() {
         // @formatter:off
-        ResponseBody body =  given().when().body(TestUtils.getResourceAsStream(this,"/soap-sample/soap-request-bonn.xml"))
-                .post("http://localhost:2000/services/cities").then()
-                .statusCode(200)
-                .contentType(TEXT_XML)
-                .body("Envelope.Body.getCityResponse.country", equalTo("Germany"))
-                .extract().response().body();
+        Response body =  given().when().body("""
+            <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
+                <s:Body>
+                    <cs:getCity>
+                        <name>Bonn</name>
+                    </cs:getCity>
+                </s:Body>
+            </s:Envelope>
+            """)
+                .post("http://localhost:2000/services/cities");
         
         System.out.println("body.prettyPrint() = " + body.prettyPrint());
         
-        System.out.println("last.getDestinations() = " + last.getDestinations()); // @TODO assert
-              
+            body.then()
+                .statusCode(200)
+                .contentType(TEXT_XML)
+                .body("Envelope.Body.getCityResponse.country", equalTo("Germany"))
+                .body("Envelope.Body.getCityResponse.population", equalTo("327000"))
+                .extract().response().body();
     }
 
-    @Disabled
     @Test
     void twoServicesA() throws Exception {
-        callService("CityServiceA", "/services/cities","Bonn");
+
+        Response res =  given().when()
+                .body("""
+                    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+                        <s:Body>
+                            <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a> 
+                        </s:Body>
+                    </s:Envelope>
+                    """.formatted("Bonn"))
+                .post("http://localhost:2000/services/a");
+
+        res.then().statusCode(200)
+                .contentType(TEXT_XML);
     }
 
     @Disabled
@@ -112,19 +136,13 @@ public class SoapProxyInvocationTest {
     }
 
     private static void callService(String serviceName, String path, String city)throws Exception {
-        soapProxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
-        soapProxy.setServiceName(serviceName);
-        gw.init();
 
-        System.out.println(city);
 
         Response res =  given().when()
                 .body("""
                     <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
                         <s:Body>
-                            <cs:getCity>
-                                <name>%s</name>
-                            </cs:getCity>
+                            <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a> 
                         </s:Body>
                     </s:Envelope>
                     """.formatted(city))

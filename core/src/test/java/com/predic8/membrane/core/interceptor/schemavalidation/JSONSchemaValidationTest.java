@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class JSONSchemaValidationTest {
 
-	private void validate(String schema, String json, boolean success) throws IOException, Exception {
+	private void validate(String schema, String json, boolean success) throws Exception {
 		final StringBuffer sb = new StringBuffer();
 		FailureHandler fh = (message, exc) -> {
             sb.append(message);

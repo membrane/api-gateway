@@ -24,20 +24,6 @@ class XMLSchemaValidatorTest {
 
         Exchange exc = Request.post("/foo").body(this.getClass().getResourceAsStream("/validation/order.xml").readAllBytes()).buildExchange();
         Outcome res = validator.validateMessage(exc, exc.getRequest());
-
-        // @TODO Asssert was timer
-    }
-
-    @Test
-    void validateSingle() throws Exception {
-
-        Exchange exc = Request.post("/foo").body(this.getClass().getResourceAsStream("/validation/order.xml").readAllBytes()).buildExchange();
-
-        Outcome res = validator.validateMessage(exc, exc.getRequest());
-
-        // @TODO
-        System.out.println("exc.getRequest().getBody() = " + exc.getRequest().getBody());
-
-
+        Assertions.assertEquals(Outcome.CONTINUE, res);
     }
 }

@@ -63,8 +63,8 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	 * StreamSource = 6.2s
 	 * DOMSource = 38.8s
 	 *
-	 * @param input
-	 * @return
+	 * @param input Stream with body
+	 * @return Source
 	 */
 	@Override
 	protected Source getMessageBody(InputStream input) {

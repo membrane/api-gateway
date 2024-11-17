@@ -154,7 +154,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * </code>
  *
  */
-@SuppressWarnings({"JavadocLinkAsPlainText", "JavadocBlankLines"})
 @MCElement(name="kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 

@@ -13,9 +13,6 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * @TODO WSDL without service
- */
 public class WSDLValidatorTest {
 
     public static final String CITIES_WSDL = "src/test/resources/ws/cities.wsdl";

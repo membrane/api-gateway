@@ -94,7 +94,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		}
 		if (schematron != null) {
 			name="Schematron Validator";
-			setValidator(new SchematronValidator(resourceResolver, combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext));
+			setValidator(new SchematronValidator( combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext));
 		}
 
 		if (validator == null) {

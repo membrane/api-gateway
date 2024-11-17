@@ -36,9 +36,7 @@ public class WSDLUtil {
 
     public static Set<PortType> getPortTypes(Service service) {
         Set<PortType> portTypes = new HashSet<>();
-        service.getPorts().forEach(port -> {
-            portTypes.add(port.getBinding().getPortType());
-        });
+        service.getPorts().forEach(port -> portTypes.add(port.getBinding().getPortType()));
         return portTypes;
     }
 

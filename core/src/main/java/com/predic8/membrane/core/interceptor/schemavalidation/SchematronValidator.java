@@ -19,7 +19,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.text.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.*;
@@ -47,7 +46,7 @@ public class SchematronValidator extends AbstractMessageValidator {
 	private final AtomicLong invalid = new AtomicLong();
 
 
-	public SchematronValidator(ResolverMap resourceResolver, String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
+	public SchematronValidator(String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
 		this.failureHandler = failureHandler;
 
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"

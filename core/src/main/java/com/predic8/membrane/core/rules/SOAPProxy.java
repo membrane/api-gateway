@@ -129,7 +129,7 @@ public class SOAPProxy extends AbstractServiceProxy {
             return services.get(0);
 
         if (serviceName == null) {
-            throw new IllegalArgumentException("WSDL contains more than one service definition. Please specify one single service to deploy. Valid service names are %s ".formatted(getServiceNames(services)), null);
+            throw new SOAPProxyMultipleServicesException(this,getServiceNames(services));
         }
 
         return services.stream()
