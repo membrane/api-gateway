@@ -119,6 +119,7 @@ public class Response extends Message {
 
 		public ResponseBuilder bodyEmpty() {
 			res.getHeader().setContentLength(0);
+			this.body("");
 			return this;
 		}
 
