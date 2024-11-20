@@ -1,78 +1,97 @@
 package com.predic8.membrane.core.ws;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.interceptor.soap.*;
+import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.rules.*;
 import io.restassured.response.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
 public class SoapProxyInvocationTest {
 
     static Router gw;
-    static Router n1;
-
-    static Exchange last;
-
-    static SOAPProxy soapProxy;
-    static SOAPProxy aServiceProxy;
+    static Router backend;
 
     @BeforeAll
     public static void setup() throws Exception {
+        setupBackend();
+        setupGateway();
+    }
 
-        n1 = new HttpRouter();
-        APIProxy api = new APIProxy();
-        api.setPort(2001);
-        api.getInterceptors().add(new SampleSoapServiceInterceptor());
-        n1.getRuleManager().addProxyAndOpenPortIfNew(api);
-        n1.init();
-
+    private static void setupGateway() throws Exception {
         gw = new HttpRouter();
         gw.setHotDeploy(false);
-        soapProxy = new SOAPProxy();
+        gw.getRuleManager().addProxyAndOpenPortIfNew(createCitiesSoapProxyGateway());
+        gw.getRuleManager().addProxyAndOpenPortIfNew(createTwoServicesSOAPProxyGateway("ServiceA"));
+        gw.init();
+    }
+
+    private static @NotNull SOAPProxy createCitiesSoapProxyGateway() {
+        SOAPProxy soapProxy = new SOAPProxy();
         soapProxy.setPort(2000);
         soapProxy.setWsdl("classpath:/ws/cities.wsdl");
-        soapProxy.getInterceptors().add(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) {
-                last = exc;
-                return CONTINUE;
-            }
-        });
+        return soapProxy;
+    }
 
+    private static @NotNull SOAPProxy createTwoServicesSOAPProxyGateway(String serviceName) {
+        SOAPProxy aServiceProxy;
         aServiceProxy = new SOAPProxy();
         aServiceProxy.setPort(2000);
         aServiceProxy.setWsdl("classpath:/ws/two-separated-services.wsdl");
-        aServiceProxy.setServiceName("ServiceA");
-
-        ValidatorInterceptor e = new ValidatorInterceptor();
-        e.setWsdl("classpath:/ws/cities-2-services.wsdl");
-
-        RequestInterceptor ri = new RequestInterceptor();
-        ri.getInterceptors().add(e);
-
-        soapProxy.getInterceptors().add(ri);
-
-        gw.getRuleManager().addProxyAndOpenPortIfNew(soapProxy);
-        gw.getRuleManager().addProxyAndOpenPortIfNew(aServiceProxy);
-        gw.init();
+        aServiceProxy.setServiceName(serviceName);
+        return aServiceProxy;
     }
+
+    private static void setupBackend() throws Exception {
+        backend = new HttpRouter();
+        backend.getRuleManager().addProxyAndOpenPortIfNew(createAServiceProxy());
+        backend.getRuleManager().addProxyAndOpenPortIfNew(createCitiesServiceProxy());
+        backend.init();
+    }
+
+    private static @NotNull APIProxy createCitiesServiceProxy() {
+        APIProxy api = new APIProxy();
+        api.setPort(2001);
+        api.getInterceptors().add(new SampleSoapServiceInterceptor());
+        return api;
+    }
+
+    private static @NotNull APIProxy createAServiceProxy() {
+        APIProxy aServiceAPI = new APIProxy();
+        Path p2 = new Path();
+        p2.setValue("/services/a");
+        aServiceAPI.setPath(p2 );
+        aServiceAPI.setPort(2001);
+        aServiceAPI.getInterceptors().add(new StaticInterceptor() {{
+            setTextTemplate("""
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
+                    <s:Body>
+                        <ns:aResponse xmlns:ns="https://predic8.de/">Correct!</ns:aResponse>
+                    </s:Body>
+                </s:Envelope>
+                """);
+            setContentType(TEXT_XML);
+        }});
+        aServiceAPI.getInterceptors().add(new ReturnInterceptor());
+        return aServiceAPI;
+    }
+
+
 
     @AfterAll
     public static void teardown() throws IOException {
         gw.shutdown();
-        n1.shutdown();
+        backend.shutdown();
     }
 
     @Test
@@ -100,7 +119,7 @@ public class SoapProxyInvocationTest {
                 </s:Body>
             </s:Envelope>
             """)
-                .post("http://localhost:2000/services/cities");
+            .post("http://localhost:2000/services/cities");
         
         System.out.println("body.prettyPrint() = " + body.prettyPrint());
         
@@ -119,39 +138,18 @@ public class SoapProxyInvocationTest {
                 .body("""
                     <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
                         <s:Body>
-                            <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a> 
+                            <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a>
                         </s:Body>
                     </s:Envelope>
-                    """.formatted("Bonn"))
+                    """)
                 .post("http://localhost:2000/services/a");
-
-        res.then().statusCode(200)
-                .contentType(TEXT_XML);
-    }
-
-    @Disabled
-    @Test
-    void twoServicesB() throws Exception {
-        callService("CityServiceB", "/city-service","New York City");
-    }
-
-    private static void callService(String serviceName, String path, String city)throws Exception {
-
-
-        Response res =  given().when()
-                .body("""
-                    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
-                        <s:Body>
-                            <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a> 
-                        </s:Body>
-                    </s:Envelope>
-                    """.formatted(city))
-                .post("http://localhost:2000" + path);
-
-        System.out.println(res.prettyPrint());
+        
+        System.out.println("res.prettyPrint() = " + res.prettyPrint());
 
         res.then().statusCode(200)
                 .contentType(TEXT_XML)
-                .body("Envelope.Body.getCityResponse.country", equalTo("Germany"))
-                .extract().response().body();}
+                .body("Envelope.Body.aResponse", equalTo("Correct!"));
+    }
+
+
 }
