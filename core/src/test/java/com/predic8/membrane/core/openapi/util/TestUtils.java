@@ -27,6 +27,7 @@ import com.predic8.membrane.core.rules.ProxyRuleKey;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.ObjectMapperFactory;
+import io.swagger.v3.parser.core.models.ParseOptions;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -57,7 +58,9 @@ public class TestUtils {
     }
 
     public static OpenAPI parseOpenAPI(InputStream is) {
-        return new OpenAPIParser().readContents(readInputStream(is), null, null).getOpenAPI();
+        ParseOptions parseOptions = new ParseOptions();
+        parseOptions.setResolve(true);
+        return new OpenAPIParser().readContents(readInputStream(is), null, parseOptions).getOpenAPI();
     }
 
     public static InputStream getResourceAsStream(Object obj, String fileName) {
