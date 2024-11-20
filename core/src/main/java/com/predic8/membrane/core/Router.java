@@ -325,9 +325,25 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 		log.info("Started {} Rule{}:", ruleManager.getRules().size(), (ruleManager.getRules().size() > 1 ? "s" : ""));
 		ruleManager.getRules().forEach(rule ->
-				log.info("  {} {}{}{}", ruleDisplayName(rule), ruleCustomName(rule),rule.getKey(), additionalRuleInfo(rule))
+				log.info("  {} {}{}{}", ruleDisplayName(rule), ruleCustomName(rule), getCustomRuleKey(rule), additionalRuleInfo(rule))
 		);
         log.info(PRODUCT_NAME + " {} up and running!", VERSION);
+	}
+
+	private static String getCustomRuleKey(Rule rule) {
+		String host = rule.getKey().getHost();
+		String ip = rule.getKey().getIp();
+		int port = rule.getKey().getPort();
+		String path = rule.getKey().getPath();
+
+		if (ip == null) {
+			ip = "0.0.0.0";
+		}
+
+		return String.format("%s:%d%s",
+                Objects.equals(host, "*") ? ip : host,
+				port,
+				path != null ? path : "");
 	}
 
 	private String additionalRuleInfo(Rule rule) {
