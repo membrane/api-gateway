@@ -32,274 +32,282 @@ import static java.nio.charset.StandardCharsets.*;
  */
 public class ChunkedBody extends AbstractBody {
 
-	private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
-	private final InputStream inputStream;
-	private long lengthStreamed;
-	private Header trailer;
+    private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
 
-	public ChunkedBody(InputStream in) {
-		log.debug("ChunkedInOutBody constructor");
-		inputStream = in;
-	}
+    private final InputStream inputStream;
+    private long lengthStreamed;
+    private Header trailer;
 
-	private static List<Chunk> readChunks(InputStream in) throws IOException {
-		List<Chunk> chunks = new ArrayList<>();
-		int chunkSize;
-		while ((chunkSize = readChunkSize(in)) > 0) {
-			chunks.add(new Chunk(ByteUtil.readByteArray(in, chunkSize)));
-			in.read(); // CR
-			in.read(); // LF
-		}
-		return chunks;
-	}
+    public ChunkedBody(InputStream in) {
+        log.debug("ChunkedInOutBody constructor");
+        inputStream = in;
+    }
 
-	private static Header readTrailer(InputStream in) throws IOException {
-		in.mark(2);
-		if (in.read() == 13) {
-			in.read();
-			return null;
-		} else {
-			in.reset();
-			try {
-				return new Header(in);
-			} catch (EndOfStreamException e) {
-				throw new IOException(e);
-			}
-		}
-	}
+    private static List<Chunk> readChunks(InputStream in) throws IOException {
+        List<Chunk> chunks = new ArrayList<>();
+        int chunkSize;
+        while ((chunkSize = readChunkSize(in)) > 0) {
+            chunks.add(new Chunk(ByteUtil.readByteArray(in, chunkSize)));
+            //noinspection ResultOfMethodCallIgnored
+            in.read(); // CR
+            //noinspection ResultOfMethodCallIgnored
+            in.read(); // LF
+        }
+        return chunks;
+    }
 
-	private static void readChunksAndDrop(InputStream in, List<MessageObserver> observers) throws IOException {
-		int chunkSize;
-		while ((chunkSize = readChunkSize(in)) > 0) {
-			byte[] bytes = ByteUtil.readByteArray(in, chunkSize);
-			Chunk chunk = new Chunk(bytes);
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk);
-			in.read(); // CR
-			in.read(); // LF
-		}
-	}
+    private static Header readTrailer(InputStream in) throws IOException {
+        in.mark(2);
+        if (in.read() == 13) {
+            //noinspection ResultOfMethodCallIgnored
+            in.read();
+            return null;
+        }
+        in.reset();
+        try {
+            return new Header(in);
+        } catch (EndOfStreamException e) {
+            throw new IOException(e);
+        }
+    }
 
-	public static int readChunkSize(InputStream in) throws IOException {
-		StringBuilder buffer = new StringBuilder();
+    private static void readChunksAndDrop(InputStream in, List<MessageObserver> observers) throws IOException {
+        int chunkSize;
+        while ((chunkSize = readChunkSize(in)) > 0) {
+            Chunk chunk = new Chunk(ByteUtil.readByteArray(in, chunkSize));
+            for (MessageObserver observer : observers)
+                observer.bodyChunk(chunk);
+            //noinspection ResultOfMethodCallIgnored
+            in.read(); // CR
+			//noinspection ResultOfMethodCallIgnored
+            in.read(); // LF
+        }
+    }
 
-		int c;
-		while ((c = in.read()) != -1) {
-			if (c == 13) {
-				c = in.read();
-				break;
-			}
+    public static int readChunkSize(InputStream in) throws IOException {
+        StringBuilder buffer = new StringBuilder();
 
-			// ignore chunk extensions
-			if (c == ';') {
-				//noinspection StatementWithEmptyBody
-				while ((c = in.read()) != 10)
-					;
-			}
+        int c;
+        while ((c = in.read()) != -1) {
+            if (c == 13) {
+                c = in.read();
+                break;
+            }
 
-			buffer.append((char) c);
-		}
+            // ignore chunk extensions
+            if (c == ';') {
+                //noinspection StatementWithEmptyBody
+                while ((c = in.read()) != 10)
+                    ;
+            }
 
-		return Integer.parseInt(buffer.toString().trim(), 16);
-	}
+            buffer.append((char) c);
+        }
 
-	@Override
-	public void read() throws IOException {
-		if (bodyObserved && !bodyComplete)
-			ByteUtil.readStream(getContentAsStream());
-		bodyObserved = true;
-		super.read();
-	}
+        return Integer.parseInt(buffer.toString().trim(), 16);
+    }
 
-	@Override
-	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
-		if (bodyObserved && !bodyComplete)
-			ByteUtil.readStream(getContentAsStream());
-		super.write(out, retainCopy);
-	}
+    @Override
+    public void read() throws IOException {
+        if (bodyObserved && !bodyComplete)
+            ByteUtil.readStream(getContentAsStream());
+        bodyObserved = true;
+        super.read();
+    }
 
-	@Override
-	protected void markAsRead() {
-		super.markAsRead();
-		bodyComplete = true;
-	}
+    @Override
+    public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
+        if (bodyObserved && !bodyComplete)
+            ByteUtil.readStream(getContentAsStream());
+        super.write(out, retainCopy);
+    }
 
-	@Override
-	protected void readLocal() throws IOException {
-		List<Chunk> chunkList = readChunks(inputStream);
-		chunks.addAll(chunkList);
-		trailer = readTrailer(inputStream);
-		for (Chunk chunk : chunkList)
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk);
-	}
+    @Override
+    protected void markAsRead() {
+        super.markAsRead();
+        bodyComplete = true;
+    }
 
-	@Override
-	public void discard() throws IOException {
-		if (read)
-			return;
-		if (wasStreamed())
-			return;
+    @Override
+    protected void readLocal() throws IOException {
+        List<Chunk> chunkList = readChunks(inputStream);
+        chunks.addAll(chunkList);
+        trailer = readTrailer(inputStream);
+        for (Chunk chunk : chunkList)
+            for (MessageObserver observer : observers)
+                observer.bodyChunk(chunk);
+    }
 
-		for (MessageObserver observer : observers)
-			observer.bodyRequested(this);
+    @Override
+    public void discard() throws IOException {
+        if (read)
+            return;
+        if (wasStreamed())
+            return;
 
-		readChunksAndDrop(inputStream, observers);
-		trailer = readTrailer(inputStream);
-		markAsRead();
-	}
+        for (MessageObserver observer : observers)
+            observer.bodyRequested(this);
 
-	boolean bodyObserved = false;
-	boolean bodyComplete = false;
+        readChunksAndDrop(inputStream, observers);
+        trailer = readTrailer(inputStream);
+        markAsRead();
+    }
 
-	public InputStream getContentAsStream() {
-		read = true;
+    boolean bodyObserved = false;
+    boolean bodyComplete = false;
 
-		if (!bodyObserved) {
-			bodyObserved = true;
-			for (MessageObserver observer : observers)
-				observer.bodyRequested(this);
-			chunks.clear();
-		}
+    public InputStream getContentAsStream() {
+        read = true;
 
-		return new BodyInputStream(chunks) {
-			@Override
-			protected Chunk readNextChunk() throws IOException {
-				if (bodyComplete)
-					return null;
-				int chunkSize = readChunkSize(inputStream);
-				if (chunkSize > 0) {
-					Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
-					inputStream.read(); // CR
-					inputStream.read(); // LF
-					for (MessageObserver observer : observers)
-						observer.bodyChunk(c);
-					return c;
-				} else {
-					trailer = readTrailer(inputStream);
+        if (!bodyObserved) {
+            bodyObserved = true;
+            for (MessageObserver observer : observers)
+                observer.bodyRequested(this);
+            chunks.clear();
+        }
 
-					bodyComplete = true;
+        return new BodyInputStream(chunks) {
+            @Override
+            protected Chunk readNextChunk() throws IOException {
+                if (bodyComplete)
+                    return null;
+                int chunkSize = readChunkSize(inputStream);
+                if (chunkSize > 0) {
+                    Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+                    //noinspection ResultOfMethodCallIgnored
+                    inputStream.read(); // CR
+                    //noinspection ResultOfMethodCallIgnored
+                    inputStream.read(); // LF
+                    for (MessageObserver observer : observers)
+                        observer.bodyChunk(c);
+                    return c;
+                } else {
+                    trailer = readTrailer(inputStream);
 
-					for (MessageObserver observer : observers)
-						observer.bodyComplete(ChunkedBody.this);
-					observers.clear();
+                    bodyComplete = true;
 
-					return null;
-				}
-			}
-		};
-	}
+                    for (MessageObserver observer : observers)
+                        observer.bodyComplete(ChunkedBody.this);
+                    observers.clear();
 
-	@Override
-	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
-		log.debug("writeNotReadChunked");
-		int chunkSize;
-		while ((chunkSize = readChunkSize(inputStream)) > 0) {
-			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
-			out.write(chunk);
-			chunks.add(chunk);
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk);
-			inputStream.read(); // CR
-			inputStream.read(); // LF
-		}
-		trailer = readTrailer(inputStream);
-		out.finish(trailer);
-		markAsRead();
-	}
+                    return null;
+                }
+            }
+        };
+    }
 
-	@Override
-	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
-		log.debug("writeStreamed");
-		int chunkSize;
-		while ((chunkSize = readChunkSize(inputStream)) > 0) {
-			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
-			out.write(chunk);
-			for (MessageObserver observer : observers)
-				observer.bodyChunk(chunk);
-			inputStream.read(); // CR
-			inputStream.read(); // LF
-			lengthStreamed += chunkSize;
-		}
-		trailer = readTrailer(inputStream);
-		out.finish(trailer);
-		markAsRead();
-	}
+    @Override
+    protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
+        log.debug("writeNotReadChunked");
+        int chunkSize;
+        while ((chunkSize = readChunkSize(inputStream)) > 0) {
+            Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+            out.write(chunk);
+            chunks.add(chunk);
+            for (MessageObserver observer : observers)
+                observer.bodyChunk(chunk);
+            //noinspection ResultOfMethodCallIgnored
+            inputStream.read(); // CR
+            //noinspection ResultOfMethodCallIgnored
+            inputStream.read(); // LF
+        }
+        trailer = readTrailer(inputStream);
+        out.finish(trailer);
+        markAsRead();
+    }
 
-	protected int getRawLength() throws IOException {
-		if (chunks.isEmpty())
-			return 0;
-		int length = getLength();
-		for (Chunk chunk : chunks) {
-			length += toHexString(chunk.getLength()).getBytes(UTF_8).length;
-			length += 2 * CRLF_BYTES.length;
-		}
-		length += "0".getBytes(UTF_8).length;
-		length += 2 * CRLF_BYTES.length;
-		return length;
-	}
+    @Override
+    protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+        log.debug("writeStreamed");
+        int chunkSize;
+        while ((chunkSize = readChunkSize(inputStream)) > 0) {
+            Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+            out.write(chunk);
+            for (MessageObserver observer : observers)
+                observer.bodyChunk(chunk);
+            inputStream.read(); // CR
+            inputStream.read(); // LF
+            lengthStreamed += chunkSize;
+        }
+        trailer = readTrailer(inputStream);
+        out.finish(trailer);
+        markAsRead();
+    }
 
-	@Override
-	protected byte[] getRawLocal() throws IOException {
-		byte[] raw = new byte[getRawLength()];
-		int destPos = 0;
-		for (Chunk chunk : chunks) {
-			destPos = chunk.copyChunkLength(raw, destPos, this);
-			destPos = copyCRLF(raw, destPos);
-			destPos = chunk.copyChunk(raw, destPos);
-			destPos = copyCRLF(raw, destPos);
-		}
-		destPos = copyLastChunk(raw, destPos);
-		copyCRLF(raw, destPos);
-		return raw;
-	}
+    protected int getRawLength() throws IOException {
+        if (chunks.isEmpty())
+            return 0;
+        int length = getLength();
+        for (Chunk chunk : chunks) {
+            length += toHexString(chunk.getLength()).getBytes(UTF_8).length;
+            length += 2 * CRLF_BYTES.length;
+        }
+        length += "0".getBytes(UTF_8).length;
+        length += 2 * CRLF_BYTES.length;
+        return length;
+    }
 
-	private int copyLastChunk(byte[] raw, int destPos) {
-		System.arraycopy(ZERO, 0, raw, destPos, ZERO.length);
-		destPos += ZERO.length;
-		destPos = copyCRLF(raw, destPos);
-		return destPos;
-	}
+    @Override
+    protected byte[] getRawLocal() throws IOException {
+        byte[] raw = new byte[getRawLength()];
+        int destPos = 0;
+        for (Chunk chunk : chunks) {
+            destPos = chunk.copyChunkLength(raw, destPos, this);
+            destPos = copyCRLF(raw, destPos);
+            destPos = chunk.copyChunk(raw, destPos);
+            destPos = copyCRLF(raw, destPos);
+        }
+        destPos = copyLastChunk(raw, destPos);
+        copyCRLF(raw, destPos);
+        return raw;
+    }
 
-	private int copyCRLF(byte[] raw, int destPos) {
-		System.arraycopy(CRLF_BYTES, 0, raw, destPos, 2);
-		return destPos += 2;
-	}
+    private int copyLastChunk(byte[] raw, int destPos) {
+        System.arraycopy(ZERO, 0, raw, destPos, ZERO.length);
+        destPos += ZERO.length;
+        destPos = copyCRLF(raw, destPos);
+        return destPos;
+    }
 
-	@Override
-	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
-		if (getLength() > 0)
-			for (Chunk chunk : chunks) {
-				out.write(chunk);
-			}
-		out.finish(trailer);
-	}
+    private int copyCRLF(byte[] raw, int destPos) {
+        System.arraycopy(CRLF_BYTES, 0, raw, destPos, 2);
+        return destPos + 2;
+    }
 
-	@Override
-	public int getLength() throws IOException {
-		if (wasStreamed())
-			return (int)lengthStreamed; // TODO: refactor into long
-		return super.getLength();
-	}
+    @Override
+    protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
+        if (getLength() > 0)
+            for (Chunk chunk : chunks) {
+                out.write(chunk);
+            }
+        out.finish(trailer);
+    }
 
-	@Override
-	public boolean isRead() {
-		return super.isRead() && bodyComplete;
-	}
+    @Override
+    public int getLength() throws IOException {
+        if (wasStreamed())
+            return (int) lengthStreamed; // TODO: refactor into long
+        return super.getLength();
+    }
 
-	@Override
-	public boolean hasTrailer() {
-		return trailer != null;
-	}
+    @Override
+    public boolean isRead() {
+        return super.isRead() && bodyComplete;
+    }
 
-	@Override
-	public Header getTrailer() {
-		return trailer;
-	}
+    @Override
+    public boolean hasTrailer() {
+        return trailer != null;
+    }
 
-	@Override
-	public boolean setTrailer(Header trailer) {
-		this.trailer = trailer;
-		return true;
-	}
+    @Override
+    public Header getTrailer() {
+        return trailer;
+    }
+
+    @Override
+    public boolean setTrailer(Header trailer) {
+        this.trailer = trailer;
+        return true;
+    }
 }

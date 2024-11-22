@@ -68,7 +68,7 @@ public class RequestTest {
 	}
 	
 	@Test
-	public void testParseStartLineChunked() throws IOException, EndOfStreamException {
+	void parseStartLineChunked() throws IOException, EndOfStreamException {
 		reqChunked.parseStartLine(inChunked);
 		assertTrue(reqChunked.isPOSTRequest());
 		assertEquals("/axis2/services/BLZService", reqChunked.getUri());
@@ -76,13 +76,13 @@ public class RequestTest {
 	}
 
 	@Test
-	public void testReadChunked() throws Exception {
+	void readChunked() throws Exception {
 		reqChunked.read(inChunked, true);
 		assertNotNull(reqChunked.getBodyAsStream());
 	}
 
 	@Test
-	public void testReadPost() throws Exception {
+	void readPost() throws Exception {
 		reqPost.read(inPost, true);
 		assertEquals(METHOD_POST, reqPost.getMethod());
 		assertEquals("/operation/call", reqPost.getUri());
@@ -92,7 +92,7 @@ public class RequestTest {
 	}
 
 	@Test
-	public void testWritePost() throws Exception {
+	void writePost() throws Exception {
 		reqPost.read(inPost, true);
 
 		tempOut = new ByteArrayOutputStream();
@@ -111,27 +111,27 @@ public class RequestTest {
 	}
 
 	@Test
-	public void testIsHTTP11() {
+	void isHTTP11() {
 		assertTrue(reqPost.isHTTP11());
 	}
 
 	@Test
-	public void testIsHTTP11Chunked() {
+	void isHTTP11Chunked() {
 		assertTrue(reqChunked.isHTTP11());
 	}
 
 	@Test
-	public void testIsKeepAlive() {
+	void isKeepAlive() {
 		assertTrue(reqPost.isKeepAlive());
 	}
 
 	@Test
-	public void testIsKeepAliveChunked() {
+	void isKeepAliveChunked() {
 		assertTrue(reqChunked.isKeepAlive());
 	}
 
 	@Test
-	public void isEmpty() throws IOException, URISyntaxException {
+	void isEmpty() throws IOException, URISyntaxException {
 		assertTrue(new Builder().body("").build().isBodyEmpty());
 		assertTrue(new Builder().body("".getBytes(UTF_8)).build().isBodyEmpty());
 		assertTrue(get("/foo").build().isBodyEmpty());
@@ -175,6 +175,37 @@ public class RequestTest {
 		req.getHeader().add("Foo","3"); // Now add a third and see if the sequence is kept.
 
 		assertEquals("1,2,3",req.getHeader().getNormalizedValue("Foo"));
+	}
+
+	/**
+	 * If we replace the body, the original body should be read, to make sure there is nothing left
+	 * in the inputStream that can be read as part of the next message in an keep alive session.
+	 * @throws EndOfStreamException
+	 * @throws IOException
+	 */
+	@Test
+	void setBodyShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
+		AbstractBody originalBody = readMessageAndGetBody();
+		reqPost.setBody(new Body("ABC".getBytes(UTF_8))); // Replace body with a different one
+		assertTrue(originalBody.isRead()); // Assert that the original body is read
+	}
+
+	/**
+	 * Same as setBodyShouldReadTheOriginalBody test but with Request.setBodyContent
+	 * @throws EndOfStreamException
+	 * @throws IOException
+	 */
+	@Test
+	void setBodyContentShouldReadTheOriginalBody() throws EndOfStreamException, IOException {
+		AbstractBody originalBody = readMessageAndGetBody();
+		reqPost.setBodyContent("ABC".getBytes(UTF_8));
+		assertTrue(originalBody.isRead()); // Assert that the original body is read
+	}
+
+	private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
+		reqPost.read(inPost, true);
+		assertFalse(reqPost.getBody().isRead());
+        return reqPost.getBody();
 	}
 
 }

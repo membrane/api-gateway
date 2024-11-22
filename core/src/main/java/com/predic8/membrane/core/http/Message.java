@@ -66,9 +66,13 @@ public abstract class Message {
 		body.read();
 	}
 
-	public void discardBody() throws IOException {
-		body.discard();
-	}
+	public void discardBody() {
+        try {
+            body.discard();
+        } catch (IOException e) {
+            log.debug("Error discarding body. Can be ignored.", e);
+        }
+    }
 
 	public AbstractBody getBody() {
 		return body;
@@ -140,6 +144,7 @@ public abstract class Message {
 	 * Does <b>NOT</b> adjust the header fields (<tt>Content-Length</tt> etc.): Use {@link #setBodyContent(byte[])} instead.
 	 */
 	public void setBody(AbstractBody b) {
+		discardBody(); // Make sure remaining bytes are read from original body's input stream
 		body = b;
 	}
 
@@ -147,6 +152,7 @@ public abstract class Message {
 	 * Sets the body. Also adjusts the header fields (<tt>Content-Length</tt>, <tt>Content-Encoding</tt>, <tt>Transfer-Encoding</tt>).
 	 */
 	public void setBodyContent(byte[] content) {
+		discardBody(); // Make sure remaining bytes are read from original body's input stream
 		body = new Body(content);
 		header.removeFields(CONTENT_ENCODING);
 		header.removeFields(TRANSFER_ENCODING);
