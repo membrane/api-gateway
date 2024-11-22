@@ -84,13 +84,13 @@ public class SchemaValidatorTest {
                 Arguments.of(numberValidator, null, null),
 
                 // ObjectValidator test cases
-                Arguments.of(objectValidator, mapper.createObjectNode(), "object"),
+                Arguments.of(objectValidator, mapper.createObjectNode(), OBJECT),
                 Arguments.of(objectValidator, stringNode, null),
                 Arguments.of(objectValidator, InputStream.nullInputStream(), null),
 
                 // StringValidator test cases
-                Arguments.of(stringValidator, stringNode, "string"),
-                Arguments.of(stringValidator, "example", "string"),
+                Arguments.of(stringValidator, stringNode, STRING),
+                Arguments.of(stringValidator, "example", STRING),
                 Arguments.of(stringValidator, mapper.createObjectNode().put(NUMBER, 123), null),
                 Arguments.of(stringValidator, null, null),
                 Arguments.of(stringValidator, 123, null)
