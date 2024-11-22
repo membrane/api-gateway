@@ -184,7 +184,7 @@ public abstract class Message {
 		}
 
 		if (log.isDebugEnabled()) {
-			log.error("Message has no content length: " + toString());
+			log.error("Message has no content length: " + this);
 		}
 
 		if (this instanceof Request && ((Request)this).isOPTIONSRequest()) {

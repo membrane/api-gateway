@@ -180,7 +180,7 @@ public abstract class AbstractBody {
 	protected abstract byte[] getRawLocal() throws IOException;
 
 	protected boolean hasRelevantObservers() {
-		return observers.stream().filter(messageObserver -> !(messageObserver instanceof NonRelevantBodyObserver)).toList().size() > 0;
+		return observers.stream().anyMatch(o -> !(o instanceof NonRelevantBodyObserver));
 	}
 
 	/**

@@ -90,7 +90,8 @@ public class ChunkedBody extends AbstractBody {
         int c;
         while ((c = in.read()) != -1) {
             if (c == 13) {
-                c = in.read();
+                //noinspection ResultOfMethodCallIgnored
+                in.read(); // LF
                 break;
             }
 
@@ -225,7 +226,9 @@ public class ChunkedBody extends AbstractBody {
             out.write(chunk);
             for (MessageObserver observer : observers)
                 observer.bodyChunk(chunk);
+            //noinspection ResultOfMethodCallIgnored
             inputStream.read(); // CR
+            //noinspection ResultOfMethodCallIgnored
             inputStream.read(); // LF
             lengthStreamed += chunkSize;
         }
