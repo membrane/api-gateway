@@ -30,6 +30,7 @@ import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
@@ -42,10 +43,10 @@ import java.net.*;
 import java.util.Timer;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
+import static java.util.stream.Collectors.*;
 
 /**
  * @description <p>
@@ -331,26 +332,35 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	private static String getCustomRuleKey(Rule rule) {
-		String host = rule.getKey().getHost();
-		String ip = rule.getKey().getIp();
-		int port = rule.getKey().getPort();
+        return String.format("%s:%d%s",
+				getHostDisplayName(rule),
+                rule.getKey().getPort(),
+				getPathDisplayName(rule));
+	}
+
+	private static @NotNull String getPathDisplayName(Rule rule) {
 		String path = rule.getKey().getPath();
+		return path != null ? path : "";
+	}
 
+	private static @Nullable String getHostDisplayName(Rule rule) {
+		String host = rule.getKey().getHost();
+		return Objects.equals(host, "*") ? getIPDisplayName(rule) : host;
+	}
+
+	private static @NotNull String getIPDisplayName(Rule rule) {
+		String ip = rule.getKey().getIp();
 		if (ip == null) {
-			ip = "0.0.0.0";
+			return  "0.0.0.0";
 		}
-
-		return String.format("%s:%d%s",
-                Objects.equals(host, "*") ? ip : host,
-				port,
-				path != null ? path : "");
+		return ip;
 	}
 
 	private String additionalRuleInfo(Rule rule) {
 		if (rule instanceof APIProxy a) {
-			List<OpenAPISpec> specs = a.getSpecs();
-			if (!specs.isEmpty()) {
-				return " using OpenAPI" + (specs.size() > 1 ? "s" : "") + " @ " + specs.stream().map(OpenAPISpec::getLocation).collect(Collectors.joining(", "));
+			Map<String,OpenAPIRecord> recs = a.getApiRecords();
+			if (!recs.isEmpty()) {
+				return " using OpenAPI @ " + getLocationsAsString(recs);
 			}
 		} else if (rule instanceof SOAPProxy s) {
 			return " using WSDL @ " + s.getWsdl();
@@ -358,11 +368,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		return "";
 	}
 
+	private static String getLocationsAsString(Map<String, OpenAPIRecord> specs) {
+		return specs.entrySet().stream().map(e -> e.getKey()).collect(joining(", "));
+	}
+
 	private String ruleCustomName(Rule rule) {
 		if (Objects.equals(rule.getName(), rule.getKey().toString())) {
 			return "";
 		}
-		return "\"" + rule.getName() + "\" ";
+		return "\"%s\" ".formatted(rule.getName());
 	}
 
 	private String ruleDisplayName(Rule rule) {
@@ -444,7 +458,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	public void tryReinitialization() {
 		boolean stillFailing = false;
 		ArrayList<Rule> inactive = getInactiveRules();
-		if (inactive.size() > 0) {
+		if (!inactive.isEmpty()) {
 			log.info("Trying to activate all inactive rules.");
 			for (Rule rule : inactive) {
 				try {
