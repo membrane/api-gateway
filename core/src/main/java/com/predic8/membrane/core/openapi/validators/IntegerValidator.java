@@ -16,16 +16,31 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.media.*;
-
-import java.io.*;
-import java.math.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.model.Body;
 
 import static java.lang.Long.parseLong;
 
 public class IntegerValidator implements IJSONSchemaValidator {
+
+    @Override
+    public String canValidate(Object obj) {
+        if (obj instanceof JsonNode j) {
+            obj = j.numberValue();
+        }
+
+        try {
+            if (obj instanceof String s) {
+                parseLong(s);
+                return INTEGER;
+            }
+            if (obj instanceof Integer)
+                return INTEGER;
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /**
      * Only check if value can be parsed as an integer.
