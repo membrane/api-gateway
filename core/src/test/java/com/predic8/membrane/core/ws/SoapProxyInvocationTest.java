@@ -2,6 +2,8 @@ package com.predic8.membrane.core.ws;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.interceptor.templating.*;
@@ -12,6 +14,7 @@ import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
@@ -44,12 +47,11 @@ public class SoapProxyInvocationTest {
     }
 
     private static @NotNull SOAPProxy createTwoServicesSOAPProxyGateway(String serviceName) {
-        SOAPProxy aServiceProxy;
-        aServiceProxy = new SOAPProxy();
-        aServiceProxy.setPort(2000);
-        aServiceProxy.setWsdl("classpath:/ws/two-separated-services.wsdl");
-        aServiceProxy.setServiceName(serviceName);
-        return aServiceProxy;
+        SOAPProxy sp = new SOAPProxy();
+        sp.setPort(2000);
+        sp.setWsdl("classpath:/ws/two-separated-services.wsdl");
+        sp.setServiceName(serviceName);
+        return sp;
     }
 
     private static void setupBackend() throws Exception {
@@ -72,16 +74,38 @@ public class SoapProxyInvocationTest {
         p2.setValue("/services/a");
         aServiceAPI.setPath(p2 );
         aServiceAPI.setPort(2001);
-        aServiceAPI.getInterceptors().add(new StaticInterceptor() {{
-            setTextTemplate("""
+        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
+            setInterceptors(List.of(new SetHeaderInterceptor() {{
+                setName("AService");
+                setValue("123");
+            }}));
+        }});
+        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
+            setInterceptors(List.of(new LogInterceptor()));
+        }});
+
+        aServiceAPI.getInterceptors().add(new TemplateInterceptor() {{
+                setTextTemplate("""
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
                     <s:Body>
                         <ns:aResponse xmlns:ns="https://predic8.de/">Correct!</ns:aResponse>
                     </s:Body>
-                </s:Envelope>
-                """);
-            setContentType(TEXT_XML);
-        }});
+                </s:Envelope>""");
+                setContentType(TEXT_XML);
+            }});
+
+//        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
+//            setInterceptors(List.of(new TemplateInterceptor() {{
+//                setTextTemplate("""
+//                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
+//                    <s:Body>
+//                        <ns:aResponse xmlns:ns="https://predic8.de/">Correct!</ns:aResponse>
+//                    </s:Body>
+//                </s:Envelope>""");
+//                setContentType(TEXT_XML);
+//            }}));
+//            }});
+
         aServiceAPI.getInterceptors().add(new ReturnInterceptor());
         return aServiceAPI;
     }
@@ -110,19 +134,18 @@ public class SoapProxyInvocationTest {
     @Test
     void callService() {
         // @formatter:off
-        Response body =  given().when().body("""
-            <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
-                <s:Body>
-                    <cs:getCity>
-                        <name>Bonn</name>
-                    </cs:getCity>
-                </s:Body>
-            </s:Envelope>
-            """)
+        Response body =  given().when()
+            .contentType(TEXT_XML)
+            .body("""
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
+                    <s:Body>
+                        <cs:getCity>
+                            <name>Bonn</name>
+                        </cs:getCity>
+                    </s:Body>
+                </s:Envelope>""")
             .post("http://localhost:2000/services/cities");
-        
-        System.out.println("body.prettyPrint() = " + body.prettyPrint());
-        
+
             body.then()
                 .statusCode(200)
                 .contentType(TEXT_XML)
@@ -132,18 +155,26 @@ public class SoapProxyInvocationTest {
     }
 
     @Test
-    void twoServicesA() throws Exception {
+    void twoServicesA()  {
 
-        Response res =  given().when()
-                .body("""
+        String s = """
                     <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
                         <s:Body>
-                            <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a>
+                            <ns:a xmlns:ns="https://predic8.de/">Paris!</ns:a>
                         </s:Body>
-                    </s:Envelope>
-                    """)
+                    </s:Envelope>""";
+
+//                String s = """
+//                    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><ns:a xmlns:ns="https://predic8.de/">Paris!</ns:a></s:Body></s:Envelope>""";
+
+//        String s = "ParisErsatz!";
+
+        Response res =  given().when()
+                .body(s)
+                .headers("Paris", "Anfrage")
+                .contentType(TEXT_XML)
                 .post("http://localhost:2000/services/a");
-        
+
         System.out.println("res.prettyPrint() = " + res.prettyPrint());
 
         res.then().statusCode(200)

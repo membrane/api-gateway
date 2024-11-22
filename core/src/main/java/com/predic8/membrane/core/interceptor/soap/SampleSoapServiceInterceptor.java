@@ -56,7 +56,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         if (isWSDLRequest(exc)) {
             exc.setResponse(createWSDLResponse(exc));
         } else if(!exc.getRequest().isPOSTRequest()) {
-            exc.setResponse(createMethodNotAllowedSOAPFault());
+            exc.setResponse(createMethodNotAllowedSOAPFault(exc.getRequest().getMethod()));
         } else {
             try {
                 exc.setResponse(createGetCityResponse(exc));
@@ -75,8 +75,8 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         return ok(getResponse(getCity(exc))).contentType(TEXT_XML).build();
     }
 
-    private static Response createMethodNotAllowedSOAPFault() throws Exception {
-        return ok(getSoapFault("Method Not Allowed", "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
+    private static Response createMethodNotAllowedSOAPFault(String method) throws Exception {
+        return ok(getSoapFault("Method %s Not Allowed".formatted(method), "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
     }
 
     private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException {

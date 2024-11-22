@@ -14,27 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.lang.ScriptingUtils;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import groovy.text.StreamingTemplateEngine;
-import groovy.text.Template;
-import groovy.text.TemplateExecutionException;
-import groovy.text.XmlTemplateEngine;
-import org.apache.commons.io.FilenameUtils;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.resolver.*;
+import groovy.text.*;
+import org.apache.commons.io.*;
+import org.jetbrains.annotations.*;
 
-import java.io.InputStreamReader;
-import java.util.HashMap;
+import java.io.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Renders the body content of a message from a template. The template can
@@ -58,17 +54,7 @@ public class TemplateInterceptor extends StaticInterceptor {
         name = "Template";
     }
 
-    @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        return handleInternal(exc.getRequest(), exc, REQUEST);
-    }
-
-    @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return handleInternal(exc.getResponse(), exc, RESPONSE);
-    }
-
-    private Outcome handleInternal(Message msg, Exchange exc, Flow flow) {
+    protected Outcome handleInternal(Message msg, Exchange exc, Flow flow) {
         try {
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
@@ -87,16 +73,19 @@ public class TemplateInterceptor extends StaticInterceptor {
     @SuppressWarnings("RedundantThrows") // Declaration of exception is needed. However, Groovy does not declare it.
     private String fillTemplate(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
 
-        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(router.getUriFactory(), exc, msg, flow, scriptAccessesJson && msg.isJSON());
-        binding.put("props", binding.get("properties"));
-        binding.remove("properties");
-        binding.putAll(exc.getProperties()); // To be compatible with old Version
-
-        String payload = template.make(binding).toString();
+        String payload = template.make(getVariableBinding(exc, msg, flow)).toString();
         if (isOfMediaType(APPLICATION_JSON,contentType) && pretty) {
             return prettifyJson(payload);
         }
         return payload;
+    }
+
+    private @NotNull HashMap<String, Object> getVariableBinding(Exchange exc, Message msg, Flow flow) {
+        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(router.getUriFactory(), exc, msg, flow, scriptAccessesJson && msg.isJSON());
+        binding.put("props", binding.get("properties"));
+        binding.remove("properties");
+        binding.putAll(exc.getProperties()); // To be compatible with old Version
+        return binding;
     }
 
     private byte[] fillAndGetBytes(Exchange exc, Message msg, Flow flow) throws TemplateExecutionException {
