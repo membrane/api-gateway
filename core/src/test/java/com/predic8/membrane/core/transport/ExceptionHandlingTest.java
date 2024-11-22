@@ -19,7 +19,6 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
-import com.predic8.membrane.core.util.*;
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.*;
@@ -34,8 +33,9 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
-import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
+import static com.predic8.membrane.core.util.SOAPUtil.*;
 import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,7 +55,6 @@ public class ExceptionHandlingTest {
 	}
 
 	HttpRouter router;
-	volatile long connectionHash = 0;
 
 	public void setUp(boolean printStackTrace) throws Exception {
 		router = new HttpRouter();
@@ -98,27 +97,25 @@ public class ExceptionHandlingTest {
 
 	private HttpUriRequest createRequest(boolean printStackTrace, ContentType contentType) throws UnsupportedEncodingException {
 		String url = "http://localhost:" + getPort(printStackTrace) + "/";
-		HttpUriRequest get = null;
+		HttpUriRequest get;
 		switch (contentType) {
 		case JSON:
 			get = new HttpGet(url);
 			get.addHeader(CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8);
-			break;
+			return get;
 		case XML:
 			get = new HttpPost(url);
 			get.addHeader(CONTENT_TYPE, TEXT_XML_UTF8);
 			((HttpPost)get).setEntity(new StringEntity("<foo />"));
-			break;
+			return get;
 		case SOAP:
 			get = new HttpPost(url);
 			get.addHeader(CONTENT_TYPE, TEXT_XML_UTF8);
-			((HttpPost)get).setEntity(new StringEntity(SOAPUtil.getFaultSOAP11Body(Server,"dummy", "no detail")));
-			break;
+			((HttpPost)get).setEntity(new StringEntity(getFaultSOAP11Body(Server,"dummy", "no detail")));
+			return get;
 		default:
-			get = new HttpGet(url);
-			break;
+			return new HttpGet(url);
 		}
-		return get;
 	}
 
 	private void checkResponseContentType(ContentType contentType, String response) {

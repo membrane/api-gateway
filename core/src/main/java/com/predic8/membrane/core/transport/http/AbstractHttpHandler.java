@@ -27,6 +27,8 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
+import static com.predic8.membrane.core.util.SOAPUtil.getFaultSOAP11Body;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -126,11 +128,10 @@ public abstract class AbstractHttpHandler  {
 	}
 
 	private static Response createSOAPErrorResponse(Exception e, boolean printStackTrace) {
-		Response internalServerError = getResponseBuilder(e).
-				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
-				body(SOAPUtil.getFaultSOAP11Body(SOAPUtil.FaultCode.Server, "Internal Server Error", getMessage(e, printStackTrace) + " " + getComment(printStackTrace)).getBytes(UTF_8)).
+        return getResponseBuilder(e).
+				header(createHeaders(TEXT_XML_UTF8)).
+				body(getFaultSOAP11Body(getMessage(e, printStackTrace) + " " + getComment(printStackTrace)).getBytes(UTF_8)).
 				build();
-		return internalServerError;
 	}
 
 	private static Response createJSONErrorResponse( Exception e, boolean printStackTrace) {
@@ -147,14 +148,14 @@ public abstract class AbstractHttpHandler  {
 			log.error("Error generating JSON error response", f);
 		}
 		return getResponseBuilder(e).
-				header(HttpUtil.createHeaders(APPLICATION_JSON_UTF8)).
+				header(createHeaders(APPLICATION_JSON_UTF8)).
 				body(baos.toByteArray()).
 				build();
 	}
 
 	private static Response createXMLErrorResponse(Exception e, boolean printStackTrace) {
 		return getResponseBuilder(e).
-				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
+				header(createHeaders(TEXT_XML_UTF8)).
 				body(("<error><message>" +
 					  escapeXml11(getMessage(e, printStackTrace)) +
 					  "</message><comment>" +

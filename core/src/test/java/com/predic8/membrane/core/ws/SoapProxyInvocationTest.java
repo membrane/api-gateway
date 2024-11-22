@@ -60,7 +60,7 @@ public class SoapProxyInvocationTest {
         gw.init();
     }
 
-    private static @NotNull SOAPProxy createCitiesSoapProxyGateway() throws Exception {
+    private static @NotNull SOAPProxy createCitiesSoapProxyGateway() {
         SOAPProxy soapProxy = new SOAPProxy();
         soapProxy.setPort(2000);
         soapProxy.setWsdl("classpath:/ws/cities.wsdl");

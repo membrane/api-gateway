@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONS
 @MCElement(name = "wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
-    private static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());
 
     public static final QName XSD_IMPORT_QNAME = new QName(XSD_NS, "import");
     public static final QName XSD_INCLUDE_QNAME = new QName(XSD_NS, "include");
