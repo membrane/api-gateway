@@ -323,7 +323,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			running = true;
 		}
 
-		log.info("Started {} Rule{}:", ruleManager.getRules().size(), (ruleManager.getRules().size() > 1 ? "s" : ""));
+		log.info("Started {} API{}:", ruleManager.getRules().size(), (ruleManager.getRules().size() > 1 ? "s" : ""));
 		ruleManager.getRules().forEach(rule ->
 				log.info("  {} {}{}{}", ruleDisplayName(rule), ruleCustomName(rule), getCustomRuleKey(rule), additionalRuleInfo(rule))
 		);
@@ -367,13 +367,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	private String ruleDisplayName(Rule rule) {
 		if (rule instanceof APIProxy) {
-			return "API Proxy";
+			return "API";
 		} else if (rule instanceof ServiceProxy) {
-			return "Service Proxy";
+			return "ServiceProxy";
 		} else if (rule instanceof SOAPProxy) {
-			return "SOAP Proxy";
+			return "SOAPProxy";
 		} else if (rule instanceof InternalProxy) {
-			return "Internal Proxy";
+			return "InternalProxy";
 		}
 		return "Proxy";
 	}
