@@ -22,6 +22,12 @@ import static org.hamcrest.Matchers.*;
 
 public class SoapProxyInvocationTest {
 
+    public static final String SERVICE_A_REQUEST = """
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+                    <s:Body>
+                        <ns:a xmlns:ns="https://predic8.de/">Paris!</ns:a>
+                    </s:Body>
+                </s:Envelope>""";
     static Router gw;
     static Router backend;
 
@@ -84,33 +90,21 @@ public class SoapProxyInvocationTest {
             setInterceptors(List.of(new LogInterceptor()));
         }});
 
-        aServiceAPI.getInterceptors().add(new TemplateInterceptor() {{
+        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
+            setInterceptors(List.of(new TemplateInterceptor() {{
                 setTextTemplate("""
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
                     <s:Body>
-                        <ns:aResponse xmlns:ns="https://predic8.de/">Correct!</ns:aResponse>
+                        <ns:aResponse xmlns:ns="https://predic8.de/">Panama</ns:aResponse>
                     </s:Body>
                 </s:Envelope>""");
                 setContentType(TEXT_XML);
+            }}));
             }});
-
-//        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
-//            setInterceptors(List.of(new TemplateInterceptor() {{
-//                setTextTemplate("""
-//                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
-//                    <s:Body>
-//                        <ns:aResponse xmlns:ns="https://predic8.de/">Correct!</ns:aResponse>
-//                    </s:Body>
-//                </s:Envelope>""");
-//                setContentType(TEXT_XML);
-//            }}));
-//            }});
 
         aServiceAPI.getInterceptors().add(new ReturnInterceptor());
         return aServiceAPI;
     }
-
-
 
     @AfterAll
     public static void teardown() throws IOException {
@@ -157,21 +151,8 @@ public class SoapProxyInvocationTest {
     @Test
     void twoServicesA()  {
 
-        String s = """
-                    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-                        <s:Body>
-                            <ns:a xmlns:ns="https://predic8.de/">Paris!</ns:a>
-                        </s:Body>
-                    </s:Envelope>""";
-
-//                String s = """
-//                    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><ns:a xmlns:ns="https://predic8.de/">Paris!</ns:a></s:Body></s:Envelope>""";
-
-//        String s = "ParisErsatz!";
-
         Response res =  given().when()
-                .body(s)
-                .headers("Paris", "Anfrage")
+                .body(SERVICE_A_REQUEST)
                 .contentType(TEXT_XML)
                 .post("http://localhost:2000/services/a");
 
@@ -179,7 +160,7 @@ public class SoapProxyInvocationTest {
 
         res.then().statusCode(200)
                 .contentType(TEXT_XML)
-                .body("Envelope.Body.aResponse", equalTo("Correct!"));
+                .body("Envelope.Body.aResponse", equalTo("Panama"));
     }
 
 
