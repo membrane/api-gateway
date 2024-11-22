@@ -15,4 +15,9 @@ public abstract class AbstractMessageValidator implements MessageValidator {
             return RESPONSE;
         return UNKNOWN;
     }
+
+    @Override
+    public void init() throws Exception {
+
+    }
 }

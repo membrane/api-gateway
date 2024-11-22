@@ -61,12 +61,6 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		name = "Validator";
 	}
 
-	private void setValidator(MessageValidator validator) throws Exception {
-		if (this.validator != null)
-			throw new Exception("<validator> cannot have more than one validator attribute.");
-		this.validator = validator;
-	}
-
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
@@ -74,27 +68,25 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
 	@Override
 	public void init() throws Exception {
-		validator = null;
+		validator = getMessageValidator();
+		validator.init();
+		name = validator.getName();
+		if (skipFaults && wsdl == null)
+			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
+	}
 
-        if (wsdl != null) {
-			name="SOAP Validator";
-			WSDLValidator validator = new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
-			validator.init();
-			setValidator(validator);
+	private MessageValidator getMessageValidator() throws Exception {
+		if (wsdl != null) {
+			return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
 		}
 		if (schema != null) {
-			name="XML Schema Validator";
-			setValidator(new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler()));
+			return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
 		}
 		if (jsonSchema != null) {
-			name="JSON Schema Validator";
-			JSONValidator validator = new JSONValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
-			validator.init();
-			setValidator(validator);
+			return new JSONValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
 		}
 		if (schematron != null) {
-			name="Schematron Validator";
-			setValidator(new SchematronValidator( combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext));
+			return new SchematronValidator( combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
 		}
 
 		if (validator == null) {
@@ -102,14 +94,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 			if (parent instanceof SOAPProxy sp) {
 				wsdl = sp.getWsdl();
 				name = "SOAP Validator";
-				setValidator(new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl),  serviceName, createFailureHandler(), skipFaults));
+				return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl),  serviceName, createFailureHandler(), skipFaults);
 			}
-			if (validator == null)
-				throw new Exception("<validator> must have an attribute specifying the validator.");
 		}
-
-		if (skipFaults && wsdl == null)
-			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
+		throw new RuntimeException("Validator is not configured properly. <validator> must have an attribute specifying the validator.");
 	}
 
 	private @Nullable String getBaseLocation() {

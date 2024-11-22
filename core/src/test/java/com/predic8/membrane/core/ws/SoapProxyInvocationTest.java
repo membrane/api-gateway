@@ -2,9 +2,9 @@ package com.predic8.membrane.core.ws;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -25,9 +25,24 @@ public class SoapProxyInvocationTest {
     public static final String SERVICE_A_REQUEST = """
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
                     <s:Body>
-                        <ns:a xmlns:ns="https://predic8.de/">Paris!</ns:a>
+                        <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a>
                     </s:Body>
                 </s:Envelope>""";
+
+    public static final String SERVICE_A_INVALID_REQUEST = """
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+                    <s:Body>
+                        <ns:a xmlns:ns="https://predic8.de/"><invalid/></ns:a>
+                    </s:Body>
+                </s:Envelope>""";
+
+    public static final String SERVICE_B_REQUEST = """
+                <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+                    <s:Body>
+                        <ns:b xmlns:ns="https://predic8.de/">Rio</ns:b>
+                    </s:Body>
+                </s:Envelope>""";
+
     static Router gw;
     static Router backend;
 
@@ -45,7 +60,7 @@ public class SoapProxyInvocationTest {
         gw.init();
     }
 
-    private static @NotNull SOAPProxy createCitiesSoapProxyGateway() {
+    private static @NotNull SOAPProxy createCitiesSoapProxyGateway() throws Exception {
         SOAPProxy soapProxy = new SOAPProxy();
         soapProxy.setPort(2000);
         soapProxy.setWsdl("classpath:/ws/cities.wsdl");
@@ -57,6 +72,7 @@ public class SoapProxyInvocationTest {
         sp.setPort(2000);
         sp.setWsdl("classpath:/ws/two-separated-services.wsdl");
         sp.setServiceName(serviceName);
+        sp.getInterceptors().add(new ValidatorInterceptor());
         return sp;
     }
 
@@ -86,10 +102,6 @@ public class SoapProxyInvocationTest {
                 setValue("123");
             }}));
         }});
-        aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
-            setInterceptors(List.of(new LogInterceptor()));
-        }});
-
         aServiceAPI.getInterceptors().add(new ResponseInterceptor() {{
             setInterceptors(List.of(new TemplateInterceptor() {{
                 setTextTemplate("""
@@ -156,12 +168,38 @@ public class SoapProxyInvocationTest {
                 .contentType(TEXT_XML)
                 .post("http://localhost:2000/services/a");
 
-        System.out.println("res.prettyPrint() = " + res.prettyPrint());
-
         res.then().statusCode(200)
                 .contentType(TEXT_XML)
                 .body("Envelope.Body.aResponse", equalTo("Panama"));
     }
 
+    @Test
+    void twoRequestToSecondNotDeployedService()  {
+        Response res =  given().when()
+                .body(SERVICE_B_REQUEST)
+                .contentType(TEXT_XML)
+                .post("http://localhost:2000/services/b");  // This service is not selected!
+
+        System.out.println("res.prettyPrint() = " + res.prettyPrint());
+
+        res.then().statusCode(404)
+                .contentType(APPLICATION_PROBLEM_JSON)
+                .body("title", equalTo("Wrong path or method"));
+    }
+
+    @Test
+    void twoServicesAInvalidRequest()  {
+        Response res =  given().when()
+                .body(SERVICE_A_INVALID_REQUEST)
+                .contentType(TEXT_XML)
+                .post("http://localhost:2000/services/a");
+        
+        System.out.println("res.body().asString() = " + res.body().asString());
+
+        res.then().statusCode(400)
+                .contentType(TEXT_XML)
+                .body("Envelope.Body.Fault.faultcode", equalTo("s11:Client"))
+                .body("Envelope.Body.Fault.faultstring", equalTo("Message validation failed!"));
+    }
 
 }

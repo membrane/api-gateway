@@ -50,6 +50,11 @@ public class JSONValidator extends AbstractMessageValidator {
 	}
 
 	@Override
+	public String getName() {
+		return "JSON Schema Validator";
+	}
+
+	@Override
 	public void init() throws IOException {
 		createValidators();
 	}

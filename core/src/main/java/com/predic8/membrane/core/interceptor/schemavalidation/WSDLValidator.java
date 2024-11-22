@@ -35,6 +35,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
 import static com.predic8.membrane.core.util.WSDLUtil.*;
 import static javax.xml.stream.XMLInputFactory.*;
 
@@ -78,6 +79,11 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) {
 		super(resourceResolver, location, failureHandler, skipFaults);
 		this.serviceName = serviceName;
+	}
+
+	@Override
+	public String getName() {
+		return "WSDL Validator";
 	}
 
 	@Override
@@ -203,7 +209,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
 	@Override
 	protected Response createErrorResponse(String message) {
-		return HttpUtil.createSOAPValidationErrorResponse(message);
+		return SOAPUtil.createSOAPValidationErrorResponse(Client, "Message validation failed!",message);
 	}
 
 	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();

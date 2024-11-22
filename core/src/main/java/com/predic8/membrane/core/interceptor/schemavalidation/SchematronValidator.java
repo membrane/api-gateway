@@ -45,6 +45,10 @@ public class SchematronValidator extends AbstractMessageValidator {
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 
+	@Override
+	public String getName() {
+		return "Schematron Validator";
+	}
 
 	public SchematronValidator(String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
 		this.failureHandler = failureHandler;
@@ -77,11 +81,6 @@ public class SchematronValidator extends AbstractMessageValidator {
 		xmlInputFactory = XMLInputFactory.newInstance();
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
-
-	@Override
-	public void init() throws Exception {
-
 	}
 
 	@Override

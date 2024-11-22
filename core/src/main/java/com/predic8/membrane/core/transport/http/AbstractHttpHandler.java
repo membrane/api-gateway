@@ -126,10 +126,11 @@ public abstract class AbstractHttpHandler  {
 	}
 
 	private static Response createSOAPErrorResponse(Exception e, boolean printStackTrace) {
-		return getResponseBuilder(e).
+		Response internalServerError = getResponseBuilder(e).
 				header(HttpUtil.createHeaders(TEXT_XML_UTF8)).
-				body(HttpUtil.getFaultSOAPBody("Internal Server Error", getMessage(e, printStackTrace) + " " + getComment(printStackTrace)).getBytes(UTF_8)).
+				body(SOAPUtil.getFaultSOAP11Body(SOAPUtil.FaultCode.Server, "Internal Server Error", getMessage(e, printStackTrace) + " " + getComment(printStackTrace)).getBytes(UTF_8)).
 				build();
+		return internalServerError;
 	}
 
 	private static Response createJSONErrorResponse( Exception e, boolean printStackTrace) {

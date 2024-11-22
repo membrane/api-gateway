@@ -20,6 +20,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 public interface MessageValidator {
 
+	String getName();
+
 	Outcome validateMessage(Exchange exc, Message msg) throws Exception;
 
 	void init() throws Exception;

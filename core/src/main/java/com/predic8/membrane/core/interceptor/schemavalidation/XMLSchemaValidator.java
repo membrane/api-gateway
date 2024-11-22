@@ -39,6 +39,11 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	}
 
 	@Override
+	public String getName() {
+		return "XML Schema Validator";
+	}
+
+	@Override
 	protected List<Schema> getSchemas() {
 		return null; // never gets called
 	}
