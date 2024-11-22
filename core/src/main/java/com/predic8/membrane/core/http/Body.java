@@ -87,7 +87,6 @@ public class Body extends AbstractBody {
 			observer.bodyRequested(this);
 
 		skipBodyContent();
-		markAsRead();
 	}
 
 	private void skipBodyContent() throws IOException {
@@ -112,6 +111,7 @@ public class Body extends AbstractBody {
 				break; // EOF
 			toSkip -= skipped;
 		}
+		markAsRead();
 	}
 
 	@Override
