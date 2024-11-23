@@ -31,6 +31,8 @@ import java.io.*;
  */
 public class Body extends AbstractBody {
 
+	private static final Logger log = LoggerFactory.getLogger(Body.class.getName());
+
 	private final static int BUFFER_SIZE;
 	private final static int MAX_CHUNK_LENGTH;
 
@@ -41,11 +43,9 @@ public class Body extends AbstractBody {
 		MAX_CHUNK_LENGTH = maxChunkLength == null ? 1_000_000_000 : Integer.parseInt(maxChunkLength);
 	}
 
-	private static final Logger log = LoggerFactory.getLogger(Body.class.getName());
 	private final InputStream inputStream;
 	private final long length;
 	private long streamedLength;
-
 
 	public Body(InputStream in) throws IOException {
 		this(in, -1);
@@ -86,6 +86,10 @@ public class Body extends AbstractBody {
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
 
+		skipBodyContent();
+	}
+
+	private void skipBodyContent() throws IOException {
 		byte[] buffer = null;
 		boolean hasRelevantObserver = hasRelevantObservers();
 		if (hasRelevantObserver)
