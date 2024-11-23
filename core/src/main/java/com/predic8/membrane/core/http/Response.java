@@ -117,9 +117,12 @@ public class Response extends Message {
 			return this;
 		}
 
+		/**
+		 * Overwrites the body with an empty body and sets the Content-Length to 0
+		 */
 		public ResponseBuilder bodyEmpty() {
 			res.getHeader().setContentLength(0);
-			this.body("");
+			res.body = new EmptyBody();
 			return this;
 		}
 
