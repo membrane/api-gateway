@@ -121,4 +121,15 @@ public class BodyTest {
 		assertArrayEquals(ciob2.getContent(), ciob.getContent());
 	}
 
+	@Test
+	void hasRelevantObservers() {
+		assertFalse(unchunkedBody.hasRelevantObservers());
+		unchunkedBody.addObserver(new NonRelevantObserver());
+		assertFalse(unchunkedBody.hasRelevantObservers());
+		unchunkedBody.addObserver(new AbstractMessageObserver() {});
+		assertTrue(unchunkedBody.hasRelevantObservers());
+	}
+
+	private static class NonRelevantObserver extends AbstractMessageObserver implements NonRelevantBodyObserver {}
+
 }
