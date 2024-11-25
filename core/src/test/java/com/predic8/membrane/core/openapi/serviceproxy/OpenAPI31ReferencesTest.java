@@ -16,21 +16,22 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.URIFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class OpenAPI31Test {
+public class OpenAPI31ReferencesTest {
 
     OpenAPIInterceptor interceptor;
 
-    OpenAPISpec petstore_v3_1;
+    OpenAPISpec referencesTest;
 
     Exchange exc = new Exchange(null);
 
@@ -39,19 +40,19 @@ public class OpenAPI31Test {
         Router router = new Router();
         router.setUriFactory(new URIFactory());
 
-        petstore_v3_1 = new OpenAPISpec();
-        petstore_v3_1.location = "src/test/resources/openapi/specs/petstore-v3.1.json";
+        referencesTest = new OpenAPISpec();
+        referencesTest.location = "src/test/resources/openapi/specs/oas31/request-reference.yaml";
 
         exc.setRequest(new Request.Builder().method("GET").build());
 
-        interceptor = new OpenAPIInterceptor(createProxy(router, petstore_v3_1), router);
+        interceptor = new OpenAPIInterceptor(createProxy(router, referencesTest), router);
         interceptor.init(router);
     }
 
     @Test
     void simple() throws Exception {
-        exc.getRequest().setUri("/pets");
-        Outcome actual = interceptor.handleRequest(exc);
-        assertEquals(Outcome.RETURN, actual);
+        exc.getRequest().setUri("/users");
+        System.out.println(exc);
+        assertEquals(Outcome.RETURN, interceptor.handleRequest(exc));
     }
 }
