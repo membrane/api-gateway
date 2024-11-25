@@ -13,6 +13,14 @@
             </target>
         </api>
 
+        <api port="2000" name="hello2">
+            <openapi location="https://api.predic8.de/shop/v2/api-docs" />
+        </api>
+
+        <api port="2000" name="hello3">
+            <openapi dir="." />
+        </api>
+
         <serviceProxy port="3000">
             <target host="api.predic8.de">
                 <ssl/>

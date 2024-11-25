@@ -19,28 +19,28 @@ public class RuleDisplayInfo {
     public static void logInfosAboutStartedProxies(RuleManager manager) {
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(rule ->
-                log.info("  {} {}{}{}", ruleDisplayName(), ruleCustomName(), getRuleKeyDisplayName(), additionalRuleDisplayName())
+                log.info("  {} {}{}{}", ruleDisplayName(rule), ruleCustomName(rule), getRuleKeyDisplayName(rule), additionalRuleDisplayName(rule))
         );
     }
 
-    private String getRuleKeyDisplayName() {
+    private static String getRuleKeyDisplayName(Rule rule) {
         return String.format("%s:%d%s",
-                getHost(),
+                getHost(rule),
                 rule.getKey().getPort(),
-                getPath());
+                getPath(rule));
     }
 
-    private  @NotNull String getPath() {
+    private static @NotNull String getPath(Rule rule) {
         String path = rule.getKey().getPath();
         return path != null ? path : "";
     }
 
-    private  @Nullable String getHost() {
+    private static @Nullable String getHost(Rule rule) {
         String host = rule.getKey().getHost();
-        return Objects.equals(host, "*") ? getIP() : host;
+        return Objects.equals(host, "*") ? getIP(rule) : host;
     }
 
-    private  @NotNull String getIP() {
+    private static @NotNull String getIP(Rule rule) {
         String ip = rule.getKey().getIp();
         if (ip == null) {
             return  "0.0.0.0";
@@ -48,11 +48,11 @@ public class RuleDisplayInfo {
         return ip;
     }
 
-    private String additionalRuleDisplayName() {
+    private static String additionalRuleDisplayName(Rule rule) {
         if (rule instanceof APIProxy a) {
             Map<String,OpenAPIRecord> recs = a.getApiRecords();
             if (!recs.isEmpty()) {
-                return " using OpenAPI @ " + getLocationsAsString(recs);
+                return " using OpenAPI " + formatLocationInfo(recs, ((APIProxy) rule));
             }
         } else if (rule instanceof SOAPProxy s) {
             return " using WSDL @ " + s.getWsdl();
@@ -60,18 +60,30 @@ public class RuleDisplayInfo {
         return "";
     }
 
-    private String getLocationsAsString(Map<String, OpenAPIRecord> specs) {
-        return specs.entrySet().stream().map(e -> e.getKey()).collect(joining(", "));
+    private static String formatLocationInfo(Map<String, OpenAPIRecord> specs, APIProxy api) {
+        if (specs.size() == 1) {
+            Map.Entry<String, OpenAPIRecord> record = specs.entrySet().iterator().next();
+            return "\"" + record.getKey() + "\"" + " @ " + record.getValue().getSpec().getLocation();
+        } else {
+            String dir = specs.values().iterator().next().getSpec().getDir();
+            return "directory: " + dir + " containing [" +
+                    String.join(", ", specs.keySet()) +
+                    "]";
+        }
     }
 
-    private String ruleCustomName() {
+    private static String getLocationsAsString(Map<String, OpenAPIRecord> specs) {
+        return String.join(", ", specs.keySet());
+    }
+
+    private static String ruleCustomName(Rule rule) {
         if (Objects.equals(rule.getName(), rule.getKey().toString())) {
             return "";
         }
         return "\"%s\" ".formatted(rule.getName());
     }
 
-    private String ruleDisplayName() {
+    private static String ruleDisplayName(Rule rule) {
         if (rule instanceof APIProxy) {
             return "API";
         } else if (rule instanceof ServiceProxy) {
