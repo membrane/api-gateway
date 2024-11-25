@@ -30,7 +30,6 @@ import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
@@ -46,7 +45,6 @@ import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
-import static java.util.stream.Collectors.*;
 
 /**
  * @description <p>
@@ -324,72 +322,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			running = true;
 		}
 
-		log.info("Started {} API{}:", ruleManager.getRules().size(), (ruleManager.getRules().size() > 1 ? "s" : ""));
-		ruleManager.getRules().forEach(rule ->
-				log.info("  {} {}{}{}", ruleDisplayName(rule), ruleCustomName(rule), getCustomRuleKey(rule), additionalRuleInfo(rule))
-		);
-        log.info(PRODUCT_NAME + " {} up and running!", VERSION);
-	}
-
-	private static String getCustomRuleKey(Rule rule) {
-        return String.format("%s:%d%s",
-				getHostDisplayName(rule),
-                rule.getKey().getPort(),
-				getPathDisplayName(rule));
-	}
-
-	private static @NotNull String getPathDisplayName(Rule rule) {
-		String path = rule.getKey().getPath();
-		return path != null ? path : "";
-	}
-
-	private static @Nullable String getHostDisplayName(Rule rule) {
-		String host = rule.getKey().getHost();
-		return Objects.equals(host, "*") ? getIPDisplayName(rule) : host;
-	}
-
-	private static @NotNull String getIPDisplayName(Rule rule) {
-		String ip = rule.getKey().getIp();
-		if (ip == null) {
-			return  "0.0.0.0";
-		}
-		return ip;
-	}
-
-	private String additionalRuleInfo(Rule rule) {
-		if (rule instanceof APIProxy a) {
-			Map<String,OpenAPIRecord> recs = a.getApiRecords();
-			if (!recs.isEmpty()) {
-				return " using OpenAPI @ " + getLocationsAsString(recs);
-			}
-		} else if (rule instanceof SOAPProxy s) {
-			return " using WSDL @ " + s.getWsdl();
-		}
-		return "";
-	}
-
-	private static String getLocationsAsString(Map<String, OpenAPIRecord> specs) {
-		return specs.entrySet().stream().map(e -> e.getKey()).collect(joining(", "));
-	}
-
-	private String ruleCustomName(Rule rule) {
-		if (Objects.equals(rule.getName(), rule.getKey().toString())) {
-			return "";
-		}
-		return "\"%s\" ".formatted(rule.getName());
-	}
-
-	private String ruleDisplayName(Rule rule) {
-		if (rule instanceof APIProxy) {
-			return "API";
-		} else if (rule instanceof ServiceProxy) {
-			return "ServiceProxy";
-		} else if (rule instanceof SOAPProxy) {
-			return "SOAPProxy";
-		} else if (rule instanceof InternalProxy) {
-			return "InternalProxy";
-		}
-		return "Proxy";
+		RuleDisplayInfo.logInfosAboutStartedProxies(ruleManager);
+		log.info(PRODUCT_NAME + " {} up and running!", VERSION);
 	}
 
 	private void startJmx() {
