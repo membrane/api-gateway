@@ -7,6 +7,7 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -52,7 +53,7 @@ public class RuleDisplayInfo {
         if (rule instanceof APIProxy a) {
             Map<String,OpenAPIRecord> recs = a.getApiRecords();
             if (!recs.isEmpty()) {
-                return " using OpenAPI " + formatLocationInfo(recs, ((APIProxy) rule));
+                return " using OpenAPI " + formatLocationInfo(recs);
             }
         } else if (rule instanceof SOAPProxy s) {
             return " using WSDL @ " + s.getWsdl();
@@ -60,20 +61,24 @@ public class RuleDisplayInfo {
         return "";
     }
 
-    private static String formatLocationInfo(Map<String, OpenAPIRecord> specs, APIProxy api) {
-        if (specs.size() == 1) {
-            Map.Entry<String, OpenAPIRecord> record = specs.entrySet().iterator().next();
-            return "\"" + record.getKey() + "\"" + " @ " + record.getValue().getSpec().getLocation();
-        } else {
-            String dir = specs.values().iterator().next().getSpec().getDir();
-            return "directory: " + dir + " containing [" +
-                    String.join(", ", specs.keySet()) +
-                    "]";
-        }
+    private static String formatLocationInfo(Map<String, OpenAPIRecord> specs) {
+        return getSpecsByDir(specs).entrySet().stream()
+                .map(e -> formatDirGroup(e.getKey(), e.getValue()))
+                .collect(joining("\n"));
     }
 
-    private static String getLocationsAsString(Map<String, OpenAPIRecord> specs) {
-        return String.join(", ", specs.keySet());
+    private static @NotNull Map<String, @NotNull List<Map.Entry<String, OpenAPIRecord>>> getSpecsByDir(Map<String, OpenAPIRecord> specs) {
+        return specs.entrySet().stream().collect(groupingBy(e ->
+                Optional.ofNullable(e.getValue().getSpec().getDir()).orElse("")
+        ));
+    }
+
+    private static String formatDirGroup(String dir, List<Map.Entry<String, OpenAPIRecord>> entries) {
+        var specsInfo = entries.stream()
+                .map(e -> "\"%s\" @ %s".formatted(e.getKey(), e.getValue().getSpec().getLocation()))
+                .collect(joining("\n" + " ".repeat(67)));
+
+        return dir.isEmpty() ? specsInfo : ("Directory \"%s\":\n" + " ".repeat(67) + "%s").formatted(dir, specsInfo);
     }
 
     private static String ruleCustomName(Rule rule) {
