@@ -16,43 +16,49 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.URIFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.util.*;
+import io.restassured.*;
+import io.restassured.response.*;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.openapi.util.TestUtils.createProxy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.*;
 
 public class OpenAPI31ReferencesTest {
 
-    OpenAPIInterceptor interceptor;
-
-    OpenAPISpec referencesTest;
-
-    Exchange exc = new Exchange(null);
-
     @BeforeEach
     public void setUp() throws Exception {
-        Router router = new Router();
+        Router router = new HttpRouter();
         router.setUriFactory(new URIFactory());
 
-        referencesTest = new OpenAPISpec();
-        referencesTest.location = "src/test/resources/openapi/specs/oas31/request-reference.yaml";
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.location = "src/test/resources/openapi/specs/oas31/request-reference.yaml";
+        spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
 
-        exc.setRequest(new Request.Builder().method("GET").build());
+        APIProxy api = new APIProxy();
+        api.setPort(2000);
+        api.setSpecs(List.of(spec));
+     //   api.getInterceptors().add(new ReturnInterceptor());
+        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+        router.init();
 
-        interceptor = new OpenAPIInterceptor(createProxy(router, referencesTest), router);
-        interceptor.init(router);
     }
 
     @Test
-    void simple() throws Exception {
-        exc.getRequest().setUri("/users");
-        System.out.println(exc);
-        assertEquals(Outcome.RETURN, interceptor.handleRequest(exc));
+    void wrongPath() throws Exception {
+        ValidatableResponse res = RestAssured.given().body("").post("http://localhost:2000/wrong").then();
+
+        // Assertion
+
+        System.out.println("res = " +  res.extract().asPrettyString());
+    }
+
+    @Test
+    void foo() throws Exception {
+        ValidatableResponse res = RestAssured.given().body("").post("http://localhost:2000/users").then();
+
+        // Assertion
+
+        System.out.println("res = " +  res.extract().asPrettyString());
     }
 }

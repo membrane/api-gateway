@@ -25,6 +25,7 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import org.apache.commons.lang3.exception.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -126,10 +127,8 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPI getOpenAPI(Router router, OpenAPISpec spec) throws ResourceRetrievalException {
-        ParseOptions parseOptions = new ParseOptions();
-        parseOptions.setResolve(true);
         OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
-                null, null).getOpenAPI();
+                null, getParseOptions()).getOpenAPI();
         if (openAPI != null)
             return openAPI;
 
@@ -138,7 +137,17 @@ public class OpenAPIRecordFactory {
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
         return new OpenAPIParser().readContents(readInputStream(new FileInputStream(oaFile)),
-                null, null).getOpenAPI();
+                null, getParseOptions()).getOpenAPI();
+    }
+
+    private static @NotNull ParseOptions getParseOptions() {
+        ParseOptions parseOptions = new ParseOptions();
+
+        // Resolve $refs in remote or relative locations, parse referenced document and remove $refs
+        // See: https://github.com/swagger-api/swagger-parser?tab=readme-ov-file#1-resolve
+        parseOptions.setResolve(true);
+
+        return parseOptions;
     }
 
     private InputStream getInputStreamForLocation(Router router, String location) throws ResourceRetrievalException {
