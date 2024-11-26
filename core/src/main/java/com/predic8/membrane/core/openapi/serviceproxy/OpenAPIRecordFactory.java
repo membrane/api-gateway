@@ -90,12 +90,12 @@ public class OpenAPIRecordFactory {
             if (root instanceof UnknownHostException) {
                 throw new ConfigurationException(format("""
                         Error accessing OpenAPI specification from location: %s
-                                            
+                        
                         The hostname cannot be resolved to an IP address. Maybe the internet
                         is not reachable or a proxy server configuration is needed.
-                                            
+                        
                         Have a look at: ...
-                            """, spec.location));
+                        """, spec.location));
             }
 
             log.error("Cannot read OpenAPI specification from location " + spec.location);
