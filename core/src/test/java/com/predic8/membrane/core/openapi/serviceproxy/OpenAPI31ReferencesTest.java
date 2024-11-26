@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 predic8 GmbH, www.predic8.com
+ *  Copyright 2024 predic8 GmbH, www.predic8.com
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -17,17 +17,19 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 import com.predic8.membrane.core.util.*;
-import io.restassured.*;
-import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 
-import java.util.*;
+import java.util.List;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
 
 public class OpenAPI31ReferencesTest {
 
-    @BeforeEach
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         Router router = new HttpRouter();
         router.setUriFactory(new URIFactory());
 
@@ -38,27 +40,47 @@ public class OpenAPI31ReferencesTest {
         APIProxy api = new APIProxy();
         api.setPort(2000);
         api.setSpecs(List.of(spec));
-     //   api.getInterceptors().add(new ReturnInterceptor());
         router.getRuleManager().addProxyAndOpenPortIfNew(api);
+
+        APIProxy backend = new APIProxy();
+        backend.setPort(3000);
+        backend.getInterceptors().add(new ReturnInterceptor());
+        router.getRuleManager().addProxyAndOpenPortIfNew(backend);
+
         router.init();
-
     }
 
     @Test
-    void wrongPath() throws Exception {
-        ValidatableResponse res = RestAssured.given().body("").post("http://localhost:2000/wrong").then();
-
-        // Assertion
-
-        System.out.println("res = " +  res.extract().asPrettyString());
+    void validEmail() {
+        given()
+            .contentType("application/json")
+            .body("{\"email\": \"user@example.com\"}")
+        .when()
+            .post("http://localhost:2000/users")
+        .then()
+            .statusCode(200);
     }
 
     @Test
-    void foo() throws Exception {
-        ValidatableResponse res = RestAssured.given().body("").post("http://localhost:2000/users").then();
+    void invalidEmail() {
+        given()
+            .contentType("application/json")
+            .body("{\"email\": \"invalid-email\"}")
+        .when()
+            .post("http://localhost:2000/users")
+        .then()
+            .statusCode(400)
+            .body(containsString("is not a valid email"));
+    }
 
-        // Assertion
-
-        System.out.println("res = " +  res.extract().asPrettyString());
+    @Test
+    void wrongPath() {
+        given()
+            .contentType("application/json")
+            .body("{\"email\": \"user@example.com\"}")
+        .when()
+            .post("http://localhost:2000/wrong")
+        .then()
+            .statusCode(404);
     }
 }
