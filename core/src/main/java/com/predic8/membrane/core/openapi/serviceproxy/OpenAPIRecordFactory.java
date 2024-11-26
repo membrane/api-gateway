@@ -21,6 +21,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import io.swagger.v3.parser.core.models.ParseOptions;
@@ -157,7 +158,7 @@ public class OpenAPIRecordFactory {
     }
 
     private JsonNode getSpec(OpenAPI api) throws IOException {
-        return omYaml.readTree(omYaml.writeValueAsBytes(api));
+        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
 
     private void setExtensionOnAPI(OpenAPISpec spec, OpenAPI api) {
