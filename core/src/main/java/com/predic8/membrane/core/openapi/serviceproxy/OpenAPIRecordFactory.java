@@ -98,6 +98,8 @@ public class OpenAPIRecordFactory {
                         """, spec.location));
             }
 
+            root.printStackTrace(); // Remove me
+
             log.error("Cannot read OpenAPI specification from location " + spec.location);
             throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
         }
