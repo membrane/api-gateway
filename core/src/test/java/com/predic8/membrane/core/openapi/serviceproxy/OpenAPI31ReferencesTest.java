@@ -17,16 +17,20 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.util.*;
+import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
-import java.util.List;
+import java.util.*;
 
-import static io.restassured.RestAssured.given;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
 public class OpenAPI31ReferencesTest {
+
+    static APIProxy api;
 
     @BeforeAll
     public static void setUp() throws Exception {
@@ -35,9 +39,9 @@ public class OpenAPI31ReferencesTest {
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = "src/test/resources/openapi/specs/oas31/request-reference.yaml";
-        spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
+        spec.setValidateRequests(YES);
 
-        APIProxy api = new APIProxy();
+        api = new APIProxy();
         api.setPort(2000);
         api.setSpecs(List.of(spec));
         router.getRuleManager().addProxyAndOpenPortIfNew(api);
@@ -48,13 +52,25 @@ public class OpenAPI31ReferencesTest {
         router.getRuleManager().addProxyAndOpenPortIfNew(backend);
 
         router.init();
+
+
+    }
+
+    // TODO
+    @Test
+    void navigateThroughReferencedPartsOfDocument() throws InterruptedException {
+
+        System.out.println("api.apiRecords = " + api.apiRecords);
+        OpenAPI openAPI = api.apiRecords.get("split-api").getApi();
+        System.out.println("openAPI = " + openAPI);
     }
 
     @Test
     void validEmail() {
         given()
             .contentType("application/json")
-            .body("{\"email\": \"user@example.com\"}")
+            .body("""
+                    {"email": "user@example.com"}""")
         .when()
             .post("http://localhost:2000/users")
         .then()
@@ -65,7 +81,8 @@ public class OpenAPI31ReferencesTest {
     void invalidEmail() {
         given()
             .contentType("application/json")
-            .body("{\"email\": \"invalid-email\"}")
+            .body("""
+                    {"email": "invalid-email"}""")
         .when()
             .post("http://localhost:2000/users")
         .then()
