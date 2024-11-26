@@ -90,12 +90,12 @@ public class OpenAPIRecordFactory {
             if (root instanceof UnknownHostException) {
                 throw new ConfigurationException(format("""
                         Error accessing OpenAPI specification from location: %s
-                                            
+                        
                         The hostname cannot be resolved to an IP address. Maybe the internet
                         is not reachable or a proxy server configuration is needed.
-                                            
+                        
                         Have a look at: ...
-                            """, spec.location));
+                        """, spec.location));
             }
 
             log.error("Cannot read OpenAPI specification from location " + spec.location);
@@ -115,7 +115,7 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec), spec);
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI( spec), getSpec( spec), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
@@ -126,8 +126,8 @@ public class OpenAPIRecordFactory {
         return record;
     }
 
-    private OpenAPI getOpenAPI(Router router, OpenAPISpec spec) throws ResourceRetrievalException {
-        OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
+    private OpenAPI getOpenAPI( OpenAPISpec spec) throws ResourceRetrievalException {
+        OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation( spec.location)),
                 null, getParseOptions()).getOpenAPI();
         if (openAPI != null)
             return openAPI;
@@ -150,12 +150,12 @@ public class OpenAPIRecordFactory {
         return parseOptions;
     }
 
-    private InputStream getInputStreamForLocation(Router router, String location) throws ResourceRetrievalException {
+    private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
         return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
     }
 
-    private JsonNode getSpec(Router router, OpenAPISpec spec) throws IOException {
-        return omYaml.readTree(getInputStreamForLocation(router, spec.location));
+    private JsonNode getSpec( OpenAPISpec spec) throws IOException {
+        return omYaml.readTree(getInputStreamForLocation( spec.location));
     }
 
     private JsonNode getSpec(File file) throws IOException {
@@ -169,7 +169,7 @@ public class OpenAPIRecordFactory {
         api.getExtensions().put(X_MEMBRANE_VALIDATION, updateExtension(getXValidationExtension(api), spec));
     }
 
-    public static Map<String, Object> getXValidationExtension(OpenAPI api) {
+    private static Map<String, Object> getXValidationExtension(OpenAPI api) {
         if (api.getExtensions().get(X_MEMBRANE_VALIDATION) != null)
             //noinspection unchecked
             return (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
