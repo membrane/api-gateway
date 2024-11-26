@@ -21,6 +21,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import io.swagger.v3.parser.core.models.ParseOptions;
@@ -115,13 +116,15 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(router, spec), getSpec(router, spec), spec);
+        OpenAPI api = getOpenAPI(router, spec);
+        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(api), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file), spec);
+        OpenAPI api = parseFileAsOpenAPI(file);
+        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(api), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
@@ -154,12 +157,8 @@ public class OpenAPIRecordFactory {
         return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
     }
 
-    private JsonNode getSpec(Router router, OpenAPISpec spec) throws IOException {
-        return omYaml.readTree(getInputStreamForLocation(router, spec.location));
-    }
-
-    private JsonNode getSpec(File file) throws IOException {
-        return omYaml.readTree(file);
+    private JsonNode getSpec(OpenAPI api) throws IOException {
+        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
 
     private void setExtensionOnAPI(OpenAPISpec spec, OpenAPI api) {
