@@ -26,9 +26,9 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.JsonSchema;
 import io.swagger.v3.oas.models.parameters.RequestBody;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
@@ -39,11 +39,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class OpenAPI31ReferencesTest {
 
+    static Router router;
+
     static APIProxy api;
 
     @BeforeAll
     public static void setUp() throws Exception {
-        Router router = new HttpRouter();
+        router = new HttpRouter();
         router.setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();
@@ -61,6 +63,11 @@ public class OpenAPI31ReferencesTest {
         router.getRuleManager().addProxyAndOpenPortIfNew(backend);
 
         router.init();
+    }
+
+    @AfterAll
+    public static void shutdown() throws IOException {
+        router.shutdown();
     }
 
     @Test
