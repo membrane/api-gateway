@@ -128,7 +128,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws IOException, URISyntaxException {
         exc.setResponse(ok().yaml()
-                .body(Json31.mapper().writeValueAsBytes(rec.getApi()))
+                .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, getRouter().getUriFactory())))
                 .build());
         return RETURN;
     }
