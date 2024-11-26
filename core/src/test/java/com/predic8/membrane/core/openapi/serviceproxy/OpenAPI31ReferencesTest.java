@@ -29,7 +29,7 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static io.restassured.RestAssured.given;
@@ -77,6 +77,8 @@ public class OpenAPI31ReferencesTest {
         assertNotNull(content);
         JsonSchema schema = (JsonSchema) content.get("application/json").getSchema();
         assertNotNull(schema);
+        assertEquals("email", schema.getRequired().get(0));
+        assertEquals(Set.of("email","id","createdAt"), schema.getProperties().keySet());
     }
 
     @Test
