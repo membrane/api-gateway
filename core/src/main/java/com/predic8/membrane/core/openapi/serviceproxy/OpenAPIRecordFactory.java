@@ -65,12 +65,12 @@ public class OpenAPIRecordFactory {
             return;
 
         log.info("Parsing specs from dir " + spec.dir);
-        File[] openAPIFiles = getOpenAPIFiles(spec.dir);
-        if (openAPIFiles == null) {
-            log.warn(format("Directory %s does not contain any OpenAPI documents.", spec.dir));
+        File[] files = getOpenAPIFiles(spec.dir);
+        if (files == null) {
+            log.warn("Directory %s does not contain any OpenAPI documents.".formatted(spec.dir));
             return;
         }
-        for (File file : openAPIFiles) {
+        for (File file : files) {
             log.info("Parsing spec " + file);
             OpenAPIRecord rec = create(spec, file);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
@@ -97,20 +97,29 @@ public class OpenAPIRecordFactory {
                         Have a look at: ...
                         """, spec.location));
             }
+            if (root instanceof FileNotFoundException fnf) {
+                log.error("Cannot read OpenAPI specification from location " + spec.location);
+                log.error("Exception: " + fnf.getMessage());
+                throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
+            }
 
-            root.printStackTrace(); // Remove me
+            // Keep that for error cases that are not caught
+            //noinspection CallToPrintStackTrace
+            root.printStackTrace();
 
-            log.error("Cannot read OpenAPI specification from location " + spec.location);
-            throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
+            throw new RuntimeException();
         }
     }
 
-    private String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
+    // @TODO Test
+    String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
         String id = getIdFromAPI(rec.api);
         if (apiRecords.get(id) != null) {
             log.warn("There are multiple OpenAPI documents with the id {}. The id is computed from the title {} and version {}. Please make sure that the documents are different or use the x-membrane-id field.",
                     id, rec.api.getInfo().getTitle(), rec.api.getInfo().getVersion());
-            id += "-0";
+           // Add -0 until unique
+            while (apiRecords.get(id) != null)
+                id += "-0";
             log.warn("Changing the id to {} in order to make them unique.", id);
         }
         return id;
@@ -128,16 +137,32 @@ public class OpenAPIRecordFactory {
         return record;
     }
 
-    private OpenAPI getOpenAPI( OpenAPISpec spec) throws ResourceRetrievalException {
-        OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation( spec.location)),
+    private OpenAPI getOpenAPI( OpenAPISpec spec) {
+        System.out.println("spec.location = " + spec.location);
+
+        String combine = resolve(spec.location);
+
+        System.out.println("combine = " + combine);
+
+        OpenAPI openAPI = new OpenAPIParser().readLocation( combine,
                 null, getParseOptions()).getOpenAPI();
+
         if (openAPI != null)
             return openAPI;
 
         throw new RuntimeException(); // Is handled and turned into a nice Exception further up
     }
 
+    private String resolve(String filepath) {
+        String baseLocation = router.getBaseLocation();
+        System.out.println("OpenAPIRecordFactory.resolve");
+        System.out.println("baseLocation = " + baseLocation);
+        System.out.println("filepath = " + filepath);
+        return ResolverMap.combine(baseLocation, filepath);
+    }
+
     private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
+
         return new OpenAPIParser().readContents(readInputStream(new FileInputStream(oaFile)),
                 null, getParseOptions()).getOpenAPI();
     }
