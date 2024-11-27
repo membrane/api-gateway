@@ -1,13 +1,12 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
-import io.swagger.v3.oas.models.parameters.Parameter;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static io.swagger.v3.oas.models.SpecVersion.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,7 +20,7 @@ class OpenAPIRecordFactoryTest {
         router.setBaseLocation("src/test/resources/openapi/specs/");
         factory = new OpenAPIRecordFactory(router);
     }
-    
+
     @Test
     void readAndParseOpenAPI31() throws IOException {
 
@@ -29,7 +28,7 @@ class OpenAPIRecordFactoryTest {
         specs.add(new OpenAPISpec() {{
             setLocation("customers.yml");
         }});
-        
+
         Map<String, OpenAPIRecord> recs = factory.create(specs);
         OpenAPIRecord rec = recs.get("customers-api-v1-0");
         assertNotNull(rec);
@@ -42,12 +41,8 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
-    void v2Test() throws IOException {
-        OpenAPIRecord rec = factory.create(new ArrayList<>() {{
-            add(new OpenAPISpec() {{
-                setLocation("fruitshop-swagger-2.0.json");
-            }});
-        }}).get("fruit-shop-api-swagger-2-v1-0-0");
+    void readAndParseSwagger2() throws IOException {
+        OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
         assertNotNull(rec);
         assertEquals("Fruit Shop API Swagger 2", rec.api.getInfo().getTitle());
         assertEquals(V30, rec.api.getSpecVersion());
@@ -63,13 +58,51 @@ class OpenAPIRecordFactoryTest {
         assertNotNull(rec);
         assertEquals("Demo", rec.api.getInfo().getTitle());
         assertEquals(V31, rec.api.getSpecVersion());
-        assertNotNull(
-            rec.api.getPaths().get("/users").getPost()
-                   .getRequestBody().getContent().get(APPLICATION_JSON)
-                   .getSchema().getProperties().get("email")
-        );
+        assertNotNull(getMail(rec));
     }
 
     @Test
-    void s2() throws IOException {}
+    void referencesRelativeFilesInSameDirectory() throws IOException {
+
+        OpenAPIRecord rec = getOpenAPIRecord("file:/Users/thomas/git/predic8-github/api-gateway/core/src/test/resources/openapi/specs/oas31/references/request-reference.yaml", "demo-v1-0-0");
+
+        assertEquals("Demo", rec.api.getInfo().getTitle());
+        assertEquals(V31, rec.api.getSpecVersion());
+        assertNotNull(getMail(rec));
+    }
+
+    @Test
+    void referencesRelativeFilesInSameDirectory2() throws IOException {
+
+        OpenAPIRecord rec = getOpenAPIRecord("oas31/references/request-reference.yaml", "demo-v1-0-0");
+
+        assertEquals("Demo", rec.api.getInfo().getTitle());
+        assertEquals(V31, rec.api.getSpecVersion());
+        assertNotNull(getMail(rec));
+    }
+
+    @Test
+    void deep() throws IOException {
+
+        OpenAPIRecord rec = getOpenAPIRecord("oas31/references/deep/deep.oas.yaml", "deep-refs-v1-0-0");
+
+        assertEquals("Deep Refs", rec.api.getInfo().getTitle());
+        assertEquals(V31, rec.api.getSpecVersion());
+        assertNotNull(getMail(rec));
+    }
+
+    private static Object getMail(OpenAPIRecord rec) {
+        return rec.api.getPaths().get("/users").getPost()
+                .getRequestBody().getContent().get(APPLICATION_JSON)
+                .getSchema().getProperties().get("email");
+    }
+
+    // @TODO
+    private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) throws IOException {
+        return factory.create(new ArrayList<>() {{
+            add(new OpenAPISpec() {{
+                setLocation(fileName);
+            }});
+        }}).get(id);
+    }
 }

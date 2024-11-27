@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info:
+  title: Deep Refs
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /users:
+    $ref: 'paths/users.oas.yaml#/paths/~1users'
