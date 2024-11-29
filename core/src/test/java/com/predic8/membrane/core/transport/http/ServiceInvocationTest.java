@@ -13,24 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-
-import java.io.IOException;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.MockInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.groovy.*;
+import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.rules.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
 
 public class ServiceInvocationTest {
 
@@ -59,28 +53,36 @@ public class ServiceInvocationTest {
 	}
 
 	private ServiceProxy createFirstRule() {
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 3016), "thomas-bayer.com", 80);
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 2000), "localhost", 80);
 		rule.setTargetURL("service:log");
 		rule.getInterceptors().add(new MockInterceptor("process"));
 		return rule;
 	}
 
 	private ServiceProxy createServiceRule() {
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 3012), "thomas-bayer.com", 80);
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 3000), "localhost", 4000);
 		rule.setName("log");
 		rule.getInterceptors().add(new MockInterceptor("log"));
 		return rule;
 	}
 
-	private void callService() throws HttpException, IOException {
+	private ServiceProxy createEndpointRule() {
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 4000), "localhost", 80);
+		rule.getInterceptors().add(new GroovyInterceptor() {{
+			setSrc("\"Pong\"");
+		}});
+		rule.getInterceptors().add(new ReturnInterceptor());
+		return rule;
+	}
+
+	private void callService() throws IOException {
 		new HttpClient().executeMethod(createPostMethod());
 	}
 
 	private PostMethod createPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:3016/axis2/services/BLZService?wsdl");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "");
+		PostMethod post = new PostMethod("http://localhost:2000");
+		post.setRequestEntity(new StringRequestEntity("Ping"));
+		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_PLAIN_UTF8);
 		return post;
 	}
 
@@ -88,6 +90,7 @@ public class ServiceInvocationTest {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(createFirstRule());
 		router.getRuleManager().addProxyAndOpenPortIfNew(createServiceRule());
+		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
 		router.getTransport().getInterceptors().add(router.getTransport().getInterceptors().size()-1, new MockInterceptor("transport-log"));
 		router.init();
 		return router;
