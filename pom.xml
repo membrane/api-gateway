@@ -376,10 +376,6 @@
 			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
 			<url>https://repository.springsource.com/maven/bundles/external</url>
 		</repository>
-		<repository>
-			<id>predic8-releases</id>
-			<url>https://repository.membrane-soa.org/content/groups/public</url>
-		</repository>
 	</repositories>
 
 
@@ -680,15 +676,4 @@
 			</distributionManagement>
 		</profile>
 	</profiles>
-
-	<distributionManagement>
-		<repository>
-			<id>predic8-releases</id>
-			<url>https://repository.membrane-soa.org/repository/releases</url>
-		</repository>
-		<snapshotRepository>
-			<id>predic8-snapshots</id>
-			<url>https://repository.membrane-soa.org/repository/snapshots</url>
-		</snapshotRepository>
-	</distributionManagement>
 </project>
