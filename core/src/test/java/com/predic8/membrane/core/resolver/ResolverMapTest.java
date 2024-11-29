@@ -3,7 +3,7 @@ package com.predic8.membrane.core.resolver;
 import org.junit.jupiter.api.*;
 
 import java.nio.file.*;
-import java.security.InvalidParameterException;
+import java.security.*;
 
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,10 +27,9 @@ public class ResolverMapTest {
 
     @Test
     void moreThanTwoParameters() {
-        // TODO Should be inverse !!!
-        assertNotEquals(
+        assertEquals(
                 current + "/src/test/resources/openapi/specs/array.yml",
-                combine("src/test/resources/", "openapi/specs/", "array.yml")
+                combine("src/test/resources/", "openapi/specs/foo", "array.yml")
         );
     }
 
@@ -47,7 +46,7 @@ public class ResolverMapTest {
         // TODO Soll specs verschwinden? Soll es auf einmal absolut sein?
         assertEquals(
                 "file:///src/test/resources/openapi/array.yml",
-                combine("file://src/test/resources/openapi/specs", "array.yml")
+                combine("file://src/test/resources/openapi/specs.wsdl", "array.yml")
         );
     }
 
@@ -66,17 +65,17 @@ public class ResolverMapTest {
 
     @Test
     void combineRelativeParentWithRelativeChild() {
-        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/","array.yml"));
+        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/", "array.yml"));
+    }
+
+    @Test
+    void combineRelativeParentWithRelativeChildParentDoesNotEndWithSlash() {
+        assertEquals(current + "/src/test/resources/openapi/specs/array.yml", combine("src/test/resources/openapi/specs/foo", "array.yml"));
     }
 
     @Test
     void combineRelativeParentWithRelativeProtocolChild() {
-        assertEquals("file://array.yml", combine("src/test/resources/openapi/specs/","file://array.yml"));
+        assertEquals("file://array.yml", combine("src/test/resources/openapi/specs/", "file://array.yml"));
     }
 
-    @Test
-    void removeFileProtocol() {
-        assertEquals("foo", ResolverMap.removeFileProtocol("file:foo"));
-        assertEquals("foo", ResolverMap.removeFileProtocol("foo"));
-    }
 }

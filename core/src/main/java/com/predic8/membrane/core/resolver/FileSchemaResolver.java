@@ -14,16 +14,15 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
 
 import java.io.*;
-import java.net.URLDecoder;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
+import java.util.concurrent.*;
+
+import static com.predic8.membrane.core.util.URIUtil.*;
 
 public class FileSchemaResolver implements SchemaResolver {
 
@@ -63,24 +62,28 @@ public class FileSchemaResolver implements SchemaResolver {
 	};
 	Thread fileWatcher = null;
 
-
-
 	@Override
 	public List<String> getSchemas() {
 		return Lists.newArrayList("file", null);
 	}
 
-	public InputStream resolve(String url) throws ResourceRetrievalException {
+	/**
+	 *
+	 * @param fileUrl URL pointing to a file e.g. file:///users/viktor/foo
+	 * @return
+	 * @throws ResourceRetrievalException
+	 */
+	public InputStream resolve(String fileUrl) throws ResourceRetrievalException {
 		try {
-			return new FileInputStream(normalize(url));
+			return new FileInputStream( pathFromFileURI(fileUrl));
 		} catch (FileNotFoundException e) {
-			throw new ResourceRetrievalException(url, e);
+			throw new ResourceRetrievalException(fileUrl, e);
 		}
 	}
 
 	@Override
 	public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
-		url = Paths.get(normalize(url)).toAbsolutePath().toString();
+		url = Paths.get(pathFromFileURI(url)).toAbsolutePath().toString();
 		if(watchService == null){
 			try {
 				watchService = FileSystems.getDefault().newWatchService();
@@ -104,28 +107,9 @@ public class FileSchemaResolver implements SchemaResolver {
 		}
 	}
 
-	public static String normalize(String uri) {
-		if(uri.startsWith("file:///")) {
-			if (uri.length() > 9 && uri.charAt(9) == '/')
-				uri = uri.charAt(8) + ":\\" + URLDecoder.decode(uri.substring(9));
-			else
-				uri = "/" + URLDecoder.decode(uri.substring(8));
-		}
-		if(uri.startsWith("file://")) {
-			if (uri.length() > 8 && uri.charAt(8) == '/')
-				uri = uri.charAt(7) + ":\\" + URLDecoder.decode(uri.substring(9));
-			else
-				uri = "/" + URLDecoder.decode(uri.substring(7));
-		}
-		if(uri.startsWith("file:")) {
-			uri = URLDecoder.decode(uri.substring(5));
-		}
-		return uri;
-	}
-
 	@Override
 	public List<String> getChildren(String url) {
-		String[] children = new File(normalize(url)).list();
+		String[] children = new File(pathFromFileURI(url)).list();
 		if (children == null)
 			return null;
 
@@ -134,6 +118,6 @@ public class FileSchemaResolver implements SchemaResolver {
 
 	@Override
 	public long getTimestamp(String url) {
-		return new File(normalize(url)).lastModified();
+		return new File(pathFromFileURI(url)).lastModified();
 	}
 }

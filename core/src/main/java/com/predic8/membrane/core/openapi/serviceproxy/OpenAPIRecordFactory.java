@@ -18,12 +18,13 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.ParseOptions;
+import io.swagger.v3.parser.core.models.*;
 import org.apache.commons.lang3.exception.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -97,17 +98,24 @@ public class OpenAPIRecordFactory {
                         Have a look at: ...
                         """, spec.location));
             }
+            if (root instanceof OpenAPIParsingException pe) {
+                throw new ConfigurationException(format("""
+                        Could not read or parse OpenAPI Document from location: %s
+                        
+                        Reason: %s
+                        
+                        Have a look at your proxies.xml configuration.
+                        """, pe.getLocation(), pe.getMessage()));
+            }
             if (root instanceof FileNotFoundException fnf) {
                 log.error("Cannot read OpenAPI specification from location " + spec.location);
                 log.error("Exception: " + fnf.getMessage());
                 throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
             }
 
-            // Keep that for error cases that are not caught
-            //noinspection CallToPrintStackTrace
-            root.printStackTrace();
+            log.error(e.getMessage(), e);
 
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
@@ -138,31 +146,22 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPI getOpenAPI( OpenAPISpec spec) {
-        System.out.println("spec.location = " + spec.location);
+        String path = resolve(spec.location);
 
-        String combine = resolve(spec.location);
-
-        System.out.println("combine = " + combine);
-
-        OpenAPI openAPI = new OpenAPIParser().readLocation( combine,
+        OpenAPI openAPI = new OpenAPIParser().readLocation( path,
                 null, getParseOptions()).getOpenAPI();
 
         if (openAPI != null)
             return openAPI;
 
-        throw new RuntimeException(); // Is handled and turned into a nice Exception further up
+        throw new OpenAPIParsingException("Could not read and parse OpenAPI.", path); // Is handled and turned into a nice Exception further up
     }
 
     private String resolve(String filepath) {
-        String baseLocation = router.getBaseLocation();
-        System.out.println("OpenAPIRecordFactory.resolve");
-        System.out.println("baseLocation = " + baseLocation);
-        System.out.println("filepath = " + filepath);
-        return ResolverMap.combine(baseLocation, filepath);
+        return ResolverMap.combine(router.getBaseLocation(), filepath);
     }
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
-
         return new OpenAPIParser().readContents(readInputStream(new FileInputStream(oaFile)),
                 null, getParseOptions()).getOpenAPI();
     }

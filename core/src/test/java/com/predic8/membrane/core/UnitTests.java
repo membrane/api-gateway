@@ -146,7 +146,8 @@ import org.junit.platform.suite.api.*;
 		SetHeaderInterceptor.class,
 		SetPropertyInterceptor.class,
 		APIProxyKeyTest.class,
-		AdjustContentLengthTest.class
+		AdjustContentLengthTest.class,
+		URIUtilTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",

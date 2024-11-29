@@ -23,7 +23,6 @@ class OpenAPIRecordFactoryTest {
 
     @Test
     void readAndParseOpenAPI31() throws IOException {
-
         Collection<OpenAPISpec> specs = new ArrayList<>();
         specs.add(new OpenAPISpec() {{
             setLocation("customers.yml");
@@ -34,10 +33,6 @@ class OpenAPIRecordFactoryTest {
         assertNotNull(rec);
         assertEquals("Customers API", rec.api.getInfo().getTitle());
         assertEquals(V30, rec.api.getSpecVersion());
-
-
-        //  rec.node Test
-
     }
 
     @Test
@@ -64,7 +59,7 @@ class OpenAPIRecordFactoryTest {
     @Test
     void referencesRelativeFilesInSameDirectory() throws IOException {
 
-        OpenAPIRecord rec = getOpenAPIRecord("file:/Users/thomas/git/predic8-github/api-gateway/core/src/test/resources/openapi/specs/oas31/references/request-reference.yaml", "demo-v1-0-0");
+        OpenAPIRecord rec = getOpenAPIRecord("oas31/references/request-reference.yaml", "demo-v1-0-0");
 
         assertEquals("Demo", rec.api.getInfo().getTitle());
         assertEquals(V31, rec.api.getSpecVersion());

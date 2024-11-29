@@ -73,7 +73,7 @@ public class ResolverMap implements Cloneable, Resolver {
             if (relativeChild.startsWith("\\") || relativeChild.startsWith("/"))
                 return "file://" + new File(relativeChild).getAbsolutePath();
             //System.err.println(FileSchemaResolver.normalize(parent));
-            File parentFile = new File(FileSchemaResolver.normalize(parent));
+            File parentFile = new File(URIUtil.pathFromFileURI(parent));
             //System.err.println(parentFile.getAbsolutePath());
             if (!parent.endsWith("/") && !parent.endsWith("\\"))
                 parentFile = parentFile.getParentFile();

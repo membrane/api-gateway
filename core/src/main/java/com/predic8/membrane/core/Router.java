@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.jmx.*;
 import com.predic8.membrane.core.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.rules.*;
@@ -312,6 +313,19 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 					Shared path: %s
 					%n""", e.getPath());
 			System.exit(1);
+		} catch (OpenAPIParsingException e) {
+			System.err.printf("""
+					================================================================================================
+					
+					Configuration Error: Could not read or parse OpenAPI Document
+					
+					Reason: %s
+					
+					Location: %s
+					
+					Have a look at the proxies.xml file.
+					""", e.getMessage(), e.getLocation());
+			System.exit(1);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -390,7 +404,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	public void tryReinitialization() {
 		boolean stillFailing = false;
 		ArrayList<Rule> inactive = getInactiveRules();
-		if (inactive.size() > 0) {
+		if (!inactive.isEmpty()) {
 			log.info("Trying to activate all inactive rules.");
 			for (Rule rule : inactive) {
 				try {
