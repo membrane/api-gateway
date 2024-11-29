@@ -343,10 +343,7 @@ public class AcmeClient {
     public Exchange withNonce(HttpCallerWithNonce f) throws Exception {
         try {
             try {
-                String nonce = getRememberedNonce();
-                if (nonce == null)
-                    nonce = retrieveNewNonce();
-                Exchange e = f.call(nonce);
+                Exchange e = f.call(getNonce());
                 rememberNonce(e.getResponse().getHeader().getFirstValue("Replay-Nonce"));
                 return e;
             } catch (AcmeException ex) {
@@ -361,6 +358,13 @@ public class AcmeClient {
             rememberNonce(ex.getNonce());
             throw ex;
         }
+    }
+
+    private String getNonce() throws Exception {
+        String nonce = getRememberedNonce();
+        if (nonce == null)
+            return retrieveNewNonce();
+        return nonce;
     }
 
     private String getRememberedNonce() {

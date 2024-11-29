@@ -14,25 +14,21 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.Store;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.TrustManagerWrapper;
-import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
-import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.http2.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.crypto.Cipher;
+import javax.annotation.*;
+import javax.crypto.*;
 import javax.net.ssl.*;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import javax.validation.constraints.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.net.*;
+import java.security.Key;
+import java.security.KeyStore;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -67,7 +63,7 @@ public class StaticSSLContext extends SSLContext {
 
     private final SSLParser sslParser;
     private List<String> dnsNames;
-    private javax.net.ssl.SSLContext sslc;
+    private final javax.net.ssl.SSLContext sslc;
     private long validFrom;
     private long validUntil;
 

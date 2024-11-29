@@ -24,9 +24,11 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.*;
 import java.security.*;
 import java.util.*;
 
@@ -38,8 +40,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 import static java.nio.charset.StandardCharsets.*;
 
 /**
- * @description
- * Check GraphQL-over-HTTP requests, enforcing several limits and/or restrictions. This effectively helps to reduce
+ * @description Check GraphQL-over-HTTP requests, enforcing several limits and/or restrictions. This effectively helps to reduce
  * the attack surface.
  * <p>
  * GraphQL Specification "October2021" is used. (But GraphQL only covers formulation of Documents/Queries.)
@@ -59,6 +60,9 @@ import static java.nio.charset.StandardCharsets.*;
 public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(GraphQLProtectionInterceptor.class);
+    public static final String EXTENSIONS = "extensions";
+    public static final String VARIABLES = "variables";
+    public static final String MUTATION = "mutation";
 
     private final GraphQLParser graphQLParser = new GraphQLParser();
     private final ObjectMapper om = new ObjectMapper()
@@ -77,135 +81,203 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
+        try {
+            return handleRequestInternal(exc);
+        } catch (Exception e) {
+            return error(exc, e.getMessage());
+        }
+
+    }
+
+
+    public Outcome handleRequestInternal(Exchange exc) throws Exception {
         if (!allowedMethods.contains(exc.getRequest().getMethod()))
             return error(exc, 405, "Invalid method.");
 
-        Map data;
-        String rawQuery = router.getUriFactory().create(exc.getRequest().getUri()).getRawQuery();
-        if ("GET".equals(exc.getRequest().getMethod())) {
-            if (rawQuery == null)
-                return error(exc, "No query parameters found.");
-            try {
-                data = URLParamUtil.parseQueryString(rawQuery, ERROR);
-            } catch (Exception e) {
-                return error(exc, "Error decoding query string.");
-            }
-            if (data.containsKey("variables"))
-                data.put("variables", om.readValue((String)data.get("variables"), Map.class));
-            if (data.containsKey("extensions"))
-                data.put("extensions", om.readValue((String)data.get("extensions"), Map.class));
-        } else if ("POST".equals(exc.getRequest().getMethod())) {
-            if (rawQuery != null) {
-                Map<String, String> params = URLParamUtil.parseQueryString(rawQuery, ERROR);
-                for (String key : new String[] { "query", "operationName", "variables", "extensions" })
-                    if (params.containsKey(key))
-                        return error(exc, "'" + key + "' is not allowed as query parameter while using POST.");
-            }
+        Map data = getData(exc);
+        checkExtensions(data);
+        checkVariables(data);
+        checkExtension(data);
 
-            List<HeaderField> contentType = exc.getRequest().getHeader().getValues(new HeaderName(CONTENT_TYPE));
-            if (contentType.isEmpty())
-                return error(exc, "No 'Content-Type' found.");
-            if (contentType.size() > 1)
-                return error(exc, "Found multiple 'Content-Type' headers.");
-            ContentType ct;
-            try {
-                ct = new ContentType(contentType.get(0).getValue());
-            } catch (ParseException e) {
-                return error(exc, "Could not parse 'Content-Type' header.");
-            }
-            if (ct.match(MimeType.APPLICATION_GRAPHQL)) {
-                data = ImmutableMap.of("query", exc.getRequest().getBodyAsStringDecoded());
-            } else if (ct.match(MimeType.APPLICATION_JSON)) {
+        ExecutableDocument ed = getExecutableDocument(getQuery(data));
+        checkMutations(ed);
+        validate(ed);
 
-                String charset = ct.getParameter("charset");
-                if (charset != null && !"utf-8".equalsIgnoreCase(charset))
-                    return error(exc, "Invalid charset in 'Content-Type': Expected 'utf-8'.");
-
-                try {
-                    data = om.readValue(exc.getRequest().getBodyAsStreamDecoded(), Map.class);
-                } catch (JsonParseException e) {
-                    return error(exc, "Error decoding JSON object.");
-                }
-            } else {
-                return error(exc, "Expected 'Content-Type: application/json' or 'Content-Type: application/graphql'.");
-            }
-        } else {
-            exc.setResponse(Response.methodNotAllowed().build());
-            return RETURN;
-        }
-
-        Object query = data.get("query");
-        if (query == null)
-            return error(exc, "Parameter 'query' is missing.");
-        if (!(query instanceof String))
-            return error(exc, "Expected 'query' to be of type 'String'.");
-
-        if (!allowExtensions && data.containsKey("extensions") && data.get("extensions") != null)
-            return error(exc, "GraphQL 'extensions' are forbidden.");
-
-        Object operationName = data.get("operationName");
-        if (operationName != null) {
-            if (!(operationName instanceof String))
-                return error(exc, "Expected 'operationName' to be a String.");
-        }
-
-        Object variables = data.get("variables");
-        if (variables != null) {
-            if (!(variables instanceof Map))
-                return error(exc, "Expected 'variables' to be a JSON Object.");
-        }
-
-        Object extensions = data.get("extensions");
-        if (extensions != null) {
-            if (!(extensions instanceof Map))
-                return error(exc, "Expected 'extensions' to be a JSON Object.");
-        }
-
-        ExecutableDocument ed = graphQLParser.parseRequest(new ByteArrayInputStream(((String) query).getBytes(UTF_8)));
-
-        if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
-            return error(exc, 400, "Too many mutations defined in document.");
-
-        // so far, this ensures uniqueness of global names
-        List<String> e1 = new GraphQLValidator().validate(ed);
-        if (e1 != null && !e1.isEmpty())
-            return error(exc, e1.get(0));
-
-        if ("GET".equals(exc.getRequest().getMethod())) {
+        if (exc.getRequest().isGETRequest()) {
             if (ed.getExecutableDefinitions().stream()
                     .filter(exd -> exd instanceof OperationDefinition)
                     .map(exd -> (OperationDefinition) exd)
                     .anyMatch(od -> od.getOperationType() != null
-                            && !"query".equals(od.getOperationType().getOperation())))
+                                    && !"query".equals(od.getOperationType().getOperation())))
                 return error(exc, 405, "'GET' may only be used for GraphQL 'query's.");
         }
 
-        OperationDefinition operationToExecute;
+        checkDepthOrRecursion(ed, getOperationName(data));
+        return CONTINUE;
+    }
 
+    private void checkMutations(ExecutableDocument ed) {
+        if (countMutations(ed.getExecutableDefinitions()) > maxMutations)
+            throw new RuntimeException("Too many mutations defined in document.");
+    }
+
+    private void checkExtensions(Map data) {
+        if (!allowExtensions && data.containsKey(EXTENSIONS) && data.get(EXTENSIONS) != null)
+            throw new RuntimeException("GraphQL 'extensions' are forbidden.");
+    }
+
+    private @Nullable Map<String,Object> getData(Exchange exc) throws URISyntaxException, IOException {
+        if (exc.getRequest().isGETRequest()) {
+            return getData(getRawQuery(exc));
+        }
+        if (exc.getRequest().isPOSTRequest()) {
+            return getDataPost(exc, getRawQuery(exc));
+        }
+        throw new IllegalStateException("Should never get here");
+    }
+
+    private void checkDepthOrRecursion(ExecutableDocument ed, Object operationName) {
+        String depthOrRecursionError = getDepthOrRecursionError(ed, getOperationDefinition(operationName, ed));
+        if (depthOrRecursionError != null)
+            throw new RuntimeException(depthOrRecursionError);
+    }
+
+    private static @Nullable Object getOperationName(Map data) {
+        Object operationName = data.get("operationName");
+        if (operationName != null) {
+            if (!(operationName instanceof String))
+                throw new RuntimeException("Expected 'operationName' to be a String.");
+        }
+        return operationName;
+    }
+
+    private static void checkVariables(Map data) {
+        Object variables = data.get(VARIABLES);
+        if (variables != null) {
+            if (!(variables instanceof Map))
+                throw new RuntimeException("Expected 'variables' to be a JSON Object.");
+        }
+    }
+
+    private static void validate(ExecutableDocument ed) {
+        // so far, this ensures uniqueness of global names
+        List<String> e1 = new GraphQLValidator().validate(ed);
+        if (e1 != null && !e1.isEmpty())
+            throw new RuntimeException(e1.get(0));
+    }
+
+    private static OperationDefinition getOperationDefinition(Object operationName, ExecutableDocument ed) {
         if (operationName != null && !operationName.equals("")) {
             List<OperationDefinition> ods = ed.getExecutableDefinitions().stream()
                     .filter(exd -> exd instanceof OperationDefinition)
                     .map(exd -> (OperationDefinition) exd)
                     .filter(od -> operationName.equals(od.getName())).toList();
             if (ods.isEmpty())
-                return error(exc, "The operation named by 'operationName' could not be found.");
+                throw new RuntimeException("The operation named by 'operationName' could not be found.");
             if (ods.size() > 1)
-                return error(exc, "Multiple OperationDefinitions with the same name in the GraphQL document.");
-            operationToExecute = ods.get(0);
-        } else {
-            List<OperationDefinition> ods = ed.getExecutableDefinitions().stream()
-                    .filter(exd -> exd instanceof OperationDefinition)
-                    .map(exd -> (OperationDefinition) exd).toList();
-            if (ods.isEmpty())
-                return error(exc, "Could not find an OperationDefinition in the GraphQL document.");
-            operationToExecute = ods.get(0);
+                throw new RuntimeException("Multiple OperationDefinitions with the same name in the GraphQL document.");
+            return ods.get(0);
+        }
+        List<OperationDefinition> ods = getOperationDefinitions(ed);
+        if (ods.isEmpty())
+            throw new RuntimeException("Could not find an OperationDefinition in the GraphQL document.");
+        return ods.get(0);
+    }
+
+    private static @NotNull List<OperationDefinition> getOperationDefinitions(ExecutableDocument ed) {
+        return ed.getExecutableDefinitions().stream()
+                .filter(exd -> exd instanceof OperationDefinition)
+                .map(exd -> (OperationDefinition) exd).toList();
+    }
+
+    private ExecutableDocument getExecutableDocument(String query) throws IOException, ParsingException {
+        return graphQLParser.parseRequest(new ByteArrayInputStream(query.getBytes(UTF_8)));
+    }
+
+    private static void checkExtension(Map data) {
+        Object extensions = data.get(EXTENSIONS);
+
+        if (extensions == null)
+            return;
+
+        if (!(extensions instanceof Map))
+            throw new RuntimeException("Expected 'extensions' to be a JSON Object.");
+
+    }
+
+    private static @NotNull String getQuery(Map data) {
+        Object query = data.get("query");
+        if (query == null)
+            throw new RuntimeException("Parameter 'query' is missing.");
+        if (!(query instanceof String))
+            throw new RuntimeException("Expected 'query' to be of type 'String'.");
+        return (String) query;
+    }
+
+    private Map<String,Object> getDataPost(Exchange exc, String rawQuery) throws IOException {
+
+        if (rawQuery != null) {
+            Map<String, String> params = URLParamUtil.parseQueryString(rawQuery, ERROR);
+            for (String key : new String[]{"query", "operationName", VARIABLES, EXTENSIONS})
+                if (params.containsKey(key))
+                    throw new RuntimeException("'" + key + "' is not allowed as query parameter while using POST.");
         }
 
-        String depthOrRecursionError = getDepthOrRecursionError(ed, operationToExecute);
-        if (depthOrRecursionError != null)
-            return error(exc, depthOrRecursionError);
+        ContentType ct = getContentType2(exc);
 
-        return CONTINUE;
+        if (ct.match(MimeType.APPLICATION_GRAPHQL)) {
+            return ImmutableMap.of("query", exc.getRequest().getBodyAsStringDecoded());
+        }
+
+        if (ct.match(MimeType.APPLICATION_JSON)) {
+            String charset = ct.getParameter("charset");
+            if (charset != null && !"utf-8".equalsIgnoreCase(charset))
+                throw new RuntimeException("Invalid charset in 'Content-Type': Expected 'utf-8'.");
+
+            try {
+                return om.readValue(exc.getRequest().getBodyAsStreamDecoded(), Map.class);
+            } catch (JsonParseException e) {
+                throw new RuntimeException("Error decoding JSON object.");
+            }
+        }
+        throw new RuntimeException("Expected 'Content-Type: application/json' or 'Content-Type: application/graphql'.");
+    }
+
+    private static @NotNull ContentType getContentType2(Exchange exc) {
+        List<HeaderField> contentType = exc.getRequest().getHeader().getValues(new HeaderName(CONTENT_TYPE));
+        if (contentType.isEmpty())
+            throw new RuntimeException("No 'Content-Type' found.");
+        if (contentType.size() > 1)
+            throw new RuntimeException("Found multiple 'Content-Type' headers.");
+        return getContentType(contentType);
+    }
+
+    private static @NotNull ContentType getContentType(List<HeaderField> contentType) {
+        try {
+            return new ContentType(contentType.get(0).getValue());
+        } catch (ParseException e) {
+            throw new RuntimeException("Could not parse 'Content-Type' header.");
+        }
+    }
+
+    private String getRawQuery(Exchange exc) throws URISyntaxException {
+        return router.getUriFactory().create(exc.getRequest().getUri()).getRawQuery();
+    }
+
+    private @NotNull Map<String,Object> getData(String rawQuery) throws JsonProcessingException {
+        Map data;
+        if (rawQuery == null)
+            throw new RuntimeException("No query parameters found.");
+        try {
+            data = URLParamUtil.parseQueryString(rawQuery, ERROR);
+        } catch (Exception e) {
+            throw new RuntimeException("Error decoding query string.");
+        }
+        if (data.containsKey(VARIABLES))
+            data.put(VARIABLES, om.readValue((String) data.get(VARIABLES), Map.class));
+        if (data.containsKey(EXTENSIONS))
+            data.put(EXTENSIONS, om.readValue((String) data.get(EXTENSIONS), Map.class));
+        return data;
     }
 
     public int countMutations(List<ExecutableDefinition> definitions) {
@@ -213,8 +285,12 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                 .filter(definition -> definition instanceof OperationDefinition)
                 .map(definition -> (OperationDefinition) definition)
                 .filter(operation -> operation.getOperationType() != null)
-                .filter(operation -> operation.getOperationType().getOperation().equals("mutation"))
+                .filter(GraphQLProtectionInterceptor::isMutation)
                 .count();
+    }
+
+    private static boolean isMutation(OperationDefinition operation) {
+        return operation.getOperationType().getOperation().equals(MUTATION);
     }
 
     private String getDepthOrRecursionError(ExecutableDocument ed, OperationDefinition od) {
@@ -229,18 +305,16 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                 LOG.error("Selection is null.");
                 return "See server log.";
             }
-            String err;
             if (selection instanceof Field) {
-                err = checkField((Field) selection, ed, od, fieldStack, fragmentNamesVisited);
-            } else if (selection instanceof FragmentSpread) {
-                err = checkFragmentSpread((FragmentSpread) selection, ed, od, fieldStack, fragmentNamesVisited);
-            } else if (selection instanceof InlineFragment) {
-                err = checkSelections(ed, od, ((InlineFragment) selection).getSelections(), fieldStack, fragmentNamesVisited);
-            } else {
-                err = checkUnhandled(selection);
+                return checkField((Field) selection, ed, od, fieldStack, fragmentNamesVisited);
             }
-            if (err != null)
-                return err;
+            if (selection instanceof FragmentSpread) {
+                return checkFragmentSpread((FragmentSpread) selection, ed, od, fieldStack, fragmentNamesVisited);
+            }
+            if (selection instanceof InlineFragment) {
+                return checkSelections(ed, od, ((InlineFragment) selection).getSelections(), fieldStack, fragmentNamesVisited);
+            }
+            return checkUnhandled(selection);
         }
         return null;
     }
@@ -299,10 +373,9 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     }
 
 
-
-
     /**
      * Limit how many mutations can be defined in a document query.
+     *
      * @default 5
      * @example 2
      */
@@ -318,6 +391,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
     /**
      * Whether to allow GraphQL "extensions".
+     *
      * @default false
      * @example true
      */
@@ -337,7 +411,8 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
     /**
      * Which HTTP methods to allow. Note, that per the GraphQL-over-HTTP spec, you need POST for mutation or subscription queries.
-     * @default GET,POST
+     *
+     * @default GET, POST
      */
     @MCAttribute
     public void setAllowedMethods(String allowedMethods) {
@@ -379,12 +454,12 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     public String getLongDescription() {
         return
                 "<div>Protects against some GraphQL attack classes (checks HTTP request against <a href=\"https://" +
-                        "spec.graphql.org/October2021/\">GraphQL</a> and <a href=\"https://github.com/graphql/" +
-                        "graphql-over-http/blob/a1e6d8ca248c9a19eb59a2eedd988c204909ee3f/spec/GraphQLOverHTTP.md\">" +
-                        "GraphQL-over-HTTP</a> specs).<br/>" +
-                        "GraphQL extensions: " + (allowExtensions ? "Allowed." : "Forbidden.") + "<br/>" +
-                        "Allowed HTTP verbs: " + TextUtil.toEnglishList("and", allowedMethods.toArray(new String[0])) + ".<br/>" +
-                        "Maximum allowed nested query levels: " + maxDepth + "<br/>" +
-                        "Maximum allowed recursion levels (nested repetitions of the same word): " + maxRecursion + ".</div>";
+                "spec.graphql.org/October2021/\">GraphQL</a> and <a href=\"https://github.com/graphql/" +
+                "graphql-over-http/blob/a1e6d8ca248c9a19eb59a2eedd988c204909ee3f/spec/GraphQLOverHTTP.md\">" +
+                "GraphQL-over-HTTP</a> specs).<br/>" +
+                "GraphQL extensions: " + (allowExtensions ? "Allowed." : "Forbidden.") + "<br/>" +
+                "Allowed HTTP verbs: " + TextUtil.toEnglishList("and", allowedMethods.toArray(new String[0])) + ".<br/>" +
+                "Maximum allowed nested query levels: " + maxDepth + "<br/>" +
+                "Maximum allowed recursion levels (nested repetitions of the same word): " + maxRecursion + ".</div>";
     }
 }

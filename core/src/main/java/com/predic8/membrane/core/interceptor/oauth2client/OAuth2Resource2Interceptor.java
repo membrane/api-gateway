@@ -13,45 +13,33 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRefresher;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
-import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.net.URLEncoder;
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.net.URLEncoder.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -117,7 +105,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     @Override
     protected Outcome handleResponseInternal(Exchange exc) {
-        return Outcome.CONTINUE;
+        return CONTINUE;
     }
 
     @Override
@@ -127,28 +115,12 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         if (isLogoutBackRequest(exc)) {
             exc.setResponse(Response.redirect(afterLogoutUrl, false).status(303).build());
-
             logOutSession(exc);
-
             return RETURN;
         }
         if (isLogoutRequest(exc)) {
-            String endSessionEndpoint = auth.getEndSessionEndpoint();
-            if (endSessionEndpoint != null && session.getOAuth2Answer(null) != null) {
-                String redirectUri = logoutUrl;
-                redirectUri = replaceUrlPath(publicUrlManager.getPublicURL(exc), redirectUri + "/back");
-                String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(redirectUri, UTF_8);
-
-                OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
-                if (ap != null && ap.getIdToken() != null)
-                    uri += "&id_token_hint=" + ap.getIdToken();
-                exc.setResponse(Response.redirect(uri, false).status(303).build());
-            } else {
-                exc.setResponse(Response.redirect(afterLogoutUrl, false).status(303).build());
-            }
-
+            renameMe(exc, session);
             logOutSession(exc);
-
             return RETURN;
         }
 
@@ -171,7 +143,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         accessTokenRevalidator.revalidateIfNeeded(session, wantedScope);
 
         if (session.hasOAuth2Answer(wantedScope)) {
-            exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
+            exc.setProperty(OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
         }
 
         accessTokenRefresher.refreshIfNeeded(session, exc);
@@ -185,15 +157,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                     applyBackendAuthorization(exc, session);
                     statistics.successfulRequest();
                     appendAccessTokenToRequest(exc);
-                    return Outcome.CONTINUE;
+                    return CONTINUE;
                 }
             }
 
             if (wasCallback) {
                 if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
-                    exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
+                    exc.setProperty(OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
                     appendAccessTokenToRequest(exc);
-                    return Outcome.CONTINUE;
+                    return CONTINUE;
                 }
 
                 if (exc.getResponse().getStatusCode() >= 400) {
@@ -219,8 +191,29 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         }
     }
 
+    private void renameMe(Exchange exc, Session session) throws Exception {
+        String endSessionEndpoint = auth.getEndSessionEndpoint();
+        if (endSessionEndpoint != null && session.getOAuth2Answer(null) != null) {
+            String uri = endSessionEndpoint + "?post_logout_redirect_uri=" + encode(getRedirectUri(exc), UTF_8);
+
+            OAuth2AnswerParameters ap = session.getOAuth2AnswerParameters();
+            if (ap != null && ap.getIdToken() != null)
+                uri += "&id_token_hint=" + ap.getIdToken();
+            exc.setResponse(Response.redirect(uri, false).status(303).build());
+        } else {
+            exc.setResponse(Response.redirect(afterLogoutUrl, false).status(303).build());
+        }
+    }
+
+    private @NotNull String getRedirectUri(Exchange exc) throws Exception {
+        return replaceUrlPath(publicUrlManager.getPublicURL(exc), logoutUrl + "/back");
+    }
+
     private String replaceUrlPath(String url, String newPath) {
-        URI uri = router.getUriFactory().createWithoutException(url);
+        return replaceURIPath(newPath, router.getUriFactory().createWithoutException(url));
+    }
+
+    private static @NotNull String replaceURIPath(String newPath, URI uri) {
         return uri.getScheme() + "://" + uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "") + newPath;
     }
 

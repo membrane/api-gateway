@@ -13,19 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
-import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.rules.*;
+import org.jetbrains.annotations.*;
 
-import javax.annotation.concurrent.GuardedBy;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
+import javax.annotation.concurrent.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.Header.X_FORWARDED_PROTO;
+import static com.predic8.membrane.core.http.Header.*;
 
 @MCElement(name = "publicURL")
 public class PublicUrlManager {
@@ -76,25 +73,46 @@ public class PublicUrlManager {
     }
 
     public String getPublicURL(Exchange exc) throws Exception {
-        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
-        boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
-        String publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
-        RuleKey key = exc.getRule().getKey();
-        if (!key.isPathRegExp() && key.getPath() != null) publicURL += key.getPath();
-        publicURL = normalizePublicURL(publicURL);
+        String publicURL = normalizePublicURL(addPathToURL(exc, getURLWithProperProtocolFromHostHeader(exc)));
 
         synchronized (publicURLs) {
             if (publicURLs.contains(publicURL)) return publicURL;
             if (!initPublicURLsOnTheFly) return publicURLs.get(0);
         }
 
-        String newURL = null;
-        if (initPublicURLsOnTheFly) newURL = addPublicURL(publicURL);
-
-        if (firstInitWhenDynamicAuthorizationService && newURL != null)
-            auth.dynamicRegistration(getPublicURLs().stream().map(url -> url + callbackPath).collect(Collectors.toList()));
+        if (firstInitWhenDynamicAuthorizationService && getNewURL(publicURL) != null)
+            auth.dynamicRegistration(getCallbackURLs());
 
         return publicURL;
+    }
+
+    private @NotNull List<String> getCallbackURLs() {
+        return getPublicURLs().stream().map(url -> url + callbackPath).toList();
+    }
+
+    private static String addPathToURL(Exchange exc, String publicURL) {
+        RuleKey key = exc.getRule().getKey();
+        if (!key.isPathRegExp() && key.getPath() != null)
+            publicURL += key.getPath();
+        return publicURL;
+    }
+
+    private @Nullable String getNewURL(String publicURL) {
+        if (initPublicURLsOnTheFly)
+            return addPublicURL(publicURL);
+        return null;
+    }
+
+    private static @NotNull String getURLWithProperProtocolFromHostHeader(Exchange exc) {
+        return (isHTTPS(exc) ? "https://" : "http://") + exc.getOriginalHostHeader();
+    }
+
+    private static boolean isHTTPS(Exchange exc) {
+        return getxForwardedProto(exc) != null ? "https".equals(getxForwardedProto(exc)) : exc.getRule().getSslInboundContext() != null;
+    }
+
+    private static String getxForwardedProto(Exchange exc) {
+        return exc.getRequest().getHeader().getFirstValue(X_FORWARDED_PROTO);
     }
 
     /**
@@ -113,5 +131,4 @@ public class PublicUrlManager {
             return new ArrayList<>(publicURLs);
         }
     }
-
 }

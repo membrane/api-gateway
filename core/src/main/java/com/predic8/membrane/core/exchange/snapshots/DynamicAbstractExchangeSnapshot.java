@@ -74,15 +74,6 @@ public class DynamicAbstractExchangeSnapshot extends AbstractExchangeSnapshot{
                     }
         });
 
-//        ImmutableMap.of(Interceptor.Flow.REQUEST, exc.getRequest(),
-//                Interceptor.Flow.RESPONSE, exc.getResponse()).forEach((flow2, msg) -> {
-//            if(msg == null)
-//                return;
-//            if (!msg.getBody().getObservers().stream().anyMatch(obs -> obs instanceof UpdateExchangeCopyObserver)) {
-//                msg.addObserver(new UpdateExchangeCopyObserver(callback, excCopy, exc, flow2));
-//            }
-//        });
-
         update(callback,excCopy,exc,flow);
     }
 
