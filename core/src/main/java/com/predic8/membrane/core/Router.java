@@ -223,12 +223,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		timerManager.shutdown();
 	}
 
-	public void shutdownAll() throws IOException{
-		for(String s : this.getBeanFactory().getBeanNamesForType(Router.class)){
-			((Router) this.getBeanFactory().getBean(s)).shutdown();
-		}
-	}
-
 	/**
 	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
 	 *
@@ -278,7 +272,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	@Override
 	public void start() {
 		try {
-			if (transport == null && beanFactory != null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
+			if (transport == null && beanFactory != null && !beanFactory.getBeansOfType(Transport.class).values().isEmpty())
 				throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
 			if (exchangeStore == null)
 				exchangeStore = new LimitedMemoryExchangeStore();

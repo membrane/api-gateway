@@ -25,8 +25,8 @@ public class URIUtil {
     private static String processDecodedPart(String path) {
         if (path.charAt(0) != '/')
             return path;
-        Optional<String> drive = getPossibleDriveLetter(removeLocalhost(removeLeadingSlashes(path)));
-        return drive.map(s -> "%s:\\%s".formatted(s, slashToBackslash(removeDriveLetterAndSlash(path)))).orElseGet(() -> "/" + path);
+        String p = removeLocalhost(removeLeadingSlashes(path));
+        return getPossibleDriveLetter(p).map(driveLetter -> "%s:\\%s".formatted(driveLetter, slashToBackslash(removeDriveLetterAndSlash(p)))).orElseGet(() -> "/" + p);
 
     }
 

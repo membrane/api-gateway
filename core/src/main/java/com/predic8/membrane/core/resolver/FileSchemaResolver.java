@@ -29,11 +29,11 @@ public class FileSchemaResolver implements SchemaResolver {
 	WatchService watchService;
 	ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<>();
 	ConcurrentHashMap<String, ExceptionThrowingConsumer<InputStream>> watchedFiles = new ConcurrentHashMap<>();
-	int fileWatchIntervalInSeconds = 1;
+	long fileWatchIntervalInSeconds = 1;
 	Runnable fileWatchJob = new Runnable() {
 		@Override
 		public void run() {
-			while(watchedFiles.size() > 0){
+			while(!watchedFiles.isEmpty()){
 				for(String url : watchServiceForFile.keySet()){
 					WatchKey wk = watchServiceForFile.get(url);
 					List<WatchEvent<?>> events = wk.pollEvents();
@@ -53,7 +53,8 @@ public class FileSchemaResolver implements SchemaResolver {
 				}
 
 				try {
-					Thread.sleep(fileWatchIntervalInSeconds*1000);
+                    //noinspection BusyWait
+                    Thread.sleep(fileWatchIntervalInSeconds*1000);
 				} catch (InterruptedException ignored) {
 				}
 			}
@@ -70,8 +71,7 @@ public class FileSchemaResolver implements SchemaResolver {
 	/**
 	 *
 	 * @param fileUrl URL pointing to a file e.g. file:///users/viktor/foo
-	 * @return
-	 * @throws ResourceRetrievalException
+	 * @return InputStream for file
 	 */
 	public InputStream resolve(String fileUrl) throws ResourceRetrievalException {
 		try {

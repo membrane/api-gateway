@@ -48,10 +48,11 @@ public class ResolverMap implements Cloneable, Resolver {
     private EtcdResolver etcdResolver;
 
     /**
-     * First param is the parent
+     * First param is the parent. The following params will be combined to one path
+     * e.g. "/foo/bar", "baz/x.yaml" ", "soo" => "/foo/bar/baz/soo"
      *
-     * @param locations
-     * @return
+     * @param locations List of relative paths
+     * @return combined path
      */
     public static String combine(String... locations) {
         if (locations.length < 2)
@@ -67,7 +68,7 @@ public class ResolverMap implements Cloneable, Resolver {
         String parent = locations[0];
         String relativeChild = locations[1];
 
-        if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.length() == 0)
+        if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
             return relativeChild;
         if (parent.startsWith("file://")) {
             if (relativeChild.startsWith("\\") || relativeChild.startsWith("/"))
@@ -207,20 +208,12 @@ public class ResolverMap implements Cloneable, Resolver {
     }
 
     public InputStream resolve(String uri) throws ResourceRetrievalException {
-        try {
-            return getSchemaResolver(uri).resolve(uri);
-        } catch (ResourceRetrievalException e) {
-            throw e;
-        }
+        return getSchemaResolver(uri).resolve(uri);
     }
 
     @Override
     public void observeChange(String uri, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
-        try {
-            getSchemaResolver(uri).observeChange(uri, consumer);
-        } catch (ResourceRetrievalException e) {
-            throw e;
-        }
+        getSchemaResolver(uri).observeChange(uri, consumer);
     }
 
     public List<String> getChildren(String uri) throws FileNotFoundException {

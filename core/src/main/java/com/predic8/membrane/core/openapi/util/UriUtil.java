@@ -46,7 +46,6 @@ public class UriUtil {
         return path;
     }
 
-
     // TODO migrate to core
     public static Map<String, String> parseQueryString(String url) {
 

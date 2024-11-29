@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unfortunately the file: protocol is
  * See
- * - https://stackoverflow.com/questions/7857416/file-uri-scheme-and-relative-files
- * - https://en.wikipedia.org/wiki/File_URI_scheme
+ * - <a href="https://stackoverflow.com/questions/7857416/file-uri-scheme-and-relative-files">File Uri Scheme and Relative Files</a>
+ * - <a href="https://en.wikipedia.org/wiki/File_URI_scheme">File URI scheme</a>
  */
 public class URIUtilTest {
 
@@ -86,7 +86,7 @@ public class URIUtilTest {
     // file://localhost/c:/WINDOWS/clock.avi
 
     /**
-     * https://en.wikipedia.org/wiki/File_URI_scheme
+     * <a href="https://en.wikipedia.org/wiki/File_URI_scheme">File URI scheme</a>
      */
     @Test
     void casesFromWikipedia() {
