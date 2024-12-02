@@ -42,30 +42,9 @@ public class RouterCLI {
         MembraneCommandLine commandLine = getMembraneCommandLine(args);
         try {
             if (commandLine.hasOpenApiSpec()) {
-                router = new HttpRouter();
-                router.setUriFactory(new URIFactory());
-
-                OpenAPISpec spec = new OpenAPISpec();
-                spec.location = "src/test/resources/openapi/specs/oas31/request-reference.yaml";
-                spec.setValidateRequests(YES);
-
-                APIProxy api = new APIProxy();
-                api.setPort(2000);
-                api.setSpecs(List.of(spec));
-                router.getRuleManager().addProxyAndOpenPortIfNew(api);
-
-                APIProxy backend = new APIProxy();
-                backend.setPort(3000);
-                backend.getInterceptors().add(new ReturnInterceptor());
-                router.getRuleManager().addProxyAndOpenPortIfNew(backend);
-
-                router.init();
+                router = initRouterByOpenApiSpec(commandLine);
             } else {
-                try {
-                    router = Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
-                } catch (XmlBeanDefinitionStoreException e) {
-                    handleXmlBeanDefinitionStoreException(e);
-                }
+                router = initRouterByConfig(commandLine);
             }
         } catch (InvalidConfigurationException e) {
             log.error("Fatal error: " + e.getMessage());
@@ -86,6 +65,32 @@ public class RouterCLI {
         } catch (InterruptedException e) {
             // do nothing
         }
+    }
+
+    private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
+        Router router = new HttpRouter();
+        router.setUriFactory(new URIFactory());
+
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.location = commandLine.getOpenApiSpec();
+        spec.setValidateRequests(YES);
+
+        APIProxy api = new APIProxy();
+        api.setPort(2000);
+        api.setSpecs(List.of(spec));
+        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+
+        router.init();
+        return router;
+    }
+
+    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws InvalidConfigurationException, IOException {
+        try {
+            return Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
+        } catch (XmlBeanDefinitionStoreException e) {
+            handleXmlBeanDefinitionStoreException(e);
+        }
+        return null;
     }
 
     private static MembraneCommandLine getMembraneCommandLine(String[] args) {
