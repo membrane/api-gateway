@@ -48,12 +48,31 @@ public class MembraneCommandLine {
         return cl.getOptionValue("oas");
     }
 
+    public boolean hasRequestValidation() {
+        return cl.hasOption("v");
+    }
+
+    public boolean hasResponseValidation() {
+        return cl.hasOption("V");
+    }
+
+    public boolean hasPort() {
+        return cl.hasOption("p");
+    }
+
+    public String getPort() {
+        return cl.getOptionValue("p");
+    }
+
     private Options getOptions() {
         Options options = new Options();
         options.addOption(Option.builder("h").longOpt("help").desc("Help content for router.").build());
         options.addOption(Option.builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build());
         options.addOption(Option.builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verify proxies configuration file").build());
-        options.addOption(Option.builder("oas").longOpt("openapi-spec").argName("OpenAPI spec location").hasArg().desc("Location of OpenAPI specification").build());
+        options.addOption(Option.builder("oas").longOpt("openapi").argName("OpenAPI location").hasArg().desc("Location of OpenAPI file").build());
+        options.addOption(Option.builder("v").longOpt("validate-requests").argName("Validate OpenAPI Requests").hasArg().desc("Enable validation of requests against set OpenAPI").build());
+        options.addOption(Option.builder("V").longOpt("validate-responses").argName("Validate OpenAPI Responses").hasArg().desc("Enable validation of responses against set OpenAPI").build());
+        options.addOption(Option.builder("p").longOpt("port").argName("API Port").hasArg().desc("Port the default API or OpenAPI should initialize").build());
         return options;
     }
 

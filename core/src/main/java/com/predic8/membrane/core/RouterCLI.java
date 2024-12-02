@@ -31,6 +31,7 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.util.OSUtil.*;
+import static java.lang.Integer.parseInt;
 
 public class RouterCLI {
 
@@ -73,10 +74,12 @@ public class RouterCLI {
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = commandLine.getOpenApiSpec();
-        spec.setValidateRequests(YES);
+
+        if (commandLine.hasRequestValidation()) spec.setValidateRequests(YES);
+        if (commandLine.hasResponseValidation()) spec.setValidateResponses(YES);
 
         APIProxy api = new APIProxy();
-        api.setPort(2000);
+        api.setPort((commandLine.hasPort()) ? parseInt(commandLine.getPort()) : 2000);
         api.setSpecs(List.of(spec));
         router.getRuleManager().addProxyAndOpenPortIfNew(api);
 
@@ -90,7 +93,7 @@ public class RouterCLI {
         } catch (XmlBeanDefinitionStoreException e) {
             handleXmlBeanDefinitionStoreException(e);
         }
-        return null;
+        throw new RuntimeException("Router could not be initialized");
     }
 
     private static MembraneCommandLine getMembraneCommandLine(String[] args) {
