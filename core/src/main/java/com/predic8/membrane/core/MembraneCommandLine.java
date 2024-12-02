@@ -40,11 +40,20 @@ public class MembraneCommandLine {
         return (cl.hasOption('c')) ? cl.getOptionValue('c') : cl.getOptionValue('t');
     }
 
+    public boolean hasOpenApiSpec() {
+        return cl.hasOption("oas");
+    }
+
+    public String getOpenApiSpec() {
+        return cl.getOptionValue("oas");
+    }
+
     private Options getOptions() {
         Options options = new Options();
         options.addOption(Option.builder("h").longOpt("help").desc("Help content for router.").build());
         options.addOption(Option.builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build());
         options.addOption(Option.builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verify proxies configuration file").build());
+        options.addOption(Option.builder("oas").longOpt("openapi-spec").argName("OpenAPI spec location").hasArg().desc("Location of OpenAPI specification").build());
         return options;
     }
 

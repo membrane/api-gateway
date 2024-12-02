@@ -15,15 +15,21 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.URIFactory;
 import org.apache.commons.cli.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
+import java.util.List;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.util.OSUtil.*;
 
 public class RouterCLI {
@@ -35,10 +41,31 @@ public class RouterCLI {
         Router router = null;
         MembraneCommandLine commandLine = getMembraneCommandLine(args);
         try {
-            try {
-                router = Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
-            } catch (XmlBeanDefinitionStoreException e) {
-                handleXmlBeanDefinitionStoreException(e);
+            if (commandLine.hasOpenApiSpec()) {
+                router = new HttpRouter();
+                router.setUriFactory(new URIFactory());
+
+                OpenAPISpec spec = new OpenAPISpec();
+                spec.location = "src/test/resources/openapi/specs/oas31/request-reference.yaml";
+                spec.setValidateRequests(YES);
+
+                APIProxy api = new APIProxy();
+                api.setPort(2000);
+                api.setSpecs(List.of(spec));
+                router.getRuleManager().addProxyAndOpenPortIfNew(api);
+
+                APIProxy backend = new APIProxy();
+                backend.setPort(3000);
+                backend.getInterceptors().add(new ReturnInterceptor());
+                router.getRuleManager().addProxyAndOpenPortIfNew(backend);
+
+                router.init();
+            } else {
+                try {
+                    router = Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
+                } catch (XmlBeanDefinitionStoreException e) {
+                    handleXmlBeanDefinitionStoreException(e);
+                }
             }
         } catch (InvalidConfigurationException e) {
             log.error("Fatal error: " + e.getMessage());
