@@ -51,6 +51,7 @@ public class OpenAPI31Test {
     @Test
     void simple() throws Exception {
         exc.getRequest().setUri("/pets");
-        assertEquals(Outcome.RETURN, interceptor.handleRequest(exc));
+        Outcome actual = interceptor.handleRequest(exc);
+        assertEquals(Outcome.RETURN, actual);
     }
 }
