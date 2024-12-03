@@ -321,7 +321,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		synchronized (lock) {
 			running = true;
 		}
-		log.info(PRODUCT_NAME + " " + VERSION + " up and running!");
+
+		RuleDisplayInfo.logInfosAboutStartedProxies(ruleManager);
+		log.info(PRODUCT_NAME + " {} up and running!", VERSION);
 	}
 
 	private void startJmx() {
@@ -390,7 +392,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	public void tryReinitialization() {
 		boolean stillFailing = false;
 		ArrayList<Rule> inactive = getInactiveRules();
-		if (inactive.size() > 0) {
+		if (!inactive.isEmpty()) {
 			log.info("Trying to activate all inactive rules.");
 			for (Rule rule : inactive) {
 				try {

@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import org.apache.commons.lang3.StringUtils;
 
 @MCElement(name="internalProxy")
 public class InternalProxy extends AbstractProxy{
@@ -25,8 +26,11 @@ public class InternalProxy extends AbstractProxy{
     private SSLContext sslOutboundContext;
 
     public InternalProxy() {
-        key = new AbstractRuleKey(-1,null){
-
+        key = new AbstractRuleKey(-1,null) {
+            @Override
+            public String toString() {
+                return StringUtils.defaultIfEmpty(getPath(), "") + ":" + port;
+            }
         };
     }
 
