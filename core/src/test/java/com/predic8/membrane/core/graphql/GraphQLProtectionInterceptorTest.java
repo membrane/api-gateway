@@ -14,23 +14,19 @@
 
 package com.predic8.membrane.core.graphql;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.graphql.model.*;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.junit.jupiter.api.*;
 
-import javax.security.auth.login.Configuration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.net.URLEncoder.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GraphQLProtectionInterceptorTest {
 
@@ -375,7 +371,7 @@ public class GraphQLProtectionInterceptorTest {
                 opDefOfType("query")
         );
 
-        assertEquals(3, i.countMutations(definitions));
+        assertEquals(3, GraphQLoverHttpValidator.countMutations(definitions));
     }
 
     private OperationDefinition opDefOfType(String type) {
