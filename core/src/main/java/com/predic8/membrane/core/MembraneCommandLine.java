@@ -21,28 +21,35 @@ public class MembraneCommandLine {
 
     private CommandLine cl;
     private String command;
-    private static final String[] VALID_COMMANDS = {"start", "stop", "restart", "status"}; // add your commands here
+    private static final String[] VALID_COMMANDS = {"start", "oas"};
 
     public void parse(String[] args) throws ParseException {
         if (args.length > 0 && !args[0].startsWith("-")) {
             command = args[0];
+
+            if (!Arrays.asList(VALID_COMMANDS).contains(command)) {
+                throw new ParseException("Unknown command: " + command);
+            }
+
             args = Arrays.copyOfRange(args, 1, args.length);
         }
         cl = new DefaultParser().parse(getOptions(), args, true);
     }
 
     public void printUsage() {
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("service-proxy.sh <command> [options]\n\nCommands:\n  " +
-                String.join("\n  ", VALID_COMMANDS) + "\n\nOptions:", getOptions());
+        new HelpFormatter().printHelp("""
+               service-proxy.sh <command> [options]
+               \s
+               Commands:
+               \s\s""" + String.join("\n  ", VALID_COMMANDS) + "\n\nOptions:", getOptions());
+    }
+
+    public boolean hasCommand() {
+        return command != null;
     }
 
     public String getCommand() {
         return command;
-    }
-
-    public boolean hasValidCommand() {
-        return command != null && Arrays.asList(VALID_COMMANDS).contains(command);
     }
 
     public boolean needHelp() {
