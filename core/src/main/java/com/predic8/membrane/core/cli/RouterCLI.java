@@ -76,7 +76,7 @@ public class RouterCLI {
 
         OpenAPISpec spec = new OpenAPISpec();
 
-        spec.location = "./conf/fruitshop-api.yaml";
+        spec.location = "./conf/fruitshop-api.yml";
         //spec.location = // TODO Figure out;
 
         if (commandLine.getCommand().isOptionSet("v"))
