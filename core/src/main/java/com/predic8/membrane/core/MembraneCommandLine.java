@@ -15,17 +15,34 @@
 package com.predic8.membrane.core;
 
 import org.apache.commons.cli.*;
+import java.util.Arrays;
 
 public class MembraneCommandLine {
 
-    CommandLine cl;
+    private CommandLine cl;
+    private String command;
+    private static final String[] VALID_COMMANDS = {"start", "stop", "restart", "status"}; // add your commands here
 
     public void parse(String[] args) throws ParseException {
+        if (args.length > 0 && !args[0].startsWith("-")) {
+            command = args[0];
+            args = Arrays.copyOfRange(args, 1, args.length);
+        }
         cl = new DefaultParser().parse(getOptions(), args, true);
     }
 
     public void printUsage() {
-        new HelpFormatter().printHelp("service-proxy.sh <command> [options]", getOptions());
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("service-proxy.sh <command> [options]\n\nCommands:\n  " +
+                String.join("\n  ", VALID_COMMANDS) + "\n\nOptions:", getOptions());
+    }
+
+    public String getCommand() {
+        return command;
+    }
+
+    public boolean hasValidCommand() {
+        return command != null && Arrays.asList(VALID_COMMANDS).contains(command);
     }
 
     public boolean needHelp() {
@@ -79,5 +96,4 @@ public class MembraneCommandLine {
     public boolean isDryRun() {
         return cl.hasOption('t');
     }
-
 }
