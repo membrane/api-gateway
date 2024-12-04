@@ -63,12 +63,15 @@ public class CliCommand {
         if (!subcommands.isEmpty()) {
             usage.append(" <command>");
         }
-        usage.append(" [options]\n\n");
+
+        if (!options.getOptions().isEmpty()) {
+            usage.append(" [options]\n\n");
+        }
 
         if (!subcommands.isEmpty()) {
             usage.append("Commands:\n");
             subcommands.forEach((cmd, ns) ->
-                    usage.append("  ")
+                    usage.append(" ")
                          .append(cmd)
                          .append(" - ")
                          .append(ns.getDescription())
@@ -81,8 +84,16 @@ public class CliCommand {
             usage.append("Options:");
             new HelpFormatter().printHelp(usage.toString(), options);
         } else {
-            System.out.println(usage);
+            new HelpFormatter().printHelp(usage.toString(), new Options());
         }
+    }
+
+    public boolean isOptionSet(String opt) {
+        return commandLine != null && commandLine.hasOption(opt);
+    }
+
+    public String getOptionValue(String opt) {
+        return commandLine != null ? commandLine.getOptionValue(opt) : null;
     }
 
     public String getName() {
@@ -95,17 +106,5 @@ public class CliCommand {
 
     public boolean hasSubcommand(String cmd) {
         return subcommands.containsKey(cmd);
-    }
-
-    public Options getOptions() {
-        return options;
-    }
-
-    public boolean isOptionSet(String opt) {
-        return commandLine != null && commandLine.hasOption(opt);
-    }
-
-    public String getOptionValue(String opt) {
-        return commandLine != null ? commandLine.getOptionValue(opt) : null;
     }
 }

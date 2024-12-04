@@ -22,24 +22,15 @@ public class MembraneCommandLine {
 
     public MembraneCommandLine() {
         rootNamespace = new CliCommand("service-proxy.sh", "Membrane Service Proxy") {{
-            addOption(Option.builder("h").longOpt("help")
-                            .desc("Help content for router.").build())
-                        .addOption(Option.builder("c").longOpt("config")
-                            .argName("proxies.xml location").hasArg()
-                            .desc("Location of the proxies configuration file").build())
-                        .addOption(Option.builder("t").longOpt("test")
-                            .argName("proxies.xml location").hasArg()
-                            .desc("Verify proxies configuration file").build());
+            addOption(Option.builder("h").longOpt("help").desc("Help content for router.").build())
+            .addOption(Option.builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build())
+            .addOption(Option.builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verify proxies configuration file").build());
 
             // TODO Location of OpenAPI. Default location or required option (e.g. -f <url>)
             addSubcommand(new CliCommand("oas", "Start Membrane as OpenAPI gateway") {{
-                    addOption(Option.builder("v").longOpt("validate-requests")
-                                    .desc("Enable validation of requests against set OpenAPI").build())
-                                .addOption(Option.builder("V").longOpt("validate-responses")
-                                    .desc("Enable validation of responses against set OpenAPI").build())
-                                .addOption(Option.builder("p").longOpt("port")
-                                    .argName("API Port").hasArg()
-                                    .desc("Port the OpenAPI should initialize").build());
+                addOption(Option.builder("v").longOpt("validate-requests").desc("Enable validation of requests against set OpenAPI").build())
+                .addOption(Option.builder("V").longOpt("validate-responses").desc("Enable validation of responses against set OpenAPI").build())
+                .addOption(Option.builder("p").longOpt("port").argName("API Port").hasArg().desc("Port the OpenAPI should initialize").build());
             }});
         }};
     }

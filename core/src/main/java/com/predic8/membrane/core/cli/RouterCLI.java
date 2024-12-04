@@ -124,9 +124,7 @@ public class RouterCLI {
     private static String getRulesFile(MembraneCommandLine cl) throws IOException {
         ResolverMap rm = new ResolverMap();
         if (hasConfiguration(cl)) {
-            String filename = fixBackslashes(
-                    getConfiguration(cl)
-            );
+            String filename = fixBackslashes(getConfiguration(cl));
             if (shouldResolveFile(filename)) {
                 // absolute
                 try(InputStream ignored = rm.resolve(filename)) {
