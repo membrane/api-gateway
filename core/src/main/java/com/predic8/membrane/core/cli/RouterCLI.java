@@ -39,9 +39,13 @@ public class RouterCLI {
     private static final Logger log = LoggerFactory.getLogger(RouterCLI.class);
 
     public static void main(String[] args) {
+        MembraneCommandLine commandLine = getMembraneCommandLine(args);
+        if (commandLine.getCommand().isOptionSet("h")) {
+            commandLine.getCommand().printHelp();
+            System.exit(0);
+        }
 
         Router router = null;
-        MembraneCommandLine commandLine = getMembraneCommandLine(args);
         try {
             if (commandLine.getCommand().getName().equals("oas")) {
                 router = initRouterByOpenApiSpec(commandLine);
@@ -114,10 +118,6 @@ public class RouterCLI {
             System.exit(1);
         }
 
-        if (cl.getCommand().isOptionSet("h")) {
-            cl.getCommand().printHelp();
-            System.exit(0);
-        }
         return cl;
     }
 

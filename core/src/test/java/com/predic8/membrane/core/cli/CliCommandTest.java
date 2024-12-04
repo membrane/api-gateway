@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.cli;
 
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.ParseException;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,7 +31,6 @@ public class CliCommandTest {
     @BeforeAll
     static void setUp() {
         rootCommand = new CliCommand("root", "Root command");
-
         rootCommand.addOption(Option.builder("a")
                         .longOpt("option-a")
                         .hasArg()
@@ -49,10 +49,17 @@ public class CliCommandTest {
                         .desc("Flag Y")
                         .build());
 
-        CliCommand subCommand2 = new CliCommand("sub2", "Sub command without options");
+        CliCommand subCommandWithoutOptions = new CliCommand("without", "Sub command without options");
+
+        CliCommand subCommandWithRequiredOption = new CliCommand("required", "Sub command with required options");
+        subCommandWithRequiredOption.addOption(Option.builder("z")
+                        .required()
+                        .desc("Required option Z")
+                        .build());
 
         rootCommand.addSubcommand(subCommand);
-        rootCommand.addSubcommand(subCommand2);
+        rootCommand.addSubcommand(subCommandWithoutOptions);
+        rootCommand.addSubcommand(subCommandWithRequiredOption);
     }
 
     @Test
@@ -75,6 +82,11 @@ public class CliCommandTest {
         assertEquals("sub value", result.getOptionValue("x"));
         assertTrue(result.isOptionSet("y"));
         assertNull(result.getOptionValue("y"));
+    }
+
+    @Test
+    void shouldThrowErrorForMissingRequiredOption() {
+        assertThrows(MissingOptionException.class, () -> rootCommand.parse(new String[]{"required"}));
     }
 
     @Test
@@ -129,10 +141,10 @@ public class CliCommandTest {
         ByteArrayOutputStream outContent = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outContent));
 
-        rootCommand.parse(new String[]{"sub2"}).printHelp();
+        rootCommand.parse(new String[]{"without"}).printHelp();
         String output = outContent.toString();
         assertEquals("""
-                usage: sub2
+                usage: without
                 
                 """, output);
 
