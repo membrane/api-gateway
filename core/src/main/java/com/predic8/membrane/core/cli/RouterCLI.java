@@ -110,7 +110,7 @@ public class RouterCLI {
             cl.parse(args);
         } catch (ParseException e) {
             System.err.println("Error parsing commandline " + e.getMessage());
-            cl.getCommand().printHelp();
+            cl.getRootNamespace().printHelp();
             System.exit(1);
         }
 

@@ -30,8 +30,8 @@ public class CliCommand {
         this.options = new Options();
     }
 
-    public CliCommand addSubcommand(CliCommand namespace) {
-        subcommands.put(namespace.getName(), namespace);
+    public CliCommand addSubcommand(CliCommand command) {
+        subcommands.put(command.getName(), command);
         return this;
     }
 
@@ -56,6 +56,10 @@ public class CliCommand {
 
     private static boolean isCommand(String[] args) {
         return args.length > 0 && !args[0].startsWith("-");
+    }
+
+    public boolean hasSubcommand(String cmd) {
+        return subcommands.containsKey(cmd);
     }
 
     public void printHelp() {
@@ -102,9 +106,5 @@ public class CliCommand {
 
     public String getDescription() {
         return description;
-    }
-
-    public boolean hasSubcommand(String cmd) {
-        return subcommands.containsKey(cmd);
     }
 }
