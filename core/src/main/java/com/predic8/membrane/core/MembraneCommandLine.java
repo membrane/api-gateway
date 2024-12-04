@@ -25,7 +25,7 @@ public class MembraneCommandLine {
     }
 
     public void printUsage() {
-        new HelpFormatter().printHelp("service-proxy", getOptions());
+        new HelpFormatter().printHelp("service-proxy.sh <command> [options]", getOptions());
     }
 
     public boolean needHelp() {
