@@ -72,10 +72,11 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         try {
-            return validator.handleRequestInternal(exc);
+            validator.validate(exc);
         } catch (GraphQLOverHttpValidationException e) {
             return error(exc, e);
         }
+        return CONTINUE;
     }
 
     private Outcome error(Exchange exc, GraphQLOverHttpValidationException e) {

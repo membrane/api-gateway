@@ -7,7 +7,6 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
 import jakarta.mail.internet.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -21,7 +20,6 @@ import static com.fasterxml.jackson.core.JsonParser.Feature.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -56,7 +54,7 @@ public class GraphQLoverHttpValidator {
         this.router = router;
     }
 
-    public Outcome handleRequestInternal(Exchange exc) throws Exception {
+    public void validate(Exchange exc) throws GraphQLOverHttpValidationException {
         if (!allowedMethods.contains(exc.getRequest().getMethod()))
             throw new GraphQLOverHttpValidationException(405, "Invalid method.");
 
@@ -71,7 +69,6 @@ public class GraphQLoverHttpValidator {
 
         checkThatGetIsUsedOnlyForQueries(exc, ed);
         checkDepthOrRecursion(ed, getOperationName(data));
-        return CONTINUE;
     }
 
     private void checkThatGetIsUsedOnlyForQueries(Exchange exc, ExecutableDocument ed) {
@@ -97,7 +94,7 @@ public class GraphQLoverHttpValidator {
             throw new GraphQLOverHttpValidationException("GraphQL 'extensions' are forbidden.");
     }
 
-    private @NotNull Map<String, Object> getData(Exchange exc) throws URISyntaxException, IOException {
+    private @NotNull Map<String, Object> getData(Exchange exc) {
         if (exc.getRequest().isGETRequest()) {
             return getData(getRawQuery(exc));
         }
@@ -152,8 +149,13 @@ public class GraphQLoverHttpValidator {
         return ods.get(0);
     }
 
-    private ExecutableDocument getExecutableDocument(String query) throws IOException, ParsingException {
-        return graphQLParser.parseRequest(new ByteArrayInputStream(query.getBytes(UTF_8)));
+    private ExecutableDocument getExecutableDocument(String query) {
+        try {
+            return graphQLParser.parseRequest(new ByteArrayInputStream(query.getBytes(UTF_8)));
+        } catch (Exception e) {
+            log.debug("Error parsing GraphQL request", e);
+            throw new GraphQLOverHttpValidationException(422, "Error parsing GraphQL request.");
+        }
     }
 
     private static void checkExtension(Map data) {
@@ -174,7 +176,7 @@ public class GraphQLoverHttpValidator {
         return (String) query;
     }
 
-    private @NotNull Map<String, Object> getDataPost(Exchange exc, String rawQuery) throws IOException {
+    private @NotNull Map<String, Object> getDataPost(Exchange exc, String rawQuery) {
         if (rawQuery != null) {
             Map<String, String> params = parseQueryString(rawQuery, ERROR);
             for (String key : new String[]{QUERY, OPERATION_NAME, VARIABLES, EXTENSIONS})
@@ -190,10 +192,9 @@ public class GraphQLoverHttpValidator {
             String charset = ct.getParameter("charset");
             if (charset != null && !"utf-8".equalsIgnoreCase(charset))
                 throw new GraphQLOverHttpValidationException("Invalid charset in 'Content-Type': Expected 'utf-8'.");
-
             try {
                 return om.readValue(exc.getRequest().getBodyAsStreamDecoded(), Map.class);
-            } catch (JsonParseException e) {
+            } catch (Exception e) {
                 throw new GraphQLOverHttpValidationException("Error decoding JSON object.");
             }
         }
@@ -217,11 +218,15 @@ public class GraphQLoverHttpValidator {
         }
     }
 
-    private String getRawQuery(Exchange exc) throws URISyntaxException {
-        return router.getUriFactory().create(exc.getRequest().getUri()).getRawQuery();
+    private String getRawQuery(Exchange exc) {
+        try {
+            return router.getUriFactory().create(exc.getRequest().getUri()).getRawQuery();
+        } catch (URISyntaxException e) {
+            throw new GraphQLOverHttpValidationException(400, "Invalid request URI.");
+        }
     }
 
-    private @NotNull Map<String, Object> getData(String rawQuery) throws JsonProcessingException {
+    private @NotNull Map<String, Object> getData(String rawQuery) {
         Map data;
         if (rawQuery == null)
             throw new GraphQLOverHttpValidationException("No query parameters found.");
@@ -230,11 +235,15 @@ public class GraphQLoverHttpValidator {
         } catch (Exception e) {
             throw new GraphQLOverHttpValidationException("Error decoding query string.");
         }
-        if (data.containsKey(VARIABLES))
-            data.put(VARIABLES, om.readValue((String) data.get(VARIABLES), Map.class));
-        if (data.containsKey(EXTENSIONS))
-            data.put(EXTENSIONS, om.readValue((String) data.get(EXTENSIONS), Map.class));
-        return data;
+        try {
+            if (data.containsKey(VARIABLES))
+                data.put(VARIABLES, om.readValue((String) data.get(VARIABLES), Map.class));
+            if (data.containsKey(EXTENSIONS))
+                data.put(EXTENSIONS, om.readValue((String) data.get(EXTENSIONS), Map.class));
+            return data;
+        } catch (JsonProcessingException e) {
+            throw new GraphQLOverHttpValidationException(422, "Error parsing variables or extensions from request JSON.");
+        }
     }
 
     public static int countMutations(List<ExecutableDefinition> definitions) {
@@ -262,6 +271,8 @@ public class GraphQLoverHttpValidator {
                 log.error("Selection is null.");
                 return "See server log.";
             }
+
+            // @TODO Replace with polymorphism
             if (selection instanceof Field) {
                 return checkField((Field) selection, ed, od, fieldStack, fragmentNamesVisited);
             }
@@ -302,6 +313,10 @@ public class GraphQLoverHttpValidator {
         return null;
     }
 
+    // @TODO
+    //  - Make testable
+    //  - return void
+    //  - case of error throw exception
     private String checkField(Field field, ExecutableDocument ed, OperationDefinition od, List<String> fieldStack, HashSet<String> fragmentNamesVisited) {
         String fieldName = field.getName();
         fieldStack.add(fieldName);

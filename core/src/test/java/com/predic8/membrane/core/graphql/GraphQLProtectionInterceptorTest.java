@@ -24,12 +24,13 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.net.URLEncoder.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GraphQLProtectionInterceptorTest {
-
 
     private static GraphQLProtectionInterceptor i;
 
@@ -46,7 +47,7 @@ public class GraphQLProtectionInterceptorTest {
                 APPLICATION_JSON,
                 """
                         {"query":"{a}"}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -60,7 +61,18 @@ public class GraphQLProtectionInterceptorTest {
                             "variables": null,
                             "extensions": null
                         }""",
-                Outcome.CONTINUE);
+                CONTINUE);
+    }
+
+    @Test
+    public void ok2_POST_missing_fields() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {
+                            "query": "{a}"
+                        }""",
+                CONTINUE);
     }
 
     @Test
@@ -72,7 +84,7 @@ public class GraphQLProtectionInterceptorTest {
                             "query": "{a}",
                             "operationName": 5
                         }""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -84,7 +96,7 @@ public class GraphQLProtectionInterceptorTest {
                             "query": "{a}",
                             "variables": 5
                         }""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -96,7 +108,7 @@ public class GraphQLProtectionInterceptorTest {
                             "query": "{a}",
                             "extensions": { "foo": "bar" }
                         }""", // while this is a validly formed extension, the interceptor (by default) does not allow extensions.
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -105,20 +117,20 @@ public class GraphQLProtectionInterceptorTest {
                 "application/graphql",
                 """
                         {a}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
     public void ok_GET() throws Exception {
         verifyGet("/?query=" + encode("{a}", UTF_8),
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
 
     @Test
     public void bad_mutation_GET() throws Exception {
         verifyGet("/?query=" + encode("mutation { trigger }", UTF_8),
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -127,7 +139,7 @@ public class GraphQLProtectionInterceptorTest {
                 "application/a/b/c",
                 """
                         {"query":"{a}"}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
 
@@ -139,9 +151,7 @@ public class GraphQLProtectionInterceptorTest {
                 .body("""
                         {"query":"{a}"}""").buildExchange();
 
-        Outcome outcome = i.handleRequest(e);
-
-        assertEquals(Outcome.RETURN, outcome);
+        assertEquals(RETURN, i.handleRequest(e));
     }
 
     @Test
@@ -153,7 +163,7 @@ public class GraphQLProtectionInterceptorTest {
                             "query": "query a {b} query c {d}",
                             "operationName": "a"
                         }""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -165,7 +175,7 @@ public class GraphQLProtectionInterceptorTest {
                             "query": "query a {b} query c {d}",
                             "operationName": "x"
                         }""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -177,7 +187,7 @@ public class GraphQLProtectionInterceptorTest {
                             "query": "query x {b} query x {d}",
                             "operationName": "x"
                         }""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -189,7 +199,7 @@ public class GraphQLProtectionInterceptorTest {
                             "query": "query a {b} ",
                             "operationName": ""
                         }""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
 
@@ -199,7 +209,7 @@ public class GraphQLProtectionInterceptorTest {
                 "application/json;charset=iso-8859-1",
                 """
                         {"query":"{a}"}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -208,7 +218,7 @@ public class GraphQLProtectionInterceptorTest {
                 null,
                 """
                         {"query":"{a}"}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -217,12 +227,12 @@ public class GraphQLProtectionInterceptorTest {
                 "text/plain",
                 """
                         {"query":"{a}"}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
     public void getParameterContainsGraphQLData() throws Exception {
-        for (String queryParam : new String[] {
+        for (String queryParam : new String[]{
                 "query=" + encode("{b}", UTF_8),
                 "operationName=foo",
                 "variables=foo",
@@ -232,7 +242,7 @@ public class GraphQLProtectionInterceptorTest {
                     APPLICATION_JSON,
                     """
                             {"query":"{a}"}""",
-                    Outcome.RETURN);
+                    RETURN);
         }
     }
 
@@ -242,13 +252,13 @@ public class GraphQLProtectionInterceptorTest {
                 APPLICATION_JSON,
                 """
                         {"query":"{a}","query":"{b}"}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
     public void duplicateKey_GET() throws Exception {
         verifyGet("/?query=" + encode("{a}", UTF_8) + "&query=" + encode("{b}", UTF_8),
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -257,7 +267,7 @@ public class GraphQLProtectionInterceptorTest {
                 APPLICATION_JSON,
                 """
                         {"query":"{...a}"}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -267,7 +277,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"query c {...a} fragment a { b }",
                         "operationName": "c"}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -277,7 +287,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"query c {...a} fragment a { ...b } fragment b { ...a }",
                         "operationName": "c"}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
 
@@ -288,7 +298,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"{ a { b } }",
                         "operationName": ""}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -298,7 +308,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"{ a ... { b } }",
                         "operationName": ""}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -308,7 +318,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"{ a { b { c { d { e { f { g } } } } } } }",
                         "operationName": ""}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -318,7 +328,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"{ a { b { c { d { e { f { g { h } } } } } } } }",
                         "operationName": ""}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
 
@@ -329,7 +339,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"{ a { b { a { d { a } } } } }",
                         "operationName": ""}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -339,7 +349,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"{ a { a { a { a { a { a } } } } } }",
                         "operationName": ""}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -349,7 +359,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{} mutation abcdefgh{}",
                         "operationName": ""}""",
-                Outcome.RETURN);
+                RETURN);
     }
 
     @Test
@@ -359,7 +369,7 @@ public class GraphQLProtectionInterceptorTest {
                 """
                         {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{}",
                         "operationName": ""}""",
-                Outcome.CONTINUE);
+                CONTINUE);
     }
 
     @Test
@@ -384,7 +394,7 @@ public class GraphQLProtectionInterceptorTest {
 
         Outcome outcome = i.handleRequest(e);
 
-        assertEquals(Outcome.RETURN, outcome);
+        assertEquals(RETURN, outcome);
     }
 
     private void verifyGet(String url, Outcome expectedOutcome) throws Exception {
