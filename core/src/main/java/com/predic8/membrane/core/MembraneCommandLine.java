@@ -70,8 +70,8 @@ public class MembraneCommandLine {
         options.addOption(Option.builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build());
         options.addOption(Option.builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verify proxies configuration file").build());
         options.addOption(Option.builder("oas").longOpt("openapi").argName("OpenAPI location").hasArg().desc("Location of OpenAPI file").build());
-        options.addOption(Option.builder("v").longOpt("validate-requests").argName("Validate OpenAPI Requests").hasArg().desc("Enable validation of requests against set OpenAPI").build());
-        options.addOption(Option.builder("V").longOpt("validate-responses").argName("Validate OpenAPI Responses").hasArg().desc("Enable validation of responses against set OpenAPI").build());
+        options.addOption(Option.builder("v").longOpt("validate-requests").argName("Validate OpenAPI Requests").desc("Enable validation of requests against set OpenAPI").build());
+        options.addOption(Option.builder("V").longOpt("validate-responses").argName("Validate OpenAPI Responses").desc("Enable validation of responses against set OpenAPI").build());
         options.addOption(Option.builder("p").longOpt("port").argName("API Port").hasArg().desc("Port the default API or OpenAPI should initialize").build());
         return options;
     }
