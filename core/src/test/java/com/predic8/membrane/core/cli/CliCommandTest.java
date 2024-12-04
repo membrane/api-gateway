@@ -109,6 +109,8 @@ public class CliCommandTest {
                 
                 Commands:
                  sub - Sub command
+                 without - Sub command without options
+                 required - Sub command with required options
                 
                 Options:
                  -a,--option-a <arg>   Option A
