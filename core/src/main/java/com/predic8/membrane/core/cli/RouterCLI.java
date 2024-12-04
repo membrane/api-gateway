@@ -12,10 +12,11 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.cli;
 
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.resolver.*;
@@ -42,7 +43,7 @@ public class RouterCLI {
         Router router = null;
         MembraneCommandLine commandLine = getMembraneCommandLine(args);
         try {
-            if (commandLine.hasOpenApiSpec()) {
+            if (commandLine.getCommand().getName().equals("oas")) {
                 router = initRouterByOpenApiSpec(commandLine);
             } else {
                 router = initRouterByConfig(commandLine);
@@ -56,7 +57,8 @@ public class RouterCLI {
             System.exit(1);
         }
 
-        if (commandLine.isDryRun()) {
+        // Dry run
+        if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
             System.exit(0);
         }
 
@@ -73,13 +75,18 @@ public class RouterCLI {
         router.setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();
-        spec.location = commandLine.getOpenApiSpec();
 
-        if (commandLine.hasRequestValidation()) spec.setValidateRequests(YES);
-        if (commandLine.hasResponseValidation()) spec.setValidateResponses(YES);
+        spec.location = "./conf/fruitshop-api.yaml";
+        //spec.location = // TODO Figure out;
+
+        if (commandLine.getCommand().isOptionSet("v"))
+            spec.setValidateRequests(YES);
+        if (commandLine.getCommand().isOptionSet("V"))
+            spec.setValidateResponses(YES);
 
         APIProxy api = new APIProxy();
-        api.setPort((commandLine.hasPort()) ? parseInt(commandLine.getPort()) : 2000);
+        api.setPort(commandLine.getCommand().isOptionSet("p") ?
+                parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
         api.setSpecs(List.of(spec));
         router.getRuleManager().addProxyAndOpenPortIfNew(api);
 
@@ -103,21 +110,23 @@ public class RouterCLI {
             cl.parse(args);
         } catch (ParseException e) {
             System.err.println("Error parsing commandline " + e.getMessage());
-            cl.printUsage();
+            cl.getCommand().printHelp();
             System.exit(1);
         }
 
-        if (cl.needHelp()) {
-            cl.printUsage();
+        if (cl.getCommand().isOptionSet("h")) {
+            cl.getCommand().printHelp();
             System.exit(0);
         }
         return cl;
     }
 
-    private static String getRulesFile(MembraneCommandLine line) throws IOException {
+    private static String getRulesFile(MembraneCommandLine cl) throws IOException {
         ResolverMap rm = new ResolverMap();
-        if (line.hasConfiguration()) {
-            String filename = fixBackslashes(line.getConfiguration());
+        if (hasConfiguration(cl)) {
+            String filename = fixBackslashes(
+                    getConfiguration(cl)
+            );
             if (shouldResolveFile(filename)) {
                 // absolute
                 try(InputStream ignored = rm.resolve(filename)) {
@@ -130,6 +139,17 @@ public class RouterCLI {
             return getRulesFileFromRelativeSpec(rm, filename, "");
         }
         return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", getErrorNotice());
+    }
+
+    private static String getConfiguration(MembraneCommandLine cl) {
+        return cl.getCommand().isOptionSet("c") ?
+                cl.getCommand().getOptionValue("c") :
+                cl.getCommand().getOptionValue("t");
+    }
+
+    private static boolean hasConfiguration(MembraneCommandLine cl) {
+        return cl.getCommand().isOptionSet("c") ||
+                cl.getCommand().isOptionSet("t");
     }
 
     private static String getErrorNotice() {
@@ -148,7 +168,6 @@ public class RouterCLI {
     }
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-
         String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
         try(InputStream ignored = rm.resolve(try1)) {
             return try1;
