@@ -112,6 +112,9 @@ public class RouterCLI {
 
         try {
             cl.parse(args);
+        } catch (MissingRequiredOptionException e) {
+            e.getCommand().printHelp();
+            System.exit(1);
         } catch (ParseException e) {
             System.err.println("Error parsing commandline " + e.getMessage());
             cl.getRootNamespace().printHelp();

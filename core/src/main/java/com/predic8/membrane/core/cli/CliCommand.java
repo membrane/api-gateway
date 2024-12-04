@@ -20,7 +20,7 @@ public class CliCommand {
     private final String name;
     private final String description;
     private final Map<String, CliCommand> subcommands;
-    private final Options options;
+    private Options options;
     private CommandLine commandLine;
 
     public CliCommand(String name, String description) {
@@ -50,7 +50,12 @@ public class CliCommand {
             }
         }
 
-        commandLine = new DefaultParser().parse(options, args, true);
+        try {
+            commandLine = new DefaultParser().parse(options, args, true);
+        } catch (MissingOptionException e) {
+            throw new MissingRequiredOptionException(e.getMessage(), this);
+        }
+
         return this;
     }
 
@@ -90,6 +95,14 @@ public class CliCommand {
         } else {
             new HelpFormatter().printHelp(usage.toString(), new Options());
         }
+    }
+
+    public Options getOptions() {
+        return options;
+    }
+
+    public void setOptions(Options options) {
+        this.options = options;
     }
 
     public boolean isOptionSet(String opt) {

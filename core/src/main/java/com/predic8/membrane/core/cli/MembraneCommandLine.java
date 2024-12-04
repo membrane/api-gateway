@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.cli;
 
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 public class MembraneCommandLine {
@@ -21,14 +22,20 @@ public class MembraneCommandLine {
     private CliCommand currentNamespace;
 
     public MembraneCommandLine() {
-        rootNamespace = new CliCommand("service-proxy.sh", "Membrane Service Proxy") {{
-            addOption(Option.builder("h").longOpt("help").desc("Display this help screen").build())
-            .addOption(Option.builder("c").longOpt("config").argName("proxies.xml Location").hasArg().desc("Location of the proxies configuration file").build())
-            .addOption(Option.builder("t").longOpt("test").argName("proxies.xml Location").hasArg().desc("Verify proxies configuration file").build());
+        Options rootOptions = new Options().addOption(Option.builder("h").longOpt("help").desc("Display this help screen").build())
+                .addOption(Option.builder("c").longOpt("config").argName("proxies.xml Location").hasArg().desc("Location of the proxies configuration file").build())
+                .addOption(Option.builder("t").longOpt("test").argName("proxies.xml Location").hasArg().desc("Verifies configuration file and terminates").build());
 
-            addSubcommand(new CliCommand("oas", "Start Membrane as OpenAPI gateway") {{
+        rootNamespace = new CliCommand("service-proxy.sh", "Membrane Service Proxy") {{
+            setOptions(rootOptions);
+
+            addSubcommand(new CliCommand("start", " (Default) Same function as command omitted. Start gateway with configuration from proxies.xml") {{
+                setOptions(rootOptions);
+            }});
+
+            addSubcommand(new CliCommand("oas", "Use a single OpenAPI document to configure and start gateway") {{
                 addOption(Option.builder("h").longOpt("help").desc("Display this help screen").build())
-                .addOption(Option.builder("l").longOpt("location").argName("OpenAPI Location").hasArg().required().desc("Set URL or path to an OpenAPI document").build())
+                .addOption(Option.builder("l").longOpt("location").argName("OpenAPI Location").hasArg().required().desc("(Required) Set URL or path to an OpenAPI document").build())
                 .addOption(Option.builder("p").longOpt("port").argName("API Port").hasArg().desc("Port the OpenAPI should initialize").build())
                 .addOption(Option.builder("v").longOpt("validate-requests").desc("Enable validation of requests against set OpenAPI").build())
                 .addOption(Option.builder("V").longOpt("validate-responses").desc("Enable validation of responses against set OpenAPI").build());
