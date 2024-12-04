@@ -63,7 +63,7 @@ public class ExecutableDocument {
                 }
             }
 
-            if (executableDefinitions.size() == 0 && !shortHandQuery) {
+            if (executableDefinitions.isEmpty() && !shortHandQuery) {
                 OperationDefinition od = new OperationDefinition();
                 od.parse(t);
                 executableDefinitions.add(od);

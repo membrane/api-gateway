@@ -23,10 +23,8 @@ public class GraphQLoverHttpValidatorTest {
 
     @Test
     void validate() {
-        assertDoesNotThrow(() -> {
-            validator1.validate(getExchange("""
-               {"query":"{a}"}"""));
-        });
+        assertDoesNotThrow(() -> validator1.validate(getExchange("""
+           {"query":"{a}"}""")));
     }
 
     @Test
@@ -46,7 +44,7 @@ public class GraphQLoverHttpValidatorTest {
 
 
     @Test
-    public void depthNotOK() throws Exception {
+    public void depthNotOK() {
         try {
             validator1.validate(getExchange("""
                  {"query":"{ a { b { c { d { e { f { g { h } } } } } } } }",
