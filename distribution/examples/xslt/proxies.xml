@@ -9,8 +9,10 @@
 		<serviceProxy port="2000">
 			<response>
 				<transform xslt="./reformat.xsl" />
-			</response>		
-			<target host="api.predic8.de" port="443" />
+			</response>
+			<target host="api.predic8.de" port="443">
+				<ssl />
+			</target>
 		</serviceProxy>
 		
 	</router>

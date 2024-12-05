@@ -16,33 +16,29 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
-import com.predic8.membrane.core.openapi.validators.ValidationErrors;
-import com.predic8.membrane.core.security.SecurityScheme;
-import jakarta.mail.internet.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.security.*;
+import jakarta.mail.internet.*;
+import org.slf4j.*;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.math.*;
+import java.net.*;
+import java.time.*;
+import java.time.format.*;
+import java.util.*;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.regex.Pattern.compile;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static java.lang.Double.*;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.regex.Pattern.*;
 
 public class Utils {
 
@@ -137,6 +133,23 @@ public class Utils {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Converts an object to a BigDecimal.
+     * @param obj the object to be converted
+     * @return the converted BigDecimal
+     * @throws NumberFormatException if the conversion fails
+     */
+    public static BigDecimal convertToBigDecimal(Object obj) throws NumberFormatException {
+        if (obj instanceof JsonNode jn) {
+            // Not using double prevents from losing fractions
+            return new BigDecimal(jn.asText());
+        }
+        if (obj instanceof String s) {
+            return BigDecimal.valueOf(parseDouble(s));
+        }
+        return (BigDecimal) obj;
     }
 
     public static String joinByComma(Collection<String> l) {

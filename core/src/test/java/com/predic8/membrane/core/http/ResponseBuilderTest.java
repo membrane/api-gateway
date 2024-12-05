@@ -16,15 +16,37 @@ package com.predic8.membrane.core.http;
 
 import org.junit.jupiter.api.*;
 
+import java.io.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResponseBuilderTest {
 
     @Test
-    void simpleOk() throws Exception {
+    void okPlain() throws Exception {
+        Response res = Response.ok().build();
+        assertEquals(200,res.getStatusCode());
+        assertEquals(res.header.getContentLength(), 0);
+        assertInstanceOf( EmptyBody.class,res.getBody());
+    }
+
+    @Test
+    void okWithBody() throws Exception {
         Response res = Response.ok("Hello").contentType("glue/instant").build();
         assertEquals(200,res.getStatusCode());
         assertEquals("Hello",res.getBodyAsStringDecoded());
         assertEquals("glue/instant",res.getHeader().getContentType());
+        assertEquals(res.header.getContentLength(), 5);
+        assertEquals("Hello", res.getBodyAsStringDecoded());
+    }
+
+    @Test
+    void bodyEmpty() throws Exception {
+        Response res = Response.ok("Empty me!").bodyEmpty().build();
+        assertEquals(200,res.getStatusCode());
+        assertEquals(res.header.getContentLength(), 0);
+        assertInstanceOf( EmptyBody.class,res.getBody());
+        assertEquals(0, res.getBody().getLength());
+        assertEquals("", res.getBodyAsStringDecoded());
     }
 }

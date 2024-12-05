@@ -5,6 +5,10 @@ on:
       - closed
     branches:
       - master
+      - 7**
+      - 6**
+      - 5**
+      - 4**
 jobs:
   build-release:
     if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
@@ -19,6 +23,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
       - id: compile-membrane
         name: Compile Membrane
         run: |
@@ -38,13 +44,15 @@ jobs:
           cd ..
       - name: Create Pull Request for next Snapshot
         id: cpr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "Snapshot version"
           title: "Snapshot version"
           author: "github-actions <github-actions@github.com>"
           body: "Update all project `pom.xml` and related files to post-${{ steps.get_version.outputs.VERSION }} snapshot version"
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
       - id: install-secret-key
         name: Install gpg secret key
         run: |
@@ -71,7 +79,7 @@ jobs:
         with:
           name: v${{ steps.get_version.outputs.VERSION }}
           tag: ${{ github.head_ref }}
-          commit: "master"
+          commit: ${{ github.event.pull_request.merge_commit_sha }}
           prerelease: true
 #          makeLatest: true
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"

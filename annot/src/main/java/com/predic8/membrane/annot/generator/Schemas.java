@@ -134,7 +134,7 @@ public class Schemas {
 		w.append("<xsd:sequence>\r\n");
 		for (ChildElementInfo cei : i.getCeis()) {
 			w.append("<xsd:choice" + (cei.isRequired() ? " minOccurs=\"1\"" : " minOccurs=\"0\"") + (cei.isList() ? " maxOccurs=\"unbounded\"" : "") + ">\r\n");
-			assembleDocumentation(w, i);
+			assembleDocumentation(w, cei);
 			for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
 				if (ei.getAnnotation().topLevel())
 					w.append("<xsd:element ref=\"" + ei.getAnnotation().name() + "\">\r\n");

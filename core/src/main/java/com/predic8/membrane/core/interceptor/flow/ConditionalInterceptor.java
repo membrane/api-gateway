@@ -168,7 +168,8 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 
     /**
      * @description the language of the 'test' condition
-     * @example groovy
+     * @default groovy
+     * @example SpEL, groovy
      */
     @MCAttribute
     public void setLanguage(LanguageType language) {

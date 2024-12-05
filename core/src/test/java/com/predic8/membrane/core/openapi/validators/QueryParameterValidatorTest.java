@@ -55,11 +55,19 @@ class QueryParameterValidatorTest extends AbstractValidatorTest{
         return val.getAllParameterSchemas(validator.getApi().getPaths().get("/cities").getGet());
     }
 
+    /**
+     * Test if the parser is inlining referenced params. foo and bar are defined on path level.
+     * Works only with the newer parser and the option TODO
+     */
     @Test
     void resolveReferencedParameter() {
-        Parameter referencingParam = validator.getApi().getPaths().get("/cities").getParameters().get(1);
-        Parameter resolvedParam = queryParameterValidator.resolveReferencedParameter(referencingParam);
-        assertEquals("bar",resolvedParam.getName());
+        Operation get = validator.getApi().getPaths().get("/cities").getGet();
+        assertTrue(operationHasParamWithName(get, "foo"));
+        assertTrue(operationHasParamWithName(get, "bar"));
+    }
+
+    private static boolean operationHasParamWithName(Operation get, String name) {
+        return get.getParameters().stream().anyMatch(param -> param.getName().equals(name));
     }
 
     @Test

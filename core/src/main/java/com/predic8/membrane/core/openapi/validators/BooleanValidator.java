@@ -20,6 +20,14 @@ import com.fasterxml.jackson.databind.node.*;
 
 public class BooleanValidator implements IJSONSchemaValidator {
 
+    @Override
+    public String canValidate(Object obj) {
+        String str = getStringValue(obj);
+        if(obj instanceof BooleanNode || str.equals("true") || str.equals("false"))
+            return BOOLEAN;
+        return null;
+    }
+
     public ValidationErrors validate(ValidationContext ctx, Object value) {
 
         ValidationErrors errors = new ValidationErrors();
@@ -38,12 +46,12 @@ public class BooleanValidator implements IJSONSchemaValidator {
     }
 
     private static String getStringValue(Object value) {
-        String str = "";
-        if (value instanceof TextNode) {
-            str = ((TextNode) value).asText();
-        } else if (value instanceof String) {
-            str = (String) value;
+        if (value instanceof TextNode tn) {
+            return  tn.asText();
         }
-        return str;
+        if (value instanceof String s) {
+            return s;
+        }
+        return "";
     }
 }

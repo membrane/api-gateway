@@ -1,0 +1,32 @@
+openapi: 3.1.0
+info:
+  title: Complex API
+  version: 1.0.0
+paths:
+  /complex:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    name:
+                      type: [string, null]
+                    age:
+                      type: [integer, null]
+                tags:
+                  type: [array, null]
+                  items:
+                    type: object
+                    properties:
+                      label:
+                        type: [string, null]
+                      value:
+                        type: [integer, null]
+      responses:
+        '200':
+          description: Ok

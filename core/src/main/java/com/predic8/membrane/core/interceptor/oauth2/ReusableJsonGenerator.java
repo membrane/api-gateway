@@ -33,6 +33,10 @@ public class ReusableJsonGenerator {
 
     public JsonGenerator resetAndGet() {
         baos.reset();
+        try {
+            jsonGenerator = jsonFactory.createGenerator(baos);
+        } catch (IOException e) {
+        }
         return jsonGenerator;
     }
 

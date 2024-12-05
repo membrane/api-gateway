@@ -16,11 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.JsonUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,7 +38,7 @@ protected String getOpenAPIFileName() {
         Map<String,Object> m = new HashMap<>();
         m.put("email",null);
 
-        ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
@@ -49,7 +49,7 @@ protected String getOpenAPIFileName() {
         Map<String,Object> m = new HashMap<>();
         m.put("address",null);
 
-        ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
 //        System.out.println("errors = " + errors);
         assertEquals(0,errors.size());
     }
@@ -60,7 +60,7 @@ protected String getOpenAPIFileName() {
         Map<String,Object> m = new HashMap<>();
         m.put("contact",null);
 
-        ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
 //        System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -74,7 +74,7 @@ protected String getOpenAPIFileName() {
         Map<String,Object> m = new HashMap<>();
         m.put("telefon",null);
 
-        ValidationErrors errors = validator.validate(Request.post().path("/composition").body(mapToJson(m)));
+        ValidationErrors errors = validator.validate(post().path("/composition").body(mapToJson(m)));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/telefon", e.getContext().getJSONpointer());

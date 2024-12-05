@@ -48,10 +48,11 @@ public abstract class AbstractBody {
 	private boolean wasStreamed = false;
 
 	public void read() throws IOException {
-		if (wasStreamed)
-			throw new IllegalStateException("Cannot read body after it was streamed.");
 		if (read)
 			return;
+
+		if (wasStreamed)
+			throw new IllegalStateException("Cannot read body after it was streamed.");
 
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
@@ -68,16 +69,19 @@ public abstract class AbstractBody {
 	protected void markAsRead() {
 		if (read)
 			return;
+
 		read = true;
+
 		for (MessageObserver observer : observers)
 			observer.bodyComplete(this);
+
 		observers.clear();
 	}
 
 	protected abstract void readLocal() throws IOException;
 
 	/**
-	 * Returns the body's content as a byte[] represenatation.
+	 * Returns the body's content as a byte[] representation.
 	 * <p>
 	 * For example, {@link #getContent()} might return a byte representation of
 	 *
@@ -113,7 +117,7 @@ public abstract class AbstractBody {
 	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
 		if (!read && !retainCopy) {
 			if (wasStreamed)
-				log.warn("streaming the body twice will not work.");
+				log.warn("Streaming the body twice will not work.");
 			for (MessageObserver observer : observers)
 				observer.bodyRequested(this);
 			wasStreamed = true;
@@ -176,7 +180,7 @@ public abstract class AbstractBody {
 	protected abstract byte[] getRawLocal() throws IOException;
 
 	protected boolean hasRelevantObservers() {
-		return observers.stream().filter(messageObserver -> !(messageObserver instanceof NonRelevantBodyObserver)).toList().size() > 0;
+		return observers.stream().anyMatch(o -> !(o instanceof NonRelevantBodyObserver));
 	}
 
 	/**

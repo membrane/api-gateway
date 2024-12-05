@@ -16,19 +16,15 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.parameters.Parameter;
+import com.predic8.membrane.core.openapi.validators.ValidationContext.*;
+import io.swagger.v3.oas.models.*;
+import io.swagger.v3.oas.models.parameters.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
-import static com.predic8.membrane.core.util.CollectionsUtil.concat;
-import static java.lang.String.format;
+import static com.predic8.membrane.core.util.CollectionsUtil.*;
+import static java.lang.String.*;
 
 public abstract class AbstractParameterValidator {
     OpenAPI api;
@@ -44,24 +40,11 @@ public abstract class AbstractParameterValidator {
     }
 
     public List<Parameter> getAllParameterSchemas(Operation operation) {
-        return concat(resolveRefs(pathItem.getParameters()), resolveRefs(operation.getParameters()));
+        return concat(pathItem.getParameters(), operation.getParameters());
     }
 
     boolean isTypeOf(Parameter p, Class<?> clazz) {
         return p.getClass().equals(clazz);
-    }
-
-    private List<Parameter> resolveRefs(List<Parameter> parameters) {
-        if (parameters == null)
-            return null;
-
-        return parameters.stream().map(this::resolveParamIfNeeded).toList();
-    }
-
-    private Parameter resolveParamIfNeeded(Parameter p ) {
-        if (p.get$ref() != null)
-            return resolveReferencedParameter(p);
-        return p;
     }
 
     public ValidationErrors getValidationErrors(ValidationContext ctx, Map<String, String> parameters, Parameter param, ValidatedEntityType type) {
@@ -72,10 +55,6 @@ public abstract class AbstractParameterValidator {
         return ctx.entity(param.getName())
                 .entityType(type)
                 .statusCode(400);
-    }
-
-    public Parameter resolveReferencedParameter(Parameter p) {
-        return api.getComponents().getParameters().get(getComponentLocalNameFromRef(p.get$ref()));
     }
 
     public ValidationErrors validateParameter(ValidationContext ctx, Map<String, String> params, Parameter param, ValidatedEntityType type) {
@@ -93,5 +72,4 @@ public abstract class AbstractParameterValidator {
         }
         return errors;
     }
-
 }
