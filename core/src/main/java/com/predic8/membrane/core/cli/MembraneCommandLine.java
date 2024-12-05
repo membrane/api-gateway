@@ -22,9 +22,9 @@ public class MembraneCommandLine {
     private CliCommand currentNamespace;
 
     public MembraneCommandLine() {
-        Options rootOptions = new Options().addOption(Option.builder("h").longOpt("help").desc("Display this help screen").build())
-                .addOption(Option.builder("c").longOpt("config").argName("proxies.xml Location").hasArg().desc("Location of the proxies configuration file").build())
-                .addOption(Option.builder("t").longOpt("test").argName("proxies.xml Location").hasArg().desc("Verifies configuration file and terminates").build());
+        Options rootOptions = new Options().addOption(Option.builder("h").longOpt("help").desc("Display this text").build())
+                .addOption(Option.builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build())
+                .addOption(Option.builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verifies configuration file and terminates").build());
 
         rootNamespace = new CliCommand("service-proxy.sh", "Membrane Service Proxy") {{
             setOptions(rootOptions);
@@ -39,11 +39,11 @@ public class MembraneCommandLine {
             }});
 
             addSubcommand(new CliCommand("oas", "Use a single OpenAPI document to configure and start gateway") {{
-                addOption(Option.builder("h").longOpt("help").desc("Display this help screen").build())
-                .addOption(Option.builder("l").longOpt("location").argName("OpenAPI Location").hasArg().required().desc("(Required) Set URL or path to an OpenAPI document").build())
-                .addOption(Option.builder("p").longOpt("port").argName("API Port").hasArg().desc("Port the OpenAPI should initialize").build())
-                .addOption(Option.builder("v").longOpt("validate-requests").desc("Enable validation of requests against set OpenAPI").build())
-                .addOption(Option.builder("V").longOpt("validate-responses").desc("Enable validation of responses against set OpenAPI").build());
+                addOption(Option.builder("h").longOpt("help").desc("Display this text").build())
+                .addOption(Option.builder("l").longOpt("location").argName("OpenAPI location").hasArg().required().desc("(Required) Set URL or path to an OpenAPI document").build())
+                .addOption(Option.builder("p").longOpt("port").argName("API port").hasArg().desc("PListen port").build())
+                .addOption(Option.builder("v").longOpt("validate-requests").desc("Validate requests").build())
+                .addOption(Option.builder("V").longOpt("validate-responses").desc("Validate responses").build());
 
             }});
         }};
