@@ -13,12 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.cli;
 
+import com.predic8.membrane.core.util.Pair;
 import org.apache.commons.cli.*;
 import java.util.*;
 
 public class CliCommand {
     private final String name;
     private final String description;
+    private final List<Pair<String, String>> examples;
     private final Map<String, CliCommand> subcommands;
     private Options options;
     private CommandLine commandLine;
@@ -28,6 +30,7 @@ public class CliCommand {
         this.description = description;
         this.subcommands = new LinkedHashMap<>();
         this.options = new Options();
+        this.examples = new ArrayList<>();
     }
 
     public CliCommand addSubcommand(CliCommand command) {
@@ -37,6 +40,11 @@ public class CliCommand {
 
     public CliCommand addOption(Option option) {
         options.addOption(option);
+        return this;
+    }
+
+    public CliCommand addExample(String exampleDescription, String exampleCommand) {
+        examples.add(new Pair<>(exampleDescription, exampleCommand));
         return this;
     }
 
@@ -72,28 +80,36 @@ public class CliCommand {
         if (!subcommands.isEmpty()) {
             usage.append(" <command>");
         }
-
         if (!options.getOptions().isEmpty()) {
             usage.append(" [options]\n\n");
         }
 
+        StringBuilder commands = new StringBuilder();
         if (!subcommands.isEmpty()) {
-            usage.append("Commands:\n");
+            commands.append("Commands:\n");
             subcommands.forEach((cmd, ns) ->
-                    usage.append(" ")
-                         .append(cmd)
-                         .append(" - ")
-                         .append(ns.getDescription())
-                         .append("\n")
+                    commands.append(" ")
+                            .append(cmd)
+                            .append(" - ")
+                            .append(ns.getDescription())
+                            .append("\n")
             );
-            usage.append("\n");
+            commands.append("\n");
+        }
+
+        StringBuilder examplesStr = new StringBuilder();
+        if (!examples.isEmpty()) {
+            examples.forEach(example ->
+                    examplesStr.append(example.first())
+                                .append("\n    ")
+                                .append(example.second())
+                                .append("\n"));
         }
 
         if (!options.getOptions().isEmpty()) {
-            usage.append("Options:");
-            new HelpFormatter().printHelp(usage.toString(), options);
+            new HelpFormatter().printHelp(usage.toString(), commands.toString(), options, examplesStr.toString());
         } else {
-            new HelpFormatter().printHelp(usage.toString(), new Options());
+            new HelpFormatter().printHelp(usage.toString(), commands.toString(), new Options(), examplesStr.toString());
         }
     }
 

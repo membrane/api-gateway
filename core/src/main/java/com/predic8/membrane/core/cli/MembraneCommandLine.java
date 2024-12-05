@@ -29,6 +29,11 @@ public class MembraneCommandLine {
         rootNamespace = new CliCommand("service-proxy.sh", "Membrane Service Proxy") {{
             setOptions(rootOptions);
 
+            addExample("Start gateway configured from OpenAPI file",
+                        "service-proxy.sh oas -l conf/fruitshop-api.yml")
+            .addExample("Start gateway configured from OpenAPI URL and validate requests",
+                        "service-proxy.sh oas -v -l https://api.predic8.de/shop/v2/api-docs");
+
             addSubcommand(new CliCommand("start", " (Default) Same function as command omitted. Start gateway with configuration from proxies.xml") {{
                 setOptions(rootOptions);
             }});

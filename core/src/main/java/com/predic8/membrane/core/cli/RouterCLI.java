@@ -80,8 +80,7 @@ public class RouterCLI {
 
         OpenAPISpec spec = new OpenAPISpec();
 
-        spec.location = "./conf/fruitshop-api.yml";
-        //spec.location = // TODO Figure out;
+        spec.location = commandLine.getCommand().getOptionValue("l");
 
         if (commandLine.getCommand().isOptionSet("v"))
             spec.setValidateRequests(YES);
