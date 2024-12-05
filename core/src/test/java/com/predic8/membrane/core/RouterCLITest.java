@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.cli.RouterCLI;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
