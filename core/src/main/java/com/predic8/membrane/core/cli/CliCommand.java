@@ -77,7 +77,7 @@ public class CliCommand {
         return subcommands.containsKey(cmd);
     }
 
-    private String getCommandPath() {
+    String getCommandPath() {
         if (parent == null) {
             return name;
         }
@@ -106,19 +106,25 @@ public class CliCommand {
             commands.append("\n");
         }
 
-        StringBuilder examplesStr = new StringBuilder();
-        if (!examples.isEmpty()) {
-            examples.forEach(example ->
-                    examplesStr.append(example.first())
-                                .append("\n    ")
-                                .append(example.second())
-                                .append("\n"));
+        if (!options.getOptions().isEmpty()) {
+            commands.append("Options:\n");
+        }
+
+        StringBuilder examples = new StringBuilder();
+        if (!this.examples.isEmpty()) {
+            examples.append("\nExamples:\n");
+            this.examples.forEach(example ->
+                    examples.append(" ")
+                            .append(example.first())
+                            .append("\n    ")
+                            .append(example.second())
+                            .append("\n"));
         }
 
         if (!options.getOptions().isEmpty()) {
-            new HelpFormatter().printHelp(usage.toString(), commands.toString(), options, examplesStr.toString());
+            new HelpFormatter().printHelp(usage.toString(), commands.toString(), options, examples.toString());
         } else {
-            new HelpFormatter().printHelp(usage.toString(), commands.toString(), new Options(), examplesStr.toString());
+            new HelpFormatter().printHelp(usage.toString(), commands.toString(), new Options(), examples.toString());
         }
     }
 

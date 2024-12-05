@@ -38,7 +38,10 @@ public class CliCommandTest {
                         .build())
                 .addOption(Option.builder("b")
                         .desc("Flag B")
-                        .build());
+                        .build())
+                .addExample("Example Number 1", "root sub")
+                .addExample("Example Number 2", "root without");
+
 
         CliCommand subCommand = new CliCommand("sub", "Sub command");
         subCommand.addOption(Option.builder("x")
@@ -98,6 +101,12 @@ public class CliCommandTest {
     }
 
     @Test
+    void shouldReturnFullCommandPath() throws ParseException {
+        CliCommand cmd = rootCommand.parse(new String[]{"sub"});
+        assertEquals("root sub", cmd.getCommandPath());
+    }
+
+    @Test
     void shouldPrintRootHelpWithSubcommandsAndOptions() throws ParseException {
         ByteArrayOutputStream outContent = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outContent));
@@ -115,6 +124,12 @@ public class CliCommandTest {
                 Options:
                  -a,--option-a <arg>   Option A
                  -b                    Flag B
+                
+                Examples:
+                 Example Number 1
+                    root sub
+                 Example Number 2
+                    root without
                 """, output);
 
         System.setOut(System.out);
@@ -128,7 +143,7 @@ public class CliCommandTest {
         rootCommand.parse(new String[]{"sub", "-y"}).printHelp();
         String output = outContent.toString();
         assertEquals("""
-                usage: sub [options]
+                usage: root sub [options]
                 
                 Options:
                  -x <arg>   Option X
@@ -146,7 +161,7 @@ public class CliCommandTest {
         rootCommand.parse(new String[]{"without"}).printHelp();
         String output = outContent.toString();
         assertEquals("""
-                usage: without
+                usage: root without
                 
                 """, output);
 
