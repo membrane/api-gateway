@@ -85,10 +85,25 @@ Try the following snippets by copying them into the `conf/proxies.xml` file.
 
 ## Using OpenAPI for Configuration & Validation
 
-Configures APIs from OpenAPI and validates messages against the definitions. Needed data like backend addresses are taken from the OpenAPI
-description. [See the example](distribution/examples/openapi)
+### 1. Command Line Mode
 
-This configuration is all you need to deploy from OpenAPI:
+Start Membrane directly with an OpenAPI document using the `oas` command:
+
+```sh
+# Display help
+service-proxy.sh -h
+
+# Start gateway with OpenAPI file
+service-proxy.sh oas -l conf/fruitshop-api.yml
+
+# Start gateway with OpenAPI URL and request validation enabled
+service-proxy.sh oas -v -l https://api.predic8.de/shop/v2/api-docs
+```
+
+### 2. Configuration File Mode
+
+Configure OpenAPI in proxies.xml to deploy APIs from OpenAPI descriptions. Backend addresses and other data are taken from the OpenAPI document.
+[See the example](distribution/examples/openapi)
 
 ```xml
 
