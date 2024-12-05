@@ -13,37 +13,44 @@
    limitations under the License. */
 package com.predic8.membrane.core.cli;
 
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
+import org.jetbrains.annotations.*;
+
+import static org.apache.commons.cli.Option.*;
 
 public class MembraneCommandLine {
     private final CliCommand rootNamespace;
     private CliCommand currentNamespace;
 
     public MembraneCommandLine() {
-        Options rootOptions = new Options().addOption(Option.builder("h").longOpt("help").desc("Display this text").build())
-                .addOption(Option.builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build())
-                .addOption(Option.builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verifies configuration file and terminates").build());
+        rootNamespace = getRootNamespace(getRootOptions());
+    }
 
-        rootNamespace = new CliCommand("service-proxy.sh", "Membrane Service Proxy") {{
+    private static Options getRootOptions() {
+        return new Options().addOption(builder("h").longOpt("help").desc("Display this text").build())
+                .addOption(builder("c").longOpt("config").argName("proxies.xml location").hasArg().desc("Location of the proxies configuration file").build())
+                .addOption(builder("t").longOpt("test").argName("proxies.xml location").hasArg().desc("Verifies configuration file and terminates").build());
+    }
+
+    private static @NotNull CliCommand getRootNamespace(Options rootOptions) {
+        return new CliCommand("service-proxy.sh", "Membrane Service Proxy") {{
             setOptions(rootOptions);
 
             addExample("Start gateway configured from OpenAPI file",
-                        "service-proxy.sh oas -l conf/fruitshop-api.yml")
-            .addExample("Start gateway configured from OpenAPI URL and validate requests",
-                        "service-proxy.sh oas -v -l https://api.predic8.de/shop/v2/api-docs");
+                    "service-proxy.sh oas -l conf/fruitshop-api.yml")
+                    .addExample("Start gateway configured from OpenAPI URL and validate requests",
+                            "service-proxy.sh oas -v -l https://api.predic8.de/shop/v2/api-docs");
 
             addSubcommand(new CliCommand("start", " (Default) Same function as command omitted. Start gateway with configuration from proxies.xml") {{
                 setOptions(rootOptions);
             }});
 
             addSubcommand(new CliCommand("oas", "Use a single OpenAPI document to configure and start gateway") {{
-                addOption(Option.builder("h").longOpt("help").desc("Display this text").build())
-                .addOption(Option.builder("l").longOpt("location").argName("OpenAPI location").hasArg().required().desc("(Required) Set URL or path to an OpenAPI document").build())
-                .addOption(Option.builder("p").longOpt("port").argName("API port").hasArg().desc("Listen port").build())
-                .addOption(Option.builder("v").longOpt("validate-requests").desc("Validate requests against OpenAPI").build())
-                .addOption(Option.builder("V").longOpt("validate-responses").desc("Validate responses against OpenAPI").build());
+                addOption(builder("h").longOpt("help").desc("Display this text").build())
+                        .addOption(builder("l").longOpt("location").argName("OpenAPI location").hasArg().required().desc("(Required) Set URL or path to an OpenAPI document").build())
+                        .addOption(builder("p").longOpt("port").argName("API port").hasArg().desc("Listen port").build())
+                        .addOption(builder("v").longOpt("validate-requests").desc("Validate requests against OpenAPI").build())
+                        .addOption(builder("V").longOpt("validate-responses").desc("Validate responses against OpenAPI").build());
 
             }});
         }};

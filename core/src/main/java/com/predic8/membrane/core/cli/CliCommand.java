@@ -15,6 +15,8 @@ package com.predic8.membrane.core.cli;
 
 import com.predic8.membrane.core.util.Pair;
 import org.apache.commons.cli.*;
+import org.jetbrains.annotations.*;
+
 import java.util.*;
 
 public class CliCommand {
@@ -55,9 +57,8 @@ public class CliCommand {
             String cmd = args[0];
             if (hasSubcommand(cmd)) {
                 return subcommands.get(cmd).parse(Arrays.copyOfRange(args, 1, args.length));
-            } else {
-                throw new ParseException("Unknown subcommand: " + cmd);
             }
+            throw new ParseException("Unknown command: " + cmd);
         }
 
         try {
@@ -85,6 +86,10 @@ public class CliCommand {
     }
 
     public void printHelp() {
+        new HelpFormatter().printHelp(getUsageHelp(), getCommandHelp(), options, getExamplesHelp());
+    }
+
+    private @NotNull String getUsageHelp() {
         StringBuilder usage = new StringBuilder(getCommandPath());
         if (!subcommands.isEmpty()) {
             usage.append(" <command>");
@@ -92,7 +97,24 @@ public class CliCommand {
         if (!options.getOptions().isEmpty()) {
             usage.append(" [options]\n\n");
         }
+        return usage.toString();
+    }
 
+    private @NotNull String getExamplesHelp() {
+        StringBuilder examples = new StringBuilder();
+        if (!this.examples.isEmpty()) {
+            examples.append("\nExamples:\n");
+            this.examples.forEach(example ->
+                    examples.append(" ")
+                            .append(example.first())
+                            .append("\n    ")
+                            .append(example.second())
+                            .append("\n"));
+        }
+        return examples.toString();
+    }
+
+    private @NotNull String getCommandHelp() {
         StringBuilder commands = new StringBuilder();
         if (!subcommands.isEmpty()) {
             commands.append("Commands:\n");
@@ -105,27 +127,10 @@ public class CliCommand {
             );
             commands.append("\n");
         }
-
         if (!options.getOptions().isEmpty()) {
             commands.append("Options:\n");
         }
-
-        StringBuilder examples = new StringBuilder();
-        if (!this.examples.isEmpty()) {
-            examples.append("\nExamples:\n");
-            this.examples.forEach(example ->
-                    examples.append(" ")
-                            .append(example.first())
-                            .append("\n    ")
-                            .append(example.second())
-                            .append("\n"));
-        }
-
-        if (!options.getOptions().isEmpty()) {
-            new HelpFormatter().printHelp(usage.toString(), commands.toString(), options, examples.toString());
-        } else {
-            new HelpFormatter().printHelp(usage.toString(), commands.toString(), new Options(), examples.toString());
-        }
+        return commands.toString();
     }
 
     public Options getOptions() {
