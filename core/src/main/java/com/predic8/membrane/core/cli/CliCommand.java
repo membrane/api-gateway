@@ -23,6 +23,7 @@ public class CliCommand {
     private final List<Pair<String, String>> examples;
     private final Map<String, CliCommand> subcommands;
     private Options options;
+    private CliCommand parent;
     private CommandLine commandLine;
 
     public CliCommand(String name, String description) {
@@ -35,6 +36,7 @@ public class CliCommand {
 
     public CliCommand addSubcommand(CliCommand command) {
         subcommands.put(command.getName(), command);
+        command.parent = this;
         return this;
     }
 
@@ -71,12 +73,19 @@ public class CliCommand {
         return args.length > 0 && !args[0].startsWith("-");
     }
 
-    public boolean hasSubcommand(String cmd) {
+    private boolean hasSubcommand(String cmd) {
         return subcommands.containsKey(cmd);
     }
 
+    private String getCommandPath() {
+        if (parent == null) {
+            return name;
+        }
+        return parent.getCommandPath() + " " + name;
+    }
+
     public void printHelp() {
-        StringBuilder usage = new StringBuilder(name);
+        StringBuilder usage = new StringBuilder(getCommandPath());
         if (!subcommands.isEmpty()) {
             usage.append(" <command>");
         }
