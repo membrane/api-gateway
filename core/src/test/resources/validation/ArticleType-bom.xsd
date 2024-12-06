@@ -1,5 +1,13 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is JAX-WS RI 2.2.1-b01-. -->
+<!--
+
+File starts with a byte order mark (BOM) of the byte sequence EF BB BF
+to test if the parser is capable of reading files with BOM. BOM handling is implemented
+in the resolver class LSInputImpl.
+
+See: https://en.wikipedia.org/wiki/Byte_order_mark
+
+-->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://predic8.com/material/1/" xmlns:ns0="http://predic8.com/common/1/" targetNamespace="http://predic8.com/material/1/">
     <xsd:import schemaLocation="ArticleService.xsd" namespace="http://predic8.com/common/1/"/>
     <xsd:complexType name="ArticleType">
