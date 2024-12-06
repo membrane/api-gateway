@@ -13,22 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.test;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.http.*;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import org.apache.http.ParseException;
-
-public class WSDLUtil {
+public class WSDLTestUtil {
 	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
@@ -60,7 +54,7 @@ public class WSDLUtil {
 
 	public static int countWSDLandXSDs(String url) throws ParseException, XMLStreamException, IOException {
 		int sum = 1;
-		List<String> xsds = WSDLUtil.getXSDs(AssertUtils.getAndAssert200(url));
+		List<String> xsds = WSDLTestUtil.getXSDs(AssertUtils.getAndAssert200(url));
 		for (String xsd : xsds)
 			sum += countWSDLandXSDs(new URL(new URL(url), xsd).toString());
 		return sum;

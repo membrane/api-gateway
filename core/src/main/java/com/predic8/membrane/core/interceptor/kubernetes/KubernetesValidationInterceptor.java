@@ -26,7 +26,7 @@ import com.predic8.membrane.core.interceptor.kubernetes.model.AdmissionResponse;
 import com.predic8.membrane.core.interceptor.kubernetes.model.AdmissionReview;
 import com.predic8.membrane.core.interceptor.kubernetes.model.JSONValidatorError;
 import com.predic8.membrane.core.interceptor.kubernetes.model.ResponseStatus;
-import com.predic8.membrane.core.interceptor.schemavalidation.IValidator;
+import com.predic8.membrane.core.interceptor.schemavalidation.MessageValidator;
 import com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
@@ -154,13 +154,12 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * </code>
  *
  */
-@SuppressWarnings({"JavadocLinkAsPlainText", "JavadocBlankLines"})
 @MCElement(name="kubernetesValidation")
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private ResolverMap resourceResolver;
     private List<String> resources;
-    private final ConcurrentMap<String, IValidator> validators = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MessageValidator> validators = new ConcurrentHashMap<>();
     private List<String> namespaces = ImmutableList.of("membrane-soa");
 
     @Override
@@ -182,14 +181,14 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
         if (object != null) { // DELETE requests do not carry an object
             String requestKind = (String) object.get("kind");
 
-            IValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> {
+            MessageValidator validator = validators.computeIfAbsent(requestKind.toLowerCase(), schema -> {
                 try {
                     return new JSONValidator(resourceResolver, "classpath:/com/predic8/membrane/core/config/kubernetes/" + schema + ".schema.json", null);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             });
-            validator.validateMessage(exc, exc.getRequest(), "request");
+            validator.validateMessage(exc, exc.getRequest());
         }
         setExchangeResponse(exc, mapper, review);
 

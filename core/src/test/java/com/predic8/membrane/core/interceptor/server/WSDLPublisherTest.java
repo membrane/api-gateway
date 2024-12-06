@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.server;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.test.WSDLUtil;
+import com.predic8.membrane.test.WSDLTestUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -57,7 +57,7 @@ public class WSDLPublisherTest {
 	public void doit(String wsdlLocation, int port) throws Exception {
 		before(wsdlLocation, port);
 		// this recursively fetches 5 documents (1 WSDL + 4 XSD)
-		assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
+		assertEquals(5, WSDLTestUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
 		after();
 	}
 
