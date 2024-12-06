@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.exceptions;
 
 import com.predic8.membrane.core.interceptor.ratelimit.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.exception.*;
@@ -38,6 +39,8 @@ public class SpringConfigurationErrorHandler {
             handleConfigurationException(ee);
         } else if (root instanceof PortOccupiedException poe) {
             handlePortOccupiedException(poe);
+        } else if (root instanceof SOAPProxyMultipleServicesException mse) {
+            handleSOAPProxyMultipleServicesException(mse);
         } else {
             e.printStackTrace();
         }
@@ -61,11 +64,12 @@ public class SpringConfigurationErrorHandler {
 
     private static String getHowToFindPort() {
         return switch (getOS()) {
-                case WINDOWS -> getHowToFindPortWindows();
-                case LINUX, MAC -> getHowToFindPortLinux();
-                case UNKNOWN -> "";
+            case WINDOWS -> getHowToFindPortWindows();
+            case LINUX, MAC -> getHowToFindPortLinux();
+            case UNKNOWN -> "";
         };
     }
+
     private static String getHowToFindPortLinux() {
         return """
                 e.g.:
@@ -84,24 +88,63 @@ public class SpringConfigurationErrorHandler {
 
     private static void handleConfigurationException(ConfigurationException ce) {
         System.err.printf("""
-            %s
-            
-            %s
-            
-            giving up.
-            %n""", STARS, ce.getMessage());
+                %s
+                            
+                %s
+                            
+                giving up.
+                %n""", STARS, ce.getMessage());
+    }
+
+    private static void handleSOAPProxyMultipleServicesException(SOAPProxyMultipleServicesException e) {
+
+        String sample = "";
+        for (String service: e.getServices()) {
+            sample += """
+                    <soapProxy wsdl="%s" serviceName="%s">
+                    ...
+                    </soapProxy>
+                    
+                    """.formatted(e.getSoapProxy().getWsdl(),service);
+        }
+
+
+        System.err.println("""
+                %s
+                
+                soapProxy Configuration Error
+                =============================
+                
+                The WSDL:
+                
+                %s
+                
+                contains definitions for the following services:
+                
+                %s 
+             
+                A <soapProxy> can only be configured with one single service. But you can deploy the same
+                WSDL several times with different services.
+                                                   
+                %s
+                
+                Each <soapProxy> will expose a different service.
+                                
+                                
+                """.formatted(STARS,e.getSoapProxy().getWsdl(), e.getServices(),sample));
     }
 
     private static void handlePropertyBatchUpdateException(Logger log, PropertyBatchUpdateException pbue) {
-        for(Exception ie : pbue.getPropertyAccessExceptions()) {
+        for (Exception ie : pbue.getPropertyAccessExceptions()) {
             if (ie instanceof MethodInvocationException mie) {
                 PropertyChangeEvent pce = mie.getPropertyChangeEvent();
 
                 //noinspection SwitchStatementWithTooFewBranches
                 switch (requireNonNull(pce).getPropertyName()) {
-                    case "requestLimitDuration" -> RateLimitErrorHandling.handleRequestLimitDurationConfigurationException(log, pce);
+                    case "requestLimitDuration" ->
+                            RateLimitErrorHandling.handleRequestLimitDurationConfigurationException(log, pce);
                     default -> log.error("""
-                            Invalid value %s for property %s.""".formatted(pce.getNewValue(),pce.getPropertyName()));
+                            Invalid value %s for property %s.""".formatted(pce.getNewValue(), pce.getPropertyName()));
 
                 }
             }
