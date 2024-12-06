@@ -13,19 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
+import static com.predic8.membrane.test.AssertUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.HttpUtil;
 
 public class SOAPFaultTest {
 	Router r = new Router();
@@ -70,7 +69,7 @@ public class SOAPFaultTest {
 
 	private Exchange createFaultExchange() {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(HttpUtil.createSOAPValidationErrorResponse("secret"));
+		exc.setResponse(SOAPUtil.createSOAPValidationErrorResponse(Server,"secret","detail"));
 		return exc;
 	}
 

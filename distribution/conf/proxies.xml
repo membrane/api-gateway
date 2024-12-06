@@ -13,6 +13,14 @@
             </target>
         </api>
 
+        <soapProxy  wsdl="../../core/src/test/resources/ws/cities.wsdl">
+            <validator/>
+        </soapProxy>
+
+        <api port="2001">
+            <sampleSoapService/>
+        </api>
+
     </router>
 
 </spring:beans>
