@@ -54,6 +54,8 @@ public class Constants {
 
 	public static final String N_A = "N/A";
 
+	public static final String MEMBRANE_NS = "http://membrane-api.io/error";
+
 	public static final String HTTP_VERSION_11 = "1.1";
 
 	public static final String WSDL_SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";

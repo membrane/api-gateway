@@ -14,20 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.Iterator;
+import org.slf4j.*;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
+import java.util.*;
 
 /**
  * Filters XML streams, removing potentially malicious elements:
@@ -46,8 +38,13 @@ public class XMLProtector {
 	private static Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
+		// TODO Test
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+
+		// Test
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+
+		// Test DTD
 		xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,false);
 	}
 
@@ -66,6 +63,8 @@ public class XMLProtector {
 			xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,true);
 	}
 
+	// TODO throw exception if there is a violation
+	// XMLProtectionException with message
 	public boolean protect(InputStreamReader isr) {
 		try {
 			XMLEventReader parser;
