@@ -312,7 +312,7 @@ Conditionally modify response:
   <if test="header.contains('X-Demo')">
     <response>
       <groovy>
-        exc.getResponse().setBodyContent("Example".getBytes())
+          exc.response.setBodyContent("Example".bytes)
       </groovy>
     </response>
   </if>
