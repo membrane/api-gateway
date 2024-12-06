@@ -24,7 +24,7 @@ Let's examine the `proxies.xml` file.
 
 ```xml
 <router>
-  <soapProxy port="2000" wsdl="http://localhost:2343?wsdl">
+    <soapProxy port="2000" wsdl="city-service.wsdl">
     <validator />
   </soapProxy>
 </router>

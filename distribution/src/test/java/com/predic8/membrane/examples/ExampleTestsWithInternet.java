@@ -14,7 +14,10 @@
 
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.config.*;
+import com.predic8.membrane.examples.config.GettingStartedTest;
+import com.predic8.membrane.examples.config.ProxiesXMLFullSampleTest;
+import com.predic8.membrane.examples.config.ProxiesXMLSoapTest;
+import com.predic8.membrane.examples.config.ProxiesXMLTest;
 import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
@@ -23,7 +26,6 @@ import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPemTest;
 import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPkcs12Test;
 import com.predic8.membrane.examples.tests.ssl.ToBackendTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
-import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialTest;
@@ -56,7 +58,6 @@ import org.junit.platform.suite.api.Suite;
         StaxExampleInterceptorTest.class,
         AddSoapHeaderTest.class,
         BasicXmlInterceptorTest.class,
-        SOAPProxyValidationTest.class,
 
         RoutingTest.class,
         XsltExampleTest.class,
