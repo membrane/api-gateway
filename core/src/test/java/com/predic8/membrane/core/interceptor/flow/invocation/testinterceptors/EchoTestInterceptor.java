@@ -17,16 +17,16 @@
 package com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class EchoTestInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-
-        exc.setResponse(Response.ok().body(exc.getRequest().getBody().getContent()).build());
-//        exc.getRequest().setBody(new Body("Leer".getBytes()));
-        return Outcome.RETURN;
+        exc.setResponse(ok().body(exc.getRequest().getBody().getContent()).build());
+        return RETURN;
     }
 }

@@ -13,14 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Interceptors are usually applied to requests and responses. In case of errors, interceptors can initiate the abort flow to safely shut down Membrane.
@@ -36,9 +34,27 @@ public class AbortInterceptor extends AbstractFlowInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         for (Interceptor i : getInterceptors()) {
             if (i.getFlow().contains(ABORT))
-                exc.pushInterceptorToStack(i);
+                exc.pushInterceptorToStack(new AdapterInterceptor(i));
         }
         return CONTINUE;
+    }
+
+    static class AdapterInterceptor extends AbstractInterceptor {
+
+        Interceptor nested;
+
+        public AdapterInterceptor(Interceptor nested) {
+            this.nested = nested;
+        }
+
+        @Override
+        public void handleAbort(Exchange exchange) {
+            try {
+                nested.handleResponse(exchange);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }

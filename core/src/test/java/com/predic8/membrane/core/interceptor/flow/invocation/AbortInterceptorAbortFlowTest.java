@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 
 import java.util.*;
 
-public class AbortInterceptorFlowTest extends AbstractInterceptorFlowTest {
+public class AbortInterceptorAbortFlowTest extends AbstractInterceptorFlowTest {
 
     @Override
     protected List<Interceptor> interceptors() {
@@ -32,11 +32,12 @@ public class AbortInterceptorFlowTest extends AbstractInterceptorFlowTest {
 
         return List.of(new FlowTestInterceptor("a"),
                 ai,
-                new FlowTestInterceptor("c"));
+                new FlowTestInterceptor("c"),
+                new ExceptionTestInterceptor());
     }
 
     @Override
     protected String flow() {
-        return ">a>c<c<a";
+        return ">a>c?c<b?a";
     }
 }
