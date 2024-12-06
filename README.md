@@ -305,17 +305,17 @@ Returns:
 
 # Branching and Conditionals
 
-Conditionally modify response:
+Replace `5XX` error messages from a backend:
 ```xml
 
 <api port="2000">
-  <if test="header.contains('X-Demo')">
-    <response>
-      <groovy>
-          exc.response.setBodyContent("Example".bytes)
-      </groovy>
-    </response>
-  </if>
+  <response>
+    <if test="statusCode matches '5\d\d'" language="SpEL">
+      <static>
+        Error!
+      </static>
+    </if>
+  </response>
   <return/>
 </api>
 ```
