@@ -12,11 +12,11 @@ This sample explains how to set up and use the `validator` plugin within a `soap
 
 
 3. Run the following command, observe a successful response:  
-    `curl --header "Content-Type: application/soap+xml" -d @blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse`
+    `curl --header "Content-Type: application/soap+xml" -d @city-soap.xml http://localhost:2000/`
 
 
 4. Run this next command and observe that verification fails:  
-    `curl --header "Content-Type: application/soap+xml" -d @invalid-blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse`
+    `curl --header "Content-Type: application/soap+xml" -d @invalid-city-soap.xml http://localhost:2000/`
 
 ## How it is done
 
@@ -24,7 +24,7 @@ Let's examine the `proxies.xml` file.
 
 ```xml
 <router>
-  <soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+  <soapProxy port="2000" wsdl="http://localhost:2343?wsdl">
     <validator />
   </soapProxy>
 </router>

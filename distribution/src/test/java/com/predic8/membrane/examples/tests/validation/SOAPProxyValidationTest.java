@@ -30,9 +30,9 @@ public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			String url = "http://localhost:2000/axis2/services/BLZService/getBankResponse";
-			postAndAssert(200, url, CONTENT_TYPE_SOAP_HEADER, readFile("blz-soap.xml"));
-			postAndAssert(400, url, CONTENT_TYPE_SOAP_HEADER, readFile("invalid-blz-soap.xml"));
+			String url = "http://localhost:2000/";
+			postAndAssert(200, url, CONTENT_TYPE_SOAP_HEADER, readFile("city-soap.xml"));
+			postAndAssert(400, url, CONTENT_TYPE_SOAP_HEADER, readFile("invalid-city-soap.xml"));
 		}
 	}
 }

@@ -23,6 +23,7 @@ import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPemTest;
 import com.predic8.membrane.examples.tests.ssl.SSLServerApiWithTlsPkcs12Test;
 import com.predic8.membrane.examples.tests.ssl.ToBackendTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
+import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialTest;
@@ -55,6 +56,7 @@ import org.junit.platform.suite.api.Suite;
         StaxExampleInterceptorTest.class,
         AddSoapHeaderTest.class,
         BasicXmlInterceptorTest.class,
+        SOAPProxyValidationTest.class,
 
         RoutingTest.class,
         XsltExampleTest.class,
