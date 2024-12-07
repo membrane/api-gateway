@@ -13,31 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.model.*;
+import com.predic8.membrane.annot.model.doc.*;
+import com.predic8.membrane.annot.model.doc.Doc.*;
 
-import javax.annotation.processing.FilerException;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
-
-import com.predic8.membrane.annot.ProcessingException;
-import com.predic8.membrane.annot.model.AbstractJavadocedInfo;
-import com.predic8.membrane.annot.model.AttributeInfo;
-import com.predic8.membrane.annot.model.ChildElementInfo;
-import com.predic8.membrane.annot.model.ElementInfo;
-import com.predic8.membrane.annot.model.MainInfo;
-import com.predic8.membrane.annot.model.Model;
-import com.predic8.membrane.annot.model.doc.Doc;
-import com.predic8.membrane.annot.model.doc.Doc.Entry;
+import javax.annotation.processing.*;
+import javax.lang.model.element.*;
+import javax.tools.*;
+import java.io.*;
+import java.util.*;
 
 public class Schemas {
 
-	private ProcessingEnvironment processingEnv;
+	private final ProcessingEnvironment processingEnv;
 
 	public Schemas(ProcessingEnvironment processingEnv) {
 		this.processingEnv = processingEnv;
@@ -88,7 +77,9 @@ public class Schemas {
 				</xsd:simpleType>
 				
 				""").formatted(namespace, namespace, Schemas.class.getName()).replace("\n", "\r\n");
-		w.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + xsdHeaders);
+		w.append("""
+                <?xml version="1.0" encoding="UTF-8"?>
+                """).append(xsdHeaders);
 		assembleDeclarations(w, m, main);
 		w.append("</xsd:schema>");
 	}
@@ -101,7 +92,7 @@ public class Schemas {
 	private void assembleElementDeclaration(Writer w, Model m, MainInfo main, ElementInfo i) throws ProcessingException, IOException {
 		String footer;
 		if (i.getAnnotation().topLevel()) {
-			w.append("<xsd:element name=\""+ i.getAnnotation().name() +"\">\r\n");
+			w.append("<xsd:element name=\"").append(i.getAnnotation().name()).append("\">\r\n");
 			assembleDocumentation(w, i);
 			w.append("<xsd:complexType>\r\n");
 			footer = """
@@ -109,14 +100,13 @@ public class Schemas {
 					</xsd:element>\r
 					""";
 		} else {
-			w.append("<xsd:complexType name=\""+ i.getXSDTypeName(m) +"\">\r\n");
+			w.append("<xsd:complexType name=\"").append(i.getXSDTypeName(m)).append("\">\r\n");
 			footer = "</xsd:complexType>\r\n";
 		}
 
-		w.append("<xsd:complexContent " + (i.getAnnotation().mixed() ? "mixed=\"true\"" : "") + ">\r\n" +
-				"<xsd:extension base=\"beans:identifiedType\">\r\n");
+		w.append("<xsd:complexContent ").append(i.getAnnotation().mixed() ? "mixed=\"true\"" : "").append(">\r\n").append("<xsd:extension base=\"beans:identifiedType\">\r\n");
 
-		if (i.getAnnotation().mixed() && i.getCeis().size() > 0) {
+		if (i.getAnnotation().mixed() && !i.getCeis().isEmpty()) {
 			throw new ProcessingException(
 					"@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
 					i.getElement());
@@ -147,6 +137,12 @@ public class Schemas {
 				w.append("<xsd:any namespace=\"##other\" processContents=\"strict\" />\r\n");
 			w.append("</xsd:choice>\r\n");
 		}
+
+		// For mixed content like XML in template interceptor: e.g. <template>  <foo>123</foo></template>
+		if (i.getAnnotation().mixed()) {
+			w.append("<xsd:any minOccurs=\"0\" maxOccurs=\"unbounded\" processContents=\"lax\"/>");
+		}
+
 		w.append("</xsd:sequence>\r\n");
 		for (AttributeInfo ai : i.getAis())
 			if (!ai.getXMLName().equals("id"))
@@ -188,7 +184,7 @@ public class Schemas {
 	}
 
 	private String capitalize(String key) {
-		if (key.length() == 0)
+		if (key.isEmpty())
 			return key;
 		return Character.toUpperCase(key.charAt(0)) + key.substring(1);
 	}
