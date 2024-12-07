@@ -17,10 +17,8 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.datatype.joda.*;
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.azure.AzureDns;
-import com.predic8.membrane.core.azure.AzureTableStorage;
-import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;
+import com.predic8.membrane.core.azure.*;
+import com.predic8.membrane.core.azure.api.dns.*;
 import com.predic8.membrane.core.config.security.acme.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -40,6 +38,7 @@ import org.bouncycastle.operator.jcajce.*;
 import org.bouncycastle.pkcs.*;
 import org.bouncycastle.pkcs.jcajce.*;
 import org.bouncycastle.util.io.pem.*;
+import org.jetbrains.annotations.*;
 import org.joda.time.*;
 import org.jose4j.base64url.Base64;
 import org.jose4j.json.*;
@@ -47,26 +46,33 @@ import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
 import org.jose4j.keys.*;
 import org.jose4j.lang.*;
+import org.slf4j.Logger;
 import org.slf4j.*;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import javax.security.auth.x500.*;
 import java.io.*;
 import java.math.*;
+import java.net.*;
 import java.security.*;
 import java.security.spec.*;
 import java.text.*;
 import java.util.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.transport.ssl.acme.Challenge.*;
 import static com.predic8.membrane.core.transport.ssl.acme.Identifier.*;
+import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.jose4j.lang.HashUtil.*;
 
 public class AcmeClient {
+
+    public static final String BEGIN_CERTIFICATE_REQUEST = "-----BEGIN CERTIFICATE REQUEST-----";
+    public static final String END_CERTIFICATE_REQUEST = "-----END CERTIFICATE REQUEST-----";
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -110,7 +116,6 @@ public class AcmeClient {
 
         om.registerModule(new JodaModule());
 
-
         if (!acme.isExperimental())
             throw new RuntimeException("The ACME client is still experimental, please set <acme experimental=\"true\" ... /> to acknowledge.");
     }
@@ -136,7 +141,7 @@ public class AcmeClient {
     }
 
     public void loadDirectory() throws Exception {
-        Exchange e = hc.call(new Request.Builder().get(directoryUrl).header("User-Agent", Constants.VERSION).buildExchange());
+        Exchange e = hc.call(new Request.Builder().get(directoryUrl).header("User-Agent", VERSION).buildExchange());
         handleError(e);
 
         @SuppressWarnings("rawtypes")
@@ -152,20 +157,22 @@ public class AcmeClient {
 
     private void handleError(Exchange e) throws IOException, AcmeException {
         if (e.getResponse().getStatusCode() >= 300) {
-            String contentType = e.getResponse().getHeader().getFirstValue("Content-Type");
 
-            if (isOfMediaType(APPLICATION_PROBLEM_JSON, contentType)) {
+            if (isOfMediaType(APPLICATION_PROBLEM_JSON, getContentType(e))) {
                 @SuppressWarnings("rawtypes")
                 Map m = om.readValue(e.getResponse().getBodyAsStreamDecoded(), Map.class);
 
                 String type = (String) m.get("type");
                 String detail = (String) m.get("detail");
                 List<Map> sub = (List<Map>) m.get("subproblems");
-                String nonce = e.getResponse().getHeader().getFirstValue("Replay-Nonce");
-                throw new AcmeException(type, detail, parse(sub), nonce);
+                throw new AcmeException(type, detail, parse(sub), getReplayNonce(e));
             }
             throw new RuntimeException("ACME Server returned " + e.getResponse() + " " + e.getResponse().getBodyAsStringDecoded());
         }
+    }
+
+    private static String getContentType(Exchange e) {
+        return e.getResponse().getHeader().getFirstValue(CONTENT_TYPE);
     }
 
     private List<AcmeException.SubProblem> parse(List<Map> subproblems) {
@@ -179,82 +186,106 @@ public class AcmeClient {
     }
 
     public String retrieveNewNonce() throws Exception {
-        Exchange e = hc.call(new Request.Builder().method("HEAD").url(new URIFactory(), newNonceUrl).header("User-Agent", Constants.VERSION).buildExchange());
+        Exchange e = hc.call(createHeadRequest());
         handleError(e);
+        e.getResponse().getBodyAsStringDecoded(); // Do not delete! Probably to read the content of the body in order to work with keep alive
+        return getReplayNonce(e);
+    }
 
-        String nonce = e.getResponse().getHeader().getFirstValue("Replay-Nonce");
-
-        e.getResponse().getBodyAsStringDecoded();
-
-        return nonce;
+    private Exchange createHeadRequest() throws URISyntaxException {
+        return new Request.Builder().method("HEAD").url(new URIFactory(), newNonceUrl).header(USER_AGENT, VERSION).buildExchange();
     }
 
     public AcmeKeyPair generateCertificateKey(String[] hosts) {
         try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
-            ECGenParameterSpec ecsp = new ECGenParameterSpec("secp384r1");
-            kpg.initialize(ecsp, random);
-            KeyPair kp = kpg.generateKeyPair();
-
-            String key = "-----BEGIN EC PRIVATE KEY-----\n"
-                    + Base64.encode(kp.getPrivate().getEncoded()) +
-                    "\n-----END EC PRIVATE KEY-----\n";
-
-            String pkey = "-----BEGIN PUBLIC KEY-----\n"
-                    + Base64.encode(kp.getPublic().getEncoded()) +
-                    "\n-----END PUBLIC KEY-----\n";
-
-            return new AcmeKeyPair(pkey, key);
+            return getAcmeKeyPair(getKeyPairGenerator().generateKeyPair());
         } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
     }
 
+    private static @NotNull AcmeKeyPair getAcmeKeyPair(KeyPair kp) {
+        return new AcmeKeyPair(getPublicKeyBase64Encoded(kp), getKeyBase64Encoded(kp));
+    }
+
+    private static @NotNull String getPublicKeyBase64Encoded(KeyPair kp) {
+        return "-----BEGIN PUBLIC KEY-----\n"
+               + Base64.encode(kp.getPublic().getEncoded()) +
+               "\n-----END PUBLIC KEY-----\n";
+    }
+
+    private static @NotNull String getKeyBase64Encoded(KeyPair kp) {
+        return "-----BEGIN EC PRIVATE KEY-----\n"
+               + Base64.encode(kp.getPrivate().getEncoded()) +
+               "\n-----END EC PRIVATE KEY-----\n";
+    }
+
+    private static @NotNull KeyPairGenerator getKeyPairGenerator() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
+        kpg.initialize(new ECGenParameterSpec("secp384r1"), random);
+        return kpg;
+    }
+
     public String generateCSR(String[] hosts, String privateKey) {
         try {
-            KeyFactory factory = KeyFactory.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
-            PrivateKey pk;
-            try (PemReader pemReader = new PemReader(new StringReader(privateKey))) {
-                PemObject pemObject = pemReader.readPemObject();
-                PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(pemObject.getContent());
-                pk = factory.generatePrivate(privKeySpec);
-            }
-            PublicKey pubkey = computePublicKeyFromPrivate(pk);
+            PrivateKey pk = getPrivateKeyFromString(privateKey);
 
             JcaPKCS10CertificationRequestBuilder p10Builder = new JcaPKCS10CertificationRequestBuilder(
-                    new X500Principal("CN=" + hosts[0]), pubkey);
+                    new X500Principal("CN=" + hosts[0]), computePublicKeyFromPrivate(pk));
 
-            GeneralName[] altNames = new GeneralName[hosts.length];
-            for (int i = 0; i < hosts.length; i++) {
-                altNames[i] = new GeneralName(GeneralName.dNSName, hosts[i]);
-            }
+            p10Builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, getExtensions(GeneralNames.getInstance(new DERSequence(getGeneralNames(hosts)))));
 
-            ExtensionsGenerator extensionsGenerator = new ExtensionsGenerator();
-
-            GeneralNames subjectAltNames = GeneralNames.getInstance(new DERSequence(altNames));
-            extensionsGenerator.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
-
-            p10Builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extensionsGenerator.generate());
-
-            JcaContentSignerBuilder csBuilder = new JcaContentSignerBuilder("SHA256withECDSA");
-            ContentSigner signer = csBuilder.build(pk);
-            PKCS10CertificationRequest csr2 = p10Builder.build(signer);
-
-            StringWriter sw = new StringWriter();
-            JcaPEMWriter jcaPEMWriter = new JcaPEMWriter(sw);
-            jcaPEMWriter.writeObject(csr2);
-            jcaPEMWriter.close();
-
-            return sw.toString()
-                    .replaceAll("-----BEGIN CERTIFICATE REQUEST-----" + System.lineSeparator(), "")
-                    .replaceAll(System.lineSeparator() + "-----END CERTIFICATE REQUEST-----", "")
-                    .replaceAll(System.lineSeparator(), "")
-                    .replaceAll("/", "_")
-                    .replaceAll("\\+", "-")
-                    .replaceAll("=", "");
+            return formatCSR(convertCSR2String(getPkcs10CertificationRequest(pk, p10Builder)));
         } catch (NoSuchAlgorithmException | IOException | OperatorCreationException | InvalidKeySpecException | NoSuchProviderException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static @NotNull String formatCSR(String sw) {
+        return sw
+                .replaceAll(BEGIN_CERTIFICATE_REQUEST + lineSeparator(), "")
+                .replaceAll(lineSeparator() + END_CERTIFICATE_REQUEST, "")
+                .replaceAll(lineSeparator(), "")
+                .replaceAll("/", "_")
+                .replaceAll("\\+", "-")
+                .replaceAll("=", "");
+    }
+
+    private static @NotNull String convertCSR2String(PKCS10CertificationRequest csr2) throws IOException {
+        StringWriter sw = new StringWriter();
+        JcaPEMWriter jcaPEMWriter = new JcaPEMWriter(sw);
+        jcaPEMWriter.writeObject(csr2);
+        jcaPEMWriter.close();
+        return sw.toString();
+    }
+
+    private static PKCS10CertificationRequest getPkcs10CertificationRequest(PrivateKey pk, JcaPKCS10CertificationRequestBuilder p10Builder) throws OperatorCreationException {
+        return p10Builder.build(new JcaContentSignerBuilder("SHA256withECDSA").build(pk));
+    }
+
+    private static Extensions getExtensions(GeneralNames subjectAltNames) throws IOException {
+        ExtensionsGenerator generator = new ExtensionsGenerator();
+        generator.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
+        return generator.generate();
+    }
+
+    private static GeneralName @NotNull [] getGeneralNames(String[] hosts) {
+        GeneralName[] altNames = new GeneralName[hosts.length];
+        for (int i = 0; i < hosts.length; i++) {
+            altNames[i] = new GeneralName(GeneralName.dNSName, hosts[i]);
+        }
+        return altNames;
+    }
+
+    private static PrivateKey getPrivateKeyFromString(String privateKey) throws NoSuchAlgorithmException, NoSuchProviderException, IOException, InvalidKeySpecException {
+        KeyFactory factory = KeyFactory.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
+        PrivateKey pk;
+        try (PemReader pemReader = new PemReader(new StringReader(privateKey))) {
+            PemObject pemObject = pemReader.readPemObject();
+            PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(pemObject.getContent());
+            pk = factory.generatePrivate(privKeySpec);
+        }
+        return pk;
     }
 
     private PublicKey computePublicKeyFromPrivate(PrivateKey pk) {
@@ -311,29 +342,37 @@ public class AcmeClient {
     }
 
     public Exchange doJWSRequest(String url, String nonce, JWSParametrizer c) throws Exception {
+        Exchange f = createExchange(url, nonce, c);
+        handleError(f);
+        return f;
+    }
+
+    private Exchange createExchange(String url, String nonce, JWSParametrizer c) throws Exception {
+        return hc.call(new Request.Builder()
+                .post(url)
+                .header(CONTENT_TYPE, APPLICATION_JOSE_JSON)
+                .header(USER_AGENT, VERSION)
+                .body(convert2String(getMyJsonWebSignature(url, nonce, c)))
+                .buildExchange());
+    }
+
+    private static String convert2String(MyJsonWebSignature jws) {
+        Map<String,Object> json = new LinkedHashMap<>();
+        json.put("protected", jws.getEncodedHeader());
+        json.put("payload", jws.getEncodedPayload());
+        json.put("signature", jws.getEncodedSignature());
+        return JsonUtil.toJson(json);
+    }
+
+    private @NotNull MyJsonWebSignature getMyJsonWebSignature(String url, String nonce, JWSParametrizer c) throws Exception {
         MyJsonWebSignature jws = new MyJsonWebSignature();
         jws.setAlgorithmHeaderValue(algorithm);
         jws.setKey(getPrivateKey());
         jws.setHeader("nonce", nonce);
         jws.setHeader("url", url);
         c.call(jws);
-
         jws.sign();
-
-        Map<String,Object> json = new LinkedHashMap<>();
-        json.put("protected", jws.getEncodedHeader());
-        json.put("payload", jws.getEncodedPayload());
-        json.put("signature", jws.getEncodedSignature());
-        String flatSer = JsonUtil.toJson(json);
-
-        Exchange f = hc.call(new Request.Builder()
-                .post(url)
-                .header("Content-Type", APPLICATION_JOSE_JSON)
-                .header("User-Agent", Constants.VERSION)
-                .body(flatSer)
-                .buildExchange());
-        handleError(f);
-        return f;
+        return jws;
     }
 
     public interface HttpCallerWithNonce {
@@ -343,16 +382,12 @@ public class AcmeClient {
     public Exchange withNonce(HttpCallerWithNonce f) throws Exception {
         try {
             try {
-                String nonce = getRememberedNonce();
-                if (nonce == null)
-                    nonce = retrieveNewNonce();
-                Exchange e = f.call(nonce);
-                rememberNonce(e.getResponse().getHeader().getFirstValue("Replay-Nonce"));
-                return e;
+                rememberNonce(getReplayNonce(f.call(getNonce())));
+                return f.call(getNonce());
             } catch (AcmeException ex) {
                 if (AcmeException.TYPE_BAD_NONCE.equals(ex.getType())) {
                     Exchange e = f.call(ex.getNonce()); // Section 6.5.1: on 'badNonce' error, retry with nonce returned
-                    rememberNonce(e.getResponse().getHeader().getFirstValue("Replay-Nonce"));
+                    rememberNonce(getReplayNonce(e));
                     return e;
                 }
                 throw ex;
@@ -361,6 +396,17 @@ public class AcmeClient {
             rememberNonce(ex.getNonce());
             throw ex;
         }
+    }
+
+    private static String getReplayNonce(Exchange e) {
+        return e.getResponse().getHeader().getFirstValue("Replay-Nonce");
+    }
+
+    private String getNonce() throws Exception {
+        String nonce = getRememberedNonce();
+        if (nonce == null)
+            nonce = retrieveNewNonce();
+        return nonce;
     }
 
     private String getRememberedNonce() {
@@ -400,36 +446,45 @@ public class AcmeClient {
     }
 
     public OrderAndLocation createOrder(String accountUrl, List<String> hostnames) throws Exception {
-        String notBefore, notAfter;
-        if (validity != null) {
-            Date now = new Date();
-            synchronized (sdf) {
-                notBefore = sdf.format(now);
-                notAfter = sdf.format(new Date(now.getTime() + validity.getMillis()));
-            }
-        } else {
-            notBefore = null;
-            notAfter = null;
-        }
+        return getOrderAndLocation(createExchange(accountUrl, hostnames, getNotBeforeNotAfter()));
+    }
 
-        Exchange e = withNonce(nonce -> doJWSRequest(newOrderUrl, nonce, jws -> {
+    private @NotNull OrderAndLocation getOrderAndLocation(Exchange e) throws IOException {
+        return new OrderAndLocation(parseOrder(e.getResponse()), e.getResponse().getHeader().getFirstValue(LOCATION));
+    }
+
+    private Exchange createExchange(String accountUrl, List<String> hostnames, Pair<String, String> notBeforeNotAfter) throws Exception {
+        return withNonce(nonce -> doJWSRequest(newOrderUrl, nonce, jws -> {
             HashMap<String, Object> pl = new HashMap<>();
             if (validity != null) {
-                pl.put("notBefore", notBefore);
-                pl.put("notAfter", notAfter);
+                pl.put("notBefore", notBeforeNotAfter.first());
+                pl.put("notAfter", notBeforeNotAfter.second());
             }
-            pl.put("identifiers", hostnames.stream()
-                    .map(host -> ImmutableMap.of("type", "dns", "value", host))
-                    .collect(Collectors.toList()));
+            pl.put("identifiers", getIdentifiers(hostnames));
 
             String payload = om.writeValueAsString(pl);
             jws.setPayload(payload);
             jws.setKeyIdHeaderValue(accountUrl);
         }));
-        return new OrderAndLocation(parseOrder(e.getResponse()), e.getResponse().getHeader().getFirstValue(LOCATION));
     }
 
-     public OrderAndLocation getOrder(String accountUrl, String orderUrl) throws Exception {
+    private static @NotNull List<ImmutableMap<String, String>> getIdentifiers(List<String> hostnames) {
+        return hostnames.stream()
+                .map(host -> ImmutableMap.of("type", "dns", "value", host))
+                .toList();
+    }
+
+    private @NotNull Pair<String, String> getNotBeforeNotAfter() {
+        if (validity != null) {
+            Date now = new Date();
+            synchronized (sdf) {
+                return new Pair<>(sdf.format(now), sdf.format(new Date(now.getTime() + validity.getMillis())) );
+            }
+        }
+        return new Pair<>(null, null);
+    }
+
+    public OrderAndLocation getOrder(String accountUrl, String orderUrl) throws Exception {
         Exchange e = withNonce(nonce -> doJWSRequest(orderUrl, nonce, jws -> {
             jws.setPayload("");
             jws.setKeyIdHeaderValue(accountUrl);
@@ -565,5 +620,4 @@ public class AcmeClient {
             return null;
         return om.readValue(error, AcmeErrorLog.class);
     }
-
 }

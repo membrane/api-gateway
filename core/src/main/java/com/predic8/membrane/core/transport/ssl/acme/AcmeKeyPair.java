@@ -17,9 +17,6 @@ public class AcmeKeyPair {
     String publicKey;
     String privateKey;
 
-    public AcmeKeyPair() {
-    }
-
     public AcmeKeyPair(String publicKey, String privateKey) {
         this.publicKey = publicKey;
         this.privateKey = privateKey;

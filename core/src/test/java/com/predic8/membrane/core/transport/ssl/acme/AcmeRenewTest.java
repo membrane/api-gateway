@@ -13,43 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.google.common.collect.ImmutableList;
-import com.predic8.membrane.core.HttpRouter;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.Certificate;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.Trust;
-import com.predic8.membrane.core.config.security.acme.Acme;
-import com.predic8.membrane.core.config.security.acme.MemoryStorage;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.AcmeHttpChallengeInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.ssl.AcmeSSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.apache.logging.log4j.core.config.ConfigurationSource;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import javax.annotation.PostConstruct;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.security.acme.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.bouncycastle.jce.provider.*;
+import org.junit.jupiter.api.*;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.Security;
-import java.util.Arrays;
+import java.io.*;
+import java.security.*;
 
-import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_PENDING;
-import static com.predic8.membrane.core.transport.ssl.acme.Authorization.AUTHORIZATION_STATUS_VALID;
-import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_PROCESSING;
-import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_READY;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeRenewTest {
@@ -75,8 +55,6 @@ public class AcmeRenewTest {
 
     @Test
     public void all() throws Exception {
-
-
 
         Acme acme = new Acme();
         acme.setExperimental(true);

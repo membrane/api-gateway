@@ -129,8 +129,8 @@ public abstract class PEMSupport {
             if (o instanceof X9ECParameters) {
                 o = p.readObject();
             }
-            if (o instanceof PEMKeyPair) {
-                if (((PEMKeyPair)o).getPublicKeyInfo() == null) {
+            if (o instanceof PEMKeyPair keyPair) {
+                if (keyPair.getPublicKeyInfo() == null) {
                     // bouncycastle has failed to dereference well-known curve OIDs, e.g. '1.3.132.0.34', to fill
                     // the algorithm parameters
                     try {
@@ -151,8 +151,7 @@ public abstract class PEMSupport {
             if (o instanceof KeyPair)
                 return o;
             if (o instanceof PrivateKeyInfo) {
-                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-                return converter.getPrivateKey((PrivateKeyInfo)o);
+                return new JcaPEMKeyConverter().setProvider("BC").getPrivateKey((PrivateKeyInfo)o);
             }
             throw new InvalidParameterException("Expected KeyPair or Key, got " + o.getClass().getName());
         }

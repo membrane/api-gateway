@@ -20,6 +20,7 @@ import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeKeyCert;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeRenewal;
 import com.predic8.membrane.core.util.TimerManager;
+import org.jetbrains.annotations.*;
 import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -220,18 +221,15 @@ public class AcmeSSLContext extends SSLContext {
             KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, "".toCharArray());
 
-            List<Certificate> certs = new ArrayList<>(PEMSupport.getInstance().parseCertificates(certsS));
-            if (certs.size() == 0)
-                throw new RuntimeException("At least one certificate is required.");
+            List<Certificate> certs = getCertificates(certsS);
 
             checkChainValidity(certs);
             validFrom = getValidFrom(certs);
             validUntil = getMinimumValidity(certs);
-            Object key = PEMSupport.getInstance().parseKey(keyS);
-            Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+            Key k = getKey(keyS);
             checkKeyMatchesCert(k, certs);
 
-            ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
+            ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[0]));
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ks, "".toCharArray());
@@ -247,6 +245,19 @@ public class AcmeSSLContext extends SSLContext {
 
         this.keyCert = new AcmeKeyCert(keyS, certsS, validFrom, validUntil, sslc);
         log.info("ACME: installed key and certificate for " + constructHostsString());
+    }
+
+    private static Key getKey(String keyS) throws IOException {
+        Object key = PEMSupport.getInstance().parseKey(keyS);
+        Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+        return k;
+    }
+
+    private static @NotNull List<Certificate> getCertificates(String certsS) throws IOException {
+        List<Certificate> certs = new ArrayList<>(PEMSupport.getInstance().parseCertificates(certsS));
+        if (certs.size() == 0)
+            throw new RuntimeException("At least one certificate is required.");
+        return certs;
     }
 
     public void schedule() {
