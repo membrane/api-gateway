@@ -76,7 +76,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     private static Response createMethodNotAllowedSOAPFault(String method) throws Exception {
-        return ok(getSoapFault("Method %s Not Allowed".formatted(method), "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
+        return ok(getSoapFault("Method %s not allowed".formatted(method), "405", "Use POST to access the service.")).contentType(TEXT_XML).build();
     }
 
     private Response createWSDLResponse(Exchange exc) throws XMLStreamException, FileNotFoundException {
