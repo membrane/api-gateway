@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.*;
 
 import java.math.*;
@@ -80,11 +81,9 @@ public class OAuth2CallbackRequestHandler {
 
     public boolean handleRequest(Exchange exc, Session session) throws Exception {
         try {
-            Map<String, String> params = URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+            Map<String, String> params = getparamsFromRequest(exc);
 
-            String state2 = params.get("state");
-
-            String stateFromUri = getSecurityTokenFromState(state2);
+            String stateFromUri = getSecurityTokenFromState(params.get("state"));
 
             if (!csrfTokenMatches(session, stateFromUri)) {
                 throw new RuntimeException("CSRF token mismatch.");
@@ -93,13 +92,9 @@ public class OAuth2CallbackRequestHandler {
             // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
             session.put(ParamNames.STATE, stateFromUri);
 
-            AbstractExchangeSnapshot originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
-            String url = originalRequest.getRequest().getUri();
-            if (url == null) {
-                url = "/";
-            }
             originalExchangeStore.remove(exc, session, stateFromUri);
 
+            // TODO LogHelper heiﬂt des oder so
             if (log.isDebugEnabled()) {
                 log.debug("CSRF token match.");
             }
@@ -108,34 +103,10 @@ public class OAuth2CallbackRequestHandler {
             if (session.get("defaultFlow") != null) {
                 tokenEndpoint = tokenEndpoint.replaceAll(session.get("defaultFlow"), session.get("triggerFlow"));
             }
-            Map<String, Object> json = exchangeCodeForToken(
-                    tokenEndpoint, publicUrlManager.getPublicURL(exc), params);
 
-            String token;
-            if (!json.containsKey("access_token")) {
-                if (!onlyRefreshToken)
-                    throw new RuntimeException("No access_token received.");
-                // todo maybe override from requireAuth via exchange property
-                String idToken = (String) json.get("id_token");
-                OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
-                tokenResponseHandler.handleTokenResponse(session, null, json, oauth2Answer);
-                sessionAuthorizer.verifyJWT(exc, idToken, oauth2Answer, session);
-            } else {
-                token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
-                if (token == null)
-                    throw new RuntimeException("OAuth2 response with access_token set to null.");
-                accessTokenRevalidator.getValidTokens().put(token, true);
-                OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
-                tokenResponseHandler.handleTokenResponse(session, null, json, oauth2Answer);
-                if (!sessionAuthorizer.isSkipUserInfo()) {
-                    sessionAuthorizer.retrieveUserInfo(json.get("token_type").toString(), token, oauth2Answer, session);
-                } else {
-                    // assume access token is JWT
-                    sessionAuthorizer.verifyJWT(exc, token, oauth2Answer, session);
-                }
-            }
+            verifyToken(exc, session, exchangeCodeForToken(tokenEndpoint, publicUrlManager.getPublicURL(exc), params));
 
-            doRedirect(exc, originalRequest, session);
+            doRedirect(exc, originalExchangeStore.reconstruct(exc, session, stateFromUri), session);
 
             originalExchangeStore.postProcess(exc);
             return true;
@@ -150,37 +121,66 @@ public class OAuth2CallbackRequestHandler {
         }
     }
 
-    private Map<String, Object> exchangeCodeForToken(String tokenEndpoint, String publicUrl, Map<String, String> params) throws Exception {
+    private @NotNull Map<String, String> getparamsFromRequest(Exchange exc) throws Exception {
+        return URLParamUtil.getParams(uriFactory, exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+    }
 
-        String code = params.get("code");
-        if (code == null) {
-            String error = params.get("error");
-            if (error != null) {
-                ProblemDetails pd = ProblemDetails.security(false)
-                        .statusCode(500)
-                        .addSubType("oauth2-error-from-authentication-server")
-                        .title("OAuth2 Error from Authentication Server");
-                pd.detail(params.get("error_description"));
-                pd.extension("error", error);
-                throw new OAuth2Exception(error, params.get("error_description"), pd.build());
-            }
-            throw new RuntimeException("No code received.");
+    private void verifyToken(Exchange exc, Session session, Map<String, Object> json) throws Exception {
+        if (!json.containsKey("access_token")) {
+            handleRefreshTokenOnly(exc, session, json);
+            return;
         }
 
+        String token = (String) json.get("access_token");
+        if (token == null) {
+            throw new RuntimeException("OAuth2 response with access_token set to null.");
+        }
+
+        handleAccessToken(exc, session, json, token);
+    }
+
+    private void handleRefreshTokenOnly(Exchange exc, Session session, Map<String, Object> json) throws Exception {
+        if (!onlyRefreshToken) {
+            throw new RuntimeException("No access_token received.");
+        }
+
+        OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
+        tokenResponseHandler.handleTokenResponse(session, null, json, oauth2Answer);
+        sessionAuthorizer.verifyJWT(exc, (String) json.get("id_token"), oauth2Answer, session);
+    }
+
+    private void handleAccessToken(Exchange exc, Session session, Map<String, Object> json, String token) throws Exception {
+        accessTokenRevalidator.getValidTokens().put(token, true);
+
+        OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
+        tokenResponseHandler.handleTokenResponse(session, null, json, oauth2Answer);
+
+        if (sessionAuthorizer.isSkipUserInfo()) {
+            sessionAuthorizer.verifyJWT(exc, token, oauth2Answer, session);
+            return;
+        }
+
+        sessionAuthorizer.retrieveUserInfo(
+                json.get("token_type").toString(),
+                token,
+                oauth2Answer,
+                session
+        );
+    }
+
+    private Map<String, Object> exchangeCodeForToken(String tokenEndpoint, String publicUrl, Map<String, String> params) throws Exception {
         Exchange e = auth.applyAuth(new Request.Builder()
                                 .post(tokenEndpoint)
                                 .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                                 .header(ACCEPT, APPLICATION_JSON)
                                 .header(USER_AGENT, USERAGENT),
-                        "code=" + code
-                        + "&redirect_uri=" + publicUrl
-                        + callbackPath + "&grant_type=authorization_code")
+                        "code=" + getCode(params)
+                                + "&redirect_uri=" + publicUrl
+                                + callbackPath + "&grant_type=authorization_code")
                 .buildExchange();
 
         logHelper.handleRequest(e);
-
         Response response = auth.doRequest(e);
-
         logHelper.handleResponse(e);
 
         if (response.getStatusCode() != 200) {
@@ -196,16 +196,39 @@ public class OAuth2CallbackRequestHandler {
         });
     }
 
+    private static @NotNull String getCode(Map<String, String> params) throws OAuth2Exception {
+        String code = params.get("code");
+        if(code != null)
+            return code;
+
+        String error = params.get("error");
+
+        if(error == null)
+            throw new RuntimeException("No code received.");
+
+        ProblemDetails pd = ProblemDetails.security(false)
+                .statusCode(500)
+                .addSubType("oauth2-error-from-authentication-server")
+                .title("OAuth2 Error from Authentication Server");
+        pd.detail(params.get("error_description"));
+        pd.extension("error", error);
+        throw new OAuth2Exception(error, params.get("error_description"), pd.build());
+    }
+
     private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws JsonProcessingException {
         if (originalRequest.getRequest().getMethod().equals("GET")) {
             exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
         } else {
-            String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
-
-            session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
-
-            String delimiter = originalRequest.getOriginalRequestUri().contains("?") ? "&" : "?";
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
+            session.put(OAuthUtils.oa2redictKeyNameInSession(
+                            new BigInteger(130, new SecureRandom()).toString(32)),
+                    new ObjectMapper().writeValueAsString(originalRequest)
+            );
+            exc.setResponse(Response.redirect(
+                    originalRequest.getOriginalRequestUri()
+                            + (originalRequest.getOriginalRequestUri().contains("?") ? "&" : "?")
+                            + OA2REDIRECT + "="
+                            + new BigInteger(130, new SecureRandom()).toString(32), false).build()
+            );
         }
     }
 }
