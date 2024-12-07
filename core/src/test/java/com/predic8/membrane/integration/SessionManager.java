@@ -100,6 +100,7 @@ public class SessionManager {
         assertEquals(rememberThis,rememberThisFromServer);
 
         httpRouter.stop();
+        httpRouter.shutdown();
     }
 
     @ParameterizedTest(name = "{0}")
