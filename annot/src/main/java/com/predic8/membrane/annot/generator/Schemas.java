@@ -13,27 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.model.*;
+import com.predic8.membrane.annot.model.doc.*;
+import com.predic8.membrane.annot.model.doc.Doc.*;
 
-import javax.annotation.processing.FilerException;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
-
-import com.predic8.membrane.annot.ProcessingException;
-import com.predic8.membrane.annot.model.AbstractJavadocedInfo;
-import com.predic8.membrane.annot.model.AttributeInfo;
-import com.predic8.membrane.annot.model.ChildElementInfo;
-import com.predic8.membrane.annot.model.ElementInfo;
-import com.predic8.membrane.annot.model.MainInfo;
-import com.predic8.membrane.annot.model.Model;
-import com.predic8.membrane.annot.model.doc.Doc;
-import com.predic8.membrane.annot.model.doc.Doc.Entry;
+import javax.annotation.processing.*;
+import javax.lang.model.element.*;
+import javax.tools.*;
+import java.io.*;
+import java.util.*;
 
 public class Schemas {
 
@@ -147,6 +136,12 @@ public class Schemas {
 				w.append("<xsd:any namespace=\"##other\" processContents=\"strict\" />\r\n");
 			w.append("</xsd:choice>\r\n");
 		}
+
+		// For mixed content like XML in template interceptor: e.g. <template>  <foo>123</foo></template>
+		if (i.getAnnotation().mixed()) {
+			w.append("<xsd:any minOccurs=\"0\" maxOccurs=\"unbounded\" processContents=\"lax\"/>");
+		}
+
 		w.append("</xsd:sequence>\r\n");
 		for (AttributeInfo ai : i.getAis())
 			if (!ai.getXMLName().equals("id"))
