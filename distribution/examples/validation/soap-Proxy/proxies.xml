@@ -4,12 +4,16 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<router>
+	<router retryInit="true">
 	
-		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+		<soapProxy port="2000" wsdl="city-service.wsdl">
 			<validator />
 		</soapProxy>
-	
+
+		<api port="2001">
+			<sampleSoapService />
+		</api>
+
 	</router>
 	
 </spring:beans>

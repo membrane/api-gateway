@@ -38,6 +38,7 @@ import com.predic8.membrane.examples.tests.template.json.JsonTemplateTest;
 import com.predic8.membrane.examples.tests.template.text.TextTemplateTest;
 import com.predic8.membrane.examples.tests.template.xml.XMLTemplateTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
+import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
@@ -68,6 +69,7 @@ import org.junit.platform.suite.api.Suite;
         JSONSchemaValidationTest.class,
         XMLValidationTest.class,
         SampleSoapServiceTest.class,
+        SOAPProxyValidationTest.class,
 
         // Logging
         AccessLogTest.class,
