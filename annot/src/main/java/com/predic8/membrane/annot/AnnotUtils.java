@@ -71,13 +71,11 @@ public class AnnotUtils {
     }
 
     private static String elementToString(Node n) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<").append(n.getNodeName());
-        sb.append(attrToString(n));
-        sb.append(">");
-        sb.append(getContentAsString(n));
-        sb.append("</").append(n.getNodeName()).append(">");
-        return sb.toString();
+        return "<" + n.getNodeName() +
+               attrToString(n) +
+               ">" +
+               getContentAsString(n) +
+               "</" + n.getNodeName() + ">";
     }
 
     private static String attrToString(Node n) {

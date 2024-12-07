@@ -33,8 +33,7 @@ public class Parsers {
 	public void writeParserDefinitior(Model m) throws IOException {
 
 		for (MainInfo main : m.getMains()) {
-			List<Element> sources = new ArrayList<>();
-			sources.addAll(main.getInterceptorElements());
+            List<Element> sources = new ArrayList<>(main.getInterceptorElements());
 			sources.add(main.getElement());
 
 			try {
@@ -179,8 +178,7 @@ public class Parsers {
                             }
 
                         bw.write(
-                                "	}\r\n" +
-                                        "");
+                                "	}\r\n");
 
                         bw.write(
                                 """
@@ -203,8 +201,7 @@ public class Parsers {
                                 "}\r\n");
 
                         bw.write(
-                                "}\r\n" +
-                                        "");
+                                "}\r\n");
                     }
 				} catch (FilerException e) {
 					if (e.getMessage().contains("Source file already created"))
