@@ -188,8 +188,9 @@ public class AcmeClient {
     public String retrieveNewNonce() throws Exception {
         Exchange e = hc.call(createHeadRequest());
         handleError(e);
+        String replayNonce = getReplayNonce(e);
         e.getResponse().getBodyAsStringDecoded(); // Do not delete! Probably to read the content of the body in order to work with keep alive
-        return getReplayNonce(e);
+        return replayNonce;
     }
 
     private Exchange createHeadRequest() throws URISyntaxException {
