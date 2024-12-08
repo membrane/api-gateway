@@ -100,7 +100,7 @@ public class AcmeClient {
     private final String algorithm = AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256;
     private final Duration validity;
     private AcmeSynchronizedStorageEngine asse;
-    private AcmeValidation acmeValidation;
+    private final AcmeValidation acmeValidation;
 
     public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory) {
         directoryUrl = acme.getDirectoryUrl();
@@ -197,7 +197,7 @@ public class AcmeClient {
         return new Request.Builder().method("HEAD").url(new URIFactory(), newNonceUrl).header(USER_AGENT, VERSION).buildExchange();
     }
 
-    public AcmeKeyPair generateCertificateKey(String[] hosts) {
+    public AcmeKeyPair generateCertificateKey() {
         try {
             return getAcmeKeyPair(getKeyPairGenerator().generateKeyPair());
         } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
@@ -525,15 +525,18 @@ public class AcmeClient {
         return om.readValue(response.getBodyAsStreamDecoded(), Authorization.class);
     }
 
-    public Challenge readyForChallenge(String accountUrl, String challengeUrl) throws Exception {
+    /**
+     * Maybe just a test if the JSON can be parsed?
+     */
+    public void readyForChallenge(String accountUrl, String challengeUrl) throws Exception {
         Exchange e = withNonce(nonce -> doJWSRequest(challengeUrl, nonce, jws -> {
             jws.setPayload("{}");
             jws.setKeyIdHeaderValue(accountUrl);
         }));
-        return parseChallenge(e.getResponse());
+        parseChallenge(e.getResponse());
     }
 
-    public String downloadCertificate(String accountUrl, String[] hosts, String certificateUrl) throws Exception {
+    public String downloadCertificate(String accountUrl, String certificateUrl) throws Exception {
         Exchange e = withNonce(nonce -> doJWSRequest(certificateUrl, nonce, jws -> {
             jws.setPayload("");
             jws.setKeyIdHeaderValue(accountUrl);

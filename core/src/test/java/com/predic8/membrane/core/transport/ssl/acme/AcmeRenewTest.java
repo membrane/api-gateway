@@ -30,6 +30,8 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.security.*;
 
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeRenewTest {
@@ -71,9 +73,9 @@ public class AcmeRenewTest {
         sp1.setHost("localhost example.com");
         sp1.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                exc.setResponse(Response.ok().status(234, "Successful test.").build());
-                return Outcome.RETURN;
+            public Outcome handleRequest(Exchange exc) {
+                exc.setResponse(ok().status(234, "Successful test.").build());
+                return RETURN;
             }
         });
         sp1.setSslInboundParser(sslParser);

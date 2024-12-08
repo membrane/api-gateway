@@ -98,7 +98,7 @@ public abstract class PEMSupport {
                     throw new IOException(e);
                 }
             }
-            if (res.size() == 0)
+            if (res.isEmpty())
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
             return res;
         }
