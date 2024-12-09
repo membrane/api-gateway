@@ -1,8 +1,7 @@
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cit="https://predic8.de/cities">
-    <soapenv:Header/>
-    <soapenv:Body>
+<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cit="https://predic8.de/cities">
+    <s11:Body>
         <cit:getCity>
             <name>Bonn</name>
         </cit:getCity>
-    </soapenv:Body>
-</soapenv:Envelope>
+    </s11:Body>
+</s11:Envelope>

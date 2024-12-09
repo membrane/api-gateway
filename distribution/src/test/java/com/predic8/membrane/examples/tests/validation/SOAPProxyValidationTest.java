@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -15,9 +15,18 @@
 package com.predic8.membrane.examples.tests.validation;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 
+import java.io.IOException;
+
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP;
 import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.config;
+import static io.restassured.RestAssured.given;
+import static io.restassured.config.EncoderConfig.encoderConfig;
 import static java.io.File.*;
 
 public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
@@ -28,11 +37,24 @@ public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 	}
 
 	@Test
-	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			String url = "http://localhost:2000/";
-			postAndAssert(200, url, CONTENT_TYPE_SOAP_HEADER, readFile("city-soap.xml"));
-			postAndAssert(400, url, CONTENT_TYPE_SOAP_HEADER, readFile("invalid-city-soap.xml"));
-		}
+	public void testValidCitySoapRequest() throws IOException {
+		given().contentType(APPLICATION_SOAP)
+				.body(readFile("city-soap.xml"))
+				.when()
+				.post("http://localhost:2000/")
+				.then()
+				.statusCode(200)
+				.extract().asString();
+	}
+
+	@Test
+	public void testInvalidCitySoapRequest() throws IOException {
+		given().contentType(APPLICATION_SOAP)
+				.body(readFile("invalid-city-soap.xml"))
+				.when()
+				.post("http://localhost:2000/")
+				.then()
+				.statusCode(400)
+				.extract().asString();
 	}
 }
