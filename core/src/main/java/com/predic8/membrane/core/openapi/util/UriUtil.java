@@ -46,21 +46,6 @@ public class UriUtil {
         return path;
     }
 
-    // TODO migrate to core
-    public static Map<String, String> parseQueryString(String url) {
-
-        int idxQM = url.indexOf('?');
-        if (idxQM == -1)
-            return new HashMap<>();
-
-        String qs = url.substring(idxQM + 1);
-
-        if (qs.length() == 0)
-            return new HashMap<>();
-
-        return splitQueryString(qs);
-    }
-
     private static Map<String, String> splitQueryString(String qs) {
         Map<String, String> qparams = new HashMap<>();
         String[] pairs = qs.split("&");
