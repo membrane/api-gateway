@@ -16,9 +16,12 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.cli.CliCommandTest;
 import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
+import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
+import com.predic8.membrane.core.exceptions.ProblemDetailsTest;
+import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
+import com.predic8.membrane.core.exchangestore.AbstractExchangeStoreTest;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
 import com.predic8.membrane.core.graphql.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.cookie.*;
@@ -135,6 +138,7 @@ import org.junit.platform.suite.api.*;
 		AbstractExchangeStoreTest.class,
 		JsonProtectionInterceptorTest.class,
 		GraphQLProtectionInterceptorTest.class,
+		GraphQLoverHttpValidatorTest.class,
 		BeautifierInterceptorTest.class,
 		ExchangeEvaluationContextTest.class,
 		PaddingHeaderInterceptorTest.class,
