@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.*;
 
 public class AcmeSSLContext extends SSLContext {
     private static final Logger log = LoggerFactory.getLogger(AcmeSSLContext.class);
-    public static final int UTF_8_FULL_STOP = 46;
+    public static final int TLS_CERTIFICATE_UNKNOWN = 46;
 
     private final SSLParser parser;
     private final AcmeClient client;
@@ -80,7 +80,7 @@ public class AcmeSSLContext extends SSLContext {
     private boolean hostMatches(String host, String certificateHost) {
         if (host.equals(certificateHost))
             return true;
-        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.length() >= certificateHost.length() && host.codePointAt(host.length() - certificateHost.length() + 1) == UTF_8_FULL_STOP && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
+        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.length() >= certificateHost.length() && host.codePointAt(host.length() - certificateHost.length() + 1) == TLS_CERTIFICATE_UNKNOWN && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
             return true;
         return false;
     }
@@ -163,7 +163,7 @@ public class AcmeSSLContext extends SSLContext {
     private void check(Socket socket) throws IOException {
         if (getSocketFactory() == null) {
             byte[] certificate_unknown = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-                    2 /* fatal */, UTF_8_FULL_STOP /* certificate_unknown */ };
+                    2 /* fatal */, TLS_CERTIFICATE_UNKNOWN /* certificate_unknown */ };
 
             try (socket) {
                 socket.getOutputStream().write(certificate_unknown);
