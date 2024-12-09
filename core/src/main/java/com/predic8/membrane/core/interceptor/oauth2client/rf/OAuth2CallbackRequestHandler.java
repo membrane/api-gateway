@@ -25,7 +25,9 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
 import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.*;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.*;
 
 import java.math.*;
@@ -38,6 +40,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
+import static java.util.List.of;
 
 public class OAuth2CallbackRequestHandler {
     private static final Logger log = LoggerFactory.getLogger(OAuth2CallbackRequestHandler.class);
@@ -196,16 +199,20 @@ public class OAuth2CallbackRequestHandler {
         });
     }
 
-    private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws JsonProcessingException {
-        if (originalRequest.getRequest().getMethod().equals("GET")) {
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
-        } else {
-            String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
+    private static void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest, Session session) throws Exception {
+        try (HttpClient hc = new HttpClient()) {
+            Exchange ogExc = (Exchange) originalRequest.toAbstractExchange();
+            //exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(), false).build());
+            if (originalRequest.getRequest().getMethod().equals("POST")) {
+                String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
+                session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
+                String delimiter = ogExc.getOriginalRequestUri().contains("?") ? "&" : "?";
 
-            session.put(OAuthUtils.oa2redictKeyNameInSession(oa2redirect), new ObjectMapper().writeValueAsString(originalRequest));
-
-            String delimiter = originalRequest.getOriginalRequestUri().contains("?") ? "&" : "?";
-            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
+                String ogDest = ogExc.getDestinations().get(0);
+                ogExc.setDestinations(new ArrayList<>(of(ogDest + delimiter + OA2REDIRECT + "=" + oa2redirect)));
+            }
+            hc.call(ogExc);
+            exc.setResponse(ogExc.getResponse());
         }
     }
 }

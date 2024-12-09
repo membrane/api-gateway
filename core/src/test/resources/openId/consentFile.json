@@ -1,0 +1,15 @@
+{
+   "product_name":"membrane",
+   "logo_url":"https://www.predic8.de/logo6.png",
+   "scopes":{
+      "openid":"OpenID standard information",
+      "profile":"Information about who you are"
+   },
+   "claims":{
+      "aud":"Aud",
+      "email":"Email",
+      "iss":"Iss",
+      "sub":"Sub",
+      "username":"Username"
+   }
+}
