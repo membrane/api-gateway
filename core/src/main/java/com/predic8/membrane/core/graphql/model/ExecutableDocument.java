@@ -14,17 +14,13 @@
 
 package com.predic8.membrane.core.graphql.model;
 
-import com.predic8.membrane.core.graphql.ParsingException;
-import com.predic8.membrane.core.graphql.Tokenizer;
+import com.predic8.membrane.core.graphql.*;
+import org.jetbrains.annotations.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.graphql.Tokenizer.Type.NAME;
+import static com.predic8.membrane.core.graphql.Tokenizer.Type.*;
 
 public class ExecutableDocument {
     List<ExecutableDefinition> executableDefinitions = new ArrayList<>();
@@ -34,6 +30,16 @@ public class ExecutableDocument {
 
     public ExecutableDocument(ExecutableDefinition... executableDefinitions) {
         this.executableDefinitions.addAll(Arrays.asList(executableDefinitions));
+    }
+
+    /**
+     * Searches for multiple OperationDefinitions with the same name. Is needed by the validator
+     * @param name
+     * @return
+     */
+    public @NotNull List<OperationDefinition> getOperationDefinitionsByName(Object name) {
+        return getOperationDefinitions().stream()
+                .filter(od -> name.equals(od.getName())).toList();
     }
 
     public void parse(Tokenizer t) throws IOException, ParsingException {
@@ -57,7 +63,7 @@ public class ExecutableDocument {
                 }
             }
 
-            if (executableDefinitions.size() == 0 && !shortHandQuery) {
+            if (executableDefinitions.isEmpty() && !shortHandQuery) {
                 OperationDefinition od = new OperationDefinition();
                 od.parse(t);
                 executableDefinitions.add(od);
@@ -70,15 +76,20 @@ public class ExecutableDocument {
         if (shortHandQuery && executableDefinitions.size() != 1)
             throw new ParsingException("The 'query' keyword may only be omitted, if there is exactly one query present"+
                     " in the ExecutableDocument.", t.position());
-        List<OperationDefinition> operations = executableDefinitions.stream()
-                .filter(ed -> ed instanceof OperationDefinition)
-                .map(ed -> (OperationDefinition)ed)
-                .toList();
+        List<OperationDefinition> operations = getOperationDefinitions();
+
         if (operations.size() > 1)
             for (OperationDefinition op : operations) {
                 if (op.getName() == null)
                     throw new ParsingException("Multiple queries must all be named.", t.position());
             }
+    }
+
+    public @NotNull List<OperationDefinition> getOperationDefinitions() {
+        return executableDefinitions.stream()
+                .filter(ed -> ed instanceof OperationDefinition)
+                .map(ed -> (OperationDefinition) ed)
+                .toList();
     }
 
     @Override

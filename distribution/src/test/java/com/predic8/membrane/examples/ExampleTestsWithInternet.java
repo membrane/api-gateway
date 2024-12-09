@@ -14,7 +14,10 @@
 
 package com.predic8.membrane.examples;
 
-import com.predic8.membrane.examples.config.*;
+import com.predic8.membrane.examples.config.GettingStartedTest;
+import com.predic8.membrane.examples.config.ProxiesXMLFullSampleTest;
+import com.predic8.membrane.examples.config.ProxiesXMLSoapTest;
+import com.predic8.membrane.examples.config.ProxiesXMLTest;
 import com.predic8.membrane.examples.env.HelpLinkExistenceTest;
 import com.predic8.membrane.examples.tests.*;
 import com.predic8.membrane.examples.tests.loadbalancing.Loadbalancing4XmlSessionTest;
