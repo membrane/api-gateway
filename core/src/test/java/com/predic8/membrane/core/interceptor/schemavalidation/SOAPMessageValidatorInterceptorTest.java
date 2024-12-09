@@ -58,7 +58,7 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidBLZMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));
 	}
 
 	@Test
@@ -68,7 +68,7 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
+		assertEquals(ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
 	}
 
 	@Test
@@ -78,23 +78,23 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleEMailElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageDoubleRequestElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail2.xml"));
 	}
 
 	@Test
 	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
 	@Disabled(value="This is a problem in the soa-model dependency.")
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
+		assertEquals(ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 
 	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {

@@ -13,32 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
-import com.predic8.membrane.core.transport.ssl.acme.AcmeKeyCert;
-import com.predic8.membrane.core.transport.ssl.acme.AcmeRenewal;
-import com.predic8.membrane.core.util.TimerManager;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.ssl.acme.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.*;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 import java.security.Key;
-import java.security.KeyPair;
 import java.security.KeyStore;
-import java.security.cert.*;
+import java.security.*;
+import java.security.cert.Certificate;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.*;
 
 public class AcmeSSLContext extends SSLContext {
     private static final Logger log = LoggerFactory.getLogger(AcmeSSLContext.class);
+    public static final int TLS_CERTIFICATE_UNKNOWN = 46;
 
     private final SSLParser parser;
     private final AcmeClient client;
@@ -53,7 +49,7 @@ public class AcmeSSLContext extends SSLContext {
     public AcmeSSLContext(SSLParser parser,
                           String[] hosts,
                           @Nullable HttpClientFactory httpClientFactory,
-                          @Nullable TimerManager timerManager) throws JoseException, IOException {
+                          @Nullable TimerManager timerManager) {
         this.parser = parser;
         this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
         client = new AcmeClient(parser.getAcme(), httpClientFactory);
@@ -84,7 +80,7 @@ public class AcmeSSLContext extends SSLContext {
     private boolean hostMatches(String host, String certificateHost) {
         if (host.equals(certificateHost))
             return true;
-        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.length() >= certificateHost.length() && host.codePointAt(host.length() - certificateHost.length() + 1) == 46 && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
+        if (certificateHost.startsWith("*.") && host.endsWith(certificateHost.substring(2)) && host.length() >= certificateHost.length() && host.codePointAt(host.length() - certificateHost.length() + 1) == TLS_CERTIFICATE_UNKNOWN && isHostname(host.substring(0, host.length() - certificateHost.length() + 1)))
             return true;
         return false;
     }
@@ -167,7 +163,7 @@ public class AcmeSSLContext extends SSLContext {
     private void check(Socket socket) throws IOException {
         if (getSocketFactory() == null) {
             byte[] certificate_unknown = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-                    2 /* fatal */, 46 /* certificate_unknown */ };
+                    2 /* fatal */, TLS_CERTIFICATE_UNKNOWN /* certificate_unknown */ };
 
             try (socket) {
                 socket.getOutputStream().write(certificate_unknown);
@@ -220,18 +216,15 @@ public class AcmeSSLContext extends SSLContext {
             KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, "".toCharArray());
 
-            List<Certificate> certs = new ArrayList<>(PEMSupport.getInstance().parseCertificates(certsS));
-            if (certs.size() == 0)
-                throw new RuntimeException("At least one certificate is required.");
+            List<Certificate> certs = getCertificates(certsS);
 
             checkChainValidity(certs);
             validFrom = getValidFrom(certs);
             validUntil = getMinimumValidity(certs);
-            Object key = PEMSupport.getInstance().parseKey(keyS);
-            Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+            Key k = getKey(keyS);
             checkKeyMatchesCert(k, certs);
 
-            ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
+            ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[0]));
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             kmf.init(ks, "".toCharArray());
@@ -247,6 +240,18 @@ public class AcmeSSLContext extends SSLContext {
 
         this.keyCert = new AcmeKeyCert(keyS, certsS, validFrom, validUntil, sslc);
         log.info("ACME: installed key and certificate for " + constructHostsString());
+    }
+
+    private static Key getKey(String keyS) throws IOException {
+        Object key = PEMSupport.getInstance().parseKey(keyS);
+        return key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+    }
+
+    private static @NotNull List<Certificate> getCertificates(String certsS) throws IOException {
+        List<Certificate> certs = new ArrayList<>(PEMSupport.getInstance().parseCertificates(certsS));
+        if (certs.isEmpty())
+            throw new RuntimeException("At least one certificate is required.");
+        return certs;
     }
 
     public void schedule() {

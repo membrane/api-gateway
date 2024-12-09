@@ -20,7 +20,7 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.http.ParseException;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.test.WSDLUtil;
+import com.predic8.membrane.test.WSDLTestUtil;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -28,7 +28,7 @@ public class WSDLPublisherTest {
 
 	@Test
 	public void doit() throws ParseException, IOException, XMLStreamException {
-		assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
+		assertEquals(5, WSDLTestUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
 	}
 
 }
