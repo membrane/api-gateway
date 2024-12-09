@@ -14,22 +14,28 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.FileInputStream;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.multipart.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
 
-import javax.xml.stream.XMLInputFactory;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import java.io.*;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.util.SOAPUtil;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.Constants.SoapVersion.SOAP11;
+import static com.predic8.membrane.core.Constants.SoapVersion.SOAP12;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.util.SOAPUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class SOAPUtilTest {
+
+	private final static String TB_NS = "http://thomas-bayer.com/blz/";
+	private final static String MEMBRANE_NS = "http://membrane-api.io/";
+
 	private static XMLInputFactory xmlInputFactory;
 
 	@BeforeAll
@@ -40,17 +46,74 @@ public class SOAPUtilTest {
 	}
 
 	@Test
-	public void testFaultCheckSpecExample() throws Exception {
-		assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultFromSpec.xml")));
+	void faultCheckSpecExample() throws Exception {
+		assertTrue(SOAPUtil.analyseSOAPMessage(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultFromSpec.xml")).isFault());
 	}
 
 	@Test
-	public void testFaultCustom() throws Exception {
-		assertTrue(SOAPUtil.isFault(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultCustom.xml")));
+	void faultCustom() throws Exception {
+		assertTrue(SOAPUtil.analyseSOAPMessage(xmlInputFactory, new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultCustom.xml")).isFault());
+	}
+
+	@Test
+	void analyseXML() {
+		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(xmlInputFactory, new XOPReconstitutor(), getMessageFromString("<foo/>"));
+		assertFalse(result.isSOAP());
+		assertFalse(result.isFault());
+	}
+
+	@Test
+	void analyseSOAP11() {
+		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(xmlInputFactory, new XOPReconstitutor(), getMessageFromString("""
+				<s11:Envelope xmlns:s11= "http://schemas.xmlsoap.org/soap/envelope/" >
+				  <s11:Body>
+					<ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/">
+					  <ns1:blz>66762332</ns1:blz>
+					</ns1:getBank>
+				  </s11:Body>
+				</s11:Envelope>
+				"""));
+		assertTrue(result.isSOAP());
+		assertFalse(result.isFault());
+		assertEquals(SOAP11, result.version());
+		assertEquals(new QName(TB_NS,"getBank"), result.soapElement());
+	}
+
+	@Test
+	void analyseSOAP12() {
+		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(xmlInputFactory, new XOPReconstitutor(), getMessageFromString("""
+				<s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+				   <s12:Body>
+					  <Bar xmlns="http://membrane-api.io/"/>
+				   </s12:Body>
+				</s12:Envelope>
+				"""));
+		assertTrue(result.isSOAP());
+		assertFalse(result.isFault());
+		assertEquals(SOAP12, result.version());
+		assertEquals(new QName(MEMBRANE_NS,"Bar"), result.soapElement());
+	}
+
+	@Test
+	void analyseFault11() {
+		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(xmlInputFactory, new XOPReconstitutor(), getMessageFromString("""
+				<s11:Envelope xmlns:s11= "http://schemas.xmlsoap.org/soap/envelope/" >
+				  <s11:Body>
+					<s11:Fault/>
+				  </s11:Body>
+				</s11:Envelope>
+				"""));
+		assertTrue(result.isSOAP());
+		assertTrue(result.isFault());
+		assertEquals(SOAP11, result.version());
+	}
+
+	private Message getMessageFromString(String body) {
+		return ok().contentType(TEXT_XML).body(body).build();
 	}
 
 	private Message getMessage(String path) throws Exception {
-		return Response.ok().contentType("text/xml").body(new FileInputStream(path), true).build();
+		return ok().contentType(TEXT_XML).body(new FileInputStream(path), true).build();
 	}
 
 }
