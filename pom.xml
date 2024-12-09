@@ -77,7 +77,7 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>17</javac.source>
 		<javac.target>17</javac.target>
-		<jackson.version>2.18.0</jackson.version>
+		<jackson.version>2.18.1</jackson.version>
 		<spring.version>6.1.14</spring.version>
 		<slf4j.version>2.0.16</slf4j.version>
 		<log4j.version>2.24.1</log4j.version>
@@ -349,7 +349,7 @@
 			<dependency>
 				<groupId>io.swagger.parser.v3</groupId>
 				<artifactId>swagger-parser</artifactId>
-				<version>2.1.22</version>
+				<version>2.1.23</version>
 			</dependency>
 			<dependency>
 				<groupId>net.sf.saxon</groupId>
@@ -573,7 +573,7 @@
 				<plugin>
 					<groupId>org.cyclonedx</groupId>
 					<artifactId>cyclonedx-maven-plugin</artifactId>
-					<version>2.7.9</version>
+					<version>2.9.0</version>
 				</plugin>
 
 				<plugin>

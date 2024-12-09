@@ -18,7 +18,6 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
@@ -42,34 +41,34 @@ public class ObjectValidator implements IJSONSchemaValidator {
 
     @SuppressWarnings("rawtypes")
     private Schema schema;
+    private JsonNode node;
 
-    final private OpenAPI api;
+    private final OpenAPI api;
 
     @SuppressWarnings("rawtypes")
     public ObjectValidator(OpenAPI api, Schema schema) {
         this.api = api;
         this.schema = schema;
-        if (schema.get$ref() != null) {
-            this.schema = getSchemaFromRef();
+    }
+
+    public String canValidate(Object obj) {
+        if (obj instanceof JsonNode j) {
+            node = j;
+        } else if (obj instanceof InputStream) {
+            throw new RuntimeException("InputStream should not happen!");
+        } else {
+            log.warn("This should not happen. Please check.");
+            throw new RuntimeException("Value cannot be read as object.");
         }
+
+        return (node instanceof ObjectNode ? OBJECT : null);
     }
 
     @Override
     public ValidationErrors validate(ValidationContext ctx, Object obj) {
         ctx = ctx.schemaType("object");
 
-        JsonNode node;
-        if (obj instanceof JsonNode) {
-            node = (JsonNode) obj;
-        } else if (obj instanceof InputStream) {
-            throw new RuntimeException("InputStream should not happen!");
-        } else {
-            log.warn("This should not happen. Please check.");
-            return ValidationErrors.create(ctx.statusCode(400), "Value cannot be read as object.");
-        }
-
-        // Is it an object?
-        if (!(node instanceof ObjectNode)) {
+        if (canValidate(obj) == null) {
             return ValidationErrors.create(ctx.statusCode(400),format("Value %s is not an object.",node));
         }
 
@@ -267,27 +266,6 @@ public class ObjectValidator implements IJSONSchemaValidator {
             return null;
 
         return ValidationErrors.create(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is write only. But the response contained the value %s.", propertyName, node.get(propertyName)));
-    }
-
-    @SuppressWarnings("rawtypes")
-    private Schema getSchemaFromRef() {
-
-        // could be removed later. Only to debug.
-        if (schema.get$ref() == null)
-            return null;
-
-        ObjectHolder<Schema> oh = new ObjectHolder<>();
-        api.getComponents().getSchemas().forEach((schemaName, refSchema) -> {
-            if (schemaName.equals(getSchemaNameFromRef())) {
-                oh.setValue(refSchema);
-            }
-
-        });
-        return oh.getValue();
-    }
-
-    private String getSchemaNameFromRef() {
-        return Utils.getComponentLocalNameFromRef(schema.get$ref());
     }
 
     @SuppressWarnings("rawtypes")
