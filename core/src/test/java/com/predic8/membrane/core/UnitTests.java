@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.cli.CliCommandTest;
+import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exceptions.*;
@@ -152,7 +154,8 @@ import org.junit.platform.suite.api.*;
 		SetHeaderInterceptor.class,
 		SetPropertyInterceptor.class,
 		APIProxyKeyTest.class,
-		AdjustContentLengthTest.class
+		AdjustContentLengthTest.class,
+		CliCommandTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",
