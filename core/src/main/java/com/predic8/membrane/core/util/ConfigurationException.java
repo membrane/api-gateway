@@ -17,7 +17,7 @@
 package com.predic8.membrane.core.util;
 
 /**
- * Exception with text to display to user before terminating Membraen
+ * Exception with text to display to user before terminating Membrane
  */
 public class ConfigurationException extends RuntimeException {
 

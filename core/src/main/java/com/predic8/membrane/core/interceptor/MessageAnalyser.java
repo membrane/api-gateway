@@ -14,18 +14,16 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.multipart.*;
 
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
+import java.io.*;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import static com.predic8.membrane.core.Constants.*;
 
 @MCElement(name="analyser")
 public class MessageAnalyser extends AbstractInterceptor {
@@ -55,8 +53,8 @@ public class MessageAnalyser extends AbstractInterceptor {
 		public String bodyContentElementName;
 		public String bodyContentElementNS;
 
-		public String getSoapVersion() {
-			return Constants.SOAP11_NS.equals(rootElementNS)?Constants.SOAP11_VERION:Constants.SOAP12_NS;
+		public Constants.SoapVersion getSoapVersion() {
+			return SOAP11_NS.equals(rootElementNS) ? Constants.SoapVersion.SOAP11 : Constants.SoapVersion.SOAP12;
 		}
 
 		public boolean hasAnyData() {
@@ -64,7 +62,7 @@ public class MessageAnalyser extends AbstractInterceptor {
 		}
 
 		public boolean hasSoapData() {
-			return "Envelope".equals(rootElementName) && (Constants.SOAP11_NS.equals(rootElementNS) || Constants.SOAP12_NS.equals(rootElementNS));
+			return "Envelope".equals(rootElementName) && (SOAP11_NS.equals(rootElementNS) || Constants.SOAP12_NS.equals(rootElementNS));
 		}
 	}
 
@@ -192,7 +190,7 @@ public class MessageAnalyser extends AbstractInterceptor {
 		return reader.hasNext() &&
 				!( reader.isStartElement() &&
 						"Body".equals(reader.getName().getLocalPart()) &&
-						Constants.SOAP11_NS.equals(reader.getNamespaceURI())
+						SOAP11_NS.equals(reader.getNamespaceURI())
 						);
 	}
 }
