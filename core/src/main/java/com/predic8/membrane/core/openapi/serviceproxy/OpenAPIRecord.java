@@ -36,6 +36,10 @@ public class OpenAPIRecord {
      * Specification parsed with JSON/YAML parser
      */
     JsonNode node;
+
+    /**
+     * Config element e.g. from the proxies.xml
+     */
     OpenAPISpec spec;
 
     /**
