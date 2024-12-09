@@ -24,8 +24,8 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -134,7 +134,7 @@ public class ValidatorInterceptorTest {
 	}
 
 	private byte[] getContent(String fileName) throws IOException {
-		return IOUtils.toByteArray(this.getClass().getResourceAsStream(fileName));
+		return IOUtils.toByteArray(requireNonNull(this.getClass().getResourceAsStream(fileName)));
 	}
 
 	private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) throws Exception {
