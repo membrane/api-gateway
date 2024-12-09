@@ -18,12 +18,11 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 
 import com.predic8.membrane.core.Router;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled // Is completely rewritten in master
 public class AdjustContentLengthIntegrationTest {
 
 	private static Router router;
@@ -58,7 +57,7 @@ public class AdjustContentLengthIntegrationTest {
 
 	private GetMethod getDirektRequest() {
 		GetMethod get = new GetMethod(
-				"http://thomas-bayer.com/samples/sqlrest/CUSTOMER/7/");
+				"http://localhost:3010/samples/sqlrest/CUSTOMER/7/");
 		return get;
 	}
 

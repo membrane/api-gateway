@@ -29,8 +29,8 @@ public class OpenApiRewriteIntegrationTest {
 
     private static final Router r = new HttpRouter();
 
-    @BeforeEach
-    public void setUp() throws Exception {
+    @BeforeAll
+    public static void setUp() throws Exception {
         r.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
         r.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());
         r.init();
@@ -43,7 +43,7 @@ public class OpenApiRewriteIntegrationTest {
 
     @NotNull
     private static Rule getTargetProxy() throws Exception {
-        Rule targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
+        Rule targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3063), null, 8000);
         targetProxy.getInterceptors().add(new ReturnInterceptor());
         targetProxy.init(r);
         return targetProxy;

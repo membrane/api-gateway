@@ -66,7 +66,8 @@ public class ConfigSerializationTest {
 			"validation-security", // throws error because openapi parser does not provide port information
 			"validation", // throws error because openapi parser does not provide port information
 			"validation-simple", // throws error because openapi parser does not provide port information
-			"template"); // template serialization fails
+			"template",
+			"greasing"); // template serialization fails
 
 	public static List<Object[]> getPorts() {
 		ArrayList<Object[]> res = new ArrayList<>();

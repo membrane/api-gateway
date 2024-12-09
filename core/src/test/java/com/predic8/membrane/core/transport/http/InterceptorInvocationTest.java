@@ -14,27 +14,21 @@
 package com.predic8.membrane.core.transport.http;
 
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.MockInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.rules.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
 
 public class InterceptorInvocationTest {
 
@@ -79,10 +73,11 @@ public class InterceptorInvocationTest {
 	}
 
 	private static ServiceProxy createServiceProxy() {
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 4000), "thomas-bayer.com", 80);
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", METHOD_POST, "*", 4000), "dummy", 80);
 		for (String label : ruleInterceptorNames) {
 			rule.getInterceptors().add(new MockInterceptor(label));
 		}
+		rule.getInterceptors().add(new ReturnInterceptor());
 		return rule;
 	}
 

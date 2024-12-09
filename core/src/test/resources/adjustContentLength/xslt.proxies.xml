@@ -7,7 +7,7 @@
 		<serviceProxy port="3010">
 			<response>
 				<transform xslt="classpath:/adjustContentLength/customer2person.xsl" />
-			</response>		
+			</response>
 			<target host="www.thomas-bayer.com" port="80" />
 		</serviceProxy>
 	</router>

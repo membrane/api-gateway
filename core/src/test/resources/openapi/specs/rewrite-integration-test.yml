@@ -3,7 +3,7 @@ info:
   title: Rewriting Test
   version: '1.0'
 servers:
-  - url: http://localhost:3000/api/v2
+  - url: http://localhost:3063/api/v2
     description: URL Path Rewriting Test
 paths:
   /foo:

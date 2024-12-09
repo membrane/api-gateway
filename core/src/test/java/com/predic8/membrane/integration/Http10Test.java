@@ -94,7 +94,6 @@ public class Http10Test {
 		PostMethod post = new PostMethod("http://localhost:3000/");
 		InputStream stream = this.getClass().getResourceAsStream("/get-city.xml");
 
-
         assert stream != null;
         InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity);

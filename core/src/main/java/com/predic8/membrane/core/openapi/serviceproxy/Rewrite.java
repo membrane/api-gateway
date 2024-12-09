@@ -152,7 +152,7 @@ public class Rewrite {
     }
 
 
-    public int getPort() {
+    public Integer getPort() {
         return port;
     }
 
