@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -38,7 +39,7 @@ public class ValidatorInterceptorTest {
 
 	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.wsdl";
 
-	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService-bom.wsdl";
+	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService-bom.xml";
 
 	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
 
@@ -53,7 +54,7 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestValidBLZMessage() throws Exception {
-		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBank.xml"));
+		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBank.xml"));
 	}
 
 	@Test
@@ -63,12 +64,12 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestValidArticleMessage() throws Exception {
-		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest.xml"));
+		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest.xml"));
 	}
 
 	@Test
 	public void testHandleRequestValidArticleMessageBOM() throws Exception {
-		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequest-bom.xml"));
+		assertEquals(CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequest-bom.xml"));
 	}
 
 	@Test
@@ -90,19 +91,19 @@ public class ValidatorInterceptorTest {
 	public void testHandleResponseValidArticleMessage() throws Exception {
 		exc.setRequest(requestTB);
 		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml")).build());
-		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
+		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 
 	@Test
 	public void testHandleResponseValidArticleMessageGzipped() throws Exception {
 		exc.setRequest(requestTB);
 		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml.gz")).header("Content-Encoding", "gzip").build());
-		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
+		assertEquals(CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 
 	@Test
 	public void testHandleRequestValidEmailMessage() throws Exception {
-		assertEquals(Outcome.CONTINUE, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/validEmail.xml"));
+		assertEquals(CONTINUE, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/validEmail.xml"));
 	}
 
 	@Test
@@ -122,7 +123,7 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testSchemaValidation() throws Exception {
-		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/order.xml"));
+		assertEquals(CONTINUE, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/order.xml"));
 		assertEquals(ABORT, getOutcome(requestTB, createSchemaValidatorInterceptor("src/test/resources/validation/order.xsd"), "/validation/invalid-order.xml"));
 	}
 
