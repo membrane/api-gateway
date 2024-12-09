@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -35,14 +36,13 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	private static Exchange exc;
 
-	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.wsdl";
 
 	public static final String BLZ_SERVICE_WSDL = "src/test/resources/validation/BLZService.xml";
 
 	public static final String E_MAIL_SERVICE_WSDL = "src/test/resources/validation/XWebEmailValidation.wsdl.xml";
 
 	public static final String INLINE_ANYTYPE_WSDL = "src/test/resources/validation/inline-anytype.wsdl";
-
 
 	@BeforeAll
 	public static void setUp() throws Exception {
@@ -104,7 +104,7 @@ public class SOAPMessageValidatorInterceptorTest {
 	}
 
 	private String getContent(String fileName) {
-		return TextUtil.formatXML(new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
+		return TextUtil.formatXML(new InputStreamReader(requireNonNull(this.getClass().getResourceAsStream(fileName))));
 	}
 
 	private ValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {
@@ -114,5 +114,4 @@ public class SOAPMessageValidatorInterceptorTest {
 		interceptor.init();
 		return interceptor;
 	}
-
 }
