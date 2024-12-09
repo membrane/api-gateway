@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="https://predic8.de/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://predic8.de/" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://predic8.de/">
+            <xsd:element name="a" type="xsd:string"/>
+            <xsd:element name="aResponse" type="xsd:string"/>
+            <xsd:element name="b" type="xsd:integer"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="a">
+        <wsdl:part name="parameters" element="tns:a"/>
+    </wsdl:message>
+    <wsdl:message name="aResponse">
+        <wsdl:part name="parameters" element="tns:aResponse"/>
+    </wsdl:message>
+    <wsdl:message name="b">
+        <wsdl:part name="parameters" element="tns:b"/>
+    </wsdl:message>
+    <wsdl:portType name="APortType">
+        <wsdl:operation name="a">
+            <wsdl:input message="tns:a"/>
+            <wsdl:output message="tns:aResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:portType name="BPortType">
+        <wsdl:operation name="b">
+            <wsdl:input message="tns:b"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="ABinding" type="tns:APortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="a">
+            <s:operation soapAction="https://predic8.de/"/>
+            <wsdl:input>
+                <s:body use="literal" namespace="https://predic8.de/"/>
+            </wsdl:input>
+            <wsdl:output>
+                <s:body use="literal" namespace="https://predic8.de/"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:binding name="BBinding" type="tns:BPortType">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="b">
+            <s:operation soapAction="https://predic8.de/"/>
+            <wsdl:input>
+                <s:body use="literal" namespace="https://predic8.de/"/>
+            </wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="ServiceA">
+        <wsdl:port name="PortA" binding="tns:ABinding">
+            <s:address location="http://localhost:2001/services/a"/>
+        </wsdl:port>
+    </wsdl:service>
+    <wsdl:service name="ServiceB">
+        <wsdl:port name="PortB" binding="tns:BBinding">
+            <s:address location="http://localhost:2002/services/b"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

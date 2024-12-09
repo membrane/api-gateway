@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.cli.CliCommandTest;
+import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exceptions.*;
@@ -63,12 +65,14 @@ import com.predic8.membrane.core.transport.http2.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.transport.ssl.acme.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.ws.*;
 import com.predic8.membrane.core.ws.relocator.*;
 import com.predic8.membrane.interceptor.*;
 import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({HeaderTest.class, BodyTest.class, ByteUtilTest.class,
+		XMLUtilTest.class,
         HttpUtilTest.class,
 		RequestTest.class,
 		RequestBuilderTest.class,
@@ -76,7 +80,10 @@ import org.junit.platform.suite.api.*;
 		ResponseBuilderTest.class,
 		BasicAuthenticationInterceptorTest.class,
 		StaticUserDataProviderTest.class,
-        MagicTest.class, WSDLInterceptorTest.class,
+        MagicTest.class,
+		WSDLUtilTest.class,
+		WSDLValidatorTest.class,
+		WSDLInterceptorTest.class,
         AccessControlParserTest.class, HostnameTest.class, ParseTypeTest.class, IpRangeTest.class,
         DispatchingInterceptorTest.class,
         HostColonPortTest.class,
@@ -101,6 +108,8 @@ import org.junit.platform.suite.api.*;
         SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class,
         InternalInvocationTest.class, HeaderFilterInterceptorTest.class,
         SOAPUtilTest.class, SoapOperationExtractorTest.class,
+		SoapProxyInvocationTest.class, // @TODO Check Proper naming!
+		SOAPProxyTest.class,
         ContentTypeDetectorTest.class,
         MessageAnalyserTest.class, ExchangeTest.class,
         LimitedMemoryExchangeStoreTest.class,
@@ -147,7 +156,8 @@ import org.junit.platform.suite.api.*;
 		SetPropertyInterceptor.class,
 		APIProxyKeyTest.class,
 		AdjustContentLengthTest.class,
-		URIUtilTest.class
+		URIUtilTest.class,
+		CliCommandTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",
