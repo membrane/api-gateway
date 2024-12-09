@@ -6,10 +6,14 @@
 
 	<router>
 	
-		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+		<soapProxy port="2000" wsdl="city-service.wsdl">
 			<validator />
 		</soapProxy>
-	
+
+		<api port="2001">
+			<sampleSoapService />
+		</api>
+
 	</router>
 	
 </spring:beans>
