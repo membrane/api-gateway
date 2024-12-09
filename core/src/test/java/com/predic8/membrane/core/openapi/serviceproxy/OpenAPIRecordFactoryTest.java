@@ -107,7 +107,7 @@ class OpenAPIRecordFactoryTest {
 
     @Test
     void getUniqueIdNoCollision() {
-        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<String, OpenAPIRecord>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
+        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
     }
 
     @Test

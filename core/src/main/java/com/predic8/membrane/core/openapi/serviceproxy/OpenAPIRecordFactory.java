@@ -121,8 +121,8 @@ public class OpenAPIRecordFactory {
 
     /**
      * Gets an unique id for an API
-     * @param apiRecords
-     * @param rec Map with OpenAPIRecords to test for collisions
+     * @param apiRecords Map with OpenAPIRecords to test for collisions
+     * @param rec Record with an parsed OpenAPI
      * @return Guaranteed unique id within the provided apiRecords
      */
     String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
