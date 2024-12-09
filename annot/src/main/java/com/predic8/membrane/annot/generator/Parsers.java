@@ -13,24 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.FilerException;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
-import javax.tools.FileObject;
-
-import com.predic8.membrane.annot.AnnotUtils;
-import com.predic8.membrane.annot.model.AttributeInfo;
-import com.predic8.membrane.annot.model.ChildElementDeclarationInfo;
-import com.predic8.membrane.annot.model.ChildElementInfo;
-import com.predic8.membrane.annot.model.ElementInfo;
-import com.predic8.membrane.annot.model.MainInfo;
-import com.predic8.membrane.annot.model.Model;
+import javax.annotation.processing.*;
+import javax.lang.model.element.*;
+import javax.tools.*;
+import java.io.*;
+import java.util.*;
 
 public class Parsers {
 
@@ -43,8 +33,7 @@ public class Parsers {
 	public void writeParserDefinitior(Model m) throws IOException {
 
 		for (MainInfo main : m.getMains()) {
-			List<Element> sources = new ArrayList<>();
-			sources.addAll(main.getInterceptorElements());
+            List<Element> sources = new ArrayList<>(main.getInterceptorElements());
 			sources.add(main.getElement());
 
 			try {
@@ -189,8 +178,7 @@ public class Parsers {
                             }
 
                         bw.write(
-                                "	}\r\n" +
-                                        "");
+                                "	}\r\n");
 
                         bw.write(
                                 """
@@ -213,8 +201,7 @@ public class Parsers {
                                 "}\r\n");
 
                         bw.write(
-                                "}\r\n" +
-                                        "");
+                                "}\r\n");
                     }
 				} catch (FilerException e) {
 					if (e.getMessage().contains("Source file already created"))
