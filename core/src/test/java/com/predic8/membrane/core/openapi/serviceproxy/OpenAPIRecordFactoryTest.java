@@ -1,12 +1,16 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
+import io.swagger.parser.*;
+import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.util.TestUtils.*;
+import static com.predic8.membrane.core.util.FileUtil.*;
 import static io.swagger.v3.oas.models.SpecVersion.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -99,5 +103,21 @@ class OpenAPIRecordFactoryTest {
                 setLocation(fileName);
             }});
         }}).get(id);
+    }
+
+    @Test
+    void getUniqueIdNoCollision() {
+        assertEquals("customers-api-v1-0",  factory.getUniqueId(new HashMap<String, OpenAPIRecord>(), new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
+    }
+
+    @Test
+    void getUniqueIdCollision() {
+        HashMap<String, OpenAPIRecord> recs = new HashMap<>();
+        recs.put("customers-api-v1-0",new OpenAPIRecord());
+        assertEquals("customers-api-v1-0-0",  factory.getUniqueId(recs, new OpenAPIRecord(getApi("/openapi/specs/customers.yml"),null,null)));
+    }
+
+    private OpenAPI getApi(String pfad) {
+        return new OpenAPIParser().readContents(readInputStream(getResourceAsStream(this,pfad)), null, null).getOpenAPI();
     }
 }

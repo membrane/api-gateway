@@ -119,7 +119,12 @@ public class OpenAPIRecordFactory {
         }
     }
 
-    // @TODO Test
+    /**
+     * Gets an unique id for an API
+     * @param apiRecords
+     * @param rec Map with OpenAPIRecords to test for collisions
+     * @return Guaranteed unique id within the provided apiRecords
+     */
     String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
         String id = getIdFromAPI(rec.api);
         if (apiRecords.get(id) != null) {
