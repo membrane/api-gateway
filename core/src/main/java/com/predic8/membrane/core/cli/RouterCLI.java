@@ -12,33 +12,45 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.cli;
 
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.URIFactory;
 import org.apache.commons.cli.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
+import java.util.List;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.util.OSUtil.*;
+import static java.lang.Integer.parseInt;
 
 public class RouterCLI {
 
     private static final Logger log = LoggerFactory.getLogger(RouterCLI.class);
 
     public static void main(String[] args) {
+        MembraneCommandLine commandLine = getMembraneCommandLine(args);
+        if (commandLine.getCommand().isOptionSet("h")) {
+            commandLine.getCommand().printHelp();
+            System.exit(0);
+        }
 
         Router router = null;
-        MembraneCommandLine commandLine = getMembraneCommandLine(args);
         try {
-            try {
-                router = Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
-            } catch (XmlBeanDefinitionStoreException e) {
-                handleXmlBeanDefinitionStoreException(e);
+            if (commandLine.getCommand().getName().equals("oas")) {
+                router = initRouterByOpenApiSpec(commandLine);
+            } else {
+                router = initRouterByConfig(commandLine);
             }
         } catch (InvalidConfigurationException e) {
             log.error("Fatal error: " + e.getMessage());
@@ -49,7 +61,8 @@ public class RouterCLI {
             System.exit(1);
         }
 
-        if (commandLine.isDryRun()) {
+        // Dry run
+        if (commandLine.noCommand() && commandLine.getCommand().isOptionSet("t")) {
             System.exit(0);
         }
 
@@ -61,28 +74,59 @@ public class RouterCLI {
         }
     }
 
+    private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
+        Router router = new HttpRouter();
+        router.setUriFactory(new URIFactory());
+
+        OpenAPISpec spec = new OpenAPISpec();
+
+        spec.location = commandLine.getCommand().getOptionValue("l");
+
+        if (commandLine.getCommand().isOptionSet("v"))
+            spec.setValidateRequests(YES);
+        if (commandLine.getCommand().isOptionSet("V"))
+            spec.setValidateResponses(YES);
+
+        APIProxy api = new APIProxy();
+        api.setPort(commandLine.getCommand().isOptionSet("p") ?
+                parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
+        api.setSpecs(List.of(spec));
+        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+
+        router.init();
+        return router;
+    }
+
+    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws InvalidConfigurationException, IOException {
+        try {
+            return Router.init(getRulesFile(commandLine), RouterCLI.class.getClassLoader());
+        } catch (XmlBeanDefinitionStoreException e) {
+            handleXmlBeanDefinitionStoreException(e);
+        }
+        throw new RuntimeException("Router could not be initialized");
+    }
+
     private static MembraneCommandLine getMembraneCommandLine(String[] args) {
         MembraneCommandLine cl = new MembraneCommandLine();
 
         try {
             cl.parse(args);
+        } catch (MissingRequiredOptionException e) {
+            e.getCommand().printHelp();
+            System.exit(1);
         } catch (ParseException e) {
             System.err.println("Error parsing commandline " + e.getMessage());
-            cl.printUsage();
+            cl.getRootNamespace().printHelp();
             System.exit(1);
         }
 
-        if (cl.needHelp()) {
-            cl.printUsage();
-            System.exit(0);
-        }
         return cl;
     }
 
-    private static String getRulesFile(MembraneCommandLine line) throws IOException {
+    private static String getRulesFile(MembraneCommandLine cl) throws IOException {
         ResolverMap rm = new ResolverMap();
-        if (line.hasConfiguration()) {
-            String filename = fixBackslashes(line.getConfiguration());
+        if (hasConfiguration(cl)) {
+            String filename = fixBackslashes(getConfiguration(cl));
             if (shouldResolveFile(filename)) {
                 // absolute
                 try(InputStream ignored = rm.resolve(filename)) {
@@ -95,6 +139,17 @@ public class RouterCLI {
             return getRulesFileFromRelativeSpec(rm, filename, "");
         }
         return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", getErrorNotice());
+    }
+
+    private static String getConfiguration(MembraneCommandLine cl) {
+        return cl.getCommand().isOptionSet("c") ?
+                cl.getCommand().getOptionValue("c") :
+                cl.getCommand().getOptionValue("t");
+    }
+
+    private static boolean hasConfiguration(MembraneCommandLine cl) {
+        return cl.getCommand().isOptionSet("c") ||
+                cl.getCommand().isOptionSet("t");
     }
 
     private static String getErrorNotice() {
@@ -113,7 +168,6 @@ public class RouterCLI {
     }
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
-
         String try1 = ResolverMap.combine(prefix(getUserDir()), relativeFile);
         try(InputStream ignored = rm.resolve(try1)) {
             return try1;

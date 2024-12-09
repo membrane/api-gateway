@@ -15,18 +15,16 @@ package com.predic8.membrane.core.util;
 
 import org.w3c.dom.*;
 
+import javax.xml.namespace.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
 
-import static javax.xml.transform.OutputKeys.INDENT;
-import static javax.xml.transform.OutputKeys.OMIT_XML_DECLARATION;
+import static javax.xml.transform.OutputKeys.*;
 
 public class XMLUtil {
 
-    // TODO 2. param boolean indent
-    // Write Test
     public static String xml2string(Document doc) throws TransformerException {
         TransformerFactory tfFactory = TransformerFactory.newInstance(); // Comment ThreadSafe? with URL
         Transformer tf = tfFactory.newTransformer();
@@ -39,4 +37,9 @@ public class XMLUtil {
         tf.transform(new DOMSource(doc), new StreamResult(writer));
         return writer.toString();
     }
+
+    public static QName groovyToJavaxQName(groovy.namespace.QName qName) {
+        return new QName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix());
+    }
+
 }

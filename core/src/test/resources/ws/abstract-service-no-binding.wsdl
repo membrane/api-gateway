@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:tns="https://predic8.de/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  targetNamespace="https://predic8.de/" name="cities">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://predic8.de/">
+            <xsd:element name="a" type="xsd:string"/>
+            <xsd:element name="aResponse" type="xsd:string"/>
+            <xsd:element name="b" type="xsd:integer"/>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="a">
+        <wsdl:part name="parameters" element="tns:a"/>
+    </wsdl:message>
+    <wsdl:message name="aResponse">
+        <wsdl:part name="parameters" element="tns:aResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="APortType">
+        <wsdl:operation name="a">
+            <wsdl:input message="tns:a"/>
+            <wsdl:output message="tns:aResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+</wsdl:definitions>

@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import javax.xml.stream.XMLStreamException;
 import java.io.StringWriter;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LoggerFactory.getLogger(RelocatingInterceptor.class.getName());
@@ -39,22 +41,22 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 		if (exc.getRule() instanceof ProxyRule) {
 			log.debug(name + " ProxyRule found: No relocating done!");
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		if (!wasGetRequest(exc)) {
 			log.debug(name + " HTTP method wasn't GET: No relocating done!");
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		if (!hasContent(exc)) {
 			log.debug(name + " No Content: No relocating done!");
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		if (!exc.getResponse().isXML()) {
 			log.debug(name + " Body contains no XML: No relocating done!");
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		}
 
 		try {
@@ -62,7 +64,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 		} catch (XMLStreamException e) {
 			throw new Exception("while rewriting " + exc.getRequestURI(), e);
 		}
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	abstract void rewrite(Exchange exc) throws Exception;

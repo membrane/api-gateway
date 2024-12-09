@@ -223,8 +223,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	public void shutdownAll() throws IOException{
-		for(String s : this.getBeanFactory().getBeanNamesForType(Router.class)){
-			((Router) this.getBeanFactory().getBean(s)).shutdown();
+		for(String s : getBeanFactory().getBeanNamesForType(Router.class)){
+			((Router) getBeanFactory().getBean(s)).shutdown();
 		}
 	}
 

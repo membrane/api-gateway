@@ -13,43 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport;
 
-import static com.predic8.membrane.test.AssertUtils.assertContains;
-import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.List;
-
-import org.apache.http.impl.client.HttpClientBuilder;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.ParseException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
-import com.predic8.membrane.core.util.HttpUtil;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.apache.http.*;
+import org.apache.http.client.*;
+import org.apache.http.client.methods.*;
+import org.apache.http.entity.*;
+import org.apache.http.impl.client.*;
+import org.apache.http.util.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
+
+import java.io.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
+import static com.predic8.membrane.core.util.SOAPUtil.*;
+import static com.predic8.membrane.test.AssertUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExceptionHandlingTest {
 
@@ -67,7 +55,6 @@ public class ExceptionHandlingTest {
 	}
 
 	HttpRouter router;
-	volatile long connectionHash = 0;
 
 	public void setUp(boolean printStackTrace) throws Exception {
 		router = new HttpRouter();
@@ -110,27 +97,25 @@ public class ExceptionHandlingTest {
 
 	private HttpUriRequest createRequest(boolean printStackTrace, ContentType contentType) throws UnsupportedEncodingException {
 		String url = "http://localhost:" + getPort(printStackTrace) + "/";
-		HttpUriRequest get = null;
+		HttpUriRequest get;
 		switch (contentType) {
 		case JSON:
 			get = new HttpGet(url);
-			get.addHeader(Header.CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8);
-			break;
+			get.addHeader(CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8);
+			return get;
 		case XML:
 			get = new HttpPost(url);
-			get.addHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
+			get.addHeader(CONTENT_TYPE, TEXT_XML_UTF8);
 			((HttpPost)get).setEntity(new StringEntity("<foo />"));
-			break;
+			return get;
 		case SOAP:
 			get = new HttpPost(url);
-			get.addHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-			((HttpPost)get).setEntity(new StringEntity(HttpUtil.getFaultSOAPBody("", "")));
-			break;
+			get.addHeader(CONTENT_TYPE, TEXT_XML_UTF8);
+			((HttpPost)get).setEntity(new StringEntity(getFaultSOAP11Body(Server,"dummy", "no detail")));
+			return get;
 		default:
-			get = new HttpGet(url);
-			break;
+			return new HttpGet(url);
 		}
-		return get;
 	}
 
 	private void checkResponseContentType(ContentType contentType, String response) {

@@ -13,15 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.predic8.membrane.core.exchange.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Arrays.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MockInterceptor extends AbstractInterceptor {
 
@@ -40,14 +39,14 @@ public class MockInterceptor extends AbstractInterceptor {
 	public MockInterceptor(String label, String[] failurePoints) {
 		this.label = label;
 		name = "MockInterceptor: "+label;
-		this.failurePoints = new HashSet<>(Arrays.asList(failurePoints));
+		this.failurePoints = new HashSet<>(asList(failurePoints));
 	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		reqLabels.add(label);
 		if (failurePoints.contains("request"))
-			return Outcome.ABORT;
+			return ABORT;
 		return super.handleRequest(exc);
 	}
 
@@ -55,7 +54,7 @@ public class MockInterceptor extends AbstractInterceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		respLabels.add(label);
 		if (failurePoints.contains("response"))
-			return Outcome.ABORT;
+			return ABORT;
 		return super.handleResponse(exc);
 	}
 
@@ -79,6 +78,6 @@ public class MockInterceptor extends AbstractInterceptor {
 	}
 
 	public static void assertContent(String[] requests, String[] responses, String[] aborts) {
-		assertContent(Arrays.asList(requests), Arrays.asList(responses), Arrays.asList(aborts));
+		assertContent(asList(requests), asList(responses), asList(aborts));
 	}
 }

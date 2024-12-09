@@ -69,6 +69,10 @@ public class XOPReconstitutor {
 	 * @return reassembled SOAP message or null if message is not SOAP or not multipart
 	 */
 	public Message getReconstitutedMessage(Message message) throws ParseException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
+
+		if(message == null)
+			return null;
+
 		ContentType contentType = message.getHeader().getContentTypeObject();
 		if (contentType == null || contentType.getPrimaryType() == null)
 			return null;

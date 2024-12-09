@@ -23,8 +23,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.membrane.core.util.URLUtil;
+import com.predic8.membrane.core.util.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -44,6 +43,7 @@ import static com.predic8.membrane.core.http.Header.SERVER;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Server;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name="testService")
@@ -125,7 +125,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 	private Response createResponse(Throwable e, boolean useSoap11) {
 		String title = "Internal Server Error";
 		String message = e.getMessage();
-		String body = useSoap11 ? HttpUtil.getFaultSOAPBody(title, message) : HttpUtil.getFaultSOAP12Body(title,
+		String body = useSoap11 ? SOAPUtil.getFaultSOAP11Body(  Server, title, message) : SOAPUtil.getFaultSOAP12Body(title,
 				message);
 		return Response.internalServerError().
 				header(SERVER, PRODUCT_NAME).

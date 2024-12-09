@@ -19,7 +19,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.resolver.*;
 import org.apache.commons.text.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.*;
@@ -35,7 +34,7 @@ import java.util.concurrent.atomic.*;
 
 import static java.nio.charset.StandardCharsets.*;
 
-public class SchematronValidator implements IValidator {
+public class SchematronValidator extends AbstractMessageValidator {
 	private static final Logger log = LoggerFactory.getLogger(SchematronValidator.class.getName());
 
 	private final ArrayBlockingQueue<Transformer> transformers;
@@ -46,8 +45,12 @@ public class SchematronValidator implements IValidator {
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 
+	@Override
+	public String getName() {
+		return "Schematron Validator";
+	}
 
-	public SchematronValidator(ResolverMap resourceResolver, String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
+	public SchematronValidator(String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
 		this.failureHandler = failureHandler;
 
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
@@ -81,7 +84,7 @@ public class SchematronValidator implements IValidator {
 	}
 
 	@Override
-	public Outcome validateMessage(Exchange exc, Message msg, String source) {
+	public Outcome validateMessage(Exchange exc, Message msg) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
@@ -104,7 +107,7 @@ public class SchematronValidator implements IValidator {
 				if (event.isStartElement()) {
 					StartElement startElement = (StartElement)event;
 					if (startElement.getName().getLocalPart().equals("failed-assert")) {
-						setErrorMessage(exc, new String(result, UTF_8), false, source);
+						setErrorMessage(exc, new String(result, UTF_8), false,getSourceOfError(msg) );
 						invalid.incrementAndGet();
 						return Outcome.ABORT;
 					}
@@ -112,12 +115,12 @@ public class SchematronValidator implements IValidator {
 			}
 
 		} catch (TransformerException e) {
-			setErrorMessage(exc, e.getMessage(), true, source);
+			setErrorMessage(exc, e.getMessage(), true, getSourceOfError(msg));
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		} catch (Exception e) {
 			log.error("", e);
-			setErrorMessage(exc, "internal error", true, source);
+			setErrorMessage(exc, "internal error", true, getSourceOfError(msg));
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		}

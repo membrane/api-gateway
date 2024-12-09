@@ -24,6 +24,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.TextUtil;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -31,6 +32,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -40,27 +42,23 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  */
 @MCElement(name="validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
+
 	private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
 
 	private String wsdl;
 	private String schema;
+	private String serviceName;
 	private String jsonSchema;
 	private String schematron;
 	private String failureHandler;
 	private boolean skipFaults;
 
-	private IValidator validator;
+	private MessageValidator validator;
 	private ResolverMap resourceResolver;
 	private ApplicationContext applicationContext;
 
 	public ValidatorInterceptor() {
 		name = "Validator";
-	}
-
-	private void setValidator(IValidator validator) throws Exception {
-		if (this.validator != null)
-			throw new Exception("<validator> cannot have more than one validator attribute.");
-		this.validator = validator;
 	}
 
 	@Override
@@ -70,40 +68,40 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
 	@Override
 	public void init() throws Exception {
-		validator = null;
+		validator = getMessageValidator();
+		validator.init();
+		name = validator.getName();
+		if (skipFaults && wsdl == null)
+			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
+	}
 
-		String baseLocation = router == null ? null : router.getBaseLocation();
-
+	private MessageValidator getMessageValidator() throws Exception {
 		if (wsdl != null) {
-			name="SOAP Validator";
-			setValidator(new WSDLValidator(resourceResolver, ResolverMap.combine(baseLocation, wsdl), createFailureHandler(), skipFaults));
+			return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
 		}
 		if (schema != null) {
-			name="XML Schema Validator";
-			setValidator(new XMLSchemaValidator(resourceResolver, ResolverMap.combine(baseLocation, schema), createFailureHandler()));
+			return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
 		}
 		if (jsonSchema != null) {
-			name="JSON Schema Validator";
-			setValidator(new JSONValidator(resourceResolver, ResolverMap.combine(baseLocation, jsonSchema), createFailureHandler()));
+			return new JSONValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler());
 		}
 		if (schematron != null) {
-			name="Schematron Validator";
-			setValidator(new SchematronValidator(resourceResolver, ResolverMap.combine(baseLocation, schematron), createFailureHandler(), router, applicationContext));
+			return new SchematronValidator( combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
 		}
 
 		if (validator == null) {
 			Rule parent = router.getParentProxy(this);
-			if (parent instanceof SOAPProxy) {
-				wsdl = ((SOAPProxy)parent).getWsdl();
+			if (parent instanceof SOAPProxy sp) {
+				wsdl = sp.getWsdl();
 				name = "SOAP Validator";
-				setValidator(new WSDLValidator(resourceResolver, ResolverMap.combine(baseLocation, wsdl), createFailureHandler(), skipFaults));
+				return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl),  serviceName, createFailureHandler(), skipFaults);
 			}
-			if (validator == null)
-				throw new Exception("<validator> must have an attribute specifying the validator.");
 		}
+		throw new RuntimeException("Validator is not configured properly. <validator> must have an attribute specifying the validator.");
+	}
 
-		if (skipFaults && wsdl == null)
-			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
+	private @Nullable String getBaseLocation() {
+		return router == null ? null : router.getBaseLocation();
 	}
 
 	@Override
@@ -111,7 +109,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		if (exc.getRequest().isBodyEmpty())
 			return CONTINUE;
 
-		return validator.validateMessage(exc, exc.getRequest(), "request");
+		return validator.validateMessage(exc, exc.getRequest());
 	}
 
 	@Override
@@ -119,7 +117,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		if (exc.getResponse().isBodyEmpty())
 			return CONTINUE;
 
-		return validator.validateMessage(exc, exc.getResponse(), "response");
+		return validator.validateMessage(exc, exc.getResponse());
 	}
 
 	/**
@@ -200,6 +198,20 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	@MCAttribute
 	public void setSkipFaults(boolean skipFaults) {
 		this.skipFaults = skipFaults;
+	}
+
+
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	/**
+	 * @description Optional name of a serivce element in a WSDL. If specified it will be
+	 * checked if the SOAP element is possible for that service.
+	 */
+	@MCAttribute
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
 	}
 
 	@Override

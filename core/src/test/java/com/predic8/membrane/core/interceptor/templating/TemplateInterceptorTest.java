@@ -100,6 +100,8 @@ public class TemplateInterceptorTest {
                 """, TEXT_PLAIN);
 
         assertEquals("City: Da Nang", exchange.getRequest().getBodyAsStringDecoded().trim());
+        assertEquals(TEXT_PLAIN, exchange.getRequest().getHeader().getContentType());
+        assertEquals(14, exchange.getRequest().getHeader().getContentLength());
     }
 
     @SuppressWarnings("unchecked")

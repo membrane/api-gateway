@@ -14,9 +14,9 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.rules.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.net.UnknownHostException;
 
 import static com.predic8.membrane.util.TestUtil.assembleExchange;
@@ -29,10 +29,12 @@ public class RuleManagerTest {
 	Rule forwardBlz;
 	Rule forwardBlzPOST;
 
+	MockRouter router;
+
 	@BeforeEach
 	public void setUp() throws Exception{
 		manager = new RuleManager();
-		MockRouter router = new MockRouter();
+		router = new MockRouter();
 		manager.setRouter(router);
 		proxy3013 = new ProxyRule(new ProxyRuleKey(3013));
 		manager.addProxyAndOpenPortIfNew(proxy3013);
@@ -45,6 +47,11 @@ public class RuleManagerTest {
 
 		manager.addProxyAndOpenPortIfNew(forwardBlz);
 		manager.addProxyAndOpenPortIfNew(forwardBlzPOST);
+	}
+
+	@AfterEach
+	public void tearDown() throws IOException {
+		router.shutdown();
 	}
 
 	@Test

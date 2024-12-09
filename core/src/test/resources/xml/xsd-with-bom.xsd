@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:lang="http://membrane-api.io/lang" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://membrane-api.io/lang" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xs:simpleType name="language">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="DE"/>
+      <xs:enumeration value="IT"/>
+      <xs:enumeration value="FR"/>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>

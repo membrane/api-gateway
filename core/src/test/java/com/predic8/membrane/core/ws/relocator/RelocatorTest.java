@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.ws.relocator;
 
 import com.predic8.membrane.core.util.*;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -21,32 +22,29 @@ import java.io.*;
 
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
-import static org.apache.commons.io.output.NullOutputStream.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RelocatorTest {
 
 	private static Relocator relocator;
+	ByteArrayOutputStream os;
 
 	@BeforeEach
 	public void setUp() throws Exception {
+
+		os = new ByteArrayOutputStream();
+
 		relocator = new Relocator(new OutputStreamWriter(
-				NULL_OUTPUT_STREAM, UTF_8), "http", "localhost",
+				os, UTF_8), "http", "localhost",
 				3000, "", null);
 	}
 
 	@Test
 	public void testWSDLRelocate() throws Exception {
 		relocator.relocate(getFile("/blz-service.wsdl"));
-		System.out.println("relocator.isWsdlFound() = " + relocator.isWsdlFound());
+		assertTrue(relocator.isWsdlFound());
+		System.out.println("os.toString(UTF_8) = " + os.toString(UTF_8));
 	}
-
-	@NotNull
-	private InputStreamReader getFile(String filename) throws IOException {
-		return new InputStreamReader(new ByteArrayInputStream(
-				getFileAsBytes(filename)), UTF_8);
-	}
-
 
 	@Test
 	public void testXMLRelocate() throws Exception {
@@ -58,5 +56,11 @@ public class RelocatorTest {
 	private byte[] getFileAsBytes(String name) throws IOException {
 		return ByteUtil.getByteArrayData(requireNonNull(this.getClass()
 				.getResourceAsStream(name)));
+	}
+
+	@NotNull
+	private InputStreamReader getFile(String filename) throws IOException {
+		return new InputStreamReader(new ByteArrayInputStream(
+				getFileAsBytes(filename)), UTF_8);
 	}
 }

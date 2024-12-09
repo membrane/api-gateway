@@ -13,18 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.io.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageAnalyserTest {
 
@@ -44,7 +40,7 @@ public class MessageAnalyserTest {
 
 		assertEquals("Envelope", exc.getProperty(MessageAnalyser.REQUEST_ROOT_ELEMENT_NAME));
 		assertEquals(Constants.SOAP11_NS, exc.getProperty(MessageAnalyser.REQUEST_ROOT_ELEMENT_NS));
-		assertEquals(Constants.SOAP11_VERION, exc.getProperty(MessageAnalyser.REQUEST_SOAP_VERSION));
+		assertEquals(Constants.SoapVersion.SOAP11, exc.getProperty(MessageAnalyser.REQUEST_SOAP_VERSION));
 		assertEquals("getBuecher", exc.getProperty(MessageAnalyser.REQUEST_SOAP_OPERATION));
 		assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.REQUEST_SOAP_OPERATION_NS));
 
@@ -59,10 +55,9 @@ public class MessageAnalyserTest {
 
 		assertEquals("Envelope", exc.getProperty(MessageAnalyser.RESPONSE_ROOT_ELEMENT_NAME));
 		assertEquals(Constants.SOAP11_NS, exc.getProperty(MessageAnalyser.RESPONSE_ROOT_ELEMENT_NS));
-		assertEquals(Constants.SOAP11_VERION, exc.getProperty(MessageAnalyser.RESPONSE_SOAP_VERSION));
+		assertEquals(Constants.SoapVersion.SOAP11, exc.getProperty(MessageAnalyser.RESPONSE_SOAP_VERSION));
 		assertEquals("getBuecher", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION));
 		assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION_NS));
-
 	}
 
 	private Exchange getResponse(String path) throws IOException {

@@ -13,38 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
+import com.googlecode.jatl.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.administration.*;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.wsdl.*;
+import com.predic8.wstool.creator.*;
 import groovy.xml.MarkupBuilder;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.io.StringWriter;
-import java.io.Writer;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.administration.Mapping;
-import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.rules.SOAPProxy;
-import com.predic8.wstool.creator.RequestTemplateCreator;
-import com.predic8.wstool.creator.SOARequestCreator;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.regex.Pattern.*;
 
@@ -102,9 +93,13 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			return parsedWSDL;
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
+        return parsedWSDL = getWsdlParser().parse(ctx);
+	}
+
+	private @NotNull WSDLParser getWsdlParser() {
 		WSDLParser wsdlParser = new WSDLParser();
 		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver().toExternalResolver());
-		return parsedWSDL = wsdlParser.parse(ctx);
+		return wsdlParser;
 	}
 
 	@Mapping("[^?]*/operation/([^/?]+)/([^/?]+)/([^/?]+)")
@@ -114,8 +109,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			final String portName = params.getGroup(2);
 			final String operationName = params.getGroup(3);
 
-			final Definitions w = getParsedWSDL();
-			final Service service = getService(w);
+            final Service service = getService(getParsedWSDL());
 
 			StringWriter sw = new StringWriter();
 			new StandardPage(sw, null) {
@@ -126,10 +120,10 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 					h3().text("Sample Request").end();
 
-					pre().text(generateSampleRequest(portName, operationName, bindingName, w)).end();
+					pre().text(generateSampleRequest(portName, operationName, bindingName, getParsedWSDL())).end();
 				}
 			};
-			return Response.ok(sw.toString()).build();
+			return ok(sw.toString()).build();
 		} catch (IllegalArgumentException e) {
 			log.error("", e);
 			return Response.internalServerError().build();
@@ -137,6 +131,15 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	}
 
 	private Service getService(Definitions d) {
+		
+		if (getRule() instanceof SOAPProxy sp) {
+			String serviceName = sp.getServiceName();
+			System.out.println("serviceName = " + serviceName);
+			if (serviceName != null) {
+				return WSDLUtil.getService(d, serviceName);
+			}
+		}
+		
 		if (d.getServices().size() != 1)
 			throw new IllegalArgumentException("WSDL needs to have exactly one service for SOAPUIInterceptor to work.");
 		return d.getServices().get(0);
@@ -182,7 +185,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 					text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 
-					for (PortType pt : w.getPortTypes()) {
+					for (PortType pt : WSDLUtil.getPortTypes(service)) {
 						h2().text("Port Type: " + pt.getName()).end();
 						Documentation d = pt.getDocumentation();
 						if (d != null) {
@@ -260,7 +263,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 				}
 
 			};
-			return Response.ok(sw.toString()).build();
+			return ok(sw.toString()).build();
 		} catch (IllegalArgumentException e) {
 			log.error("", e);
 			return Response.internalServerError().build();

@@ -14,30 +14,17 @@
 
 package com.predic8.membrane.core.ws.relocator;
 
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import org.slf4j.*;
 
-import javax.annotation.concurrent.NotThreadSafe;
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventFactory;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.annotation.concurrent.*;
+import javax.xml.namespace.*;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import com.predic8.membrane.core.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.predic8.membrane.core.Constants.*;
 
 @NotThreadSafe
 public class Relocator {
@@ -132,10 +119,8 @@ public class Relocator {
 		if (!event.isStartElement())
 			return event;
 
-		if (getElementName(event).getNamespaceURI().equals(
-				Constants.WSDL_SOAP11_NS)
-				|| getElementName(event).getNamespaceURI().equals(
-						Constants.WSDL_SOAP12_NS)) {
+		if (getElementName(event).getNamespaceURI().equals(WSDL_SOAP11_NS)
+				|| getElementName(event).getNamespaceURI().equals(WSDL_SOAP12_NS)) {
 			wsdlFound = true;
 		}
 

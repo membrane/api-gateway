@@ -13,22 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.List;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import org.junit.jupiter.api.*;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
-import com.predic8.membrane.core.interceptor.SpringInterceptor;
-import com.predic8.membrane.core.rules.ServiceProxy;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SpringReferencesTest {
 
@@ -37,6 +31,11 @@ public class SpringReferencesTest {
 	@BeforeAll
 	public static void before() throws MalformedURLException {
 		r = Router.init("classpath:/proxies-using-spring-refs.xml");
+	}
+
+	@AfterAll
+	public static void after() throws IOException {
+		r.shutdown();
 	}
 
 	@Test
@@ -54,10 +53,5 @@ public class SpringReferencesTest {
 
 		assertSame(is.get(1), is.get(2));
 		assertSame(is.get(1), si.getInner());
-	}
-
-	@AfterAll
-	public static void after() throws IOException {
-		r.shutdown();
 	}
 }
