@@ -18,6 +18,7 @@ import com.predic8.membrane.core.config.security.acme.KubernetesStorage;
 import com.predic8.membrane.core.kubernetes.client.KubernetesApiException;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClient;
 import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,10 +176,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
 
     @Override
     public boolean acquireLease(long durationMillis) {
-        String renewTime; // "2022-06-02T05:28:03.186642Z"
-        synchronized (sdf) {
-            renewTime = sdf.format(new Date(System.currentTimeMillis() + durationMillis));
-        }
+        String renewTime = getRenewTime(durationMillis);
         Map l = of(
                 "apiVersion", "coordination.k8s.io/v1",
                 "kind", "Lease",
@@ -223,6 +221,14 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
         }
     }
 
+    private @NotNull String getRenewTime(long durationMillis) {
+        String renewTime; // "2022-06-02T05:28:03.186642Z"
+        synchronized (sdf) {
+            renewTime = sdf.format(new Date(System.currentTimeMillis() + durationMillis));
+        }
+        return renewTime;
+    }
+
     /**
      * Parse date in the format of {@code sdf}, but Kubernetes-style with microsecond precision.
      */
@@ -255,10 +261,7 @@ public class AcmeKubernetesStorageEngine implements AcmeSynchronizedStorageEngin
 
     @Override
     public boolean prolongLease(long durationMillis) {
-        String renewTime; // "2022-06-02T05:28:03.186642Z"
-        synchronized (sdf) {
-            renewTime = sdf.format(new Date(System.currentTimeMillis() + durationMillis));
-        }
+        String renewTime = getRenewTime(durationMillis);
 
         try {
             client.edit("coordination.k8s.io/v1", "Lease", namespace, lease, le -> {

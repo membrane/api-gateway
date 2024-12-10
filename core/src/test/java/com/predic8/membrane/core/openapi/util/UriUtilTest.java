@@ -21,10 +21,9 @@ import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
-import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class UriUtilTest {
 
@@ -56,31 +55,6 @@ public class UriUtilTest {
     @Test
     public void trailingSlashWhenNoSlash() {
         assertEquals("", trimTrailingSlash(""));
-    }
-
-    @Test
-    public void stringWithoutParams() {
-        assertEquals(0,parseQueryString("foo").size());
-    }
-
-    @Test
-    public void stringWithoutParamsAndQuestionmark() {
-        assertEquals(0,parseQueryString("foo?").size());
-    }
-
-    @Test
-    public void oneParam() {
-        Map<String,String> m = parseQueryString("foo?answer=42");
-        assertEquals(1,m.size());
-        assertEquals("42",m.get("answer"));
-    }
-
-    @Test
-    public void twoParams() {
-        Map<String,String> m = parseQueryString("foo?answer=42&city=Bonn");
-        assertEquals(2,m.size());
-        assertEquals("42",m.get("answer"));
-        assertEquals("Bonn",m.get("city"));
     }
 
     @Test

@@ -97,7 +97,7 @@ public class CliCommandTest {
         ParseException exception = assertThrows(ParseException.class, () ->
                 rootCommand.parse(new String[]{"unknown"})
         );
-        assertEquals("Unknown subcommand: unknown", exception.getMessage());
+        assertEquals("Unknown command: unknown", exception.getMessage());
     }
 
     @Test

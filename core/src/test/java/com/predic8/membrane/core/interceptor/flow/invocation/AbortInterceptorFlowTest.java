@@ -14,19 +14,29 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors;
+package com.predic8.membrane.core.interceptor.flow.invocation;
 
-import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import java.util.*;
 
-public class EchoTestInterceptor extends AbstractInterceptor {
+public class AbortInterceptorFlowTest extends AbstractInterceptorFlowTest {
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(ok().body(exc.getRequest().getBody().getContent()).build());
-        return RETURN;
+    protected List<Interceptor> interceptors() {
+
+        AbortInterceptor ai = new AbortInterceptor();
+        ai.getInterceptors().add(new FlowTestInterceptor("b"));
+
+        return List.of(new FlowTestInterceptor("a"),
+                ai,
+                new FlowTestInterceptor("c"));
+    }
+
+    @Override
+    protected String flow() {
+        return ">a>c<c<a";
     }
 }

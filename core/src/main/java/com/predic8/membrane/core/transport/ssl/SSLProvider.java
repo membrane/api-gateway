@@ -21,26 +21,26 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public interface SSLProvider {
-	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException;
-	public Socket wrapAcceptedSocket(Socket socket) throws IOException;
-	public Socket createSocket() throws IOException;
+	ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException;
+	Socket wrapAcceptedSocket(Socket socket) throws IOException;
+	Socket createSocket() throws IOException;
 	/**
 	 * @param host relevant to verify the server cert only
 	 * @param port relevant to verify the server cert only
 	 */
-	public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName,
-							   @Nullable String[] applicationProtocols) throws IOException;
-	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName,
-							   @Nullable String[] applicationProtocols) throws IOException;
-	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout,
-							   @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException;
+    Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName,
+                        @Nullable String[] applicationProtocols) throws IOException;
+	Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName,
+                        @Nullable String[] applicationProtocols) throws IOException;
+	Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout,
+                        @Nullable String sniServerName, @Nullable String[] applicationProtocols) throws IOException;
 
-	public boolean showSSLExceptions();
+	boolean showSSLExceptions();
 
 	/**
 	 * @return the application protocols selected by the TLS server, or null elsewise (not a TLS connection, ALPN not supported, ...)
 	 */
-	public String[] getApplicationProtocols(Socket socket);
+    String[] getApplicationProtocols(Socket socket);
 
 	/**
 	 * Advises the SSL Provider to stop providing its services. (For most providers this will be a no-op.)
