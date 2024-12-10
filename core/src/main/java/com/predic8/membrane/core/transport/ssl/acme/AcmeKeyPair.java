@@ -17,6 +17,9 @@ public class AcmeKeyPair {
     String publicKey;
     String privateKey;
 
+    /**
+     * Default constructor is needed for serialization
+     */
     public AcmeKeyPair() {
     }
 
@@ -29,15 +32,7 @@ public class AcmeKeyPair {
         return publicKey;
     }
 
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
-    }
-
     public String getPrivateKey() {
         return privateKey;
-    }
-
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
     }
 }

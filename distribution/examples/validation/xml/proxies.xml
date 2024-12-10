@@ -17,9 +17,10 @@
 		</api>
 	
 		<api port="2001">
-			<groovy>
-				Response.ok("&lt;amount&gt;100&lt;/amount&gt;").build()			
-			</groovy>
+			<template contentType="application/xml">
+				&gt;amount>100&gt;/amount>
+			</template>
+			<return/>
 		</api>
 		
 	</router>
