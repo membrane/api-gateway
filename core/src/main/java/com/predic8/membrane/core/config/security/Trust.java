@@ -14,13 +14,9 @@
 
 package com.predic8.membrane.core.config.security;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @description Experimental.
@@ -53,6 +49,10 @@ public class Trust {
         return certificateList;
     }
 
+    /**
+     *
+     * @param certificateList
+     */
     @MCChildElement
     public void setCertificateList(List<Certificate> certificateList) {
         this.certificateList = certificateList;
@@ -62,6 +62,10 @@ public class Trust {
         return algorithm;
     }
 
+    /**
+     *
+     * @param algorithm
+     */
     @MCAttribute
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
@@ -71,6 +75,10 @@ public class Trust {
         return checkRevocation;
     }
 
+    /**
+     * TODO
+     * @param checkRevocation
+     */
     @MCAttribute
     public void setCheckRevocation(String checkRevocation) {
         this.checkRevocation = checkRevocation;

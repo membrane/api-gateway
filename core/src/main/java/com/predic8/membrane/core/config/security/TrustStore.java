@@ -50,6 +50,10 @@ public class TrustStore extends Store {
 		return checkRevocation;
 	}
 
+	/**
+	 * TODO
+	 * @param checkRevocation
+	 */
 	@MCAttribute
 	public void setCheckRevocation(String checkRevocation) {
 		this.checkRevocation = checkRevocation;
