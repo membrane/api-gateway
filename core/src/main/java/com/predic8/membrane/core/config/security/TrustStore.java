@@ -25,9 +25,8 @@ public class TrustStore extends Store {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof TrustStore))
+		if (!(obj instanceof TrustStore other))
 			return false;
-		TrustStore other = (TrustStore) obj;
 		return super.equals(obj)
 				&& Objects.equal(algorithm, other.algorithm);
 	}

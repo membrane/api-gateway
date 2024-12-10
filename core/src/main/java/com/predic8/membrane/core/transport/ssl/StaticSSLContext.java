@@ -156,13 +156,6 @@ public class StaticSSLContext extends SSLContext {
         return tmf;
     }
 
-    private @org.jetbrains.annotations.NotNull String getTrustStoreType() {
-        String trustStoreType = sslParser.getTrustStore().getType();
-        if (trustStoreType == null)
-            trustStoreType = PKCS_12;
-        return trustStoreType;
-    }
-
     private static @org.jetbrains.annotations.NotNull PKIXBuilderParameters getPkixBuilderParameters(KeyStore trustStore, String trustAlgorithm, String checkRevocation) throws KeyStoreException, InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(trustStore, new X509CertSelector());
         pkixParams.addCertPathChecker(getRevocationChecker(trustAlgorithm, checkRevocation));
@@ -203,7 +196,7 @@ public class StaticSSLContext extends SSLContext {
         return (paramAlias != null) ? aliasOrThrow(ks, paramAlias) : firstAliasOrThrow(ks);
     }
 
-    record Validity(long from, long until) {};
+    record Validity(long from, long until) {}
 
     private Validity getValidityPeriod(KeyStore ks, String keyAlias) throws KeyStoreException {
         List<Certificate> certs = Arrays.asList(ks.getCertificateChain(keyAlias));
@@ -253,8 +246,7 @@ public class StaticSSLContext extends SSLContext {
 
     private static Key getKey(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws IOException {
         Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
-        Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
-        return k;
+        return key instanceof Key? (Key) key : ((KeyPair)key).getPrivate();
     }
 
     private static char[] getKeyPassword(SSLParser sslParser) {
@@ -377,7 +369,7 @@ public class StaticSSLContext extends SSLContext {
         return sslss;
     }
 
-    public Socket wrapAcceptedSocket(Socket socket) throws IOException {
+    public Socket wrapAcceptedSocket(Socket socket) {
         return socket;
     }
 

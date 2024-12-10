@@ -19,8 +19,7 @@ import com.predic8.membrane.annot.*;
 import java.util.*;
 
 /**
- * @description Experimental.
- * <p>Allows to insert one or more PEM blocks containing the certificates to be trusted directly into the proxies.xml
+ * @description <p>Allows to insert one or more PEM blocks containing the certificates to be trusted directly into the proxies.xml
  * file.</p>
  * <p>This is an alternative for {@link TrustStore}.</p>
  */
@@ -50,7 +49,7 @@ public class Trust {
     }
 
     /**
-     *
+     * @description List of certificates
      * @param certificateList
      */
     @MCChildElement
