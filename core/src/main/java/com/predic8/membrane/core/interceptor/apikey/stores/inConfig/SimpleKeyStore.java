@@ -26,11 +26,17 @@ import java.util.Optional;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * @description Stores api keys inline as XML.
+ */
 @MCElement(name = "keys", topLevel = false)
 public class SimpleKeyStore implements ApiKeyStore {
 
     private final List<Key> keys = new ArrayList<>();
 
+    /**
+     * @description <secret value="..." /> elements containing the key as value property.
+     */
     @MCChildElement(allowForeign = true)
     public void setKeys(List<Key> keys) {
         this.keys.addAll(keys);

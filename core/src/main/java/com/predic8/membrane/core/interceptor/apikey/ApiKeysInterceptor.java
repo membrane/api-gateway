@@ -33,6 +33,10 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.util.stream.Stream.ofNullable;
 
+/**
+ * @description Secures APIs by validating keys stored in either files or proxies.xml. Keys can be received from clients via HTTP headers or URL query parameters. Additional permission checks are possible through scope validation - scopes are loaded into an Exchange property and can be checked using the "hasScope()" SpEL function.
+ * @topic 6. Security
+ */
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
     public static final String SCOPES = "membrane-scopes";
@@ -123,6 +127,11 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                          .findFirst();
     }
 
+    /**
+     * @description Controls whether API key validation is enforced or optional. Optional will still load scopes and make them available for checking through SpEL function "hasScope()".
+     * @default true
+     * @example false
+     */
     @SuppressWarnings("SameParameterValue")
     @MCAttribute
     public void setRequired(boolean required) {
@@ -133,6 +142,9 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return required;
     }
 
+    /**
+     * @description API key stores to validate keys against
+     */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
         this.stores.addAll(stores);
@@ -142,6 +154,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return stores;
     }
 
+    /**
+     * @description Extractors that define where and how to extract API keys from requests
+     * @default <headerExtractor /> (Using default header "X-Api-Key")
+     */
     @MCChildElement(allowForeign = true, order = 1)
     public void setExtractors(List<ApiKeyExtractor> extractors) {
         this.extractors.addAll(extractors);
