@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.toMap;
 
 /**
  * @description Loads api keys from a file. File has to be one key per line, blank lines for formatting are allowed. Optionally, a comma separated list of scopes after the key and a colon in between the two. Hash symbol can be used for comments at the end of each line, including empty lines.
+ * @example See: https://github.com/membrane/api-gateway/blob/master/distribution/examples/security/api-key/simple/demo-keys.txt
  */
 @MCElement(name = "keyFileStore", topLevel = false)
 public class ApiKeyFileStore implements ApiKeyStore {

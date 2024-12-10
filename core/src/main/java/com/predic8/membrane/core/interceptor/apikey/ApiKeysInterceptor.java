@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.util.stream.Stream.ofNullable;
 
 /**
- * @description Protects proxies using keys from files or inline configuration. Can source keys from headers or query parameters from clients. Supports additional scope verification by loading associated scopes into an Exchange property to be used with <code>hasScope</code> SpEL function.
+ * @description Secures APIs by validating keys stored in either files or proxies.xml. Keys can be received from clients via HTTP headers or URL query parameters. Additional permission checks are possible through scope validation - scopes are loaded into an Exchange property and can be checked using the "hasScope()" SpEL function.
  * @topic 6. Security
  */
 @MCElement(name = "apiKey")
@@ -128,7 +128,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Controls whether API key validation is enforced or optional. Optional will still load scopes into Exchange property.
+     * @description Controls whether API key validation is enforced or optional. Optional will still load scopes and make them available for checking through SpEL function "hasScope()".
      * @default true
      * @example false
      */
