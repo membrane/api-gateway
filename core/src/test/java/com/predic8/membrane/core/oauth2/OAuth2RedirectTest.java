@@ -25,10 +25,7 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import io.restassured.response.Response;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,12 +45,20 @@ public class OAuth2RedirectTest {
     static Router nginxRouter;
     static AtomicReference<String> firstUrlHit = new AtomicReference<>();
     static AtomicReference<String> targetUrlHit = new AtomicReference<>();
+    static AtomicReference<String> interceptorChainHit = new AtomicReference<>();
 
     @BeforeEach
     void init() throws Exception {
         azureRouter = startProxyRule(getAzureRule());
         membraneRouter = startProxyRule(getMembraneRule());
         nginxRouter = startProxyRule(getNginxRule());
+    }
+
+    @AfterEach
+    void shutdown() throws IOException {
+        azureRouter.shutdown();
+        membraneRouter.shutdown();
+        nginxRouter.shutdown();
     }
 
     @Test
@@ -79,6 +84,7 @@ public class OAuth2RedirectTest {
         OAuth2.step9exchangeCodeForToken(callbackUrl);
 
         assertEquals(firstUrlHit.get(), targetUrlHit.get(), "Check that URL survived encoding.");
+        assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
     }
 
     @Test
@@ -104,6 +110,7 @@ public class OAuth2RedirectTest {
         OAuth2.step9exchangeCodeForToken(callbackUrl);
 
         assertTrue(targetUrlHit.get().startsWith(firstUrlHit.get() + "&oa2redirect"), "Check that URL survived encoding.");
+        assertEquals(firstUrlHit.get(), interceptorChainHit.get(), "Is interceptor chain correctly continued?");
     }
 
     private static ConditionalInterceptor createConditionalInterceptorWithReturnMessage(String test, String returnMessage) {
@@ -114,13 +121,6 @@ public class OAuth2RedirectTest {
                 setTextTemplate(returnMessage);
             }}));
         }};
-    }
-
-    @AfterAll
-    public static void tearDown() throws IOException {
-        membraneRouter.shutdown();
-        azureRouter.shutdown();
-        nginxRouter.shutdown();
     }
 
     private static Router startProxyRule(Rule azureRule) throws Exception {
@@ -136,7 +136,7 @@ public class OAuth2RedirectTest {
         Rule nginxRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2001), "localhost", 80);
         nginxRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 targetUrlHit.set(exc.getRequest().getUri());
                 return Outcome.CONTINUE;
             }
@@ -151,7 +151,7 @@ public class OAuth2RedirectTest {
         Rule membraneRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "localhost", 2001);
         membraneRule.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 if (firstUrlHit.get() == null)
                     firstUrlHit.set(exc.getRequest().getUri());
                 return Outcome.CONTINUE;
@@ -167,6 +167,14 @@ public class OAuth2RedirectTest {
             }});
             setOriginalExchangeStore(new SessionOriginalExchangeStore());
         }});
+        membraneRule.getInterceptors().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                if (interceptorChainHit.get() == null)
+                    interceptorChainHit.set(exc.getRequest().getUri());
+                return Outcome.CONTINUE;
+            }
+        });
         return membraneRule;
     }
 
