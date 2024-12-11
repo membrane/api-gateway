@@ -130,7 +130,7 @@ public class AcmeStepTest {
                 assertEquals(AUTHORIZATION_STATUS_VALID, auth.getStatus());
             }
 
-            AcmeKeyPair key = acmeClient.generateCertificateKey(hosts);
+            AcmeKeyPair key = acmeClient.generateCertificateKey();
             acmeClient.getAsse().setKeyPair(hosts, key);
 
 
@@ -148,7 +148,7 @@ public class AcmeStepTest {
 
             assertEquals(Order.ORDER_STATUS_VALID, ol.getOrder().getStatus());
 
-            acmeClient.getAsse().setCertChain(hosts, acmeClient.downloadCertificate(accountUrl, hosts, ol.getOrder().getCertificate()));
+            acmeClient.getAsse().setCertChain(hosts, acmeClient.downloadCertificate(accountUrl, ol.getOrder().getCertificate()));
 
             // ---
 

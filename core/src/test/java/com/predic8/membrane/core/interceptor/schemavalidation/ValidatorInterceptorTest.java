@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -36,9 +37,9 @@ public class ValidatorInterceptorTest {
 
 	private Exchange exc;
 
-	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.wsdl";
 
-	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService-bom.xml";
 
 	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
 
@@ -133,7 +134,7 @@ public class ValidatorInterceptorTest {
 	}
 
 	private byte[] getContent(String fileName) throws IOException {
-		return IOUtils.toByteArray(this.getClass().getResourceAsStream(fileName));
+		return IOUtils.toByteArray(requireNonNull(this.getClass().getResourceAsStream(fileName)));
 	}
 
 	private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) throws Exception {
