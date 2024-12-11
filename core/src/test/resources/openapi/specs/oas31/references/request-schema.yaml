@@ -1,0 +1,12 @@
+paths:
+  /users:
+    post:
+      description: Demo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: 'user-schema.yaml#/components/schemas/User'
+      responses:
+        '200':
+          description: Ok

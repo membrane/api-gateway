@@ -23,7 +23,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
- *              &lt;response&gt; Element you can limit their applictaion to responses only.
+ *              &lt;response&gt; Element you can limit their application to responses only.
  */
 @MCElement(name="response", topLevel=false)
 public class ResponseInterceptor extends AbstractFlowInterceptor {

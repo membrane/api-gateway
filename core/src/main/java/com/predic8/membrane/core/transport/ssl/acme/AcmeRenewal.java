@@ -27,7 +27,6 @@ import java.io.StringWriter;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.transport.ssl.AcmeSSLContext.renewAt;
 import static com.predic8.membrane.core.transport.ssl.SSLContext.getMinimumValidity;
@@ -99,7 +98,7 @@ public class AcmeRenewal {
             makeOrderValid(oal);
             if (LOG.isDebugEnabled())
                 LOG.debug("acme ("+id()+"): downloading certificate");
-            String certs = client.downloadCertificate(getAccountURL(), hosts, oal.get().getOrder().getCertificate());
+            String certs = client.downloadCertificate(getAccountURL(), oal.get().getOrder().getCertificate());
 
             if (LOG.isDebugEnabled())
                 LOG.debug("acme ("+id()+"): promoting key+cert to production");
@@ -136,7 +135,7 @@ public class AcmeRenewal {
             if (client.getOALKey(hosts) == null) {
                 if (LOG.isDebugEnabled())
                     LOG.debug("acme ("+id()+"): generating certificate key");
-                AcmeKeyPair key = client.generateCertificateKey(hosts);
+                AcmeKeyPair key = client.generateCertificateKey();
                 client.setOALKey(hosts, key);
             }
             if (LOG.isDebugEnabled())

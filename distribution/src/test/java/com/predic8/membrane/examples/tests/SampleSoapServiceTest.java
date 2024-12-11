@@ -36,7 +36,7 @@ public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestca
         String soapWsdlSubStr = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/";
         put("/foo?wsdl", soapWsdlSubStr);
         put("/foo/bar?wSdL", soapWsdlSubStr);
-        put("/foo", "<faultstring>Method Not Allowed</faultstring>");
+        put("/foo", "<faultstring>Method GET not allowed</faultstring>");
 
     }};
 
@@ -60,7 +60,6 @@ public class SampleSoapServiceTest extends AbstractSampleMembraneStartStopTestca
         put("Bonn", "<population>327000</population>");
         put("London", "<population>8980000</population>");
         put("Berlin", "<errorcode>404</errorcode>");
-
     }};
 
     final List<String> cityMap() {

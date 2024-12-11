@@ -118,6 +118,7 @@ import org.junit.platform.suite.api.*;
         LimitedMemoryExchangeStoreTest.class,
         IndexInterceptorTest.class,
         SingleResolverTest.class,
+		ResolverMapTest.class,
         JSONSchemaValidationTest.class,
         SOAPMessageValidatorInterceptorTest.class,
         URITest.class,
@@ -159,6 +160,7 @@ import org.junit.platform.suite.api.*;
 		SetPropertyInterceptor.class,
 		APIProxyKeyTest.class,
 		AdjustContentLengthTest.class,
+		URIUtilTest.class,
 		CliCommandTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
