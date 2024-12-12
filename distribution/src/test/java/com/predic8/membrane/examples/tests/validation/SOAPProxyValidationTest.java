@@ -15,46 +15,50 @@
 package com.predic8.membrane.examples.tests.validation;
 
 import com.predic8.membrane.examples.util.*;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
+import java.io.*;
 
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP;
-import static com.predic8.membrane.test.AssertUtils.*;
-import static io.restassured.RestAssured.config;
-import static io.restassured.RestAssured.given;
-import static io.restassured.config.EncoderConfig.encoderConfig;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
 import static java.io.File.*;
 
 public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 
-	@Override
-	protected String getExampleDirName() {
-		return "validation" + separator + "soap-Proxy";
-	}
+    @Override
+    protected String getExampleDirName() {
+        return "validation" + separator + "soap-Proxy";
+    }
 
-	@Test
-	public void testValidCitySoapRequest() throws IOException {
-		given().contentType(APPLICATION_SOAP)
+    @Test
+    public void testValidCitySoapRequest() throws IOException, InterruptedException {
+        try (Process2 ignored = startServiceProxyScript()) {
+            // @formatter:off
+			given()
+				.contentType(APPLICATION_SOAP)
 				.body(readFile("city-soap.xml"))
-				.when()
+			.when()
 				.post("http://localhost:2000/")
-				.then()
+			.then()
 				.statusCode(200)
 				.extract().asString();
-	}
+			// @formatter:on
+        }
+    }
 
-	@Test
-	public void testInvalidCitySoapRequest() throws IOException {
-		given().contentType(APPLICATION_SOAP)
+    @Test
+    public void testInvalidCitySoapRequest() throws IOException, InterruptedException {
+        try (Process2 ignored = startServiceProxyScript()) {
+            // @formatter:off
+			given()
+				.contentType(APPLICATION_SOAP)
 				.body(readFile("invalid-city-soap.xml"))
-				.when()
+			.when()
 				.post("http://localhost:2000/")
-				.then()
+			.then()
 				.statusCode(400)
 				.extract().asString();
-	}
+			// @formatter:on
+        }
+    }
 }
