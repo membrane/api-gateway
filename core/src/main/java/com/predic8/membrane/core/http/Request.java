@@ -232,8 +232,10 @@ public class Request extends Message {
 
 		public Exchange buildExchange() {
 			Exchange exc = new Exchange(null);
-			exc.setRequest(build());
+			Request req = build();
+			exc.setRequest(req);
 			exc.getDestinations().add(fullURL);
+			exc.setOriginalRequestUri(req.getUri());
 			return exc;
 		}
 
