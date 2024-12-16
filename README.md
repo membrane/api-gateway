@@ -38,9 +38,7 @@ API Gateway for REST, WebSockets and legacy Web Services written in Java. Featur
 ## Java
 
 1. Make sure Java 17 or newer is installed.
-
 2. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it.
-
 3. Run `service-proxy.sh` or `service-proxy.bat` in a terminal
 4. Open http://localhost:2000 to access https://api.predic8.de over the gateway.
 
