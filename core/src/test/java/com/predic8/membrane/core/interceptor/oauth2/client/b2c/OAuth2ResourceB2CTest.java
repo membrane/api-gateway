@@ -236,7 +236,7 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void userFlowViaInitiatorTest() throws Exception {
         Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        exc = browser.apply(exc);
+        browser.apply(exc);
 
         exc = new Request.Builder().get(tc.getClientAddress() + "/pe/init").buildExchange();
         exc = browser.apply(exc);
@@ -256,10 +256,10 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void multipleUserFlowsTest() throws Exception {
         Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        exc = browser.apply(exc);
+        browser.apply(exc);
 
         exc = new Request.Builder().get(tc.getClientAddress() + "/pe2/init").buildExchange();
-        exc = browser.apply(exc);
+        browser.apply(exc);
 
         exc = new Request.Builder().get(tc.getClientAddress() + "/api/").buildExchange();
         exc = browser.apply(exc);
@@ -273,12 +273,12 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void multipleUserFlowsWithErrorTest() throws Exception {
         Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        exc = browser.apply(exc);
+        browser.apply(exc);
 
         mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
 
         exc = new Request.Builder().get(tc.getClientAddress() + "/pe2/init").buildExchange();
-        exc = browser.apply(exc);
+        browser.apply(exc);
 
         // here, an error is returned (as checked by {@link #errorDuringSignIn()}) and the user is logged out
 
@@ -292,7 +292,7 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void stayLoggedInAfterProfileEditing2() throws Exception {
         Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        exc = browser.apply(exc);
+        browser.apply(exc);
 
         mockAuthorizationServer.abortSignIn.set(true);
 
@@ -315,7 +315,7 @@ public abstract class OAuth2ResourceB2CTest {
     @Test
     public void notLoggedInAfterProfileEditing() throws Exception {
         Exchange exc = new Request.Builder().get(tc.getClientAddress() + "/init").buildExchange();
-        exc = browser.apply(exc);
+        browser.apply(exc);
 
         mockAuthorizationServer.abortSignIn.set(true);
 
@@ -435,7 +435,7 @@ public abstract class OAuth2ResourceB2CTest {
         exc = browser.apply(exc);
 
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
-        assertEquals("http://membrane-api.io/error/security/oauth2-error-from-authentication-server", pd.getType());
+        assertEquals("https://membrane-api.io/error/security/oauth2-error-from-authentication-server", pd.getType());
         assertEquals("DEMO-123", pd.getExtensions().get("error"));
     }
 

@@ -156,6 +156,7 @@ public class OAuth2CallbackRequestHandler {
         if (code == null) {
             String error = params.get("error");
             if (error != null) {
+                log.warn("OAuth2 Error from Authentication Server: {}",error);
                 ProblemDetails pd = ProblemDetails.security(false)
                         .statusCode(500)
                         .addSubType("oauth2-error-from-authentication-server")

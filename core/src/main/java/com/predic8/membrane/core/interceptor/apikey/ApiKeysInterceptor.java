@@ -13,28 +13,30 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
-import com.predic8.membrane.core.interceptor.apikey.extractors.LocationNameValue;
-import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
-import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
-import com.predic8.membrane.core.security.ApiKeySecurityScheme;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.apikey.extractors.*;
+import com.predic8.membrane.core.interceptor.apikey.stores.*;
+import com.predic8.membrane.core.security.*;
+import org.slf4j.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.util.stream.Stream.ofNullable;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.stream.Stream.*;
 
+/**
+ * @description Secures APIs by validating keys stored in either files or proxies.xml. Keys can be received from clients via HTTP headers or URL query parameters. Additional permission checks are possible through scope validation - scopes are loaded into an Exchange property and can be checked using the "hasScope()" SpEL function.
+ * @topic 6. Security
+ */
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiKeysInterceptor.class.getName());
+
     public static final String SCOPES = "membrane-scopes";
     public static final String TYPE_4XX = "authorization-denied";
     public static final String TITLE_4XX = "Access Denied";
@@ -69,6 +71,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         var key = getKey(exc);
         if (required && key.isEmpty()) {
+            log.warn("Tried access apiKey protected resource without key. Uri: {}",exc.getRequestURI());
             exc.setResponse(ProblemDetails.security(false)
                             .statusCode(401)
                             .addSubType(TYPE_4XX)
@@ -85,6 +88,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
 
             } catch (UnauthorizedApiKeyException e) {
                 if (!required) {return CONTINUE;}
+                log.warn("The provided API {} key is invalid.",key.get());
                 exc.setResponse(ProblemDetails.security(false)
                                 .statusCode(403)
                                 .addSubType(TYPE_4XX)
@@ -123,6 +127,11 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                          .findFirst();
     }
 
+    /**
+     * @description Controls whether API key validation is enforced or optional. Optional will still load scopes and make them available for checking through SpEL function "hasScope()".
+     * @default true
+     * @example false
+     */
     @SuppressWarnings("SameParameterValue")
     @MCAttribute
     public void setRequired(boolean required) {
@@ -133,6 +142,9 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return required;
     }
 
+    /**
+     * @description API key stores to validate keys against
+     */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
         this.stores.addAll(stores);
@@ -142,6 +154,10 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         return stores;
     }
 
+    /**
+     * @description Extractors that define where and how to extract API keys from requests
+     * @default <headerExtractor /> (Using default header "X-Api-Key")
+     */
     @MCChildElement(allowForeign = true, order = 1)
     public void setExtractors(List<ApiKeyExtractor> extractors) {
         this.extractors.addAll(extractors);
