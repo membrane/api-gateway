@@ -41,7 +41,7 @@ import static java.util.EnumSet.*;
 @MCElement(name = "jsonProtection")
 public class JsonProtectionInterceptor extends AbstractInterceptor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(JsonProtectionInterceptor.class);
 
     private final ObjectMapper om = new ObjectMapper()
             .configure(FAIL_ON_READING_DUP_TREE_KEY, true)
@@ -120,15 +120,15 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         try {
             parseJson(new CountingInputStream(exc.getRequest().getBodyAsStreamDecoded()));
         } catch (JsonProtectionException e) {
-            LOG.debug(e.getMessage());
+            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(e.getMessage(), e.getLine(), e.getCol()));
             return RETURN;
         } catch (JsonParseException e) {
-            LOG.debug(e.getMessage());
+            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(e.getMessage(), e.getLocation().getLineNr(), e.getLocation().getColumnNr()));
             return RETURN;
         } catch (Throwable e) {
-            LOG.debug(e.getMessage());
+            log.debug(e.getMessage());
             exc.setResponse(createErrorResponse(e.getMessage(), null, null));
             return RETURN;
         }
@@ -137,6 +137,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     private Response createErrorResponse(String msg, Integer line, Integer col) {
         if (shouldProvideDetails()) {
+            log.warn("JSON protection violation. Line: {}, col: {}, msg: {}", line, col, msg);
             ProblemDetails pd = ProblemDetails.security(false)
                     .statusCode(400)
                     .addSubType("json-validation")

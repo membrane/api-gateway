@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import java.net.*;
 
@@ -36,6 +37,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  */
 @MCElement(name = "httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
 
     private static final String PROXIES_HINT = " String Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
 
@@ -67,6 +70,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     }
 
     private void setErrorResponse(Exchange exc, String msg) {
+        log.warn(msg);
         exc.setResponse(ProblemDetails.gateway(router.isProduction())
                 .statusCode(502)
                 .detail(msg)

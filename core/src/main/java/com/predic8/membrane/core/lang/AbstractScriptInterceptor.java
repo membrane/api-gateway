@@ -74,6 +74,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
         } catch (Exception e) {
+            log.warn(e.getMessage(), e);
             exc.setResponse(ProblemDetails.internal( router.isProduction())
                     .title("Error executing script.")
                     .detail("See logs for details.")
