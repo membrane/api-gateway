@@ -119,7 +119,6 @@ public class ProblemDetails {
     /**
      * Does only log, when key in log is needed. The caller is responsible to do the log if
      * there is something interessting.
-     * @return
      */
     public Response build() {
         Map<String, Object> root = new LinkedHashMap<>();

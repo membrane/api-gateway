@@ -145,7 +145,7 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException, URISyntaxException {
+    private Template createTemplate(String filePath) throws ClassNotFoundException, IOException {
         return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
     }
 

@@ -34,7 +34,7 @@ public class ProblemDetailsTest {
 
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
-        assertEquals("http://membrane-api.io/error/user/catastrophy",json.get("type").asText());
+        assertEquals("https://membrane-api.io/error/user/catastrophy",json.get("type").asText());
         assertEquals("Something happened!",json.get("title").asText());
     }
 
@@ -68,7 +68,7 @@ public class ProblemDetailsTest {
     void production() throws JsonProcessingException {
         JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(true).getBodyAsStringDecoded());
         assertEquals(3,json.size());
-        assertEquals("http://membrane-api.io/error/internal",json.get("type").asText());
+        assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
         assertEquals("An internal error occurred.",json.get("title").asText());
         assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
     }
@@ -77,7 +77,7 @@ public class ProblemDetailsTest {
     void noProduction() throws JsonProcessingException {
         JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(false).getBodyAsStringDecoded());
         assertEquals(5,json.size());
-        assertEquals("http://membrane-api.io/error/user/catastrophy",json.get("type").asText());
+        assertEquals("https://membrane-api.io/error/user/catastrophy",json.get("type").asText());
         assertEquals("Something happend!",json.get("title").asText());
         assertEquals("A detailed description.",json.get("detail").asText());
     }
@@ -101,7 +101,7 @@ public class ProblemDetailsTest {
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
         assertEquals(3,json.size());
-        assertEquals("http://membrane-api.io/error/internal",json.get("type").asText());
+        assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
         assertEquals("An internal error occurred.",json.get("title").asText());
         assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
     }
