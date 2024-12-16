@@ -52,7 +52,7 @@ public class SpringConfigurationErrorHandler {
             System.err.printf("""
                 %s
         
-                Membrane is configured to open port %d, but the port cannot be opened. 
+                Membrane is configured to open port %d, but the port cannot be opened.
                 Please check:
         
                 a) The port %d is lower than 1024. Opening it might require root or superuser rights.
@@ -60,7 +60,7 @@ public class SpringConfigurationErrorHandler {
         
                 To resolve this issue, you can:
         
-                1. Configure Membrane to use a different port. Update the port in the `conf/proxies.xml` file, 
+                1. Configure Membrane to use a different port. Update the port in the `conf/proxies.xml` file,
                    then restart Membrane.
                 2. Find and stop the program that is occupying the port. Then restart Membrane.
                 
@@ -130,34 +130,34 @@ public class SpringConfigurationErrorHandler {
                     <soapProxy wsdl="%s" serviceName="%s">
                     ...
                     </soapProxy>
-                                        
+                    
                     """.formatted(e.getSoapProxy().getWsdl(), service);
         }
 
 
-        System.err.println("""
+        System.err.printf("""
                 %s
-                                
+                        
                 soapProxy Configuration Error
                 =============================
-                                
+                        
                 The WSDL:
-                                
+                        
                 %s
-                                
+                        
                 contains definitions for the following services:
-                                
-                %s 
-                             
+                        
+                %s
+                        
                 A <soapProxy> can only be configured with one single service. But you can deploy the same
                 WSDL several times with different services.
-                                                   
+                        
                 %s
-                                
+                        
                 Each <soapProxy> will expose a different service.
-                                
-                                
-                """.formatted(STARS, e.getSoapProxy().getWsdl(), e.getServices(), sample));
+                        
+                        
+                %n""", STARS, e.getSoapProxy().getWsdl(), e.getServices(), sample);
     }
 
     private static void handlePropertyBatchUpdateException(Logger log, PropertyBatchUpdateException pbue) {
