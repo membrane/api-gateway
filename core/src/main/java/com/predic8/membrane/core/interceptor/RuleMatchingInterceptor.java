@@ -19,7 +19,6 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -46,6 +45,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		assignRule(exc, rule);
 
 		if (rule instanceof NullRule) {
+			// Do not log. 404 is too common
 			exc.setResponse(ProblemDetails.user(router.isProduction())
 							.statusCode(404)
 							.title("Wrong path or method")

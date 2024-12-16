@@ -28,11 +28,9 @@ import org.springframework.expression.spel.standard.*;
 import java.time.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.HttpUtil.getForwardedForList;
-import static com.predic8.membrane.core.util.Util.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.lang.String.*;
 
 /**
@@ -100,6 +98,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
             if (!strategy.isRequestLimitReached(getKey(exc)))
                 return CONTINUE;
         } catch (SpelEvaluationException e) {
+            log.info("Cannot evaluate keyExpression {} cause is {}", keyExpression, e.getCause());
             exc.setResponse(ProblemDetails.internal(router.isProduction())
                     .addSubType("rate-limiter")
                     .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(keyExpression,e.getMessage()))

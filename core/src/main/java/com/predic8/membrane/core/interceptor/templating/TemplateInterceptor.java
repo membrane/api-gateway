@@ -59,9 +59,11 @@ public class TemplateInterceptor extends StaticInterceptor {
             msg.setBodyContent(fillAndGetBytes(exc,msg,flow));
         }
         catch (TemplateExecutionException e) {
+            log.warn(e.getMessage(),e);
             exc.setResponse(ProblemDetails.gateway( router.isProduction()).addSubType("template").exception(e).build());
         }
         catch (Exception e) {
+            log.info(e.getMessage(),e);
             exc.setResponse(ProblemDetails.internal(router.isProduction()).exception(e).build());
         }
 
