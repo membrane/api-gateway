@@ -14,8 +14,9 @@
 		<api port="2000">
 			<request>
 				<javascript>
+					console.log("Query parameters: " + params);
 					// Return Json as Map
-					({ id:7, city:"Berlin" })
+					({ id:params.get('id'), city: params.get('city') })
 				</javascript>
 			</request>
 			<return contentType="application/json"/><!-- Return response to client -->
