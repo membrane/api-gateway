@@ -17,7 +17,7 @@ import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProblemDetailsTest {
@@ -27,8 +27,7 @@ public class ProblemDetailsTest {
     @Test
     void simple() throws JsonProcessingException {
 
-
-        Response r = user(false).addSubType("catastrophy").title("Something happend!").build();
+        Response r = user(false).addSubType("catastrophy").title("Something happened!").build();
 
         assertEquals(400, r.getStatusCode());
         assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
@@ -36,7 +35,7 @@ public class ProblemDetailsTest {
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
         assertEquals("http://membrane-api.io/error/user/catastrophy",json.get("type").asText());
-        assertEquals("Something happend!",json.get("title").asText());
+        assertEquals("Something happened!",json.get("title").asText());
     }
 
     @Test
@@ -117,11 +116,9 @@ public class ProblemDetailsTest {
                 .detail("Wrong format")
                 .build();
 
-        System.out.println("r = " + r);
-
         ProblemDetails pd = ProblemDetails.parse(r);
 
         assertEquals(421,pd.getStatusCode());
-        assertEquals("http://membrane-api.io/error/user/validation",pd.getType());
+        assertEquals("https://membrane-api.io/error/user/validation",pd.getType());
     }
 }
