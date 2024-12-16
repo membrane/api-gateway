@@ -389,6 +389,27 @@ Also try the [Groovy](distribution/examples/groovy) and [Javascript example](dis
 
 Membrane offers lots of security features to protect backend servers.
 
+## API Keys
+
+Secure any API using a simple API key configuration like this:
+
+```xml
+<api port="2000">
+    <apiKey>
+        <keys>
+            <secret value="demokey123" />
+        </keys>
+        <headerExtractor />
+    </apiKey>
+    <static>Hidden API</static>
+    <return/>
+</api>
+```
+
+This will fetch the API key from the "X-Api-Key" header if present.
+On incorrect key entry or missing key, access is denied and an error response is sent.
+For more complex configurations using RBAC and file-based key stores see: [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md)
+
 ## JSON Web Tokens
 
 The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT validator for other identity providers.
