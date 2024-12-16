@@ -16,7 +16,7 @@
 				<javascript>
 					console.log("Query parameters: " + params);
 					// Return Json as Map
-					({ id:params.get('id'), city: params.get('city') })
+					({ id: params.get('id'), city: params.get('city') })
 				</javascript>
 			</request>
 			<return contentType="application/json"/><!-- Return response to client -->

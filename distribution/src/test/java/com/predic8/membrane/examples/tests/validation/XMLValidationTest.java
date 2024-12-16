@@ -15,6 +15,7 @@
 package com.predic8.membrane.examples.tests.validation;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
@@ -31,10 +32,10 @@ public class XMLValidationTest extends DistributionExtractingTestcase {
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
 			// @formatter:off
-			given()
+			Response r = given()
 				.body(readFileFromBaseDir("year.xml"))
-				.post(LOCALHOST_2000)
-			.then()
+				.post(LOCALHOST_2000);
+			r.then()
 				.statusCode(200);
 
 			given()
