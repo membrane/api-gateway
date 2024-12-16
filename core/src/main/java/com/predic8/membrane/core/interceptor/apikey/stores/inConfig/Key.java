@@ -20,6 +20,9 @@ import com.predic8.membrane.annot.MCElement;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @description Contains api keys and scopes.
+ */
 @MCElement(name = "secret", topLevel = false)
 public class Key {
 
@@ -27,6 +30,9 @@ public class Key {
 
     private String value;
 
+    /**
+     * @description <scope>...</scope> elements for defining scopes for this key.
+     */
     @MCChildElement(allowForeign = true)
     public void setScopes(List<Scope> scopes) {
         this.scopes.addAll(scopes);
@@ -36,6 +42,9 @@ public class Key {
         return scopes;
     }
 
+    /**
+     * @description The api key itself.
+     */
     @MCAttribute
     public void setValue(String value) {
         this.value = value;
