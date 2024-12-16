@@ -73,6 +73,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         String basePath = getMatchingBasePath(exc);
         // No matching API found
         if (basePath == null) {
+            // Do not log: 404 is too common
             exc.setResponse(ProblemDetails.user(false)
                             .statusCode(404)
                             .addSubType("not-found")
@@ -98,8 +99,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 return returnErrors(exc, errors, REQUEST, validationDetails(rec.api));
             }
         } catch (OpenAPIParsingException e) {
+            String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
+            log.warn(detail);
             exc.setResponse(ProblemDetails.internal(router.isProduction())
-                    .detail("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()))
+                    .detail(detail)
                     .exception(e)
                     .build());
             return RETURN;
@@ -139,13 +142,16 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 return returnErrors(exc, errors, RESPONSE, validationDetails(rec.api));
             }
         } catch (OpenAPIParsingException e) {
+            String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
+            log.warn(detail,e);
             exc.setResponse(ProblemDetails.internal(router.isProduction())
-                    .detail("Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle()))
+                    .detail(detail)
                     .exception(e)
                     .build());
             return RETURN;
         }
         catch (Throwable t /* On Purpose! Catch absolutely all */) {
+            log.error(t.getMessage(),t);
             exc.setResponse(ProblemDetails.internal(router.isProduction())
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
