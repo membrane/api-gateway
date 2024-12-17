@@ -5,20 +5,27 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-		<api port="2000" name="example_main">
+
+		<api port="2020">
 			<switch>
-				<!-- If the case is true the message is routed to the mybackend internalProxy below -->
-				<case xPath="//order[@express='yes']" service="mybackend" />
+				<!-- In case of 'true' set destination to internalProxy -->
+				<case xPath="//order[@express='yes']" service="express" />
+				<case xPath="true()" service="normal"/>
 			</switch>
-			<static>Fallthrough switch!</static>
-			<return/>
+			<target/>
 		</api>
 
 		<!-- An internalProxy is like a function or subroutine for an API. -->
-		<internalProxy name="mybackend">
-			<static>Processed by internalProxy!</static>
+		<internalProxy name="express">
+			<static>Express processing!</static>
 			<return/>
 		</internalProxy>
+
+		<internalProxy name="normal">
+			<static>Normal processing!</static>
+			<return/>
+		</internalProxy>
+
 	</router>
 
 </spring:beans>

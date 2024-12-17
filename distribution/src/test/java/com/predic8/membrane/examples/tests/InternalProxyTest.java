@@ -14,11 +14,10 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
-import io.restassured.http.ContentType;
-import org.junit.jupiter.api.Test;
+import io.restassured.http.*;
+import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InternalProxyTest extends DistributionExtractingTestcase {
@@ -42,6 +41,8 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
                     .statusCode(200)
                     .extract()
                     .asString();
+
+            System.out.println("response = " + response);
 
             assertTrue(response.contains("Processed by internalProxy!"));
         }
