@@ -18,11 +18,11 @@ Secure endpoints using API keys.
       ```
     - Use a valid API key to gain access:
       ```
-      curl http://localhost:2000 -H "X-Api-Key: P8MBR" -v
+      curl http://localhost:2000 -H "X-Api-Key: abc123" -v
       ```
     - Alternatively, provide the API key as a query parameter:
       ```
-      curl http://localhost:2000/?api-key=P8MBR -v
+      curl http://localhost:2000?api-key=abc123 -v
       ```
 
 ## Understanding the Configuration
@@ -43,17 +43,21 @@ Key stores maintain API keys and their corresponding scopes through various meth
 
 ### Mandatory API Key Authentication
 This part of the configuration sets up an API on port `2000`, where providing an API key is mandatory. The setup allows API keys to be received either as HTTP headers or query parameters.  
-On successful authentication we simply return with the message "Secret Area!". Here we would direct the request to the destination server.
+On successful authentication the request is routed to the destination server.
 
 ```xml
 <api port="2000">
     <apiKey>
+       <keys>
+          <secret value="123" />
+       </keys>
         <headerExtractor />
         <queryParamExtractor />
     </apiKey>
-    <template>Hidden API</template>
-    <return/>
+    <target url="https://api.predic8.de"/>
 </api>
 ```
-###  Optional API Key with RBAC
-See [API keys with RBAC](./../rbac/README.md)
+###  More Complex Examples
+See:
+- [API Keys with RBAC](./../rbac/README.md)
+- [API Keys with OpenAPI](../apikey-openapi) 
