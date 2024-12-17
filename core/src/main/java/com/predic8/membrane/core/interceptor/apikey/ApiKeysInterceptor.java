@@ -76,7 +76,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
                             .statusCode(401)
                             .addSubType(TYPE_4XX)
                             .title(TITLE_4XX)
-                    .detail("Tried to access apiKey protected resource without key.")
+                    .detail("Tried to access API key protected resource without key.")
                     .build());
             return RETURN;
         }
