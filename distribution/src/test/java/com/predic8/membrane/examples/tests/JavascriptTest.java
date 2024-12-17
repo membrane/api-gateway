@@ -15,7 +15,6 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
-import io.restassured.filter.log.*;
 import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 import org.skyscreamer.jsonassert.*;
@@ -49,11 +48,12 @@ public class JavascriptTest extends AbstractSampleMembraneStartStopTestcase {
     @Test
     public void returnJsonAsMap() {
 
-        Response r = get("http://localhost:2000");
-
-        get("http://localhost:2000").then().assertThat()
-                .body("id",equalTo(7))
-                .body("city",equalTo("Berlin"));
+        // @formatter:off
+        Response r = get("http://localhost:2000?id=314&city=Boston");
+        r.then().assertThat()
+            .body("id",equalTo("314"))
+            .body("city",equalTo("Boston"));
+        // @formatter:on
     }
 
     @Test
@@ -117,12 +117,15 @@ public class JavascriptTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Test
     public void headers() {
+
+        // @formatter:off
         given()
-                .header("X-Foo",3141)
-                .get("http://localhost:2020")
-                .then().assertThat()
-                .statusCode(200)
-                .header("X-Javascript", "42");
+            .header("X-Foo",3141)
+            .get("http://localhost:2020")
+        .then().assertThat()
+            .statusCode(200)
+            .header("X-Javascript", "42");
+        // @formatter:on
 
         assertContains("Request headers:",logger.toString());
         assertContains("X-Foo",logger.toString());
