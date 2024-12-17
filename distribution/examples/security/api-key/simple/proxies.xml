@@ -9,20 +9,30 @@
         <!--API key authentication, providing key is mandatory.-->
         <api port="2000">
             <apiKey>
-                <!-- Register some API keys that will be permitted to access this API. -->
+                <!-- API keys that permit access -->
                 <keys>
-                    <secret value="demokey123" />
+                    <secret value="demokey" />
+                    <secret value="aed8bcc4-7c83-44d5-8789-21e4024ac873" />
+                    <secret value="abc123" />
                 </keys>
 
-                <!-- Fetch the API key from header (X-Api-Key) or query parameter (&api-key). -->
+                <!-- Fetch the API key from header
+
+                     X-Api-Key: demokey
+                -->
                 <headerExtractor />
+
+                <!-- Fetch key from query
+
+                     GET /foo?api-key=abc123
+                -->
                 <queryParamExtractor />
             </apiKey>
 
-            <!-- Use your backend through target instead of template and return.
-                <target url="https://example.com"/>
+            <!-- Use your backend instead of static and return.
+                 e.g. <target url="https://example.com"/>
             -->
-            <static>Hidden API</static>
+            <static>Secured API!</static>
             <return/>
         </api>
 
