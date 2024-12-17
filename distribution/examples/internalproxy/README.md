@@ -2,52 +2,7 @@
 
 This example explains how to realize complex message flows and how to break an api or serviceProxy into smaller units. Instead of an external target a request can be routed to an internal proxy. The internal proxy can offer reusable functionality that is shared by multiple APIs.
 
-## SOAP Example
-
-## Running the Example
-
-Let's start first example with the `<soapProxy>`
-
-1. Go to the `examples/internalProxy` directory
-
-2. Execute `service-proxy.sh`
-
-3. Go to [http://localhost:2000/axis2/services/BLZService](http://localhost:2000/axis2/services/BLZService)
- 
-4. Observe that `soapProxy` takes the `WSDL` file from `<internalProxy>`  and populates and serves the webpage
-## How it is done
-
-The following part describes the `<soapProxy>` example in detail.
-
-Let's take a look at the `proxies_soap.xml` file.
-
-In below line you can see definition of `<soapProxy>`
-
-`<soapProxy wsdl="service:mysoapbackend/axis2/services/BLZService?wsdl" port="2000">`
-
-When we put `URL`s starting with `service:` scheme in `wsdl` attribute, these URLs are resolved for  `<internalProxy>` with the name that comes after
-`service:` part until next `/`.
-
-In this example our `<soapProxy>` looks at value of `wsdl` attribute, parses `URL` and fetches the `WSDL` file from `<internalProxy>` defined in line below.
-
-```<internalProxy name="mysoapbackend">```
-
-As you can see our `<soapProxy>` knows which `<internalProxy>` it connects to, through the `name` attribute of `<internalProxy>`.
-
-You can also run below command and create valid `SOAP` request that would go through `<soapProxy>` and `<internalProxy>` we defined
-in `proxies_soap.xml` file. Don't forget to run it in the `examples/internalproxy` folder.
-```
-curl -d @soap_request.xml http://localhost:2000/axis2/services/BLZService --header "Content-Type: text/xml;charset=UTF-8" --header "SOAPAction:Get"
-```
-
-It is also possible to use interceptors in `<internalProxy>` like other proxies. This is useful when you have tasks that are common for other proxies.
-You can put them in `<internalProxy>` and route other proxies using `service:` URL scheme.
-If you ran above command you can see `X-Example-Header: true` header in the console you have run Membrane.
-In our example we use `<groovy>` interceptor for putting header and printing it. Have a look at `examples/groovy` folder if you are interested.
-
-### SERVICE PROXY EXAMPLE
-
-#### RUNNING THE EXAMPLE
+### RUNNING THE EXAMPLE
 
 This section explains how to run the example with `<serviceProxy>`
 

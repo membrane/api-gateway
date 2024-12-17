@@ -10,18 +10,14 @@
 				<!-- If the case is true the message is routed to the mybackend internalProxy below -->
 				<case xPath="//order[@express='yes']" service="mybackend" />
 			</switch>
-			<groovy>
-				println("Inside proxy example_main.")
-			</groovy>
-			<target url="http://www.predic8.de"/>
+			<static>Fallthrough switch!</static>
+			<return/>
 		</api>
 
 		<!-- An internalProxy is like a function or subroutine for an API. -->
 		<internalProxy name="mybackend">
-			<groovy>
-				println("Inside proxy mybackend.")
-			</groovy>
-			<target url="http://www.predic8.de"/>
+			<static>Processed by internalProxy!</static>
+			<return/>
 		</internalProxy>
 	</router>
 
