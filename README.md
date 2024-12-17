@@ -5,151 +5,157 @@
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-API Gateway for REST, WebSockets and legacy Web Services written in Java. Featuring:
+A versatile **API Gateway** for **REST**, **WebSockets**, and **legacy Web Services**, built in Java.
 
-**OpenAPI:**
+## Features
 
-* API [Deployment from OpenAPI](https://www.membrane-api.io/openapi/configuration-and-validation)
-* [Message validation](distribution/examples/openapi/validation-simple) against OpenAPI and JSON Schema
+### **OpenAPI**
 
-**API Security:**
+- Deploy APIs directly from [OpenAPI specifications](https://www.membrane-api.io/openapi/configuration-and-validation).
+- Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
-* [JSON Web Tokens](#json-web-tokens)
-* [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm)
-  and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm)
-* [OAuth2 authorization server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html)
-* [Rate limiting](#rate-limiting)
-* GraphQL-, JSON- and XML protection
+### **API Security**
+- Support for [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
+- Implement **rate limiting** to control traffic ([example](#rate-limiting)).
+- Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
 
-**Legacy Web Services:**
+### **Legacy Web Services**
+- Seamless support for [SOAP message routing](#soap-web-services).
+- Configure, validate, and rewrite WSDL-based services, including [message validation](#message-validation-against-wsdl-and-xsd).
 
-* [SOAP message routing](#soap-web-services)
-* WSDL configuration, [message validation](#message-validation-against-wsdl-and-xsd) and rewriting
-
-**Other:**
-
-* Admin Web console
-* [Load balancing](#load-balancing)
-* [Message Transformation](#message-transformation)
-* Embeddable reverse proxy HTTP framework for own API gateways
+### **Additional Features**
+- Intuitive **Admin Web Console** for monitoring and management.
+- Advanced [load balancing](#load-balancing) to ensure high availability.
+- Flexible [message transformation](#message-transformation) for seamless data processing.
+- Embeddable reverse proxy HTTP framework to build custom API gateways.
 
 # Getting Started
 
 ## Java
 
-1. Make sure Java 17 or newer is installed.
-2. Download the [binary](https://github.com/membrane/service-proxy/releases) and unzip it.
-3. Run `service-proxy.sh` or `service-proxy.bat` in a terminal
-4. Open http://localhost:2000 to access https://api.predic8.de over the gateway.
+### Prerequisites
+- Ensure **Java 17** or newer is installed.
 
-5. Change the configuration in `conf/proxies.xml`
+### Setup and Run
+1. **Download and Extract**
+  - Get the latest [binary release](https://github.com/membrane/service-proxy/releases).
+  - Unzip the downloaded file to a directory of your choice.
+
+2. **Start the Gateway**
+  - Open a terminal in the extracted directory.
+  - Run the appropriate command for your operating system:
+    - **Linux/Mac:** `./service-proxy.sh`
+    - **Windows:** `service-proxy.bat`
+
+3. **Access the Gateway**
+  - Open your browser and navigate to [http://localhost:2000](http://localhost:2000).
+  - The gateway will forward traffic to [https://api.predic8.de](https://api.predic8.de) by default.
+
+4. **Modify Configuration**
+  - To customize the behavior, edit the file located at `conf/proxies.xml`.
+
 
 ## Docker
 
-```
-$ docker run -p 2000:2000 predic8/membrane
-```
+### Quick Start
+Run the Membrane API Gateway in a Docker container:
+```bash
+docker run -p 2000:2000 predic8/membrane
+```  
 
-Browse to http://localhost:2000 or use curl:
-
-```
-curl http://localhost:2000
-```
-
-This should yield the same response as calling https://api.predic8.de does.
+### Access the Gateway
+- Open [http://localhost:2000](http://localhost:2000) in your browser, or use `curl`:
+  ```bash
+  curl http://localhost:2000
+  ```  
+- The response will match the output of directly calling [https://api.predic8.de](https://api.predic8.de).
 
 ### Changing the Configuration
-Bind a custom `proxies.xml` to Membrane container.
- 
-**Windows/Linux:**
-```
-docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
-```
-**Mac:**
-```
-docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
-```
+To use a custom [proxies.xml](distribution/router/conf/proxies.xml) configuration file, bind it to the Membrane container.
 
-More about setting up [Membrane for Docker](https://membrane-api.io/deployment/#docker).
+#### For Windows/Linux:
+```bash
+docker run -v proxies.xml:/opt/membrane/conf/proxies.xml -p 2000:2000 predic8/membrane
+```  
+
+#### For Mac:
+```bash
+docker run -v "$(pwd)/proxies.xml:/opt/membrane/conf/proxies.xml" -p 2000:2000 predic8/membrane
+```  
+
+### Learn More
+For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
+
 
 ## Next Steps
 
-See the snippets below, run the [samples](distribution/examples#readme), follow the [REST](https://membrane-api.io/tutorials/rest/)
-or [SOAP](https://membrane-api.io/tutorials/soap/) tutorial or have a look at the [documentation](https://www.membrane-soa.org/service-proxy-doc/).
+### Explore and Experiment
+- Try the code snippets below.
+- Run the provided [examples](distribution/examples#readme) to see Membrane in action.
+
+### Dive into Tutorials
+- Follow the [REST API Tutorial](https://membrane-api.io/tutorials/rest/) to learn about deploying and securing RESTful services.
+- Check out the [SOAP API Tutorial](https://membrane-api.io/tutorials/soap/) for legacy web service integration.
+
+### Read the Documentation
+- For detailed guidance, visit the [official documentation](https://www.membrane-soa.org/service-proxy-doc/).
 
 # Configuration
 
-Try the following snippets by copying them into the `conf/proxies.xml` file.
+### Customizing Membrane
+To configure Membrane, edit the `proxies.xml` file located in the `conf` folder.
+
+### Using Samples
+Explore the sample configurations provided below. Copy and modify them to suit your needs, then save or restart the gateway to apply the changes.
+
+For even more sample have a look at the `examples` folder.
+
+
+## Simple REST and HTTP Forwarding APIs
+
+### Define an API Route
+To forward requests from the API Gateway to a backend, use a simple `api` configuration. The example below routes requests received on port `2000` with a path starting with `/shop` to the backend at `https://api.predic8.de`:
+
+```xml
+<api port="2000">
+  <path>/shop</path>
+  <target url="https://api.predic8.de"/>
+</api>
+```  
+
+### Testing the Configuration
+After adding the configuration to the `proxies.xml` file, open the following URL in your browser to test the API: [http://localhost:2000/shop/v2/](http://localhost:2000/shop/v2/)
+
 
 ## Using OpenAPI for Configuration & Validation
 
-### 1. Command Line Mode
+### Deploy APIs with OpenAPI
+Membrane allows you to configure APIs directly from OpenAPI documents in the `proxies.xml` file. Backend addresses and other details are automatically derived from the OpenAPI description.
 
-Start Membrane directly with an OpenAPI document using the `oas` command:
-
-```sh
-# Display help
-service-proxy.sh -h
-
-# Start gateway with OpenAPI file
-service-proxy.sh oas -l conf/fruitshop-api.yml
-
-# Start gateway with OpenAPI URL and request validation enabled
-service-proxy.sh oas -v -l https://api.predic8.de/shop/v2/api-docs
-```
-
-### 2. Configuration File Mode
-
-Configure OpenAPI in proxies.xml to deploy APIs from OpenAPI descriptions. Backend addresses and other data are taken from the OpenAPI document.
-[See the example](distribution/examples/openapi)
+#### Example Configuration
+The snippet below shows how to deploy an API using an OpenAPI file (`fruitshop-api.yml`) with request validation enabled:
 
 ```xml
-
 <api port="2000">
     <openapi location="fruitshop-api.yml" validateRequests="yes"/>
 </api>
-```
+```  
 
-A list of deployed APIs is available at `http://localhost:2000/api-docs`
+#### Viewing Deployed APIs
+Once configured, a list of deployed APIs is available at:  
+
+[http://localhost:2000/api-docs](http://localhost:2000/api-docs)
 
 ![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
 
-Click on the API title to get the Swagger UI.
+Click on an API title in the list to open the Swagger UI for interactive exploration and testing:
 
 ![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.png)
 
-## REST and HTTP APIs
+### Learn More
+For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
 
-Routing requests from port `2000` to `api.predic8.de` when the path starts with `/shop/v2/`.
-
-```xml
-
-<api port="2000">
-    <path>/shop/v2/</path>
-    <target url="https://api.predic8.de"/>
-</api>
-```
-
-Call the API by opening `http://localhost:2000/shop/v2/` in the browser.
-
-# Instrumentation
-
-## Open Telemetry
-Using the `openTelemetry` plugin and the `W3C` propagation standard, we can integrate Membrane into OpenTelemetry traces.
-![otel_example](distribution/examples/opentelemetry/resources/otel_example.png)
-
-Membrane together with a backend with database connection.
-
-```xml
-    <api port="2000">
-        <openTelemetry sampleRate="1.0">
-            <otlpExporter host="localhost" port="4317"/>
-        </openTelemetry>
-        <target host="localhost" port="3000"/>
-    </api>
-```
-
-See the [opentelemetry example](./distribution/examples/opentelemetry)
 
 # Message Transformation
 
@@ -608,4 +614,30 @@ The _validator_ checks SOAP messages against a WSDL document including reference
 </soapProxy>
 ```
 
-See [configuration reference](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/) for much more.
+
+# Operation
+
+## Instrumentation
+
+### OpenTelemetry Integration
+Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.
+
+![OpenTelemetry Example](distribution/examples/opentelemetry/resources/otel_example.png)  
+This diagram illustrates Membrane in a tracing setup with a backend service and a database connection.
+
+#### Example Setup
+The configuration below shows Membrane forwarding requests to a backend, while exporting OpenTelemetry data to a collector:
+
+```xml
+<api port="2000">
+    <openTelemetry sampleRate="1.0">
+        <otlpExporter host="localhost" port="4317"/>
+    </openTelemetry>
+    <target host="localhost" port="3000"/>
+</api>
+```  
+
+For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/opentelemetry).
+
+
+
