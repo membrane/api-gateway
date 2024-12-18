@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.misc;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 import org.springframework.expression.spel.support.*;
 
@@ -37,7 +36,14 @@ class SetHeaderInterceptorTest {
         Router router = new Router();
         router.setBaseLocation("");
         exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/boo").header("host", "localhost:8080").build());
+        exc.setRequest(new Request.Builder().post("/boo")
+                .header("host", "localhost:8080")
+                .body("""
+                        {
+                            "name": "Mango"
+                        }
+                        """)
+                .build());
         exc.setProperty("prop", 88);
 
         interceptor.setName("foo");
@@ -127,6 +133,20 @@ class SetHeaderInterceptorTest {
     void jsonWrongAttribute() {
         interceptor.setValue("foo ${json[b]} baz");
         assertEquals("foo null baz", interceptor.evaluateExpression(evalCtx));
+    }
+
+    @Test
+    void jsonPath() throws Exception {
+        interceptor.setValue("${jsonPath('$.name')}");
+        interceptor.handleRequest(exc);
+        assertEquals("Mango", exc.getRequest().getHeader().getFirstValue("foo"));
+    }
+
+    @Test
+    void json() throws Exception {
+        interceptor.setValue("${json[name]}");
+        interceptor.handleRequest(exc);
+        assertEquals("Mango", exc.getRequest().getHeader().getFirstValue("foo"));
     }
 
     @Test

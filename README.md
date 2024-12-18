@@ -157,19 +157,210 @@ Click on an API title in the list to open the Swagger UI for interactive explora
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
 
 
-# Message Transformation
+## Routing
 
-## Create JSON from Query Parameters
+Membrane offers versatile routing options. Its fallthrough mechanism ensures that only the first matching API rule is applied, skipping the rest. This enables precise and efficient routing based on criteria such as paths, HTTP methods, or hostnames.
+
+### Example: Advanced Routing
+
+The configuration below demonstrates several routing rules, with comments explaining their behavior:
 
 ```xml
+<!-- Block POST requests -->
+<api port="2000" method="POST">
+    <response>
+        <static>POST is blocked!</static>
+    </response>
+    <return statusCode="405"/>
+</api>
 
+<!-- Requests matching "/shop/v2/products/.*" -->
+<api port="2000">
+    <path isRegExp="true">/shop/v2/products/.*</path>
+    <target url="https://api.predic8.de" />
+</api>
+
+<!-- All other requests to "/shop" -->
+<api port="2000">
+    <path>/shop</path>
+    <target url="https://api.predic8.de" />
+</api>
+
+<!-- Requests with a HOST header of "www.predic8.de" -->
+<api port="2000" host="www.predic8.de">
+    <response>
+        <static>Calling Web Server</static>
+    </response>
+    <return/>
+</api>
+
+<!-- Requests to "api.predic8.de" -->
+<api port="2000" host="api.predic8.de">
+    <response>
+        <static>Calling API</static>
+    </response>
+    <return/>
+</api>
+```  
+
+### Configuration Options
+
+- **`port`**: The port Membrane listens on for incoming connections.
+- **`method`**: Matches the HTTP method (e.g., `GET`, `POST`, `DELETE`). Use `*` to match any method.
+- **`host`**: Specifies hostnames for routing. Supports basic globbing with `*`.
+- **`path`**: Matches request paths. Regular expressions can be enabled with `isRegExp="true"`.
+
+For more routing options, see the [Membrane API documentation](https://www.membrane-api.io/docs/current/api.html).
+
+---  
+
+This version adds structure, clear explanations for each rule, and practical use cases for better readability and understanding.
+
+### Short Circuit
+
+Sometimes, you may need an endpoint that doesn’t forward requests to a backend. Membrane makes it easy to create such endpoints.
+
+#### Example: Health Check Endpoint
+The following configuration creates a health check endpoint that responds to requests at [http://localhost:2000/health](http://localhost:2000/health):
+
+```xml
+<api port="2000">
+  <path>/health</path>
+  <response>
+    <static>I'am fine.</static>
+  </response>
+  <return statusCode="200"/>
+</api>
+```
+
+#### Example: Blocking Specific Paths
+You can block specific paths (e.g., `/nothing`) while allowing other calls to pass through.
+
+**Routing Note:** APIs are matched from top to bottom. When multiple APIs share the same port, place the APIs with stricter routing conditions higher in the configuration.
+
+```xml
+<api port="2000"> <!-- Calls to /nothing are blocked with 404 -->
+  <path>/nothing</path>
+  <response>
+    <static>Nothing to see!</static>
+  </response>
+  <return statusCode="404"/>
+</api>
+
+<api port="2000">
+  <response>
+    <static>Other call to port 2000</static>
+  </response>
+  <return statusCode="404"/>
+</api>
+```
+
+## Scripting
+
+Membrane has powerful scripting features that allow to realize the desired behaviour of an API. You can use the Groovy or the Javascript language to write small plugins. 
+
+### Groovy Scripts
+
+The following API executes a Groovy script during the request and the response. 
+
+```xml
+<api port="2000">
+    <groovy>
+        println "I'am executed in the ${flow} flow"
+        println "HTTP Headers:\n${header}"
+    </groovy>
+    <target url="https://api.predic8.de"/>
+</api>
+```
+
+After invoking [http://localhost:2000](http://localhost:2000) you can see the following output in the console where you have started Membrane:
+
+```text
+I'am executed in the REQUEST flow
+HTTP Headers:
+Host: localhost:2000
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:133.0) Gecko/20100101 Firefox/133.0
+...
+
+I'am executed in the RESPONSE flow
+HTTP Headers:
+Content-Length: 390
+Content-Type: application/json
+```
+
+## Message Transformation
+
+### Manipulating HTTP Headers
+
+You can modify HTTP headers in requests or responses using Membrane's `setHeader` and `headerFilter` feature. This is particularly useful for enabling CORS or adding custom headers.
+
+#### Example: Adding CORS Headers
+The following configuration adds `CORS` headers to the responses received from the backend:
+
+```xml
+<api port="2000">
+    <response>
+        <setHeader name="Access-Control-Allow-Origin" value="*" />
+        <setHeader name="Access-Control-Allow-Methods" value="GET" />
+    </response>
+    <target url="https://api.predic8.de" />
+</api>
+```
+
+### Example: Setting Headers from JSON Body Content
+
+Membrane allows dynamic extraction of values from the JSON body of a request or response and uses them to set HTTP headers. 
+
+#### Example Configuration
+The following example extracts the `id` and `name` fields from a JSON body and sets them as custom headers in the response:
+
+```xml
+<api port="2000">
+    <response>
+        <!-- Extract the "id" field from the JSON body and set it as the X-Product-Id header -->
+        <setHeader name="X-Product-Id" value="${jsonPath('$.id')}"/>
+        
+        <!-- Extract the "name" field from the JSON body and set it as the X-Product-Name header -->
+        <setHeader name="X-Product-Name" value="${jsonPath('$.name')}"/>
+    </response>
+    <target url="https://api.predic8.de" />
+</api>  
+```
+
+### Removing HTTP Headers
+
+You can easily remove specific HTTP headers from requests or responses (or both) using the `headerFilter` element. This is useful for cleaning up headers or meeting security requirements.
+
+#### Example: Header Filtering
+The following configuration demonstrates how to manage headers:
+
+```xml
+<api port="2000">
+  <response>
+  <headerFilter>
+    <include>X-XSS-Protection</include> <!-- Keep the X-XSS-Protection header -->
+    <exclude>X-.*</exclude>             <!-- Remove all headers starting with "X-" except those explicitly included -->
+  </headerFilter>
+  </response>
+  <target url="https://www.predic8.de"/>
+</api>
+```  
+
+- **`<include>`:** Specifies headers to retain.
+- **`<exclude>`:** Defines headers to remove. Wildcards can be used for patterns.
+
+The first matching rule will be acted upon by the filter.
+
+### Create JSON from Query Parameters
+
+```xml
 <api port="2000" method="GET">
-    <request>
-        <template contentType="application/json" pretty="yes">
-            { "answer": ${params.answer} }
-        </template>
-    </request>
-    <return statusCode="200"/>
+  <request>
+    <template contentType="application/json" pretty="yes">
+      { "answer": ${params.answer} }
+    </template>
+  </request>
+  <return/>
 </api>
 ```
 
