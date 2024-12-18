@@ -65,50 +65,41 @@ public class XMLProtectorTest {
 	}
 
 	@Test
-	public void testInvariant() throws Exception {
+	void invariant() throws Exception {
 		assertTrue(runOn("/customer.xml"));
 	}
 
 	@Test
-	public void testNotWellformed() throws Exception {
+	void NotWellformed() throws Exception {
 		assertFalse(runOn("/xml/not-wellformed.xml"));
 	}
 
 	@Test
-	public void testDTDRemoval1() throws Exception {
+	void DTDRemoval() throws Exception {
 		assertTrue(runOn("/xml/entity-expansion.lmx"));
 		assertTrue(output.length < input.length / 2);
 		assertFalse(new String(output).contains("ENTITY"));
 	}
 
 	@Test
-	public void testDTDRemoval2() throws Exception {
-		assertTrue(runOn("/xml/entity-external.xml"));
-		assertTrue(output.length < input.length * 2 / 3);
-		assertFalse(new String(output).contains("ENTITY"));
-	}
-
-	@Test
-	public void testExpandingEntities() throws Exception {
+	void expandingEntities() throws Exception {
 		assertTrue(runOn("/xml/entity-expansion.lmx", false));
 		assertTrue(output.length > input.length / 2);
 		assertTrue(new String(output).contains("ENTITY"));
 	}
 
 	@Test
-	public void testExternalEntities() throws Exception {
-		assertTrue(runOn("/xml/entity-external.xml", false));
-		assertTrue(output.length > input.length * 2 / 3);
-		assertTrue(new String(output).contains("ENTITY"));
+	void externalEntities() throws Exception {
+		assertThrows(XMLProtectionException.class, () -> runOn("/xml/entity-external.xml", false));
 	}
 
 	@Test
-	public void testLongElementName() throws Exception {
+	void longElementName() throws Exception {
 		assertFalse(runOn("/xml/long-element-name.xml"));
 	}
 
 	@Test
-	public void testManyAttributes() throws Exception {
+	void manyAttributes() throws Exception {
 		assertFalse(runOn("/xml/many-attributes.xml"));
 	}
 }

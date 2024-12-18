@@ -14,20 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.Iterator;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
+import java.util.*;
+import java.util.function.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static javax.xml.stream.XMLInputFactory.*;
 
 /**
  * Filters XML streams, removing potentially malicious elements:
@@ -46,9 +42,9 @@ public class XMLProtector {
 	private static Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,false);
+		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+		xmlInputFactory.setProperty(SUPPORT_DTD,false);
 	}
 
 	private XMLEventWriter writer;
@@ -63,10 +59,16 @@ public class XMLProtector {
 		this.maxAttibuteCount = maxAttibuteCount;
 
 		if(!removeDTD)
-			xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD,true);
+			xmlInputFactory.setProperty(SUPPORT_DTD,true);
 	}
 
-	public boolean protect(InputStreamReader isr) {
+	/**
+	 * Is XML secure?
+	 * @param isr
+	 * @return false if there is any security problem in the XML
+	 * @throws XMLProtectionException if there are critical issues like external entity references
+	 */
+	public boolean protect(InputStreamReader isr) throws XMLProtectionException {
 		try {
 			XMLEventReader parser;
 			synchronized(xmlInputFactory) {
@@ -91,7 +93,9 @@ public class XMLProtector {
 								return false;
 							}
 					}
-				} if (event instanceof javax.xml.stream.events.DTD) {
+				}
+				if (event instanceof javax.xml.stream.events.DTD dtd) {
+					checkExternalEntities(dtd);
 					if (removeDTD) {
 						log.debug("removed DTD.");
 						continue;
@@ -105,6 +109,26 @@ public class XMLProtector {
 			return false;
 		}
 		return true;
+	}
+
+	private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
+		if (containsExternalEntityReferences(dtd)) {
+			String msg = "Possible attack. External entity found in DTD.";
+			log.warn(msg);
+			throw new XMLProtectionException(msg);
+		}
+	}
+
+	private static boolean containsExternalEntityReferences(DTD dtd) {
+		var entities = dtd.getEntities();
+		if (entities == null || entities.isEmpty())
+			return false;
+
+		return entities.stream().anyMatch(isExternalEntity());
+	}
+
+	private static @NotNull Predicate<EntityDeclaration> isExternalEntity() {
+		return ed -> ed.getPublicId() != null || ed.getSystemId() != null;
 	}
 
 }
