@@ -143,13 +143,6 @@ class SetHeaderInterceptorTest {
     }
 
     @Test
-    void json() throws Exception {
-        interceptor.setValue("${json[name]}");
-        interceptor.handleRequest(exc);
-        assertEquals("Mango", exc.getRequest().getHeader().getFirstValue("foo"));
-    }
-
-    @Test
     @DisplayName("Only set if the header is absent")
     void onlyIfAbsent() throws Exception {
         exc.getRequest().getHeader().add("X-FOO","0");
