@@ -73,6 +73,7 @@ A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web S
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
 9. [Operation](#Operation)
    - [Logging](#log-http)
+   - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
    - [OpenTelemetry](#opentelemetry-integration)
 
 # Getting Started
@@ -1009,6 +1010,40 @@ or [JSON](distribution/examples/logging/json) file.
 ```
 
 ## Instrumentation
+
+### Monitoring with Prometheus and Grafana
+
+Membrane supports seamless monitoring with Prometheus and Grafana, enabling visibility into API performance and system metrics.
+
+Add an API with the `prometheus` plugin to your `proxies.xml` file. This will expose metrics at the specified endpoint:
+
+```xml
+<api port="2000">
+  <path>/metrics</path>
+  <prometheus />
+</api>
+```
+
+Then you can query the metrics by navigating to:  
+[http://localhost:2000/metrics](http://localhost:2000/metrics).
+
+This endpoint provides Prometheus-compatible metrics, which you can scrape using a Prometheus server.
+
+For a complete configuration example with Prometheus and Grafana, refer to:  
+[Prometheus Example](distribution/examples/prometheus).
+
+### Monitoring with Prometheus and Grafana
+
+Add an API with the `prometheus` plugin at the top of the `proxies.xml` file.
+
+```xml
+<api port="2000">
+  <path>/metrics</path>
+  <prometheus />
+</api>
+```
+
+Then query the metrics endpoint by opening [http://localhost:2000/metrics](http://localhost:2000/metrics). Now you can setup a prometheus to scrape that endpoint. For a complete example with prometheus and Grafana have a look at [examples/prometheus](distribution/examples/prometheus).
 
 ### OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.
