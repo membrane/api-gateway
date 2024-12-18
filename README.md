@@ -65,6 +65,7 @@ A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web S
     - [OAuth2](#oauth2)
       - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
       - [Membrane as Authorization Server](#membrane-as-authorization-server)
+    - [XML and JSON Protection](#xml-and-json-protection)
 9. [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
@@ -918,6 +919,49 @@ Secure endpoints with SSL/TLS:
   <target host="localhost" port="8080"  />
 </api>
 ```
+
+### XML and JSON Protection
+
+Membrane offers protection mechanisms to secure your APIs from common risks associated with XML and JSON payloads.
+
+#### XML Protection
+
+The `xmlProtection` plugin inspects incoming XML requests and mitigates risks such as:
+
+- External entity references (XXE attacks).
+- Excessively large element names.
+- High numbers of attributes or deeply nested structures.
+
+**Example:**
+```xml
+<api port="2000">
+   <xmlProtection />
+   <target url="https://api.predic8.de"/>
+</api>
+```  
+
+See [XML Protection Reference](https://www.membrane-api.io/docs/current/xmlProtection.html).
+
+#### JSON Protection
+
+The `jsonProtection` plugin safeguards APIs from JSON-based vulnerabilities by setting limits on:
+
+- **Depth**: Prevents overly nested JSON structures.
+- **Key Length**: Restricts excessively long keys.
+- **Object Size**: Maximum number of fields in aJSON object.
+- **String Length**: Controls maximum length of string values.
+- **...**
+
+**Example:**
+
+```xml
+<api port="2000">
+   <jsonProtection maxDepth="5" maxKeyLength="100" maxStringLength="100000"/>
+   <target url="https://api.predic8.de"/>
+</api>
+```  
+
+See [JSON Protection](https://www.membrane-api.io/docs/current/jsonProtection.html).
 
 # Traffic Control
 
