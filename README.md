@@ -5,7 +5,7 @@
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-A versatile **API Gateway** for **REST**, **WebSockets**, and **legacy Web Services**, built in Java.
+A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web Services**, built in Java.
 
 ## Features
 
@@ -15,9 +15,9 @@ A versatile **API Gateway** for **REST**, **WebSockets**, and **legacy Web Servi
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
 ### **API Security**
-- Support for [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](distribution/examples/api-management), [NTLM](distribution/examples/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- Support for [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#API-Keys), [NTLM](distribution/examples/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
-- Implement **rate limiting** to control traffic ([example](#rate-limiting)).
+- [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
 
 ### **Legacy Web Services**
@@ -29,6 +29,17 @@ A versatile **API Gateway** for **REST**, **WebSockets**, and **legacy Web Servi
 - Advanced [load balancing](#load-balancing) to ensure high availability.
 - Flexible [message transformation](#message-transformation) for seamless data processing.
 - Embeddable reverse proxy HTTP framework to build custom API gateways.
+
+# Content
+
+- [Getting Started](#Getting-Started)
+- [Basics](#Basics) Routing, rewriting
+- [Scripting](#scripting)
+- [Message Transformation](#message-transformation)
+- [Security](#security)
+- [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
+- [Legacy Web Services](#soap-web-services) SOAP and WSDL
+- [Operation](#Operation)
 
 # Getting Started
 
@@ -101,7 +112,7 @@ For detailed Docker setup instructions, see the [Membrane Deployment Guide](http
 ### Read the Documentation
 - For detailed guidance, visit the [official documentation](https://www.membrane-soa.org/service-proxy-doc/).
 
-# Configuration
+# Basics
 
 ### Customizing Membrane
 To configure Membrane, edit the `proxies.xml` file located in the `conf` folder.
@@ -212,10 +223,6 @@ The configuration below demonstrates several routing rules, with comments explai
 
 For more routing options, see the [Membrane API documentation](https://www.membrane-api.io/docs/current/api.html).
 
----  
-
-This version adds structure, clear explanations for each rule, and practical use cases for better readability and understanding.
-
 ### Short Circuit
 
 Sometimes, you may need an endpoint that doesn’t forward requests to a backend. Membrane makes it easy to create such endpoints.
@@ -255,9 +262,43 @@ You can block specific paths (e.g., `/nothing`) while allowing other calls to pa
 </api>
 ```
 
-## Scripting
+### URL Rewriting
 
-Membrane has powerful scripting features that allow to realize the desired behaviour of an API. You can use the Groovy or the Javascript language to write small plugins. 
+The URLs of request can be rewritten dynamically before forwarding them to the backend. This is useful for restructuring API paths or managing legacy endpoints.
+
+#### Example
+The following configuration rewrites requests starting with `/fruitshop` to `/shop/v2`, preserving the remainder of the path:
+
+```xml
+<api port="2000">
+    <path>/fruitshop</path>
+    <rewriter>
+        <map from="^/fruitshop(.*)" to="/shop/v2/$1"/>
+    </rewriter>
+    <target url="https://api.predic8.de"/>
+</api>
+```
+
+#### Testing
+A request to:
+```
+http://localhost:2000/fruitshop/products/4
+```  
+will be rewritten to and forwarded to the backend at:
+```
+https://api.predic8.de/shop/v2/products/4
+```
+
+# Scripting
+
+Membrane has powerful scripting features that allow to modify the desired of an API using Groovy or Javascript. 
+
+#### Use Cases
+
+- **Custom Responses**: Tailor responses dynamically based on client requests or internal logic.
+- **Mocking APIs**: Simulate API behavior during testing or development phases.
+- **Dynamic Headers**: Add headers conditionally based on business rules.
+- **Debugging**: Inspect incoming requests during development.
 
 ### Groovy Scripts
 
@@ -265,11 +306,11 @@ The following API executes a Groovy script during the request and the response.
 
 ```xml
 <api port="2000">
-    <groovy>
-        println "I'am executed in the ${flow} flow"
-        println "HTTP Headers:\n${header}"
-    </groovy>
-    <target url="https://api.predic8.de"/>
+  <groovy>
+    println "I'am executed in the ${flow} flow" 
+    println "HTTP Headers:\n${header}"
+  </groovy>
+  <target url="https://api.predic8.de"/>
 </api>
 ```
 
@@ -287,6 +328,121 @@ HTTP Headers:
 Content-Length: 390
 Content-Type: application/json
 ```
+
+#### Dynamically Route to random Target 
+
+You can realize a load balancer by setting the destination randomly.  
+
+```xml
+<api port="2000">
+  <request>
+    <groovy>
+      sites = ["https://api.predic8.de","https://membrane-api.io","https://predic8.de"]
+      Collections.shuffle sites
+      exchange.setDestinations(sites)
+    </groovy>
+  </request>
+  <target/> <!-- No details needed target uses destinations from exchange -->
+</api>
+```
+
+### Create a Response with Groovy
+
+The `groovy` plugin in Membrane allows you to dynamically generate custom responses. The result of the last line of the Groovy script is passed to the plugin. If the result is a `Response` object, it will be returned to the caller.
+
+#### Example
+The following example creates a custom JSON response with a status code of `200`, a specific content type, and a custom header:
+
+```xml
+<api port="2000">
+  <groovy>
+    Response.ok() 
+      .contentType("application/json")   
+      .header("X-Foo", "bar")           
+      .body("""
+        {
+            "success": true
+        }
+        """)                             
+    .build()
+  </groovy>
+</api>
+```  
+
+#### How It Works
+- The `Response.ok()` method initializes a new HTTP response with a status of `200 OK`.
+- The `contentType()` method sets the `Content-Type` header, ensuring the response is identified as JSON.
+- The `header()` method adds custom headers to the response.
+- The `body()` method specifies the response payload.
+- The `build()` method finalizes the response object, which is then returned by the `groovy` plugin.
+
+#### Resulting Response
+When accessing this API, the response will look like this:
+
+```
+HTTP/1.1 200 OK  
+Content-Type: application/json  
+X-Foo: bar  
+
+{
+  "success": true
+}
+```  
+
+#### Learn More about the Groovy Plugin
+For more information about using Groovy with Membrane, refer to:
+
+- [Groovy Plugin Reference](https://www.membrane-api.io/docs/current/groovy.html).
+- [Sample Project](distribution/examples/groovy)
+
+### JavaScript Extension
+
+In addition to Groovy, Membrane supports JavaScript for implementing custom behavior. This allows you to inspect, modify, or log details about requests and responses.
+
+#### Example
+The following example logs all HTTP headers from incoming requests and responses to the console:
+
+```xml
+<api port="2000">
+  <javascript>
+    console.log("------------ Headers: -------------");
+
+    var fields = header.getAllHeaderFields();
+    for (var i = 0; i < fields.length; i++) {
+        console.log(fields[i]);
+    }
+      
+    CONTINUE;
+  </javascript>
+  <target url="https://api.predic8.de"/>
+</api>
+```  
+
+The `CONTINUE` keyword ensures that the request continues processing and is forwarded to the target URL.
+
+#### Learn More
+For more details about using JavaScript with Membrane, check the [JavaScript Plugin documentation](https://www.membrane-api.io/docs/current/javascript.html).
+
+### Javascript Extenstion
+
+Besides Groovy you can realize custom behavior with Javascript.
+
+```xml
+<api port="2020">
+        <javascript>
+            console.log("------------ Headers: -------------")
+
+            var fields = header.getAllHeaderFields();
+
+            for(i=0;i &lt; fields.length;i++) {
+              console.log(fields[i]);
+            }
+            CONTINUE
+        </javascript>
+    <target url="https://api.predic8.de"/>
+</api>
+```
+
 
 ## Message Transformation
 
@@ -586,62 +742,75 @@ Membrane offers lots of security features to protect backend servers.
 
 ## API Keys
 
-Secure any API using a simple API key configuration like this:
+You can define APIs keys directly in your configuration, and Membrane will validate incoming requests against them.
+
+### Example Configuration
+The following configuration secures the `Fruitshop API` by validating a key provided as a query parameter:
 
 ```xml
 <api port="2000">
     <apiKey>
+        <!-- Define valid API keys -->
         <keys>
-            <secret value="demokey123" />
+            <secret value="abc123" />
+            <secret value="secret" />
+            <secret value="Paris2025" />
         </keys>
-        <headerExtractor />
+        
+        <!-- Extract the API key from the query parameter -->
+        <queryParamExtractor paramName="api-key" />
     </apiKey>
-    <static>Hidden API</static>
-    <return/>
+    <target url="https://api.predic8.de" />
 </api>
-```
+```  
 
-This will fetch the API key from the "X-Api-Key" header if present.
-On incorrect key entry or missing key, access is denied and an error response is sent.
-For more complex configurations using RBAC and file-based key stores see: [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md)
+### Testing the Configuration
+To test the configuration, pass a valid API key in the query string:
+
+```bash
+curl "http://localhost:2000/shop/v2/products/4?api-key=abc123"
+```  
+
+If the key is invalid or missing, Membrane denies access and returns an error response (HTTP 401 Unauthorized).
+
+### Advanced Use Cases
+For more complex setups, such as API keys in the HTTP header, role-based access control (RBAC) or file-based key storage, see the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md).
 
 ## JSON Web Tokens
 
 The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT validator for other identity providers.
 
 ```xml
-
 <api port="8080">
-    <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
-        <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
-    </jwtAuth>
-    <target url="https://your-backend"/>
+  <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
+    <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
+  </jwtAuth>
+  <target url="https://your-backend"/>
 </api>
 ```
 
 ## OAuth2
 
-### Secure an API with OAuth2
+### Secure APIs with OAuth2
 
 Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak or Membrane authentication servers.
 
 ```xml
-
 <api port="2001">
-    <oauth2Resource>
-        <membrane src="https://accounts.google.com"
-                  clientId="INSERT_CLIENT_ID"
-                  clientSecret="INSERT_CLIENT_SECRET"
-                  scope="email profile"
-                  subject="sub"/>
-    </oauth2Resource>
-    <groovy>
-        // Get email from OAuth2 and forward it to the backend
-        def oauth2 = exc.properties.oauth2
-        header.setValue('X-EMAIL',oauth2.userinfo.email)
-        CONTINUE
-    </groovy>
-    <target url="https://backend"/>
+  <oauth2Resource>
+    <membrane src="https://accounts.google.com"
+              clientId="INSERT_CLIENT_ID"
+              clientSecret="INSERT_CLIENT_SECRET"
+              scope="email profile"
+              subject="sub"/>
+  </oauth2Resource>
+  <groovy>
+    // Get email from OAuth2 and forward it to the backend
+    def oauth2 = exc.properties.oauth2
+    header.setValue('X-EMAIL',oauth2.userinfo.email)
+    CONTINUE
+  </groovy>
+  <target url="https://backend"/>
 </api>
 ```
 
@@ -654,19 +823,19 @@ Operate your own identity provider:
 ```xml
 
 <api port="2000">
-    <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
-        <staticUserDataProvider>
-            <user username="john" password="password" email="john@predic8.de"/>
-        </staticUserDataProvider>
-        <staticClientList>
-            <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback"/>
-        </staticClientList>
-        <bearerToken/>
-        <claims value="aud email iss sub username">
-            <scope id="username" claims="username"/>
-            <scope id="profile" claims="username email password"/>
-        </claims>
-    </oauth2authserver>
+  <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
+    <staticUserDataProvider>
+        <user username="john" password="password" email="john@predic8.de"/>
+    </staticUserDataProvider>
+    <staticClientList>
+        <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback"/>
+    </staticClientList>
+    <bearerToken/>
+    <claims value="aud email iss sub username">
+        <scope id="username" claims="username"/>
+        <scope id="profile" claims="username email password"/>
+    </claims>
+  </oauth2authserver>
 </api>
 ```
 
@@ -675,12 +844,12 @@ See the [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy
 ## Basic Authentication
 
 ```xml
-
 <api port="2000">
-    <basicAuthentication>
-        <user name="bob" password="secret"/>
-    </basicAuthentication>
-    <target host="localhost" port="8080"/>
+  <basicAuthentication>
+    <user name="bob" password="secret"/>
+    <user name="alice" password="secret"/>
+  </basicAuthentication>
+  <target host="localhost" port="8080"/>
 </api>
 ```
 
@@ -689,9 +858,8 @@ See the [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy
 Route to SSL/TLS secured endpoints:
 
 ```xml
-
 <api port="8080">
-    <target url="https://api.predic8.de"/>
+  <target url="https://api.predic8.de"/> <!-- Note the s in https! -->
 </api>
 ```
 
@@ -708,6 +876,8 @@ Secure endpoints with SSL/TLS:
 </api>
 ```
 
+# Traffic Control
+
 ## Rate Limiting
 
 Limit the number of incoming requests:
@@ -720,7 +890,7 @@ Limit the number of incoming requests:
 </api>
 ```
 
-# Load balancing
+## Load balancing
 
 Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
 
@@ -736,18 +906,6 @@ Distribute workload to multiple backend nodes. [See the example](distribution/ex
             </cluster>
         </clusters>
     </balancer>
-</api>
-```
-
-# Rewrite URLs
-
-```xml
-
-<api port="2000">
-    <rewriter>
-        <map from="^/good-looking-path/(.*)" to="/backend-path/$1"/>
-    </rewriter>
-    <target host="my.backend.server"/>
 </api>
 ```
 
