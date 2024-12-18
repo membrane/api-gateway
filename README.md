@@ -423,27 +423,6 @@ The `CONTINUE` keyword ensures that the request continues processing and is forw
 #### Learn More
 For more details about using JavaScript with Membrane, check the [JavaScript Plugin documentation](https://www.membrane-api.io/docs/current/javascript.html).
 
-### Javascript Extenstion
-
-Besides Groovy you can realize custom behavior with Javascript.
-
-```xml
-<api port="2020">
-        <javascript>
-            console.log("------------ Headers: -------------")
-
-            var fields = header.getAllHeaderFields();
-
-            for(i=0;i &lt; fields.length;i++) {
-              console.log(fields[i]);
-            }
-            CONTINUE
-        </javascript>
-    <target url="https://api.predic8.de"/>
-</api>
-```
-
-
 ## Message Transformation
 
 ### Manipulating HTTP Headers
