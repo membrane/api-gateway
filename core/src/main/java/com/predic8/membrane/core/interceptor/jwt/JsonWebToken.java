@@ -13,13 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.util.Base64;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 public class JsonWebToken {
+
+    private static final Logger log = LoggerFactory.getLogger(JsonWebToken.class.getName());
 
     public static abstract class AbstractJwtSubHolder {
         private final Map<String, Object> data;
@@ -62,8 +64,10 @@ public class JsonWebToken {
     public JsonWebToken(String jwt) throws JWTException {
         var chunks = jwt.split("\\.");
 
-        if (chunks.length < 3)
+        if (chunks.length < 3) {
+            log.warn("Less than 3 parts in JWT header: {}", jwt);
             throw new JWTException(ERROR_MALFORMED_COMPACT_SERIALIZATION);
+        }
 
         var decoder = Base64.getUrlDecoder();
         var mapper = new ObjectMapper();

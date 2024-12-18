@@ -90,7 +90,7 @@ public class StaticInterceptor extends AbstractInterceptor {
         try {
             return jsonBeautifier.beautify(text);
         } catch (IOException e) {
-            log.warn("Failed to format JSON", e);
+            log.warn("Failed to format JSON: {}", e.getMessage());
             return text;
         }
     }

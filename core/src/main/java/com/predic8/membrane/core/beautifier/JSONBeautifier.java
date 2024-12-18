@@ -44,21 +44,4 @@ public class JSONBeautifier {
 		objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, quoteFieldNames);
 		objectMapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
 	}
-
-	public void setIndentOutput(boolean indentOutput) {
-		this.indentOutput = indentOutput;
-	}
-
-	public void setAllowedUnquotedFieldNames(boolean allowedUnquotedFieldNames) {
-		this.allowedUnquotedFieldNames = allowedUnquotedFieldNames;
-	}
-
-	public void setQuoteFieldNames(boolean quoteFieldNames) {
-		this.quoteFieldNames = quoteFieldNames;
-	}
-
-	public void setFailOnUnknownProperties(boolean failOnUnknownProperties) {
-		this.failOnUnknownProperties = failOnUnknownProperties;
-	}
-
 }

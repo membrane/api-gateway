@@ -31,7 +31,13 @@ public class URLParamUtil {
 	private static final Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
 
 	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) throws Exception {
-		URI jUri = uriFactory.create(exc.getRequest().getUri());
+		String uri = exc.getRequest().getUri();
+
+		// Avoid unnecessary log entries
+		if (uri == null || uri.isEmpty())
+			return Collections.emptyMap();
+
+		URI jUri = uriFactory.create(uri);
 		String q = jUri.getRawQuery();
 		if (q == null) {
 			if (hasNoFormParams(exc))
