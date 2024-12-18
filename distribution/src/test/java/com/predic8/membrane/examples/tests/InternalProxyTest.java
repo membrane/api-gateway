@@ -1,4 +1,4 @@
-/* Copyright 2022 predic8 GmbH, www.predic8.com
+/* Copyright 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
+import io.restassured.http.*;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
-import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InternalProxyTest extends DistributionExtractingTestcase {
 
-    final static String ENDPOINT_URL = "http://localhost:2000/axis2/services/BLZService";
+    private static final String BASE_URL = "http://localhost:2020";
 
     @Override
     protected String getExampleDirName() {
@@ -30,44 +30,67 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    public void testWsdl() throws Exception {
-        try(Process2 ignored = startServiceProxyScript()) {
-            assertContains("Service Proxy: BLZService", getAndAssert200(ENDPOINT_URL));
+    public void testExpressOrderRoutesToInternalProxy() throws Exception {
+        try(Process2 sl = startServiceProxyScript()) {
+            // @formatter:off
+            String response = given()
+                    .contentType(ContentType.XML)
+                    .body(readFileFromBaseDir("express.xml"))
+                .when()
+                    .post(BASE_URL)
+                .then()
+                    .statusCode(200)
+                    .extract()
+                    .asString();
+            // @formatter:on
+
+            System.out.println("response = " + response);
+
+            assertTrue(response.contains("Express processing!"));
         }
     }
 
     @Test
-    public void testSoapRequest() throws Exception {
-        try(Process2 ignored = startServiceProxyScript()) {
-            assertContains("COLSDE33XXX", postAndAssert(200,ENDPOINT_URL, getSoapRequestHeader(), readFileFromBaseDir("soap_request.xml")));
+    public void testNonExpressOrderFallsThrough() throws Exception {
+        try(Process2 sl = startServiceProxyScript()) {
+            // @formatter:off
+            String response = given()
+                .when()
+                    .get(BASE_URL)
+                .then()
+                    .statusCode(200)
+                    .extract()
+                    .asString();
+            // @formatter:on
+
+            assertTrue(response.contains("Normal processing!"));
         }
     }
 
-    private String[] getSoapRequestHeader() {
-        return new String[]{"Content-Type", TEXT_PLAIN_UTF8, "SOAPAction", "Get"};
-    }
-
     @Test
-    public void testCbrRequest() throws Exception {
-        replaceInFile2("service-proxy.sh","proxies_soap", "proxies_service");
+    public void testRegularOrderFallsThrough() throws Exception {
+        String regularOrder = """
+            <order express='no'>
+                <items>
+                    <item id="1" count="1"/>
+                </items>
+            </order>
+            """;
 
         try(Process2 sl = startServiceProxyScript()) {
-            SubstringWaitableConsoleEvent internalOutput =
-                    new SubstringWaitableConsoleEvent(sl, "Inside proxy mybackend");
-            postAndAssert(200,"http://localhost:2000", new String[]{"Content-Type", "text/xml;charset=UTF-8"}, readFileFromBaseDir("express.xml"));
-            assertTrue(internalOutput.occurred());
-        }
-    }
+            // @formatter:off
+            String response = given()
+                    .contentType(ContentType.XML)
+                    .body(regularOrder)
+                .when()
+                    .post(BASE_URL)
+                .then()
+                    .statusCode(200)
+                    .extract()
+                    .asString();
+            // @formatter:on
 
-    @Test
-    public void testCbrRequestWithoutInternal() throws Exception {
-        replaceInFile2("service-proxy.sh","proxies_soap", "proxies_service");
-
-        try(Process2 sl = startServiceProxyScript()) {
-            SubstringWaitableConsoleEvent internalOutput =
-                    new SubstringWaitableConsoleEvent(sl, "Inside proxy mybackend");
-            getAndAssert200("http://localhost:2000");
-            assertFalse(internalOutput.occurred());
+            assertTrue(response.contains("Normal processing!"));
         }
     }
 }

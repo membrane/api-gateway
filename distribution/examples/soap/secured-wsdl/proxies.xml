@@ -1,0 +1,37 @@
+
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+
+    <router>
+
+        <!-- Access to some WSDL documents is protected by TLS or password.
+             Because there are so many authentication mechanisms soapProxy
+             does not provide one. Instead route the WSDL requests to an
+             internal Proxy where you can use any authentication that is needed.
+        -->
+
+        <soapProxy port="2010" wsdl="service:wsdl/?wsdl">
+        </soapProxy>
+
+        <internalProxy name="wsdl">
+            <sampleSoapService/>
+            <!--
+
+            Replace <sampleSoapService/> with a target pointing to a protected WSDL
+
+            <target host="sample" port="443">
+                <ssl>
+                   <keystore ...>
+                    <truststore ...>
+                </ssl>
+            </target>
+            -->
+        </internalProxy>
+
+    </router>
+
+</spring:beans>

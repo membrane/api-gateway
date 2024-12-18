@@ -38,7 +38,11 @@ public class ScriptingUtils {
 
     public static HashMap<String, Object> createParameterBindings(URIFactory uriFactory, Exchange exc, Message msg, Interceptor.Flow flow, boolean includeJsonObject) {
         HashMap<String, Object> parameters = new HashMap<>();
+
+        // support both
         parameters.put("exc", exc);
+        parameters.put("exchange", exc);
+
         parameters.put("flow", flow);
 
         if (flow == REQUEST) {
