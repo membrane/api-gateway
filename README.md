@@ -32,14 +32,48 @@ A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web S
 
 # Content
 
-- [Getting Started](#Getting-Started)
-- [Basics](#Basics) Routing, rewriting
-- [Scripting](#scripting)
-- [Message Transformation](#message-transformation)
-- [Security](#security)
-- [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
-- [Legacy Web Services](#soap-web-services) SOAP and WSDL
-- [Operation](#Operation)
+1. [Getting Started](#Getting-Started)
+   - [Java](#java)
+   - [Docker](#docker)
+2. [Basics](#Basics) Routing, rewriting
+   - [API Definition and Configuration](#API-Definition-and-Configuration)
+   - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
+3. [OpenAPI Support](#openapi-support)
+   - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
+4. [Routing](#routing)
+    - [Short Circuit](#short-circuit)
+    - [URL Rewriting](#url-rewriting)
+5. [Scripting](#scripting)
+    - [Groovy](#groovy-scripts)
+    - [Creating Responses with Groovy](#creating-responses-with-groovy)
+    - [Javascript](#javascript-scripts)
+6. [Message Transformation](#message-transformation)
+    - [Manipulating HTTP Headers](#manipulating-http-headers)
+    - [Removing HTTP Headers](#removing-http-headers)
+    - [Create JSON from Query Parameters](#create-json-from-query-parameters)
+    - [Transform JSON into TEXT, JSON or XML with Templates](#transform-json-into-text-json-or-xml-with-templates)
+    - [Transform XML into Text or JSON](#transform-xml-into-text-or-json)
+    - [Complex Transformations using Javascript or Groovy](#complex-transformations-using-javascript-or-groovy)
+    - [Transformation with Computations](#transformation-with-computations)
+    - [JSON and XML Beautifier](#json-and-xml-beautifier)
+7. [Conditionals with if](#conditionals-with-if)
+8. [Security](#security)
+    - [API Keys](#api-keys)
+    - [Basic Authentication](#basic-authentication)
+    - [SSL/TLS](#ssltls)
+    - [JSON Web Tokens](#json-web-tokens) JWT
+    - [OAuth2](#oauth2)
+      - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
+      - [Membrane as Authorization Server](#membrane-as-authorization-server)
+9. [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
+    - [Rate Limiting](#rate-limiting)
+    - [Load Balancing](#load-balancing)
+8. [Legacy Web Services](#soap-web-services) SOAP and WSDL
+    - [API configuration from WSDL](#api-configuration-from-wsdl)
+    - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
+9. [Operation](#Operation)
+   - [Logging](#log-http)
+   - [OpenTelemetry](#opentelemetry-integration)
 
 # Getting Started
 
@@ -110,17 +144,19 @@ For detailed Docker setup instructions, see the [Membrane Deployment Guide](http
 - Check out the [SOAP API Tutorial](https://membrane-api.io/tutorials/soap/) for legacy web service integration.
 
 ### Read the Documentation
+
 - For detailed guidance, visit the [official documentation](https://www.membrane-soa.org/service-proxy-doc/).
 
 # Basics
 
-### Customizing Membrane
-To configure Membrane, edit the `proxies.xml` file located in the `conf` folder.
+### API Definition and Configuration
+
+To define new APIs or modify the existing configuration, edit the `proxies.xml` file located in the `conf` folder. This file serves as the central configuration point for managing API behavior and routing rules.
 
 ### Using Samples
-Explore the sample configurations provided below. Copy and modify them to suit your needs, then save or restart the gateway to apply the changes.
+Explore and copy the sample snippets below into the `proxies.xml` file and modify them to suit your needs. Then save or restart the gateway to apply the changes. Usually a save will trigger a reload automatically.
 
-For even more sample have a look at the `examples` folder.
+For even more samples have a look at the `examples` folder. 
 
 
 ## Simple REST and HTTP Forwarding APIs
@@ -139,7 +175,7 @@ To forward requests from the API Gateway to a backend, use a simple `api` config
 After adding the configuration to the `proxies.xml` file, open the following URL in your browser to test the API: [http://localhost:2000/shop/v2/](http://localhost:2000/shop/v2/)
 
 
-## Using OpenAPI for Configuration & Validation
+## OpenAPI Support
 
 ### Deploy APIs with OpenAPI
 Membrane allows you to configure APIs directly from OpenAPI documents in the `proxies.xml` file. Backend addresses and other details are automatically derived from the OpenAPI description.
@@ -346,7 +382,7 @@ You can realize a load balancer by setting the destination randomly.
 </api>
 ```
 
-### Create a Response with Groovy
+### Creating Responses with Groovy
 
 The `groovy` plugin in Membrane allows you to dynamically generate custom responses. The result of the last line of the Groovy script is passed to the plugin. If the result is a `Response` object, it will be returned to the caller.
 
@@ -395,7 +431,7 @@ For more information about using Groovy with Membrane, refer to:
 - [Groovy Plugin Reference](https://www.membrane-api.io/docs/current/groovy.html).
 - [Sample Project](distribution/examples/groovy)
 
-### JavaScript Extension
+### JavaScript Scripts
 
 In addition to Groovy, Membrane supports JavaScript for implementing custom behavior. This allows you to inspect, modify, or log details about requests and responses.
 
@@ -419,6 +455,23 @@ The following example logs all HTTP headers from incoming requests and responses
 ```  
 
 The `CONTINUE` keyword ensures that the request continues processing and is forwarded to the target URL.
+
+When a JavaScript script returns a `Response` object as the last line of code, the request flow is interrupted, and the response is sent back to the client. This allows for creating custom responses dynamically.
+
+The following example generates a JSON response and sends it directly to the client:
+
+```xml
+<api port="2000">
+  <javascript>
+    var body = JSON.stringify({
+      foo: 7,
+      bar: 42
+    });
+
+   Response.ok(body).contentType("application/json").build();
+  </javascript>
+</api>
+```
 
 #### Learn More
 For more details about using JavaScript with Membrane, check the [JavaScript Plugin documentation](https://www.membrane-api.io/docs/current/javascript.html).
@@ -643,7 +696,7 @@ This script transforms the input and adds some calculations.
 
 See [examples/javascript](distribution/examples/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/groovy)
 
-## Beautifier
+## JSON and XML Beautifier
 
 You can beautify a JSON or XML using the `<beautifier/>` plugin.
 
@@ -669,11 +722,11 @@ Returns:
 </foo>
 ```
 
-# Branching and Conditionals
+# Conditionals with if
 
 Replace `5XX` error messages from a backend:
-```xml
 
+```xml
 <api port="2000">
   <response>
     <if test="statusCode matches '5\d\d'" language="SpEL">
@@ -683,17 +736,6 @@ Replace `5XX` error messages from a backend:
     </if>
   </response>
   <return/>
-</api>
-```
-
-Check if certain scopes/roles are provided:
-```xml
-
-<api port="2000">
-    <if test="hasScopes({'admin', 'webmaster'})" language="SpEL">
-      <target url="https://localhost:2000/admin" />
-    </if>
-    <target host="localhost" port="1001" />
 </api>
 ```
 
@@ -909,20 +951,6 @@ Distribute workload to multiple backend nodes. [See the example](distribution/ex
 </api>
 ```
 
-# Log HTTP
-
-Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv)
-or [JSON](distribution/examples/logging/json) file.
-
-```xml
-
-<api port="2000">
-    <log/> <!-- Logs to the console -->
-    <statisticsCSV file="./log.csv"/> <!-- Logs fine-grained CSV -->
-    <target url="https://api.predic8.de"/>
-</api>
-```
-
 # Websockets
 
 Route and intercept WebSocket traffic:
@@ -965,6 +993,20 @@ The _validator_ checks SOAP messages against a WSDL document including reference
 
 
 # Operation
+
+## Log HTTP
+
+Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv)
+or [JSON](distribution/examples/logging/json) file.
+
+```xml
+
+<api port="2000">
+    <log/> <!-- Logs to the console -->
+    <statisticsCSV file="./log.csv"/> <!-- Logs fine-grained CSV -->
+    <target url="https://api.predic8.de"/>
+</api>
+```
 
 ## Instrumentation
 
