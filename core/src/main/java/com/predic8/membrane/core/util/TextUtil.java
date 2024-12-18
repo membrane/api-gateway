@@ -81,7 +81,7 @@ public class TextUtil {
 	}
 
 	public static boolean isNullOrEmpty(String str) {
-		return str == null || str.length() == 0;
+		return str == null || str.isEmpty();
 	}
 
 	public static String globToRegExp(String glob) {
@@ -107,7 +107,7 @@ public class TextUtil {
 	public static String toEnglishList(String conjuction, String... args) {
 		ArrayList<String> l = new ArrayList<>();
 		for (String arg : args)
-			if (arg != null && arg.length() > 0)
+			if (arg != null && !arg.isEmpty())
 				l.add(arg);
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < l.size(); i++) {
@@ -124,7 +124,7 @@ public class TextUtil {
 	}
 
 	public static Object capitalize(String english) {
-		if (english.length() == 0)
+		if (english.isEmpty())
 			return "";
 		return (english.charAt(0) + english.substring(1)).toUpperCase();
 	}
@@ -167,7 +167,7 @@ public class TextUtil {
 
 	public static Object removeFinalChar(String s) {
 		StringBuilder sb = new StringBuilder(s);
-		if (sb.length() > 0)
+		if (!sb.isEmpty())
 			sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
 	}
