@@ -1,72 +1,54 @@
 # Internal Proxy
 
-This example explains how to realize complex message flows and how to break an api or serviceProxy into smaller units. Instead of an external target a request can be routed to an internal proxy. The internal proxy can offer reusable functionality that is shared by multiple APIs.
+Route requests to internal proxies for reusable functionality across multiple APIs and content-based routing.
 
-### RUNNING THE EXAMPLE
+## Running the Example
 
-This section explains how to run the example with `<serviceProxy>`
+***Note:*** *You can test these requests using the provided HTTP file or cURL snippets.*
 
-1. Go to the `examples/internalProxy` directory
+1. **Navigate** to the `examples/internalproxy` directory.
+2. **Start** Membrane by executing `service-proxy.sh` (Linux/Mac) or `service-proxy.bat` (Windows).
+3. **Execute the following requests** (alternatively, use the `requests.http` file):
+- **Normal Processing**:
+  ```bash
+  curl http://localhost:2020
+  ```
+  Response: `Normal processing!`
 
-2. Go to the `service-proxy.sh` file and change  below line to second line below
 
-``` 
-java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies_soap.xml
-java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies_service.xml
-```
-3. Execute `service-proxy.sh`
+- **Express Processing**:
+  ```bash
+  curl -X POST -d @express.xml http://localhost:2020
+  ```
+  Response: `Express processing!`
 
-4. Execute `curl localhost:2000` in another console
+## How it works
 
-5. Take a look at the output of the console that you are running Membrane. You should see the line: `"Inside proxy example_main."`
+The main API endpoint configuration uses a `<switch>` element to change the url of `<target>` conditionally.
+In this instance, we use internal proxies to encapsulate our plugins in separate routines,
+this makes them reusable and cleans up our APIs:
 
-6. Now execute below command
-
-```curl -d @express.xml localhost:2000```
-
-7.Observe that additionally to above output we got `Inside proxy mybackend.`
-
-#### HOW IT IS DONE
-
-The following part describes the `<serviceProxy>` example in detail.
-
-Open `proxies_service.xml` in text editor.
-
-First we define a `<serviceProxy>` with like below.
-
-```
-    <serviceProxy port="2000" name="example_main">
-```
-
-When we run first command in step 4 from a command line, `<groovy>` interceptor we defined prints to the console
-
-```
-    <groovy>
-      println("Inside proxy example_main.")
-    </groovy>
-```
-
-You can see in file we have `<switch>` element. This is a `XPathCBRInterceptor`.
-
-```
+```xml
+<api port="2020">
     <switch>
-      <case xPath="//order[@express='yes']" service="mybackend" />
+        <case xPath="//order[@express='yes']" service="express" />
     </switch>
+    <target url="service:normal" />
+</api>
 ```
 
-`XPathCBRInterceptor` changes the target of exchange based on XPath expressions.
+***Note:*** InternalProxies can only be called from other proxies and APIs, not from external sources.
 
-In our example when we run the command from step 6, our `XPathCBRInterceptor` checks the `express.xml` file we put into request for given `XPath` expression and
-sends the exchange to `mybackend` service if the condition is true.
+Two internal proxies handle different processing paths:
 
+```xml
+<internalProxy name="express">
+    <static>Express processing!</static>
+    <return/>
+</internalProxy>
 
-`XPathCBRInterceptor` knows which proxy to send exchange to through `service` attribute.
-Since our `internalProxy` has the name `mybackend`, Membrane sends the exchange to `<internalProxy>` defined like below.
-
+<internalProxy name="normal">
+    <static>Normal processing!</static>
+    <return/>
+</internalProxy>
 ```
-<internalProxy name="mybackend">
-```
-
----
-See:
-- [internalProxy](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/internalProxy.htm) reference

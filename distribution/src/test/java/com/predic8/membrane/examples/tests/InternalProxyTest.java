@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class InternalProxyTest extends DistributionExtractingTestcase {
 
-    private static final String BASE_URL = "http://localhost:2000";
+    private static final String BASE_URL = "http://localhost:2020";
 
     @Override
     protected String getExampleDirName() {
@@ -32,34 +32,38 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
     @Test
     public void testExpressOrderRoutesToInternalProxy() throws Exception {
         try(Process2 sl = startServiceProxyScript()) {
+            // @formatter:off
             String response = given()
                     .contentType(ContentType.XML)
                     .body(readFileFromBaseDir("express.xml"))
-                    .when()
+                .when()
                     .post(BASE_URL)
-                    .then()
+                .then()
                     .statusCode(200)
                     .extract()
                     .asString();
+            // @formatter:on
 
             System.out.println("response = " + response);
 
-            assertTrue(response.contains("Processed by internalProxy!"));
+            assertTrue(response.contains("Express processing!"));
         }
     }
 
     @Test
     public void testNonExpressOrderFallsThrough() throws Exception {
         try(Process2 sl = startServiceProxyScript()) {
+            // @formatter:off
             String response = given()
-                    .when()
+                .when()
                     .get(BASE_URL)
-                    .then()
+                .then()
                     .statusCode(200)
                     .extract()
                     .asString();
+            // @formatter:on
 
-            assertTrue(response.contains("Fallthrough switch!"));
+            assertTrue(response.contains("Normal processing!"));
         }
     }
 
@@ -74,17 +78,19 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
             """;
 
         try(Process2 sl = startServiceProxyScript()) {
+            // @formatter:off
             String response = given()
                     .contentType(ContentType.XML)
                     .body(regularOrder)
-                    .when()
+                .when()
                     .post(BASE_URL)
-                    .then()
+                .then()
                     .statusCode(200)
                     .extract()
                     .asString();
+            // @formatter:on
 
-            assertTrue(response.contains("Fallthrough switch!"));
+            assertTrue(response.contains("Normal processing!"));
         }
     }
 }
