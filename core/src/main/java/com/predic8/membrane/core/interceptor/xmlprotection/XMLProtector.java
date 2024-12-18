@@ -39,15 +39,15 @@ import static javax.xml.stream.XMLInputFactory.*;
  * an error response should be returned to the requestor.
  */
 public class XMLProtector {
-	private static Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
-	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	private static final Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 		xmlInputFactory.setProperty(SUPPORT_DTD,false);
 	}
 
-	private XMLEventWriter writer;
+	private final XMLEventWriter writer;
 	private final int maxAttibuteCount;
 	private final int maxElementNameLength;
 	private final boolean removeDTD;
@@ -64,7 +64,7 @@ public class XMLProtector {
 
 	/**
 	 * Is XML secure?
-	 * @param isr
+	 * @param isr Stream with XML
 	 * @return false if there is any security problem in the XML
 	 * @throws XMLProtectionException if there are critical issues like external entity references
 	 */

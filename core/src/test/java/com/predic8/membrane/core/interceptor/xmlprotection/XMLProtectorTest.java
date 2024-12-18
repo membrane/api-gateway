@@ -25,8 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class XMLProtectorTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(XMLProtectorTest.class);
-	private XMLProtector xmlProtector;
-	private byte[] input, output;
+    private byte[] input, output;
 
 	private boolean runOn(String resource) throws Exception {
 		return runOn(resource, true);
@@ -34,7 +33,7 @@ public class XMLProtectorTest {
 
 	private boolean runOn(String resource, boolean removeDTD) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		xmlProtector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), removeDTD, 1000, 1000);
+        XMLProtector xmlProtector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), removeDTD, 1000, 1000);
 		input = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream(resource));
 
 		if (resource.endsWith("lmx")) {
@@ -89,7 +88,7 @@ public class XMLProtectorTest {
 	}
 
 	@Test
-	void externalEntities() throws Exception {
+	void externalEntities() {
 		assertThrows(XMLProtectionException.class, () -> runOn("/xml/entity-external.xml", false));
 	}
 
