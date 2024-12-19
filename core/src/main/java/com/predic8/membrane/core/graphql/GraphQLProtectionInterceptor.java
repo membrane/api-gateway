@@ -86,8 +86,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Limit how many mutations can be defined in a document query.
-     *
+     * @description Limit how many mutations can be defined in a document query.
      * @default 5
      * @example 2
      */
@@ -102,8 +101,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Whether to allow GraphQL "extensions".
-     *
+     * @description Whether to allow GraphQL "extensions".
      * @default false
      * @example true
      */
@@ -122,8 +120,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Which HTTP methods to allow. Note, that per the GraphQL-over-HTTP spec, you need POST for mutation or subscription queries.
-     *
+     * @description Which HTTP methods to allow. Note that per the GraphQL-over-HTTP spec, you need POST for mutation or subscription queries.
      * @default GET, POST
      */
     @MCAttribute
@@ -138,6 +135,10 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         return maxRecursion;
     }
 
+    /**
+     * @description How deep recursive parts of queries can be nested.
+     * @default 3
+     */
     @MCAttribute
     public void setMaxRecursion(int maxRecursion) {
         this.maxRecursion = maxRecursion;
@@ -147,6 +148,10 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
         return maxDepth;
     }
 
+    /**
+     * @description How deep queries can be nested.
+     * @default 7
+     */
     @MCAttribute
     public void setMaxDepth(int maxDepth) {
         this.maxDepth = maxDepth;
