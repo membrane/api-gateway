@@ -132,10 +132,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
         if (!router.isProduction()) {
             pd.extension("message", e.getMessage())
-            .extension("source", trim(src))
-            .extension("note", """
-                To hide error details set Membrane into production mode. In proxies.xml use <router production="true">..</router>.");
-                """);
+            .extension("source", trim(src));
         } else {
             pd.detail("See logs for details.");
         }
