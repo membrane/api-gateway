@@ -15,6 +15,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.Stream;
 
 import static com.fasterxml.jackson.core.JsonParser.Feature.*;
 import static com.fasterxml.jackson.databind.DeserializationFeature.*;
@@ -247,12 +248,15 @@ public class GraphQLoverHttpValidator {
     }
 
     public static int countMutations(List<ExecutableDefinition> definitions) {
-        return (int) definitions.stream()
+        return (int) getMutationOperations(definitions).map(OperationDefinition::getSelections).mapToLong(List::size).sum();
+    }
+
+    private static @NotNull Stream<OperationDefinition> getMutationOperations(List<ExecutableDefinition> definitions) {
+        return definitions.stream()
                 .filter(isOperationDefinition())
                 .map(definition -> (OperationDefinition) definition)
                 .filter(operation -> operation.getOperationType() != null)
-                .filter(GraphQLoverHttpValidator::isMutation)
-                .count();
+                .filter(GraphQLoverHttpValidator::isMutation);
     }
 
     private static boolean isMutation(OperationDefinition operation) {
