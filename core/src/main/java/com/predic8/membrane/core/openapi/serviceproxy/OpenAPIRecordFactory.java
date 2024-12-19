@@ -22,6 +22,7 @@ import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import io.swagger.v3.parser.core.models.*;
@@ -145,7 +146,8 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file), spec);
+        OpenAPI api = parseFileAsOpenAPI(file);
+        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(api), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
