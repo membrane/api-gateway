@@ -85,7 +85,7 @@ public class Hostname extends AbstractClientAddress {
             log.debug("CanonicalHostname for {} / {} is {}", hostname, ip, canonicalHostName);
 			return Pattern.compile(schema).matcher(canonicalHostName).matches();
 		} catch (UnknownHostException e) {
-            log.warn("Could not reverse lookup canonical hostname for {} {}.", hostname, ip, e);
+            log.warn("Could not reverse lookup canonical hostname for {} {}.", hostname, ip);
 			return false;
 		}
 	}

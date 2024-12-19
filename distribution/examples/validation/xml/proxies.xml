@@ -18,7 +18,7 @@
 	
 		<api port="2001">
 			<template contentType="application/xml">
-				&gt;amount>100&gt;/amount>
+				&lt;amount>100&lt;/amount>
 			</template>
 			<return/>
 		</api>
