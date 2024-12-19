@@ -146,8 +146,7 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPI api = parseFileAsOpenAPI(file);
-        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(api), spec);
+        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(file), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
