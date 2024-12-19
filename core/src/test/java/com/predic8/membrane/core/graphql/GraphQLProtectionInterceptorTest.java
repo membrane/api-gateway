@@ -363,6 +363,16 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
+    public void nestedMutationsCountNotOK() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query": "mutation { addProduct(name: \\"Apple\\", price: 1.99) { id } addProduct(name: \\"Orange\\", price: 2.99) { id } addProduct(name: \\"Banana\\", price: 3.99) { id } addProduct(name: \\"Grape\\", price: 4.99) { id } addProduct(name: \\"Mango\\", price: 5.99) { id } addProduct(name: \\"Pear\\", price: 6.99) { id } }"}",
+                        "operationName": ""}""",
+                RETURN);
+    }
+
+    @Test
     public void mutationsCountOK() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
