@@ -33,6 +33,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
+import static org.apache.commons.lang3.StringUtils.*;
 
 public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
 
@@ -73,12 +74,9 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         Object res;
         try {
             res = script.apply(getParameterBindings(exc, flow, msg));
-        } catch (Exception e) {
-            log.warn(e.getMessage(), e);
-            exc.setResponse(ProblemDetails.internal( router.isProduction())
-                    .title("Error executing script.")
-                    .detail("See logs for details.")
-                    .build());
+        }
+        catch (Exception e) {
+            handleScriptExecutionException(exc, e);
             return RETURN;
         }
 
@@ -114,7 +112,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        // Test for packagename is needed cause the dependency is provided and maybe not on the classpath
+        // Test for package name is needed cause the dependency is provided and maybe not on the classpath
         if(res.getClass().getPackageName().startsWith("org.graalvm.polyglot") && res instanceof Value value) {
             Map m = value.as(Map.class);
             msg.getHeader().setContentType(APPLICATION_JSON);
@@ -123,6 +121,23 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    protected void handleScriptExecutionException(Exchange exc, Exception e) {
+        log.warn("Error executing {} script: {}", name , e.getMessage());
+        log.warn("Script: {}", src);
+
+        ProblemDetails pd = ProblemDetails.internal(router.isProduction())
+                .title("Error executing script.");
+
+        if (!router.isProduction()) {
+            pd.extension("message", e.getMessage())
+            .extension("source", trim(src));
+        } else {
+            pd.detail("See logs for details.");
+        }
+
+        exc.setResponse(pd.build());
     }
 
     private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {

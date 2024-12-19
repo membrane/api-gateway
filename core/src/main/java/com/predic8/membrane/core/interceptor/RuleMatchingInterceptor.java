@@ -46,11 +46,17 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		if (rule instanceof NullRule) {
 			// Do not log. 404 is too common
-			exc.setResponse(ProblemDetails.user(router.isProduction())
-							.statusCode(404)
-							.title("Wrong path or method")
-							.detail("This request was not accepted by Membrane. Please check HTTP method and path.")
-					.build());
+			ProblemDetails pd = ProblemDetails.user(router.isProduction())
+					.statusCode(404)
+					.title("Wrong path or method")
+					.detail("This request was not accepted by Membrane. Please check HTTP method and path.");
+
+			if (!router.isProduction()) {
+				pd.extension("method", exc.getRequest().getMethod());
+				pd.extension("uri", exc.getRequest().getUri());
+			}
+
+			exc.setResponse(pd.build());
 			return ABORT;
 		}
 

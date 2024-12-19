@@ -14,25 +14,21 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.Store;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.TrustManagerWrapper;
-import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
-import org.apache.commons.lang3.NotImplementedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.http2.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.crypto.Cipher;
+import javax.annotation.*;
+import javax.crypto.*;
 import javax.net.ssl.*;
-import javax.validation.constraints.NotNull;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import javax.validation.constraints.*;
+import java.io.*;
+import java.lang.reflect.*;
+import java.net.*;
+import java.security.Key;
+import java.security.KeyStore;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -44,8 +40,8 @@ public class StaticSSLContext extends SSLContext {
 
     private static final String DEFAULT_CERTIFICATE_SHA256 = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
     private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
+    public static final String PKCS_12 = "PKCS12";
     private static boolean defaultCertificateWarned = false;
-    private static boolean limitedStrength;
 
     static {
         String dhKeySize = System.getProperty("jdk.tls.ephemeralDHKeySize");
@@ -53,8 +49,7 @@ public class StaticSSLContext extends SSLContext {
             System.setProperty("jdk.tls.ephemeralDHKeySize", "matched");
 
         try {
-            limitedStrength = Cipher.getMaxAllowedKeyLength("AES") <= 128;
-            if (limitedStrength)
+            if (Cipher.getMaxAllowedKeyLength("AES") <= 128)
                 log.warn("Your Java Virtual Machine does not have unlimited strength cryptography. If it is legal in your country, we strongly advise installing the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files.");
         } catch (NoSuchAlgorithmException ignored) {
         }
@@ -64,121 +59,24 @@ public class StaticSSLContext extends SSLContext {
             System.setProperty("jdk.tls.server.enableStatusRequestExtension", "true");
     }
 
-
-    private final SSLParser sslParser;
+    private final SSLParser sslParser; // TODO push up to super class?
     private List<String> dnsNames;
     private javax.net.ssl.SSLContext sslc;
-    private long validFrom;
-    private long validUntil;
 
+    private Validity validity;
 
     public StaticSSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
+        if (sslParser.getTrustStore() != null && sslParser.getTrust() != null)
+            throw new InvalidParameterException("<trust> may not be used together with <truststore>.");
+
+        if (sslParser.getKeyStore() != null && sslParser.getKey() != null)
+            throw new InvalidParameterException("<key> may not be used together with <keystore>.");
+
         this.sslParser = sslParser;
 
         try {
-            String algorihm = getAlgorithm(sslParser);
-
-            KeyManagerFactory kmf = null;
-            String keyStoreType = "PKCS12";
-            if (sslParser.getKeyStore() != null) {
-                char[] keyPass = getKeyPass(sslParser);
-
-                if (sslParser.getKeyStore().getType() != null)
-                    keyStoreType = sslParser.getKeyStore().getType();
-                KeyStore ks = openKeyStore(sslParser.getKeyStore(), "PKCS12", keyPass, resourceResolver, baseLocation);
-
-                String paramAlias = sslParser.getKeyStore().getKeyAlias();
-                String keyAlias = (paramAlias != null) ? aliasOrThrow(ks, paramAlias) : firstAliasOrThrow(ks);
-
-                KeyStore filteredKeyStore = filterKeyStoreByAlias(ks, keyPass, keyAlias);
-
-                kmf = KeyManagerFactory.getInstance(algorihm);
-                kmf.init(filteredKeyStore, keyPass);
-
-                dnsNames = extractDnsNames(ks.getCertificate(keyAlias));
-                List<Certificate> certs = Arrays.asList(ks.getCertificateChain(keyAlias));
-                validUntil = getMinimumValidity(certs);
-                validFrom = getValidFrom(certs);
-            }
-            if (sslParser.getKey() != null) {
-                if (kmf != null)
-                    throw new InvalidParameterException("<key> may not be used together with <keystore>.");
-
-                KeyStore ks = KeyStore.getInstance(keyStoreType);
-                ks.load(null, "".toCharArray());
-
-                List<Certificate> certs = new ArrayList<>();
-
-                for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
-                    certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
-                if (certs.isEmpty())
-                    throw new RuntimeException("At least one //ssl/key/certificate is required.");
-                dnsNames = extractDnsNames(certs.get(0));
-
-                checkChainValidity(certs);
-                Key k = getKey(sslParser, resourceResolver, baseLocation);
-                checkKeyMatchesCert(k, certs);
-
-                ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
-
-                kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-                kmf.init(ks, getKeyPassword(sslParser));
-                validUntil = getMinimumValidity(certs);
-                validFrom = getValidFrom(certs);
-            }
-
-            TrustManagerFactory tmf = null;
-            KeyStore ts = null;
-            String trustAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-            String checkRevocation = null;
-            if (sslParser.getTrustStore() != null) {
-                if (sslParser.getTrustStore().getAlgorithm() != null)
-                    trustAlgorithm = sslParser.getTrustStore().getAlgorithm();
-                ts = openKeyStore(sslParser.getTrustStore(), keyStoreType, null, resourceResolver, baseLocation);
-                checkRevocation = sslParser.getTrustStore().getCheckRevocation();
-            }
-            if (sslParser.getTrust() != null) {
-                if (tmf != null)
-                    throw new InvalidParameterException("<trust> may not be used together with <truststore>.");
-                if (sslParser.getTrust().getAlgorithm() != null)
-                    trustAlgorithm = sslParser.getTrust().getAlgorithm();
-
-                ts = KeyStore.getInstance(keyStoreType);
-                ts.load(null, "".toCharArray());
-
-                for (int j = 0; j < sslParser.getTrust().getCertificateList().size(); j++)
-                    ts.setCertificateEntry("inlinePemCertificate" + j, PEMSupport.getInstance().parseCertificate(sslParser.getTrust().getCertificateList().get(j).get(resourceResolver, baseLocation)));
-                checkRevocation = sslParser.getTrust().getCheckRevocation();
-            }
-            if (ts != null) {
-                tmf = TrustManagerFactory.getInstance(trustAlgorithm);
-                if (checkRevocation != null) {
-                    CertPathBuilder cpb = CertPathBuilder.getInstance(trustAlgorithm);
-                    PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(ts, new X509CertSelector());
-                    PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
-                    EnumSet<PKIXRevocationChecker.Option> options = EnumSet.noneOf(PKIXRevocationChecker.Option.class);
-                    for (String option : checkRevocation.split(","))
-                        options.add(PKIXRevocationChecker.Option.valueOf(option));
-                    pkixParams.addCertPathChecker(rc);
-                    tmf.init( new CertPathTrustManagerParameters(pkixParams) );
-                } else {
-                    tmf.init(ts);
-                }
-            }
-
-            TrustManager[] tms = tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */;
-            if (sslParser.isIgnoreTimestampCheckFailure())
-                tms = new TrustManager[] { new TrustManagerWrapper(tms, true) };
-
-            if (sslParser.getProtocol() != null)
-                sslc = javax.net.ssl.SSLContext.getInstance(sslParser.getProtocol());
-            else
-                sslc = javax.net.ssl.SSLContext.getInstance("TLS");
-
-            sslc.init(
-                    kmf != null ? kmf.getKeyManagers() : null,
-                    tms,
-                    null);
+            initializeJavaSSLContext(createTrustManagerFactory(resourceResolver, baseLocation),
+                    createKeyManagerFactoryWithSideEffects(resourceResolver, baseLocation));
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -187,10 +85,168 @@ public class StaticSSLContext extends SSLContext {
         init(sslParser, sslc);
     }
 
+    private @org.jetbrains.annotations.Nullable KeyManagerFactory createKeyManagerFactoryWithSideEffects( ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException, UnrecoverableKeyException {
+        if (sslParser.getKeyStore() != null) {
+            char[] keyPass = getKeyPass(sslParser);
+
+            KeyStore ks = openKeyStore(sslParser.getKeyStore(), keyPass, resourceResolver, baseLocation);
+
+            String keyAlias = getKeyAlias(sslParser, ks);
+
+            dnsNames = extractDnsNames(ks.getCertificate(keyAlias));
+            validity = getValidityPeriod(ks, keyAlias);
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(getAlgorithm(sslParser));
+            kmf.init(filterKeyStoreByAlias(ks, keyPass, keyAlias), keyPass);
+            return kmf;
+        }
+        if (sslParser.getKey() != null) {
+            return getKeyManagerFactoryWithSideEffects(sslParser, resourceResolver, baseLocation);
+        }
+        return null; // Ok!
+    }
+
+    private @org.jetbrains.annotations.Nullable TrustManagerFactory createTrustManagerFactory( ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException, InvalidAlgorithmParameterException {
+        if (sslParser.getTrustStore() == null && sslParser.getTrust() == null)
+            return null;
+
+        KeyStore trustStore = null;
+        String checkRevocation = null;
+        if (sslParser.getTrustStore() != null) {
+            trustStore = openKeyStore(sslParser.getTrustStore(), null, resourceResolver, baseLocation);
+            checkRevocation = sslParser.getTrustStore().getCheckRevocation();
+        } else if (sslParser.getTrust() != null) {
+            trustStore = getStore(resourceResolver, baseLocation);
+            checkRevocation = sslParser.getTrust().getCheckRevocation();
+        }
+        return createTrustManagerFactory2(trustStore, checkRevocation);
+    }
+
+    private @org.jetbrains.annotations.NotNull KeyStore getStore(ResolverMap resourceResolver, String baseLocation) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        KeyStore trustStore = KeyStore.getInstance(PKCS_12);
+        trustStore.load(null, "".toCharArray());
+
+        for (int j = 0; j < sslParser.getTrust().getCertificateList().size(); j++)
+            trustStore.setCertificateEntry("inlinePemCertificate" + j,
+                    PEMSupport.getInstance().parseCertificate(
+                            sslParser.getTrust().getCertificateList().get(j).get(resourceResolver, baseLocation)));
+        return trustStore;
+    }
+
+    private String getTrustAlgorithm() {
+        if (sslParser.getTrust() != null && sslParser.getTrust().getAlgorithm() != null)
+            return sslParser.getTrust().getAlgorithm();
+
+        if (sslParser.getTrustStore() != null && sslParser.getTrustStore().getAlgorithm() != null)
+            return sslParser.getTrustStore().getAlgorithm();
+
+        return TrustManagerFactory.getDefaultAlgorithm();
+    }
+
+    private @org.jetbrains.annotations.Nullable TrustManagerFactory createTrustManagerFactory2(KeyStore trustStore, String checkRevocation) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, KeyStoreException {
+        TrustManagerFactory tmf = null;
+        if (trustStore != null) {
+            tmf = TrustManagerFactory.getInstance(getTrustAlgorithm());
+            if (checkRevocation != null) {
+                tmf.init( new CertPathTrustManagerParameters(getPkixBuilderParameters(trustStore, getTrustAlgorithm(), checkRevocation)) );
+            } else {
+                tmf.init(trustStore);
+            }
+        }
+        return tmf;
+    }
+
+    private static @org.jetbrains.annotations.NotNull PKIXBuilderParameters getPkixBuilderParameters(KeyStore trustStore, String trustAlgorithm, String checkRevocation) throws KeyStoreException, InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+        PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(trustStore, new X509CertSelector());
+        pkixParams.addCertPathChecker(getRevocationChecker(trustAlgorithm, checkRevocation));
+        return pkixParams;
+    }
+
+    private static @org.jetbrains.annotations.NotNull PKIXRevocationChecker getRevocationChecker(String trustAlgorithm, String checkRevocation) throws NoSuchAlgorithmException {
+        PKIXRevocationChecker rc = (PKIXRevocationChecker) CertPathBuilder.getInstance(trustAlgorithm).getRevocationChecker();
+        rc.setOptions(createOptions(checkRevocation));
+        return rc;
+    }
+
+    private static @org.jetbrains.annotations.NotNull EnumSet<PKIXRevocationChecker.Option> createOptions(String checkRevocation) {
+        EnumSet<PKIXRevocationChecker.Option> options = EnumSet.noneOf(PKIXRevocationChecker.Option.class);
+        for (String option : checkRevocation.split(","))
+            options.add(PKIXRevocationChecker.Option.valueOf(option));
+        return options;
+    }
+
+    private void initializeJavaSSLContext(TrustManagerFactory tmf, KeyManagerFactory kmf) throws KeyManagementException, NoSuchAlgorithmException {
+        TrustManager[] tms = tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */;
+        if (sslParser.isIgnoreTimestampCheckFailure())
+            tms = new TrustManager[] { new TrustManagerWrapper(tms, true) };
+
+        if (sslParser.getProtocol() != null)
+            sslc = javax.net.ssl.SSLContext.getInstance(sslParser.getProtocol());
+        else
+            sslc = javax.net.ssl.SSLContext.getInstance("TLS");
+
+        sslc.init(
+                kmf != null ? kmf.getKeyManagers() : null,
+                tms,
+                null);
+    }
+
+    private static String getKeyAlias(SSLParser sslParser, KeyStore ks) throws KeyStoreException {
+        String paramAlias = sslParser.getKeyStore().getKeyAlias();
+        return (paramAlias != null) ? aliasOrThrow(ks, paramAlias) : firstAliasOrThrow(ks);
+    }
+
+    record Validity(long from, long until) {}
+
+    private Validity getValidityPeriod(KeyStore ks, String keyAlias) throws KeyStoreException {
+        List<Certificate> certs = Arrays.asList(ks.getCertificateChain(keyAlias));
+        return new Validity(getValidFrom(certs), getMinimumValidity(certs));
+    }
+
+    private @org.jetbrains.annotations.NotNull KeyManagerFactory getKeyManagerFactoryWithSideEffects(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
+
+        List<Certificate> certs = getCertificates(sslParser, resourceResolver, baseLocation);
+
+        dnsNames = extractDnsNames(certs.get(0));
+
+        checkChainValidity(certs);
+        validity = new Validity(getValidFrom(certs),getMinimumValidity(certs));
+
+        return getKeyManagerFactory(sslParser, getKey(sslParser, resourceResolver, baseLocation, certs), certs);
+    }
+
+    private Key getKey(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation, List<Certificate> certs) throws IOException {
+        Key k = getKey(sslParser, resourceResolver, baseLocation);
+        checkKeyMatchesCert(k, certs);
+        return k;
+    }
+
+    private @org.jetbrains.annotations.NotNull KeyManagerFactory getKeyManagerFactory(SSLParser sslParser, Key k, List<Certificate> certs) throws NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException, IOException, CertificateException {
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(getKeyStore(k, certs), getKeyPassword(sslParser));
+        return kmf;
+    }
+
+    private static @org.jetbrains.annotations.NotNull List<Certificate> getCertificates(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws IOException {
+        List<Certificate> certs = new ArrayList<>();
+
+        for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
+            certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
+        if (certs.isEmpty())
+            throw new RuntimeException("At least one //ssl/key/certificate is required.");
+        return certs;
+    }
+
+    private static @org.jetbrains.annotations.NotNull KeyStore getKeyStore(Key k, List<Certificate> certs) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        KeyStore ks = KeyStore.getInstance(StaticSSLContext.PKCS_12);
+        ks.load(null, "".toCharArray());
+        ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[0]));
+        return ks;
+    }
+
     private static Key getKey(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws IOException {
         Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
-        Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
-        return k;
+        return key instanceof Key? (Key) key : ((KeyPair)key).getPrivate();
     }
 
     private static char[] getKeyPassword(SSLParser sslParser) {
@@ -207,10 +263,9 @@ public class StaticSSLContext extends SSLContext {
     }
 
     private static String getAlgorithm(SSLParser sslParser) {
-        String algorihm = KeyManagerFactory.getDefaultAlgorithm();
         if (sslParser.getAlgorithm() != null)
-            algorihm = sslParser.getAlgorithm();
-        return algorihm;
+            return sslParser.getAlgorithm();
+        return KeyManagerFactory.getDefaultAlgorithm();
     }
 
     public StaticSSLContext(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
@@ -248,19 +303,11 @@ public class StaticSSLContext extends SSLContext {
 
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(sslParser, dnsNames, sslc, validFrom, validUntil);
+        return java.util.Objects.hash(sslParser, dnsNames, sslc, validity);
     }
 
-    public static KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
-        String type = store.getType();
-        if (type == null)
-            type = defaultType;
-        char[] password = keyPass;
-        if (store.getPassword() != null)
-            password = store.getPassword().toCharArray();
-        if (password == null)
-            throw new InvalidParameterException("Password for key store is not set.");
-        KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, type, password);
+    public static KeyStore openKeyStore(Store store, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
+        KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, getStoreTypeOrDefault(store), getPassword(store, keyPass));
         if (!defaultCertificateWarned && ks.getCertificate("membrane") != null) {
             if (getDigest(ks, "membrane").equals(DEFAULT_CERTIFICATE_SHA256)) {
                 log.warn("Using Membrane with the default certificate. This is highly discouraged! "
@@ -269,6 +316,22 @@ public class StaticSSLContext extends SSLContext {
             }
         }
         return ks;
+    }
+
+    private static char @org.jetbrains.annotations.NotNull [] getPassword(Store store, char[] keyPass) {
+        char[] password = keyPass;
+        if (store.getPassword() != null)
+            password = store.getPassword().toCharArray();
+        if (password == null)
+            throw new InvalidParameterException("Password for key store is not set.");
+        return password;
+    }
+
+    private static @org.jetbrains.annotations.NotNull String getStoreTypeOrDefault(Store store) {
+        String type = store.getType();
+        if (type == null)
+            return PKCS_12;
+        return type;
     }
 
     public void applyCiphers(SSLServerSocket sslServerSocket) {
@@ -306,7 +369,7 @@ public class StaticSSLContext extends SSLContext {
         return sslss;
     }
 
-    public Socket wrapAcceptedSocket(Socket socket) throws IOException {
+    public Socket wrapAcceptedSocket(Socket socket) {
         return socket;
     }
 
@@ -413,16 +476,16 @@ public class StaticSSLContext extends SSLContext {
 
     @Override
     public boolean hasKeyAndCertificate() {
-        return validUntil != 0 && validFrom != 0;
+        return validity.until != 0 && validity.from != 0;
     }
 
     @Override
     public long getValidFrom() {
-        return validFrom;
+        return validity.from;
     }
 
     @Override
     public long getValidUntil() {
-        return validUntil;
+        return validity.until;
     }
 }

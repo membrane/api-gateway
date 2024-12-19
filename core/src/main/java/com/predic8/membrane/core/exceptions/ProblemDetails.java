@@ -135,6 +135,8 @@ public class ProblemDetails {
                 root.put("message",exception.getMessage());
                 root.put("stackTrace", exception.getStackTrace());
             }
+            root.put("attention", """
+                Membrane is running in development mode. For production set <router production="true"> to reduce the details in error message!""");
             root.putAll(extensions);
         }
 

@@ -15,24 +15,15 @@
 package com.predic8.membrane.core.util;
 
 
-import com.predic8.beautifier.HtmlBeautifierFormatter;
-import com.predic8.beautifier.PlainBeautifierFormatter;
-import com.predic8.beautifier.XMLBeautifier;
-import com.predic8.beautifier.XMLBeautifierFormatter;
-import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.beautifier.*;
+import org.apache.commons.text.*;
+import org.slf4j.*;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.events.XMLEvent;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.ArrayList;
+import javax.xml.stream.*;
+import javax.xml.stream.events.*;
+import java.io.*;
+import java.util.*;
 
-import static java.lang.Character.toUpperCase;
 import static javax.xml.stream.XMLInputFactory.*;
 
 
@@ -50,11 +41,24 @@ public class TextUtil {
 	}
 
 
-	public static String formatXML(Reader reader) {
+	/**
+	 *
+	 * @param reader
+	 * @return
+	 * @throws Exception
+	 */
+	public static String formatXML(Reader reader) throws Exception {
 		return formatXML(reader, false);
 	}
 
-	public static String formatXML(Reader reader, boolean asHTML) {
+	/**
+	 * As HTML is needed for the AdminConsole
+	 * @param reader XML
+	 * @param asHTML Should output formatted as XML
+	 * @return Formatted string
+	 * @throws Exception
+	 */
+	public static String formatXML(Reader reader, boolean asHTML) throws Exception {
 		StringWriter out = new StringWriter();
 
 		try {
@@ -63,7 +67,8 @@ public class TextUtil {
 			beautifier.parse(reader);
 		}
 		catch (Exception e){
-			log.error("", e);
+			log.warn("Error parsing XML: {}", e.getMessage());
+			throw e;
 		} finally {
 			try {
 				out.close();
@@ -76,7 +81,7 @@ public class TextUtil {
 	}
 
 	public static boolean isNullOrEmpty(String str) {
-		return str == null || str.length() == 0;
+		return str == null || str.isEmpty();
 	}
 
 	public static String globToRegExp(String glob) {
@@ -102,7 +107,7 @@ public class TextUtil {
 	public static String toEnglishList(String conjuction, String... args) {
 		ArrayList<String> l = new ArrayList<>();
 		for (String arg : args)
-			if (arg != null && arg.length() > 0)
+			if (arg != null && !arg.isEmpty())
 				l.add(arg);
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < l.size(); i++) {
@@ -119,9 +124,9 @@ public class TextUtil {
 	}
 
 	public static Object capitalize(String english) {
-		if (english.length() == 0)
+		if (english.isEmpty())
 			return "";
-		return toUpperCase(english.charAt(0)) + english.substring(1);
+		return (english.charAt(0) + english.substring(1)).toUpperCase();
 	}
 
 
@@ -162,7 +167,7 @@ public class TextUtil {
 
 	public static Object removeFinalChar(String s) {
 		StringBuilder sb = new StringBuilder(s);
-		if (sb.length() > 0)
+		if (!sb.isEmpty())
 			sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
 	}
