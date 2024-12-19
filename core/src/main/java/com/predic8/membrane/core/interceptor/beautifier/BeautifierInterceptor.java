@@ -14,27 +14,27 @@
 
 package com.predic8.membrane.core.interceptor.beautifier;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TextUtil;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Beautifies request and response bodies. Supported are the Formats: JSON, XML
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="beautifier")
-public class BeautifierInterceptor extends AbstractInterceptor{
+@MCElement(name = "beautifier")
+public class BeautifierInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(BeautifierInterceptor.class);
 
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
     private final ObjectMapper om = new ObjectMapper();
@@ -46,36 +46,49 @@ public class BeautifierInterceptor extends AbstractInterceptor{
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return handleInternal(exc, exc.getRequest());
+        return handleInternal(exc.getRequest());
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return handleInternal(exc, exc.getResponse());
+        return handleInternal(exc.getResponse());
     }
 
-    private Outcome handleInternal(Exchange exc, Message msg) throws IOException {
-        if(msg.isJSON()) {
-            msg.setBodyContent(
-                    ow.writeValueAsBytes(
-                            om.readTree(msg.getBodyAsStreamDecoded())
-                    )
-            );
+    private Outcome handleInternal(Message msg) {
+        if (msg.isJSON()) {
+            beautifyJSON(msg);
             return CONTINUE;
         }
-        if(msg.isXML()) {
-            msg.setBodyContent(
-                    TextUtil.formatXML(
-                            new InputStreamReader(
-                                    msg.getBodyAsStream(),
-                                    msg.getHeader().getCharset()
-                            )
-                    ).getBytes(UTF_8)
-            );
-            return CONTINUE;
+        if (msg.isXML()) {
+            beautifyXML(msg);
         }
-
         return CONTINUE;
+    }
+
+    /**
+     * If it is not possible to beautify, leave body as it is.
+     */
+    private static void beautifyXML(Message msg) {
+        try {
+            InputStreamReader reader = new InputStreamReader(msg.getBodyAsStream(), msg.getHeader().getCharset());
+            msg.setBodyContent(formatXML(reader).getBytes(UTF_8));
+        } catch (Exception e) {
+            // If it is not possible to beautify, to nothing
+            log.warn("Error parsing XML: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * If it is not possible to beautify, leave body as it is.
+     */
+    private void beautifyJSON(Message msg) {
+        try {
+            JsonNode node = om.readTree(msg.getBodyAsStreamDecoded());
+            msg.setBodyContent(ow.writeValueAsBytes(node));
+        } catch (IOException e) {
+            // If it is not possible to beautify, to nothing
+            log.warn("Error parsing JSON: {}", e.getMessage());
+        }
     }
 
     @Override

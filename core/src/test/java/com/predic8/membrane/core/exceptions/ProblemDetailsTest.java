@@ -17,7 +17,7 @@ import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProblemDetailsTest {
@@ -27,16 +27,15 @@ public class ProblemDetailsTest {
     @Test
     void simple() throws JsonProcessingException {
 
-
-        Response r = user(false).addSubType("catastrophy").title("Something happend!").build();
+        Response r = user(false).addSubType("catastrophy").title("Something happened!").build();
 
         assertEquals(400, r.getStatusCode());
         assertEquals(APPLICATION_PROBLEM_JSON, r.getHeader().getContentType());
 
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
-        assertEquals("http://membrane-api.io/error/user/catastrophy",json.get("type").asText());
-        assertEquals("Something happend!",json.get("title").asText());
+        assertEquals("https://membrane-api.io/error/user/catastrophy",json.get("type").asText());
+        assertEquals("Something happened!",json.get("title").asText());
     }
 
     @Test
@@ -69,7 +68,7 @@ public class ProblemDetailsTest {
     void production() throws JsonProcessingException {
         JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(true).getBodyAsStringDecoded());
         assertEquals(3,json.size());
-        assertEquals("http://membrane-api.io/error/internal",json.get("type").asText());
+        assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
         assertEquals("An internal error occurred.",json.get("title").asText());
         assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
     }
@@ -77,8 +76,8 @@ public class ProblemDetailsTest {
     @Test
     void noProduction() throws JsonProcessingException {
         JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(false).getBodyAsStringDecoded());
-        assertEquals(5,json.size());
-        assertEquals("http://membrane-api.io/error/user/catastrophy",json.get("type").asText());
+        assertEquals(6,json.size());
+        assertEquals("https://membrane-api.io/error/user/catastrophy",json.get("type").asText());
         assertEquals("Something happend!",json.get("title").asText());
         assertEquals("A detailed description.",json.get("detail").asText());
     }
@@ -102,7 +101,7 @@ public class ProblemDetailsTest {
         JsonNode json = om.readTree(r.getBodyAsStringDecoded());
 
         assertEquals(3,json.size());
-        assertEquals("http://membrane-api.io/error/internal",json.get("type").asText());
+        assertEquals("https://membrane-api.io/error/internal",json.get("type").asText());
         assertEquals("An internal error occurred.",json.get("title").asText());
         assertTrue(json.get("detail").asText().contains("can be found in the Membrane log"));
     }
@@ -117,11 +116,9 @@ public class ProblemDetailsTest {
                 .detail("Wrong format")
                 .build();
 
-        System.out.println("r = " + r);
-
         ProblemDetails pd = ProblemDetails.parse(r);
 
         assertEquals(421,pd.getStatusCode());
-        assertEquals("http://membrane-api.io/error/user/validation",pd.getType());
+        assertEquals("https://membrane-api.io/error/user/validation",pd.getType());
     }
 }

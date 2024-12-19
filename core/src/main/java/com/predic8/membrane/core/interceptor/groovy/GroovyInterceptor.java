@@ -46,12 +46,12 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
         try {
             script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializator(), null, src);
         } catch (MultipleCompilationErrorsException e) {
-            logGroovyException(e);
+            logScriptExceptionDuringInitialization(e);
             throw new RuntimeException(e);
         }
     }
 
-    private void logGroovyException(Exception e) {
+    private void logScriptExceptionDuringInitialization(Exception e) {
         try {
             Rule rule = getRule();
             if (rule instanceof ServiceProxy sp) {

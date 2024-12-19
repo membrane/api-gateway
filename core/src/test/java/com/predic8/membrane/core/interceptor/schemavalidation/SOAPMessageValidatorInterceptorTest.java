@@ -103,7 +103,7 @@ public class SOAPMessageValidatorInterceptorTest {
 		return interceptor.handleRequest(exc);
 	}
 
-	private String getContent(String fileName) {
+	private String getContent(String fileName) throws Exception {
 		return TextUtil.formatXML(new InputStreamReader(requireNonNull(this.getClass().getResourceAsStream(fileName))));
 	}
 

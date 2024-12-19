@@ -95,7 +95,7 @@ class OpenAPIInterceptorTest {
         ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
 
         assertEquals("No matching API found!", pd.getTitle());
-        assertEquals("http://membrane-api.io/error/user/not-found", pd.getType());
+        assertEquals("https://membrane-api.io/error/user/not-found", pd.getType());
     }
 
     @Test

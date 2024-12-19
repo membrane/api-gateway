@@ -205,6 +205,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         try {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException ignore) {
+            log.info("Can't parse query: {}", destination);
             exc.setResponse(
                     ProblemDetails.user(false)
                             .addSubType("path")

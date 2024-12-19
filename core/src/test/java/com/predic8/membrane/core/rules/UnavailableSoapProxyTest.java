@@ -35,7 +35,7 @@ public class UnavailableSoapProxyTest {
 	private ServiceProxy sp3;
 
 	@BeforeAll
-	public static void setup() throws Exception {
+	static void setup() throws Exception {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
 		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
 		Router router = new HttpRouter();
@@ -44,7 +44,7 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@BeforeEach
-	public void startRouter() {
+	void startRouter() {
 		r = new Router();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.setMaxRetries(1);
@@ -72,7 +72,7 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@AfterEach
-	public void shutdownRouter() throws IOException {
+	void shutdownRouter() throws IOException {
 		r.shutdown();
 		r2.shutdown();
 	}
@@ -97,24 +97,21 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@Test
-	public void checkWSDLDownloadFailureInSoapProxy() {
+	void checkWSDLDownloadFailureInSoapProxy() {
 		r.getRules().add(sp);
-
 		test();
 	}
 
 	@Test
-	public void checkWSDLDownloadFailureInSoapProxyAndValidator() {
+	void checkWSDLDownloadFailureInSoapProxyAndValidator() {
 		sp.getInterceptors().add(new ValidatorInterceptor());
 		r.getRules().add(sp);
-
 		test();
 	}
 
 	@Test
-	public void checkWSDLDownloadFailureInValidatorOfServiceProxy() {
+	void checkWSDLDownloadFailureInValidatorOfServiceProxy() {
 		r.getRules().add(sp3);
-
 		test();
 	}
 }
