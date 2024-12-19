@@ -76,7 +76,7 @@ public class ProblemDetailsTest {
     @Test
     void noProduction() throws JsonProcessingException {
         JsonNode json = om.readTree(getResponseWithDetailsAndExtensions(false).getBodyAsStringDecoded());
-        assertEquals(5,json.size());
+        assertEquals(6,json.size());
         assertEquals("https://membrane-api.io/error/user/catastrophy",json.get("type").asText());
         assertEquals("Something happend!",json.get("title").asText());
         assertEquals("A detailed description.",json.get("detail").asText());
