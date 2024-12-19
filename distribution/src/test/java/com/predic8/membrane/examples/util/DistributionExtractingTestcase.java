@@ -35,16 +35,11 @@ public abstract class DistributionExtractingTestcase {
 
     public static final String MEMBRANE_LOG_LEVEL = "info";
 
-    public static final String BLZ_SERVICE = "http://localhost:2000/bank/services/BLZService";
-    public static final String BLZ_SERVICE_WSDL = BLZ_SERVICE + "?wsdl";
-
     public static final String LOCALHOST_2000 = "http://localhost:2000";
 
     public static  final String[] CONTENT_TYPE_APP_XML_HEADER = {"Content-Type", APPLICATION_XML};
     public static  final String[] CONTENT_TYPE_TEXT_XML_HEADER = {"Content-Type", TEXT_XML};
     public static  final String[] CONTENT_TYPE_APP_JSON_HEADER = {"Content-Type", APPLICATION_JSON};
-
-    public static  final String[] CONTENT_TYPE_SOAP_HEADER = {"Content-Type", APPLICATION_SOAP};
 
     private File unzipDir;
     private File membraneHome;

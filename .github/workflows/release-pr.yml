@@ -3,6 +3,11 @@ name: Pull Request for Release
 on:
   workflow_dispatch:
     inputs:
+      branch:
+        description: Branch to be used as base (e.g. master, e.g. 5.5.X)
+        type: string
+        default: 'master'
+        required: true
       version:
         description: Version Number of release to be created (e.g. 1.2.3)
         type: string
@@ -18,6 +23,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.branch }}
       - id: compile-membrane
         name: Compile Membrane
         run: |
@@ -38,7 +45,7 @@ jobs:
           cd ..
       - name: Create Pull Request
         id: cpr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           branch: v${{ github.event.inputs.version }}
           commit-message: "Release ${{ github.event.inputs.version }}"

@@ -13,27 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.beautifier.JSONBeautifier;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TextUtil;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.beautifier.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.io.StringReader;
+import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.util.TextUtil.unifyIndent;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
+import static java.nio.charset.StandardCharsets.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 @MCElement(name = "static", mixed = true)
 public class StaticInterceptor extends AbstractInterceptor {
@@ -56,15 +52,15 @@ public class StaticInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return handleInternal(exc.getRequest());
+        return handleInternal(exc.getRequest(), exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return handleInternal(exc.getResponse());
+        return handleInternal(exc.getResponse(), exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Message msg) {
+    protected Outcome handleInternal(Message msg, Exchange exchange, Flow flow) throws Exception {
         msg.setBodyContent(getTemplateBytes());
         msg.getHeader().setContentType(getContentType());
         return CONTINUE;
@@ -83,7 +79,7 @@ public class StaticInterceptor extends AbstractInterceptor {
 
     private String prettifyXML(String text) {
         try {
-            return TextUtil.formatXML(new StringReader(text));
+            return formatXML(new StringReader(text));
         } catch (Exception e) {
             log.warn("Failed to format XML", e);
             return text;
@@ -94,7 +90,7 @@ public class StaticInterceptor extends AbstractInterceptor {
         try {
             return jsonBeautifier.beautify(text);
         } catch (IOException e) {
-            log.warn("Failed to format JSON", e);
+            log.warn("Failed to format JSON: {}", e.getMessage());
             return text;
         }
     }

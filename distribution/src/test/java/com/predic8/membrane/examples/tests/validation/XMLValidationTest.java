@@ -15,11 +15,11 @@
 package com.predic8.membrane.examples.tests.validation;
 
 import com.predic8.membrane.examples.util.*;
+import io.restassured.response.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.AssertUtils.*;
+import static io.restassured.RestAssured.*;
 import static java.io.File.*;
-import static java.lang.Thread.*;
 
 public class XMLValidationTest extends DistributionExtractingTestcase {
 
@@ -31,9 +31,19 @@ public class XMLValidationTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
-			sleep(1000);
-			postAndAssert(200, LOCALHOST_2000, readFileFromBaseDir("year.xml"));
-			postAndAssert(400, LOCALHOST_2000, readFileFromBaseDir("invalid-year.xml"));
+			// @formatter:off
+			Response r = given()
+				.body(readFileFromBaseDir("year.xml"))
+				.post(LOCALHOST_2000);
+			r.then()
+				.statusCode(200);
+
+			given()
+					.body(readFileFromBaseDir("invalid-year.xml"))
+					.post(LOCALHOST_2000)
+				.then()
+					.statusCode(400);
+			// @formatter:on
 		}
 	}
 }

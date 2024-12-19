@@ -13,31 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.*;
+import org.junit.jupiter.api.*;
+
+import java.util.*;
+
+import static com.google.common.collect.Lists.*;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Action.*;
 import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Action;
-import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Rule;
-
-import java.util.List;
 
 public class HeaderFilterInterceptorTest {
 
 	@Test
 	public void doit() throws Exception {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(Response.ok().header("a", "b").header("c", "d").header("c", "d2").header("e", "f").build());
+		exc.setResponse(ok().header("a", "b").header("c", "d").header("c", "d2").header("e", "f").build());
 
 		HeaderFilterInterceptor fhi = new HeaderFilterInterceptor();
-		fhi.setRules(Lists.newArrayList(new Rule("Server", Action.REMOVE), // implicitly set by Response.ok()
-                new Rule("a", Action.KEEP),
-                new Rule("c.*", Action.REMOVE)));
+		fhi.setRules(newArrayList(new Rule("Server", REMOVE), // implicitly set by Response.ok()
+                new Rule("a", KEEP),
+                new Rule("c.*", REMOVE)));
 		fhi.handleResponse(exc);
 
 		HeaderField[] h = exc.getResponse().getHeader().getAllHeaderFields();
@@ -50,13 +48,31 @@ public class HeaderFilterInterceptorTest {
 	@DisplayName("Remove header from Response")
 	void remove() throws Exception {
 		var exc = new Exchange(null);
-		exc.setResponse(Response.ok().header("Strict-Transport-Security", "foo").build());
+		exc.setResponse(ok().header("Strict-Transport-Security", "foo").build());
 
 		var filter = new HeaderFilterInterceptor();
-		filter.setRules(List.of(new Rule("strict-transport-security", Action.REMOVE)));
+		filter.setRules(List.of(new Rule("strict-transport-security", REMOVE)));
 
 		filter.handleResponse(exc);
 
 		assertFalse(exc.getResponse().getHeader().contains("STRICT-TRANSPORT-SECURITY"));
+	}
+
+	@Test
+	void removeWildcard() throws Exception {
+		var exc = new Exchange(null);
+		exc.setResponse(ok()
+				.header("X-Foo", "foo")
+				.header("Xtreme", "true")
+				.header("X-Bar","bar").build());
+
+		var filter = new HeaderFilterInterceptor();
+		filter.setRules(List.of(new Rule("X-.*", REMOVE)));
+
+		filter.handleResponse(exc);
+
+		assertNotNull(exc.getResponse().getHeader().getFirstValue("Xtreme"));
+		assertNull(exc.getResponse().getHeader().getFirstValue("X-Bar"));
+		assertNull(exc.getResponse().getHeader().getFirstValue("X-Foo"));
 	}
 }

@@ -134,7 +134,11 @@ public class ConsistentVersionNumbers {
 		recurse(baseDirectory, versionTransformer, 2);
 
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/embedding-java/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/custom-interceptor/pom.xml"), false, versionTransformer);
 		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/stax-interceptor/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/soap/add-soap-header/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/embedding-java/pom.xml"), false, versionTransformer);
+		handlePOM(new File(baseDirectory.getAbsolutePath(), "/distribution/examples/basic-xml-interceptor/pom.xml"), false, versionTransformer);
 
 		handleHelpReference(new File(baseDirectory.getAbsolutePath(), "/annot/src/main/java/com/predic8/membrane/annot/generator/HelpReference.java"), versionTransformer);
 		handleRpmSpec(new File(baseDirectory.getAbsolutePath(), "/membrane.spec"), versionTransformer);

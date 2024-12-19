@@ -116,6 +116,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Outcome returnNoFound(Exchange exc, String id) {
+        // Do not log. Too common!
         exc.setResponse(ProblemDetails.openapi(false)
                 .statusCode(404)
                 .addSubType("wrong-id")
@@ -138,6 +139,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
         // No id specified
         if (!m.matches()) {
+            // Do not log! Too common.
             exc.setResponse(ProblemDetails.openapi(false)
                     .statusCode(404)
                     .addSubType("wrong-id")

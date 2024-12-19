@@ -23,7 +23,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>5.7.5-SNAPSHOT</version>
+		<version>5.8.1-SNAPSHOT</version>
 	</parent>
 
 	<!-- Open Telemetry -->
@@ -32,7 +32,7 @@
 			<dependency>
 				<groupId>io.opentelemetry</groupId>
 				<artifactId>opentelemetry-bom</artifactId>
-				<version>1.31.0</version>
+				<version>1.43.0</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -322,17 +322,17 @@
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-sdk</artifactId>
-			<version>1.43.0</version>
+			<version>1.44.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-exporter-otlp</artifactId>
-			<version>1.43.0</version>
+			<version>1.44.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.opentelemetry.instrumentation</groupId>
 			<artifactId>opentelemetry-resources</artifactId>
-			<version>1.31.0-alpha</version>
+			<version>2.6.0-alpha</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jetbrains</groupId>

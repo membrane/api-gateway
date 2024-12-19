@@ -14,17 +14,12 @@
 
 package com.predic8.membrane.core.config.security;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
- * @description Experimental.
- * <p>Allows to insert one or more PEM blocks containing the certificates to be trusted directly into the proxies.xml
+ * @description <p>Allows to insert one or more PEM blocks containing the certificates to be trusted directly into the proxies.xml
  * file.</p>
  * <p>This is an alternative for {@link TrustStore}.</p>
  */
@@ -53,6 +48,10 @@ public class Trust {
         return certificateList;
     }
 
+    /**
+     * @description List of certificates
+     * @param certificateList
+     */
     @MCChildElement
     public void setCertificateList(List<Certificate> certificateList) {
         this.certificateList = certificateList;
@@ -62,6 +61,10 @@ public class Trust {
         return algorithm;
     }
 
+    /**
+     *
+     * @param algorithm
+     */
     @MCAttribute
     public void setAlgorithm(String algorithm) {
         this.algorithm = algorithm;
@@ -71,6 +74,10 @@ public class Trust {
         return checkRevocation;
     }
 
+    /**
+     * TODO
+     * @param checkRevocation
+     */
     @MCAttribute
     public void setCheckRevocation(String checkRevocation) {
         this.checkRevocation = checkRevocation;

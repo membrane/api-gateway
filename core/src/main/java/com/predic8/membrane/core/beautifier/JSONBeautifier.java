@@ -24,41 +24,16 @@ import static com.fasterxml.jackson.databind.SerializationFeature.*;
 
 public class JSONBeautifier {
 
-	private final ObjectMapper objectMapper = new ObjectMapper();
-
-	private boolean indentOutput = true;
-
-	private boolean allowedUnquotedFieldNames = true;
-
-	private boolean quoteFieldNames = false;
-
-	private boolean failOnUnknownProperties = true;
+	private final ObjectMapper om = new ObjectMapper();
 
 	public String beautify(String content) throws IOException {
-		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(content));
+		return om.writerWithDefaultPrettyPrinter().writeValueAsString(om.readTree(content));
 	}
 
 	public void configure() {
-		objectMapper.configure(INDENT_OUTPUT, indentOutput);
-		objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, allowedUnquotedFieldNames);
-		objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, quoteFieldNames);
-		objectMapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
+		om.configure(INDENT_OUTPUT, true);
+		om.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+		om.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, false);
+		om.configure(FAIL_ON_UNKNOWN_PROPERTIES, true);
 	}
-
-	public void setIndentOutput(boolean indentOutput) {
-		this.indentOutput = indentOutput;
-	}
-
-	public void setAllowedUnquotedFieldNames(boolean allowedUnquotedFieldNames) {
-		this.allowedUnquotedFieldNames = allowedUnquotedFieldNames;
-	}
-
-	public void setQuoteFieldNames(boolean quoteFieldNames) {
-		this.quoteFieldNames = quoteFieldNames;
-	}
-
-	public void setFailOnUnknownProperties(boolean failOnUnknownProperties) {
-		this.failOnUnknownProperties = failOnUnknownProperties;
-	}
-
 }

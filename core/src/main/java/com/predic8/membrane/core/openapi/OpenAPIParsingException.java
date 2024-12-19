@@ -17,7 +17,19 @@
 package com.predic8.membrane.core.openapi;
 
 public class OpenAPIParsingException extends RuntimeException {
+
+    private String location;
+
     public OpenAPIParsingException(String s) {
         super(s);
+    }
+
+    public OpenAPIParsingException(String message, String location) {
+        super(message);
+        this.location = location;
+    }
+
+    public String getLocation() {
+        return location;
     }
 }

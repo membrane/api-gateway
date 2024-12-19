@@ -18,13 +18,14 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.ParseOptions;
+import io.swagger.v3.parser.core.models.*;
 import org.apache.commons.lang3.exception.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -66,12 +67,12 @@ public class OpenAPIRecordFactory {
             return;
 
         log.info("Parsing specs from dir " + spec.dir);
-        File[] openAPIFiles = getOpenAPIFiles(spec.dir);
-        if (openAPIFiles == null) {
-            log.warn(format("Directory %s does not contain any OpenAPI documents.", spec.dir));
+        File[] files = getOpenAPIFiles(spec.dir);
+        if (files == null) {
+            log.warn("Directory %s does not contain any OpenAPI documents.".formatted(spec.dir));
             return;
         }
-        for (File file : openAPIFiles) {
+        for (File file : files) {
             log.info("Parsing spec " + file);
             OpenAPIRecord rec = create(spec, file);
             apiRecords.put(getUniqueId(apiRecords, rec), rec);
@@ -91,33 +92,55 @@ public class OpenAPIRecordFactory {
             if (root instanceof UnknownHostException) {
                 throw new ConfigurationException(format("""
                         Error accessing OpenAPI specification from location: %s
-                                            
+                        
                         The hostname cannot be resolved to an IP address. Maybe the internet
                         is not reachable or a proxy server configuration is needed.
-                                            
+                        
                         Have a look at: ...
-                            """, spec.location));
+                        """, spec.location));
+            }
+            if (root instanceof OpenAPIParsingException pe) {
+                throw new ConfigurationException(format("""
+                        Could not read or parse OpenAPI Document from location: %s
+                        
+                        Reason: %s
+                        
+                        Have a look at your proxies.xml configuration.
+                        """, pe.getLocation(), pe.getMessage()));
+            }
+            if (root instanceof FileNotFoundException fnf) {
+                log.error("Cannot read OpenAPI specification from location " + spec.location);
+                log.error("Exception: " + fnf.getMessage());
+                throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
             }
 
-            log.error("Cannot read OpenAPI specification from location " + spec.location);
-            throw new ConfigurationException("Cannot read OpenAPI specification from location: " + spec.location);
+            log.error(e.getMessage(), e);
+
+            throw new RuntimeException(e);
         }
     }
 
-    private String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
+    /**
+     * Gets an unique id for an API
+     * @param apiRecords Map with OpenAPIRecords to test for collisions
+     * @param rec Record with an parsed OpenAPI
+     * @return Guaranteed unique id within the provided apiRecords
+     */
+    String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
         String id = getIdFromAPI(rec.api);
         if (apiRecords.get(id) != null) {
             log.warn("There are multiple OpenAPI documents with the id {}. The id is computed from the title {} and version {}. Please make sure that the documents are different or use the x-membrane-id field.",
                     id, rec.api.getInfo().getTitle(), rec.api.getInfo().getVersion());
-            id += "-0";
+           // Add -0 until unique
+            while (apiRecords.get(id) != null)
+                id += "-0";
             log.warn("Changing the id to {} in order to make them unique.", id);
         }
         return id;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPI api = getOpenAPI(router, spec);
-        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(api), spec);
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI( spec), getSpec( spec), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
@@ -129,13 +152,20 @@ public class OpenAPIRecordFactory {
         return record;
     }
 
-    private OpenAPI getOpenAPI(Router router, OpenAPISpec spec) throws ResourceRetrievalException {
-        OpenAPI openAPI = new OpenAPIParser().readContents(readInputStream(getInputStreamForLocation(router, spec.location)),
+    private OpenAPI getOpenAPI( OpenAPISpec spec) {
+        String path = resolve(spec.location);
+
+        OpenAPI openAPI = new OpenAPIParser().readLocation( path,
                 null, getParseOptions()).getOpenAPI();
+
         if (openAPI != null)
             return openAPI;
 
-        throw new RuntimeException(); // Is handled and turned into a nice Exception further up
+        throw new OpenAPIParsingException("Could not read and parse OpenAPI.", path); // Is handled and turned into a nice Exception further up
+    }
+
+    private String resolve(String filepath) {
+        return ResolverMap.combine(router.getBaseLocation(), filepath);
     }
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
@@ -153,12 +183,16 @@ public class OpenAPIRecordFactory {
         return parseOptions;
     }
 
-    private InputStream getInputStreamForLocation(Router router, String location) throws ResourceRetrievalException {
+    private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
         return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
     }
 
-    private JsonNode getSpec(OpenAPI api) throws IOException {
-        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
+    private JsonNode getSpec( OpenAPISpec spec) throws IOException {
+        return omYaml.readTree(getInputStreamForLocation( spec.location));
+    }
+
+    private JsonNode getSpec(File file) throws IOException {
+        return omYaml.readTree(file);
     }
 
     private void setExtensionOnAPI(OpenAPISpec spec, OpenAPI api) {
@@ -168,7 +202,7 @@ public class OpenAPIRecordFactory {
         api.getExtensions().put(X_MEMBRANE_VALIDATION, updateExtension(getXValidationExtension(api), spec));
     }
 
-    public static Map<String, Object> getXValidationExtension(OpenAPI api) {
+    private static Map<String, Object> getXValidationExtension(OpenAPI api) {
         if (api.getExtensions().get(X_MEMBRANE_VALIDATION) != null)
             //noinspection unchecked
             return (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);

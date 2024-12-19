@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.server;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.test.WSDLUtil;
+import com.predic8.membrane.test.WSDLTestUtil;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -28,16 +28,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WSDLPublisherTest {
 
-	public static List<Object[]> getPorts() {
+	static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
-				{ "src/test/resources/validation/ArticleService.xml", 3024 },
-				{ "classpath:/validation/ArticleService.xml", 3025 },
+				{ "src/test/resources/validation/ArticleService.wsdl", 3024 },
+				{ "classpath:/validation/ArticleService.wsdl", 3025 },
 		});
 	}
 
 	private HttpRouter router;
 
-	public void before(String wsdlLocation, int port) throws Exception {
+	void before(String wsdlLocation, int port) throws Exception {
 		router = new HttpRouter();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
 		WSDLPublisherInterceptor wi = new WSDLPublisherInterceptor();
@@ -48,16 +48,16 @@ public class WSDLPublisherTest {
 		router.init();
 	}
 
-	public void after() throws IOException {
+	void after() throws IOException {
 		router.shutdown();
 	}
 
 	@ParameterizedTest(name = "{0} {1}")
 	@MethodSource("getPorts")
-	public void doit(String wsdlLocation, int port) throws Exception {
+	void doit(String wsdlLocation, int port) throws Exception {
 		before(wsdlLocation, port);
 		// this recursively fetches 5 documents (1 WSDL + 4 XSD)
-		assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
+		assertEquals(5, WSDLTestUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
 		after();
 	}
 

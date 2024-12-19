@@ -116,6 +116,10 @@ public class ProblemDetails {
         return this;
     }
 
+    /**
+     * Does only log, when key in log is needed. The caller is responsible to do the log if
+     * there is something interessting.
+     */
     public Response build() {
         Map<String, Object> root = new LinkedHashMap<>();
 
@@ -127,16 +131,16 @@ public class ProblemDetails {
             title = "An internal error occurred.";
             detail = "Details can be found in the Membrane log searching for key: %s.".formatted(logKey);
         } else {
-            log.info("type={}\ntitle={}\n,detail={}\n,extension={},.", type, title, detail, extensions);
-//            root.put("exception", exception.printStackTrace(););
             if (exception != null) {
                 root.put("message",exception.getMessage());
                 root.put("stackTrace", exception.getStackTrace());
             }
+            root.put("attention", """
+                Membrane is running in development mode. For production set <router production="true"> to reduce the details in error message!""");
             root.putAll(extensions);
         }
 
-        root.put("type", "http://membrane-api.io/error/" + type);
+        root.put("type", "https://membrane-api.io/error/" + type);
         root.put("title", title);
 
         if (detail != null) {

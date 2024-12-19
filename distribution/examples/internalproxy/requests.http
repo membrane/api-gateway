@@ -1,0 +1,11 @@
+POST http://localhost:2000
+Content-Type: text/xml
+
+<order express='no'/>
+
+###
+
+POST http://localhost:2000
+Content-Type: text/xml
+
+<order express='yes'/>

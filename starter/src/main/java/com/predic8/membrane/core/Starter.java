@@ -52,7 +52,7 @@ public class Starter {
 	}
 
 	private static Class<?> getRouterCLIClass() throws ClassNotFoundException {
-		return getLoader().loadClass("com.predic8.membrane.core.RouterCLI");
+		return getLoader().loadClass("com.predic8.membrane.core.cli.RouterCLI");
 	}
 
 	private static URLClassLoader getLoader() {
