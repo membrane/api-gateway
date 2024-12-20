@@ -14,19 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
+import java.util.*;
 
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
 	private List<Interceptor> interceptors = new ArrayList<>();
 
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
+	}
+
+	public AbstractFlowInterceptor() {}
+
+	public AbstractFlowInterceptor(List<Interceptor> interceptors) {
+		this.interceptors = interceptors;
 	}
 
 	@MCChildElement(allowForeign=true)

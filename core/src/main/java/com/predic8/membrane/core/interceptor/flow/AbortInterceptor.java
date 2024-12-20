@@ -17,7 +17,6 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -32,11 +31,28 @@ public class AbortInterceptor extends AbstractFlowInterceptor {
      */
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        for (Interceptor i : getInterceptors()) {
-            if (i.getFlow().contains(ABORT))
-                exc.pushInterceptorToStack(new AdapterInterceptor(i));
-        }
+//        for (Interceptor i : getInterceptors()) {
+//            if (i.getFlow().contains(ABORT))
+//                exc.pushInterceptorToStack(new AdapterInterceptor(i));
+//        }
         return CONTINUE;
+    }
+
+    @Override
+    public void handleAbort(Exchange exchange) {
+        System.out.println("AbortInterceptor.handleAbort");
+        for (Interceptor i : getInterceptors().reversed()) {
+            System.out.println("In Abort for: " + i);
+            System.out.println("Interceptor supports Flows " + i.getFlow());
+            if ((i.getFlow().contains(Flow.RESPONSE))) {
+                try {
+                    i.handleResponse(exchange);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+        }
     }
 
     static class AdapterInterceptor extends AbstractInterceptor {

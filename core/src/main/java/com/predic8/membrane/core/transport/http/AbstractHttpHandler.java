@@ -38,7 +38,7 @@ public abstract class AbstractHttpHandler  {
 
 	protected Exchange exchange;
 	protected Request srcReq;
-	private static final InterceptorFlowController flowController = new InterceptorFlowController();
+	private static final InterceptorFlowController flowController = new NonStackInterceptorFlowController();
 
 	private final Transport transport;
 

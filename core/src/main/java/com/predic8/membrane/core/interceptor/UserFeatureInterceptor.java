@@ -19,6 +19,7 @@ import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
 import static com.predic8.membrane.core.util.URLUtil.getHost;
 
 /**
@@ -31,11 +32,12 @@ import static com.predic8.membrane.core.util.URLUtil.getHost;
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());
-	private static final InterceptorFlowController flowController = new InterceptorFlowController();
+	private static final NonStackInterceptorFlowController flowController = new NonStackInterceptorFlowController();
+//	private static final InterceptorFlowController flowController = new InterceptorFlowController();
 
 	public UserFeatureInterceptor() {
 		name = "User Feature";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
@@ -60,6 +62,14 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 		}
 		exc.setRule(predecessorRule);
 		return outcome;
+	}
+
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+		System.out.println("----------------------");
+		System.out.println("UserFeatureInterceptor handleResponse");
+		flowController.invokeResponseHandlers(exc, exc.getRule().getInterceptors());
+		return Outcome.CONTINUE;
 	}
 
 	private String getServiceProxyName(Exchange exc) {

@@ -26,8 +26,6 @@ public class ExceptionAbortRequestConditionalFlowTest extends AbstractIntercepto
     @Override
     protected List<Interceptor> interceptors() {
 
-
-
         ConditionalInterceptor ci = new ConditionalInterceptor();
         ci.setTest("true");
         ci.getInterceptors().add(new FlowTestInterceptor("c"));

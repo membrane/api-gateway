@@ -23,6 +23,7 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE;
 import static com.predic8.membrane.core.util.TextUtil.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -39,6 +40,11 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
 
     public GroovyInterceptor() {
         name = "Groovy";
+    }
+
+    @Override
+    public EnumSet<Flow> getFlow() {
+        return REQUEST_RESPONSE;
     }
 
     @Override

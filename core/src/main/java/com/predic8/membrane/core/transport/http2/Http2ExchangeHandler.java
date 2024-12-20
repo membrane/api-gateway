@@ -40,7 +40,7 @@ import static java.nio.charset.StandardCharsets.*;
 
 public class Http2ExchangeHandler implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(Http2ExchangeHandler.class.getName());
-    private static final InterceptorFlowController flowController = new InterceptorFlowController();
+    private static final InterceptorFlowController flowController = new NonStackInterceptorFlowController();
 
     private final StreamInfo streamInfo;
     private final Transport transport;

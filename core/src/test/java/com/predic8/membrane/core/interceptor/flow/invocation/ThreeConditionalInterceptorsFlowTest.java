@@ -17,37 +17,21 @@
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 
 import java.util.*;
 
 public class ThreeConditionalInterceptorsFlowTest extends AbstractInterceptorFlowTest {
     @Override
     protected List<Interceptor> interceptors() {
-
-
-        ConditionalInterceptor ci1 = new ConditionalInterceptor();
-        ci1.setTest("true");
-        ci1.getInterceptors().add(new FlowTestInterceptor("c1"));
-
-        ConditionalInterceptor ci2 = new ConditionalInterceptor();
-        ci2.setTest("true");
-        ci2.getInterceptors().add(new FlowTestInterceptor("c2"));
-
-        ConditionalInterceptor ci3 = new ConditionalInterceptor();
-        ci3.setTest("true");
-        ci3.getInterceptors().add(new FlowTestInterceptor("c3"));
-
-        return List.of(new FlowTestInterceptor("a"),
-                ci1,
-                ci2,
-                ci3,
-                new FlowTestInterceptor("d"));
+        return List.of(A,
+                IF("true", I1),
+                IF("true", I2),
+                IF("true", I3),
+                D);
     }
 
     @Override
     protected String flow() {
-        return ">a>c1>c2>c3>d<d<c3<c2<c1<a";
+        return ">a>i1>i2>i3>d<d<i3<i2<i1<a";
     }
 }

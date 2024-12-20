@@ -68,7 +68,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.MIXED, this.getClass().getClassLoader());
     private Expression spelExpr;
 
-    private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
+    private final NonStackInterceptorFlowController interceptorFlowController = new NonStackInterceptorFlowController();
     private Function<Map<String, Object>, Boolean> condition;
 
     public enum LanguageType {
@@ -148,10 +148,11 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
                     return interceptorFlowController.invokeRequestHandlers(exc, getInterceptors());
                 }
                 case RESPONSE -> {
-                    if (conditionWasFalseOrNotExecutedInRequestFlow(exc))
-                        for (Interceptor i : getInterceptors()) {
-                            exc.pushInterceptorToStack(i);
-                        }
+                    interceptorFlowController.invokeResponseHandlers(exc, getInterceptors());
+//                    if (conditionWasFalseOrNotExecutedInRequestFlow(exc))
+//                        for (Interceptor i : getInterceptors()) {
+//                            exc.pushInterceptorToStack(i);
+//                        }
                 }
             }
         }

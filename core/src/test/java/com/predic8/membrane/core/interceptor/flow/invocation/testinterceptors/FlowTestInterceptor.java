@@ -19,12 +19,17 @@ package com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.groovy.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class FlowTestInterceptor extends AbstractInterceptor {
 
     private final String name;
+
+    public static GroovyInterceptor ABORT = new GroovyInterceptor() {{
+        src = "ABORT";
+    }};
 
     public FlowTestInterceptor(String name) {
         this.name = name;
