@@ -154,7 +154,7 @@ public class OpenAPIRecordFactory {
     private OpenAPI getOpenAPI(OpenAPISpec spec) {
         String path = resolve(spec.location);
         try {
-            JsonNode node = omYaml.readTree(new URL(path));
+            JsonNode node = omYaml.readTree(getInputStreamForLocation(spec.location));
             OpenAPI openAPI = new OpenAPIParser().readLocation(path, null, getParseOptions()).getOpenAPI();
 
             addConversionNoticeIfSwagger2(openAPI, node);
@@ -162,6 +162,10 @@ public class OpenAPIRecordFactory {
         } catch (IOException e) {
             throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), path);
         }
+    }
+
+    private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
+        return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
     }
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) {
