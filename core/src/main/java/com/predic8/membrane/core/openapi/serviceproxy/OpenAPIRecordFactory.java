@@ -140,38 +140,63 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPI api = getOpenAPI(spec);
-        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(api), spec);
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), getSpec(getOpenAPI(spec)), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPI api = parseFileAsOpenAPI(file);
-        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(api), spec);
+        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(parseFileAsOpenAPI(file)), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
-    private OpenAPI getOpenAPI( OpenAPISpec spec) {
+    private OpenAPI getOpenAPI(OpenAPISpec spec) {
         String path = resolve(spec.location);
+        try {
+            JsonNode node = omYaml.readTree(new URL(path));
+            OpenAPI openAPI = new OpenAPIParser().readLocation(path, null, getParseOptions()).getOpenAPI();
 
-        OpenAPI openAPI = new OpenAPIParser().readLocation( path,
-                null, getParseOptions()).getOpenAPI();
-
-        if (openAPI != null)
+            addConversionNoticeIfSwagger2(openAPI, node);
             return openAPI;
-
-        throw new OpenAPIParsingException("Could not read and parse OpenAPI.", path); // Is handled and turned into a nice Exception further up
+        } catch (IOException e) {
+            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), path);
+        }
     }
 
+    private OpenAPI parseFileAsOpenAPI(File oaFile) {
+        try {
+            JsonNode node = omYaml.readTree(oaFile);
+            OpenAPI api = new OpenAPIParser().readContents(
+                    readInputStream(new FileInputStream(oaFile)),
+                    null,
+                    getParseOptions()
+            ).getOpenAPI();
+
+            addConversionNoticeIfSwagger2(api, node);
+            return api;
+        } catch (IOException e) {
+            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), oaFile.getPath());
+        }
+    }
+
+    private void addConversionNoticeIfSwagger2(OpenAPI api, JsonNode node) {
+        if (isSwagger2(node) && api.getInfo() != null) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(api.getInfo().getDescription());
+            if (api.getInfo().getDescription() != null) builder.append("\n\n");
+            builder.append("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.");
+            api.getInfo().setDescription(builder.toString());
+        }
+    }
+
+    boolean isSwagger2(JsonNode node) {
+        JsonNode swaggerNode = node.get("swagger");
+        return swaggerNode != null && swaggerNode.asText().startsWith("2.");
+    }
+    
     private String resolve(String filepath) {
         return ResolverMap.combine(router.getBaseLocation(), filepath);
-    }
-
-    private OpenAPI parseFileAsOpenAPI(File oaFile) throws FileNotFoundException {
-        return new OpenAPIParser().readContents(readInputStream(new FileInputStream(oaFile)),
-                null, getParseOptions()).getOpenAPI();
     }
 
     private static @NotNull ParseOptions getParseOptions() {

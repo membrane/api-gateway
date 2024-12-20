@@ -13,8 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.*;
 import io.swagger.parser.*;
+import io.swagger.util.ObjectMapperFactory;
 import io.swagger.v3.oas.models.*;
 import org.junit.jupiter.api.*;
 
@@ -58,6 +61,54 @@ class OpenAPIRecordFactoryTest {
         assertNotNull(rec);
         assertEquals("Fruit Shop API Swagger 2", rec.api.getInfo().getTitle());
         assertEquals(V30, rec.api.getSpecVersion());
+    }
+
+    @Test
+    void swagger2ConversionNoticeAdded() throws IOException {
+        OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
+        String description = rec.api.getInfo().getDescription();
+        assertTrue(description.endsWith("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway."));
+    }
+
+    @Test
+    void swagger2ConversionNoticeAddedWithExistingDescription() throws IOException {
+        OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0-with-description.json", "fruit-shop-api-swagger-2-v1-0-0");
+        String description = rec.api.getInfo().getDescription();
+        assertTrue(description.startsWith("This is a showcase for REST API design and serves as a public API for educational usage."));
+        assertTrue(description.endsWith("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway."));
+    }
+
+    @Test
+    void openapi3NoConversionNoticeAdded() throws IOException {
+        OpenAPIRecord rec = getOpenAPIRecord("fruitshop-api-v2-openapi-3.yml", "fruit-shop-api-v2-0");
+        assertEquals("""
+                ![Logo](https://www.predic8.de/logo6.png)
+                   \s
+                    Showcases REST API design and serves as a public API for
+                    educational usage. Feel free to use this API even by using the POST, PUT and DELETE methods. You
+                    cannot do any harm, the API will be reset automatically.""",
+                rec.api.getInfo().getDescription()
+        );
+    }
+
+    @Test
+    void isSwagger2Detection() throws JsonProcessingException {
+        ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+
+        String swagger2Json = """
+        {"swagger": "2.0", "info": {"title": "Test API"}}
+        """;
+        assertTrue(factory.isSwagger2(omYaml.readTree(swagger2Json)));
+
+        String openapi3Json = """
+        {"openapi": "3.0.0", "info": {"title": "Test API"}}
+        """;
+        assertFalse(factory.isSwagger2(omYaml.readTree(openapi3Json)));
+
+        String invalidJson = """
+        {"swagger": "1.0", "info": {"title": "Test API"}}
+        """;
+        assertFalse(factory.isSwagger2(omYaml.readTree(invalidJson)));
     }
 
     @Test
@@ -109,7 +160,6 @@ class OpenAPIRecordFactoryTest {
                 .getSchema().getProperties().get("email");
     }
 
-    // @TODO
     private static OpenAPIRecord getOpenAPIRecord(String fileName, String id) throws IOException {
         return factory.create(new ArrayList<>() {{
             add(new OpenAPISpec() {{
