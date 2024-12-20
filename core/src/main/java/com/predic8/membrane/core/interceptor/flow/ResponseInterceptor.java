@@ -33,11 +33,19 @@ public class ResponseInterceptor extends AbstractFlowInterceptor {
 	 */
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		for (Interceptor i : getInterceptors()) {
-			if (i.getFlow().contains(RESPONSE))
-				exc.pushInterceptorToStack(i);
-		}
+//		for (Interceptor i : getInterceptors()) {
+//			if (i.getFlow().contains(RESPONSE))
+//				exc.pushInterceptorToStack(i);
+//		}
 		return CONTINUE;
 	}
 
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+		for (Interceptor i : getInterceptors().reversed()) {
+			if (i.getFlow().contains(RESPONSE))
+				i.handleResponse(exc); // @TODO implement returning ABORT
+		}
+		return CONTINUE;
+	}
 }
