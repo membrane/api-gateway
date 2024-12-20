@@ -43,7 +43,6 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.parseSwaggersInfoServer;
 import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
@@ -229,11 +228,6 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static URL getServerUrlFromOpenAPI(OpenAPIRecord rec, Server server) {
         try {
-            if (rec.isVersion2()) {
-                return new URL(parseSwaggersInfoServer(server.getUrl()).getUrl());
-            }
-
-            // OpenAPI 3 or newer
             return new URL(server.getUrl());
         } catch (Exception e) {
             throw new RuntimeException("Cannot parse server address from OpenAPI " + server.getUrl());
