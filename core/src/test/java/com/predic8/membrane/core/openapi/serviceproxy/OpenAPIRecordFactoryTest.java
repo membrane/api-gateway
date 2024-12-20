@@ -13,21 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.*;
-import io.swagger.parser.*;
-import io.swagger.util.ObjectMapperFactory;
-import io.swagger.v3.oas.models.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.TestUtils.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static io.swagger.v3.oas.models.SpecVersion.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.openapi.util.TestUtils.getResourceAsStream;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static io.swagger.v3.oas.models.SpecVersion.V30;
+import static io.swagger.v3.oas.models.SpecVersion.V31;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIRecordFactoryTest {
@@ -84,26 +86,6 @@ class OpenAPIRecordFactoryTest {
         assertFalse("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.".contains(
                 rec.api.getInfo().getDescription()
         ));
-    }
-
-    @Test
-    void isSwagger2Detection() throws JsonProcessingException {
-        ObjectMapper omYaml = ObjectMapperFactory.createYaml();
-
-        String swagger2Json = """
-        {"swagger": "2.0", "info": {"title": "Test API"}}
-        """;
-        assertTrue(factory.isSwagger2(omYaml.readTree(swagger2Json)));
-
-        String openapi3Json = """
-        {"openapi": "3.0.0", "info": {"title": "Test API"}}
-        """;
-        assertFalse(factory.isSwagger2(omYaml.readTree(openapi3Json)));
-
-        String invalidJson = """
-        {"swagger": "1.0", "info": {"title": "Test API"}}
-        """;
-        assertFalse(factory.isSwagger2(omYaml.readTree(invalidJson)));
     }
 
     @Test

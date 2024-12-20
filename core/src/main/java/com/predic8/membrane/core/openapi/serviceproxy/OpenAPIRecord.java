@@ -43,7 +43,7 @@ public class OpenAPIRecord {
     OpenAPISpec spec;
 
     /**
-     * Version of the OpenAPI standard e.g. 2.0, 3.0.1
+     * Version of the OpenAPI standard e.g. 3.0.1, 3.1.0
      */
     String version;
 
@@ -56,25 +56,7 @@ public class OpenAPIRecord {
         this.api = api;
         this.node = node;
         this.spec = spec;
-
-        // If used without a node. Version is read from JSON cause JSON
-        // supports any version number like 3.1.0 or 3.0.9. For
-        // getSpecVerison() there are just a number of enum constants.
-        if (node != null) {
-            this.version = getOpenAPIVersion(node);
-        } else {
-            this.version = api.getSpecVersion().name();
-        }
-
-
-    }
-
-    public boolean isVersion2() {
-        return version.startsWith("2");
-    }
-
-    public boolean isVersion3() {
-        return version.startsWith("3");
+        this.version = api.getSpecVersion().name();
     }
 
     public JsonNode rewriteOpenAPI(Exchange exc, URIFactory uriFactory) throws URISyntaxException {

@@ -122,11 +122,6 @@ class RewriteTest {
     }
 
     @Test
-    void rewriteSwagger2AccordingToRequestTest() throws Exception {
-        assertEquals("api.predic8.de:80", records.get("fruit-shop-api-swagger-2-v1-0-0").rewriteOpenAPI(get, new URIFactory()).get("host").asText());
-    }
-
-    @Test
     void rewriteOpenAPIAccordingToRequestTest() throws Exception {
         JsonNode servers = records.get("servers-1-api-v1-0").rewriteOpenAPI(get, new URIFactory()).get("servers");
         assertEquals(1,servers.size());
@@ -176,6 +171,8 @@ class RewriteTest {
 
     @Test
     void rewriteOpenAPI3WithNoServers() throws Exception {
-        assertTrue(records.get("no-servers-v1-0").rewriteOpenAPI(get, new URIFactory()).get("servers").isEmpty());
+        OpenAPIRecord openAPIRecord = records.get("no-servers-v1-0");
+        JsonNode jsonNode = openAPIRecord.rewriteOpenAPI(get, new URIFactory());
+        assertTrue(jsonNode.get("servers").isEmpty());
     }
 }

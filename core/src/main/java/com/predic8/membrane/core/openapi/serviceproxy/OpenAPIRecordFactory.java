@@ -22,7 +22,6 @@ import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
-import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import io.swagger.v3.parser.core.models.*;
@@ -141,14 +140,14 @@ public class OpenAPIRecordFactory {
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
         OpenAPI api = getOpenAPI(spec);
-        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(getOpenAPI(spec)), spec);
+        OpenAPIRecord record = new OpenAPIRecord(api, convert2Json(getOpenAPI(spec), omYaml), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
         OpenAPI api = parseFileAsOpenAPI(file);
-        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(parseFileAsOpenAPI(file)), spec);
+        OpenAPIRecord record = new OpenAPIRecord(api, convert2Json(parseFileAsOpenAPI(file), omYaml), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
@@ -187,18 +186,15 @@ public class OpenAPIRecordFactory {
     }
 
     private void addConversionNoticeIfSwagger2(OpenAPI api, JsonNode node) {
-        if (isSwagger2(node) && api.getInfo() != null) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(api.getInfo().getDescription());
-            if (api.getInfo().getDescription() != null) builder.append("\n\n");
-            builder.append("***Note:*** *This OpenAPI description was converted from Swagger 2 to OAS 3 by Membrane API Gateway!*");
-            api.getInfo().setDescription(builder.toString());
+        if (!isSwagger2(node) || api.getInfo() == null) {
+            return;
         }
-    }
 
-    boolean isSwagger2(JsonNode node) {
-        JsonNode swaggerNode = node.get("swagger");
-        return swaggerNode != null && swaggerNode.asText().startsWith("2.");
+        StringBuilder builder = new StringBuilder();
+        builder.append(api.getInfo().getDescription());
+        if (api.getInfo().getDescription() != null) builder.append("\n\n");
+        builder.append("***Note:*** *This OpenAPI description was converted from Swagger 2 to OAS 3 by Membrane API Gateway!*");
+        api.getInfo().setDescription(builder.toString());
     }
     
     private String resolve(String filepath) {
@@ -213,10 +209,6 @@ public class OpenAPIRecordFactory {
         parseOptions.setResolve(true);
 
         return parseOptions;
-    }
-
-    private JsonNode getSpec(OpenAPI api) throws IOException {
-        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
 
     private void setExtensionOnAPI(OpenAPISpec spec, OpenAPI api) {
