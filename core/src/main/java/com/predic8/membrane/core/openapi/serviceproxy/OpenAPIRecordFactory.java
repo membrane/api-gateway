@@ -191,7 +191,7 @@ public class OpenAPIRecordFactory {
             StringBuilder builder = new StringBuilder();
             builder.append(api.getInfo().getDescription());
             if (api.getInfo().getDescription() != null) builder.append("\n\n");
-            builder.append("***Note:*** *OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.*");
+            builder.append("***Note:*** *This OpenAPI description was converted from Swagger 2 to OAS 3 by Membrane API Gateway!*");
             api.getInfo().setDescription(builder.toString());
         }
     }
