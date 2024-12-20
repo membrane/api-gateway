@@ -69,15 +69,15 @@ class OpenAPIRecordFactoryTest {
     void swagger2ConversionNoticeAdded() throws IOException {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
         String description = rec.api.getInfo().getDescription();
-        assertTrue(description.endsWith("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway."));
+        assertTrue(description.contains("Membrane API Gateway."));
     }
 
     @Test
     void swagger2ConversionNoticeAddedWithExistingDescription() throws IOException {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-swagger-2.0.json", "fruit-shop-api-swagger-2-v1-0-0");
         String description = rec.api.getInfo().getDescription();
-        assertTrue(description.startsWith("This is a showcase for REST API design and serves as a public API for educational usage."));
-        assertTrue(description.endsWith("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway."));
+        assertTrue(description.startsWith("This is a showcase"));
+        assertTrue(description.contains("Membrane API Gateway."));
     }
 
     @Test

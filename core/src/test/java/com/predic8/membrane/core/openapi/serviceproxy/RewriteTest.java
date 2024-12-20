@@ -173,6 +173,6 @@ class RewriteTest {
     void rewriteOpenAPI3WithNoServers() throws Exception {
         OpenAPIRecord openAPIRecord = records.get("no-servers-v1-0");
         JsonNode jsonNode = openAPIRecord.rewriteOpenAPI(get, new URIFactory());
-        assertTrue(jsonNode.get("servers").isEmpty());
+        assertEquals("http://api.predic8.de/", jsonNode.get("servers").get(0).get("url").textValue());
     }
 }
