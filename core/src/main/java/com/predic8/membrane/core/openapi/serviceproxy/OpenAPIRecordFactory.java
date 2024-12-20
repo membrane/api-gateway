@@ -22,6 +22,7 @@ import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
+import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
 import io.swagger.v3.parser.core.models.*;
@@ -43,7 +44,7 @@ public class OpenAPIRecordFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIRecordFactory.class.getName());
 
-    private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
     private final Router router;
 
@@ -139,17 +140,19 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPI api = getOpenAPI(spec);
-        OpenAPIRecord record = new OpenAPIRecord(api, convert2Json(getOpenAPI(spec), omYaml), spec);
+        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPI api = parseFileAsOpenAPI(file);
-        OpenAPIRecord record = new OpenAPIRecord(api, convert2Json(parseFileAsOpenAPI(file), omYaml), spec);
+        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file),  spec);
         setExtensionOnAPI(spec, record.api);
         return record;
+    }
+
+    public static JsonNode convert2Json(OpenAPI api) throws IOException {
+        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
 
     private OpenAPI getOpenAPI(OpenAPISpec spec) {

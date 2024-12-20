@@ -35,10 +35,6 @@ public class OpenAPIUtil {
 
     private static final Pattern hostPortPattern = Pattern.compile("//(.*):(.*)/");
 
-    public static JsonNode convert2Json(OpenAPI api, ObjectMapper omYaml) throws IOException {
-        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
-    }
-
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {
             String id = (String) api.getInfo().getExtensions().get(X_MEMBRANE_ID);

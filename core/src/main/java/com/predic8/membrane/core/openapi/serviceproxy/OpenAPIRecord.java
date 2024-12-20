@@ -21,8 +21,10 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 
+import java.io.IOException;
 import java.net.*;
 
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecordFactory.convert2Json;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 
 public class OpenAPIRecord {
@@ -52,9 +54,9 @@ public class OpenAPIRecord {
      */
     public OpenAPIRecord() {}
 
-    public OpenAPIRecord(OpenAPI api, JsonNode node, OpenAPISpec spec) {
+    public OpenAPIRecord(OpenAPI api, OpenAPISpec spec) throws IOException {
         this.api = api;
-        this.node = node;
+        this.node = convert2Json(api);
         this.spec = spec;
         this.version = api.getSpecVersion().name();
     }
