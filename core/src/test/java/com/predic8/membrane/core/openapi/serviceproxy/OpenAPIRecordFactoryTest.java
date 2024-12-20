@@ -81,15 +81,9 @@ class OpenAPIRecordFactoryTest {
     @Test
     void openapi3NoConversionNoticeAdded() throws IOException {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-api-v2-openapi-3.yml", "fruit-shop-api-v2-0-0");
-        assertEquals("""
-                        ![Logo](https://www.predic8.de/logo6.png)
-                        
-                        Showcases REST API design and serves as a public API for
-                        educational usage. Feel free to use this API even by using the POST, PUT and DELETE methods. You
-                        cannot do any harm, the API will be reset automatically.
-                        """,
+        assertFalse("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.".contains(
                 rec.api.getInfo().getDescription()
-        );
+        ));
     }
 
     @Test

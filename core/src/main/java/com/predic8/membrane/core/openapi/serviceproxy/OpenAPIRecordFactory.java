@@ -140,13 +140,15 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), getSpec(getOpenAPI(spec)), spec);
+        OpenAPI api = getOpenAPI(spec);
+        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(getOpenAPI(spec)), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), getSpec(parseFileAsOpenAPI(file)), spec);
+        OpenAPI api = parseFileAsOpenAPI(file);
+        OpenAPIRecord record = new OpenAPIRecord(api, getSpec(parseFileAsOpenAPI(file)), spec);
         setExtensionOnAPI(spec, record.api);
         return record;
     }
@@ -189,7 +191,7 @@ public class OpenAPIRecordFactory {
             StringBuilder builder = new StringBuilder();
             builder.append(api.getInfo().getDescription());
             if (api.getInfo().getDescription() != null) builder.append("\n\n");
-            builder.append("OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.");
+            builder.append("***Note:*** *OpenAPI description was converted to OAS 3 from Swagger 2 by Membrane API Gateway.*");
             api.getInfo().setDescription(builder.toString());
         }
     }

@@ -97,7 +97,12 @@ def hasRootServerPath = {server -> com.predic8.membrane.core.openapi.util.UriUti
 
     </td>
     <td><%= api.value.api.info.version %></td>
-    <td><%= api.value.api.openapi %></td>
+    <td>
+        <%= api.value.api.openapi %>
+        <% if (api.value.api.extensions?.'x-original-swagger-version') { %>
+        (from <%= api.value.api.extensions.'x-original-swagger-version' %>)
+        <% } %>
+    </td>
     <td><a href="${path}/${api.key}"><%= api.key %></a></td>
     </tr>
     <% } %>
