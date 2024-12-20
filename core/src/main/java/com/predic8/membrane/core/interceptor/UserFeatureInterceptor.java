@@ -69,7 +69,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 		System.out.println("----------------------");
 		System.out.println("UserFeatureInterceptor handleResponse");
 		flowController.invokeResponseHandlers(exc, exc.getRule().getInterceptors());
-		return Outcome.CONTINUE;
+		return Outcome.CONTINUE; // TODO right?
 	}
 
 	private String getServiceProxyName(Exchange exc) {

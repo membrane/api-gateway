@@ -43,9 +43,9 @@ public class ServiceInvocationTest {
 		callService();
 
 		MockInterceptor.assertContent(
-				new String[] {"process", "log", "transport-log" },
-				new String[] {"transport-log", "log", "process" },
-				new String[] {});
+				new String[] {"process", "log", "transport-log" }, // requests
+				new String[] {"transport-log", "log", "process" }, // responses
+				new String[] {}); // aborts
 	}
 
 

@@ -128,11 +128,20 @@ public class NonStackInterceptorFlowController extends  InterceptorFlowControlle
 	}
 
 	private static void runReturn(Exchange exchange, List<Interceptor> interceptors, int i) throws Exception {
+		boolean aborted = false;
 		for (int j = i - 1 ; j >= 0; j--) {
 			Interceptor backI = interceptors.get(j);
 			System.out.println("------<-<-<--------!");
-			System.out.println("Back %d: %s".formatted(i, backI.getDisplayName()));
-			backI.handleResponse(exchange);
+			System.out.println("Back %d: %s".formatted(j, backI.getDisplayName()));
+			Outcome o = null;
+			if (!aborted) {
+				o = backI.handleResponse(exchange);
+			} else {
+				backI.handleAbort(exchange);
+			}
+			if (o == ABORT) {
+				aborted = true;
+			}
 		}
 	}
 

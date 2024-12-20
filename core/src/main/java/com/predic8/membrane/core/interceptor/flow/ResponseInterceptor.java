@@ -31,8 +31,11 @@ public class ResponseInterceptor extends AbstractFlowInterceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		for (int i = interceptors.size() - 1; i >= 0; i--) {
 			Interceptor interceptor = interceptors.get(i);
-			if (interceptor.handlesResponses())
-				interceptor.handleResponse(exc); // @TODO implement returning ABORT
+			if (interceptor.handlesResponses()) {
+				Outcome o = interceptor.handleResponse(exc); // @TODO implement returning ABORT
+				if (o == ABORT)
+					return ABORT;
+			}
 		}
 		return CONTINUE;
 	}

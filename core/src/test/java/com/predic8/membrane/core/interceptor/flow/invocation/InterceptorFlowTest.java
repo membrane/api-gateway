@@ -25,12 +25,12 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
 
     @Test
     void request() throws Exception {
-        assertFlow(">a>b>c<c<a", A, REQUEST(B), C);
+        assertFlow(">a>b>c>d<d<a", A, REQUEST(B,C), D);
     }
 
     @Test
     void response() throws Exception {
-        assertFlow(">a>c<c<b<a", A, RESPONSE(B), C);
+        assertFlow(">a>d<d<c<b<a", A, RESPONSE(B,C), D);
     }
 
     @Test
@@ -84,6 +84,20 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
     @Test
     void requestResponseIf() throws Exception {
         assertFlow(">a>i1>b<b<i2<a", A, REQUEST(IF("true", I1)), RESPONSE(IF("true", I2)), B);
+    }
+
+    @Test
+    void abortInRequest() throws Exception {
+        // Note: ">a>c<b?a" is correct not ">a>c?b?a" because the <abort>-interceptor
+        // calls handleResponse() on it's children
+        assertFlow(">a>c<b?a", A, ABORT(B), REQUEST(C, ABORT, D), E);
+    }
+
+    @Test
+    void abortInResponse() throws Exception {
+        // Note: ">a>e<e<c?a" is correct not ">a>e<e?c?a" because the <abort>-interceptor
+        // calls handleResponse() on it's children
+        assertFlow(">a>e<e<c?a", A, RESPONSE(B), ABORT(C), RESPONSE( D,ABORT), E);
     }
 
     @Test

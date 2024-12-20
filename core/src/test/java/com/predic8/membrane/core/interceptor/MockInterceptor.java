@@ -31,7 +31,6 @@ public class MockInterceptor extends AbstractInterceptor {
 	private final String label;
 	private final Set<String> failurePoints;
 
-
 	public MockInterceptor(String label) {
 		this(label, new String[]{});
 	}

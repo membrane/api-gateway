@@ -21,10 +21,12 @@ import org.slf4j.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 
 /**
- * @description Interceptors are usually applied to requests and responses.
- * In case of errors, the flow returns and <i>handleAbort()</i> is called on interceptors
+ * @description Plugins are usually applied to requests and responses.
+ * In case of errors, the flow returns and <i>handleAbort()</i> is called on plugins
  * going back the chain.
- * By nesting interceptors into an &lt;abort&gt; Element you can limit their application to abort flows only.
+ * By nesting plugins into an &lt;abort&gt; you can limit their application to abort flows only.
+ * On plugins nested in &lt;abort&gt; handleResponse() is called not handleAbort() in order to
+ * allow normal processing.
  */
 @MCElement(name="abort", topLevel=false)
 public class AbortInterceptor extends AbstractFlowInterceptor {
@@ -38,12 +40,10 @@ public class AbortInterceptor extends AbstractFlowInterceptor {
 
     @Override
     public void handleAbort(Exchange exchange) {
-        System.out.println("AbortInterceptor.handleAbort");
-
         for (int i = interceptors.size() - 1; i >= 0; i--) {
             Interceptor interceptor = interceptors.get(i);
-            System.out.println("In Abort for: " + interceptor);
             if (interceptor.handlesResponses()) {
+                log.debug("Invoking handleResponse() on {}", interceptor);
                 try {
                     interceptor.handleResponse(exchange);
                 } catch (Exception e) {
