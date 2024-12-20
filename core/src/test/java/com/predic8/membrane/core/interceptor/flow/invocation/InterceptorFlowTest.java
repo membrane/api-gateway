@@ -14,12 +14,12 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
     public static final String TRUE = "true";
 
     @Test
-    void normalOne() throws Exception {
+    void one() throws Exception {
         assertFlow(">a<a", A);
     }
 
     @Test
-    void normalTwo() throws Exception {
+    void two() throws Exception {
         assertFlow(">a>b<b<a", A, B);
     }
 
@@ -40,16 +40,11 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
 
     @Test
     void responseReturn() throws Exception {
-        assertFlow(">a>b<b<a", A, RESPONSE(RETURN), B);
+        assertFlow(">a>b<a", A, REQUEST(B, RETURN, C), D);
     }
 
     @Test
-    void requestReturn() throws Exception {
-        assertFlow(">a<a", A, REQUEST(RETURN), B);
-    }
-
-    @Test
-    void normalIgnoreAbort() throws Exception {
+    void normalAbort() throws Exception {
         assertFlow(">a>c<c<a", A, ABORT(B), C);
     }
 
@@ -59,8 +54,18 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
     }
 
     @Test
+    void exception() throws Exception {
+        assertFlow(">a?a", A, EXCEPTION, B);
+    }
+
+    @Test
     void abortException() throws Exception {
-        assertFlow(">a>c?c<b?a", A, ABORT(B), C, EXCEPTION, ABORT(B), C, EXCEPTION);
+        assertFlow(">a>c?c<b?a", A, ABORT(B), C, EXCEPTION, ABORT(B), C);
+    }
+
+    @Test
+    void ifTrue() throws Exception {
+        assertFlow(">a>b>c<c<b<a", A, IF("true", B), C);
     }
 
     @Test
@@ -69,21 +74,16 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
     }
 
     @Test
-    void exception() throws Exception {
-        assertFlow(">a?a", A, EXCEPTION, B);
-    }
-
-    @Test
     void ifRequestResponseWithException() throws Exception {
         assertFlow(">a>i1?a", A,
-                REQUEST(IF(TRUE,I1)),
-                RESPONSE(IF(TRUE,I2)),
+                REQUEST(IF(TRUE, I1)),
+                RESPONSE(IF(TRUE, I2)),
                 EXCEPTION);
     }
 
     @Test
     void requestResponseIf() throws Exception {
-        assertFlow(">a>i1>b<b<i2<a", A, REQUEST(IF("true", I1)), RESPONSE(IF("true",I2)), B);
+        assertFlow(">a>i1>b<b<i2<a", A, REQUEST(IF("true", I1)), RESPONSE(IF("true", I2)), B);
     }
 
     @Test
@@ -98,7 +98,7 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
     @Test
     void complexRequestResponseIf() throws Exception {
         assertFlow(">a>i1>b>c>i3>d>e<e<i4<d<c<i2<b<a", A,
-                REQUEST(IF(TRUE, I1)),B,
+                REQUEST(IF(TRUE, I1)), B,
                 RESPONSE(IF(TRUE, I2)), C,
                 REQUEST(IF(TRUE, I3)),
                 D,
@@ -106,4 +106,11 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
                 E);
     }
 
+    @Test
+    void exceptionInIf() throws Exception {
+        assertFlow(">a>c?c?a",
+                A,
+                REQUEST(IF(TRUE, C, EXCEPTION)),
+                B);
+    }
 }

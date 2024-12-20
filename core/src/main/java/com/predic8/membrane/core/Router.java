@@ -46,6 +46,7 @@ import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
  * @description <p>
@@ -84,12 +85,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	private String baseLocation;
 
 	protected RuleManager ruleManager = new RuleManager();
-	protected ExchangeStore exchangeStore;
+	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 	protected Transport transport;
 	protected ResolverMap resolverMap;
 	protected DNSCache dnsCache = new DNSCache();
 	protected ExecutorService backgroundInitializator =
-			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
+			newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 	protected HotDeploymentThread hdt;
 	protected URIFactory uriFactory = new URIFactory(false);
 	protected Statistics statistics = new Statistics();
@@ -128,6 +129,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	@MCChildElement(order=3)
 	public void setRules(Collection<Rule> proxies) {
+		getRuleManager().removeAllRules();
 		for (Rule rule : proxies)
 			getRuleManager().addProxy(rule, RuleDefinitionSource.SPRING);
 	}
@@ -170,9 +172,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	public ExchangeStore getExchangeStore() {
 		return exchangeStore;
 	}
-
-
-
 
 	/**
 	 * @description Spring Bean ID of an {@link ExchangeStore}. The exchange store will be used by this router's

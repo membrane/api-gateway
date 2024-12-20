@@ -14,33 +14,18 @@
 
 package com.predic8.membrane.core;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.rules.InternalProxy;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.config.ConfigurationException;
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.model.IRuleChangeListener;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.transport.http.IpPort;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLContextCollection;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import java.io.*;
+import java.util.*;
 
 public class RuleManager {
 

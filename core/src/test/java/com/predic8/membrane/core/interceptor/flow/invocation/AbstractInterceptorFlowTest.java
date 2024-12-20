@@ -17,7 +17,6 @@
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
@@ -32,6 +31,7 @@ import java.util.*;
 
 import static io.restassured.RestAssured.*;
 import static java.util.Arrays.*;
+import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 abstract class AbstractInterceptorFlowTest {
@@ -50,23 +50,15 @@ abstract class AbstractInterceptorFlowTest {
     public static final Interceptor ABORT = new AbortFlowTestInterceptor();
     public static final Interceptor EXCEPTION = new ExceptionTestInterceptor();
 
-    protected List<Interceptor> interceptors() {
-        return null;
-    };
+    private static Router router;
 
-    protected String flow() {
-        return "";
-    }
-
-    Router router;
-
-    @BeforeEach
-    void setUp() throws Exception {
+    @BeforeAll
+    static void setUp() throws Exception {
         router = getRouter();
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
+    @AfterAll
+    static void tearDown() throws Exception {
         router.shutdown();
     }
 
@@ -76,6 +68,7 @@ abstract class AbstractInterceptorFlowTest {
     }
 
     private void setUpRouter(Interceptor[] interceptors) throws Exception {
+        router.setRules(EMPTY_LIST);
         router.add(getApiProxy(interceptors));
         router.init();
     }
@@ -98,7 +91,6 @@ abstract class AbstractInterceptorFlowTest {
     private static Router getRouter() {
         Router r = new Router();
         r.setTransport(new HttpTransport());
-        r.setExchangeStore(new ForgetfulExchangeStore());
         return r;
     }
 

@@ -21,16 +21,11 @@ import com.predic8.membrane.core.interceptor.*;
 import java.util.*;
 
 public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
-	private List<Interceptor> interceptors = new ArrayList<>();
+
+	protected List<Interceptor> interceptors = new ArrayList<>();
 
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
-	}
-
-	public AbstractFlowInterceptor() {}
-
-	public AbstractFlowInterceptor(List<Interceptor> interceptors) {
-		this.interceptors = interceptors;
 	}
 
 	@MCChildElement(allowForeign=true)

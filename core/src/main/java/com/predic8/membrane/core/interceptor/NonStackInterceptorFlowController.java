@@ -153,15 +153,16 @@ public class NonStackInterceptorFlowController extends  InterceptorFlowControlle
 
 		boolean aborted = false;
 
-		for (Interceptor i : interceptors.reversed()) {
-            if (!i.getFlow().contains(RESPONSE))
+		for (int i = interceptors.size() - 1; i >= 0; i--) {
+			Interceptor interceptor = interceptors.get(i);
+			if (!interceptor.getFlow().contains(RESPONSE))
 				continue;
 
 			if (!aborted) {
-                if (i.handleResponse(exchange) == ABORT)
+				if (interceptor.handleResponse(exchange) == ABORT)
 					aborted = true;
 			} else {
-				i.handleAbort(exchange);
+				interceptor.handleAbort(exchange);
 			}
 		}
 	}

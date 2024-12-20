@@ -16,61 +16,40 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 
 /**
- * @description Interceptors are usually applied to requests and responses. In case of errors, interceptors can initiate the abort flow to safely shut down Membrane.
- *              By nesting interceptors into an &lt;abort&gt; Element you can limit their application to abort flows only.
+ * @description Interceptors are usually applied to requests and responses.
+ * In case of errors, the flow returns and <i>handleAbort()</i> is called on interceptors
+ * going back the chain.
+ * By nesting interceptors into an &lt;abort&gt; Element you can limit their application to abort flows only.
  */
 @MCElement(name="abort", topLevel=false)
 public class AbortInterceptor extends AbstractFlowInterceptor {
 
-    /**
-     * (Yes, this needs to be handled in handleREQUEST.)
-     */
-    @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-//        for (Interceptor i : getInterceptors()) {
-//            if (i.getFlow().contains(ABORT))
-//                exc.pushInterceptorToStack(new AdapterInterceptor(i));
-//        }
-        return CONTINUE;
+    private static final Logger log = LoggerFactory.getLogger(AbortInterceptor.class);
+
+    public AbortInterceptor() {
+        name = "Abort";
+        setFlow(RESPONSE);
     }
 
     @Override
     public void handleAbort(Exchange exchange) {
         System.out.println("AbortInterceptor.handleAbort");
-        for (Interceptor i : getInterceptors().reversed()) {
-            System.out.println("In Abort for: " + i);
-            System.out.println("Interceptor supports Flows " + i.getFlow());
-            if ((i.getFlow().contains(Flow.RESPONSE))) {
+
+        for (int i = interceptors.size() - 1; i >= 0; i--) {
+            Interceptor interceptor = interceptors.get(i);
+            System.out.println("In Abort for: " + interceptor);
+            if (interceptor.handlesResponses()) {
                 try {
-                    i.handleResponse(exchange);
+                    interceptor.handleResponse(exchange);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
-
         }
     }
-
-    static class AdapterInterceptor extends AbstractInterceptor {
-
-        Interceptor nested;
-
-        public AdapterInterceptor(Interceptor nested) {
-            this.nested = nested;
-        }
-
-        @Override
-        public void handleAbort(Exchange exchange) {
-            try {
-                nested.handleResponse(exchange);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
 }

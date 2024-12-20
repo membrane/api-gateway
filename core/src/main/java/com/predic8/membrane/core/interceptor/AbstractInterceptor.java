@@ -20,11 +20,10 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.rules.*;
-import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public class AbstractInterceptor implements Interceptor {
@@ -63,9 +62,18 @@ public class AbstractInterceptor implements Interceptor {
 		this.flow = flow;
 	}
 
-
 	public EnumSet<Flow> getFlow() {
 		return flow;
+	}
+
+	@Override
+	public boolean handlesRequests() {
+		return flow.contains(Flow.REQUEST);
+	}
+
+	@Override
+	public boolean handlesResponses() {
+		return flow.contains(Flow.RESPONSE);
 	}
 
 	@Override
@@ -131,6 +139,8 @@ public class AbstractInterceptor implements Interceptor {
 			case RESPONSE, ABORT -> {
 				if (exc.getResponse() != null)
 					yield exc.getResponse();
+
+				// Should we really create a response here?
 				Response response = Response.ok().build();
 				exc.setResponse(response);
 				yield response;
