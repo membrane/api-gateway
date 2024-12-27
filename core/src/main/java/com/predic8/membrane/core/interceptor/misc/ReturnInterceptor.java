@@ -51,32 +51,13 @@ public class ReturnInterceptor extends AbstractInterceptor {
     private int statusCode = 200;
     private String contentType = null;
 
-    @MCAttribute
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    @MCAttribute
-    public void setContentType(String contentType) {
-        this.contentType = contentType;
-    }
-
-    public String getContentType() {
-        return contentType;
-    }
-
-    // @TODO Specify correct behaviour!
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        exc.setResponse(getResponse(exc));
+        exc.setResponse(getOrCreateResponse(exc));
         return RETURN;
     }
 
-    private Response getResponse(Exchange exc) throws IOException {
+    private Response getOrCreateResponse(Exchange exc) throws IOException {
         Response response = exc.getResponse();
         if (response == null) {
             response = createResponseFromRequest(exc);
@@ -119,5 +100,23 @@ public class ReturnInterceptor extends AbstractInterceptor {
     @Override
     public String getShortDescription() {
         return (contentType != null) ? format("Sends a response with a status code of %d and a content type of %s.", statusCode, contentType) : format("Sends a response with a status code of %d.", statusCode);
+    }
+
+    @MCAttribute
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
+
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    @MCAttribute
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getContentType() {
+        return contentType;
     }
 }

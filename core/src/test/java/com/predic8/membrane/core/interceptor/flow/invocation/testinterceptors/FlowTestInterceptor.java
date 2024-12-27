@@ -19,7 +19,6 @@ package com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.groovy.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -27,40 +26,43 @@ public class FlowTestInterceptor extends AbstractInterceptor {
 
     private final String name;
 
-    public static GroovyInterceptor ABORT = new GroovyInterceptor() {{
-        src = "ABORT";
-    }};
-
     public FlowTestInterceptor(String name) {
         this.name = name;
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
         addStringToBody(exc.getRequest(),">" + name);
         return CONTINUE;
     }
 
     @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        addStringToBody(exc.getResponse(),"<" + name);
+    public Outcome handleResponse(Exchange exc) {
+        addStringToBody(createResponseIfThereIsNone(exc),"<" + name);
         return CONTINUE;
     }
 
     @Override
     public void handleAbort(Exchange exc) {
-        Response msg;
-        if (exc.getResponse() != null) {
-            msg = exc.getResponse();
-        } else  {
-            msg = Response.ok().body(exc.getRequest().getBodyAsStringDecoded()).build();
-            exc.setResponse(msg);
-        }
-        addStringToBody(msg,"?" + name);
+        addStringToBody(createResponseIfThereIsNone(exc), "?" + name);
         exc.setProperty("status", "aborted");
+    }
+
+    private static Response createResponseIfThereIsNone(Exchange exc) {
+        if (exc.getResponse() != null) {
+            return exc.getResponse();
+        }
+        Response msg = Response.ok().body(exc.getRequest().getBodyAsStringDecoded()).build();
+        exc.setResponse(msg);
+        return msg;
     }
 
     private void addStringToBody(Message msg, String s) {
         msg.setBodyContent((msg.getBodyAsStringDecoded() + s).getBytes());
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

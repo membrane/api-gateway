@@ -21,8 +21,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
 import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import com.predic8.membrane.core.transport.http.Connection;
@@ -45,15 +44,15 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.predic8.membrane.core.interceptor.InterceptorFlowController.ABORTION_REASON;
+import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 
 @MCElement(name="sslProxy")
 public class SSLProxy implements Rule {
-    private static Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
 
     private Target target;
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
-    private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
+    private final RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
     private boolean useAsDefault = true;
     private List<SSLInterceptor> sslInterceptors = new ArrayList<>();
 
@@ -333,9 +332,8 @@ public class SSLProxy implements Rule {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof MyRuleKey))
+            if (!(obj instanceof MyRuleKey other))
                 return false;
-            MyRuleKey other = (MyRuleKey)obj;
             return Objects.equal(getHost(), other.getHost()) && getPort() == other.getPort();
         }
     }
@@ -432,9 +430,8 @@ public class SSLProxy implements Rule {
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof ForwardingStaticSSLContext))
+            if (!(obj instanceof ForwardingStaticSSLContext other))
                 return false;
-            ForwardingStaticSSLContext other = (ForwardingStaticSSLContext)obj;
             return Objects.equal(SSLProxy.this, other.getSSLProxy());
         }
 

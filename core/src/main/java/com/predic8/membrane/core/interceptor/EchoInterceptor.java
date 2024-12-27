@@ -11,31 +11,29 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
-package com.predic8.membrane.core.interceptor.flow;
+package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.http.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
- *              &lt;response&gt; plugin you can limit their application to responses only.
+ * @description Returns the flow of plugins and copies the content of the
+ * request into a new response. The response has a status code of 200.
+ * Useful for testing.
  */
-@MCElement(name="response", topLevel=false)
-public class ResponseInterceptor extends AbstractFlowInterceptor {
+@MCElement(name="echo", topLevel = false)
+public class EchoInterceptor extends AbstractInterceptor {
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		for (int i = interceptors.size() - 1; i >= 0; i--) {
-			Interceptor interceptor = interceptors.get(i);
-			if (interceptor.handlesResponses()) {
-                if (interceptor.handleResponse(exc) == ABORT)
-					return ABORT;
-			}
-		}
-		return CONTINUE;
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		Response response = Response.ok()
+				.body(exc.getRequest().getBody().getContent())
+				.header(exc.getRequest().getHeader())
+				.build();
+		exc.setResponse(response);
+		return RETURN;
 	}
 }

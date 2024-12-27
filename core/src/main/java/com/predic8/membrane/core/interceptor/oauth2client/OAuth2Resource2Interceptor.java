@@ -40,7 +40,6 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URLEncoder;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
@@ -98,7 +97,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     @Override
     public void init(Router router) throws Exception {
         name = "OAuth 2 Client";
-        setFlow(Flow.Set.REQUEST_RESPONSE);
+        setFlow(Flow.Set.REQUEST_RESPONSE_ABORT);
 
         super.init(router);
 

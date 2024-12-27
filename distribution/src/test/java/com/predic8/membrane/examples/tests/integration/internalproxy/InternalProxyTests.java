@@ -35,6 +35,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.junit.jupiter.api.Test;
@@ -91,7 +92,7 @@ public class InternalProxyTests {
     public static Rule returningInternalProxy() {
         return createInternalProxy("Returning internal proxy", null, new AbstractInterceptor(){
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok().header(X_COUNTER,exc.getRequest().getHeader().getFirstValue(X_COUNTER)).build());
                 return Outcome.RETURN;
             }
@@ -116,7 +117,7 @@ public class InternalProxyTests {
     }
 
     public static Rule createInternalProxy(String name, AbstractServiceProxy.Target target, Interceptor... interceptors){
-        InternalProxy internalProxy = new InternalProxy();
+        APIProxy internalProxy = new APIProxy();
         internalProxy.setName(name);
         internalProxy.setInterceptors(Arrays.asList(interceptors));
         internalProxy.setTarget(target);

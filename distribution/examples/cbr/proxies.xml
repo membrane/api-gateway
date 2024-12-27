@@ -21,17 +21,17 @@
 			</groovy>
 		</api>
 	
-		<internalProxy name="Order">
+		<api name="Order">
 			<groovy>
 				Response.ok("Normal order received.").build()						
 			</groovy>
-		</internalProxy>
+		</api>
 		
-		<internalProxy name="Express">
+		<api name="Express">
 			<groovy>
 				Response.ok("Express order received.").build()			
 			</groovy>
-		</internalProxy>
+		</api>
 
 	</router>
 	

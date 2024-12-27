@@ -23,8 +23,7 @@ import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.spel.*;
 import org.slf4j.*;
 import org.springframework.expression.*;
-import org.springframework.expression.spel.SpelCompilerMode;
-import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
 import java.util.*;
@@ -35,21 +34,12 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
-import static java.util.UUID.*;
+import static org.springframework.expression.spel.SpelCompilerMode.*;
 
 /**
  * @description <p>
- * The "if" interceptor supports conditional execution of a group of executors.
+ * The "if" interceptor supports conditional execution of nested plugins.
  * </p>
- *
- * <p>
- * Note that this is a draft implementation only: Design decisions are still pending.
- * </p>
- * <ul>
- * <li>'evaluate condition only once': Should the condition be reevaluated once response handling has begun?</li>
- * <li>'evaluate condition always during request handling already' (even when 'if' is nested in 'response')</li>
- * <li>What happens to ABORT handling of interceptor A in <code>&lt;request&gt;&lt;if test="..."&gt;&lt;A /&gt;&lt;/if&gt;&lt;/response&gt;</code></li>
- * </ul>
  */
 @MCElement(name = "if")
 public class ConditionalInterceptor extends AbstractFlowInterceptor {
@@ -59,16 +49,15 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     private String test;
     private LanguageType language = GROOVY;
 
-
     /**
      * Spring Expression Language
      * SpEL configuration with MIXED mode allows both interpreted and compiled expression evaluation.
      * Compiled only did not work with jsonPath
      */
-    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.MIXED, this.getClass().getClassLoader());
+    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(MIXED, this.getClass().getClassLoader());
     private Expression spelExpr;
 
-    private final NonStackInterceptorFlowController interceptorFlowController = new NonStackInterceptorFlowController();
+    private final FlowController flowController = new FlowController();
     private Function<Map<String, Object>, Boolean> condition;
 
     public enum LanguageType {
@@ -77,7 +66,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     }
 
     public ConditionalInterceptor() {
-        name = "Conditional Interceptor";
+        name = "If";
     }
 
     @Override
@@ -88,12 +77,10 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
             case GROOVY ->
                     condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, test);
             case SPEL -> spelExpr = new SpelExpressionParser(spelConfig).parseExpression(test);
-
         }
     }
 
     private boolean testCondition(Exchange exc, Message msg, Flow flow) {
-
         switch (language) {
             case GROOVY -> {
                 return condition.apply(getParametersForGroovy(exc, msg, flow));
@@ -117,6 +104,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
             put("ABORT", ABORT);
             put("spring", router.getBeanFactory());
             put("exc", exc);
+            put("exchange", exc);
             putAll(createParameterBindings(router.getUriFactory(), exc, msg, flow, false));
         }};
     }
@@ -131,36 +119,26 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
         return handleInternal(exc, exc.getResponse(), RESPONSE);
     }
 
-    // Unique id of this interceptors instance.
-    // Avoids child interceptors being pushed to the stack twice
-    private final String uuid = "if-" + randomUUID();
-
     private Outcome handleInternal(Exchange exc, Message msg, Flow flow) throws Exception {
 
         boolean result = testCondition(exc, msg, flow);
         if (log.isDebugEnabled())
-            log.debug("Expression evaluated to " + result);
+            log.debug("Expression evaluated to {}", result);
 
-        if (result) {
-            switch (flow) {
-                case REQUEST -> {
-                    exc.setProperty(uuid, true);
-                    return interceptorFlowController.invokeRequestHandlers(exc, getInterceptors());
-                }
-                case RESPONSE -> {
-                    interceptorFlowController.invokeResponseHandlers(exc, getInterceptors());
-//                    if (conditionWasFalseOrNotExecutedInRequestFlow(exc))
-//                        for (Interceptor i : getInterceptors()) {
-//                            exc.pushInterceptorToStack(i);
-//                        }
-                }
+        if (!result)
+            return CONTINUE;
+
+        switch (flow) {
+            case REQUEST -> {
+                return flowController.invokeRequestHandlers(exc, getInterceptors());
+            }
+            case RESPONSE -> {
+                return flowController.invokeResponseHandlers(exc, getInterceptors());
+            }
+            default -> {
+                throw new RuntimeException("Should never happen");
             }
         }
-        return CONTINUE;
-    }
-
-    private boolean conditionWasFalseOrNotExecutedInRequestFlow(Exchange exchange) {
-        return exchange.getProperty(uuid) == null;
     }
 
     public LanguageType getLanguage() {

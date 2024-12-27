@@ -21,6 +21,8 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.*;
 import com.predic8.membrane.core.security.*;
 
+import java.util.*;
+
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static java.util.List.*;
@@ -43,10 +45,9 @@ class ConditionalEvaluationTestContext {
             exc.setRequest(b.build());
             condInt.handleRequest(exc);
         } else if (builder instanceof ResponseBuilder b) {
-            exc.pushInterceptorToStack(mockInt);
             exc.setResponse(b.build());
             condInt.handleResponse(exc);
-            new NonStackInterceptorFlowController().invokeResponseHandlers(exc);
+            new FlowController().invokeResponseHandlers(exc, List.of(condInt));
         } else {
             throw new IllegalStateException("Unexpected value: " + builder);
         }

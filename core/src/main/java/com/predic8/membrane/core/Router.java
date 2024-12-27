@@ -39,14 +39,13 @@ import org.springframework.context.support.*;
 
 import javax.annotation.concurrent.*;
 import java.io.*;
-import java.net.*;
 import java.util.Timer;
 import java.util.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import static java.util.concurrent.Executors.*;
 
 /**
  * @description <p>
@@ -134,14 +133,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			getRuleManager().addProxy(rule, RuleDefinitionSource.SPRING);
 	}
 
-	public static Router init(String configFileName)
-			throws MalformedURLException {
-		log.debug("loading spring config from classpath: " + configFileName);
+	public static Router init(String configFileName) {
+		log.debug("loading spring config from classpath: {}", configFileName);
 		return init(configFileName, Router.class.getClassLoader());
 	}
 
 	public static Router init(String resource, ClassLoader classLoader) {
-		log.debug("loading spring config: " + resource);
+		log.debug("loading spring config: {}", resource);
 
 		TrackingFileSystemXmlApplicationContext beanFactory =
 				new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
@@ -253,18 +251,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	public void init() throws Exception {
-		initInternalProxies();
 		initRemainingRules();
 		transport.init(this);
 	}
 
 	private void initRemainingRules() throws Exception {
-		for (Rule rule : getRuleManager().getRules().stream().filter(r -> !(r instanceof InternalProxy)).toList())
-			rule.init(this);
-	}
-
-	private void initInternalProxies() throws Exception {
-		for (Rule rule : getRuleManager().getRules().stream().filter(r -> r instanceof InternalProxy).toList())
+		for (Rule rule : getRuleManager().getRules())
 			rule.init(this);
 	}
 
@@ -328,7 +320,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		synchronized (lock) {
 			running = true;
 		}
-		log.info(PRODUCT_NAME + " " + VERSION + " up and running!");
+		log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
 	}
 
 	private void startJmx() {
@@ -528,7 +520,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	 * <p>If true, the router will continue startup, and all rules which could not be initialized will be <i>inactive</i> (=not
 	 * {@link Rule#isActive()}).</p>
 	 * <h3>Inactive rules</h3>
-	 * <p>Inactive rules will simply be ignored for routing decissions for incoming requests.
+	 * <p>Inactive rules will simply be ignored for routing decisions for incoming requests.
 	 * This means that requests for inactive rules might be routed using different routes or result in a "400 Bad Request"
 	 * when no active route could be matched to the request.</p>
 	 * <p>Once rules become active due to reinitialization, they are considered in future routing decissions.</p>

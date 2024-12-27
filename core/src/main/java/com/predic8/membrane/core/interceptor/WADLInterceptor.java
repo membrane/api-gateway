@@ -34,7 +34,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 
 	public WADLInterceptor() {
 		name = "WADL Rewriting Interceptor";
-		setFlow(Flow.Set.RESPONSE);
+		setFlow(Flow.Set.RESPONSE_ABORT);
 	}
 
 	@Override

@@ -18,9 +18,6 @@ package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
-import com.predic8.membrane.core.interceptor.misc.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -30,30 +27,15 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static io.restassured.RestAssured.*;
-import static java.util.Arrays.*;
 import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 abstract class AbstractInterceptorFlowTest {
 
-    public static Interceptor A = new FlowTestInterceptor("a");
-    public static Interceptor B = new FlowTestInterceptor("b");
-    public static Interceptor C = new FlowTestInterceptor("c");
-    public static Interceptor D = new FlowTestInterceptor("d");
-    public static Interceptor E = new FlowTestInterceptor("e");
-    public static Interceptor I1 = new FlowTestInterceptor("i1");
-    public static Interceptor I2 = new FlowTestInterceptor("i2");
-    public static Interceptor I3 = new FlowTestInterceptor("i3");
-    public static Interceptor I4 = new FlowTestInterceptor("i4");
-
-    public static final Interceptor RETURN = new ReturnInterceptor();
-    public static final Interceptor ABORT = new AbortFlowTestInterceptor();
-    public static final Interceptor EXCEPTION = new ExceptionTestInterceptor();
-
     private static Router router;
 
     @BeforeAll
-    static void setUp() throws Exception {
+    static void setUp() {
         router = getRouter();
     }
 
@@ -76,7 +58,7 @@ abstract class AbstractInterceptorFlowTest {
     private static @NotNull APIProxy getApiProxy(Interceptor[] interceptors) {
         APIProxy api = getServiceProxy();
         api.getInterceptors().addAll(Arrays.asList(interceptors));
-        api.getInterceptors().add(new EchoTestInterceptor());
+        api.getInterceptors().add(new EchoInterceptor());
         return api;
     }
 
@@ -92,34 +74,5 @@ abstract class AbstractInterceptorFlowTest {
         Router r = new Router();
         r.setTransport(new HttpTransport());
         return r;
-    }
-
-    ConditionalInterceptor IF(String test,Interceptor... interceptors) {
-        ConditionalInterceptor i = new ConditionalInterceptor();
-        i.setTest(test);
-        i.setInterceptors(asList(interceptors));
-        return i;
-    }
-
-    RequestInterceptor REQUEST(Interceptor... interceptors) {
-        RequestInterceptor ai = new RequestInterceptor();
-        ai.setInterceptors(asList(interceptors));
-        return ai;
-    }
-
-    ResponseInterceptor RESPONSE(Interceptor... interceptors) {
-        ResponseInterceptor ai = new ResponseInterceptor();
-        ai.setInterceptors(asList(interceptors));
-        return ai;
-    }
-
-    AbortInterceptor ABORT(Interceptor... interceptors) {
-        AbortInterceptor ai = new AbortInterceptor();
-        ai.setInterceptors(asList(interceptors));
-        return ai;
-    }
-
-    Interceptor I(String label) {
-        return new FlowTestInterceptor(label);
     }
 }

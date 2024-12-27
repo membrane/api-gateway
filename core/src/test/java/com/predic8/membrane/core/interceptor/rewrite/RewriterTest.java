@@ -32,7 +32,7 @@ public class RewriterTest {
     private RewriteInterceptor rewriter;
 
     @BeforeEach
-    public void setUp() throws Exception {
+    void setUp() throws Exception {
         rewriter = new RewriteInterceptor();
         List<Mapping> mappings = new ArrayList<>();
         mappings.add( new Mapping("/hello/(.*)", "/$1", null));
@@ -42,7 +42,7 @@ public class RewriterTest {
     }
 
     @Test
-    void testRewriteWithoutTarget() throws Exception {
+    void rewriteWithoutTarget() {
         assertThrows(URISyntaxException.class, () -> {
             Exchange exc = new Exchange(null);
             Request req = new Request();
@@ -52,14 +52,11 @@ public class RewriterTest {
             exc.getDestinations().add("/%");
 
             rewriter.handleRequest(exc);
-
-            System.out.println("uri: " + exc.getRequest().getUri());
-            System.out.println("dest: " + exc.getDestinations().get(0));
         });
     }
 
     @Test
-    void testRewriteWithoutTarget2() throws Exception {
+    void rewriteWithoutTarget2() throws Exception {
         Exchange exc = new Exchange(null);
         Request req = new Request();
         req.setUri("/%25");
@@ -70,11 +67,11 @@ public class RewriterTest {
         rewriter.handleRequest(exc);
 
         assertEquals("/%25", exc.getRequest().getUri());
-        assertEquals("/%25", exc.getDestinations().get(0));
+        assertEquals("/%25", exc.getDestinations().getFirst());
     }
 
     @Test
-    void testRewriteWithoutTarget3() throws Exception {
+    void rewriteWithoutTarget3() throws Exception {
         Exchange exc = new Exchange(null);
         Request req = new Request();
         req.setUri("/hello/%25");
@@ -85,6 +82,6 @@ public class RewriterTest {
         rewriter.handleRequest(exc);
 
         assertEquals("/%25", exc.getRequest().getUri());
-        assertEquals("/%25", exc.getDestinations().get(0));
+        assertEquals("/%25", exc.getDestinations().getFirst());
     }
 }

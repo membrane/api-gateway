@@ -74,46 +74,48 @@ public class DispatchingInterceptorTest {
 	}
 
     @Test
-    void handleAbstractServiceProxyTargetWithHostAndPort() throws MalformedURLException, URISyntaxException {
+    void getAddressFromTargetElementTargetWithHostAndPort() throws Exception {
 		exc.setRule(serviceProxy);
 		exc.setRequest(new Request.Builder().get("/foo").build());
-		assertEquals("http://thomas-bayer.com:80/foo", getHandleAbstractServiceProxy());
+		assertEquals("http://thomas-bayer.com:80/foo", getGetAddressFromTargetElement());
     }
 
 	@Test
-	void handleAbstractServiceProxyTargetWithURL() throws MalformedURLException, URISyntaxException {
+	void getAddressFromTargetElementTargetWithURL() throws Exception {
 		serviceProxy.setTargetURL("http://api.predic8.de");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("http://api.predic8.de/foo", getHandleAbstractServiceProxy());
+		assertEquals("http://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
 
 	@Test
-	void handleAbstractServiceProxyTargetWithURLHTTPS() throws MalformedURLException, URISyntaxException {
+	void getAddressFromTargetElementTargetWithURLHTTPS() throws Exception {
 		serviceProxy.setTargetURL("https://api.predic8.de");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("https://api.predic8.de/foo", getHandleAbstractServiceProxy());
+		assertEquals("https://api.predic8.de/foo", getGetAddressFromTargetElement());
 	}
 
 	@Test
-	void handleAbstractServiceProxyTargetWithSlash() throws MalformedURLException, URISyntaxException {
+	void getAddressFromTargetElementTargetWithSlash() throws Exception {
 		serviceProxy.setTargetURL("https://api.predic8.de/");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("https://api.predic8.de/", getHandleAbstractServiceProxy());
+		assertEquals("https://api.predic8.de/", getGetAddressFromTargetElement());
 	}
 
 	@Test
-	void handleAbstractServiceProxyTargetWithPath() throws MalformedURLException, URISyntaxException {
+	void getAddressFromTargetElementTargetWithPath() throws Exception {
 		serviceProxy.setTargetURL("https://api.predic8.de/baz");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
-		assertEquals("https://api.predic8.de/baz", getHandleAbstractServiceProxy());
+		assertEquals("https://api.predic8.de/baz", getGetAddressFromTargetElement());
 	}
 
 	@Nullable
-	private String getHandleAbstractServiceProxy() throws MalformedURLException, URISyntaxException {
-		return DispatchingInterceptor.handleAbstractServiceProxy(new URIFactory(), exc);
+	private String getGetAddressFromTargetElement() throws Exception {
+		DispatchingInterceptor di = new DispatchingInterceptor();
+		di.init(new Router());
+		return di.getAddressFromTargetElement( exc);
 	}
 }

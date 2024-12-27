@@ -1,6 +1,24 @@
+/*
+ *  Copyright 2024 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
 import org.junit.jupiter.api.*;
+
+import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 
 /**
  * Tests the invocation of interceptors in different flows
@@ -12,6 +30,7 @@ import org.junit.jupiter.api.*;
 public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
 
     public static final String TRUE = "true";
+    public static final String FALSE = "false";
 
     @Test
     void one() throws Exception {
@@ -70,7 +89,7 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
 
     @Test
     void ifFalse() throws Exception {
-        assertFlow(">a>c<c<a", A, IF("false", B), C);
+        assertFlow(">a>c<c<a", A, IF(FALSE, B), C);
     }
 
     @Test
@@ -83,7 +102,10 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
 
     @Test
     void requestResponseIf() throws Exception {
-        assertFlow(">a>i1>b<b<i2<a", A, REQUEST(IF("true", I1)), RESPONSE(IF("true", I2)), B);
+        assertFlow(">a>i1>b<b<i2<a", A,
+                REQUEST(IF("true", I1)),
+                RESPONSE(IF("true", I2)),
+                B);
     }
 
     @Test
@@ -97,6 +119,7 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
     void abortInResponse() throws Exception {
         // Note: ">a>e<e<c?a" is correct not ">a>e<e?c?a" because the <abort>-interceptor
         // calls handleResponse() on it's children
+        // D is not invoked cause before there is an ABORT and it is in a response interceptor
         assertFlow(">a>e<e<c?a", A, RESPONSE(B), ABORT(C), RESPONSE( D,ABORT), E);
     }
 
@@ -126,5 +149,41 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
                 A,
                 REQUEST(IF(TRUE, C, EXCEPTION)),
                 B);
+    }
+
+    @Test
+    void ifWhenAborted() throws Exception {
+        assertFlow(">a>i1>i2?a",
+                A,
+                IF(TRUE, I1, I2),
+                ABORT);
+    }
+
+    @Test
+    void ifInAbort() throws Exception {
+        assertFlow(">a<i2<i1?a",
+                A,
+                ABORT(IF(TRUE, I1, I2)),
+                ABORT);
+    }
+
+    @Test
+    void groovy() throws Exception {
+        assertFlow(">a<a",
+                A,
+                GROOVY("RETURN"),
+                B);
+    }
+
+    @Test
+    void groovyInAbortFlow() throws Exception {
+        assertFlow(">a?GroovyAbort?a",
+                A,
+                GROOVY("""
+                    if (!flow.isAbort())
+                        return
+                    Response.ok(message.getBodyAsStringDecoded()+"?GroovyAbort").build();
+                    """),
+                ABORT);
     }
 }

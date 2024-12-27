@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
@@ -22,309 +21,311 @@ import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 public class RuleManager {
 
-	private static Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
 
-	private Router router;
+    private Router router;
 
-	private List<Rule> rules = new Vector<>();
-	private List<RuleDefinitionSource> ruleSources = new ArrayList<>();
-	private Set<IRuleChangeListener> listeners = new HashSet<>();
+    private final List<Rule> rules = new Vector<>();
+    private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
+    private final Set<IRuleChangeListener> listeners = new HashSet<>();
 
-	private String defaultTargetHost = "localhost";
-	private String defaultHost = "*";
-	private int defaultListenPort = 2000;
-	private int defaultTargetPort = 8080;
-	private String defaultPath = ".*";
-	private int defaultMethod = 4;
+    private String defaultTargetHost = "localhost";
+    private final String defaultHost = "*";
+    private final int defaultListenPort = 2000;
+    private final int defaultTargetPort = 8080;
+    private final String defaultPath = ".*";
+    private int defaultMethod = 4;
 
-	public enum RuleDefinitionSource {
-		/** rule defined in the spring context that created the router */
-		SPRING,
-		/** rule defined by admin web interface or through custom code */
-		MANUAL,
-	}
+    public enum RuleDefinitionSource {
+        /**
+         * rule defined in the spring context that created the router
+         */
+        SPRING,
+        /**
+         * rule defined by admin web interface or through custom code
+         */
+        MANUAL,
+    }
 
-	public int getDefaultListenPort() {
-		return defaultListenPort;
-	}
+    public int getDefaultListenPort() {
+        return defaultListenPort;
+    }
 
-	public String getDefaultHost() {
-		return defaultHost;
-	}
+    public String getDefaultHost() {
+        return defaultHost;
+    }
 
-	public String getDefaultPath() {
-		return defaultPath;
-	}
+    public String getDefaultPath() {
+        return defaultPath;
+    }
 
-	public int getDefaultMethod() {
-		return defaultMethod;
-	}
+    public int getDefaultMethod() {
+        return defaultMethod;
+    }
 
-	public void setDefaultMethod(int defaultMethod) {
-		this.defaultMethod = defaultMethod;
-	}
+    public void setDefaultMethod(int defaultMethod) {
+        this.defaultMethod = defaultMethod;
+    }
 
-	public String getDefaultTargetHost() {
-		return defaultTargetHost;
-	}
+    public String getDefaultTargetHost() {
+        return defaultTargetHost;
+    }
 
-	public void setDefaultTargetHost(String defaultTargetHost) {
-		this.defaultTargetHost = defaultTargetHost;
-	}
+    public void setDefaultTargetHost(String defaultTargetHost) {
+        this.defaultTargetHost = defaultTargetHost;
+    }
 
-	public int getDefaultTargetPort() {
-		return defaultTargetPort;
-	}
+    public int getDefaultTargetPort() {
+        return defaultTargetPort;
+    }
 
-	public boolean isAnyRuleWithPort(int port) {
-		for (Rule rule : rules) {
-			if (rule.getKey().getPort() == port) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public boolean isAnyRuleWithPort(int port) {
+        for (Rule rule : rules) {
+            if (rule.getKey().getPort() == port) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	public void addProxyAndOpenPortIfNew(Rule rule) throws IOException {
-		addProxyAndOpenPortIfNew(rule, RuleDefinitionSource.MANUAL);
-	}
+    public void addProxyAndOpenPortIfNew(Rule rule) throws IOException {
+        addProxyAndOpenPortIfNew(rule, RuleDefinitionSource.MANUAL);
+    }
 
-	public synchronized void addProxyAndOpenPortIfNew(Rule rule, RuleDefinitionSource source) throws IOException {
-		if (exists(rule.getKey()))
-			return;
+    public synchronized void addProxyAndOpenPortIfNew(Rule rule, RuleDefinitionSource source) throws IOException {
+        if (exists(rule.getKey()))
+            return;
 
-		if (!(rule instanceof InternalProxy))
-			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext(),
-					router.getTimerManager());
+        router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext(),
+                router.getTimerManager());
 
-		rules.add(rule);
-		ruleSources.add(source);
+        rules.add(rule);
+        ruleSources.add(source);
 
-		for (IRuleChangeListener listener : listeners) {
-			listener.ruleAdded(rule);
-		}
-	}
+        for (IRuleChangeListener listener : listeners) {
+            listener.ruleAdded(rule);
+        }
+    }
 
-	public synchronized void addProxy(Rule rule, RuleDefinitionSource source) {
-		if (exists(rule.getKey()))
-			return;
+    public synchronized void addProxy(Rule rule, RuleDefinitionSource source) {
+        if (exists(rule.getKey()))
+            return;
 
-		rules.add(rule);
-		ruleSources.add(source);
+        rules.add(rule);
+        ruleSources.add(source);
 
-		for (IRuleChangeListener listener : listeners) {
-			listener.ruleAdded(rule);
-		}
-	}
+        for (IRuleChangeListener listener : listeners) {
+            listener.ruleAdded(rule);
+        }
+    }
 
-	public synchronized void openPorts() throws IOException {
-		HashMap<IpPort, SSLProvider> sslProviders;
-		try {
-			HashMap<IpPort, SSLContextCollection.Builder> sslContexts = new HashMap<>();
-			for (Rule rule : rules) {
-				SSLContext sslContext = rule.getSslInboundContext();
-				if (sslContext != null) {
-					IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
-					SSLContextCollection.Builder builder = sslContexts.get(ipPort);
-					if (builder == null) {
-						builder = new SSLContextCollection.Builder();
-						sslContexts.put(ipPort, builder);
-					}
-					builder.add(sslContext);
-				}
-			}
+    public synchronized void openPorts() throws IOException {
+        HashMap<IpPort, SSLProvider> sslProviders;
 
-			sslProviders = new HashMap<>();
-			for (Map.Entry<IpPort, SSLContextCollection.Builder> entry : sslContexts.entrySet())
-				sslProviders.put(entry.getKey(), entry.getValue().build());
-		} catch (ConfigurationException e) {
-			throw new IOException(e);
-		}
+        sslProviders = new HashMap<>();
+        for (Map.Entry<IpPort, SSLContextCollection.Builder> entry : getSSLContexts().entrySet())
+            sslProviders.put(entry.getKey(), entry.getValue().build());
 
-		for (Rule rule : rules) {
-			if(rule instanceof InternalProxy) {
-				if (rule.getName().contains("/"))
-					throw new RuntimeException("<internalProxy> names must not contain a '/'.");
-				continue;
-			}
+        for (Rule rule : rules) {
 
-			IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
-			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort),
-					router.getTimerManager());
-		}
-	}
+            if (rule.getName().contains("/")) {
+                log.error("API name is {}. <api> names must not contain a '/'. ", rule.getName());
+//                throw new RuntimeException("API name is %s. <api> names must not contain a '/'. ".formatted());
+            }
+
+            IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
+            router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort),
+                    router.getTimerManager());
+        }
+    }
+
+    private @NotNull HashMap<IpPort, SSLContextCollection.Builder> getSSLContexts() throws UnknownHostException {
+        HashMap<IpPort, SSLContextCollection.Builder> sslContexts = new HashMap<>();
+        for (Rule rule : rules) {
+            SSLContext sslContext = rule.getSslInboundContext();
+            if (sslContext != null) {
+                IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
+                SSLContextCollection.Builder builder = sslContexts.get(ipPort);
+                if (builder == null) {
+                    builder = new SSLContextCollection.Builder();
+                    sslContexts.put(ipPort, builder);
+                }
+                builder.add(sslContext);
+            }
+        }
+        return sslContexts;
+    }
 
 
-	public boolean exists(RuleKey key) {
-		return getRule(key) != null;
-	}
+    public boolean exists(RuleKey key) {
+        return getRule(key) != null;
+    }
 
-	private Rule getRule(RuleKey key) {
-		for (Rule r : rules) {
-			if (r.getKey().equals(key))
-				return r;
-		}
-		return null;
-	}
+    private Rule getRule(RuleKey key) {
+        for (Rule r : rules) {
+            if (r.getKey().equals(key))
+                return r;
+        }
+        return null;
+    }
 
-	public List<Rule> getRules() {
-		return rules;
-	}
+    public List<Rule> getRules() {
+        return rules;
+    }
 
-	public synchronized void ruleUp(Rule rule) {
-		int index = rules.indexOf(rule);
-		if (index <= 0)
-			return;
-		Collections.swap(rules, index, index - 1);
-		Collections.swap(ruleSources, index, index - 1);
-		for (IRuleChangeListener listener : listeners) {
-			listener.rulePositionsChanged();
-		}
-	}
+    public synchronized void ruleUp(Rule rule) {
+        int index = rules.indexOf(rule);
+        if (index <= 0)
+            return;
+        Collections.swap(rules, index, index - 1);
+        Collections.swap(ruleSources, index, index - 1);
+        for (IRuleChangeListener listener : listeners) {
+            listener.rulePositionsChanged();
+        }
+    }
 
-	public synchronized void ruleDown(Rule rule) {
-		int index = rules.indexOf(rule);
-		if (index < 0 || index == (rules.size() - 1))
-			return;
-		Collections.swap(rules, index, index + 1);
-		Collections.swap(ruleSources, index, index + 1);
-		for (IRuleChangeListener listener : listeners) {
-			listener.rulePositionsChanged();
-		}
-	}
+    public synchronized void ruleDown(Rule rule) {
+        int index = rules.indexOf(rule);
+        if (index < 0 || index == (rules.size() - 1))
+            return;
+        Collections.swap(rules, index, index + 1);
+        Collections.swap(ruleSources, index, index + 1);
+        for (IRuleChangeListener listener : listeners) {
+            listener.rulePositionsChanged();
+        }
+    }
 
-	public void ruleChanged(Rule rule) {
-		for (IRuleChangeListener listener : listeners) {
-			listener.ruleUpdated(rule);
-		}
-		getExchangeStore().refreshExchangeStoreListeners();
-	}
+    public void ruleChanged(Rule rule) {
+        for (IRuleChangeListener listener : listeners) {
+            listener.ruleUpdated(rule);
+        }
+        getExchangeStore().refreshExchangeStoreListeners();
+    }
 
-	public Rule getMatchingRule(Exchange exc) {
-		Request request = exc.getRequest();
-		AbstractHttpHandler handler = exc.getHandler();
+    public Rule getMatchingRule(Exchange exc) {
+        Request request = exc.getRequest();
+        AbstractHttpHandler handler = exc.getHandler();
 
-		String hostHeader = request.getHeader().getHost();
-		String method = request.getMethod();
-		String uri = request.getUri();
-		String version = request.getVersion();
-		int port = handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
-		String localIP = handler.getLocalAddress().getHostAddress();
+        String hostHeader = request.getHeader().getHost();
+        String method = request.getMethod(); // @TODO examine closer values like "POST  HTTP/1,1"
+        String uri = request.getUri();
+        String version = request.getVersion();
+        int port = handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
+        String localIP = handler.getLocalAddress().getHostAddress();
 
-		for (Rule rule : rules) {
-			RuleKey key = rule.getKey();
+        for (Rule rule : rules) {
+            RuleKey key = rule.getKey();
 
-			log.debug("Host from rule: " + key.getHost() + ";   Host from parameter rule key: " + hostHeader);
+            log.debug("Host from rule: {} Host from parameter rule key: {}", key.getHost(), hostHeader);
 
-			if (!rule.isActive())
-				continue;
-			if (!key.matchesVersion(version))
-				continue;
-			if (key.getIp() != null && !key.getIp().equals(localIP))
-				continue;
-			if (!key.matchesHostHeader(hostHeader))
-				continue;
-			if (key.getPort() != -1 && port != -1 && key.getPort() != port)
-				continue;
-			if (!key.getMethod().equals(method) && !key.isMethodWildcard())
-				continue;
-			if (key.isUsePathPattern() && !key.matchesPath(uri))
-				continue;
-			if (!key.complexMatch(exc))
-				continue;
+            if (!rule.isActive())
+                continue;
+            if (!key.matchesVersion(version))
+                continue;
+            if (key.getIp() != null && !key.getIp().equals(localIP))
+                continue;
+            if (!key.matchesHostHeader(hostHeader))
+                continue;
+            if (key.getPort() != -1 && port != -1 && key.getPort() != port)
+                continue;
+            if (!key.getMethod().equals(method) && !key.isMethodWildcard())
+                continue;
+            if (key.isUsePathPattern() && !key.matchesPath(uri))
+                continue;
+            if (!key.complexMatch(exc))
+                continue;
 
-			if (log.isDebugEnabled())
-				log.debug("Matching Rule found for RuleKey " + hostHeader + " " + method + " " + uri + " " + port + " " + localIP);
-			return rule;
-		}
-		return null;
-	}
+            if (log.isDebugEnabled())
+                log.debug("Matching Rule found for RuleKey {} {} {} {} {}", hostHeader, method, uri, port, localIP);
+            return rule;
+        }
+        return null;
+    }
 
-	public void addRuleChangeListener(IRuleChangeListener viewer) {
-		listeners.add(viewer);
-		viewer.batchUpdate(rules.size());
-	}
+    public void addRuleChangeListener(IRuleChangeListener viewer) {
+        listeners.add(viewer);
+        viewer.batchUpdate(rules.size());
+    }
 
-	public void removeRuleChangeListener(IRuleChangeListener viewer) {
-		listeners.remove(viewer);
+    public void removeRuleChangeListener(IRuleChangeListener viewer) {
+        listeners.remove(viewer);
 
-	}
+    }
 
-	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
-		getExchangeStore().addExchangesStoreListener(viewer);
+    public void addExchangesStoreListener(IExchangesStoreListener viewer) {
+        getExchangeStore().addExchangesStoreListener(viewer);
 
-	}
+    }
 
-	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
-		getExchangeStore().removeExchangesStoreListener(viewer);
-	}
+    public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
+        getExchangeStore().removeExchangesStoreListener(viewer);
+    }
 
-	public synchronized void removeRule(Rule rule) {
-		getExchangeStore().removeAllExchanges(rule);
+    public synchronized void removeRule(Rule rule) {
+        getExchangeStore().removeAllExchanges(rule);
 
-		int i = rules.indexOf(rule);
-		rules.remove(i);
-		ruleSources.remove(i);
+        int i = rules.indexOf(rule);
+        rules.remove(i);
+        ruleSources.remove(i);
 
-		for (IRuleChangeListener listener : listeners) {
-			listener.ruleRemoved(rule, rules.size());
-		}
+        for (IRuleChangeListener listener : listeners) {
+            listener.ruleRemoved(rule, rules.size());
+        }
 
-	}
+    }
 
-	public synchronized void replaceRule(Rule rule, Rule newRule) {
-		getExchangeStore().removeAllExchanges(rule);
+    public synchronized void replaceRule(Rule rule, Rule newRule) {
+        getExchangeStore().removeAllExchanges(rule);
 
-		int i = rules.indexOf(rule);
-		rules.set(i, newRule);
+        int i = rules.indexOf(rule);
+        rules.set(i, newRule);
 
-		for (IRuleChangeListener listener : listeners) {
-			listener.ruleRemoved(rule, rules.size());
-		}
-		for (IRuleChangeListener listener : listeners) {
-			listener.ruleAdded(newRule);
-		}
-	}
+        for (IRuleChangeListener listener : listeners) {
+            listener.ruleRemoved(rule, rules.size());
+        }
+        for (IRuleChangeListener listener : listeners) {
+            listener.ruleAdded(newRule);
+        }
+    }
 
-	public synchronized void removeRulesFromSource(RuleDefinitionSource source) {
-		for (int i = 0; i < rules.size(); i++)
-			if (ruleSources.get(i) == source)
-				removeRule(rules.get(i--));
-	}
+    public synchronized void removeRulesFromSource(RuleDefinitionSource source) {
+        for (int i = 0; i < rules.size(); i++)
+            if (ruleSources.get(i) == source)
+                removeRule(rules.get(i--));
+    }
 
-	public synchronized void removeAllRules() {
-		while (rules.size() > 0)
-			removeRule(rules.get(0));
-	}
+    public synchronized void removeAllRules() {
+        while (!rules.isEmpty())
+            removeRule(rules.getFirst());
+    }
 
-	public synchronized int getNumberOfRules() {
-		return rules.size();
-	}
+    public void setRouter(Router router) {
+        this.router = router;
+    }
 
-	public void setRouter(Router router) {
-		this.router = router;
-	}
+    private ExchangeStore getExchangeStore() {
+        return router.getExchangeStore();
+    }
 
-	private ExchangeStore getExchangeStore() {
-		return router.getExchangeStore();
-	}
+    public Rule getRuleByName(String name) {
+        for (Rule r : rules) {
+            if (name.equals(r.getName())) return r;
+        }
+        return null;
+    }
 
-	public Rule getRuleByName(String name) {
-		for (Rule r : rules ) {
-			if ( name.equals(r.getName()) ) return r;
-		}
-		return null;
-	}
-
-	public synchronized List<Rule> getRulesBySource(final RuleDefinitionSource source) {
-		ArrayList<Rule> res = new ArrayList<>() {
+    public synchronized List<Rule> getRulesBySource(final RuleDefinitionSource source) {
+        return new ArrayList<>() {
+            @Serial
             private static final long serialVersionUID = 1L;
 
             {
@@ -350,7 +351,6 @@ public class RuleManager {
                 super.add(index, e);
             }
         };
-		return res;
-	}
+    }
 
 }

@@ -13,32 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import com.predic8.membrane.core.interceptor.xslt.*;
+import com.predic8.membrane.core.rules.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.apache.http.params.*;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.params.HttpProtocolParams;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.interceptor.rewrite.*;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
-import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.rules.Rule;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RESTBLZServiceIntegrationTest {
 
 	private static HttpRouter router;
 
-
 	@BeforeAll
-	public void setUp() throws Exception {
+	static void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3005), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
@@ -57,18 +52,18 @@ public class RESTBLZServiceIntegrationTest {
 		xslt.setXslt("classpath:/blz-httpget2soap-request.xsl");
 		xslt.setFlow(Flow.Set.REQUEST);
 		xslt.setXslt("classpath:/strip-soap-envelope.xsl");
-		xslt.setFlow(Flow.Set.RESPONSE);
+		xslt.setFlow(Flow.Set.RESPONSE_ABORT);
 		router.getTransport().getInterceptors().add(xslt);
 
 	}
 
 	@AfterAll
-	public void tearDown() throws Exception {
+	static void tearDown() throws Exception {
 		router.shutdown();
 	}
 
 	@Test
-	public void testRest() throws Exception {
+	void testRest() throws Exception {
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 		GetMethod get = new GetMethod("http://localhost:3005/bank/37050198");

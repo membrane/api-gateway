@@ -303,8 +303,8 @@ public abstract class AbstractExchange {
 					return getRequest().getHeader().getHost();
 				}
 
-				return new URL(getOriginalRequestUri()).getHost();
-			} catch (MalformedURLException e) {
+				return new URI(getOriginalRequestUri()).getHost();
+			} catch (URISyntaxException e) {
 				log.error("", e);
 			}
 			return getOriginalRequestUri();
@@ -320,7 +320,7 @@ public abstract class AbstractExchange {
 		if (length != -1)
 			return length;
 
-		if (length == -1 && getResponse().getBody().isRead()) {
+		if (getResponse().getBody().isRead()) {
 			try {
 				return  getResponse().getBody().getLength();
 			} catch (IOException e) {
@@ -395,15 +395,6 @@ public abstract class AbstractExchange {
 	@Override
 	public String toString() {
 		return "[time:" + DateFormat.getDateInstance().format(time.getTime()) + (request != null ? ",requestURI:"+ request.getUri() : "") + "]";
-	}
-
-	public void pushInterceptorToStack(Interceptor i) {
-		interceptorStack.add(i);
-	}
-
-	public Interceptor popInterceptorFromStack() {
-		int s = interceptorStack.size();
-		return s == 0 ? null : interceptorStack.remove(s-1);
 	}
 
 	public int getHeapSizeEstimation() {

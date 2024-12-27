@@ -30,7 +30,7 @@ public class AbstractInterceptor implements Interceptor {
 
 	protected String name = this.getClass().getName();
 
-	private EnumSet<Flow> flow = REQUEST_RESPONSE;
+	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT;
 
 	protected Router router;
 
@@ -136,15 +136,7 @@ public class AbstractInterceptor implements Interceptor {
 	public static Message getMessage(Exchange exc, Interceptor.Flow flow) {
 		return switch (flow) {
 			case REQUEST -> exc.getRequest();
-			case RESPONSE, ABORT -> {
-				if (exc.getResponse() != null)
-					yield exc.getResponse();
-
-				// Should we really create a response here?
-				Response response = Response.ok().build();
-				exc.setResponse(response);
-				yield response;
-			}
+			case RESPONSE, ABORT ->  exc.getResponse();
 		};
 	}
 }

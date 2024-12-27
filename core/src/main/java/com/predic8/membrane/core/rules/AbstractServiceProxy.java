@@ -14,12 +14,10 @@
 
 package com.predic8.membrane.core.rules;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.transport.ssl.*;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
 

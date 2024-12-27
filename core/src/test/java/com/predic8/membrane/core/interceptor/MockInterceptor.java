@@ -43,6 +43,7 @@ public class MockInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		System.out.println("MockInterceptor.handleRequest");
 		reqLabels.add(label);
 		if (failurePoints.contains("request"))
 			return ABORT;
@@ -51,6 +52,7 @@ public class MockInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
+		System.out.println("MockInterceptor.handleResponse");
 		respLabels.add(label);
 		if (failurePoints.contains("response"))
 			return ABORT;

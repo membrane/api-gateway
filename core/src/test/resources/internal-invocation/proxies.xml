@@ -98,6 +98,7 @@
 		<serviceProxy name="ReturnedChain1" port="3029">
 			<interceptor refid="Mock3" />
 			<groovy>
+				println "Before Echo"
 				exc.echo()
 			</groovy>		
 			<interceptor refid="Mock4" />

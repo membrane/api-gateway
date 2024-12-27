@@ -54,6 +54,12 @@ public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestC
         assertTrue(eval("flow.isResponse()", new ResponseBuilder()));
     }
 
+    @Test
+    void exchangeIsAvailable() throws Exception {
+        assertTrue(eval("exc != null", new Builder()));
+        assertTrue(eval("exchange != null", new Builder()));
+    }
+
     private static boolean eval(String condition, Object builder) throws Exception {
         return performEval(condition, builder, GROOVY);
     }

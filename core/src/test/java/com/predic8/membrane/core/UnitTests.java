@@ -161,9 +161,11 @@ import org.junit.platform.suite.api.*;
 		APIProxyKeyTest.class,
 		AdjustContentLengthTest.class,
 		URIUtilTest.class,
-		CliCommandTest.class
+		CliCommandTest.class,
+		EchoInterceptorTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
+				 "com.predic8.membrane.core.internalservice",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",
 				 "com.predic8.membrane.core.acl"})
 public class UnitTests {

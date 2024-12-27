@@ -108,7 +108,7 @@ public class UriUtil {
         return !((Objects.equals(port, "80") && scheme.equals("http")) || (Objects.equals(port, "443") && scheme.equals("https")));
     }
 
-    public static String getPathFromURL(URIFactory factory, String str) throws URISyntaxException {
-        return factory.create(str).getPath();
+    public static String getPathFromURL(URIFactory factory, String url) throws URISyntaxException {
+        return factory.create(url).getPath();
     }
 }

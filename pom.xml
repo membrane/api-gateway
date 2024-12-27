@@ -24,13 +24,13 @@
 	- OAuth2, JWT, NTLM, ...
 	- Legacy support for SOAP and WSDL
 	</description>
-	<url>http://membrane-soa.org/service-proxy/</url>
+	<url>https://membrane-api.io</url>
 	<packaging>pom</packaging>
 
 	<developers>
 		<developer>
 			<organization>predic8 GmbH</organization>
-			<organizationUrl>http://predic8.com/</organizationUrl>
+			<organizationUrl>https://predic8.com/</organizationUrl>
 			<email>info@predic8.de</email>
 		</developer>
 	</developers>
@@ -38,7 +38,7 @@
 	<licenses>
 		<license>
 			<name>Apache License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -57,7 +57,7 @@
 	<mailingLists>
 		<mailingList>
 			<name>membrane-monitor</name>
-			<subscribe>http://groups.google.com/group/membrane-monitor</subscribe>
+			<subscribe>https://groups.google.com/group/membrane-monitor</subscribe>
 		</mailingList>
 	</mailingLists>
 
@@ -75,8 +75,8 @@
 		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 		<gpg.keyname>5B8A65F6</gpg.keyname>
-		<javac.source>17</javac.source>
-		<javac.target>17</javac.target>
+		<javac.source>21</javac.source>
+		<javac.target>21</javac.target>
 		<jackson.version>2.18.1</jackson.version>
 		<spring.version>6.2.0</spring.version>
 		<slf4j.version>2.0.16</slf4j.version>
@@ -400,7 +400,7 @@
 							<mainClass>com.predic8.membrane.core.Starter</mainClass>
 						</manifest>
 						<manifestEntries>
-							<Bundle-License>http://www.apache.org/licenses/LICENSE-2.0.html</Bundle-License>
+							<Bundle-License>https://www.apache.org/licenses/LICENSE-2.0.html</Bundle-License>
 						</manifestEntries>
 					</archive>
 				</configuration>

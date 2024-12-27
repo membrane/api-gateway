@@ -40,52 +40,42 @@ public class RuleResolver implements SchemaResolver {
     }
 
     @Override
-    public InputStream resolve(String url) throws ResourceRetrievalException {
+    public InputStream resolve(String url) {
         String ruleName = url.substring(8).split("/")[0];
         Rule rule = router.getRuleManager().getRuleByName(ruleName);
 
-        if(rule == null)
+        if (rule == null)
             throw new RuntimeException("Rule with name '" + ruleName + "' not found");
 
-        if(!rule.isActive())
+        if (!rule.isActive())
             throw new RuntimeException("Rule with name '" + ruleName + "' not active");
 
-        if(!(rule instanceof AbstractProxy))
+        if (!(rule instanceof AbstractProxy p))
             throw new RuntimeException("Rule with name '" + ruleName + "' is not of type AbstractProxy");
-
-        AbstractProxy p = (AbstractProxy) rule;
-        InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
+        FlowController interceptorFlowController = new FlowController();
         try {
             String pathAndQuery = "/" + url.substring(8).split("/", 2)[1];
             Exchange exchange = new Request.Builder().get(pathAndQuery).buildExchange();
             RuleMatchingInterceptor.assignRule(exchange, p);
             List<Interceptor> additionalInterceptors = new ArrayList<>();
 
-            if(p instanceof AbstractServiceProxy || p instanceof InternalProxy) {
-                if (p instanceof AbstractServiceProxy) {
-                    AbstractServiceProxy asp = (AbstractServiceProxy) p;
-                    exchange.setDestinations(Stream.of(toUrl(asp.getTargetSSL() != null ? "https" : "http", asp.getHost(), asp.getTargetPort()).toString() + pathAndQuery).collect(Collectors.toList()));
-                    exchange.getRequest().getHeader().setHost(asp.getHost());
-                }
-                if (p instanceof InternalProxy) {
-                    InternalProxy ip = (InternalProxy) p;
-                    exchange.setDestinations(Stream.of(toUrl(ip.getTarget()).toString() + pathAndQuery).collect(Collectors.toList()));
-                    exchange.getRequest().getHeader().setHost(ip.getTarget().getHost());
-                }
+            if (p instanceof AbstractServiceProxy asp) {
+                exchange.setDestinations(Stream.of(toUrl(asp.getTargetSSL() != null ? "https" : "http", asp.getHost(), asp.getTargetPort()).toString() + pathAndQuery).collect(Collectors.toList()));
+                exchange.getRequest().getHeader().setHost(asp.getHost());
 
                 HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
                 httpClientInterceptor.init(router);
                 additionalInterceptors.add(httpClientInterceptor);
             }
 
-            interceptorFlowController.invokeHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).collect(Collectors.toList()));
+            interceptorFlowController.invokeRequestHandlers(exchange, Stream.concat(p.getInterceptors().stream(), additionalInterceptors.stream()).collect(Collectors.toList()));
             return exchange.getResponse().getBodyAsStream();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public URL toUrl(String scheme, String host, int port){
+    public URL toUrl(String scheme, String host, int port) {
         try {
             return new URL(scheme + "://" + host + ":" + port);
         } catch (MalformedURLException e) {
@@ -93,12 +83,12 @@ public class RuleResolver implements SchemaResolver {
         }
     }
 
-    public URL toUrl(AbstractServiceProxy.Target t){
+    public URL toUrl(AbstractServiceProxy.Target t) {
         return toUrl(t.getSslParser() != null ? "https" : "http", t.getHost(), t.getPort());
     }
 
     @Override
-    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) throws ResourceRetrievalException {
+    public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
         throw new RuntimeException("Not implemented");
     }
 
@@ -108,7 +98,7 @@ public class RuleResolver implements SchemaResolver {
     }
 
     @Override
-    public long getTimestamp(String url) throws FileNotFoundException {
+    public long getTimestamp(String url) {
         return 0;
     }
 

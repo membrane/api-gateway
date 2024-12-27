@@ -164,7 +164,7 @@ public class Exchange extends AbstractExchange {
 	/**
 	 * Returns the relative original URI.
 	 * <p>
-	 * "original" meaning "as recieved by Membrane's transport".
+	 * "original" meaning "as received by Membrane's transport".
 	 * <p>
 	 * To be used, for example, when generating self-referring web pages.
 	 */
@@ -180,6 +180,7 @@ public class Exchange extends AbstractExchange {
 		return getOriginalRequestUri();
 	}
 
+	// @TODO Do we really need that
 	public Outcome echo() throws IOException {
 		ResponseBuilder builder = Response.ok();
 		byte[] content = getRequest().getBody().getContent();
@@ -235,7 +236,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	@Override
-	public AbstractExchange createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
+	public Exchange createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
 		Exchange exc = updateCopy(this, new Exchange(null), bodyUpdatedCallback, strategy, limit);
 		exc.setId(this.getId());
 		return exc;

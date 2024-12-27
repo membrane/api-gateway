@@ -17,98 +17,79 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.util.URLUtil.*;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description This interceptor adds the destination specified in the target
- *              element to the list of destinations of the exchange object. It
- *              must be placed into the transport to make Service Proxies Work
- *              properly. It has to be placed after the ruleMatching
- *              interceptor. The ruleMatching interceptor looks up a service
- *              proxy for an incoming request and places it into the exchange
- *              object. The dispatching interceptor needs the service proxy to
- *              get information about the target.
+ * element to the list of destinations of the exchange object. It
+ * must be placed into the transport to make Service Proxies Work
+ * properly. It has to be placed after the ruleMatching
+ * interceptor. The ruleMatching interceptor looks up a service
+ * proxy for an incoming request and places it into the exchange
+ * object. The dispatching interceptor needs the service proxy to
+ * get information about the target.
  */
-@MCElement(name="dispatching")
+@MCElement(name = "dispatching")
 public class DispatchingInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
 
-	public DispatchingInterceptor() {
-		name = "Dispatching Interceptor";
-		setFlow(Flow.Set.REQUEST);
-	}
+    public DispatchingInterceptor() {
+        name = "Dispatching Interceptor";
+        setFlow(Flow.Set.REQUEST);
+    }
 
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
 
-		if (exc.getRule() instanceof AbstractServiceProxy) {
-			exc.getDestinations().add(getForwardingDestination(router.getUriFactory(),exc));
-			setSNIPropertyOnExchange(exc);
-			return CONTINUE;
-		}
+        if (exc.getRule() instanceof AbstractServiceProxy asp) {
+            exc.getDestinations().clear();
+            exc.getDestinations().add(getForwardingDestination( exc));
+            setSNIPropertyOnExchange(exc, asp);
+            return CONTINUE;
+        }
 
-		exc.getDestinations().add(exc.getRequest().getUri());
+        exc.getDestinations().add(exc.getRequest().getUri());
 
-		return CONTINUE;
-	}
+        return CONTINUE;
+    }
 
-	private void setSNIPropertyOnExchange(Exchange exc) {
-		AbstractServiceProxy asp = (AbstractServiceProxy) exc.getRule();
-		if(asp.getTargetSSL() != null) {
-			String sni = asp.getTargetSSL().getServerName();
-			if (sni != null)
-				exc.setProperty(Exchange.SNI_SERVER_NAME, sni);
-		}
-	}
+    private void setSNIPropertyOnExchange(Exchange exc, AbstractServiceProxy asp) {
+        if (asp.getTargetSSL() == null)
+            return;
 
-	public static String getForwardingDestination(URIFactory uriFactory, Exchange exc) throws Exception {
-		String urlResult = null;
+        String sni = asp.getTargetSSL().getServerName();
+        if (sni == null)
+            return;
 
-		if(exc.getRule() instanceof InternalProxy)
-			urlResult = handleInternalProxy(exc);
-		if(exc.getRule() instanceof AbstractServiceProxy)
-			urlResult = handleAbstractServiceProxy(uriFactory, exc);
+        exc.setProperty(SNI_SERVER_NAME, sni);
+    }
 
-		log.debug("destination: " + urlResult);
-		return urlResult != null ? urlResult : exc.getRequest().getUri();
-	}
+    private String getForwardingDestination(Exchange exc) throws Exception {
+        String urlResult = getAddressFromTargetElement( exc);
+        log.debug("destination: {}", urlResult);
+        return urlResult != null ? urlResult : exc.getRequest().getUri();
+    }
 
-	private static String handleInternalProxy(Exchange exc) throws MalformedURLException {
-		InternalProxy ip = (InternalProxy) exc.getRule();
+    protected String getAddressFromTargetElement(Exchange exc) throws MalformedURLException, URISyntaxException {
+        AbstractServiceProxy p = (AbstractServiceProxy) exc.getRule();
 
-		if(ip.getTarget() == null)
-			return null;
+        if (p.getTargetURL() != null) {
+            if (p.getTargetURL().startsWith("http") && !UriUtil.getPathFromURL(router.getUriFactory(), p.getTargetURL()).contains("/")) {
+                return p.getTargetURL() + exc.getRequestURI();
+            }
+            return p.getTargetURL();
+        }
+        if (p.getTargetHost() != null)
+            return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
 
-		if(ip.getTarget().getUrl() != null)
-			return ip.getTarget().getUrl();
-		if(ip.getTarget().getHost() != null)
-			return new URL(ip.getTarget().getSslParser() != null ? "https" : "http", ip.getTarget().getHost(), ip.getTarget().getPort(), exc.getRequest().getUri()).toString();
+        log.warn("No target host and no target url for rule {}", p.getName());
 
-		return null;
-	}
-
-	protected static String handleAbstractServiceProxy(URIFactory uriFactory, Exchange exc) throws MalformedURLException, URISyntaxException {
-		AbstractServiceProxy p = (AbstractServiceProxy) exc.getRule();
-
-		if (p.getTargetURL() != null) {
-			if (p.getTargetURL().startsWith("service:") && !p.getTargetURL().contains("/")) {
-				return "service://" + getHost(p.getTargetURL()) + exc.getRequest().getUri();
-			}
-			if (p.getTargetURL().startsWith("http") && !UriUtil.getPathFromURL(uriFactory, p.getTargetURL()).contains("/")) {
-				return p.getTargetURL() + exc.getRequestURI();
-			}
-			return p.getTargetURL();
-		}
-		if (p.getTargetHost() != null)
-			return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
-
-		return null;
-	}
+        return null;
+    }
 }

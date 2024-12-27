@@ -34,7 +34,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONSE_ABORT;
 
 /**
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
@@ -55,7 +55,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
     public WSDLInterceptor() {
         name = "WSDL Rewriting Interceptor";
-        setFlow(RESPONSE);
+        setFlow(RESPONSE_ABORT);
     }
 
     @Override

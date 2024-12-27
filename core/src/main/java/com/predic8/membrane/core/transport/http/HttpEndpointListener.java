@@ -32,7 +32,7 @@ import static java.lang.Boolean.*;
 public class HttpEndpointListener extends Thread {
 
 	private static final Logger log = LoggerFactory.getLogger(HttpEndpointListener.class.getName());
-	byte[] TLS_ALERT_INTERNAL_ERROR = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+	private static final byte[] TLS_ALERT_INTERNAL_ERROR = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
 			2 /* fatal */, 80 /* unrecognized_name */ };
 
 
@@ -47,7 +47,7 @@ public class HttpEndpointListener extends Thread {
 	private volatile boolean closed;
 
 	private static class ClientInfo {
-		public AtomicInteger count;
+		public final AtomicInteger count;
 		public volatile long lastUse;
 
 		public ClientInfo() {
@@ -66,7 +66,7 @@ public class HttpEndpointListener extends Thread {
 
 		public boolean compareAndSet(int expected, int update) {
 			boolean b = count.compareAndSet(expected, update);
-			// TODO: fix this for timezone switch (and whereever System.currentTimeMillis() is used)
+			// TODO: fix this for timezone switch (and wherever System.currentTimeMillis() is used)
 			lastUse = System.currentTimeMillis();
 			return b;
 		}
@@ -76,10 +76,7 @@ public class HttpEndpointListener extends Thread {
 		this.transport = transport;
 		this.sslProvider = sslProvider;
 		try {
-			if (sslProvider != null)
-				serverSocket = sslProvider.createServerSocket(p.port(), transport.getBacklog(), p.ip());
-			else
-				serverSocket = new ServerSocket(p.port(), transport.getBacklog(), p.ip());
+			serverSocket = getServerSocket(p);
 
 			if (timerManager == null)
 				timerManager = this.timerManager = new TimerManager();
@@ -101,10 +98,17 @@ public class HttpEndpointListener extends Thread {
 
 			final String s = p.toShortString();
 			setName("Connection Acceptor " + s);
-			log.info("listening at " + s);
+			log.info("listening at {}", s);
 		} catch (BindException e) {
 			throw new PortOccupiedException(p);
 		}
+	}
+
+	private ServerSocket getServerSocket(IpPort p) throws IOException {
+		if (sslProvider != null)
+			return sslProvider.createServerSocket(p.port(), transport.getBacklog(), p.ip());
+
+		return new ServerSocket(p.port(), transport.getBacklog(), p.ip());
 	}
 
 	@Override
@@ -115,11 +119,11 @@ public class HttpEndpointListener extends Thread {
 
 				InetAddress remoteIp = getRemoteIp(socket);
 				ClientInfo connectionCount = getClientInfo(remoteIp);
-				if (isConnnectionWithinLimit(socket, remoteIp, connectionCount)) {
+				if (isConnectionWithinLimit(socket, remoteIp, connectionCount)) {
 					openSockets.put(socket, TRUE);
 					try {
 						if (log.isDebugEnabled())
-							log.debug("Accepted connection from " + socket.getRemoteSocketAddress());
+							log.debug("Accepted connection from {}", socket.getRemoteSocketAddress());
 						transport.getExecutorService().execute(new HttpServerHandler(socket, this));
 					} catch (RejectedExecutionException e) {
 						connectionCount.decrementAndGet();
@@ -174,14 +178,14 @@ public class HttpEndpointListener extends Thread {
 		return connectionCount;
 	}
 
-	private boolean isConnnectionWithinLimit(Socket socket, InetAddress remoteIp, ClientInfo connectionCount) throws IOException {
+	private boolean isConnectionWithinLimit(Socket socket, InetAddress remoteIp, ClientInfo connectionCount) throws IOException {
 		int concurrentConnectionLimitPerIp = transport.getConcurrentConnectionLimitPerIp();
 
 		// -1 == NoLimit => Ok
 		if (concurrentConnectionLimitPerIp == -1)
 			return true;
 
-		boolean connnectionWithinLimit = true;
+		boolean connectionWithinLimit = true;
 		while(true) {
 			int currentConnections = connectionCount.get();
 			// TODO: if count == -1 -> try to get the counter in a while loop
@@ -189,13 +193,13 @@ public class HttpEndpointListener extends Thread {
 				log.warn(constructLogMessage(new StringBuilder(), remoteIp, NetworkUtil.readUpTo1KbOfDataFrom(socket, new byte[1023])));
 				writeRateLimitReachedToSource(socket);
 				socket.close();
-				connnectionWithinLimit = false;
+				connectionWithinLimit = false;
 				break;
 			}
 			if (connectionCount.compareAndSet(currentConnections, currentConnections + 1))
 				break;
 		}
-		return connnectionWithinLimit;
+		return connectionWithinLimit;
 	}
 
 	public void closePort() throws IOException {
