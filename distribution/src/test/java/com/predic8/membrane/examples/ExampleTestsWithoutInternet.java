@@ -101,6 +101,8 @@ import org.junit.platform.suite.api.Suite;
         APIKeyWithOpenAPITest.class,
         XMLTemplateTest.class,
         //DefaultConfigAdminConsoleTest.class*/
+
+        InternalProxyTest.class
 })
 public class ExampleTestsWithoutInternet {
 }

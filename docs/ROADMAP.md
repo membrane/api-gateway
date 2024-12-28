@@ -5,9 +5,20 @@
 - Grafana Dashboard to import in examples/prometheus
   - Also provide the datasource config
   - Maybe the config can be included into the docker-compose setup
+- Example Tests without unzipping for every test
 
 # Version 6.0.0
 
+- Delete interceptor/
+  - api-management
+  - CBR
+
+- Check
+  - Is example embeddug-java still running?
+    - Update to Java 21 needed? 
+
+- Move Examples
+  - basic-xml-interceptor -> xml/basic-xml-interceptor
 
 
 - Refactor setHeader, setProperty make it like if

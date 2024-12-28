@@ -11,19 +11,19 @@
 				<!-- In case of 'true' set destination to internalProxy -->
 				<case xPath="//order[@express='yes']" service="express" />
 			</switch>
-			<target url="service:normal" />
+			<target url="service://normal" />
 		</api>
 
 		<!-- An internalProxy is like a function or subroutine for an API. -->
-		<internalProxy name="express">
+		<api name="express">
 			<static>Express processing!</static>
 			<return/>
-		</internalProxy>
+		</api>
 
-		<internalProxy name="normal">
+		<api name="normal">
 			<static>Normal processing!</static>
 			<return/>
-		</internalProxy>
+		</api>
 
 	</router>
 

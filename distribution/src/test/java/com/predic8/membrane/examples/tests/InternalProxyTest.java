@@ -14,10 +14,10 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
-import io.restassured.http.*;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InternalProxyTest extends DistributionExtractingTestcase {
@@ -34,7 +34,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
         try(Process2 sl = startServiceProxyScript()) {
             // @formatter:off
             String response = given()
-                    .contentType(ContentType.XML)
+                    .contentType(XML)
                     .body(readFileFromBaseDir("express.xml"))
                 .when()
                     .post(BASE_URL)
@@ -80,7 +80,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
         try(Process2 sl = startServiceProxyScript()) {
             // @formatter:off
             String response = given()
-                    .contentType(ContentType.XML)
+                    .contentType(XML)
                     .body(regularOrder)
                 .when()
                     .post(BASE_URL)
