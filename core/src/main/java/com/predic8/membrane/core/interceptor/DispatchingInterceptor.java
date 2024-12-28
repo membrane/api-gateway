@@ -88,8 +88,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         if (p.getTargetHost() != null)
             return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
 
-        log.warn("No target host and no target url for rule {}", p.getName());
-
+        // That's fine. Maybe it is a <soapProxy> without a target
         return null;
     }
 }

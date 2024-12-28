@@ -34,7 +34,6 @@ import com.predic8.membrane.core.util.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.*;
-
 import org.slf4j.*;
 
 import java.io.*;
@@ -48,10 +47,8 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
-
-import static java.util.concurrent.TimeUnit.*;
-
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.concurrent.TimeUnit.*;
 
 
 /**
@@ -515,7 +512,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
-        String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
+        String path = uriFactory.create(exc.getDestinations().getFirst()).getPath();
 
         if(path == null)
             return false;
@@ -533,7 +530,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 Map<String, String> param = URLParamUtil.parseQueryString(state2, ERROR);
 
-                if (param == null || !param.containsKey("security_token"))
+                if (!param.containsKey("security_token"))
                     throw new RuntimeException("No CSRF token.");
 
                 boolean csrfMatch = false;

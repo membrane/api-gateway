@@ -58,7 +58,7 @@ public abstract class AbstractHttpHandler  {
 	public abstract int getLocalPort();
 
 
-	protected void invokeHandlers() throws IOException, EndOfStreamException, AbortException, NoMoreRequestsException, EOFWhileReadingFirstLineException {
+	protected void invokeHandlers() throws AbortException, NoMoreRequestsException, EOFWhileReadingFirstLineException {
 		try {
 			flowController.invokeRequestHandlers(exchange, transport.getInterceptors());
 			if (exchange.getResponse() == null)
@@ -68,10 +68,6 @@ public abstract class AbstractHttpHandler  {
 				exchange.setResponse(generateErrorResponse(e));
 
 			// TODO What is going on here?
-			if (e instanceof IOException)
-				throw (IOException)e;
-			if (e instanceof EndOfStreamException)
-				throw (EndOfStreamException)e;
 			if (e instanceof AbortException)
 				throw (AbortException)e; // TODO: migrate catch logic into this method
 			if (e instanceof NoMoreRequestsException)

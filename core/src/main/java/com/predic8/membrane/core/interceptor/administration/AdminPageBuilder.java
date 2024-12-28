@@ -93,7 +93,7 @@ public class AdminPageBuilder extends Html {
 		return super.href(makeRelative(value));
 	}
 
-	public String createPage() throws Exception {
+	public String createPage() {
 		start("!DOCTYPE html");
 		html();
 		createHead();
@@ -118,7 +118,7 @@ public class AdminPageBuilder extends Html {
 		return 0;
 	}
 
-	protected void createTabContent() throws Exception {
+	protected void createTabContent() {
 	}
 
 
@@ -636,7 +636,7 @@ public class AdminPageBuilder extends Html {
 			String iid = "i" + id;
 			div().id("i"+id);
 			createHelpIcon(i, id);
-			if (shortDescription.length() > 0 && !longDescription.equals(shortDescription)) {
+			if (!shortDescription.isEmpty() && !longDescription.equals(shortDescription)) {
 				createExpandIcon(i, id);
 			}
 			end();
@@ -645,7 +645,7 @@ public class AdminPageBuilder extends Html {
 			div().classAttr("name");
 			text(i.getDisplayName());
 			end();
-			if (shortDescription.length() > 0) {
+			if (!shortDescription.isEmpty()) {
 				div().style("padding-top: 4px;");
 				String sid = "s" + id;
 				div().id(sid);
@@ -689,8 +689,7 @@ public class AdminPageBuilder extends Html {
 							"  });\r\n" +
 							"});\r\n" +
 							"</script>\r\n" +
-							"\r\n" +
-							"");
+							"\r\n");
 				}
 				end();
 				end();
@@ -731,8 +730,7 @@ public class AdminPageBuilder extends Html {
 				"  {\r\n" +
 				"    jQuery(\"#"+iid+"\").hide();\r\n" +
 				"  });\r\n" +
-				"});\r\n" +
-				"");
+				"});\r\n");
 		end();
 	}
 

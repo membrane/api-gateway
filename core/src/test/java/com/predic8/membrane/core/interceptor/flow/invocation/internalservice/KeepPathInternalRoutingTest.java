@@ -40,7 +40,7 @@ public class KeepPathInternalRoutingTest extends AbstractInternalServiceRoutingI
     }
 
     @Test
-    void test() throws Exception {
+    void test() {
         assertEquals(">a>b<b<a", call());
 
         // Check if the path was not modified

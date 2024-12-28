@@ -162,7 +162,8 @@ import org.junit.platform.suite.api.*;
 		AdjustContentLengthTest.class,
 		URIUtilTest.class,
 		CliCommandTest.class,
-		EchoInterceptorTest.class
+		EchoInterceptorTest.class,
+		XPathExpressionTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.internalservice",

@@ -14,22 +14,18 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.collect.Lists;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.stream.*;
 
 public class RuleResolver implements SchemaResolver {
 
@@ -83,17 +79,13 @@ public class RuleResolver implements SchemaResolver {
         }
     }
 
-    public URL toUrl(AbstractServiceProxy.Target t) {
-        return toUrl(t.getSslParser() != null ? "https" : "http", t.getHost(), t.getPort());
-    }
-
     @Override
     public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
         throw new RuntimeException("Not implemented");
     }
 
     @Override
-    public List<String> getChildren(String url) throws FileNotFoundException {
+    public List<String> getChildren(String url) {
         return null;
     }
 

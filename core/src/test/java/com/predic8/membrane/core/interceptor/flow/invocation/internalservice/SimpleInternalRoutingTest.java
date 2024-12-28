@@ -39,7 +39,7 @@ public class SimpleInternalRoutingTest extends AbstractInternalServiceRoutingInt
     }
 
     @Test
-    void test() throws Exception {
+    void test() {
         assertEquals(">a>b<b<a", call());
     }
 }

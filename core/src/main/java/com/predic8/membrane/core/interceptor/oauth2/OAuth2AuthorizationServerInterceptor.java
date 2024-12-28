@@ -37,7 +37,7 @@ import java.util.HashSet;
 
 @MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
-    private static Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
 
     private String issuer;
     private String location;

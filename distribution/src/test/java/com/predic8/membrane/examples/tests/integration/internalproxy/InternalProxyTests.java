@@ -124,10 +124,6 @@ public class InternalProxyTests {
         return internalProxy;
     }
 
-    public static Rule createServiceProxy(int listenPort, Interceptor... interceptors){
-        return createServiceProxy(listenPort,null,interceptors);
-    }
-
     public static Rule createServiceProxy(int listenPort, AbstractServiceProxy.Target target, Interceptor... interceptors){
         if (target == null)
             target = new AbstractServiceProxy.Target(null, -1);

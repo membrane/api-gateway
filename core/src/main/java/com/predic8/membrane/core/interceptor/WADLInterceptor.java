@@ -30,7 +30,7 @@ import static com.predic8.membrane.core.Constants.WADL_NS;
 @MCElement(name="wadlRewriter")
 public class WADLInterceptor extends RelocatingInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(WADLInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(WADLInterceptor.class.getName());
 
 	public WADLInterceptor() {
 		name = "WADL Rewriting Interceptor";
@@ -43,7 +43,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 	}
 
 	@Override
-	protected void rewrite(Exchange exc) throws Exception, IOException {
+	protected void rewrite(Exchange exc) throws Exception {
 
 		log.debug("Changing endpoint address in WADL");
 
@@ -121,7 +121,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 				end();
 				end();
 			}};
-			sb.append(sw.toString());
+			sb.append(sw);
 		} else {
 			sb.append(".");
 		}

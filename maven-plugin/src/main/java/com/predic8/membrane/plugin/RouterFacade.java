@@ -16,9 +16,9 @@
 package com.predic8.membrane.plugin;
 
 import com.predic8.membrane.core.*;
-import org.apache.maven.plugin.*;
 
-import java.util.concurrent.*;
+import static java.lang.Long.*;
+import static java.util.concurrent.TimeUnit.*;
 
 class RouterFacade {
     private final Router router;
@@ -27,7 +27,7 @@ class RouterFacade {
         this.router = router;
     }
 
-    static RouterFacade createStarted(String proxiesPath) throws MojoFailureException {
+    static RouterFacade createStarted(String proxiesPath) {
         return new RouterFacade(Router.init(proxiesPath));
     }
 
@@ -37,7 +37,7 @@ class RouterFacade {
 
     void waitForFinish() {
         try {
-            router.getBackgroundInitializator().awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            router.getBackgroundInitializator().awaitTermination(MAX_VALUE, NANOSECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

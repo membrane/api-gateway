@@ -36,7 +36,9 @@ public class ScriptingUtils {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    public static HashMap<String, Object> createParameterBindings(URIFactory uriFactory, Exchange exc, Message msg, Interceptor.Flow flow, boolean includeJsonObject) {
+    public static HashMap<String, Object> createParameterBindings(URIFactory uriFactory, Exchange exc, Interceptor.Flow flow, boolean includeJsonObject) {
+        Message msg = exc.getMessage(flow);
+
         HashMap<String, Object> parameters = new HashMap<>();
 
         // support both
@@ -49,7 +51,7 @@ public class ScriptingUtils {
             try {
                 parameters.put("params", getParams(uriFactory, exc, MERGE_USING_COMMA));
             } catch (Exception e) {
-                log.info("Cannot parse query parameter from " + exc.getRequest().getUri());
+                log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
             }
         }
 
@@ -61,7 +63,7 @@ public class ScriptingUtils {
                     log.info("Parsing body as JSON for scripting plugins");
                     parameters.put("json",om.readValue(readInputStream(msg.getBodyAsStream()),Map.class));  // @Todo not with Javascript
                 } catch (Exception e) {
-                    log.warn("Can't parse body as JSON: " + e);
+                    log.warn("Can't parse body as JSON", e);
                 }
             }
         }

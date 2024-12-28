@@ -17,6 +17,7 @@ package com.predic8.membrane.core.exchange;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.rules.*;
 import org.slf4j.*;
@@ -183,10 +184,6 @@ public abstract class AbstractExchange {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.setExchangeStopped(this);
 		}
-	}
-
-	public void finishExchange(boolean refresh) {
-		finishExchange(refresh, "");
 	}
 
 	public void finishExchange(boolean refresh, String errmsg) {
@@ -443,17 +440,6 @@ public abstract class AbstractExchange {
 		return copy;
 	}
 
-	public String getPublicUrl(){
-		String xForwardedProto = getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
-		boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : getRule().getSslInboundContext() != null;
-		String publicURL = (isHTTPS ? "https://" : "http://") + getRequest().getHeader().getHost().replaceFirst(".*:", "");
-		RuleKey key = getRule().getKey();
-		if (!key.isPathRegExp() && key.getPath() != null)
-			publicURL += key.getPath();
-
-		return publicURL;
-	}
-
 	/**
 	 * Prepares for long-term storage (for example, in-memory {@link ExchangeStore}s).
 	 */
@@ -481,5 +467,17 @@ public abstract class AbstractExchange {
 		this.interceptorStack = interceptorStack;
 	}
 
-
+	/**
+	 * Gets the message for the flow.
+	 * ADR: The flow is not stored in the Exchange cause it is not a property of the exchange. The flow is a
+	 * property of the context where a exchange is used e.g. a plugin in &lt;abort&gt; is executed in the
+	 * RESPONSE flow even when outside it happens in an ABORT flow.
+	 * @param flow
+	 * @return Message
+	 */
+	public Message getMessage(Flow flow) {
+		if (flow.isRequest())
+			return request;
+		return response; // RESPONSE and ABORT flow both work on the response
+	}
 }

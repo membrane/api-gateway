@@ -14,33 +14,28 @@
 
 package com.predic8.membrane.core.interceptor.cbr;
 
+import com.googlecode.jatl.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
+import org.xml.sax.*;
+
+import javax.xml.xpath.*;
+import java.io.*;
+import java.util.*;
+
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.SynchronizedXPathFactory.newXPath;
-
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.xml.xpath.XPathConstants;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-import org.xml.sax.InputSource;
-
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TextUtil;
+import static com.predic8.membrane.core.util.SynchronizedXPathFactory.*;
 
 /**
  * @description Changes an exchange's target based on a series of XPath expressions.
  * @topic 3. Enterprise Integration Patterns
+ *
+ * @TODO 6.0.0 Take out
+ *
  */
 @MCElement(name="switch")
 public class XPathCBRInterceptor extends AbstractInterceptor {
@@ -63,7 +58,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		if (r == null) {
 			return CONTINUE;
 		}
-		log.debug("match found for {"+r.getXPath()+"} routing to {"+ r.getUrl() + "}");
+		log.debug("match found for {} routing to {}",r.getXPath(),r.getUrl());
 
 		updateDestination(exc, r);
 		return CONTINUE;
@@ -82,7 +77,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 			is.setEncoding(request.getCharset());
 			if ( (Boolean) newXPath(namespaces).evaluate(r.getXPath(), is, XPathConstants.BOOLEAN) )
 				return r;
-			log.debug("no match found for xpath {"+r.getXPath()+"}");
+			log.debug("no match found for xpath {}",r.getXPath());
 		}
 		return null;
 	}

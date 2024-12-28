@@ -49,7 +49,7 @@ public class DispatchingInterceptorTest {
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
-		URL url = new URL(exc.getDestinations().get(0));
+		URL url = new URL(exc.getDestinations().getFirst());
 		assertEquals(80, url.getPort());
 		assertEquals("thomas-bayer.com", url.getHost());
 		assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
@@ -58,18 +58,18 @@ public class DispatchingInterceptorTest {
 	@Test
 	public void testProxyRuleHttp() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
-		exc.setRule(getProxyrRule());
+		exc.setRule(getProxyRule());
 
 		assertEquals(CONTINUE, dispatcher.handleRequest(exc));
 
-		URL url = new URL(exc.getDestinations().get(0));
+		URL url = new URL(exc.getDestinations().getFirst());
 
 		assertEquals(80, url.getPort());
 		assertEquals("www.thomas-bayer.com", url.getHost());
 		assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
 	}
 
-	private ProxyRule getProxyrRule() {
+	private ProxyRule getProxyRule() {
 		return new ProxyRule(new ProxyRuleKey(3090));
 	}
 

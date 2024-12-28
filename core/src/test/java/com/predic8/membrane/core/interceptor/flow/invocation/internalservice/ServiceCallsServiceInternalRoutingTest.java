@@ -51,7 +51,7 @@ public class ServiceCallsServiceInternalRoutingTest extends AbstractInternalServ
     }
 
     @Test
-    void test() throws Exception {
+    void test() {
         assertEquals(">a>b>c>d<d<c<b<a", call());
     }
 }

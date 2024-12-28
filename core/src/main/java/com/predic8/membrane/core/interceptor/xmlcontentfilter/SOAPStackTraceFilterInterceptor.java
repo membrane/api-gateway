@@ -13,17 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
-import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.*;
+
+import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description <p>
@@ -44,10 +44,10 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SOAPStackTraceFilterInterceptor.class);
 	private static final String XPATH = ""
-			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='faultstring' and contains(., '.java:')] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message |"
-			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//detail/Exception";
+			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
+			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//*[local-name()='faultstring' and contains(., '.java:')] | "
+			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message |"
+			+ "//*[local-name()='Fault' and namespace-uri()='" + SOAP11_NS + "']//detail/Exception";
 
 	private final XMLContentFilter xmlContentFilter;
 
@@ -63,23 +63,23 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		return handleMessage(exc, exc.getRequest());
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
+	public Outcome handleResponse(Exchange exc) {
 		return handleMessage(exc, exc.getResponse());
 	}
 
 	private Outcome handleMessage(Exchange exc, Message message) {
 		try {
 			xmlContentFilter.removeMatchingElements(message);
-			return Outcome.CONTINUE;
+			return CONTINUE;
 		} catch (Exception e) {
 			LOG.error("soapStackTraceFilter error", e);
 			exc.setResponse(Response.internalServerError("soapStackTraceFilter error. See log for details.").build());
-			return Outcome.ABORT;
+			return ABORT;
 		}
 	}
 

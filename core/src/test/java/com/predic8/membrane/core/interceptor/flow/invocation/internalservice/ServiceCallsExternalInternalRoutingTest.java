@@ -46,9 +46,7 @@ public class ServiceCallsExternalInternalRoutingTest extends AbstractInternalSer
     }
 
     @Test
-    void test() throws Exception {
-        String call = call();
-        System.out.println("call = " + call);
-        assertEquals(">a>b>c<c<b<a", call);
+    void test() {
+        assertEquals(">a>b>c<c<b<a", call());
     }
 }

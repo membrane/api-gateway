@@ -13,14 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.http.Request.Builder;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import org.junit.jupiter.api.Test;
-import org.springframework.expression.spel.SpelParseException;
+import com.predic8.membrane.core.http.Request.*;
+import com.predic8.membrane.core.http.Response.*;
+import org.junit.jupiter.api.*;
+import org.springframework.expression.spel.*;
 
-import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.SPEL;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
@@ -43,6 +42,11 @@ public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestCon
     @Test
     void hasHeader() throws Exception {
         assertTrue(eval("headers['X-Foo-Bar'] == 'Baz'", new Builder().header("X-Foo-Bar", "Baz")));
+    }
+
+    @Test
+    void property() throws Exception {
+        assertTrue(eval("properties['bar'] == '123'", new Builder()));
     }
 
     @Test

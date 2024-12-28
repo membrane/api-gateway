@@ -72,7 +72,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
      * @throws Exception
      */
     private @Nullable Outcome routeService(Exchange exchange) throws Exception {
-        ServiceProxy service = getRuleByDest(exchange);
+        AbstractServiceProxy service = getRuleByDest(exchange);
 
         RuleMatchingInterceptor.assignRule(exchange, service);
 
@@ -129,11 +129,11 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
         return exc.getDestinations().getFirst().startsWith("service:");
     }
 
-    private ServiceProxy getRuleByDest(Exchange exchange) {
+    private AbstractServiceProxy getRuleByDest(Exchange exchange) {
         Rule rule = router.getRuleManager().getRuleByName(getHost(exchange.getDestinations().getFirst()));
         if (rule == null)
             throw new RuntimeException("No api found for destination " + exchange.getDestinations().getFirst());
-        if (rule instanceof ServiceProxy sp)
+        if (rule instanceof AbstractServiceProxy sp)
             return sp;
         throw new RuntimeException("Not a service proxy: " + rule.getClass().getSimpleName());
     }
@@ -161,12 +161,14 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
         }
     }
 
-    private static @Nullable String getTargetAsUri(Exchange exchange, ServiceProxy service) {
+    private static @Nullable String getTargetAsUri(Exchange exchange, AbstractServiceProxy service) {
         if (service.getTargetURL() != null) {
             return service.getTargetURL();
         }
-        if (service.getTarget().getHost() != null) {
-            return service.getTargetScheme() + "://" + service.getTarget().getHost() + ":" + service.getTarget().getPort() + exchange.getRequest().getUri();
+        if (service instanceof ServiceProxy sp) {
+            if (sp.getTarget().getHost() != null) {
+                return service.getTargetScheme() + "://" + sp.getTarget().getHost() + ":" + sp.getTarget().getPort() + exchange.getRequest().getUri();
+            }
         }
         return "/";
     }

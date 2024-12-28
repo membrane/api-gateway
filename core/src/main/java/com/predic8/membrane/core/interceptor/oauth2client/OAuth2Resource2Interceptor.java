@@ -316,7 +316,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private boolean handleRequest(Exchange exc, Session session) throws Exception {
-        String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
+        String path = uriFactory.create(exc.getDestinations().getFirst()).getPath();
 
         if (path == null) {
             return false;

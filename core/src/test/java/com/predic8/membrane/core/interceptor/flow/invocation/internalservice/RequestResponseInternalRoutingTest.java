@@ -39,7 +39,7 @@ public class RequestResponseInternalRoutingTest extends AbstractInternalServiceR
     }
 
     @Test
-    void test() throws Exception {
+    void test() {
         assertEquals(">a>b>c>e<e<d<b<a", call());
     }
 }

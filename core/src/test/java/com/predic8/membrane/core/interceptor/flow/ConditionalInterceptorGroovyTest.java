@@ -18,7 +18,7 @@ import com.predic8.membrane.core.http.Response.*;
 import org.codehaus.groovy.control.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.GROOVY;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestContext {
@@ -47,6 +47,11 @@ public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestC
     @Test
     void hasHeader() throws Exception {
         assertTrue(eval("header.getFirstValue(\"X-Foo-Bar\").equals(\"Baz\")", new Builder().header("X-Foo-Bar", "Baz")));
+    }
+
+    @Test
+    void property() throws Exception {
+        assertTrue(eval("properties['bar'] == '123'", new Builder()));
     }
 
     @Test

@@ -14,27 +14,16 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.charset.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Pattern;
+import com.oracle.util.ssl.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.net.ssl.SNIServerName;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.oracle.util.ssl.SSLCapabilities;
-import com.oracle.util.ssl.SSLExplorer;
-import com.predic8.membrane.core.config.ConfigurationException;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import javax.annotation.*;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.regex.*;
 
 import static java.nio.charset.StandardCharsets.*;
 
@@ -52,13 +41,13 @@ public class SSLContextCollection implements SSLProvider {
 		private final List<String> dnsNames = new ArrayList<>();
 		private final List<SSLContext> sslContexts = new ArrayList<>();
 
-		public SSLProvider build() throws ConfigurationException {
+		public SSLProvider build() {
 			if (sslContexts.isEmpty())
 				throw new IllegalStateException("No SSLContext's were added to this Builder before invoking build().");
 			if (sslContexts.size() > 1) {
 				return new SSLContextCollection(sslContexts, dnsNames);
 			} else
-				return sslContexts.get(0);
+				return sslContexts.getFirst();
 		}
 
 		public void add(SSLContext sslContext) {
@@ -133,7 +122,7 @@ public class SSLContextCollection implements SSLProvider {
 
 		if (capabilities != null) {
 			List<SNIServerName> serverNames = capabilities.getServerNames();
-			if (serverNames != null && serverNames.size() > 0) {
+			if (serverNames != null && !serverNames.isEmpty()) {
 				OUTER:
 					for (SNIServerName snisn : serverNames) {
 						String hostname = new String(snisn.getEncoded(), UTF_8);
@@ -177,7 +166,7 @@ public class SSLContextCollection implements SSLProvider {
 				}
 		}
 		if (sslContext == null)
-			sslContext = sslContexts.get(0);
+			sslContext = sslContexts.getFirst();
 
 		return sslContext.wrap(socket, buffer, position);
 	}
@@ -190,12 +179,12 @@ public class SSLContextCollection implements SSLProvider {
 				break;
 			}
 		if (sslContext == null)
-			sslContext = sslContexts.get(0);
+			sslContext = sslContexts.getFirst();
 		return sslContext;
 	}
 
 	@Override
-	public Socket createSocket() throws IOException {
+	public Socket createSocket() {
 		throw new IllegalStateException("not implemented");
 	}
 
@@ -231,7 +220,7 @@ public class SSLContextCollection implements SSLProvider {
 
 	@Override
 	public String[] getApplicationProtocols(Socket socket) {
-		return sslContexts.get(0).getApplicationProtocols(socket);
+		return sslContexts.getFirst().getApplicationProtocols(socket);
 	}
 
 	@Override

@@ -83,7 +83,7 @@ public class TemplateInterceptor extends StaticInterceptor {
     }
 
     private @NotNull HashMap<String, Object> getVariableBinding(Exchange exc, Message msg, Flow flow) {
-        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(router.getUriFactory(), exc, msg, flow, scriptAccessesJson && msg.isJSON());
+        HashMap<String, Object> binding = ScriptingUtils.createParameterBindings(router.getUriFactory(), exc, flow, scriptAccessesJson && msg.isJSON());
         binding.put("props", binding.get("properties"));
         binding.remove("properties");
         binding.putAll(exc.getProperties()); // To be compatible with old Version

@@ -17,53 +17,36 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.groovy.*;
-import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.*;
-import org.springframework.expression.*;
-import org.springframework.expression.spel.*;
-import org.springframework.expression.spel.standard.*;
-
-import java.util.*;
-import java.util.function.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.LanguageType.*;
-import static com.predic8.membrane.core.lang.ScriptingUtils.*;
-import static org.springframework.expression.spel.SpelCompilerMode.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 /**
  * @description <p>
  * The "if" interceptor supports conditional execution of nested plugins.
  * </p>
+ *
+ * See:
+ * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorSpELTest
+ * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorGroovyTest
+ * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorJsonpathTest
+ * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorXPathTest
  */
 @MCElement(name = "if")
 public class ConditionalInterceptor extends AbstractFlowInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ConditionalInterceptor.class);
 
-    // configuration
     private String test;
-    private LanguageType language = GROOVY;
-
-    /**
-     * Spring Expression Language
-     * SpEL configuration with MIXED mode allows both interpreted and compiled expression evaluation.
-     * Compiled only did not work with jsonPath
-     */
-    private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(MIXED, this.getClass().getClassLoader());
-    private Expression spelExpr;
+    private Language language = GROOVY; // @TODO make Spel default also setHeader
 
     private final FlowController flowController = new FlowController();
-    private Function<Map<String, Object>, Boolean> condition;
 
-    public enum LanguageType {
-        GROOVY,
-        SPEL
-    }
+    private ExchangeExpression exchangeExpression;
 
     public ConditionalInterceptor() {
         name = "If";
@@ -73,85 +56,46 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
     public void init(Router router) throws Exception {
         super.init(router);
 
-        switch (language) {
-            case GROOVY ->
-                    condition = new GroovyLanguageSupport().compileExpression(router.getBackgroundInitializator(), null, test);
-            case SPEL -> spelExpr = new SpelExpressionParser(spelConfig).parseExpression(test);
-        }
-    }
-
-    private boolean testCondition(Exchange exc, Message msg, Flow flow) {
-        switch (language) {
-            case GROOVY -> {
-                return condition.apply(getParametersForGroovy(exc, msg, flow));
-            }
-            case SPEL -> {
-                Boolean result = spelExpr.getValue(new ExchangeEvaluationContext(exc, msg), Boolean.class);
-                return result != null && result;
-            }
-            default -> {
-                log.error("Should not happen!");
-                return false;
-            }
-        }
-    }
-
-    private HashMap<String, Object> getParametersForGroovy(Exchange exc, Message msg, Flow flow) {
-        return new HashMap<>() {{
-            put("Outcome", Outcome.class);
-            put("RETURN", RETURN);
-            put("CONTINUE", CONTINUE);
-            put("ABORT", ABORT);
-            put("spring", router.getBeanFactory());
-            put("exc", exc);
-            put("exchange", exc);
-            putAll(createParameterBindings(router.getUriFactory(), exc, msg, flow, false));
-        }};
+        exchangeExpression = ExchangeExpression.getInstance(router, language, test);
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return handleInternal(exc, exc.getRequest(), REQUEST);
+        return handleInternal(exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return handleInternal(exc, exc.getResponse(), RESPONSE);
+        return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Exchange exc, Message msg, Flow flow) throws Exception {
+    private Outcome handleInternal(Exchange exc, Flow flow) throws Exception {
 
-        boolean result = testCondition(exc, msg, flow);
+        boolean result = exchangeExpression.evaluate(exc, flow);
         if (log.isDebugEnabled())
-            log.debug("Expression evaluated to {}", result);
+            log.debug("Expression {} evaluated to {}.", test, result);
 
         if (!result)
             return CONTINUE;
 
-        switch (flow) {
-            case REQUEST -> {
-                return flowController.invokeRequestHandlers(exc, getInterceptors());
-            }
-            case RESPONSE -> {
-                return flowController.invokeResponseHandlers(exc, getInterceptors());
-            }
-            default -> {
-                throw new RuntimeException("Should never happen");
-            }
-        }
+        return switch (flow) {
+            case REQUEST -> flowController.invokeRequestHandlers(exc, getInterceptors());
+            case RESPONSE -> flowController.invokeResponseHandlers(exc, getInterceptors());
+            default -> throw new RuntimeException("Should never happen");
+        };
     }
 
-    public LanguageType getLanguage() {
+    public Language getLanguage() {
         return language;
     }
 
     /**
      * @description the language of the 'test' condition
      * @default groovy
-     * @example SpEL, groovy
+     * @example SpEL, groovy, jsonpath, xpath
      */
     @MCAttribute
-    public void setLanguage(LanguageType language) {
+    public void setLanguage(Language language) {
         this.language = language;
     }
 

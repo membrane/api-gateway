@@ -139,7 +139,7 @@ public class Http2ExchangeHandler implements Runnable {
         }
     }
 
-    private void invokeHandlers() throws IOException, EndOfStreamException, AbortException {
+    private void invokeHandlers() throws AbortException {
         try {
             flowController.invokeRequestHandlers(exchange, transport.getInterceptors());
             if (exchange.getResponse() == null)
@@ -147,11 +147,6 @@ public class Http2ExchangeHandler implements Runnable {
         } catch (Exception e) {
             if (exchange.getResponse() == null)
                 exchange.setResponse(generateErrorResponse(e, exchange, transport));
-
-            if (e instanceof IOException)
-                throw (IOException)e;
-            if (e instanceof EndOfStreamException)
-                throw (EndOfStreamException)e;
             if (e instanceof AbortException)
                 throw (AbortException)e; // TODO: migrate catch logic into this method
             if (e instanceof NoMoreRequestsException)

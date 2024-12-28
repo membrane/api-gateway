@@ -18,7 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.flow.ConditionalInterceptor.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.security.*;
 
 import java.util.*;
@@ -29,12 +29,14 @@ import static java.util.List.*;
 
 class ConditionalEvaluationTestContext {
 
-    static boolean performEval(String condition, Object builder, LanguageType lang) throws Exception {
+    static boolean performEval(String condition, Object builder, Language lang) throws Exception {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var condInt = new ConditionalInterceptor();
 
         new ApiKeySecurityScheme(HEADER,"x-api-key").scopes("test", "main").add(exc);
+
+        exc.setProperty("bar", "123");
 
         condInt.setLanguage(lang);
         condInt.setInterceptors(of(mockInt));

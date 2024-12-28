@@ -27,15 +27,15 @@ import static java.util.Arrays.*;
 
 public class FlowTestInterceptors {
 
-    public static Interceptor A = new FlowTestInterceptor("a");
-    public static Interceptor B = new FlowTestInterceptor("b");
-    public static Interceptor C = new FlowTestInterceptor("c");
-    public static Interceptor D = new FlowTestInterceptor("d");
-    public static Interceptor E = new FlowTestInterceptor("e");
-    public static Interceptor I1 = new FlowTestInterceptor("i1");
-    public static Interceptor I2 = new FlowTestInterceptor("i2");
-    public static Interceptor I3 = new FlowTestInterceptor("i3");
-    public static Interceptor I4 = new FlowTestInterceptor("i4");
+    public static final Interceptor A = new FlowTestInterceptor("a");
+    public static final Interceptor B = new FlowTestInterceptor("b");
+    public static final Interceptor C = new FlowTestInterceptor("c");
+    public static final Interceptor D = new FlowTestInterceptor("d");
+    public static final Interceptor E = new FlowTestInterceptor("e");
+    public static final Interceptor I1 = new FlowTestInterceptor("i1");
+    public static final Interceptor I2 = new FlowTestInterceptor("i2");
+    public static final Interceptor I3 = new FlowTestInterceptor("i3");
+    public static final Interceptor I4 = new FlowTestInterceptor("i4");
 
     public static final Interceptor RETURN = new ReturnInterceptor();
     public static final Interceptor ABORT = new AbortFlowTestInterceptor();
@@ -72,9 +72,5 @@ public class FlowTestInterceptors {
         AbortInterceptor ai = new AbortInterceptor();
         ai.setInterceptors(asList(interceptors));
         return ai;
-    }
-
-    public static Interceptor I(String label) {
-        return new FlowTestInterceptor(label);
     }
 }

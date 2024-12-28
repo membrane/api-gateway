@@ -10,5 +10,16 @@
 
 
 
-
+- Refactor setHeader, setProperty make it like if
 - Is SessionResumptionTest still needed?
+- Document XPath Language of <if>
+- Delete CBR
+- Restructure samples
+- UnitTests: Use PackageScan for more or all
+- Make <log headerOnly="false"/> clearer! 
+
+# ADR Discussions
+
+- Make flow a property of exchange 
+  - That would support a method like getMessage
+  - Flow is more a property of E

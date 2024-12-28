@@ -71,7 +71,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     protected abstract void initInternal() throws IOException, ClassNotFoundException;
 
     @SuppressWarnings("rawtypes")
-    protected Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, IOException, ClassNotFoundException {
+    protected Outcome runScript(Exchange exc, Flow flow) throws IOException {
 
         Message msg = getMessage(exc, flow);
 
@@ -167,7 +167,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        HashMap<String, Object> binding = createParameterBindings(router.getUriFactory(), exc, msg, flow, scriptAccessesJson && msg.isJSON());
+        HashMap<String, Object> binding = createParameterBindings(router.getUriFactory(), exc, flow, scriptAccessesJson && msg.isJSON());
         addOutcomeObjects(binding);
         binding.put("spring", router.getBeanFactory());
         return binding;
