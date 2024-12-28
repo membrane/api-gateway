@@ -41,15 +41,15 @@ public abstract class DistributionExtractingTestcase {
     public static  final String[] CONTENT_TYPE_TEXT_XML_HEADER = {"Content-Type", TEXT_XML};
     public static  final String[] CONTENT_TYPE_APP_JSON_HEADER = {"Content-Type", APPLICATION_JSON};
 
-    private File unzipDir;
-    private File membraneHome;
+    private static File unzipDir;
+    private static File membraneHome;
     protected File baseDir = new File(getExampleDirName());
 
     protected String getExampleDirName() { return "dummy"; }
 
-    @BeforeEach
-    public void init() throws IOException, InterruptedException {
-        System.out.println("unzipping router distribution [" + getClass().getSimpleName() + "]...");
+    @BeforeAll
+    public static void beforeAll() throws IOException, InterruptedException {
+        System.out.println("unzipping router distribution");
 
         File targetDir = getTargetDir();
 
@@ -58,21 +58,27 @@ public abstract class DistributionExtractingTestcase {
         unzip(getZipFile(targetDir), unzipDir);
 
         membraneHome = requireNonNull(unzipDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway")))[0];
-        baseDir = getExampleDir(getExampleDirName());
+        //baseDir = getExampleDir(getExampleDirName());
 
         replaceLog4JConfig();
 
         System.out.println("running test...");
     }
 
-    private File getTargetDir() throws IOException {
+    @BeforeEach
+    public void init() throws IOException, InterruptedException {
+        baseDir = getExampleDir(getExampleDirName());
+        System.out.println("running test..." + baseDir);
+    }
+
+    private static File getTargetDir() throws IOException {
         File targetDir = new File("target").getCanonicalFile();
         if (!targetDir.exists())
             throw new RuntimeException("membraneHome " + targetDir.getName() + " does not exist.");
         return targetDir;
     }
 
-    private File getZipFile(File targetDir) {
+    private static File getZipFile(File targetDir) {
         File[] files = targetDir.listFiles((dir, name) -> name.startsWith("membrane-api-gateway") && name.endsWith(".zip"));
         if (files == null || files.length != 1) {
             throw new RuntimeException("Exactly one file matching membrane-api-gateway*.zip in %s expected!".formatted(targetDir));
@@ -80,7 +86,7 @@ public abstract class DistributionExtractingTestcase {
         return files[0];
     }
 
-    private File getUnzipDir(File targetDir) throws InterruptedException {
+    private static File getUnzipDir(File targetDir) throws InterruptedException {
         File dir = new File(targetDir, "examples-automatic");
         if (dir.exists()) {
             recursiveDelete(dir);
@@ -91,7 +97,7 @@ public abstract class DistributionExtractingTestcase {
         return dir;
     }
 
-    private void replaceLog4JConfig() throws IOException {
+    private static void replaceLog4JConfig() throws IOException {
         File log4jproperties = new File(membraneHome, "conf" + separator + "log4j2.xml");
         if (!log4jproperties.exists())
             throw new RuntimeException("log4j2.xml does not exits.");
@@ -128,14 +134,14 @@ public abstract class DistributionExtractingTestcase {
         return membraneHome;
     }
 
-    @AfterEach
-    public void done() {
+    @AfterAll
+    public static void done() {
         System.out.println("cleaning up...");
         recursiveDelete(unzipDir);
         System.out.println("done.");
     }
 
-    private void recursiveDelete(File file) {
+    private static void recursiveDelete(File file) {
         if (file.isDirectory())
             //noinspection ConstantConditions
             for (File child : file.listFiles())
