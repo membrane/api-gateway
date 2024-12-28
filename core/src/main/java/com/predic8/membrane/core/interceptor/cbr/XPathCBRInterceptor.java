@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.util.SynchronizedXPathFactory.*;
  * @description Changes an exchange's target based on a series of XPath expressions.
  * @topic 3. Enterprise Integration Patterns
  *
- * @TODO 6.0.0 Take out
+ * TODO 6.0.0 Take out
  *
  */
 @MCElement(name="switch")

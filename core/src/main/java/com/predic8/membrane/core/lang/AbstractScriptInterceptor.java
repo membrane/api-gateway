@@ -177,9 +177,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     public void handleAbort(Exchange exc) {
         try {
             runScript(exc, Flow.ABORT);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (Exception  e) {
             log.error("",e);
         }
     }
