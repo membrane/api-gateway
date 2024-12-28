@@ -3,6 +3,7 @@ name: Maven Build and Tests
 on:
   push:
     branches: [ main ]
+  workflow_dispatch: {}
 
 # Matrix test does not work cause MAVEN_OPTS must be set
 jobs:
