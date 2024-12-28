@@ -14,10 +14,11 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.AssertUtils.postAndAssert;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 public class StaxExampleInterceptorTest extends DistributionExtractingTestcase {
 
@@ -29,16 +30,26 @@ public class StaxExampleInterceptorTest extends DistributionExtractingTestcase {
     @Test
     public void test() throws Exception {
 
+        compileCustomInterceptor();
+
+        try(Process2 ignored = startServiceProxyScript()) {
+
+            // @formatter:off
+            given()
+                .contentType(TEXT_XML)
+                .body(readFileFromBaseDir("request.xml"))
+                .post(LOCALHOST_2000)
+            .then()
+                .body("bar.bar", equalTo("42"));
+            // @formatter:on
+        }
+    }
+
+    private void compileCustomInterceptor() throws Exception {
         BufferLogger logger = new BufferLogger();
         try(Process2 mvn = new Process2.Builder().in(baseDir).executable("mvn package").withWatcher(logger).start())  {
             if (mvn.waitForExit(60000) != 0)
                 throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + logger);
-        }
-
-        BufferLogger proxyWatcher = new BufferLogger();
-        try(Process2 ignored = startServiceProxyScript(proxyWatcher)) {
-            postAndAssert(200, LOCALHOST_2000, CONTENT_TYPE_APP_XML_HEADER, readFileFromBaseDir("example.xml"));
-            assertTrue(proxyWatcher.contains("<bar>42</bar>"));
         }
     }
 }

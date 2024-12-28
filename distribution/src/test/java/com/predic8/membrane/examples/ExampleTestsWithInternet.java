@@ -55,7 +55,6 @@ import org.junit.platform.suite.api.Suite;
 
         FormValidationTest.class,
         CustomInterceptorTest.class,
-        StaxExampleInterceptorTest.class,
         BasicXmlInterceptorTest.class,
 
         RoutingTest.class,

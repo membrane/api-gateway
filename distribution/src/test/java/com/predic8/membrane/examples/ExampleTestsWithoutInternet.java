@@ -102,6 +102,9 @@ import org.junit.platform.suite.api.Suite;
         XMLTemplateTest.class,
         //DefaultConfigAdminConsoleTest.class*/
 
+        // XML
+        StaxExampleInterceptorTest.class,
+
         // SOAP
         AddSoapHeaderTest.class,
 

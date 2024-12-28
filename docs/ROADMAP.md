@@ -20,6 +20,8 @@
 - Delete interceptor/
   - api-management
   - CBR
+  - Swagger-proxy
+    - OpenAPI supports Swagger 2.0
 
 - Check
   - Is example embeddug-java still running?
@@ -27,6 +29,7 @@
 
 - Move Examples
   - basic-xml-interceptor -> xml/basic-xml-interceptor
+  - StaxInterceptor -> xml/stax-interceptor
 
 
 - Refactor setHeader, setProperty make it like if
