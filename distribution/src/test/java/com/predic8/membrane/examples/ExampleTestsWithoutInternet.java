@@ -102,6 +102,9 @@ import org.junit.platform.suite.api.Suite;
         XMLTemplateTest.class,
         //DefaultConfigAdminConsoleTest.class*/
 
+        // SOAP
+        AddSoapHeaderTest.class,
+
         InternalProxyTest.class
 })
 public class ExampleTestsWithoutInternet {

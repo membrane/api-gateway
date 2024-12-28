@@ -31,7 +31,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
 
     @Test
     public void testExpressOrderRoutesToInternalProxy() throws Exception {
-        try(Process2 sl = startServiceProxyScript()) {
+        try(Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
             String response = given()
                     .contentType(XML)
@@ -52,7 +52,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
 
     @Test
     public void testNonExpressOrderFallsThrough() throws Exception {
-        try(Process2 sl = startServiceProxyScript()) {
+        try(Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
             String response = given()
                 .when()
@@ -77,7 +77,7 @@ public class InternalProxyTest extends DistributionExtractingTestcase {
             </order>
             """;
 
-        try(Process2 sl = startServiceProxyScript()) {
+        try(Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
             String response = given()
                     .contentType(XML)

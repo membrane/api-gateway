@@ -29,6 +29,7 @@ A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web S
 - Advanced [load balancing](#load-balancing) to ensure high availability.
 - Flexible [message transformation](#message-transformation) for seamless data processing.
 - Embeddable reverse proxy HTTP framework to build custom API gateways.
+- Traffic shadowing
 
 # Content
 
@@ -69,10 +70,10 @@ A versatile and lightweight **API Gateway** for **REST** and **legacy SOAP Web S
 9. [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
-8. [Legacy Web Services](#soap-web-services) SOAP and WSDL
+10. [Legacy Web Services](#soap-web-services) SOAP and WSDL
     - [API configuration from WSDL](#api-configuration-from-wsdl)
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
-9. [Operation](#Operation)
+11. [Operation](#Operation)
    - [Logging](#log-http)
    - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
    - [OpenTelemetry](#opentelemetry-integration)
@@ -263,7 +264,7 @@ For more routing options, see the [Membrane API documentation](https://www.membr
 
 ### Short Circuit
 
-Sometimes, you may need an endpoint that doesn’t forward requests to a backend. Membrane makes it easy to create such endpoints.
+Sometimes, you may need an endpoint that does not forward requests to a backend. Membrane makes it easy to create such endpoints.
 
 #### Example: Health Check Endpoint
 The following configuration creates a health check endpoint that responds to requests at [http://localhost:2000/health](http://localhost:2000/health):
