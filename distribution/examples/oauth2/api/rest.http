@@ -1,23 +1,23 @@
-@password =password
-@clientid =abc
-@clientsecret =def
-@username =john
-
 ### Get access token
-# @name getAADToken
 POST http://localhost:7007/oauth2/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=password
-    &username={{username}}
-    &password={{password}}
-    &client_id={{clientid}}
-    &client_secret={{clientsecret}}
+    &username=john
+    &password=password
+    &client_id=abc
+    &client_secret=def
 
-### Extract access token from getAADToken request
-@token = {{getAADToken.response.body.access_token}}
+# Execute the POST request above. You should be a response like that:
+#
+# {
+#  "access_token": "5ta3kbi948eav3dtqs8vqus8j4",
+#  "token_type": "Bearer",
+#  "refresh_token": "6b6ll21lu7l0a8lasi9rvnstaq"
+# }
+#
+# Copy the access_token and use it for the second request below
 
-
-### Authentication using access token
+### Calling the resource.  using access token
 GET http://localhost:2000
-Authorization: Bearer {{token}}
+Authorization: Bearer <<Replace me with the access_token from the response of the first call>>

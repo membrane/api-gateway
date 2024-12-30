@@ -9,6 +9,10 @@
 
 # Version 6.1.0
 
+- Update Java Version
+- Change Interceptor chain from stack to instant execution
+  - Probably in InterceptorFlowController {
+- API Key Database Filestore
 - Grafana Dashboard to import in examples/prometheus
   - Also provide the datasource config
   - Maybe the config can be included into the docker-compose setup
@@ -39,4 +43,8 @@
 - Restructure samples
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer! 
+
+- Simple JWT example 
+- Clean up examples in examples/oauth2
+
 
