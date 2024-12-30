@@ -17,12 +17,16 @@ package com.predic8.membrane.core.lang.jsonpath;
 import com.fasterxml.jackson.databind.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.util.*;
+
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 public class JsonpathExchangeExpression implements ExchangeExpression {
 
@@ -37,19 +41,41 @@ public class JsonpathExchangeExpression implements ExchangeExpression {
     }
 
     @Override
-    public boolean evaluate(Exchange exchange, Interceptor.Flow flow) {
-
+    public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
         try {
-            return execute(exchange, flow) != null;
+            Object o = execute(exchange, flow);
+            if (type.isAssignableFrom(Boolean.class)) {
+                if (o instanceof Boolean b) {
+                    return (T) b;
+                }
+                return convertToBoolean(o);
+            }
+            if (o instanceof Integer i) {
+                if (type.isAssignableFrom(Integer.class)) {
+                    return (T) String.valueOf(i);
+                }
+                return (T) String.valueOf(o);
+            }
+            return type.cast(o);
         } catch (PathNotFoundException e) {
-            return false;
+            if (type.isAssignableFrom(Boolean.class)) {
+                return (T) FALSE;
+            }
+            return null;
         } catch (Exception e) {
             log.error("Error evaluating Jsonpath expression {}. Got message {}", source, e);
             throw new RuntimeException("Error evaluating Jsonpath expression");
         }
     }
 
-    private Object execute(Exchange exchange, Interceptor.Flow flow) throws IOException {
+    private <T> @NotNull T convertToBoolean(Object o) {
+        if (o != null)
+            return (T) TRUE;
+        else
+            return (T) FALSE;
+    }
+
+    private Object execute(Exchange exchange, Flow flow) throws IOException {
         return JsonPath.read(om.readValue(exchange.getMessage(flow).getBodyAsStream(), Map.class), source);
     }
 }

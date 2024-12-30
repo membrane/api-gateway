@@ -14,46 +14,46 @@
 package com.predic8.membrane.core.interceptor.flow;
 
 import com.predic8.membrane.core.http.Request.*;
-import com.predic8.membrane.core.http.Response.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ConditionalInterceptorXPathTest extends ConditionalEvaluationTestContext {
+class IfInterceptorJsonpathTest extends ConditionalEvaluationTestContext {
 
     @Test
-    void simpleRequestTrue() throws Exception {
-        assertTrue(eval("true()", getRequest()));
+    void accessField() throws Exception {
+        assertTrue(eval("$.id", getRequest()));
+        assertTrue(eval("$.name", getRequest()));
     }
 
     @Test
-    void simpleResponseTrue() throws Exception {
-        assertTrue(eval("true()", getResponse()));
+    void accessFieldWithNullValue() throws Exception {
+        assertFalse(eval("$.email", getRequest()));
     }
 
     @Test
-    void attribute() throws Exception {
-        assertTrue(eval("/person/@id = 314", getRequest()));
+    void accessNotExistingField() throws Exception {
+        assertFalse(eval("$.unknown", getRequest()));
     }
 
     @Test
-    void invalid() {
-        assertThrows(RuntimeException.class, () -> eval("foobar][", getRequest()));
-        assertThrows(RuntimeException.class, () -> eval("foobar][", getResponse()));
+    void invalid() throws Exception {
+        assertFalse( eval("33foobar][", getRequest()));
     }
 
     private static Builder getRequest() {
         return new Builder().body("""
-            <person id="314"/>""");
-    }
-
-    private static ResponseBuilder getResponse() {
-        return new ResponseBuilder().body("<foo/>");
+            {
+                "id": 314,
+                "name": "Heinz",
+                "email": null
+            }
+            """);
     }
 
     private static boolean eval(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, XPATH);
+        return performEval(condition, builder, JSONPATH);
     }
 }
 

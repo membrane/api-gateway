@@ -14,26 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.misc;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-class SetPropertyInterceptorTest {
-
-    Exchange exc;
-    AbstractSetterInterceptor interceptor = new SetPropertyInterceptor();
-
-    @BeforeEach
-    void setUp() {
-        exc = new Exchange(null);
-        exc.setRequest(new Request());
-        exc.setProperty("exists", "false");
-        interceptor.setName("exists");
-    }
+// TODO Add Classes to Unittest
+class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest {
 
     @Test
     @DisplayName("Overwrite header when it is not absent")

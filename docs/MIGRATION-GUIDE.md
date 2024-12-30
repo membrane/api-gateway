@@ -10,3 +10,10 @@
 
 SpeL default für setHeader, if
 
+# setHeader
+
+Now if there is no message to set a header, an exception is thrown.
+
+# Internal API
+
+- ConditionalInterceptor is renamed in IfInterceptor

@@ -13,33 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import java.io.IOException;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
 
-import javax.xml.xpath.XPathExpressionException;
+import java.io.*;
 
-import org.junit.jupiter.api.Test;
+import static com.predic8.membrane.test.AssertUtils.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.test.AssertUtils;
-
-public class SOAPStackTraceFilterTest {
+class SOAPStackTraceFilterTest {
 
 	private Request getRequest() throws IOException {
 		Request r = new Request();
-		r.setBody(new Body(getClass().getResourceAsStream("/xml/soap-stack-trace.xml")));
+		r.setBody(new Body(getClass().getResourceAsStream("/soap-sample/soapfault-with-java-stacktrace.xml")));
 		return r;
 	}
 
 	@Test
-	public void doit() throws XPathExpressionException, Exception {
+	void doit() throws Exception {
 		Exchange exc = new Exchange(null);
 		exc.setRequest(getRequest());
 		new SOAPStackTraceFilterInterceptor().handleRequest(exc);
 		String body = exc.getRequest().getBody().toString();
-		AssertUtils.assertContainsNot("SECRET", body);
-		AssertUtils.assertContains("KEEP1", body);
+		assertContainsNot("MyService", body);
+		assertContains("soap:Server", body);
+		assertContainsNot("stacktrace", body);
 	}
 
 }

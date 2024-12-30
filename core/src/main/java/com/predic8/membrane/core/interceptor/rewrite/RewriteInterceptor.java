@@ -142,7 +142,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequest(Exchange exc) {
 
         logMappings();
 
@@ -159,8 +159,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
                 pathBegin = dest.indexOf("/", authorityBegin + 2);
             String schemaHostPort = pathBegin == -1 ? null : dest.substring(0, pathBegin);
 
-            log.debug("pathQuery: " + pathQuery);
-            log.debug("schemaHostPort: " + schemaHostPort);
+            log.debug("pathQuery: {}", pathQuery);
+            log.debug("schemaHostPort: {}", schemaHostPort);
 
             Mapping mapping = findFirstMatchingRegEx(pathQuery);
             if (mapping == null)
@@ -168,9 +168,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
             Type do_ = mapping.getDo();
 
-            log.debug("match found: " + mapping.from);
-            log.debug("replacing with: " + mapping.to);
-            log.debug("for type: " + do_);
+            log.debug("match found: {} replacing with: {} for type: {}", mapping.from, mapping.to, do_);
 
             String newDest = replace(pathQuery, mapping);
 
@@ -206,26 +204,25 @@ public class RewriteInterceptor extends AbstractInterceptor {
             return URLUtil.getPathQuery(factory, destination);
         } catch (URISyntaxException ignore) {
             log.info("Can't parse query: {}", destination);
-            exc.setResponse(
-                    ProblemDetails.user(false)
-                            .addSubType("path")
-                            .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
-                            .detail("Check the URL: " +destination)
-                            .build()
-            );
+            ProblemDetails.user(false)
+                    .addSubType("path")
+                    .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
+                    .detail("Check the URL: " + destination)
+                    .extension("component", "rewrite")
+                    .build(exc);
             return null;
         }
     }
 
     private void logMappings() {
         for (Mapping m : mappings) {
-            log.debug("[from:" + m.from + "],[to:" + m.to + "],[do:" + m.do_ + "]");
+            log.debug("[from: {}],[to: {}],[do: {}]", m.from, m.to, m.do_);
         }
     }
 
     private String replace(String uri, Mapping mapping) {
         String replaced = uri.replaceAll(mapping.from, mapping.to);
-        log.debug("replaced URI: " + replaced);
+        log.debug("replaced URI: {}", replaced);
         return replaced;
     }
 

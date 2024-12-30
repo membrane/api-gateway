@@ -21,7 +21,7 @@ import org.springframework.expression.spel.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ConditionalInterceptorSpELTest extends ConditionalEvaluationTestContext {
+public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
     @Test
     void simpleRequestTrue() throws Exception {

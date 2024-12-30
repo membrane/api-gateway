@@ -15,10 +15,9 @@ package com.predic8.membrane.core.transport;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
+import com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType;
 import org.apache.http.*;
 import org.apache.http.client.*;
 import org.apache.http.client.methods.*;
@@ -43,14 +42,14 @@ public class ExceptionHandlingTest {
 
 	public static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
-				{ true, ContentType.UNKNOWN },
-				{ true, ContentType.SOAP },
-				{ true, ContentType.JSON },
-				{ true, ContentType.XML },
-				{ false, ContentType.UNKNOWN },
-				{ false, ContentType.SOAP },
-				{ false, ContentType.JSON },
-				{ false, ContentType.XML },
+				{ true, EffectiveContentType.UNKNOWN },
+				{ true, EffectiveContentType.SOAP },
+				{ true, EffectiveContentType.JSON },
+				{ true, EffectiveContentType.XML },
+				{ false, EffectiveContentType.UNKNOWN },
+				{ false, EffectiveContentType.SOAP },
+				{ false, EffectiveContentType.JSON },
+				{ false, EffectiveContentType.XML },
 		});
 	}
 
@@ -95,13 +94,13 @@ public class ExceptionHandlingTest {
 		return entity == null ? "" : EntityUtils.toString(entity);
 	}
 
-	private HttpUriRequest createRequest(boolean printStackTrace, ContentType contentType) throws UnsupportedEncodingException {
+	private HttpUriRequest createRequest(boolean printStackTrace, EffectiveContentType effectiveContentType) throws UnsupportedEncodingException {
 		String url = "http://localhost:" + getPort(printStackTrace) + "/";
 		HttpUriRequest get;
-		switch (contentType) {
+		switch (effectiveContentType) {
 		case JSON:
 			get = new HttpGet(url);
-			get.addHeader(CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8);
+			get.addHeader(CONTENT_TYPE, APPLICATION_JSON_UTF8);
 			return get;
 		case XML:
 			get = new HttpPost(url);
@@ -118,8 +117,8 @@ public class ExceptionHandlingTest {
 		}
 	}
 
-	private void checkResponseContentType(ContentType contentType, String response) {
-		switch (contentType) {
+	private void checkResponseContentType(EffectiveContentType effectiveContentType, String response) {
+		switch (effectiveContentType) {
 		case JSON:
 			assertTrue(response.startsWith("{"));
 			return;
@@ -134,18 +133,21 @@ public class ExceptionHandlingTest {
 		case UNKNOWN:
 			return;
 		}
-		throw new RuntimeException("Unhandled contentType:" + contentType);
+		throw new RuntimeException("Unhandled contentType:" + effectiveContentType);
 	}
 
 	@ParameterizedTest
 	@MethodSource("getPorts")
-	public void testStackTraces(boolean printStackTrace, ContentType contentType) throws Exception {
+	public void testStackTraces(boolean printStackTrace, EffectiveContentType effectiveContentType) throws Exception {
 		setUp(printStackTrace);
 
-		String response = getAndAssert(500, createRequest(printStackTrace, contentType));
+		String response = getAndAssert(500, createRequest(printStackTrace, effectiveContentType));
 		assertEquals(printStackTrace, response.contains(".java:"));
+
+		System.out.println("response = " + response);
+		
 		assertContains("secret", response);
-		checkResponseContentType(contentType, response);
+		checkResponseContentType(effectiveContentType, response);
 	}
 
 }

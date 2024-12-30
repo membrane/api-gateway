@@ -40,4 +40,9 @@ public class CollectionsUtilTest {
     void allNull() {
         assertEquals(List.of(), CollectionsUtil.concat(null,null));
     }
+
+    @Test
+    void toList() {
+        Assertions.assertIterableEquals(List.of(1,2,3), CollectionsUtil.toList(List.of(1,2,3).iterator()));
+    }
 }

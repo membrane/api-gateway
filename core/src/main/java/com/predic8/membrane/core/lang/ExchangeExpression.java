@@ -29,7 +29,7 @@ public interface ExchangeExpression {
 
     enum Language {GROOVY, SPEL, XPATH, JSONPATH}
 
-    boolean evaluate(Exchange exchange, Flow flow);
+    <T> T evaluate(Exchange exchange, Flow flow, Class<T> type);
 
     static ExchangeExpression getInstance(Router router, Language language, String source) {
         return switch (language) {

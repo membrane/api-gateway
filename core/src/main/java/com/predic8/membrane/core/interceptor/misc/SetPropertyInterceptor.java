@@ -13,9 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.misc;
 
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
 
 @MCElement(name = "setProperty")
 public class SetPropertyInterceptor extends AbstractSetterInterceptor {
@@ -40,6 +39,6 @@ public class SetPropertyInterceptor extends AbstractSetterInterceptor {
 
     @Override
     public String getShortDescription() {
-        return String.format("Sets the value of the exchange property '%s' to %s.", name, value);
+        return "Sets the value of the exchange property '%s' to %s.".formatted(name, value);
     }
 }

@@ -36,8 +36,8 @@ public class GroovyExchangeExpression implements ExchangeExpression {
     }
 
     @Override
-    public boolean evaluate(Exchange exchange, Interceptor.Flow flow) {
-        return condition.apply(getParametersForGroovy(exchange, flow));
+    public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
+        return type.cast(condition.apply(getParametersForGroovy(exchange, flow)));
     }
 
     private HashMap<String, Object> getParametersForGroovy(Exchange exc, Interceptor.Flow flow) {

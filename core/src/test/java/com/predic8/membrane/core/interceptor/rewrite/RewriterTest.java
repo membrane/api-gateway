@@ -13,19 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RewriterTest {
 
@@ -35,24 +32,27 @@ public class RewriterTest {
     void setUp() throws Exception {
         rewriter = new RewriteInterceptor();
         List<Mapping> mappings = new ArrayList<>();
-        mappings.add( new Mapping("/hello/(.*)", "/$1", null));
+        mappings.add(new Mapping("/hello/(.*)", "/$1", null));
         rewriter.setMappings(mappings);
 
         rewriter.init(new HttpRouter());
     }
 
     @Test
-    void rewriteWithoutTarget() {
-        assertThrows(URISyntaxException.class, () -> {
-            Exchange exc = new Exchange(null);
-            Request req = new Request();
-            req.setUri("/%");
-            exc.setRequest(req);
+    void rewriteWithoutTarget() throws Exception {
+        Exchange exc = new Exchange(null) {{
+            setRequest(new Request() {{
+                setUri("/%");
+            }});
+            getDestinations().add("/%");
+        }};
+        rewriter.handleRequest(exc);
 
-            exc.getDestinations().add("/%");
+        assertEquals(400, exc.getResponse().getStatusCode());
 
-            rewriter.handleRequest(exc);
-        });
+        var pd = ProblemDetails.parse(exc.getResponse());
+        assertEquals("https://membrane-api.io/error/user/path", pd.getType());
+
     }
 
     @Test

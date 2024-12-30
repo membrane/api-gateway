@@ -38,6 +38,11 @@ public class ExchangeEvaluationContextTest {
                 .header("Authentication","foo")
                 .header("shadow-ing", "nothappening")
                 .header("shadowIng", "test")
+                .body("""
+                        {
+                          "product": "Snake oil"
+                        }
+                        """)
                 .buildExchange();
 
         exc.setProperty("foo","1234");
@@ -71,8 +76,13 @@ public class ExchangeEvaluationContextTest {
     }
 
     @Test
-    void propertyDot() {
+    void propertiesDot() {
         assertEquals("1234", keyExpression("properties.foo"));
+    }
+
+    @Test
+    void propertyWithY() {
+        assertEquals("1234", keyExpression("property.foo"));
     }
 
     @Test
@@ -83,6 +93,16 @@ public class ExchangeEvaluationContextTest {
     @Test
     void conversion() {
         assertEquals(APPLICATION_JSON.toString(), keyExpression("request.headers.contentType"));
+    }
+
+    @Test
+    void headers() {
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("headers.contentType"));
+    }
+
+    @Test
+    void headerWithOutS() {
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("header.contentType"));
     }
 
     @Test
@@ -108,5 +128,15 @@ public class ExchangeEvaluationContextTest {
     @Test
     void getMethodIgnoreCase() {
         assertEquals("foo", keyExpression("headers.AUTHenticatioN"));
+    }
+
+    @Test
+    void json() {
+        assertEquals("Snake oil", keyExpression("json['product']"));
+    }
+
+    @Test
+    void jsonUnknown() {
+        assertEquals("", keyExpression("json['unknown']"));
     }
 }

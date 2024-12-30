@@ -41,8 +41,8 @@ public class FlowTestInterceptors {
     public static final Interceptor ABORT = new AbortFlowTestInterceptor();
     public static final Interceptor EXCEPTION = new ExceptionTestInterceptor();
 
-    public static ConditionalInterceptor IF(String test,Interceptor... nestedInterceptors) {
-        return new ConditionalInterceptor() {{
+    public static IfInterceptor IF(String test, Interceptor... nestedInterceptors) {
+        return new IfInterceptor() {{
             setTest(test);
             setInterceptors(asList(nestedInterceptors));
         }};

@@ -20,10 +20,10 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import org.slf4j.*;
 
+import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
 import static com.predic8.membrane.core.util.XMLUtil.*;
-import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression implements ExchangeExpression {
 
@@ -38,14 +38,25 @@ public class XPathExchangeExpression implements ExchangeExpression {
     }
 
     @Override
-    public boolean evaluate(Exchange exchange, Interceptor.Flow flow) {
+    public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Message msg = exchange.getMessage(flow);
         try {
-            // XPath is not thread safe! Therefore every time the factory is called!
-            return (Boolean) factory.newXPath().evaluate(xpath, getInputSource(msg), BOOLEAN);
+            if (type.isAssignableFrom(Boolean.class)) {
+                // XPath is not thread safe! Therefore every time the factory is called!
+                return evalutateAndCast(msg, XPathConstants.BOOLEAN, type);
+            }
+            if (type.isAssignableFrom(String.class)) {
+                return evalutateAndCast(msg, XPathConstants.STRING, type);
+            }
+            return null; // TODO
         } catch (XPathExpressionException xe) {
-            log.error("Error evaluating XPath {} : {}", xpath, xe.getMessage());
+            log.info("Error evaluating XPath: {}\n Error: {}\n ", xpath, xe.getMessage());
+            log.debug("Message: {}", msg.getBodyAsStringDecoded());
             throw new RuntimeException("Error evaluating XPath " + xpath, xe);
         }
+    }
+
+    private <T> T evalutateAndCast(Message msg, QName xmlType, Class<T> expectedJavaType) throws XPathExpressionException {
+        return expectedJavaType.cast(factory.newXPath().evaluate(xpath, getInputSource(msg), xmlType));
     }
 }

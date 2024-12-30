@@ -1,4 +1,4 @@
-/* Copyright 2023 predic8 GmbH, www.predic8.com
+/* Copyright 2024 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,22 +11,25 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.util;
 
-import java.util.*;
-import java.util.stream.*;
+package com.predic8.membrane.core.interceptor.misc;
 
-public class CollectionsUtil {
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
 
-    public static <T> List<T> concat(List<T> l1, List<T> l2) {
-        return Stream.of(l1,l2).filter(Objects::nonNull).flatMap(Collection::stream).toList();
+abstract class AbstractSetPropertyInterceptorTest {
+
+    Exchange exc;
+    final AbstractSetterInterceptor interceptor = new SetPropertyInterceptor();
+
+    @BeforeEach
+    void setUp() {
+        exc = new Exchange(null);
+        exc.setRequest(new Request());
+        exc.setProperty("exists", "false");
+        interceptor.setName("exists");
     }
 
-    public static <T> List<T> toList(Iterator<T> iterator) {
-        List<T> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
-        }
-        return list;
-    }
+
 }

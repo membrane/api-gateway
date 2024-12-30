@@ -13,18 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Limits the maximum length of a HTTP message body.
@@ -42,7 +39,7 @@ import com.predic8.membrane.core.http.Response;
 @MCElement(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LoggerFactory.getLogger(LimitInterceptor.class);
+	private static final Logger log = LoggerFactory.getLogger(LimitInterceptor.class);
 
 	private long maxBodyLength = -1;
 
@@ -80,22 +77,24 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 	private Outcome handleMessage(Exchange exc, Message msg) throws IOException {
 		if (maxBodyLength == -1)
-			return Outcome.CONTINUE;
+			return CONTINUE;
 
 		long len = msg.getHeader().getContentLength();
 		if (len != -1 && len > maxBodyLength) {
-			log.info("Message length (" + len + ") exceeded limit (" + maxBodyLength + ")");
+			log.info("Message length of {} exceeded limit {}.",len,maxBodyLength);
 			exc.setResponse(createFailureResponse());
-			return Outcome.ABORT;
+			return ABORT;
 		}
 
 		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStream())));
 
-		return Outcome.CONTINUE;
+		return CONTINUE;
 	}
 
 	private Response createFailureResponse() {
-		return Response.badRequest("Message bodies must be smaller than " + maxBodyLength + " bytes.").build();
+		return ProblemDetails.security(router.isProduction())
+				.title("Message is too large")
+				.detail("Message bodies must be smaller than %s bytes.".formatted(maxBodyLength)).build();
 	}
 
 	public class LengthLimitingStream extends InputStream {
@@ -110,7 +109,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 
 		private void checkPosition() throws IOException {
 			if (pos > maxBodyLength) {
-				log.info("Message length (>=" + pos + ") exceeded limit (" + maxBodyLength + ")");
+				log.info("Message length >= {} exceeded limit {}.",pos,maxBodyLength);
 				throw new IOException("Message body too large.");
 			}
 		}
@@ -169,12 +168,5 @@ public class LimitInterceptor extends AbstractInterceptor {
 		public void close() throws IOException {
 			is.close();
 		}
-
-		@Override
-		public boolean markSupported() {
-			return false;
-		}
-
-	}
-
+    }
 }

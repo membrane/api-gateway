@@ -13,15 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.cli.CliCommandTest;
-import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
+import com.predic8.membrane.core.cli.*;
 import com.predic8.membrane.core.config.ProxyTest;
-import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
-import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
-import com.predic8.membrane.core.exceptions.ProblemDetailsTest;
-import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
-import com.predic8.membrane.core.exchangestore.AbstractExchangeStoreTest;
-import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStoreTest;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.graphql.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.cookie.*;
@@ -35,7 +31,6 @@ import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.beautifier.*;
-import com.predic8.membrane.core.interceptor.cbr.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.formvalidation.*;
 import com.predic8.membrane.core.interceptor.groovy.*;
@@ -56,8 +51,6 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.*;
 import com.predic8.membrane.core.interceptor.xmlprotection.*;
 import com.predic8.membrane.core.interceptor.xslt.*;
 import com.predic8.membrane.core.kubernetes.client.*;
-import com.predic8.membrane.core.lang.spel.*;
-import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.magic.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
@@ -100,7 +93,7 @@ import org.junit.platform.suite.api.*;
         LoadBalancingWithClusterManagerAndNoSessionTest.class,
         LoadBalancingWithClusterManagerTest.class,
         MultipleLoadBalancersTest.class, DNSCacheTest.class,
-        ValidatorInterceptorTest.class, XPathCBRInterceptorTest.class,
+        ValidatorInterceptorTest.class,
         CustomSpringConfigurationTest.class, JSESSIONIDExtractorTest.class,
         ThrottleInterceptorTest.class, GroovyInterceptorTest.class,
         FormValidationInterceptorTest.class, ServiceInvocationTest.class,
@@ -141,18 +134,15 @@ import org.junit.platform.suite.api.*;
 		GraphQLProtectionInterceptorTest.class,
 		GraphQLoverHttpValidatorTest.class,
 		BeautifierInterceptorTest.class,
-		ExchangeEvaluationContextTest.class,
 		PaddingHeaderInterceptorTest.class,
 		CollectionsUtilTest.class,
-		ConditionalInterceptorGroovyTest.class,
-		ConditionalInterceptorSpELTest.class,
+		IfInterceptorGroovyTest.class,
+		IfInterceptorSpELTest.class,
 		ReplaceInterceptorTest.class,
 		ApiKeysInterceptorTest.class,
 		ApiKeyFileStoreTest.class,
 		ApiKeyHeaderExtractorTest.class,
 		ApiKeyUtils.class,
-		ReflectiveMethodHandlerTest.class,
-		BuiltInFunctionsTest.class,
 		AccessLogInterceptorTest.class,
 		MediaTypeUtilTest.class,
 		ProblemDetailsTest.class,
@@ -161,14 +151,34 @@ import org.junit.platform.suite.api.*;
 		APIProxyKeyTest.class,
 		AdjustContentLengthTest.class,
 		URIUtilTest.class,
-		CliCommandTest.class,
-		EchoInterceptorTest.class,
-		XPathExpressionTest.class
+		CliCommandTest.class
 })
 @SelectPackages({"com.predic8.membrane.core.openapi",
 				 "com.predic8.membrane.core.internalservice",
 				 "com.predic8.membrane.core.interceptor.flow.invocation",
-				 "com.predic8.membrane.core.acl"})
+				 "com.predic8.membrane.core.acl",
+				 "com.predic8.membrane.core.lang",
+				 "com.predic8.membrane.core.interceptor"})
+/**
+ * @TODO Fis:
+ * - com.predic8.membrane.core.interceptor.soap.SampleSoapInterceptorTest
+ * - com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest
+ * - com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest   // Rewrite as UnitTest with sampleSOAPService
+ * Still in use?
+ * - com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest
+ * - com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest
+ */
+@ExcludeClassNamePatterns({
+		"com.predic8.membrane.core.interceptor.soap.SampleSoapInterceptorTest",
+		"com.predic8.membrane.core.interceptor.opentelemetry.OpenTelemetryInterceptorTest",
+		"com.predic8.membrane.core.interceptor.session.SessionInterceptorTest",
+		"com.predic8.membrane.core.interceptor.balancer.NodeOnlineCheckerTest",
+		"com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest",
+		"com.predic8.membrane.core.interceptor.rest.RESTBLZServiceIntegrationTest",
+		"com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest",
+		"com.predic8.membrane.core.interceptor.shadowing.ShadowingInterceptorTest",
+		"com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorIntegrationTest"
+})
 public class UnitTests {
     /*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

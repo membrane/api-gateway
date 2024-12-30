@@ -20,37 +20,32 @@ import org.junit.jupiter.api.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ConditionalInterceptorJsonpathTest extends ConditionalEvaluationTestContext {
+public class IfInterceptorXPathTest extends ConditionalEvaluationTestContext {
 
     @Test
-    void accessField() throws Exception {
-        assertTrue(eval("$.id", getRequest()));
-        assertTrue(eval("$.name", getRequest()));
+    void simpleRequestTrue() throws Exception {
+        assertTrue(eval("true()", getRequest()));
     }
 
     @Test
-    void accessFieldWithNullValue() throws Exception {
-        assertFalse(eval("$.email", getRequest()));
+    void simpleResponseTrue() throws Exception {
+        assertTrue(eval("true()", getResponse()));
     }
 
     @Test
-    void accessNotExistingField() throws Exception {
-        assertFalse(eval("$.unknown", getRequest()));
+    void attribute() throws Exception {
+        assertTrue(eval("/person/@id = 314", getRequest()));
     }
 
     @Test
-    void invalid() throws Exception {
-        assertFalse( eval("33foobar][", getRequest()));
+    void invalid() {
+        assertThrows(RuntimeException.class, () -> eval("foobar][", getRequest()));
+        assertThrows(RuntimeException.class, () -> eval("foobar][", getResponse()));
     }
 
     private static Builder getRequest() {
         return new Builder().body("""
-            {
-                "id": 314,
-                "name": "Heinz",
-                "email": null
-            }
-            """);
+            <person id="314"/>""");
     }
 
     private static ResponseBuilder getResponse() {
@@ -58,7 +53,7 @@ public class ConditionalInterceptorJsonpathTest extends ConditionalEvaluationTes
     }
 
     private static boolean eval(String condition, Object builder) throws Exception {
-        return performEval(condition, builder, JSONPATH);
+        return performEval(condition, builder, XPATH);
     }
 }
 

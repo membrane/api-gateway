@@ -14,16 +14,17 @@
 package com.predic8.membrane.core.util;
 
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
+import org.jetbrains.annotations.*;
 
 import javax.xml.stream.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.ContentTypeDetector.ContentType.*;
-
+import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
+import static javax.xml.stream.XMLStreamConstants.*;
 
 /**
  * This class tries to detect the "content type" of a given message.
@@ -34,83 +35,81 @@ import static com.predic8.membrane.core.util.ContentTypeDetector.ContentType.*;
  * valid.
  */
 public class ContentTypeDetector {
-	public enum ContentType {
-		SOAP,
-		XML,
-		JSON,
 
-		UNKNOWN
-	}
+    /**
+     * ContentType this message effectively is (e.g. return
+     * "SOAP", if the message is a multipart/related XOP-encoded
+     * SOAP-message).
+     */
+    public enum EffectiveContentType {
+        SOAP,
+        XML,
+        JSON,
+        UNKNOWN
+    }
 
-	public static class ContentDescriptor {
-		private final ContentType effectiveContentType;
+    private static final Set<String> contentTypesXML = ImmutableSet.of(
+            "text/xml",
+            "application/xml",
+            "multipart/related");
 
-		public ContentDescriptor(ContentType effectiveContentType) {
-			this.effectiveContentType = effectiveContentType;
-		}
+    private static final Set<String> contentTypesJSON = ImmutableSet.of(
+            APPLICATION_JSON,
+            APPLICATION_X_JAVASCRIPT,
+            TEXT_JAVASCRIPT,
+            TEXT_X_JAVASCRIPT,
+            TEXT_X_JSON);
 
-		/**
-		 * @return the contentType this message effectively is (e.g. return
-		 *         "SOAP", if the message is a multipart/related XOP-encoded
-		 *         SOAP-message).
-		 */
-		public ContentType getEffectiveContentType() {
-			return effectiveContentType;
-		}
-	}
+    private static final XOPReconstitutor xopr = new XOPReconstitutor();
+    private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
+    static {
+        xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+        xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    }
 
-	private static final Set<String> contentTypesXML = ImmutableSet.of(
-			"text/xml",
-			"application/xml",
-			"multipart/related");
+    public static EffectiveContentType detectEffectiveContentType(Message m) {
+        try {
+            jakarta.mail.internet.ContentType t = m.getHeader().getContentTypeObject();
+            if (t == null)
+                return EffectiveContentType.UNKNOWN;
 
-	private static final Set<String> contentTypesJSON = ImmutableSet.of(
-			APPLICATION_JSON,
-			APPLICATION_X_JAVASCRIPT,
-			TEXT_JAVASCRIPT,
-			TEXT_X_JAVASCRIPT,
-			TEXT_X_JSON);
+            String type = t.getPrimaryType() + "/" + t.getSubType();
 
-	private static final XOPReconstitutor xopr = new XOPReconstitutor();
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
+            // JSON
+            if (contentTypesJSON.contains(type))
+                return JSON;
 
-	public static ContentDescriptor detect(Message m) {
-		try {
-			jakarta.mail.internet.ContentType t = m.getHeader().getContentTypeObject();
-			if (t == null)
-				return new ContentDescriptor(UNKNOWN);
+            // XML
+            if (contentTypesXML.contains(type)) {
+                return analyseXMLContent(m);
+            }
 
-			String type = t.getPrimaryType() + "/" + t.getSubType();
+        } catch (Exception e) {
+            // do nothing
+        }
+        return EffectiveContentType.UNKNOWN;
+    }
 
-			// JSON
-			if (contentTypesJSON.contains(type))
-				return new ContentDescriptor(ContentType.JSON);
+    private static @NotNull EffectiveContentType analyseXMLContent(Message m) {
+        XMLStreamReader reader;
 
-			// XML
-			if (contentTypesXML.contains(type)) {
-				XMLStreamReader reader;
-				synchronized(xmlInputFactory) {
-					reader = xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(m));
-				}
-				if (reader.nextTag() == XMLStreamReader.START_ELEMENT) {
-					boolean isSOAP =
-							Constants.SOAP11_NS.equals(reader.getNamespaceURI()) ||
-							Constants.SOAP12_NS.equals(reader.getNamespaceURI());
-					if (isSOAP)
-						return new ContentDescriptor(ContentType.SOAP);
-					return new ContentDescriptor(ContentType.XML);
-				}
-			}
+        try {
+            // See: https://stackoverflow.com/questions/21634315/is-xmlinputfactory-thread-safe
+            synchronized (xmlInputFactory) {
+                reader = xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(m));
+            }
+            if (reader.nextTag() == START_ELEMENT) {
+                if (isSOAP(reader))
+                    return SOAP;
+            }
+        } catch (Exception ignored) {
+        }
+        return XML;
+    }
 
-		} catch (Exception e) {
-			// do nothing
-		}
-		return new ContentDescriptor(UNKNOWN);
-	}
-
+    private static boolean isSOAP(XMLStreamReader reader) {
+        return SOAP11_NS.equals(reader.getNamespaceURI()) ||
+               SOAP12_NS.equals(reader.getNamespaceURI());
+    }
 }

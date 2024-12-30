@@ -13,45 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
-import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import org.apache.commons.io.*;
+import org.apache.http.client.config.*;
+import org.apache.http.client.methods.*;
+import org.apache.http.impl.client.*;
+import org.apache.http.impl.conn.*;
+import org.apache.http.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.io.*;
+import java.time.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
+import java.util.stream.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SessionInterceptorTest {
@@ -80,7 +67,7 @@ public class SessionInterceptorTest {
 
         IntStream.range(0, 50).forEach(i -> sendRequest());
 
-        assertEquals(null,vals.get(0));
+        assertNull(vals.getFirst());
         for(int i = 1; i < 98; i+=2){
             int index = Math.round((i-1)/2f);
             assertEquals(index,vals.get(i).intValue());
@@ -110,7 +97,7 @@ public class SessionInterceptorTest {
         IntStream.range(0, 50).forEach(i -> sendRequest());
 
         for(int i = 0; i < 100; i+=2)
-            assertEquals(null,vals.get(i));
+            assertNull(vals.get(i));
     }
 
     @Test
@@ -160,8 +147,6 @@ public class SessionInterceptorTest {
         sendRequest();
         ((JwtSessionManager)createAndReadOnlySessionInterceptor.getSessionManager()).setRenewalTime(origRenewalTime);
 
-        System.out.println("After sleep");
-
         bodies.clear();
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
@@ -171,8 +156,6 @@ public class SessionInterceptorTest {
         IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1))));
 
         String cookieTwo = getCookieKey(bodies.get(upperBound-1));
-
-
 
         assertNotEquals(cookieOne,cookieTwo);
 
@@ -194,12 +177,12 @@ public class SessionInterceptorTest {
                 if(exc.getResponse() == null)
                     exc.setResponse(Response.ok().build());
                 exc.getResponse().setBodyContent(createTestResponseBody(exc).getBytes());
-                return Outcome.RETURN;
+                return RETURN;
             }
 
             @Override
-            public Outcome handleResponse(Exchange exc) throws Exception {
-                return Outcome.RETURN;
+            public Outcome handleResponse(Exchange exc) {
+                return RETURN;
             }
         };
     }
@@ -207,14 +190,14 @@ public class SessionInterceptorTest {
     private AbstractInterceptorWithSession createAndReadOnlySessionInterceptor() {
         return new AbstractInterceptorWithSession() {
             @Override
-            protected Outcome handleRequestInternal(Exchange exc) throws Exception {
+            protected Outcome handleRequestInternal(Exchange exc) {
                 getSessionManager().getSession(exc);
-                return Outcome.CONTINUE;
+                return CONTINUE;
             }
 
             @Override
-            protected Outcome handleResponseInternal(Exchange exc) throws Exception {
-                return Outcome.CONTINUE;
+            protected Outcome handleResponseInternal(Exchange exc) {
+                return CONTINUE;
             }
         };
     }
@@ -236,7 +219,7 @@ public class SessionInterceptorTest {
         if(msg == null)
             return Stream.empty();
         return Stream.of(msg.getHeader().getAllHeaderFields())
-                .filter(hf -> hf.getHeaderName().equals(name));
+                .filter(hf -> hf.getHeaderName().getName().equalsIgnoreCase(name));
     }
 
     private void addJoinedHeaderTo(Map cache, String name, Message msg){
@@ -254,8 +237,7 @@ public class SessionInterceptorTest {
         HttpGet httpGet = new HttpGet("http://localhost:3001");
         try {
             try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
-                String body = IOUtils.toString(response.getEntity().getContent());
-                result = new ObjectMapper().readValue(body, new TypeReference<>() {});
+                result = new ObjectMapper().readValue(IOUtils.toString(response.getEntity().getContent(), UTF_8), new TypeReference<>() {});
                 EntityUtils.consume(response.getEntity());
             }
         } catch (Exception e) {
@@ -267,18 +249,18 @@ public class SessionInterceptorTest {
     private AbstractInterceptorWithSession defineInterceptor(AtomicLong counter, List<Long> vals) {
         return new AbstractInterceptorWithSession() {
                 @Override
-                public Outcome handleRequestInternal(Exchange exc) throws Exception {
+                public Outcome handleRequestInternal(Exchange exc) {
                     Session s = getSessionManager().getSession(exc);
                     vals.add(s.get("value"));
                     long nextVal = counter.getAndIncrement();
                     s.put("value", nextVal);
                     vals.add(s.get("value"));
-                    return Outcome.CONTINUE;
+                    return CONTINUE;
                 }
 
                 @Override
-                protected Outcome handleResponseInternal(Exchange exc) throws Exception {
-                    return Outcome.CONTINUE;
+                protected Outcome handleResponseInternal(Exchange exc) {
+                    return CONTINUE;
                 }
             };
     }

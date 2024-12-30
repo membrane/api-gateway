@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
+import org.slf4j.*;
 
 import java.util.ArrayList;
 import java.util.*;
@@ -23,6 +24,8 @@ import static java.util.Arrays.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MockInterceptor extends AbstractInterceptor {
+
+	private static final Logger log = LoggerFactory.getLogger(MockInterceptor.class);
 
 	private static final List<String> reqLabels = new ArrayList<>();
 	private static final List<String> respLabels = new ArrayList<>();
@@ -42,21 +45,21 @@ public class MockInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		System.out.println("MockInterceptor.handleRequest");
+	public Outcome handleRequest(Exchange exc) {
+		log.info("MockInterceptor {} handleRequest()",label);
 		reqLabels.add(label);
 		if (failurePoints.contains("request"))
 			return ABORT;
-		return super.handleRequest(exc);
+		return CONTINUE;
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		System.out.println("MockInterceptor.handleResponse");
+	public Outcome handleResponse(Exchange exc) {
+		log.info("MockInterceptor {} handleResponse()",label);
 		respLabels.add(label);
 		if (failurePoints.contains("response"))
 			return ABORT;
-		return super.handleResponse(exc);
+		return CONTINUE;
 	}
 
 	@Override
@@ -73,9 +76,14 @@ public class MockInterceptor extends AbstractInterceptor {
 	}
 
 	public static void assertContent(List<String> reqLabels, List<String> respLabels, List<String> abortLabels) {
-		assertEquals(reqLabels, MockInterceptor.reqLabels);
-		assertEquals(respLabels, MockInterceptor.respLabels);
-		assertEquals(abortLabels, MockInterceptor.abortLabels);
+
+		log.info("Request labels:\nexpected: {}\n actual: {}\n", reqLabels, MockInterceptor.reqLabels);
+		log.info("Response labels:\nexpected: {}\n actual: {}\n", respLabels, MockInterceptor.respLabels);
+		log.info("Abort labels:\nexpected: {}\n actual: {}\n", abortLabels, MockInterceptor.abortLabels);
+
+		assertIterableEquals(reqLabels, MockInterceptor.reqLabels);
+		assertIterableEquals(respLabels, MockInterceptor.respLabels);
+		assertIterableEquals(abortLabels, MockInterceptor.abortLabels);
 	}
 
 	public static void assertContent(String[] requests, String[] responses, String[] aborts) {

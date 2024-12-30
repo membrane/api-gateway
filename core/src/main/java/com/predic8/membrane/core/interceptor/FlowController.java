@@ -93,12 +93,11 @@ public class FlowController {
     }
 
     /**
-     * Run interceptors backward from current position
+     * Run interceptors backward from current position.
      *
-     * @param exchange
-     * @param interceptors
-     * @param pos          Position of called interceptors in the interceptors list
-     * @throws Exception
+     * @param exchange Exchange
+     * @param interceptors List of all interceptors
+     * @param pos Position of called interceptors in the interceptors list
      */
     public Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) throws Exception {
         boolean aborted = false;
@@ -130,7 +129,12 @@ public class FlowController {
          */
     public void invokeAbortHandlers(Exchange exchange, List<Interceptor> interceptors, int pos) {
         for (int i = pos - 1; i >= 0; i--) {
-            interceptors.get(i).handleAbort(exchange);
+            try {
+                interceptors.get(i).handleAbort(exchange);
+            } catch (Exception e) {
+                log.error("Exception handling abort interceptor. Ignoring: Continuing to abort!", e);
+            }
+
         }
     }
 }

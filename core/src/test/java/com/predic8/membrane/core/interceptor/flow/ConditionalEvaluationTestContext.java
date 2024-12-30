@@ -32,24 +32,24 @@ class ConditionalEvaluationTestContext {
     static boolean performEval(String condition, Object builder, Language lang) throws Exception {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
-        var condInt = new ConditionalInterceptor();
+        var ifInt = new IfInterceptor();
 
         new ApiKeySecurityScheme(HEADER,"x-api-key").scopes("test", "main").add(exc);
 
         exc.setProperty("bar", "123");
 
-        condInt.setLanguage(lang);
-        condInt.setInterceptors(of(mockInt));
-        condInt.setTest(condition);
-        condInt.init(new HttpRouter());
+        ifInt.setLanguage(lang);
+        ifInt.setInterceptors(of(mockInt));
+        ifInt.setTest(condition);
+        ifInt.init(new HttpRouter());
 
         if (builder instanceof Builder b) {
             exc.setRequest(b.build());
-            condInt.handleRequest(exc);
+            ifInt.handleRequest(exc);
         } else if (builder instanceof ResponseBuilder b) {
             exc.setResponse(b.build());
-            condInt.handleResponse(exc);
-            new FlowController().invokeResponseHandlers(exc, List.of(condInt));
+            ifInt.handleResponse(exc);
+            new FlowController().invokeResponseHandlers(exc, List.of(ifInt));
         } else {
             throw new IllegalStateException("Unexpected value: " + builder);
         }

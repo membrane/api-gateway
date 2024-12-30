@@ -32,23 +32,23 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
  * </p>
  *
  * See:
- * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorSpELTest
- * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorGroovyTest
- * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorJsonpathTest
- * - com.predic8.membrane.core.interceptor.flow.ConditionalInterceptorXPathTest
+ * - com.predic8.membrane.core.interceptor.flow.IfInterceptorSpELTest
+ * - com.predic8.membrane.core.interceptor.flow.IfInterceptorGroovyTest
+ * - com.predic8.membrane.core.interceptor.flow.IfInterceptorJsonpathTest
+ * - com.predic8.membrane.core.interceptor.flow.IfInterceptorXPathTest
  */
 @MCElement(name = "if")
-public class ConditionalInterceptor extends AbstractFlowInterceptor {
-    private static final Logger log = LoggerFactory.getLogger(ConditionalInterceptor.class);
+public class IfInterceptor extends AbstractFlowInterceptor {
+    private static final Logger log = LoggerFactory.getLogger(IfInterceptor.class);
 
     private String test;
-    private Language language = GROOVY; // @TODO make Spel default also setHeader
+    private Language language = SPEL;
 
     private final FlowController flowController = new FlowController();
 
     private ExchangeExpression exchangeExpression;
 
-    public ConditionalInterceptor() {
+    public IfInterceptor() {
         name = "If";
     }
 
@@ -71,7 +71,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 
     private Outcome handleInternal(Exchange exc, Flow flow) throws Exception {
 
-        boolean result = exchangeExpression.evaluate(exc, flow);
+        boolean result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         if (log.isDebugEnabled())
             log.debug("Expression {} evaluated to {}.", test, result);
 

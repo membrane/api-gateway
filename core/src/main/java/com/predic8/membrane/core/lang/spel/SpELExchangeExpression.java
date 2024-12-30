@@ -36,8 +36,8 @@ public class SpELExchangeExpression implements ExchangeExpression {
     }
 
     @Override
-    public boolean evaluate(Exchange exchange, Interceptor.Flow flow) {
-        return expression.getValue(new ExchangeEvaluationContext(exchange, exchange.getMessage(flow)), Boolean.class);
+    public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
+        return type.cast(expression.getValue(new ExchangeEvaluationContext(exchange, exchange.getMessage(flow)), type));
     }
 
     private @NotNull SpelParserConfiguration getSpelParserConfiguration() {

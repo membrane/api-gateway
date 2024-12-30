@@ -18,6 +18,7 @@ package com.predic8.membrane.core.interceptor.javascript;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -36,16 +37,16 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
-public class JavascriptInterceptorTest {
+class JavascriptInterceptorTest {
 
     private final static ObjectMapper om = new ObjectMapper();
 
-    Router router = new Router();
+    final Router router = new Router();
     JavascriptInterceptor interceptor;
     Exchange exc;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() {
         router.setApplicationContext(new GenericApplicationContext());
         interceptor = new JavascriptInterceptor();
 
@@ -77,19 +78,28 @@ public class JavascriptInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
-    public void simpleScript(Class<LanguageSupport> engine) throws Exception {
+    void simpleScript(Class<LanguageSupport> engine) throws Exception {
         executeScript("var x = 1;", engine);
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
-    public void scriptWithError(Class<LanguageSupport> engine) {
-        assertThrows(Exception.class, () -> executeScript("var x=;", engine));
+    void scriptWithError(Class<LanguageSupport> engine) throws Exception {
+        Outcome outcome= executeScript("adsfasf;", engine);
+        assertEquals(ABORT, outcome);
+        assertEquals(500, exc.getResponse().getStatusCode());
+        ProblemDetails pd = ProblemDetails.parse(exc.getResponse());
+        assertEquals(500, pd.getStatusCode());
+        System.out.println("pd = " + pd);
+        assertEquals("https://membrane-api.io/error/internal", pd.getType());
+        assertTrue(pd.getTitle().contains("Error executing"));
+        assertEquals(1,pd.getExtensions().get("line"));
+        assertEquals(1,pd.getExtensions().get("column"));
     }
 
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
-    public void exchangeAccess(Class<LanguageSupport> engine) throws Exception {
+    void exchangeAccess(Class<LanguageSupport> engine) throws Exception {
         executeScript("var e = exc;", engine);
         executeScript("var e = flow;", engine);
         executeScript("var e = spring;", engine);
@@ -168,7 +178,7 @@ public class JavascriptInterceptorTest {
         // Object must be nested in () otherwise it won't compile
         executeScript("""
                ({id:7, name: 'Roller', desc: 'äöüÄÖÜ'});
-                """, engine);
+               """, engine);
 
         Map<String,Object> m = om.readValue(exc.getRequest().getBodyAsStringDecoded(),Map.class);
         assertEquals(7, m.get("id"));

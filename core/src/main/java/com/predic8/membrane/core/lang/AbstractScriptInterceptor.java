@@ -33,6 +33,7 @@ import java.util.function.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.lang3.StringUtils.*;
@@ -81,7 +82,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
         catch (Exception e) {
             handleScriptExecutionException(exc, e);
-            return RETURN;
+            return ABORT;
         }
 
         if (res instanceof Outcome outcome) {
@@ -186,7 +187,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         parameters.put("Outcome", Outcome.class);
         parameters.put("RETURN", RETURN);
         parameters.put("CONTINUE", CONTINUE);
-        parameters.put("ABORT", Outcome.ABORT);
+        parameters.put("ABORT", ABORT);
     }
 
     public String getSrc() {

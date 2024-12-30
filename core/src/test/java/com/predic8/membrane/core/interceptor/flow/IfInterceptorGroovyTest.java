@@ -21,7 +21,7 @@ import org.junit.jupiter.api.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ConditionalInterceptorGroovyTest extends ConditionalEvaluationTestContext {
+public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
 
     @Test
     void simpleRequestTrue() throws Exception {

@@ -13,32 +13,40 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.util.ContentTypeDetector.*;
+import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ContentTypeDetectorTest {
 
 	@Test
-	public void testJSON() {
-		assertEquals(ContentType.JSON, ContentTypeDetector.detect(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).build()).getEffectiveContentType());
+	void json() {
+		assertEquals(JSON, detectEffectiveContentType(ok().contentType(APPLICATION_JSON_UTF8).build()));
 	}
 
 	@Test
-	public void testXML() {
-		assertEquals(ContentType.XML, ContentTypeDetector.detect(Response.ok().
-				contentType(MimeType.TEXT_XML_UTF8).
+	void xml() {
+		assertEquals(XML, detectEffectiveContentType(ok().
+				contentType(TEXT_XML_UTF8).
 				body("<foo/>").
-				build()).getEffectiveContentType());
+				build()));
 	}
 
 	@Test
-	public void testUNKNOWN() {
-		assertEquals(ContentType.UNKNOWN, ContentTypeDetector.detect(Response.ok().build()).getEffectiveContentType());
+	void xmlContentTypeButParseErrors() {
+		assertEquals(XML, detectEffectiveContentType(ok().
+				contentType(TEXT_XML_UTF8).
+				body("Wrong!<foo/>").
+				build()));
+	}
+
+	@Test
+	void unknown() {
+		assertEquals(UNKNOWN, detectEffectiveContentType(ok().build()));
 	}
 
 }

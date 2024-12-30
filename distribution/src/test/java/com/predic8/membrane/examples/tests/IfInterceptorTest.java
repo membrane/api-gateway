@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConditionalInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
+public class IfInterceptorTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {

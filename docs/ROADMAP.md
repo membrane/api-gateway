@@ -40,8 +40,3 @@
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer! 
 
-# ADR Discussions
-
-- Make flow a property of exchange 
-  - That would support a method like getMessage
-  - Flow is more a property of E
