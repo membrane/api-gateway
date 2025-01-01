@@ -16,32 +16,39 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.transport.http.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.servers.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.rules.RuleKey;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.parseSwaggersInfoServer;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
-import static java.util.Comparator.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.RESPONSE;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
 
@@ -103,7 +110,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
             log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()));
-            log.error(t.getMessage(), t);
+            log.error(t.getMessage(),t);
             exc.setResponse(ProblemDetails.internal(router.isProduction())
                     .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
@@ -137,7 +144,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             }
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
-            log.warn(detail, e);
+            log.warn(detail,e);
             exc.setResponse(ProblemDetails.internal(router.isProduction())
                     .detail(detail)
                     .exception(e)
@@ -216,7 +223,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         rec.api.getServers().forEach(server -> {
             URL url = getServerUrlFromOpenAPI(rec, server);
             exc.setProperty(SNI_SERVER_NAME, url.getHost());
-            exc.getDestinations().add(UriUtil.getUrlWithoutPath(url) + exc.getRequest().getUri());
+            exc.getDestinations().add(getUrlWithoutPath(url) + exc.getRequest().getUri());
         });
     }
 
@@ -311,12 +318,12 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private String buildValidationPropertiesDescription(Map<String, Object> props) {
         return """
-                - Security: %s<br />
-                - Requests: %s<br />
-                - Responses: %s<br />
-                - Details: %s<br />
-                For in-depth explanation of these properties visit <a href="https://www.membrane-api.io/openapi/configuration-and-validation/index.html#validation"> here </a><br />
-                """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
+            - Security: %s<br />
+            - Requests: %s<br />
+            - Responses: %s<br />
+            - Details: %s<br />
+            For in-depth explanation of these properties visit <a href="https://www.membrane-api.io/openapi/configuration-and-validation/index.html#validation"> here </a><br />
+            """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
     }
 
     private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {

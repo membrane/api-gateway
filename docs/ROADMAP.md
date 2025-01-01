@@ -1,5 +1,18 @@
 # Membrane Roadmap
 
+# Version 6.2.0
+
+- One API that calls multiple Backends
+  - Ideas
+    - <target ../> inside <if>
+- Routing with if instead of switch and cbr
+
+# Version 6.1.0
+
+- Grafana Dashboard to import in examples/prometheus
+  - Also provide the datasource config
+  - Maybe the config can be included into the docker-compose setup
+- Example Tests without unzipping for every test
 
 
 # Version 6.0.0
@@ -30,39 +43,3 @@
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer! 
 
- - internalProxy ? Does not open a port <internal/>
-
-- Error message when a targel url is misspelled: like (serive://i1)
-
-## Done
-- Refactor setHeader, setProperty make it like if
-
-## Merge
-
-Reliable resource loading (Windows)
-Enhance bootup logging to include detailed rule information
-
-
-Not in 6.0.0 and 5.8.X:
-Add OAuth2redirectTest
-
-
-# Version 6.1.0
-
-- Grafana Dashboard to import in examples/prometheus
-  - Also provide the datasource config
-  - Maybe the config can be included into the docker-compose setup
-
-- JWT with if, setHeader
-  - e.g. Allow only POST for JWT with claim XYZ
-
-- HttpClient, ...? Refactoring
-
-# Version 6.2.0
-
-- One API that calls multiple Backends
-  - Ideas
-    - <target ../> inside <if>
-- Routing with if instead of switch and cbr
-
-# Ideas

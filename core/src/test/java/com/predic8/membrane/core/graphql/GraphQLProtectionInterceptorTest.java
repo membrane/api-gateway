@@ -35,14 +35,14 @@ public class GraphQLProtectionInterceptorTest {
     private static GraphQLProtectionInterceptor i;
 
     @BeforeAll
-    public static void init() throws Exception {
+    static void init() throws Exception {
         HttpRouter router = new HttpRouter();
         i = new GraphQLProtectionInterceptor();
         i.init(router);
     }
 
     @Test
-    public void ok_POST() throws Exception {
+    void ok_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -51,7 +51,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void ok2_POST() throws Exception {
+    void ok2_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -65,7 +65,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void ok2_POST_missing_fields() throws Exception {
+    void ok2_POST_missing_fields() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -76,7 +76,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void invalidOperationName() throws Exception {
+    void invalidOperationName() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -88,7 +88,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void invalidVariables() throws Exception {
+    void invalidVariables() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -100,7 +100,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void invalidExtensions() throws Exception {
+    void invalidExtensions() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -112,7 +112,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void ok_POST_plain() throws Exception {
+    void ok_POST_plain() throws Exception {
         verifyPost("/",
                 "application/graphql",
                 """
@@ -121,20 +121,20 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void ok_GET() throws Exception {
+    void ok_GET() throws Exception {
         verifyGet("/?query=" + encode("{a}", UTF_8),
                 CONTINUE);
     }
 
 
     @Test
-    public void bad_mutation_GET() throws Exception {
+    void bad_mutation_GET() throws Exception {
         verifyGet("/?query=" + encode("mutation { trigger }", UTF_8),
                 RETURN);
     }
 
     @Test
-    public void invalidContentType() throws Exception {
+    void invalidContentType() throws Exception {
         verifyPost("/",
                 "application/a/b/c",
                 """
@@ -144,7 +144,7 @@ public class GraphQLProtectionInterceptorTest {
 
 
     @Test
-    public void multipleContentTypeHeaders() throws Exception {
+    void multipleContentTypeHeaders() throws Exception {
         Exchange e = new Request.Builder().post("/")
                 .header("Content-Type", APPLICATION_JSON)
                 .header("Content-Type", APPLICATION_JSON)
@@ -155,7 +155,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void operationName_ok_POST() throws Exception {
+    void operationName_ok_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -167,7 +167,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void operationName_notFound_POST() throws Exception {
+    void operationName_notFound_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -179,7 +179,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void operationName_notUnique_POST() throws Exception {
+    void operationName_notUnique_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -191,7 +191,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void operationName_empty_POST() throws Exception {
+    void operationName_empty_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -204,7 +204,7 @@ public class GraphQLProtectionInterceptorTest {
 
 
     @Test
-    public void invalidCharset() throws Exception {
+    void invalidCharset() throws Exception {
         verifyPost("/",
                 "application/json;charset=iso-8859-1",
                 """
@@ -213,7 +213,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void noContentType() throws Exception {
+    void noContentType() throws Exception {
         verifyPost("/",
                 null,
                 """
@@ -222,7 +222,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void badContentType() throws Exception {
+    void badContentType() throws Exception {
         verifyPost("/",
                 "text/plain",
                 """
@@ -231,7 +231,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void getParameterContainsGraphQLData() throws Exception {
+    void getParameterContainsGraphQLData() throws Exception {
         for (String queryParam : new String[]{
                 "query=" + encode("{b}", UTF_8),
                 "operationName=foo",
@@ -247,7 +247,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void duplicateKey_POST() throws Exception {
+    void duplicateKey_POST() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -256,13 +256,13 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void duplicateKey_GET() throws Exception {
+    void duplicateKey_GET() throws Exception {
         verifyGet("/?query=" + encode("{a}", UTF_8) + "&query=" + encode("{b}", UTF_8),
                 RETURN);
     }
 
     @Test
-    public void nonExistentFragment() throws Exception {
+    void nonExistentFragment() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -271,7 +271,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void ok_fragment() throws Exception {
+    void ok_fragment() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -281,7 +281,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void cyclicFragmentSpreads() throws Exception {
+    void cyclicFragmentSpreads() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -292,7 +292,7 @@ public class GraphQLProtectionInterceptorTest {
 
 
     @Test
-    public void nested() throws Exception {
+    void nested() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -302,7 +302,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void inlineFragment() throws Exception {
+    void inlineFragment() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -312,7 +312,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void depthOK() throws Exception {
+    void depthOK() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -322,7 +322,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void depthNotOK() throws Exception {
+    void depthNotOK() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -333,7 +333,7 @@ public class GraphQLProtectionInterceptorTest {
 
 
     @Test
-    public void recursionOK() throws Exception {
+    void recursionOK() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -343,7 +343,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void recursionNotOK() throws Exception {
+    void recursionNotOK() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
@@ -353,35 +353,33 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void mutationsCountNotOK() throws Exception {
+    void mutationsCountNotOK() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
-                        {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{} mutation abcdefgh{}",
+                        {"query":"mutation abc{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcd{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcde{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcdef{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcdefg{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcdefgh{ addProduct(name: \\"Apple\\", price: 1.99) }",
                         "operationName": ""}""",
                 RETURN);
     }
 
     @Test
-    public void mutationsCountOK() throws Exception {
+    void nestedMutationsCountNotOK() throws Exception {
         verifyPost("/",
                 APPLICATION_JSON,
                 """
-                        {"query":"mutation abc{} mutation abcd{} mutation abcde{} mutation abcdef{} mutation abcdefg{}",
+                        {"query": "mutation { addProduct(name: \\"Apple\\", price: 1.99) { id } addProduct(name: \\"Orange\\", price: 2.99) { id } addProduct(name: \\"Banana\\", price: 3.99) { id } addProduct(name: \\"Grape\\", price: 4.99) { id } addProduct(name: \\"Mango\\", price: 5.99) { id } addProduct(name: \\"Pear\\", price: 6.99) { id }}"}",
                         "operationName": ""}""",
-                CONTINUE);
+                RETURN);
     }
 
     @Test
-    public void countThreeMutations() {
-        List<ExecutableDefinition> definitions = Arrays.asList(
-                opDefOfType("mutation"),
-                opDefOfType("mutation"),
-                opDefOfType("mutation"),
-                opDefOfType("query")
-        );
-
-        assertEquals(3, GraphQLoverHttpValidator.countMutations(definitions));
+    void mutationsCountOK() throws Exception {
+        verifyPost("/",
+                APPLICATION_JSON,
+                """
+                        {"query":"mutation abc{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcd{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcde{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcdef{ addProduct(name: \\"Apple\\", price: 1.99) } mutation abcdefg{ addProduct(name: \\"Apple\\", price: 1.99) }",
+                        "operationName": ""}""",
+                CONTINUE);
     }
 
     private OperationDefinition opDefOfType(String type) {
@@ -389,7 +387,7 @@ public class GraphQLProtectionInterceptorTest {
     }
 
     @Test
-    public void invalidMethod() throws Exception {
+    void invalidMethod() throws Exception {
         Exchange e = new Request.Builder().put("/").contentType(APPLICATION_JSON).body("{}").buildExchange();
 
         Outcome outcome = i.handleRequest(e);
