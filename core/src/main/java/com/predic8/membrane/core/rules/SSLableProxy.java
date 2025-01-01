@@ -32,6 +32,7 @@ public abstract class SSLableProxy extends AbstractProxy {
 	}
 
 
+	// TODO Push up?
 	@Override
 	public String getName() {
 		return StringUtils.defaultIfEmpty(name, getKey().toString());

@@ -67,11 +67,6 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     @Override
-    protected AbstractProxy getNewInstance() {
-        return new SOAPProxy();
-    }
-
-    @Override
     public void init() throws Exception {
         if (wsdl == null) {
             return;

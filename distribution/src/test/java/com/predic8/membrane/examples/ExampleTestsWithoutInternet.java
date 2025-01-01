@@ -110,5 +110,5 @@ import org.junit.platform.suite.api.Suite;
 
         InternalProxyTest.class
 })
-public class ExampleTestsWithoutInternet {
+class ExampleTestsWithoutInternet {
 }

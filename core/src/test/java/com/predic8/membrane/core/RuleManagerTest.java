@@ -16,10 +16,9 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.rules.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
-import java.net.UnknownHostException;
+import java.net.*;
 
-import static com.predic8.membrane.util.TestUtil.assembleExchange;
+import static com.predic8.membrane.util.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RuleManagerTest {
@@ -50,61 +49,49 @@ public class RuleManagerTest {
 	}
 
 	@AfterEach
-	public void tearDown() throws IOException {
+	public void tearDown() {
 		router.shutdown();
 	}
 
 	@Test
-	public void testGetRules() {
+	void getRules() {
 		assertFalse(manager.getRules().isEmpty());
 		assertEquals(3, manager.getRules().size());
 	}
 
 	@Test
-	public void testExists() {
+	void exists() {
 		assertTrue(manager.exists(proxy3013.getKey()));
 	}
 
 	@Test
-	public void testGetMatchingRuleForwardBlz() throws UnknownHostException {
+	void getMatchingRuleForwardBlz() throws UnknownHostException {
 		assertEquals(forwardBlz, manager.getMatchingRule(assembleExchange("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, "127.0.0.1")));
 	}
 
 	@Test
-	public void testGetMatchingRuleForwardBlzPOST() throws UnknownHostException {
+	void getMatchingRuleForwardBlzPOST() throws UnknownHostException {
 		assertEquals(forwardBlz, manager.getMatchingRule(assembleExchange("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, "127.0.0.1")));
 	}
 
 	@Test
-	public void testRemoveRule() {
+	void testRemoveRule() {
 		manager.removeRule(proxy3013);
 		assertEquals(2, manager.getRules().size());
 		assertFalse(manager.getRules().contains(proxy3013));
 	}
 
 	@Test
-	public void testRemoveAllRules() {
+	void removeAllRules() {
 		manager.removeAllRules();
 		assertTrue(manager.getRules().isEmpty());
 	}
 
 	@Test
-	public void testIsAnyRuleWithPort() {
+	void isAnyRuleWithPort() {
 		assertFalse(manager.isAnyRuleWithPort(1234));
 		assertTrue(manager.isAnyRuleWithPort(3013));
 		assertTrue(manager.isAnyRuleWithPort(3014));
 		assertTrue(manager.isAnyRuleWithPort(3015));
-	}
-
-	@Test
-	public void testRuleUp() {
-		manager.ruleUp(forwardBlz);
-		assertEquals(forwardBlz, manager.getRules().get(0));
-	}
-
-	@Test
-	public void testRuleDown() {
-		manager.ruleDown(forwardBlz);
-		assertEquals(forwardBlz, manager.getRules().get(2));
 	}
 }

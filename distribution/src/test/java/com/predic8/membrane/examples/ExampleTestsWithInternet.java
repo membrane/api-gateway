@@ -73,5 +73,5 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLFullSampleTest.class
 
 })
-public class ExampleTestsWithInternet {
+class ExampleTestsWithInternet {
 }

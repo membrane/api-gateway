@@ -18,7 +18,6 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// TODO Add Classes to Unittest
 class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest {
 
     @Test

@@ -24,6 +24,8 @@ import java.util.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
+import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;
+import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;
 import static javax.xml.stream.XMLStreamConstants.*;
 
 /**
@@ -61,12 +63,6 @@ public class ContentTypeDetector {
             TEXT_X_JSON);
 
     private static final XOPReconstitutor xopr = new XOPReconstitutor();
-    private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-
-    static {
-        xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-        xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-    }
 
     public static EffectiveContentType detectEffectiveContentType(Message m) {
         try {
@@ -95,10 +91,10 @@ public class ContentTypeDetector {
         XMLStreamReader reader;
 
         try {
+            // It is probably cheaper to create a factory than to synchronize on it. Also less risky.
             // See: https://stackoverflow.com/questions/21634315/is-xmlinputfactory-thread-safe
-            synchronized (xmlInputFactory) {
-                reader = xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(m));
-            }
+            reader = getXMLInputFactory().createXMLStreamReader(xopr.reconstituteIfNecessary(m));
+
             if (reader.nextTag() == START_ELEMENT) {
                 if (isSOAP(reader))
                     return SOAP;
@@ -111,5 +107,12 @@ public class ContentTypeDetector {
     private static boolean isSOAP(XMLStreamReader reader) {
         return SOAP11_NS.equals(reader.getNamespaceURI()) ||
                SOAP12_NS.equals(reader.getNamespaceURI());
+    }
+
+    private static XMLInputFactory getXMLInputFactory() {
+        XMLInputFactory f = XMLInputFactory.newInstance();
+        f.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
+        f.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        return f;
     }
 }

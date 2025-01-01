@@ -38,13 +38,6 @@ public class RuleManager {
     private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
     private final Set<IRuleChangeListener> listeners = new HashSet<>();
 
-    private String defaultTargetHost = "localhost";
-    private final String defaultHost = "*";
-    private final int defaultListenPort = 2000;
-    private final int defaultTargetPort = 8080;
-    private final String defaultPath = ".*";
-    private int defaultMethod = 4;
-
     public enum RuleDefinitionSource {
         /**
          * rule defined in the spring context that created the router
@@ -54,38 +47,6 @@ public class RuleManager {
          * rule defined by admin web interface or through custom code
          */
         MANUAL,
-    }
-
-    public int getDefaultListenPort() {
-        return defaultListenPort;
-    }
-
-    public String getDefaultHost() {
-        return defaultHost;
-    }
-
-    public String getDefaultPath() {
-        return defaultPath;
-    }
-
-    public int getDefaultMethod() {
-        return defaultMethod;
-    }
-
-    public void setDefaultMethod(int defaultMethod) {
-        this.defaultMethod = defaultMethod;
-    }
-
-    public String getDefaultTargetHost() {
-        return defaultTargetHost;
-    }
-
-    public void setDefaultTargetHost(String defaultTargetHost) {
-        this.defaultTargetHost = defaultTargetHost;
-    }
-
-    public int getDefaultTargetPort() {
-        return defaultTargetPort;
     }
 
     public boolean isAnyRuleWithPort(int port) {
@@ -137,9 +98,11 @@ public class RuleManager {
 
         for (Rule rule : rules) {
 
+            if (rule instanceof NotPortOpeningProxy)
+                continue;
+
             if (rule.getName().contains("/")) {
                 log.error("API name is {}. <api> names must not contain a '/'. ", rule.getName());
-//                throw new RuntimeException("API name is %s. <api> names must not contain a '/'. ".formatted());
             }
 
             IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
@@ -180,28 +143,6 @@ public class RuleManager {
 
     public List<Rule> getRules() {
         return rules;
-    }
-
-    public synchronized void ruleUp(Rule rule) {
-        int index = rules.indexOf(rule);
-        if (index <= 0)
-            return;
-        Collections.swap(rules, index, index - 1);
-        Collections.swap(ruleSources, index, index - 1);
-        for (IRuleChangeListener listener : listeners) {
-            listener.rulePositionsChanged();
-        }
-    }
-
-    public synchronized void ruleDown(Rule rule) {
-        int index = rules.indexOf(rule);
-        if (index < 0 || index == (rules.size() - 1))
-            return;
-        Collections.swap(rules, index, index + 1);
-        Collections.swap(ruleSources, index, index + 1);
-        for (IRuleChangeListener listener : listeners) {
-            listener.rulePositionsChanged();
-        }
     }
 
     public void ruleChanged(Rule rule) {
@@ -248,7 +189,27 @@ public class RuleManager {
                 log.debug("Matching Rule found for RuleKey {} {} {} {} {}", hostHeader, method, uri, port, localIP);
             return rule;
         }
-        return null;
+        return findProxyRule(exc);
+    }
+
+    private Rule findProxyRule(Exchange exc) {
+        for (Rule rule : getRules()) {
+            if (!(rule instanceof ProxyRule))
+                continue;
+
+            if (rule.getKey().getIp() != null)
+                if (!rule.getKey().getIp().equals(exc.getHandler().getLocalAddress().toString()))
+                    continue;
+
+
+            if (rule.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || rule.getKey().getPort() == exc.getHandler().getLocalPort()) {
+                if (log.isDebugEnabled())
+                    log.debug("proxy rule found: {}", rule);
+                return rule;
+            }
+        }
+        log.debug("No rule found for incoming request");
+        return new NullRule();
     }
 
     public void addRuleChangeListener(IRuleChangeListener viewer) {
@@ -295,12 +256,6 @@ public class RuleManager {
         for (IRuleChangeListener listener : listeners) {
             listener.ruleAdded(newRule);
         }
-    }
-
-    public synchronized void removeRulesFromSource(RuleDefinitionSource source) {
-        for (int i = 0; i < rules.size(); i++)
-            if (ruleSources.get(i) == source)
-                removeRule(rules.get(i--));
     }
 
     public synchronized void removeAllRules() {

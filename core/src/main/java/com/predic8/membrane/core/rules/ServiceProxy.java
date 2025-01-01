@@ -41,11 +41,6 @@ public class ServiceProxy extends AbstractServiceProxy {
 		setTargetPort(targetPort);
 	}
 
-	@Override
-	protected AbstractProxy getNewInstance() {
-		return new ServiceProxy();
-	}
-
 	public String getMethod() {
 		return key.getMethod();
 	}

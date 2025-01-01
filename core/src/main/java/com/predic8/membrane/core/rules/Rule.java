@@ -13,51 +13,49 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import java.util.List;
-import java.util.Map;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.stats.*;
+import com.predic8.membrane.core.transport.ssl.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.stats.RuleStatisticCollector;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import java.util.*;
 
 public interface Rule extends Cloneable {
 
-	public List<Interceptor> getInterceptors();
+	List<Interceptor> getInterceptors();
 
-	public void setInterceptors(List<Interceptor> interceptors);
+	void setInterceptors(List<Interceptor> interceptors);
 
-	public boolean isBlockRequest();
+	boolean isBlockRequest();
 
-	public boolean isBlockResponse();
+	boolean isBlockResponse();
 
-	public RuleKey getKey();
+	RuleKey getKey();
 
-	public void setKey(RuleKey ruleKey);
+	void setKey(RuleKey ruleKey);
 
-	public void setName(String name);
+	void setName(String name);
 
-	public String getName();
+	String getName();
 
-	public void setBlockRequest(boolean blockStatus);
+	void setBlockRequest(boolean blockStatus);
 
-	public void setBlockResponse(boolean blockStatus);
+	void setBlockResponse(boolean blockStatus);
 
-	public RuleStatisticCollector getStatisticCollector();
+	RuleStatisticCollector getStatisticCollector();
 
-	public SSLContext getSslInboundContext();
+	// Question: Can we push up ssl stuff?
+	SSLContext getSslInboundContext();
 
-	public SSLProvider getSslOutboundContext();
+	SSLProvider getSslOutboundContext();
 
-	public void init(Router router) throws Exception;
+	void init(Router router) throws Exception;
 
-	public boolean isTargetAdjustHostHeader();
+	boolean isTargetAdjustHostHeader();
 
-	public boolean isActive();
+	boolean isActive();
 
-	public String getErrorState();
+	String getErrorState();
 
-	public Rule clone() throws CloneNotSupportedException;
+	Rule clone() throws CloneNotSupportedException;
 }

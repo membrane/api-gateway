@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import org.slf4j.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
@@ -27,13 +28,18 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 @MCElement(name="echo", topLevel = false)
 public class EchoInterceptor extends AbstractInterceptor {
 
+	private static final Logger log = LoggerFactory.getLogger(EchoInterceptor.class.getName());
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		Response response = Response.ok()
-				.body(exc.getRequest().getBody().getContent())
-				.header(exc.getRequest().getHeader())
-				.build();
-		exc.setResponse(response);
+		log.debug("Echoing request: {}", exc.getRequest());
+		Response.ResponseBuilder builder = Response.ok();
+		if (!exc.getRequest().isBodyEmpty()) {
+			builder.body(exc.getRequest().getBody().getContent());
+		} else {
+			builder.status(204); // No Content
+		}
+		exc.setResponse(builder.header(exc.getRequest().getHeader()).build());
 		return RETURN;
 	}
 }

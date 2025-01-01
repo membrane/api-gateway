@@ -26,16 +26,17 @@ import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.services.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
-import org.apache.http.params.*;
 import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.*;
+import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
+import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -46,7 +47,9 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Fabian Kessler / Optimaize
  */
-public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
+public class LoadBalancingInterceptorFaultMonitoringStrategyTest {
+
+    private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptorFaultMonitoringStrategyTest.class.getName());
 
     protected LoadBalancingInterceptor balancingInterceptor;
     protected HttpRouter balancer;
@@ -91,11 +94,11 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
     private void enableFailOverOn5XX(HttpRouter balancer) {
         List<Interceptor> l = balancer.getTransport().getInterceptors();
-        ((HTTPClientInterceptor) l.get(l.size() - 1)).setFailOverOn5XX(true);
+        ((HTTPClientInterceptor) l.getLast()).setFailOverOn5XX(true);
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    public void tearDown() {
         for (HttpRouter httpRouter : httpRouters) {
             httpRouter.shutdown();
         }
@@ -170,11 +173,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .successChance(1d)
                 .preSubmitCallback(integer -> {
                     if (integer == 20) {
-                        try {
-                            httpRouters.get(0).shutdown();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        httpRouters.getFirst().shutdown();
                     }
                     return null;
                 })
@@ -203,18 +202,14 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                 .numRequests(100)
                 .successChance(1d)
                 .preSubmitCallback(integer -> {
-                    try {
-                        if (integer == 10) {
-                            httpRouters.get(0).shutdown();
-                        } else if (integer == 20) {
-                            httpRouters.get(1).shutdown();
-                        } else if (integer == 30) {
-                            httpRouters.get(2).shutdown();
-                        } else if (integer == 40) {
-                            httpRouters.get(3).shutdown();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if (integer == 10) {
+                        httpRouters.get(0).shutdown();
+                    } else if (integer == 20) {
+                        httpRouters.get(1).shutdown();
+                    } else if (integer == 30) {
+                        httpRouters.get(2).shutdown();
+                    } else if (integer == 40) {
+                        httpRouters.get(3).shutdown();
                     }
                     return null;
                 })
@@ -257,6 +252,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
             /**
              * The service requests to the nodes are made using a ThreadPoolExecutor, using this many threads.
+             *
              * @param numThreads default is 6
              */
             public Builder numThreads(int numThreads) {
@@ -266,6 +262,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
 
             /**
              * How many service requests to send in total (not per thread).
+             *
              * @param numRequests default is 100
              */
             public Builder numRequests(int numRequests) {
@@ -276,6 +273,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
             /**
              * Each service request can be given a random chance to fail with a 5xx code.
              * See {@link RandomlyFailingDummyWebServiceInterceptor}.
+             *
              * @param successChance 1.0 for always succeeding, 0.0 for never succeeding, and anything in between for a weighted likeliness.
              */
             public Builder successChance(double successChance) {
@@ -358,7 +356,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
         submitTasks(ctx);
         ctx.shutdown();
 
-        long totalTimeSpent = overallTime.elapsed(TimeUnit.MILLISECONDS);
+        long totalTimeSpent = overallTime.elapsed(MILLISECONDS);
         System.out.println("Time spent total: " + totalTimeSpent + "ms, longest run was " + ctx.getSlowestRuntime() + "ms");
 
         standardExpectations(ctx);
@@ -377,16 +375,15 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
                     ctx.runCounter.incrementAndGet();
                     final HttpClient client = new HttpClient();
 
-                    client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-                    int responseCode = client.executeMethod(getPostMethod());
-                    if (responseCode == 200) {
+                    client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
+                    if (client.executeMethod(getPostMethod()) == 200) {
                         ctx.successCounter.incrementAndGet();
                     }
                 } catch (Exception e) {
                     ctx.exceptionCounter.incrementAndGet();
-                    e.printStackTrace();
+                    log.error("Error",e);
                 }
-                ctx.runtimes[runNumber] = taskTime.elapsed(TimeUnit.MILLISECONDS);
+                ctx.runtimes[runNumber] = taskTime.elapsed(MILLISECONDS);
             });
         }
     }
@@ -395,7 +392,7 @@ public class LoadBalancingInterceptor_FaultMonitoringStrategyTest {
     private void standardExpectations(TestingContext ctx) {
         assertEquals(ctx.numRequests, ctx.runCounter.get());
         assertEquals(0, ctx.exceptionCounter.get());
-      
+
         var totalInterceptorCount = dummyInterceptors.stream()
                 .mapToLong(RandomlyFailingDummyWebServiceInterceptor::getCount)
                 .sum();

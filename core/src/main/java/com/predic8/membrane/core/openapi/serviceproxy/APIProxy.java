@@ -55,12 +55,6 @@ public class APIProxy extends ServiceProxy {
 
     protected ValidationStatisticsCollector statisticCollector = new ValidationStatisticsCollector();
 
-    @Override
-    protected AbstractProxy getNewInstance() {
-        return new APIProxy();
-    }
-
-
     protected List<OpenAPISpec> specs = new ArrayList<>();
 
     public List<OpenAPISpec> getSpecs() {

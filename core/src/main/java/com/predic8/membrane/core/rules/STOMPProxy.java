@@ -33,9 +33,4 @@ public class STOMPProxy extends SSLableProxy {
 		((ServiceProxyKey)key).setMethod("CONNECT");
 	}
 
-	@Override
-	protected AbstractProxy getNewInstance() {
-		return new STOMPProxy();
-	}
-
 }

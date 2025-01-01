@@ -84,11 +84,11 @@ public abstract class Transport {
 		this.printStackTrace = printStackTrace;
 	}
 
-	public void closeAll() throws IOException {
+	public void closeAll() {
 		closeAll(true);
 	}
 
-	public void closeAll(boolean waitForCompletion) throws IOException {}
+	public void closeAll(boolean waitForCompletion) {}
 	public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {}
 
 	public abstract boolean isOpeningPorts();

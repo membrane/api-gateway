@@ -13,19 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.stats.*;
 import com.predic8.membrane.core.transport.ssl.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.core.config.security.SSLParser;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.Interceptor;
+import java.util.*;
 
 public abstract class AbstractProxy implements Rule {
     private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
@@ -38,11 +35,6 @@ public abstract class AbstractProxy implements Rule {
     protected volatile boolean blockResponse;
 
     protected List<Interceptor> interceptors = new ArrayList<>();
-
-    /**
-     * Used to determine the IP address for outgoing connections
-     */
-    protected String localHost;
 
     private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
 
@@ -59,12 +51,6 @@ public abstract class AbstractProxy implements Rule {
 
     public AbstractProxy(RuleKey ruleKey) {
         this.key = ruleKey;
-    }
-
-    @Override
-    public String toString() { // TODO toString, getName, setName und name=""
-        // Initialisierung vereinheitlichen.
-        return getName();
     }
 
     public List<Interceptor> getInterceptors() {
@@ -98,10 +84,7 @@ public abstract class AbstractProxy implements Rule {
      */
     @MCAttribute
     public void setName(String name) {
-        if (name == null)
-            return;
         this.name = name;
-
     }
 
     public void setKey(RuleKey ruleKey) {
@@ -124,12 +107,6 @@ public abstract class AbstractProxy implements Rule {
     @MCAttribute
     public void setBlockResponse(boolean blockStatus) {
         this.blockResponse = blockStatus;
-    }
-
-    protected abstract AbstractProxy getNewInstance();
-
-    public SSLParser getSslInboundParser() {
-        return sslInboundParser;
     }
 
     /**
@@ -189,11 +166,7 @@ public abstract class AbstractProxy implements Rule {
             acmeCtx.init(router.getKubernetesClientFactory(), router.getHttpClientFactory());
             return;
         }
-
-        if (sslInboundParser.getKeyGenerator() != null)
-            setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
-        else
-            setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+        sslInboundContext = generateSslInboundContext();
     }
 
     public boolean isTargetAdjustHostHeader() {
@@ -224,5 +197,17 @@ public abstract class AbstractProxy implements Rule {
     @Override
     public RuleStatisticCollector getStatisticCollector() {
         return ruleStatisticCollector;
+    }
+
+    @Override
+    public String toString() { // TODO toString, getName, setName und name=""
+        // Initialisierung vereinheitlichen.
+        return getName();
+    }
+
+    private @NotNull SSLContext generateSslInboundContext() {
+        if (sslInboundParser.getKeyGenerator() != null)
+            return new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
+        return new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
     }
 }

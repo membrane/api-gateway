@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked")
-class JavascriptInterceptorTest {
+public class JavascriptInterceptorTest {
 
     private final static ObjectMapper om = new ObjectMapper();
 

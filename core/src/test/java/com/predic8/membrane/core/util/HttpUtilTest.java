@@ -18,6 +18,8 @@ import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.*;
+import java.net.URI;
 import java.util.List;
 
 import static com.predic8.membrane.core.Constants.*;
@@ -31,7 +33,7 @@ public class HttpUtilTest {
 	private static InputStream is1;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	public void setUp() {
 		is1 = new ByteArrayInputStream(s1.getBytes());
 	}
 
@@ -95,5 +97,17 @@ public class HttpUtilTest {
 		var exc = new Request.Builder().header(X_FORWARDED_FOR, "::1,628c::e115")
 									   .header(X_FORWARDED_FOR, "10.10.10.10, 8.8.8.8").buildExchange();
 		assertEquals(List.of("::1", "628c::e115", "10.10.10.10", "8.8.8.8"), getForwardedForList(exc));
+	}
+
+    @Test
+    void getPortTests() throws URISyntaxException, MalformedURLException {
+		assertEquals(80, getPort("http://localhost"));
+		assertEquals(8080, getPort("http://localhost:8080"));
+		assertEquals(443, getPort("https://localhost"));
+		assertEquals(8443, getPort("https://localhost:8443"));
+    }
+
+	private static int getPort(String uri) throws MalformedURLException, URISyntaxException {
+		return HttpUtil.getPort(new URI(uri).toURL());
 	}
 }

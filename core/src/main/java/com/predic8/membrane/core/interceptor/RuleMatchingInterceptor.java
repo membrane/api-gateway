@@ -21,6 +21,9 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.rules.*;
 import org.slf4j.*;
 
+import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
+import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @SuppressWarnings("unused")
@@ -34,11 +37,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	public RuleMatchingInterceptor() {
 		name = "Rule Matching Interceptor";
-		setFlow(Flow.Set.REQUEST);
+		setFlow(REQUEST);
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) {
 		if (exc.getRule() != null ) return CONTINUE;
 
 		Rule rule = getRule(exc);
@@ -46,17 +49,12 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		if (rule instanceof NullRule) {
 			// Do not log. 404 is too common
-			ProblemDetails pd = ProblemDetails.user(router.isProduction())
-					.statusCode(404)
-					.title("Wrong path or method")
-					.detail("This request was not accepted by Membrane. Please check HTTP method and path.");
-
-			if (!router.isProduction()) {
-				pd.extension("method", exc.getRequest().getMethod());
-				pd.extension("uri", exc.getRequest().getUri());
-			}
-
-			exc.setResponse(pd.build());
+            exc.setResponse(ProblemDetails.user(router.isProduction())
+                    .statusCode(404)
+                    .title("Wrong path or method")
+                    .detail("This request was not accepted by Membrane. Please check HTTP method and path.")
+                    .extension("method", exc.getRequest().getMethod())
+                    .extension("uri", exc.getRequest().getUri()).build());
 			return ABORT;
 		}
 
@@ -69,45 +67,19 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	public static void assignRule(Exchange exc, Rule rule) {
 		exc.setRule(rule);
 		if(exc.getRule().getSslOutboundContext() != null){
-			exc.setProperty(Exchange.SSL_CONTEXT, exc.getRule().getSslOutboundContext());
+			exc.setProperty(SSL_CONTEXT, exc.getRule().getSslOutboundContext());
 		}
 	}
 
 	private Rule getRule(Exchange exc) {
-		Rule rule = router.getRuleManager().getMatchingRule(exc);
-		if (rule != null) {
-			return rule;
-		}
-
-		return findProxyRule(exc);
-	}
-
-	private Rule findProxyRule(Exchange exc) {
-		for (Rule rule : router.getRuleManager().getRules()) {
-			if (!(rule instanceof ProxyRule))
-				continue;
-
-			if (rule.getKey().getIp() != null)
-				if (!rule.getKey().getIp().equals(exc.getHandler().getLocalAddress().toString()))
-					continue;
-
-
-			if (rule.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || rule.getKey().getPort() == exc.getHandler().getLocalPort()) {
-				if (log.isDebugEnabled())
-					log.debug("proxy rule found: " + rule);
-				return rule;
-			}
-		}
-		log.debug("No rule found for incoming request");
-		return new NullRule();
+		return router.getRuleManager().getMatchingRule(exc);
 	}
 
 	private void insertXForwardedFor(AbstractExchange exc) {
 		Header h = exc.getRequest().getHeader();
-		if (h.getNumberOf(Header.X_FORWARDED_FOR) > maxXForwardedForHeaders) {
+		if (h.getNumberOf(X_FORWARDED_FOR) > maxXForwardedForHeaders) {
 			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_FOR + " flood: " + r.getStartLine() +
-					r.getHeader().toString());
+			throw new RuntimeException("Request caused X-Forwarded-For flood: " + r.getStartLine() + r.getHeader());
 		}
 		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
 
