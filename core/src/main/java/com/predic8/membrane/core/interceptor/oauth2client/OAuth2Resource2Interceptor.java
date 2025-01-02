@@ -13,44 +13,33 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
-import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRefresher;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.AccessTokenRevalidator;
-import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.OAUTH2;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.generateNewState;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.isOAuth2RedirectRequest;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuthUtils.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.StateManager.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.*;
 import static com.predic8.membrane.core.interceptor.session.SessionManager.*;
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.net.URLEncoder.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -116,7 +105,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     @Override
     protected Outcome handleResponseInternal(Exchange exc) {
-        return Outcome.CONTINUE;
+        return CONTINUE;
     }
 
     @Override
@@ -184,7 +173,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                     applyBackendAuthorization(exc, session);
                     statistics.successfulRequest();
                     appendAccessTokenToRequest(exc);
-                    return Outcome.CONTINUE;
+                    return CONTINUE;
                 }
             }
 
@@ -192,7 +181,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 if (exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.hasOAuth2Answer()) {
                     exc.setProperty(Exchange.OAUTH2, session.getOAuth2AnswerParameters(wantedScope));
                     appendAccessTokenToRequest(exc);
-                    return Outcome.CONTINUE;
+                    return CONTINUE;
                 }
 
                 if (exc.getResponse().getStatusCode() >= 400) {
@@ -304,9 +293,9 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         originalExchangeStore.store(exc, session, state, exc);
 
-        if (session.get().containsKey(ParamNames.STATE))
-            state = session.get(ParamNames.STATE) + SESSION_VALUE_SEPARATOR + state;
-        session.put(ParamNames.STATE, state);
+        if (session.get().containsKey(STATE))
+            state = session.get(STATE) + SESSION_VALUE_SEPARATOR + state;
+        session.put(STATE, state);
 
         return RETURN;
     }

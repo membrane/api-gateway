@@ -64,7 +64,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             setErrorResponse(exc, "Target %s is not reachable.".formatted(getDestination(exc)) + PROXIES_HINT);
             return ABORT;
         } catch (UnknownHostException e) {
-            setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getRule().getName()) + PROXIES_HINT);
+            setErrorResponse(exc, "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName()) + PROXIES_HINT);
             return ABORT;
         }
     }
@@ -78,7 +78,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     }
 
     private String getDestination(Exchange exc) {
-        return exc.getDestinations().get(0);
+        return exc.getDestinations().getFirst();
     }
 
     @Override

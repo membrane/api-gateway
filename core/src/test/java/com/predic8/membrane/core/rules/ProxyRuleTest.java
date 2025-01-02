@@ -13,55 +13,51 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import org.junit.jupiter.api.*;
+
+import java.util.*;
+
 import static org.junit.jupiter.api.Assertions.*;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 
 public class ProxyRuleTest {
 
 	private static Router router;
-	private static Rule rule;
+	private static ProxyRule proxy;
 
 	@BeforeAll
-	public static void setUp() throws Exception {
+	public static void setUp() {
 		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
-		rule = new ProxyRule(new ProxyRuleKey(8888));
-		rule.setName("Rule 1");
+		proxy = new ProxyRule(new ProxyRuleKey(8888));
+		proxy.setName("Rule 1");
 		// TODO: this is not possible anymore rule.setInboundTLS(true);
-		rule.setBlockResponse(true);
-		rule.setInterceptors(getInterceptors());
+		proxy.setBlockResponse(true);
+		proxy.setInterceptors(getInterceptors());
 
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router.shutdown();
 	}
 
 	@Test
-	public void testRule() throws Exception {
+	public void testRule() {
 
-		assertEquals(8888, rule.getKey().getPort());
-		assertEquals("Rule 1", rule.getName());
+		assertEquals(8888, proxy.getKey().getPort());
+		assertEquals("Rule 1", proxy.getName());
 		//TODO: see above assertEquals(true, rule.isInboundTLS());
-		assertNull(rule.getSslOutboundContext());
+		assertNull(proxy.getSslOutboundContext());
 
-		List<Interceptor> inters = rule.getInterceptors();
+		List<Interceptor> inters = proxy.getInterceptors();
 		assertFalse(inters.isEmpty());
-		assertTrue(inters.size() == 2);
+        assertEquals(2, inters.size());
 
-		assertEquals(true, rule.isBlockResponse());
-		assertFalse(rule.isBlockRequest());
+        assertTrue(proxy.isBlockResponse());
+		assertFalse(proxy.isBlockRequest());
 	}
 
 	private static List<Interceptor> getInterceptors() {

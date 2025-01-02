@@ -18,6 +18,7 @@ package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Proxy;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -39,7 +40,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
         if (!isTargetInternal(exchange))
             return CONTINUE;
 
-        Rule currentRule = exchange.getRule(); // Store current rule (non- "service:..." rule )
+        Proxy currentProxy = exchange.getProxy(); // Store current rule (non- "service:..." rule )
 
         Outcome outcome = routeService(exchange);
         if (outcome == RETURN) { // An interceptor returned RETURN, so shortcut flow and return
@@ -50,7 +51,7 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
         } else if (outcome == ABORT) { // An interceptor returned ABORT, so shortcut flow and abort
             handleAbort(exchange);
         }
-        exchange.setRule(currentRule); // Restore current rule, so that the response interceptors of that rule could be invoked
+        exchange.setRule(currentProxy); // Restore current rule, so that the response interceptors of that rule could be invoked
         return outcome;
     }
 
@@ -130,12 +131,12 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
     }
 
     private AbstractServiceProxy getRuleByDest(Exchange exchange) {
-        Rule rule = router.getRuleManager().getRuleByName(getHost(exchange.getDestinations().getFirst()));
-        if (rule == null)
+        Proxy proxy = router.getRuleManager().getRuleByName(getHost(exchange.getDestinations().getFirst()));
+        if (proxy == null)
             throw new RuntimeException("No api found for destination " + exchange.getDestinations().getFirst());
-        if (rule instanceof AbstractServiceProxy sp)
+        if (proxy instanceof AbstractServiceProxy sp)
             return sp;
-        throw new RuntimeException("Not a service proxy: " + rule.getClass().getSimpleName());
+        throw new RuntimeException("Not a service proxy: " + proxy.getClass().getSimpleName());
     }
 
     /**
@@ -146,12 +147,12 @@ public class InternalServiceRoutingInterceptor extends AbstractInterceptor {
      */
     private static List<Interceptor> getBackInterceptors(Exchange exc) {
         Object o = exc.getProperty(REVERSE_INTERCEPTOR_LIST);
-        if (o == null) {
-            var l = new ArrayList<Interceptor>();
-            exc.setProperty(REVERSE_INTERCEPTOR_LIST, l);
-            return l;
-        }
-        return (List<Interceptor>) o;
+        if (o != null)
+            return (List<Interceptor>) o;
+
+        var l = new ArrayList<Interceptor>();
+        exc.setProperty(REVERSE_INTERCEPTOR_LIST, l);
+        return l;
     }
 
     private static void updateRequestPath(Exchange exchange) throws URISyntaxException {

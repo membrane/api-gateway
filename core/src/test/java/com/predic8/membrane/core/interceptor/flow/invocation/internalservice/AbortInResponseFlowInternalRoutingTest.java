@@ -27,7 +27,7 @@ public class AbortInResponseFlowInternalRoutingTest extends AbstractInternalServ
         api(api -> {
             api.setKey(new ServiceProxyKey("*", "*", null, 2000));
             api.add(A);
-            api.setTargetURL("service:a");
+            api.getTarget().setUrl("service:a");
         });
 
         api(api -> {

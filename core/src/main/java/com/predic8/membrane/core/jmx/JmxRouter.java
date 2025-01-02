@@ -14,12 +14,10 @@
 package com.predic8.membrane.core.jmx;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.Proxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
-
-import java.util.ArrayList;
 
 @ManagedResource()
 public class JmxRouter {
@@ -40,9 +38,9 @@ public class JmxRouter {
     }
 
     private void exportServiceProxyList(){
-        for(Rule rule : router.getRules()){
-            if(rule instanceof ServiceProxy){
-                exportServiceProxy((ServiceProxy) rule);
+        for(Proxy proxy : router.getRules()){
+            if(proxy instanceof ServiceProxy){
+                exportServiceProxy((ServiceProxy) proxy);
             }
         }
     }

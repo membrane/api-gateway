@@ -74,10 +74,6 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         var span = getExchangeSpan(exc);
         setSpanHttpHeaderAttributes(exc.getRequest().getHeader(), span);
 
-//        span.addEvent("Request", of(
-//                stringKey("Request Header"), exc.getRequest().getHeader().toString()
-//        ));
-
         if (logBody) {
             span.addEvent("Request", of(
                     stringKey("Request Body"), exc.getRequest().getBodyAsStringDecoded()
@@ -93,7 +89,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         span.setStatus(getOtelStatusCode(exc));
         span.setAttribute("http.status_code", exc.getResponse().getStatusCode());
         setSpanHttpHeaderAttributes(exc.getResponse().getHeader(), span);
-        if (exc.getRule() instanceof APIProxy) {
+        if (exc.getProxy() instanceof APIProxy) {
             setSpanOpenAPIAttributes(exc, span);
         }
 
@@ -135,7 +131,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
     }
 
     private String getProxyName(Exchange exc) {
-        var r = exc.getRule();
+        var r = exc.getProxy();
         return r.getName().isEmpty() ?
                r.getKey().getHost() + r.getKey().getPort()
                : r.getName();

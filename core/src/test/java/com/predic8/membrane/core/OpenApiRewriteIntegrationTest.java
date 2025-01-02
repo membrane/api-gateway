@@ -37,13 +37,13 @@ public class OpenApiRewriteIntegrationTest {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    public static void tearDown() {
         r.shutdown();
     }
 
     @NotNull
-    private static Rule getTargetProxy() throws Exception {
-        Rule targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
+    private static ServiceProxy getTargetProxy() throws Exception {
+        ServiceProxy targetProxy = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 3000), null, 8000);
         targetProxy.getInterceptors().add(new ReturnInterceptor());
         targetProxy.init(r);
         return targetProxy;

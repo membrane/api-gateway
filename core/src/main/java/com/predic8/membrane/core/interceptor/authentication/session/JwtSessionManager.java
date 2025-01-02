@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import org.jetbrains.annotations.*;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -29,6 +29,7 @@ import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
+import org.slf4j.*;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -39,7 +40,8 @@ import java.util.Map;
 @MCElement(name="jwtSessionManager2", mixed = true)
 public class JwtSessionManager extends SessionManager {
 
-    private SecureRandom random = new SecureRandom();
+    private static final Logger log = LoggerFactory.getLogger(JwtSessionManager.class);
+    private final SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
     private String key;
@@ -81,12 +83,12 @@ public class JwtSessionManager extends SessionManager {
                 .setVerificationKey(rsaJsonWebKey.getRsaPublicKey())
                 .build();
 
-        JwtClaims jwtClaims = null;
+        JwtClaims jwtClaims;
         Session session = new Session();
         try {
             jwtClaims = jwtConsumer.processToClaims(singedSession);
         } catch (InvalidJwtException e) {
-            e.printStackTrace();
+            log.error("Cannot process JWT {}", e.getMessage());
             return session;
         }
         Map<String, String> attr = new HashMap<>();
@@ -100,15 +102,15 @@ public class JwtSessionManager extends SessionManager {
             if ("nbf".equals(entry.getKey()))
                 continue;
             if ("sub".equals(entry.getKey())) {
-                session.setUserName((String)entry.getValue().get(0));
+                session.setUserName((String)entry.getValue().getFirst());
                 continue;
             }
             if ("level".equals(entry.getKey())) {
-                session.setLevel(Integer.parseInt((String)entry.getValue().get(0)));
+                session.setLevel(Integer.parseInt((String)entry.getValue().getFirst()));
                 continue;
             }
             if (entry.getKey().startsWith("map.")) {
-                attr.put(entry.getKey().substring(4), (String)entry.getValue().get(0));
+                attr.put(entry.getKey().substring(4), (String)entry.getValue().getFirst());
                 continue;
             }
             throw new RuntimeException("not parsed: " + entry.getKey());
@@ -122,28 +124,7 @@ public class JwtSessionManager extends SessionManager {
         String userName = session.getUserName();
         if (userName != null) {
 
-            JwtClaims claims = new JwtClaims();
-            claims.setExpirationTimeMinutesInTheFuture(getTimeout() / 60000f);
-            claims.setIssuedAtToNow();
-
-            claims.setGeneratedJwtId();
-            claims.setNotBeforeMinutesInThePast(2);
-
-            claims.setSubject(userName);
-            claims.setStringClaim("level", "" + session.getLevel());
-
-            synchronized (session) {
-                for (Map.Entry<String, String> entry : session.getUserAttributes().entrySet()) {
-                    claims.setStringClaim("map." + entry.getKey(), entry.getValue());
-                }
-            }
-
-            JsonWebSignature jws = new JsonWebSignature();
-            jws.setPayload(claims.toJson());
-            jws.setKey(rsaJsonWebKey.getPrivateKey());
-            jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
-            jws.setHeader("typ", "JWT");
-            jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+            JsonWebSignature jws = getJsonWebSignature(session, userName);
 
             try {
                 value = jws.getCompactSerialization();
@@ -152,10 +133,36 @@ public class JwtSessionManager extends SessionManager {
             }
         }
 
-        return value + "; " +
-                (getDomain() != null ? "Domain=" + getDomain() + "; " : "") +
-                "Path=/" +
-                (exc.getRule().getSslInboundContext() != null ? "; Secure" : "");
+        return getCookieValue(exc, value);
+    }
+
+    private @NotNull JsonWebSignature getJsonWebSignature(Session session, String userName) {
+        JsonWebSignature jws = new JsonWebSignature();
+        jws.setPayload(getJwtClaims(session, userName).toJson());
+        jws.setKey(rsaJsonWebKey.getPrivateKey());
+        jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
+        jws.setHeader("typ", "JWT");
+        jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+        return jws;
+    }
+
+    private @NotNull JwtClaims getJwtClaims(final Session session, String userName) {
+        JwtClaims claims = new JwtClaims();
+        claims.setExpirationTimeMinutesInTheFuture(getTimeout() / 60000f);
+        claims.setIssuedAtToNow();
+
+        claims.setGeneratedJwtId();
+        claims.setNotBeforeMinutesInThePast(2);
+
+        claims.setSubject(userName);
+        claims.setStringClaim("level", "" + session.getLevel());
+
+        synchronized (session) {
+            for (Map.Entry<String, String> entry : session.getUserAttributes().entrySet()) {
+                claims.setStringClaim("map." + entry.getKey(), entry.getValue());
+            }
+        }
+        return claims;
     }
 
     @Override
@@ -183,10 +190,6 @@ public class JwtSessionManager extends SessionManager {
     public Session createSession(Exchange exc) {
         Session s = new Session();
         exc.setProperty(SESSION, s);
-        /*
-        if (exc.getResponse() != null)
-            exc.getResponse().getHeader().addCookieSession(getCookieName(), signSession(s));
-            */
         return s;
     }
 

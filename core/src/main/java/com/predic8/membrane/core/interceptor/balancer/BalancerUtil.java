@@ -14,19 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.rules.Rule;
+import java.util.*;
 
 public class BalancerUtil {
 
 	public static List<Cluster> collectClusters(Router router) {
 		ArrayList<Cluster> result = new ArrayList<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getInterceptors();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
@@ -38,7 +36,7 @@ public class BalancerUtil {
 
 	public static List<LoadBalancingInterceptor> collectBalancers(Router router) {
 		ArrayList<LoadBalancingInterceptor> result = new ArrayList<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getInterceptors();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
@@ -49,7 +47,7 @@ public class BalancerUtil {
 	}
 
 	public static Balancer lookupBalancer(Router router, String name) {
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getInterceptors();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
@@ -61,7 +59,7 @@ public class BalancerUtil {
 	}
 
 	public static LoadBalancingInterceptor lookupBalancerInterceptor(Router router, String name) {
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getInterceptors();
 			if (interceptors != null)
 				for (Interceptor i : interceptors)
@@ -73,7 +71,7 @@ public class BalancerUtil {
 	}
 
 	public static boolean hasLoadBalancing(Router router) {
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getInterceptors();
 			if (interceptors == null)
 				continue;
@@ -126,7 +124,7 @@ public class BalancerUtil {
 
 	public static String getSingleClusterNameOrDefault(Balancer balancer){
 		if(balancer.getClusters().size() == 1)
-			return balancer.getClusters().get(0).getName();
+			return balancer.getClusters().getFirst().getName();
 		return Cluster.DEFAULT_NAME;
 	}
 

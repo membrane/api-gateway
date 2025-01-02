@@ -24,9 +24,9 @@ import static org.junit.jupiter.api.Assertions.*;
 public class RuleManagerTest {
 
 	RuleManager manager;
-	Rule proxy3013;
-	Rule forwardBlz;
-	Rule forwardBlzPOST;
+	ProxyRule proxy3013;
+	ServiceProxy forwardBlz;
+	ServiceProxy forwardBlzPOST;
 
 	MockRouter router;
 

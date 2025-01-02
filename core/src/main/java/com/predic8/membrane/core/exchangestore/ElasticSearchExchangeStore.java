@@ -14,44 +14,33 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.snapshots.DynamicAbstractExchangeSnapshot;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.cache.*;
+import com.google.common.collect.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.administration.PropertyValueCollector;
-import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.rules.StatisticCollector;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.administration.*;
+import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.apache.commons.io.*;
+import org.json.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.concurrent.*;
+import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.*;
 
 /**
  * @description Used for storing exchanges in the Elasticsearch.
@@ -67,7 +56,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     HttpClient client;
     static Logger log = LoggerFactory.getLogger(ElasticSearchExchangeStore.class);
     int updateIntervalMs = 1000;
-    Map<Long,AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
+    private final Map<Long,AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
     Cache<Long,AbstractExchangeSnapshot> cacheToWaitForElasticSearchIndex = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
     Thread updateJob;
     String index = "membrane";
@@ -118,7 +107,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                         shortTermMemoryForBatching.values().forEach(exc -> cacheToWaitForElasticSearchIndex.put(exc.getId(),exc));
                         shortTermMemoryForBatching.clear();
                     }
-                    if(exchanges.size() > 0){
+                    if(!exchanges.isEmpty()){
                         sendToElasticSearch(exchanges);
                     }
                     else
@@ -294,8 +283,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
             exc = client.call(exc);
-            Map res = responseToMap(exc);
-            Map excJson = getSourceElementFromElasticSearchResponse(res).get(0);
+            Map excJson = getSourceElementFromElasticSearchResponse(responseToMap(exc)).getFirst();
             return mapper.readValue(mapper.writeValueAsString(excJson),AbstractExchangeSnapshot.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -344,8 +332,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
     }
 
     @Override
-    public void removeAllExchanges(Rule rule) {
-        String name = rule.toString();
+    public void removeAllExchanges(Proxy proxy) {
+        String name = proxy.toString();
         try {
             String body = """
                     {
@@ -452,10 +440,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
             e.printStackTrace();
             return new AbstractExchange[0];
         }
-    }
-    @Override
-    public int getNumberOfExchanges(RuleKey ruleKey) {
-        return getExchanges(ruleKey).length;
     }
 
     @Override
@@ -592,7 +576,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
             try {
                 if( isElasticAcked(indexRes)){
-                    log.info("Index " + index + " created");
+                    log.info("Index {} created",index);
                 }
             } catch (JSONException e) {
                 if(indexRes.getJSONObject("error").getJSONArray("root_cause")
@@ -614,7 +598,7 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .buildExchange());
             String currentMapping = client.call(currentMappingExc).getResponse().getBodyAsStringDecoded();
 
-            if(new JSONObject(currentMapping).getJSONObject(index).getJSONObject("mappings").length() != 0 ){
+            if(!new JSONObject(currentMapping).getJSONObject(index).getJSONObject("mappings").isEmpty()){
                 log.info("Mapping already set skipping");
                 return;
             }

@@ -35,17 +35,17 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-        return flowController.invokeRequestHandlers(exc, exc.getRule().getInterceptors());
+	public Outcome handleRequest(Exchange exc) {
+        return flowController.invokeRequestHandlers(exc, exc.getProxy().getInterceptors());
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-        return flowController.invokeResponseHandlers(exc, exc.getRule().getInterceptors());
+        return flowController.invokeResponseHandlers(exc, exc.getProxy().getInterceptors());
 	}
 
 	@Override
 	public void handleAbort(Exchange exc) {
-        flowController.invokeAbortHandlers(exc, exc.getRule().getInterceptors(), exc.getRule().getInterceptors().size());
+        flowController.invokeAbortHandlers(exc, exc.getProxy().getInterceptors(), exc.getProxy().getInterceptors().size());
 	}
 }

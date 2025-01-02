@@ -14,27 +14,21 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.http.Header.CHUNKED;
-import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.lang.Integer.MAX_VALUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LargeBodyTest {
@@ -50,23 +44,23 @@ public class LargeBodyTest {
         hcc = new HttpClientConfiguration();
         hcc.setMaxRetries(1);
 
-        Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3040), "thomas-bayer.com", 80);
-        rule.getInterceptors().add(new AbstractInterceptor() {
+        ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3040), "thomas-bayer.com", 80);
+        proxy.getInterceptors().add(new AbstractInterceptor() {
             @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
+            public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok().body("").build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
         router = new HttpRouter();
 
         ((HTTPClientInterceptor) router.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+        router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
         router.init();
 
-        Rule rule1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
-        rule1.getInterceptors().add(new AbstractInterceptor() {
+        ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
+        proxy1.getInterceptors().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
                 middleExchange.set(exc);
@@ -77,12 +71,12 @@ public class LargeBodyTest {
 
         ((HTTPClientInterceptor) router2.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
 
-        router2.getRuleManager().addProxyAndOpenPortIfNew(rule1);
+        router2.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
         router2.init();
     }
 
     @AfterAll
-    public static void shutdown() throws IOException {
+    public static void shutdown() {
         if (router != null)
             router.shutdown();
         if (router2 != null)
@@ -91,37 +85,37 @@ public class LargeBodyTest {
 
     @Test
     public void large() throws Exception {
-        long len = Integer.MAX_VALUE + 1l;
+        long len = MAX_VALUE + 1L;
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).buildExchange();
-        new HttpClient(hcc).call(e);
-
+        try (HttpClient hc = new HttpClient(hcc)) {
+            hc.call(e);
+        }
         assertTrue(e.getRequest().getBody().wasStreamed());
         assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
     }
 
     @Test
     public void largeChunked() throws Exception {
-        long len = Integer.MAX_VALUE + 1l;
+        long len = MAX_VALUE + 1L;
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
-        new HttpClient(hcc).call(e);
-
+        try (HttpClient hc = new HttpClient(hcc)) {
+            hc.call(e);
+        }
         assertTrue(e.getRequest().getBody().wasStreamed());
         assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
     }
 
     public static class ConstantInputStream extends InputStream {
-        private final long len;
         long remaining;
 
         public ConstantInputStream(long length) {
-            this.len = length;
             remaining = length;
         }
 
         @Override
-        public int read() throws IOException {
+        public int read() {
             if (remaining == 0)
                 return -1;
             remaining--;
@@ -139,7 +133,7 @@ public class LargeBodyTest {
             }
 
             if (remaining > len) {
-                Arrays.fill(b, off, off+len, (byte)65);
+                Arrays.fill(b, off, off + len, (byte) 65);
                 remaining -= len;
                 return len;
             } else {

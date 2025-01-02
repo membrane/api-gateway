@@ -60,7 +60,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor {
     }
 
     private void logGroovyError(MultipleCompilationErrorsException e) {
-        log.error("Error in Groovy script in API '{}' with source: {}", getRule().getName(),src);
+        log.error("Error in Groovy script in API '{}' with source: {}", getProxy().getName(),src);
         for(Message error : e.getErrorCollector().getErrors()) {
             ByteArrayOutputStream bais = new ByteArrayOutputStream();
             PrintWriter pw = new PrintWriter(bais);

@@ -63,7 +63,7 @@ public class OpenAPIPublisherInterceptorTest {
         interceptor.init(router);
 
         get.setRequest(new Request.Builder().method("GET").build());
-        get.setRule(new NullRule());
+        get.setRule(new NullProxy());
         get.setOriginalHostHeader("api.predic8.de:80");
     }
 

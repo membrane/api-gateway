@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.Proxy;
 import com.predic8.membrane.core.util.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -69,7 +69,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		super.init(router);
 		wi.init(router);
 
-		Rule r = router.getParentProxy(this);
+		Proxy r = router.getParentProxy(this);
 		if (r instanceof AbstractServiceProxy) {
 			final Path path = ((AbstractServiceProxy) r).getPath();
 			if (path != null) {

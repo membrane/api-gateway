@@ -82,7 +82,7 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	void getAddressFromTargetElementTargetWithURL() throws Exception {
-		serviceProxy.setTargetURL("http://api.predic8.de");
+		serviceProxy.getTarget().setUrl("http://api.predic8.de");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("http://api.predic8.de/foo", getGetAddressFromTargetElement());
@@ -90,7 +90,7 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	void getAddressFromTargetElementTargetWithURLHTTPS() throws Exception {
-		serviceProxy.setTargetURL("https://api.predic8.de");
+		serviceProxy.getTarget().setUrl("https://api.predic8.de");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("https://api.predic8.de/foo", getGetAddressFromTargetElement());
@@ -98,7 +98,7 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	void getAddressFromTargetElementTargetWithSlash() throws Exception {
-		serviceProxy.setTargetURL("https://api.predic8.de/");
+		serviceProxy.getTarget().setUrl("https://api.predic8.de/");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("https://api.predic8.de/", getGetAddressFromTargetElement());
@@ -106,7 +106,7 @@ public class DispatchingInterceptorTest {
 
 	@Test
 	void getAddressFromTargetElementTargetWithPath() throws Exception {
-		serviceProxy.setTargetURL("https://api.predic8.de/baz");
+		serviceProxy.getTarget().setUrl("https://api.predic8.de/baz");
 		exc.setRule(serviceProxy);
 		exc.setOriginalRequestUri("/foo");
 		assertEquals("https://api.predic8.de/baz", getGetAddressFromTargetElement());

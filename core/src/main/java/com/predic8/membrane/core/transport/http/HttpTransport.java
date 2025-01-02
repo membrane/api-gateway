@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
@@ -182,6 +183,12 @@ public class HttpTransport extends Transport {
 		for (IPortChangeListener listener : menuListeners) {
 			listener.addPort(port);
 		}
+	}
+
+	@Override
+	public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {
+		TimerManager timerManager1 = getRouter() != null ? getRouter().getTimerManager() : null;
+		openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), proxy.getSslInboundContext(), timerManager1);
 	}
 
 	@Override

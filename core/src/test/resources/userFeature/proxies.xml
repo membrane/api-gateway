@@ -110,10 +110,6 @@
 	
 		<api name="Service Proxy" port="3030">
 			<path>/failinresponse/</path>
-			<groovy>
-				exc.echo();
-				CONTINUE
-			</groovy>
 			<interceptor refid="mock1" />
 			<response>
 				<interceptor refid="mock2" />	
@@ -133,10 +129,6 @@
 	
 		<api name="Service Proxy" port="3030">
 			<path>/failinabort/</path>
-			<groovy>
-				exc.echo();
-				CONTINUE
-			</groovy>
 			<interceptor refid="mock1" />
 			<response>
 				<interceptor refid="mock2" />	

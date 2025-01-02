@@ -18,13 +18,21 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
 
 import java.io.*;
 import java.util.*;
 
+/**
+ *
+ */
 public abstract class Transport {
+
+	/**
+	 * SSL and Non-SSL are mixed here, maybe split that in future
+	 */
 
 	protected Set<IPortChangeListener> menuListeners = new HashSet<>();
 
@@ -89,7 +97,10 @@ public abstract class Transport {
 	}
 
 	public void closeAll(boolean waitForCompletion) {}
+
 	public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {}
+
+	public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {}
 
 	public abstract boolean isOpeningPorts();
 

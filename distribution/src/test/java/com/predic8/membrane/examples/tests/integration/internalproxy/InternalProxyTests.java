@@ -50,34 +50,33 @@ public class InternalProxyTests {
     public static final int GATEWAY_PORT = 31337;
 
     @Test
-    public void internalProxyCallingWorks() throws Exception{
+    public void internalProxyCallingWorks() throws Exception {
         HttpRouter router = basicRouter(gateway("service:Returning internal proxy"), returningInternalProxy());
-
-        HttpClient hc = new HttpClient();
-        Exchange resp = hc.call(new Request.Builder().get("http://localhost:" + GATEWAY_PORT).buildExchange());
-
-        assertEquals(200,resp.getResponse().getStatusCode());
-
+        Exchange resp;
+        try (HttpClient hc = new HttpClient()) {
+            resp = hc.call(new Request.Builder().get("http://localhost:" + GATEWAY_PORT).buildExchange());
+        }
+        assertEquals(200, resp.getResponse().getStatusCode());
         router.stop();
+
     }
 
     @Test
-    public void internalProxyChainingWorks() throws Exception{
-        HttpRouter router = basicRouter(gateway("service:Counting internal proxy 1"), countingInternalProxy("1"),returningInternalProxy());
-
-        HttpClient hc = new HttpClient();
-        Exchange resp = hc.call(new Request.Builder().get("http://localhost:" + GATEWAY_PORT).buildExchange());
-
-        assertEquals(200,resp.getResponse().getStatusCode());
+    public void internalProxyChainingWorks() throws Exception {
+        HttpRouter router = basicRouter(gateway("service:Counting internal proxy 1"), countingInternalProxy("1"), returningInternalProxy());
+        Exchange resp;
+        try (HttpClient hc = new HttpClient()) {
+            resp = hc.call(new Request.Builder().get("http://localhost:" + GATEWAY_PORT).buildExchange());
+        }
+        assertEquals(200, resp.getResponse().getStatusCode());
         assertEquals("1", resp.getResponse().getHeader().getFirstValue(X_COUNTER));
-
         router.stop();
     }
 
-    public static Rule countingInternalProxy(String nameSuffix) {
+    public static Proxy countingInternalProxy(String nameSuffix) {
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
         target.setUrl("service:Returning internal proxy");
-        return createInternalProxy("Counting internal proxy " + nameSuffix, target, new AbstractInterceptor(){
+        return createInternalProxy("Counting internal proxy " + nameSuffix, target, new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
                 String counterHeader = exc.getRequest().getHeader().getFirstValue(X_COUNTER);
@@ -89,34 +88,34 @@ public class InternalProxyTests {
         });
     }
 
-    public static Rule returningInternalProxy() {
-        return createInternalProxy("Returning internal proxy", null, new AbstractInterceptor(){
+    public static Proxy returningInternalProxy() {
+        return createInternalProxy("Returning internal proxy", null, new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                exc.setResponse(Response.ok().header(X_COUNTER,exc.getRequest().getHeader().getFirstValue(X_COUNTER)).build());
+                exc.setResponse(Response.ok().header(X_COUNTER, exc.getRequest().getHeader().getFirstValue(X_COUNTER)).build());
                 return Outcome.RETURN;
             }
         });
     }
 
-    public static Rule gateway(String targetUrl) {
+    public static Proxy gateway(String targetUrl) {
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
         target.setUrl(targetUrl);
         return createServiceProxy(GATEWAY_PORT, target);
     }
 
-    public static HttpRouter basicRouter(Rule... rules){
+    public static HttpRouter basicRouter(Proxy... proxies) {
         HttpRouter router = new HttpRouter();
         router.getTransport().setForceSocketCloseOnHotDeployAfter(1000);
         router.setHotDeploy(false);
 
-        Arrays.stream(rules).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
+        Arrays.stream(proxies).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
 
         router.start();
         return router;
     }
 
-    public static Rule createInternalProxy(String name, AbstractServiceProxy.Target target, Interceptor... interceptors){
+    public static Proxy createInternalProxy(String name, AbstractServiceProxy.Target target, Interceptor... interceptors) {
         APIProxy internalProxy = new APIProxy();
         internalProxy.setName(name);
         internalProxy.setInterceptors(Arrays.asList(interceptors));
@@ -124,7 +123,7 @@ public class InternalProxyTests {
         return internalProxy;
     }
 
-    public static Rule createServiceProxy(int listenPort, AbstractServiceProxy.Target target, Interceptor... interceptors){
+    public static Proxy createServiceProxy(int listenPort, AbstractServiceProxy.Target target, Interceptor... interceptors) {
         if (target == null)
             target = new AbstractServiceProxy.Target(null, -1);
 

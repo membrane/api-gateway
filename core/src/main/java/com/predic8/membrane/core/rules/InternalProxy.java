@@ -13,46 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.annot.*;
 
 @MCElement(name="internal")
-public class InternalProxy extends AbstractProxy implements NotPortOpeningProxy {
-    private AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
-    private SSLContext sslOutboundContext;
+public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {
 
     public InternalProxy() {
         key = new AbstractRuleKey(-1,null){
 
         };
     }
-
-    @Override
-    public void init() throws Exception {
-        super.init();
-        if (target.getSslParser() != null)
-            setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
-    }
-
-    @MCChildElement(order=150)
-    public void setTarget(AbstractServiceProxy.Target target) {
-        this.target = target;
-    }
-
-    public AbstractServiceProxy.Target getTarget() {
-        return target;
-    }
-
-    @Override
-    public SSLProvider getSslOutboundContext() {
-        return sslOutboundContext;
-    }
-
-    protected void setSslOutboundContext(SSLContext sslOutboundContext) {
-        this.sslOutboundContext = sslOutboundContext;
-    }
-
 }

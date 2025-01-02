@@ -14,15 +14,44 @@ limitations under the License. */
 
 package com.predic8.membrane.core.rules;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import org.apache.commons.lang3.StringUtils;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.jetbrains.annotations.*;
 
-public abstract class SSLableProxy extends AbstractProxy {
+public class SSLableProxy extends AbstractProxy {
+
+	private SSLContext sslInboundContext;
+	private SSLParser sslInboundParser;
+
 	private SSLContext sslOutboundContext;
 
-	@Override
+	public SSLableProxy() {
+	}
+
+	public SSLableProxy(AbstractRuleKey ruleKey) {
+		super(ruleKey);
+	}
+
+	public void init()  {
+		if (sslInboundParser == null)
+			return;
+
+		if (sslInboundParser.getAcme() != null) {
+			if (!(key instanceof AbstractRuleKey))
+				throw new RuntimeException("<acme> only be used inside of <serviceProxy> and similar rules.");
+			String[] host = key.getHost().split(" +");
+			AcmeSSLContext acmeCtx = (AcmeSSLContext) getSslInboundContext(); // TODO: remove this.
+			// getSslInboundContext() of an inactive rule should not be called in the first place.
+			if (acmeCtx == null)
+				acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
+			setSslInboundContext(acmeCtx);
+			acmeCtx.init(router.getKubernetesClientFactory(), router.getHttpClientFactory());
+			return;
+		}
+		sslInboundContext = generateSslInboundContext();
+	}
+
 	public SSLProvider getSslOutboundContext() {
 		return sslOutboundContext;
 	}
@@ -31,11 +60,13 @@ public abstract class SSLableProxy extends AbstractProxy {
 		this.sslOutboundContext = sslOutboundContext;
 	}
 
+	public boolean isOutboundSSL() {
+		return sslOutboundContext != null;
+	}
 
-	// TODO Push up?
 	@Override
-	public String getName() {
-		return StringUtils.defaultIfEmpty(name, getKey().toString());
+	public String getProtocol() {
+		return isInboundSSL() ? "https" : "http";
 	}
 
 	public int getPort() {
@@ -64,6 +95,32 @@ public abstract class SSLableProxy extends AbstractProxy {
 	@MCAttribute
 	public void setIp(String ip) {
 		key.setIp(ip);
+	}
+
+	/**
+	 * @description Configures the usage of inbound SSL (HTTPS).
+	 */
+	@MCChildElement(order = 75, allowForeign = true)
+	public void setSslInboundParser(SSLParser sslInboundParser) {
+		this.sslInboundParser = sslInboundParser;
+	}
+
+	public SSLContext getSslInboundContext() {
+		return sslInboundContext;
+	}
+
+	protected void setSslInboundContext(SSLContext sslInboundContext) {
+		this.sslInboundContext = sslInboundContext;
+	}
+
+	public boolean isInboundSSL() {
+		return sslInboundContext != null;
+	}
+
+	private @NotNull SSLContext generateSslInboundContext() {
+		if (sslInboundParser.getKeyGenerator() != null)
+			return new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
+		return new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
 	}
 
 }

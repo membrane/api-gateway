@@ -56,7 +56,7 @@ public class ServiceInvocationTest {
 
 	private ServiceProxy createFirstRule() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", METHOD_POST, "*", 2000), "localhost", 80);
-		rule.setTargetURL("service:log");
+		rule.getTarget().setUrl("service:log");
 		rule.getInterceptors().add(new MockInterceptor("process"));
 		return rule;
 	}

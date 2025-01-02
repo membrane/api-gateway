@@ -17,10 +17,12 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.fasterxml.jackson.databind.*;
+import io.swagger.v3.core.util.*;
 import io.swagger.v3.oas.models.*;
+import io.swagger.v3.parser.ObjectMapperFactory;
 import org.slf4j.*;
 
-import java.util.regex.*;
+import java.io.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
@@ -29,7 +31,7 @@ public class OpenAPIUtil {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIUtil.class.getName());
 
-    private static final Pattern hostPortPattern = Pattern.compile("//(.*):(.*)/");
+    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {
@@ -60,5 +62,9 @@ public class OpenAPIUtil {
 
     public static boolean isSwagger2(JsonNode node) {
         return node.get("swagger") != null && node.get("swagger").asText().startsWith("2");
+    }
+
+    public static JsonNode convert2Json(OpenAPI api) throws IOException {
+        return omYaml.readTree(Json31.mapper().writeValueAsBytes(api));
     }
 }

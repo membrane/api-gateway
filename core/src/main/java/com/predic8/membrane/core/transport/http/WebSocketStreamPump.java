@@ -17,7 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.Proxy;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
@@ -33,18 +33,18 @@ public class WebSocketStreamPump extends StreamPump {
     protected static Logger log = LoggerFactory.getLogger(WebSocketStreamPump.class.getName());
 
     //pumpsToRight == true: from sender to recipient "sender -> recipient"
-    public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Rule rule, boolean pumpsToRight, Exchange originalExchange) {
-        super(in, out, stats, name, rule);
+    public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Proxy proxy, boolean pumpsToRight, Exchange originalExchange) {
+        super(in, out, stats, name, proxy);
         this.pumpsToRight = pumpsToRight;
         frameAssembler = new WebSocketFrameAssembler(in, originalExchange);
-        for (Interceptor i : rule.getInterceptors()) {
+        for (Interceptor i : proxy.getInterceptors()) {
             if (i instanceof WebSocketInterceptor) {
                 chain = ((WebSocketInterceptor) i).getInterceptors();
                 for (WebSocketInterceptorInterface i2 : chain)
                     try {
                         i2.init(i.getRouter());
                     } catch (Exception e) {
-                        log.error("Could not init WebSocketInterceptors:" + e.getMessage());
+                        log.error("Could not init WebSocketInterceptors: {}",e.getMessage());
                     }
                 break;
             }
@@ -77,7 +77,7 @@ public class WebSocketStreamPump extends StreamPump {
                         passFrameToChainElement(chain.size() - 1, false, frame);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("Error while reading frames.",e);
                 }
             });
         } catch (Exception e) {
@@ -85,7 +85,7 @@ public class WebSocketStreamPump extends StreamPump {
             String entity = (pumpsToRight ? "client to server" : "server to client");
 
             log.debug("",e);
-            log.info("Connection from " + entity + ": " + e.fillInStackTrace().toString());
+            log.info("Connection from {}: {}", entity,e.fillInStackTrace().toString());
         } finally {
             try {
                 out.close();
@@ -97,19 +97,18 @@ public class WebSocketStreamPump extends StreamPump {
 
     private void passFrameToChainElement(int i, boolean frameTravelsToRight, WebSocketFrame frame) throws Exception {
         if (chain.isEmpty()) {
-            if (true)
                 synchronized (out) {
                     frame.write(out);
                 }
             return;
         }
         if (i == -1) {
-            OutputStream target = pumpsToRight ? otherStreamPump.out : out;
+            final OutputStream target = pumpsToRight ? otherStreamPump.out : out;
             synchronized (target) {
                 frame.write(target);
             }
         } else if (chain.size() == i) {
-            OutputStream target = pumpsToRight ? out : otherStreamPump.out;
+            final OutputStream target = pumpsToRight ? out : otherStreamPump.out;
             synchronized (target) {
                 frame.write(target);
             }

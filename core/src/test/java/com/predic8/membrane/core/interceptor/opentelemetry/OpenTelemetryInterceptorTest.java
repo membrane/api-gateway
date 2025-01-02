@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.Proxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ class OpenTelemetryInterceptorTest {
 
     @Test
     void initTest() throws Exception {
-        Rule r = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3141), null, 0);
+        Proxy r = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3141), null, 0);
         r.getInterceptors().add(new OpenTelemetryInterceptor());
 
         HttpRouter rtr = new HttpRouter();

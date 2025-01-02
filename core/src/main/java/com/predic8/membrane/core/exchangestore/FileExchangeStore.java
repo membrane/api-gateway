@@ -25,12 +25,14 @@ import org.apache.commons.io.*;
 import org.slf4j.*;
 
 import java.io.*;
+import java.nio.file.*;
 import java.text.*;
 import java.util.Timer;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Calendar.DAY_OF_MONTH;
 
 /**
  * The output file is UTF-8 encoded.
@@ -47,8 +49,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<>();
 
-	private static final String separator = System
-			.getProperty("file.separator");
+	private static final String separator = FileSystems.getDefault().getSeparator();
 
 	public static final String MESSAGE_FILE_PATH = "message.file.path";
 
@@ -102,7 +103,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				log.error("{}",e, e);
 			}
 		} else {
-			log.error("Directory does not exists or file is not a directory: " + buf);
+			log.error("Directory does not exists or file is not a directory: {}",buf);
 		}
 
 	}
@@ -115,7 +116,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		buf.append(separator);
 		buf.append((time.get(Calendar.MONTH) + 1));
 		buf.append(separator);
-		buf.append(time.get(Calendar.DAY_OF_MONTH));
+		buf.append(time.get(DAY_OF_MONTH));
 		return buf;
 	}
 
@@ -169,7 +170,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 		// schedule for the next day if the scheduled execution time is before now
 		if (firstRun.before(Calendar.getInstance()))
-			firstRun.add(Calendar.DAY_OF_MONTH, 1);
+			firstRun.add(DAY_OF_MONTH, 1);
 
 		oldFilesCleanupTimer.scheduleAtFixedRate(
 				new TimerTask() {
@@ -192,8 +193,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			return; // don't do anything if this feature is deactivated
 		}
 
-		Calendar threshold = now;
-		threshold.add(Calendar.DAY_OF_MONTH, -maxDays);
+        now.add(DAY_OF_MONTH, -maxDays);
 
 		ArrayList<File> folders3 = new DepthWalker(3).getDirectories(new File(dir));
 
@@ -206,7 +206,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			Calendar folderTime = Calendar.getInstance();
 			folderTime.clear();
 			folderTime.set(year, mon-1, day);
-			if (folderTime.before(threshold)) {
+			if (folderTime.before(now)) {
 				deletion.add(f);
 			}
 		}
@@ -231,7 +231,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				"Method remove() is not supported by FileExchangeStore");
 	}
 
-	public void removeAllExchanges(Rule rule) {
+	public void removeAllExchanges(Proxy proxy) {
 		throw new RuntimeException(
 				"Method removeAllExchanges() is not supported by FileExchangeStore");
 	}
@@ -241,10 +241,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	}
 
 	public Object[] getAllExchanges() {
-		return null;
-	}
-
-	public Object[] getLatExchanges(int count) {
 		return null;
 	}
 

@@ -13,32 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy.ApiDescription;
-import com.predic8.membrane.core.rules.Rule;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import com.predic8.membrane.core.rules.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.text.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.lang.String.valueOf;
-import static java.text.DateFormat.getDateTimeInstance;
-import static java.util.Optional.ofNullable;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Optional.*;
 
 @MCElement(name = "APIsJSON")
 public class ApisJsonInterceptor extends AbstractInterceptor {
@@ -71,7 +65,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
             return;
         }
         if (apisJsonUrl == null) {
-            apisJsonUrl = getProtocol(exc.getRule()) + exc.getRequest().getHeader().getHost() + exc.getRequest().getUri();
+            apisJsonUrl = getProtocol(exc.getProxy()) + exc.getRequest().getHeader().getHost() + exc.getRequest().getUri();
         }
         ObjectNode apis = om.createObjectNode();
         apis.put("aid", rootDomain + ":" + collectionId);
@@ -126,8 +120,8 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         return rootDomain + ":" + ((APIProxyKey) api.getKey()).getKeyId();
     }
 
-    private static @NotNull String getProtocol(Rule rule) {
-        return (rule.getSslInboundContext() != null ? "https" : "http") + "://";
+    private static @NotNull String getProtocol(Proxy proxy) {
+        return proxy.getProtocol() + "://";
     }
 
     @MCAttribute

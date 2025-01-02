@@ -26,19 +26,14 @@ import com.predic8.membrane.annot.*;
 @MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {
 
-	@Override
-	public void init() throws Exception {
-		super.init();
-	}
-
 	public ServiceProxy() {
 		this.key = new ServiceProxyKey(80);
 	}
 
 	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort) {
 		this.key = ruleKey;
-		setTargetHost(targetHost);
-		setTargetPort(targetPort);
+		this.target.setHost(targetHost);
+		this.target.setPort(targetPort);
 	}
 
 	public String getMethod() {
@@ -54,27 +49,6 @@ public class ServiceProxy extends AbstractServiceProxy {
 	@MCAttribute
 	public void setMethod(String method) {
 		((ServiceProxyKey)key).setMethod(method);
-	}
-
-	public Target getTarget() {
-		return target;
-	}
-
-	@MCChildElement(order=150)
-	public void setTarget(Target target) {
-		this.target = target;
-	}
-
-	public void setTargetHost(String targetHost) {
-		this.target.setHost(targetHost);
-	}
-
-	public void setTargetPort(int targetPort) {
-		this.target.setPort(targetPort);
-	}
-
-	public void setTargetURL(String targetURL) {
-		this.target.setUrl(targetURL);
 	}
 
 }

@@ -14,28 +14,21 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicLong;
+import com.predic8.membrane.core.rules.Proxy;
+import org.slf4j.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.core.rules.Rule;
-
-import javax.net.ssl.SSLException;
+import javax.net.ssl.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
 public class StreamPump implements Runnable {
 
 	protected static Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
 
 	public static class StreamPumpStats {
-		private static ArrayList<StreamPump> pumps = new ArrayList<>();
+		private static final ArrayList<StreamPump> pumps = new ArrayList<>();
 
 		public synchronized int getRunning() {
 			return pumps.size();
@@ -64,22 +57,22 @@ public class StreamPump implements Runnable {
 	protected AtomicLong bytesTransferred;
 	private String pumpName;
 	private final long creationTime;
-	private Rule rule;
+	private final Proxy proxy;
 
-	public StreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Rule rule) {
+	public StreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Proxy proxy) {
 		this.in = in;
 		this.out = out;
 		this.stats = stats;
 		this.bytesTransferred = new AtomicLong();
 		this.pumpName = name;
 		this.creationTime = System.currentTimeMillis();
-		this.rule = rule;
+		this.proxy = proxy;
 	}
 
 	@Override
 	public void run() {
 		byte[] buffer = new byte[8192];
-		int length = 0;
+		int length;
 		if (stats != null)
 			stats.registerPump(this);
 		try {
@@ -92,7 +85,7 @@ public class StreamPump implements Runnable {
 		} catch (SocketTimeoutException | SSLException | SocketException e) {
 			// do nothing
 		} catch (IOException e) {
-			log.error("Reading from or writing to stream failed: " + e);
+			log.error("Reading from or writing to stream failed: {}", e.getMessage());
 		} finally {
 			try {
 				out.close();
@@ -108,7 +101,7 @@ public class StreamPump implements Runnable {
 		return this.pumpName;
 	}
 	public String getServiceProxyName() {
-		return rule.getName();
+		return proxy.getName();
 	}
 	public synchronized long getTransferredBytes() {
 		return bytesTransferred.get();
@@ -119,7 +112,7 @@ public class StreamPump implements Runnable {
 
 	public synchronized void close() {
 		try {
-			log.debug("Closing Stream Pump '" + pumpName + "'");
+			log.debug("Closing Stream Pump {}",pumpName);
 			in.close();
 			out.close();
 		} catch (IOException e) {

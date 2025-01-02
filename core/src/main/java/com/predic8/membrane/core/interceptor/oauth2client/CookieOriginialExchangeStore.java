@@ -21,6 +21,8 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.rules.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -32,6 +34,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.time.ZoneOffset.UTC;
 
 @MCElement(name = "cookieOriginalExchangeStore")
 public class CookieOriginialExchangeStore extends OriginalExchangeStore {
@@ -48,18 +51,23 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     }
 
     public List<String> createCookieAttributes(Exchange exc) {
+
         return Stream.of(
                 "Max-Age=" + expiresAfterSeconds,
-                "Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))),
-                "Path=/",
-
-                exc.getRule().getSslInboundContext() != null ? "Secure" : null,
+                "Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(UTC).plus(Duration.ofSeconds(expiresAfterSeconds))),
+                "Path=/", getSecureAttribute(exc),
                 domain != null ? "Domain=" + domain + "; " : null,
                 httpOnly ? "HttpOnly" : null,
                 sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+    }
+
+    private static @Nullable String getSecureAttribute(Exchange exc) {
+        if (!(exc.getProxy() instanceof SSLableProxy sp))
+            return null;
+        return sp.isInboundSSL() ? "Secure" : null;
     }
 
     public List<String> createInvalidationAttributes() {
@@ -82,13 +90,17 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
     @Override
     public void store(Exchange exchange, Session session, String state, Exchange exchangeToStore) throws IOException {
         try {
-            String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=" + escapeForCookie(new ObjectMapper().writeValueAsString(getTrimmedAbstractExchangeSnapshot(exchangeToStore, 3000)));
+            AbstractExchangeSnapshot trimmedAbstractExchangeSnapshot = getTrimmedAbstractExchangeSnapshot(exchangeToStore, 3000);
+            
+            var r = trimmedAbstractExchangeSnapshot.getRule();
+
+            String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=" + escapeForCookie(new ObjectMapper().writeValueAsString(trimmedAbstractExchangeSnapshot));
 
             if (currentSessionCookieValue.length() > 4093)
                 log.warn("Cookie is larger than 4093 bytes, this will not work some browsers.");
             exchange.getResponse().getHeader()
-                    .add(Header.SET_COOKIE, currentSessionCookieValue
-                            + ";" + String.join(";", createCookieAttributes(exchange)));
+                    .add(SET_COOKIE, currentSessionCookieValue
+                                     + ";" + String.join(";", createCookieAttributes(exchange)));
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -147,7 +159,7 @@ public class CookieOriginialExchangeStore extends OriginalExchangeStore {
         getStatesToRemove(exchange).forEach(state -> {
             String currentSessionCookieValue = originalRequestKeyNameInSession(state) + "=";
             expireCookies(ImmutableList.of(currentSessionCookieValue))
-                .forEach(cookie -> exchange.getResponse().getHeader().add(Header.SET_COOKIE, cookie));
+                .forEach(cookie -> exchange.getResponse().getHeader().add(SET_COOKIE, cookie));
         });
     }
 }

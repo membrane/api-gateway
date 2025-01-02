@@ -67,7 +67,7 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
         if (wsdl == null) {
             return;
         }
@@ -84,12 +84,12 @@ public class SOAPProxy extends AbstractServiceProxy {
         super.init();
     }
 
-    protected void configure() throws Exception {
+    protected void configure() {
 
         parseWSDL();
         // remove previously added interceptors
         for (; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
-            interceptors.remove(0);
+            interceptors.removeFirst();
 
 
         // add interceptors (in reverse order) to position 0.
@@ -104,32 +104,18 @@ public class SOAPProxy extends AbstractServiceProxy {
         if (targetPath != null) {
             RewriteInterceptor ri = new RewriteInterceptor();
             ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
-            interceptors.add(0, ri);
+            interceptors.addFirst(ri);
             automaticallyAddedInterceptorCount++;
         }
     }
 
-    void parseWSDL() throws Exception {
-        WSDLParserContext ctx = new WSDLParserContext();
-        ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
-
-
-        WSDLParser wsdlParser = new WSDLParser();
-        wsdlParser.setResourceResolver(resolverMap.toExternalResolver().toExternalResolver());
-
-        Definitions definitions = wsdlParser.parse(ctx);
-
+    void parseWSDL() {
+        Definitions definitions = getWsdlParser().parse(getWsdlParserContext());
         Service service = getService(definitions);
 
         setProxyName(service, definitions);
 
-        List<Port> ports = service.getPorts();
-        Port port = selectPort(ports, portName);
-
-        String location = port.getAddress().getLocation();
-
-        if (location == null)
-            throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
+        String location = getLocation(service);
 
         try {
 
@@ -156,15 +142,37 @@ public class SOAPProxy extends AbstractServiceProxy {
 
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("WSDL endpoint location '" + location + "' is not an URL.", e);
-        } catch (Exception e) {
-            handleException(e);
         }
+    }
+
+    private @NotNull String getLocation(Service service) {
+        String location = getPort(service).getAddress().getLocation();
+
+        if (location == null)
+            throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
+        return location;
+    }
+
+    private @NotNull Port getPort(Service service) {
+        return selectPort(service.getPorts(), portName);
+    }
+
+    private @NotNull WSDLParserContext getWsdlParserContext() {
+        WSDLParserContext ctx = new WSDLParserContext();
+        ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
+        return ctx;
+    }
+
+    private @NotNull WSDLParser getWsdlParser() {
+        WSDLParser wsdlParser = new WSDLParser();
+        wsdlParser.setResourceResolver(resolverMap.toExternalResolver().toExternalResolver());
+        return wsdlParser;
     }
 
     private Service getService(Definitions definitions) {
         List<Service> services = definitions.getServices();
         if (services.size() == 1)
-            return services.get(0);
+            return services.getFirst();
 
         if (serviceName == null) {
             throw new SOAPProxyMultipleServicesException(this, getServiceNames(services));
@@ -180,24 +188,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         return services.stream()
                 .map(WSDLElement::getName)
                 .toList();
-    }
-
-    private void handleException(Exception e) throws ResourceRetrievalException, UnknownHostException, ConnectException {
-        Throwable f = e;
-        while (f.getCause() != null && !(f instanceof ResourceRetrievalException))
-            f = f.getCause();
-        if (f instanceof ResourceRetrievalException rre) {
-            if (rre.getStatus() >= 400)
-                throw rre;
-            Throwable cause = rre.getCause();
-            if (cause != null) {
-                if (cause instanceof UnknownHostException)
-                    throw (UnknownHostException) cause;
-                else if (cause instanceof ConnectException)
-                    throw (ConnectException) cause;
-            }
-        }
-        throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
     }
 
     private void setTarget(URL url) {
@@ -260,24 +250,24 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 
 
-    private boolean addWSDLInterceptor(WSDLInterceptor wsdlInterceptor) throws URISyntaxException {
+    private boolean addWSDLInterceptor(WSDLInterceptor wsdlInterceptor) {
         boolean hasRewriter = wsdlInterceptor != null;
         if (!hasRewriter) {
             wsdlInterceptor = new WSDLInterceptor();
-            interceptors.add(0, wsdlInterceptor);
+            interceptors.addFirst(wsdlInterceptor);
             automaticallyAddedInterceptorCount++;
         }
         renameMe(wsdlInterceptor);
         return hasRewriter;
     }
 
-    private void renameMe(WSDLInterceptor wsdlInterceptor) throws URISyntaxException {
+    private void renameMe(WSDLInterceptor wsdlInterceptor) {
 
         if (key.getPath() == null)
             return;
 
         final String keyPath = key.getPath();
-        final String name = URLUtil.getName(router.getUriFactory(), keyPath);
+        final String name = getReplacementName(keyPath);
         wsdlInterceptor.setPathRewriter(path2 -> {
             try {
                 if (path2.contains("://")) {
@@ -287,18 +277,27 @@ public class SOAPProxy extends AbstractServiceProxy {
                     return m.replaceAll("./" + name + "?");
                 }
             } catch (MalformedURLException e) {
-                log.error("Cannot parse URL " + path2);
+                log.error("Cannot parse URL {}", path2);
             }
             return path2;
         });
 
     }
 
+    private @NotNull String getReplacementName(String keyPath) {
+        try {
+            return URLUtil.getName(router.getUriFactory(), keyPath);
+        } catch (URISyntaxException e) {
+            log.error("Error parsing URL {}", keyPath, e);
+            throw new RuntimeException("Check!");
+        }
+    }
+
     private void addWebServiceExplorer() {
         WebServiceExplorerInterceptor sui = new WebServiceExplorerInterceptor();
         sui.setWsdl(wsdl);
         sui.setPortName(portName);
-        interceptors.add(0, sui);
+        interceptors.addFirst(sui);
         automaticallyAddedInterceptorCount++;
     }
 
@@ -307,7 +306,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         if (!hasPublisher) {
             WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
             wp.setWsdl(wsdl);
-            interceptors.add(0, wp);
+            interceptors.addFirst(wp);
             automaticallyAddedInterceptorCount++;
         }
         return hasPublisher;

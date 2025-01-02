@@ -14,8 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.rewrite;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
@@ -30,6 +32,7 @@ public class ReverseProxyingInterceptorTest {
 
 	@Test
 	public void localRedirect() throws Exception {
+		rp.init(new Router());
 		// invalid by spec, redirection location should not be rewritten
 		assertEquals("/local", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "/local"));
 	}
@@ -65,6 +68,7 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private String getRewrittenRedirectionLocation(String requestHostHeader, int port, String requestURI, String redirectionURI) throws Exception {
 		Exchange exc = createExchange(requestHostHeader, null, port, requestURI, redirectionURI);
+		exc.setRule(new ServiceProxy());
 		assertEquals(CONTINUE, rp.handleResponse(exc));
 		return exc.getResponse().getHeader().getFirstValue(LOCATION);
 	}
@@ -106,6 +110,7 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private String getRewrittenDestination(String requestHostHeader, String requestDestinationHeader, int port, String requestURI, String targetScheme, int targetPort) throws Exception {
 		Exchange exc = createExchange(requestHostHeader, requestDestinationHeader, port, requestURI, null);
+		exc.setRule(new ServiceProxy());
 		String url = new URL(targetScheme, "target", targetPort, exc.getRequest().getUri()).toString();
 		exc.getDestinations().add(url);
 		assertEquals(CONTINUE, rp.handleRequest(exc));
@@ -117,6 +122,7 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private Exchange createExchange(String requestHostHeader, String requestDestinationHeader, int port, String requestURI, String redirectionURI) {
 		Exchange exc = new Exchange(new FakeHttpHandler(port));
+		exc.setRule(new ServiceProxy());
 		Request req = new Request();
 		req.setUri(requestURI);
 		Header header = new Header();

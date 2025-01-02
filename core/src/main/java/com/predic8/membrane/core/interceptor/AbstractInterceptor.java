@@ -108,7 +108,7 @@ public class AbstractInterceptor implements Interceptor {
 		init();
 	}
 
-	public <T extends Rule> T getRule(){
+	public <T extends Proxy> T getProxy(){
 		return (T)getRouter()
 				.getRuleManager()
 				.getRules()

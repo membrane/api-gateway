@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.config;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 
@@ -25,34 +24,34 @@ import org.junit.jupiter.api.Test;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.SpringInterceptor;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.Proxy;
 
 public class ReadRulesWithInterceptorsConfigurationTest {
 
 	private static Router router;
 
-	private static List<Rule> rules;
+	private static List<Proxy> proxies;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
 		router = Router.init("src/test/resources/ref.proxies.xml");
-		rules = router.getRuleManager().getRules();
+		proxies = router.getRuleManager().getRules();
 	}
 
 	@Test
 	public void testRulesSize() throws Exception {
-		assertEquals(2, rules.size());
+		assertEquals(2, proxies.size());
 	}
 
 	@Test
 	public void testRuleInterceptorSize() throws Exception {
-		Rule rule = rules.get(0);
-		assertEquals(1, rule.getInterceptors().size());
+		Proxy proxy = proxies.get(0);
+		assertEquals(1, proxy.getInterceptors().size());
 	}
 
 	@Test
 	public void testRuleInterceptorsHaveRouterReference() throws Exception {
-		List<Interceptor> interceptors = rules.get(0).getInterceptors();
+		List<Interceptor> interceptors = proxies.get(0).getInterceptors();
 		for (Interceptor itsp : interceptors) {
 			assertNotNull(itsp.getRouter());
 		}
@@ -60,13 +59,13 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@Test
 	public void testRuleInterceptorIDs() throws Exception {
-		List<Interceptor> interceptors = rules.get(0).getInterceptors();
+		List<Interceptor> interceptors = proxies.get(0).getInterceptors();
 		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.get(0)).getRefId());
 	}
 
 	@Test
 	public void testRuleInterceptorDisplayNames() throws Exception {
-		List<Interceptor> interceptors = rules.get(0).getInterceptors();
+		List<Interceptor> interceptors = proxies.get(0).getInterceptors();
 		assertEquals("Access Control List Interceptor", interceptors.get(0).getDisplayName());
 	}
 

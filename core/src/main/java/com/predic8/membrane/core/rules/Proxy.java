@@ -16,11 +16,13 @@ package com.predic8.membrane.core.rules;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.stats.*;
-import com.predic8.membrane.core.transport.ssl.*;
 
 import java.util.*;
 
-public interface Rule extends Cloneable {
+/**
+ * Should not know anything about HTTP
+ */
+public interface Proxy extends Cloneable {
 
 	List<Interceptor> getInterceptors();
 
@@ -44,11 +46,6 @@ public interface Rule extends Cloneable {
 
 	RuleStatisticCollector getStatisticCollector();
 
-	// Question: Can we push up ssl stuff?
-	SSLContext getSslInboundContext();
-
-	SSLProvider getSslOutboundContext();
-
 	void init(Router router) throws Exception;
 
 	boolean isTargetAdjustHostHeader();
@@ -57,5 +54,7 @@ public interface Rule extends Cloneable {
 
 	String getErrorState();
 
-	Rule clone() throws CloneNotSupportedException;
+	Proxy clone() throws CloneNotSupportedException;
+
+	String getProtocol();
 }

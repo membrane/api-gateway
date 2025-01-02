@@ -24,9 +24,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
 import com.predic8.membrane.core.stats.RuleStatisticCollector;
-import com.predic8.membrane.core.transport.http.Connection;
-import com.predic8.membrane.core.transport.http.ConnectionManager;
-import com.predic8.membrane.core.transport.http.StreamPump;
+import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLExchange;
@@ -46,8 +44,11 @@ import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 
+/**
+ * TODO Do will still use this?
+ */
 @MCElement(name="sslProxy")
-public class SSLProxy implements Rule {
+public class SSLProxy implements Proxy {
     private static final Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
 
     private Target target;
@@ -203,12 +204,12 @@ public class SSLProxy implements Rule {
 
     ConnectionManager cm;
 
-    @Override
+
     public SSLContext getSslInboundContext() {
         return new ForwardingStaticSSLContext();
     }
 
-    @Override
+
     public SSLProvider getSslOutboundContext() {
         return null;
     }
@@ -249,6 +250,12 @@ public class SSLProxy implements Rule {
         return clone;
     }
 
+    @Override
+    public String getProtocol() {
+        return "";
+    }
+
+    // TODO ?
     private class MyRuleKey implements RuleKey {
         @Override
         public int getPort() {
@@ -408,18 +415,7 @@ public class SSLProxy implements Rule {
 
             socket.setSoTimeout(0);
 
-            String threadName = Thread.currentThread().getName();
-            new Thread(a, threadName + " " + protocol + " Backward Thread").start();
-            try {
-                Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
-                b.run();
-            } finally {
-                try {
-                    con.close();
-                } catch (IOException e) {
-                    log.debug("", e);
-                }
-            }
+            HttpClient.runClient(log, a, protocol, b, con);
             throw new SocketException("SSL Forwarding Connection closed.");
         }
 

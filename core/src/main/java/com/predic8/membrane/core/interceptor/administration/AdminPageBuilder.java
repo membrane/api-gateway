@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Proxy;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.text.*;
@@ -398,7 +399,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createStatusCodesTable(Map<Integer, StatisticCollector> statusCodes) {
+	protected void createStatusCodesTable(final Map<Integer, StatisticCollector> statusCodes) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "statuscode-table");
 		thead();
 		tr();
@@ -555,7 +556,7 @@ public class AdminPageBuilder extends Html {
 
 	private List<ProxyRule> getProxyRules() {
 		List<ProxyRule> rules = new LinkedList<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			if (!(r instanceof ProxyRule)) continue;
 			rules.add((ProxyRule) r);
 		}
@@ -565,7 +566,7 @@ public class AdminPageBuilder extends Html {
 	private Map<String, StatisticCollector> getStatistics() {
 		Map<String, StatisticCollector> res = new TreeMap<>();
 		HashMap<StatisticCollector,String> backendConnections = new HashMap<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractProxy)) continue;
 			StatisticCollector sc = new StatisticCollector(true);
 			for (StatisticCollector s : r.getStatisticCollector().getStatisticsByStatusCodes().values())

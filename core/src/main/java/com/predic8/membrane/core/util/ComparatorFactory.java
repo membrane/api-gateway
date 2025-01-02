@@ -28,7 +28,7 @@ public class ComparatorFactory {
         if ("statusCode".equals(propName)) {
             return new PropertyComparator<>(order, exc -> exc.getResponse().getStatusCode());
         } else if ("proxy".equals(propName)) {
-            return new PropertyComparator<>(order, exc -> exc.getRule().toString());
+            return new PropertyComparator<>(order, exc -> exc.getProxy().toString());
         } else if ("method".equals(propName)) {
             return new PropertyComparator<>(order, exc -> exc.getRequest().getMethod());
         } else if ("path".equals(propName)) {

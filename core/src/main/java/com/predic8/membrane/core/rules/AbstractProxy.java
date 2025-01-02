@@ -15,16 +15,18 @@ package com.predic8.membrane.core.rules;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.stats.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import org.jetbrains.annotations.*;
+import org.apache.commons.lang3.*;
 import org.slf4j.*;
 
 import java.util.*;
 
-public abstract class AbstractProxy implements Rule {
+/**
+ * Convenience class that implements Proxy.
+ */
+public abstract class AbstractProxy implements Proxy {
+
     private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
     protected String name = "";
@@ -36,15 +38,12 @@ public abstract class AbstractProxy implements Rule {
 
     protected List<Interceptor> interceptors = new ArrayList<>();
 
-    private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
+    private final RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
 
     private boolean active;
     private String error;
 
     protected Router router;
-
-    private SSLContext sslInboundContext;
-    private SSLParser sslInboundParser;
 
     public AbstractProxy() {
     }
@@ -63,7 +62,7 @@ public abstract class AbstractProxy implements Rule {
     }
 
     public String getName() {
-        return name;
+        return StringUtils.defaultIfEmpty(name, getKey().toString());
     }
 
     public RuleKey getKey() {
@@ -109,35 +108,14 @@ public abstract class AbstractProxy implements Rule {
         this.blockResponse = blockStatus;
     }
 
-    /**
-     * @description Configures the usage of inbound SSL (HTTPS).
-     */
-    @MCChildElement(order = 75, allowForeign = true)
-    public void setSslInboundParser(SSLParser sslInboundParser) {
-        this.sslInboundParser = sslInboundParser;
-    }
-
-    @Override
-    public SSLContext getSslInboundContext() {
-        return sslInboundContext;
-    }
-
-    protected void setSslInboundContext(SSLContext sslInboundContext) {
-        this.sslInboundContext = sslInboundContext;
-    }
-
-    @Override
-    public SSLProvider getSslOutboundContext() {
-        return null;
-    }
 
     /**
      * Called after parsing is complete and this has been added to the object tree (whose root is Router).
      */
-    public final void init(Router router) throws Exception {
+    public void init(Router router) throws Exception {
         this.router = router;
         try {
-            init();
+            init(); // Extension point for subclasses
             for (Interceptor i : interceptors)
                 i.init(router);
             active = true;
@@ -150,23 +128,10 @@ public abstract class AbstractProxy implements Rule {
         }
     }
 
-    public void init() throws Exception {
-        if (sslInboundParser == null)
-            return;
-
-        if (sslInboundParser.getAcme() != null) {
-            if (!(key instanceof AbstractRuleKey))
-                throw new RuntimeException("<acme> only be used inside of <serviceProxy> and similar rules.");
-            String[] host = key.getHost().split(" +");
-            AcmeSSLContext acmeCtx = (AcmeSSLContext) getSslInboundContext(); // TODO: remove this.
-            // getSslInboundContext() of an inactive rule should not be called in the first place.
-            if (acmeCtx == null)
-                acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
-            setSslInboundContext(acmeCtx);
-            acmeCtx.init(router.getKubernetesClientFactory(), router.getHttpClientFactory());
-            return;
-        }
-        sslInboundContext = generateSslInboundContext();
+    /**
+     *  Extension point for subclasses
+     */
+    public void init() {
     }
 
     public boolean isTargetAdjustHostHeader() {
@@ -200,14 +165,13 @@ public abstract class AbstractProxy implements Rule {
     }
 
     @Override
+    public String getProtocol() {
+        return "unknown";
+    }
+
+    @Override
     public String toString() { // TODO toString, getName, setName und name=""
         // Initialisierung vereinheitlichen.
         return getName();
-    }
-
-    private @NotNull SSLContext generateSslInboundContext() {
-        if (sslInboundParser.getKeyGenerator() != null)
-            return new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
-        return new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
     }
 }

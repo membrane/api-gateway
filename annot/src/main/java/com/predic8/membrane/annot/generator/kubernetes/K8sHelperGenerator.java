@@ -13,20 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator.kubernetes;
 
-import com.predic8.membrane.annot.model.MainInfo;
-import com.predic8.membrane.annot.model.Model;
+import com.predic8.membrane.annot.model.*;
 
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.tools.FileObject;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.Writer;
+import javax.annotation.processing.*;
+import javax.lang.model.element.*;
+import javax.tools.*;
+import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
-import static java.util.stream.Stream.concat;
+import static java.util.stream.Stream.*;
 
 /**
  * Autogenerates a helper file for JSON parsing
@@ -91,7 +87,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                 "",
                 "package " + mainInfo.getAnnotation().outputPackage() + ";",
                 "",
-                "import com.predic8.membrane.core.rules.Rule;",
+                "import com.predic8.membrane.core.rules.Proxy;",
                 "import com.predic8.membrane.core.interceptor.Interceptor;",
                 "",
                 "import java.util.Map;",

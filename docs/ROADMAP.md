@@ -13,11 +13,14 @@
   - Also provide the datasource config
   - Maybe the config can be included into the docker-compose setup
 - Example Tests without unzipping for every test
-
+- Refactor HttpClient
+  - Replace finalize with try(...)
 
 # Version 6.0.0
 
 ## TODOs
+- Delete SSLProxy
+
 - If/setHeader
   - Write example with lots of samples in different languages
 
@@ -43,3 +46,6 @@
 - UnitTests: Use PackageScan for more or all
 - Make <log headerOnly="false"/> clearer! 
 
+# Discussion
+
+- K8S stuff document or delete?

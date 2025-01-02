@@ -193,6 +193,8 @@ public class SoapProxyInvocationTest {
                 .contentType(TEXT_XML)
                 .post("http://localhost:2000/services/b");  // This service is not selected!
 
+        System.out.println("res.prettyPrint() = " + res.prettyPrint());
+        
         res.then().statusCode(404)
                 .contentType(APPLICATION_PROBLEM_JSON)
                 .body("title", equalTo("Wrong path or method"));

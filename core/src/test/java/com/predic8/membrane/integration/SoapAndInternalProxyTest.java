@@ -36,17 +36,18 @@ import org.bouncycastle.jce.provider.*;
 import org.bouncycastle.openssl.jcajce.*;
 import org.bouncycastle.operator.*;
 import org.bouncycastle.operator.jcajce.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import javax.security.auth.x500.*;
 import java.io.*;
 import java.math.*;
-import java.nio.charset.*;
 import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -98,23 +99,26 @@ public class SoapAndInternalProxyTest {
     }
 
     private void runCheck(boolean checkTrigger) throws Exception {
-        HttpClient hc = new HttpClient();
-        Response r1 = hc.call(new Request.Builder().get("http://localhost:3047/b?wsdl").buildExchange()).getResponse();
-        //r1.write(System.out, true);
-        assertTrue(r1.getBodyAsStringDecoded().contains("\"https://a.b.local/b\""));
+        try(HttpClient hc = new HttpClient()) {
+            Response r1 = hc.call(new Request.Builder().get("http://localhost:3047/b?wsdl").buildExchange()).getResponse();
+            //r1.write(System.out, true);
+            assertTrue(r1.getBodyAsStringDecoded().contains("\"https://a.b.local/b\""));
 
-        if (checkTrigger)
-            assertTrue(trigger.getAndSet(false));
+            if (checkTrigger)
+                assertTrue(trigger.getAndSet(false));
 
+            Response r2 = hc.call(new Request.Builder().post("http://localhost:3047/b").body(getBody()).buildExchange()).getResponse();
+            //r2.write(System.out,true);
 
-        String body = new String(requireNonNull(this.getClass().getResourceAsStream("/get-city.xml")).readAllBytes(), StandardCharsets.UTF_8);
+            assertTrue(r2.getBodyAsStringDecoded().contains("population"));
 
-        Response r2 = hc.call(new Request.Builder().post("http://localhost:3047/b").body(body).buildExchange()).getResponse();
-        //r2.write(System.out,true);
-        assertTrue(r2.getBodyAsStringDecoded().contains("population"));
+            if (checkTrigger)
+                assertTrue(trigger.getAndSet(false));
+        }
+    }
 
-        if (checkTrigger)
-            assertTrue(trigger.getAndSet(false));
+    private @NotNull String getBody() throws IOException {
+        return new String(requireNonNull(this.getClass().getResourceAsStream("/get-city.xml")).readAllBytes(), UTF_8);
     }
 
     private void generateKeyAndCert() throws NoSuchAlgorithmException, OperatorCreationException, CertificateException, IOException {
@@ -198,7 +202,7 @@ public class SoapAndInternalProxyTest {
         return sp;
     }
 
-    private Rule createInternalProxy(boolean useTLS) throws Exception {
+    private Proxy createInternalProxy(boolean useTLS) throws Exception {
         APIProxy internalProxy = new APIProxy();
         internalProxy.setName("int");
         AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
@@ -225,7 +229,7 @@ public class SoapAndInternalProxyTest {
         return internalProxy;
     }
 
-    private Rule createSoapProxy() {
+    private Proxy createSoapProxy() {
         SOAPProxy soapProxy = new SOAPProxy();
         soapProxy.setPort(3047);
         soapProxy.setWsdl("service:int/?wsdl");

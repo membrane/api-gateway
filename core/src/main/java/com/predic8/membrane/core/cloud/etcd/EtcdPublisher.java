@@ -13,27 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.cloud.etcd;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.Lifecycle;
-import org.springframework.context.event.ContextRefreshedEvent;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.cloud.*;
+import com.predic8.membrane.core.cloud.ExponentialBackoff.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 import org.springframework.context.event.EventListener;
+import org.springframework.context.event.*;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.cloud.ExponentialBackoff;
-import com.predic8.membrane.core.cloud.ExponentialBackoff.Job;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import java.util.*;
 
 @MCElement(name = "etcdPublisher")
 public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
@@ -130,12 +121,10 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
     public void readConfig() {
         nodesFromConfig.clear();
-        for (Rule rule : router.getRuleManager().getRules()) {
+        for (Proxy proxy : router.getRuleManager().getRules()) {
 
-            if (!(rule instanceof ServiceProxy))
+            if (!(proxy instanceof ServiceProxy sp))
                 continue;
-
-            ServiceProxy sp = (ServiceProxy) rule;
 
             if (sp.getPath() == null)
                 continue;

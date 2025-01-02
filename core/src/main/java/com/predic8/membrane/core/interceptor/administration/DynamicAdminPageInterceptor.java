@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Proxy;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
@@ -48,7 +49,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		log.debug("request: " + exc.getOriginalRequestUri());
+		log.debug("request: {}", exc.getOriginalRequestUri());
 
 		exc.setTimeReqSent(System.currentTimeMillis());
 
@@ -74,8 +75,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/service-proxy/show/?(\\?.*)?")
-	public Response handleServiceProxyShowRequest(final Map<String, String> params, final String relativeRootPath)
-			throws Exception {
+	public Response handleServiceProxyShowRequest(final Map<String, String> params, final String relativeRootPath) {
 		final StringWriter writer = new StringWriter();
 
 		final AbstractServiceProxy rule = (AbstractServiceProxy) RuleUtil.findRuleByIdentifier(router,params.get("name"));
@@ -120,8 +120,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/proxy/show/?(\\?.*)?")
-	public Response handlePruleShowRequest(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	public Response handlePruleShowRequest(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 
 		final ProxyRule rule = (ProxyRule) RuleUtil.findRuleByIdentifier(router,params.get("name"));
@@ -162,7 +161,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 		logAddFwdRuleParams(params);
 
-		Rule r = new ServiceProxy(new ServiceProxyKey("*",
+		ServiceProxy r = new ServiceProxy(new ServiceProxyKey("*",
 				params.get("method"), ".*", getPortParam(params), null),
 				params.get("targetHost"), getTargetPortParam(params));
 		r.setName(params.get("name"));
@@ -184,10 +183,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			return createReadOnlyErrorResponse();
 
 		log.debug("adding proxy rule");
-		log.debug("name: " + params.get("name"));
-		log.debug("port: " + params.get("port"));
+		log.debug("name: {}", params.get("name"));
+		log.debug("port: {}", params.get("port"));
 
-		Rule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port")), null));
+		ProxyRule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port")), null));
 		r.setName(params.get("name"));
 		router.getRuleManager().addProxyAndOpenPortIfNew(r);
 		return respond(getProxyPage(params, relativeRootPath));
@@ -200,9 +199,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
-		Rule rule = RuleUtil.findRuleByIdentifier(router, params.get("name"));
-		if (rule != null)
-			router.getRuleManager().removeRule(rule);
+		Proxy proxy = RuleUtil.findRuleByIdentifier(router, params.get("name"));
+		if (proxy != null)
+			router.getRuleManager().removeRule(proxy);
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
@@ -213,9 +212,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
-		Rule rule = RuleUtil.findRuleByIdentifier(router, params.get("name"));
-		Rule newRule = rule.clone();
-		router.getRuleManager().replaceRule(rule, newRule);
+		Proxy proxy = RuleUtil.findRuleByIdentifier(router, params.get("name"));
+		Proxy newProxy = proxy.clone();
+		router.getRuleManager().replaceRule(proxy, newProxy);
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
@@ -233,8 +232,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/transport/?(\\?.*)?")
-	public Response handleTransportRequest(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	public Response handleTransportRequest(Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -255,8 +253,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/system/?(\\?.*)?")
-	public Response handleSystemRequest(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	public Response handleSystemRequest(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 
@@ -315,8 +312,8 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			return createReadOnlyErrorResponse();
 
 		log.debug("adding cluster");
-		log.debug("balancer: " + getBalancerParam(params));
-		log.debug("name: " + params.get("name"));
+		log.debug("balancer: {}", getBalancerParam(params));
+		log.debug("name: {}", params.get("name"));
 
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).addCluster(params.get("name"));
 
@@ -325,8 +322,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/node/show/?(\\?.*)?")
-	public Response handleNodeShowRequest(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	public Response handleNodeShowRequest(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -360,8 +356,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@SuppressWarnings("unused")
 	@Mapping("/admin/node/sessions/?(\\?.*)?")
-	public Response handleNodeSessionsRequest(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	public Response handleNodeSessionsRequest(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -388,10 +383,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			return createReadOnlyErrorResponse();
 
 		log.debug("adding node");
-		log.debug("balancer: " + getBalancerParam(params));
-		log.debug("cluster: " + params.get("cluster"));
-		log.debug("host: " + params.get("host"));
-		log.debug("port: " + params.get("port"));
+		log.debug("balancer: {}", getBalancerParam(params));
+		log.debug("cluster: {}", params.get("cluster"));
+		log.debug("host: {}", params.get("host"));
+		log.debug("port: {}", params.get("port"));
 
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
 				params.get("cluster"),
@@ -486,8 +481,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getAboutPage(params, relativeRootPath));
 	}
 
-	private String getServiceProxyPage(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getServiceProxyPage(Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -505,8 +499,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getProxyPage(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getProxyPage(Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -524,8 +517,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getClusterPage(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getClusterPage(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -544,8 +536,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getClustersPage(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getClustersPage(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 
@@ -570,8 +561,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getBalancersPage(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getBalancersPage(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 
@@ -589,8 +579,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getStatisticsPage(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getStatisticsPage(Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -607,8 +596,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getStreamPumpsPage(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getStreamPumpsPage(Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -623,8 +611,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getCallsPage(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getCallsPage(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -746,12 +733,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				res.add(t);
 		Collections.sort(res);
 		while (nulls-- > 0)
-			res.add(0, null);
+			res.addFirst(null);
 		return res;
 	}
 
-	private String getCallPage(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getCallPage(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -821,8 +807,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getClientsPage(Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getClientsPage(Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -839,8 +824,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getAboutPage(final Map<String, String> params, String relativeRootPath)
-			throws Exception {
+	private String getAboutPage(final Map<String, String> params, String relativeRootPath) {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
@@ -858,7 +842,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().get(0));
+		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().getFirst());
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
@@ -898,13 +882,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	private void logAddFwdRuleParams(Map<String, String> params) {
 		log.debug("adding fwd rule");
-		log.debug("name: " + params.get("name"));
-		log.debug("port: " + params.get("port"));
-		log.debug("client host: " + params.get("clientHost"));
-		log.debug("method: " + params.get("method"));
-		log.debug("path: " + params.get("path"));
-		log.debug("target host: " + params.get("targetHost"));
-		log.debug("target port: " + params.get("targetPort"));
+		log.debug("name: {}", params.get("name"));
+		log.debug("port: {}", params.get("port"));
+		log.debug("client host: {}", params.get("clientHost"));
+		log.debug("method: {}", params.get("method"));
+		log.debug("path: {}", params.get("path"));
+		log.debug("target host: {}", params.get("targetHost"));
+		log.debug("target port: {}", params.get("targetPort"));
 	}
 
 	public boolean isReadOnly() {

@@ -30,8 +30,7 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 import com.predic8.membrane.examples.tests.versioning.XsltExampleTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestInitialTest;
 import com.predic8.membrane.examples.tutorials.rest.TutorialRestStepsTest;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.*;
 
 @Suite
 @SelectClasses({
@@ -73,5 +72,6 @@ import org.junit.platform.suite.api.Suite;
         ProxiesXMLFullSampleTest.class
 
 })
+@ExcludeClassNamePatterns("com.predic8.membrane.examples.env.HelpLinkExistenceTest")
 class ExampleTestsWithInternet {
 }

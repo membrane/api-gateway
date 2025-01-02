@@ -122,15 +122,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         resolverMap.addRuleResolver(this);
     }
 
-    public Collection<Rule> getRules() {
+    public Collection<Proxy> getRules() {
         return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING);
     }
 
     @MCChildElement(order = 3)
-    public void setRules(Collection<Rule> proxies) {
+    public void setRules(Collection<Proxy> proxies) {
         getRuleManager().removeAllRules();
-        for (Rule rule : proxies)
-            getRuleManager().addProxy(rule, RuleDefinitionSource.SPRING);
+        for (Proxy proxy : proxies)
+            getRuleManager().addProxy(proxy, RuleDefinitionSource.SPRING);
     }
 
     public static Router init(String configFileName) {
@@ -147,7 +147,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         beanFactory.refresh();
         beanFactory.start();
 
-        return (Router) beanFactory.getBean("router");
+        return beanFactory.getBean("router",Router.class);
     }
 
     @SuppressWarnings("NullableProblems")
@@ -236,8 +236,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return backgroundInitializator;
     }
 
-    public Rule getParentProxy(Interceptor interceptor) {
-        for (Rule r : getRuleManager().getRules()) {
+    public Proxy getParentProxy(Interceptor interceptor) {
+        for (Proxy r : getRuleManager().getRules()) {
             if (r.getInterceptors() != null)
                 for (Interceptor i : r.getInterceptors())
                     if (i == interceptor)
@@ -246,8 +246,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
     }
 
-    public void add(Rule rule) throws IOException {
-        ruleManager.addProxyAndOpenPortIfNew(rule);
+    public void add(Proxy proxy) throws IOException {
+        if (!(proxy instanceof SSLableProxy sp)) {
+            ruleManager.addProxy(proxy,RuleDefinitionSource.MANUAL);
+        } else {
+            ruleManager.addProxyAndOpenPortIfNew(sp);
+        }
     }
 
     public void init() throws Exception {
@@ -256,8 +260,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     private void initRemainingRules() throws Exception {
-        for (Rule rule : getRuleManager().getRules())
-            rule.init(this);
+        for (Proxy proxy : getRuleManager().getRules())
+            proxy.init(this);
     }
 
     @Override
@@ -388,18 +392,18 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public void tryReinitialization() {
         boolean stillFailing = false;
-        ArrayList<Rule> inactive = getInactiveRules();
+        ArrayList<Proxy> inactive = getInactiveRules();
         if (!inactive.isEmpty()) {
             log.info("Trying to activate all inactive rules.");
-            for (Rule rule : inactive) {
+            for (Proxy proxy : inactive) {
                 try {
-                    log.info("Trying to start API {}.", rule.getName());
-                    Rule newRule = rule.clone();
-                    if (!newRule.isActive()) {
-                        log.warn("New rule for API {} is still not active.", rule.getName());
+                    log.info("Trying to start API {}.", proxy.getName());
+                    Proxy newProxy = proxy.clone();
+                    if (!newProxy.isActive()) {
+                        log.warn("New rule for API {} is still not active.", proxy.getName());
                         stillFailing = true;
                     }
-                    getRuleManager().replaceRule(rule, newRule);
+                    getRuleManager().replaceRule(proxy, newProxy);
                 } catch (CloneNotSupportedException e) {
                     log.error("", e);
                 }
@@ -484,11 +488,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         this.retryInitInterval = retryInitInterval;
     }
 
-    private ArrayList<Rule> getInactiveRules() {
-        ArrayList<Rule> inactive = new ArrayList<>();
-        for (Rule rule : getRuleManager().getRules())
-            if (!rule.isActive())
-                inactive.add(rule);
+    private ArrayList<Proxy> getInactiveRules() {
+        ArrayList<Proxy> inactive = new ArrayList<>();
+        for (Proxy proxy : getRuleManager().getRules())
+            if (!proxy.isActive())
+                inactive.add(proxy);
         return inactive;
     }
 
@@ -513,7 +517,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      * (for example, when a WSDL a component depends on could not be downloaded).</p>
      * <p>If false, the router will exit with code -1 just after startup, when the initialization of a rule failed.</p>
      * <p>If true, the router will continue startup, and all rules which could not be initialized will be <i>inactive</i> (=not
-     * {@link Rule#isActive()}).</p>
+     * {@link Proxy#isActive()}).</p>
      * <h3>Inactive rules</h3>
      * <p>Inactive rules will simply be ignored for routing decisions for incoming requests.
      * This means that requests for inactive rules might be routed using different routes or result in a "400 Bad Request"

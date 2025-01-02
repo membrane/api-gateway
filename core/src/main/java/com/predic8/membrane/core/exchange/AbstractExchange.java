@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Proxy;
 import org.slf4j.*;
 
 import java.io.*;
@@ -43,7 +44,7 @@ public abstract class AbstractExchange {
 	private final Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<>();
 	private final Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<>();
 
-	protected Rule rule;
+	protected Proxy proxy;
 
 	protected Map<String, Object> properties = new HashMap<>();
 
@@ -81,7 +82,7 @@ public abstract class AbstractExchange {
 		properties = new HashMap<>(original.properties);
 		originalRequestUri = original.originalRequestUri;
 		destinations.addAll(original.getDestinations());
-		rule = original.getRule();
+		proxy = original.getProxy();
 	}
 
 	public void setStatus(ExchangeState state) {
@@ -130,12 +131,12 @@ public abstract class AbstractExchange {
 		}
 	}
 
-	public Rule getRule() {
-		return rule;
+	public Proxy getProxy() {
+		return proxy;
 	}
 
-	public void setRule(Rule rule) {
-		this.rule = rule;
+	public void setRule(Proxy proxy) {
+		this.proxy = proxy;
 	}
 
 	public void addExchangeViewerListener(IExchangeViewerListener viewer) {
@@ -294,7 +295,7 @@ public abstract class AbstractExchange {
 	}
 
 	public String getServer() {
-		if (getRule() instanceof ProxyRule) {
+		if (getProxy() instanceof ProxyRule) {
 			try {
 				if (getRequest().isCONNECTRequest()) {
 					return getRequest().getHeader().getHost();
@@ -306,8 +307,8 @@ public abstract class AbstractExchange {
 			}
 			return getOriginalRequestUri();
 		}
-		if (getRule() instanceof AbstractServiceProxy) {
-			return ((AbstractServiceProxy) getRule()).getTargetHost();
+		if (getProxy() instanceof AbstractServiceProxy) {
+			return ((AbstractServiceProxy) getProxy()).getTargetHost();
 		}
 		return "";
 	}
@@ -424,7 +425,7 @@ public abstract class AbstractExchange {
 		copy.setOriginalRequestUri(source.getOriginalRequestUri());
 		copy.setTime(source.getTime());
 		copy.setErrorMessage(source.getErrorMessage());
-		copy.setRule(source.getRule());
+		copy.setRule(source.getProxy());
 		copy.setProperties(new HashMap<>(source.getProperties()));
 		copy.setStatus(source.getStatus());
 		copy.setForceToStop(source.isForcedToStop());
@@ -457,7 +458,7 @@ public abstract class AbstractExchange {
 		this.properties = properties;
 	}
 
-	public abstract <T extends AbstractExchange> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception;
+	public abstract <T extends AbstractExchange> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit);
 
 	public ArrayList<Interceptor> getInterceptorStack() {
 		return interceptorStack;

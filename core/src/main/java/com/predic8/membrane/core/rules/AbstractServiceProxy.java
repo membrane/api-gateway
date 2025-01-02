@@ -21,6 +21,61 @@ import com.predic8.membrane.core.transport.ssl.*;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
 
+	@Override
+	public void init() {
+		super.init();
+		if(target.port == -1)
+			target.port = target.getSslParser() != null ? 443 : 80;
+		if (target.getSslParser() != null)
+			setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
+	}
+
+	public String getHost() {
+		return key.getHost();
+	}
+
+	/**
+	 * @description <p>A space separated list of hostnames. If set, Membrane will only consider this rule, if the "Host"
+	 *              header of incoming HTTP requests matches one of the hostnames.
+	 *              </p>
+	 *              <p>
+	 *              The asterisk '*' can be used for basic globbing (to match any number, including zero, characters).
+	 *              </p>
+	 * @default <i>not set</i>
+	 * @example predic8.de *.predic8.de
+	 */
+	@MCAttribute
+	public void setHost(String host) {
+		((ServiceProxyKey)key).setHost(host);
+	}
+
+	public Path getPath() {
+		AbstractRuleKey k = (AbstractRuleKey)key;
+		if (!k.isUsePathPattern())
+			return null;
+		return new Path(k.isPathRegExp(), k.getPath());
+	}
+
+	/**
+	 * @description <p>
+	 *              If set, Membrane will only consider this rule, if the path of incoming HTTP requests matches.
+	 *              {@link Path} supports starts-with and regex matching.
+	 *              </p>
+	 *              <p>
+	 *              If used in a {@link SOAPProxy}, this causes path rewriting of SOAP requests and in the WSDL to
+	 *              automatically be configured.
+	 *              </p>
+	 */
+	@MCChildElement(order=50)
+	public void setPath(Path path) {
+		AbstractRuleKey k = (AbstractRuleKey)key;
+		k.setUsePathPattern(path != null);
+		if (path != null) {
+			k.setPathRegExp(path.isRegExp());
+			k.setPath(path.getValue());
+		}
+	}
+
 	/**
 	 * @description <p>
 	 *              The destination where the service proxy will send messages to. Use the target element, if you want
@@ -80,9 +135,9 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		}
 
 		/**
-         * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
-         * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
-         */
+		 * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
+		 * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
+		 */
 		@MCAttribute
 		public void setUrl(String url) {
 			this.url = url;
@@ -113,63 +168,17 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
 	protected Target target = new Target();
 
+	public Target getTarget() {
+		return target;
+	}
+
+	@MCChildElement(order=150)
+	public void setTarget(Target target) {
+		this.target = target;
+	}
+
 	public String getTargetScheme() {
 		return getSslOutboundContext() != null ? "https" : "http";
-	}
-
-	@Override
-	public void init() throws Exception {
-		super.init();
-		if(target.port == -1)
-			target.port = target.getSslParser() != null ? 443 : 80;
-		if (target.getSslParser() != null)
-			setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
-	}
-
-	public String getHost() {
-		return key.getHost();
-	}
-
-	/**
-	 * @description <p>A space separated list of hostnames. If set, Membrane will only consider this rule, if the "Host"
-	 *              header of incoming HTTP requests matches one of the hostnames.
-	 *              </p>
-	 *              <p>
-	 *              The asterisk '*' can be used for basic globbing (to match any number, including zero, characters).
-	 *              </p>
-	 * @default <i>not set</i>
-	 * @example predic8.de *.predic8.de
-	 */
-	@MCAttribute
-	public void setHost(String host) {
-		((ServiceProxyKey)key).setHost(host);
-	}
-
-	public Path getPath() {
-		AbstractRuleKey k = (AbstractRuleKey)key;
-		if (!k.isUsePathPattern())
-			return null;
-		return new Path(k.isPathRegExp(), k.getPath());
-	}
-
-	/**
-	 * @description <p>
-	 *              If set, Membrane will only consider this rule, if the path of incoming HTTP requests matches.
-	 *              {@link Path} supports starts-with and regex matching.
-	 *              </p>
-	 *              <p>
-	 *              If used in a {@link SOAPProxy}, this causes path rewriting of SOAP requests and in the WSDL to
-	 *              automatically be configured.
-	 *              </p>
-	 */
-	@MCChildElement(order=50)
-	public void setPath(Path path) {
-		AbstractRuleKey k = (AbstractRuleKey)key;
-		k.setUsePathPattern(path != null);
-		if (path != null) {
-			k.setPathRegExp(path.isRegExp());
-			k.setPath(path.getValue());
-		}
 	}
 
 	public String getTargetHost() {

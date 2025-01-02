@@ -29,19 +29,19 @@ public class ServiceCallsServiceInternalRoutingTest extends AbstractInternalServ
         api(a -> {
             a.setKey(new ServiceProxyKey("*","*",null,2000));
             a.add(A);
-            a.setTargetURL("service://b");
+            a.getTarget().setUrl("service://b");
         });
 
         api(b -> {
             b.setName("b");
             b.add(B);
-            b.setTargetURL("service://c");
+            b.getTarget().setUrl("service://c");
         });
 
         api(c -> {
             c.setName("c");
             c.add(C);
-            c.setTargetURL("service://d");
+            c.getTarget().setUrl("service://d");
         });
 
         api(d -> {

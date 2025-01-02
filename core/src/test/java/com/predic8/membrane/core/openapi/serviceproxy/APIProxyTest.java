@@ -17,6 +17,7 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -168,7 +169,7 @@ public class APIProxyTest {
         api.setSpecs(List.of(extracted("src/test/resources/openapi/specs/paths/api-a-path-foo.yml"),
                 extracted("src/test/resources/openapi/specs/paths/api-b-path-foo.yml")));
 
-        assertThrows(DuplicatePathException.class, api::init);
+        assertThrows(ConfigurationException.class, api::init);
     }
 
     @Test
@@ -178,6 +179,16 @@ public class APIProxyTest {
         api.setName("TestAPI");
         api.init(router);
         api.setSpecs(List.of(extracted("api-c-multiple-server-urls.yml")));
+    }
+
+    @Test
+    void wrongLocationPath() throws Exception {
+        APIProxy api = new APIProxy();
+        api.setName("TestAPI");
+        api.setSpecs(List.of(new OpenAPISpec() {{
+            location = "file:afdasfdasfsaf";
+        }}));
+        assertThrows(ConfigurationException.class, () -> api.init(router));
     }
 
     private OpenAPISpec extracted(String location) {

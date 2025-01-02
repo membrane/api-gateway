@@ -13,28 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.io.InputStream;
-
-import com.predic8.membrane.core.interceptor.soap.SampleSoapServiceInterceptor;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.soap.*;
+import com.predic8.membrane.core.rules.*;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
+import org.apache.http.params.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("deprecation")
 public class Http10Test {
@@ -43,19 +34,19 @@ public class Http10Test {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
-		rule2.getInterceptors().add(new SampleSoapServiceInterceptor());
+		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
+		proxy2.getInterceptors().add(new SampleSoapServiceInterceptor());
         router2 = new HttpRouter();
-		router2.getRuleManager().addProxyAndOpenPortIfNew(rule2);
+		router2.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
 		router2.init();
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "localhost", 2000);
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "localhost", 2000);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
 		router.init();
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	public static void tearDown() {
 		router2.shutdown();
 		router.shutdown();
 	}

@@ -14,20 +14,15 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.rules.StatisticCollector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.model.*;
+import com.predic8.membrane.core.rules.*;
+import org.slf4j.*;
 
-import java.text.DecimalFormat;
+import java.text.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -78,7 +73,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 						try {
 							snapInternal(exc, RESPONSE);
 						} catch (Exception e) {
-							e.printStackTrace();
+							log.error("Error snapping exchange", e);
 						}
 					}
 				});
@@ -144,20 +139,20 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		modify();
 	}
 
-	public synchronized void removeAllExchanges(Rule rule) {
-		exchanges.removeAll(getExchangeList(rule.getKey()));
+	public synchronized void removeAllExchanges(Proxy proxy) {
+		exchanges.removeAll(getExchangeList(proxy.getKey()));
 		modify();
 	}
 
 	private synchronized List<AbstractExchange> getExchangeList(RuleKey key) {
 		List<AbstractExchange> c = new ArrayList<>();
 		for (AbstractExchange exc : inflight) {
-			if (exc.getRule().getKey().equals(key)) {
+			if (exc.getProxy().getKey().equals(key)) {
 				c.add(exc);
 			}
 		}
 		for(AbstractExchange exc : exchanges) {
-			if (exc.getRule().getKey().equals(key)) {
+			if (exc.getProxy().getKey().equals(key)) {
 				c.add(exc);
 			}
 		}
@@ -195,7 +190,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			Exchange newEx = new Exchange(null);
 			newEx.setId(ex.getId());
 			newEx.setRequest(ex.getRequest());
-			newEx.setRule(ex.getRule());
+			newEx.setRule(ex.getProxy());
 			newEx.setRemoteAddr(ex.getRemoteAddr());
 			newEx.setTime(ex.getTime());
 			newEx.setTimeReqSent(ex.getTimeReqSent() != 0 ? ex.getTimeReqSent() : ex.getTimeReqReceived());
@@ -284,9 +279,9 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		log.warn(separator);
 		log.warn(separator);
 		log.warn("You current LimitedMemoryExchangeStore max size is near the max available JVM heap space.");
-		log.warn("LimitedMemoryExchangeStore max size: " + formatTwoDecimals(getLmesMaxSizeInMb()) + "mb");
-		log.warn("Java Virtual Machine heap size: " + formatTwoDecimals(getJvmHeapSizeInMb()) + "mb");
-		log.warn("Suggestion: add \"-Xmx"+Math.round(getLmesMaxSizeInMb()+additionalMemoryToAddInMb+1)+"m\" as additional parameter in the Membrane starter script");
+		log.warn("LimitedMemoryExchangeStore max size: {}",formatTwoDecimals(getLmesMaxSizeInMb()) + "mb");
+		log.warn("Java Virtual Machine heap size: {} mb", formatTwoDecimals(getJvmHeapSizeInMb()));
+		log.warn("Suggestion: add \"-Xmx{}m\" as additional parameter in the Membrane starter script", Math.round(getLmesMaxSizeInMb()+additionalMemoryToAddInMb+1));
 		log.warn(separator);
 		log.warn(separator);
 	}

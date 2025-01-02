@@ -13,22 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HostColonPort;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.googlecode.jatl.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.apache.commons.lang3.*;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
 /**
  * @description The index feature lists available proxys at a simple Web page.
@@ -48,7 +43,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 
 	public List<ServiceInfo> getServices(Exchange exc) {
 		List<ServiceInfo> result = new ArrayList<>();
-		for (Rule r : router.getRuleManager().getRules()) {
+		for (Proxy r : router.getRuleManager().getRules()) {
 			if (r instanceof AbstractServiceProxy) {
 				ServiceInfo si = getServiceInfo(exc, (AbstractServiceProxy)r);
 				if (si != null)
@@ -59,7 +54,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 	}
 
 	private ServiceInfo getServiceInfo(Exchange exc, AbstractServiceProxy sp) {
-		if (sp.getInterceptors().size() == 1 && sp.getInterceptors().get(0) instanceof IndexInterceptor)
+		if (sp.getInterceptors().size() == 1 && sp.getInterceptors().getFirst() instanceof IndexInterceptor)
 			return null;
 
 		ServiceProxyKey k = (ServiceProxyKey) sp.getKey();

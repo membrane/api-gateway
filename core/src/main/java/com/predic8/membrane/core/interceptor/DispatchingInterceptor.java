@@ -47,7 +47,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
-        if (exc.getRule() instanceof AbstractServiceProxy asp) {
+        if (exc.getProxy() instanceof AbstractServiceProxy asp) {
             exc.getDestinations().clear();
             exc.getDestinations().add(getForwardingDestination( exc));
             setSNIPropertyOnExchange(exc, asp);
@@ -77,7 +77,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     protected String getAddressFromTargetElement(Exchange exc) throws MalformedURLException, URISyntaxException {
-        AbstractServiceProxy p = (AbstractServiceProxy) exc.getRule();
+        AbstractServiceProxy p = (AbstractServiceProxy) exc.getProxy();
 
         if (p.getTargetURL() != null) {
             if (p.getTargetURL().startsWith("http") && !UriUtil.getPathFromURL(router.getUriFactory(), p.getTargetURL()).contains("/")) {

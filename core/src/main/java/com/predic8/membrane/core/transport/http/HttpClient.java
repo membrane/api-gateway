@@ -123,6 +123,7 @@ public class HttpClient implements AutoCloseable {
 		this.streamPumpStats = streamPumpStats;
 	}
 
+	// TODO remove it and close it otherwise
 	@Override
 	protected void finalize() throws Throwable {
 		close();
@@ -164,7 +165,7 @@ public class HttpClient implements AutoCloseable {
 		if (authentication != null)
 			exc.getRequest().getHeader().setAuthorization(authentication.getUsername(), authentication.getPassword());
 
-		if (adjustHostHeader && (exc.getRule() == null || exc.getRule().isTargetAdjustHostHeader())) {
+		if (adjustHostHeader && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
 			URL d = new URL(dest);
 			exc.getRequest().getHeader().setHost(d.getHost() + ":" + HttpUtil.getPort(d));
 		}
@@ -208,7 +209,7 @@ public class HttpClient implements AutoCloseable {
 			HostColonPort target = null;
 			Integer responseStatusCode = null;
 			try {
-				log.debug("try # " + counter + " to " + dest);
+				log.debug("try # {} to {}", counter, dest);
 				target = init(exc, dest, adjustHostHeader);
 				if (counter == 0) {
 					con = exc.getTargetConnection();
@@ -295,22 +296,22 @@ public class HttpClient implements AutoCloseable {
 				// java.net.SocketException: Software caused connection abort: socket write error
 			} catch (ConnectException e) {
 				exception = e;
-				log.info("Connection to " + (target == null ? dest : target) + " refused.");
+				log.info("Connection to {} refused.",  (target == null ? dest : target));
 			} catch(SocketException e){
 				exception = e;
 				if ( e.getMessage().contains("Software caused connection abort")) {
-					log.info("Connection to " + dest + " was aborted externally. Maybe by the server or the OS Membrane is running on.");
+					log.info("Connection to {} was aborted externally. Maybe by the server or the OS Membrane is running on.", dest);
 				} else if (e.getMessage().contains("Connection reset") ) {
-					log.info("Connection to " + dest + " was reset externally. Maybe by the server or the OS Membrane is running on.");
+					log.info("Connection to {} was reset externally. Maybe by the server or the OS Membrane is running on.", dest);
 				} else {
 					logException(exc, counter, e);
 				}
 			} catch (UnknownHostException e) {
 				exception = e;
-				log.warn("Unknown host: " + (target == null ? dest : target ));
+				log.warn("Unknown host: {}", (target == null ? dest : target ));
 			} catch (EOFWhileReadingFirstLineException e) {
 				exception = e;
-				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getLineSoFar());
+				log.debug("Server connection to {} terminated before line was read. Line so far: {}",dest, e.getLineSoFar());
 			} catch (NoResponseException e) {
 				exception = e;
 			} catch (Exception e) {
@@ -478,16 +479,16 @@ public class HttpClient implements AutoCloseable {
 		final StreamPump a;
 		final StreamPump b;
 		if("WebSocket".equals(protocol)){
-			WebSocketStreamPump aTemp = new WebSocketStreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule(),true,exc);
-			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule(),false, null);
+			WebSocketStreamPump aTemp = new WebSocketStreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy(),true,exc);
+			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy(),false, null);
 			aTemp.init(bTemp);
 			bTemp.init(aTemp);
 			a = aTemp;
 			b = bTemp;
 		}
 		else {
-			a = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule());
-			b = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule());
+			a = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getProxy());
+			b = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getProxy());
 		}
 
 		hsr.getSourceSocket().setSoTimeout(0);
@@ -496,20 +497,24 @@ public class HttpClient implements AutoCloseable {
 
 			@Override
 			public void setExchangeFinished() {
-				String threadName = Thread.currentThread().getName();
-				new Thread(b, threadName + " " + protocol + " Backward Thread").start();
-				try {
-					Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
-					a.run();
-				} finally {
-					try {
-						con.close();
-					} catch (IOException e) {
-						log.debug("", e);
-					}
-				}
+				runClient(log, b, protocol, a, con);
 			}
 		});
+	}
+
+	public static void runClient(Logger log, StreamPump b, String protocol, StreamPump a, Connection con) {
+		String threadName = Thread.currentThread().getName();
+		new Thread(b, threadName + " " + protocol + " Backward Thread").start();
+		try {
+			Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
+			a.run();
+		} finally {
+			try {
+				con.close();
+			} catch (IOException e) {
+				log.debug("", e);
+			}
+		}
 	}
 
 	private boolean isUpgradeToResponse(Response res, String protocol) {
@@ -523,7 +528,7 @@ public class HttpClient implements AutoCloseable {
 			exc.getRequest().write(con.out, maxRetries > 1);
 			Response response = new Response();
 			response.read(con.in, false);
-			log.debug("Status code response on CONNECT request: " + response.getStatusCode());
+			log.debug("Status code response on CONNECT request: {}", response.getStatusCode());
 		}
 		exc.getRequest().setUri(Constants.N_A);
 	}
@@ -544,7 +549,7 @@ public class HttpClient implements AutoCloseable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close()  {
 		conMgr.shutdownWhenDone();
 		if (http2ClientPool != null)
 			http2ClientPool.shutdownWhenDone();

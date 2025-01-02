@@ -13,32 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.shadowing;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.misc.SetHeaderInterceptor;
-import com.predic8.membrane.core.rules.AbstractServiceProxy.Target;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.rules.AbstractServiceProxy.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
 
-import java.util.List;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static io.restassured.RestAssured.given;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class ShadowingInterceptorTest {
@@ -49,12 +40,12 @@ class ShadowingInterceptorTest {
     static Router interceptorRouter;
     static Router shadowingRouter;
 
-    static Rule interceptorRule;
+    static ServiceProxy interceptorProxy;
     static ShadowingInterceptor shadowingInterceptor;
 
     static ReturnInterceptor returnInterceptorMock;
 
-    static Rule shadowingRule;
+    static ServiceProxy shadowingProxy;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -81,13 +72,13 @@ class ShadowingInterceptorTest {
         interceptorRouter.setExchangeStore(new ForgetfulExchangeStore());
         interceptorRouter.setTransport(new HttpTransport());
 
-        interceptorRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), null, 0);
+        interceptorProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), null, 0);
         shadowingInterceptor = new ShadowingInterceptor();
         shadowingInterceptor.setTargets(List.of(new Target() {{
             setHost("localhost");
             setPort(3000);
         }}));
-        interceptorRule.setInterceptors(List.of(
+        interceptorProxy.setInterceptors(List.of(
                 shadowingInterceptor,
                 new SetHeaderInterceptor() {{
                     setName("foo");
@@ -96,7 +87,7 @@ class ShadowingInterceptorTest {
                 new ReturnInterceptor()
         ));
 
-        interceptorRouter.getRuleManager().addProxyAndOpenPortIfNew(interceptorRule);
+        interceptorRouter.getRuleManager().addProxyAndOpenPortIfNew(interceptorProxy);
         interceptorRouter.init();
         interceptorRouter.start();
 
@@ -105,12 +96,12 @@ class ShadowingInterceptorTest {
         shadowingRouter.setExchangeStore(new ForgetfulExchangeStore());
         shadowingRouter.setTransport(new HttpTransport());
 
-        shadowingRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
+        shadowingProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
         returnInterceptorMock = Mockito.spy(new ReturnInterceptor());
         returnInterceptorMock.setStatusCode(200);
-        shadowingRule.setInterceptors(List.of(returnInterceptorMock));
+        shadowingProxy.setInterceptors(List.of(returnInterceptorMock));
 
-        shadowingRouter.getRuleManager().addProxyAndOpenPortIfNew(shadowingRule);
+        shadowingRouter.getRuleManager().addProxyAndOpenPortIfNew(shadowingProxy);
         shadowingRouter.init();
         shadowingRouter.start();
     }
@@ -151,7 +142,7 @@ class ShadowingInterceptorTest {
         assertNotNull(exc);
         assertEquals("POST", exc.getRequest().getMethod());
         assertEquals("/foo", exc.getRequest().getUri());
-        assertEquals("https://www.predic8.com:9000/foo", exc.getDestinations().get(0));
+        assertEquals("https://www.predic8.com:9000/foo", exc.getDestinations().getFirst());
         assertEquals(APPLICATION_JSON, exc.getRequest().getHeader().getContentType());
     }
 }

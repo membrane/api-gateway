@@ -34,8 +34,8 @@ public class ExclusiveMinMaxTest {
     OpenAPIValidator validator;
 
     @BeforeEach
-    void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/exclusive-min-max.yaml")), null, new OpenAPISpec());
+    void setUp() throws Exception {
+        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/exclusive-min-max.yaml")), new OpenAPISpec());
         validator = new OpenAPIValidator(new URIFactory(), apiRecord);
     }
 

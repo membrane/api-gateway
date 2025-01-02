@@ -24,9 +24,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.StatisticCollector;
-import com.predic8.membrane.core.rules.TimeCollector;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,12 +117,12 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private void buildPrometheusStyleResponse(Context ctx) {
         ctx.resetAll();
         ctx.reset();
-        for (Rule r : router.getRuleManager().getRules()) {
+        for (Proxy r : router.getRuleManager().getRules()) {
             if (!ctx.seenRules.add(prometheusCompatibleName(r.getName()))) {
                 // the prometheus format is not allowed to contain the same metric more than once
                 if (issuedDuplicateRuleNameWarning)
                     continue;
-                LOG.warn("The prometheus interceptor detected the same rule name more than once: " + r.getName());
+                LOG.warn("The prometheus interceptor detected the same rule name more than once: {}",r.getName());
                 issuedDuplicateRuleNameWarning = true;
                 continue;
             }
@@ -134,9 +132,11 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             buildActive(ctx, r);
 
             if (r.isActive()) {
-                SSLContext sslib = r.getSslInboundContext();
-                if (sslib != null)
-                    buildSSLLines(ctx, r, sslib);
+                if (r instanceof SSLableProxy sp) {
+                    SSLContext sslib = sp.getSslInboundContext();
+                    if (sslib != null)
+                        buildSSLLines(ctx, r, sslib);
+                }
             }
 
             if (r instanceof APIProxy) {
@@ -155,9 +155,9 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         }
     }
 
-    private StringBuilder buildLine(StringBuilder sb, String ruleName, long value, Map<String, String> labels, String postFix) {
+    private void buildLine(StringBuilder sb, String ruleName, long value, Map<String, String> labels, String postFix) {
         String prometheusName = prometheusCompatibleName("membrane_" + postFix);
-        if (sb.length() == 0) {
+        if (sb.isEmpty()) {
             sb.append("# TYPE ");
             sb.append(prometheusName);
             sb.append(" counter\n");
@@ -176,10 +176,9 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         sb.append("} ");
         sb.append(value);
         sb.append("\n");
-        return sb;
     }
 
-    private void buildSSLLines(Context ctx, Rule r, SSLContext sslib) {
+    private void buildSSLLines(Context ctx, Proxy r, SSLContext sslib) {
         boolean hasKeyAndCert = sslib.hasKeyAndCertificate();
         buildSSLLine(ctx.s7, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_haskeyandcert", hasKeyAndCert ? 1 : 0);
         if (hasKeyAndCert) {
@@ -191,7 +190,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private void buildSSLLine(StringBuilder sb, String ruleName, String prometheusContextTypeName, String metric, long value) {
         String prometheusName = prometheusCompatibleName("membrane_" + metric);
 
-        if (sb.length() == 0) {
+        if (sb.isEmpty()) {
             sb.append("# TYPE ");
             sb.append(prometheusName);
             sb.append(" gauge\n");
@@ -213,15 +212,15 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         buildLine(ctx.s6, "duplicate_rule_name", hasDuplicateRuleName ? 1 : 0);
     }
 
-    private void buildActive(Context ctx, Rule r) {
-        if (ctx.s6.length() == 0)
+    private void buildActive(Context ctx, Proxy r) {
+        if (ctx.s6.isEmpty())
             ctx.s6.append("# TYPE membrane_rule_active gauge\n");
 
         buildBucketLine(ctx.s6, r.getName(), "rule_active", r.isActive() ? 1 : 0);
     }
 
-    private void buildBuckets(Context ctx, Rule rule) {
-        rule.getStatisticCollector().getTimeStatisticsByStatusCodeRange().forEach((code, tc) -> tc.getTrackedTimes().forEach((name, tt) -> {
+    private void buildBuckets(Context ctx, Proxy proxy) {
+        proxy.getStatisticCollector().getTimeStatisticsByStatusCodeRange().forEach((code, tc) -> tc.getTrackedTimes().forEach((name, tt) -> {
             if (tt.isEmpty())
                 return;
 
@@ -230,20 +229,20 @@ public class PrometheusInterceptor extends AbstractInterceptor {
                 if (le.equals("SUM") || le.equals("COUNT"))
                     return;
 
-                buildBucketLine(sb, rule.getName(), code, le, count, name);
+                buildBucketLine(sb, proxy.getName(), code, le, count, name);
             });
-            buildBucketLine(sb, rule.getName(), code, name + "_sum", tt.get("SUM"));
-            buildBucketLine(sb, rule.getName(), code,name + "_count", tt.get("COUNT"));
+            buildBucketLine(sb, proxy.getName(), code, name + "_sum", tt.get("SUM"));
+            buildBucketLine(sb, proxy.getName(), code, name + "_count", tt.get("COUNT"));
         }));
     }
 
-    private void buildStatuscodeLines(Context ctx, Rule rule) {
-        rule.getStatisticCollector().getStatisticsByStatusCodes().forEach((key, value) -> {
-            buildLine(ctx.s1, rule.getName(), value.getCount(), "code", key, "count");
-            buildLine(ctx.s2, rule.getName(), value.getGoodCount(), "code", key, "good_count");
-            buildLine(ctx.s3, rule.getName(), value.getGoodTotalTime(), "code", key, "good_time");
-            buildLine(ctx.s4, rule.getName(), value.getGoodTotalBytesSent(), "code", key, "good_bytes_req_body");
-            buildLine(ctx.s5, rule.getName(), value.getGoodTotalBytesReceived(), "code", key, "good_bytes_res_body");
+    private void buildStatuscodeLines(Context ctx, Proxy proxy) {
+        proxy.getStatisticCollector().getStatisticsByStatusCodes().forEach((key, value) -> {
+            buildLine(ctx.s1, proxy.getName(), value.getCount(), "code", key, "count");
+            buildLine(ctx.s2, proxy.getName(), value.getGoodCount(), "code", key, "good_count");
+            buildLine(ctx.s3, proxy.getName(), value.getGoodTotalTime(), "code", key, "good_time");
+            buildLine(ctx.s4, proxy.getName(), value.getGoodTotalBytesSent(), "code", key, "good_bytes_req_body");
+            buildLine(ctx.s5, proxy.getName(), value.getGoodTotalBytesReceived(), "code", key, "good_bytes_res_body");
         });
     }
 
@@ -282,7 +281,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     private void buildBucketLine(StringBuilder sb, String ruleName, int code, String le, long valueCount, String infix) {
         String prometheusName = prometheusCompatibleName("membrane_" + infix + "_bucket");
-        if (sb.length() == 0) {
+        if (sb.isEmpty()) {
             sb.append("# TYPE ");
             sb.append(prometheusName);
             sb.append(" histogram\n");
@@ -304,9 +303,9 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     /**
      * see <a href="https://prometheus.io/docs/instrumenting/exposition_formats/">Exposition Formats</a> .
      */
-    private StringBuilder buildLine(StringBuilder sb, String ruleName, long value, String labelName, int labelValue, String postFix) {
+    private void buildLine(StringBuilder sb, String ruleName, long value, String labelName, int labelValue, String postFix) {
         String prometheusName = prometheusCompatibleName("membrane_" + postFix);
-        if (sb.length() == 0) {
+        if (sb.isEmpty()) {
             sb.append("# TYPE ");
             sb.append(prometheusName);
             sb.append(" counter\n");
@@ -322,7 +321,6 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         sb.append("\"} ");
         sb.append(value);
         sb.append("\n");
-        return sb;
     }
 
     ConcurrentHashMap<String, String> names = new ConcurrentHashMap<>();

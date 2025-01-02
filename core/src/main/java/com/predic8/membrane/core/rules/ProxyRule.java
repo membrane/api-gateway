@@ -14,10 +14,7 @@
 
 package com.predic8.membrane.core.rules;
 
-import org.apache.commons.lang3.StringUtils;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 
 /**
  * @description
@@ -25,7 +22,7 @@ import com.predic8.membrane.annot.MCElement;
  * @topic 2. Proxies
  */
 @MCElement(name="proxy")
-public class ProxyRule extends AbstractProxy {
+public class ProxyRule extends SSLableProxy {
 
 	public static final String ELEMENT_NAME = "proxy";
 
@@ -37,26 +34,4 @@ public class ProxyRule extends AbstractProxy {
 		super(ruleKey);
 	}
 
-	@Override
-	public String getName() {
-		return StringUtils.defaultIfEmpty(name, getKey().toString());
-	}
-
-	public int getPort() {
-		return key.getPort();
-	}
-
-	@MCAttribute
-	public void setPort(int port) {
-		((ProxyRuleKey)key).setPort(port);
-	}
-
-	public String getIp() {
-		return key.getIp();
-	}
-
-	@MCAttribute
-	public void setIp(String ip) {
-		key.setIp(ip);
-	}
 }

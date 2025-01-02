@@ -29,7 +29,7 @@ public class OverwritePathInternalRoutingTest extends AbstractInternalServiceRou
         api(api -> {
             api.setKey(new ServiceProxyKey("*","*",null,2000));
             api.add(A);
-            api.setTargetURL("service://a/overwritten-path");
+            api.getTarget().setUrl("service://a/overwritten-path");
         });
 
         api(api -> {

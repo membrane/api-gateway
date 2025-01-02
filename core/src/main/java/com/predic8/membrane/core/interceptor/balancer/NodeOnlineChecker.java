@@ -15,26 +15,20 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.joda.time.*;
+import org.slf4j.*;
+
 import java.net.*;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import org.joda.time.DateTime;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 @MCElement(name = "nodeOnlineChecker")
 public class NodeOnlineChecker {
@@ -52,7 +46,7 @@ public class NodeOnlineChecker {
         client = router.getHttpClientFactory().createClient(null);
     }
 
-    private class BadNode {
+    private static class BadNode {
         private Node node;
         private AtomicInteger failsOn5XX = new AtomicInteger(0);
         private HashSet<Cluster> nodeClusters = new HashSet<>();
@@ -125,14 +119,14 @@ public class NodeOnlineChecker {
 
     }
 
-    private static Logger log = LoggerFactory.getLogger(NodeOnlineChecker.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(NodeOnlineChecker.class.getName());
     LoadBalancingInterceptor lbi;
     ConcurrentHashMap<String, BadNode> badNodesForDestinations = new ConcurrentHashMap<>();
-    HashSet<BadNode> offlineNodes = new HashSet<>();
+    private final HashSet<BadNode> offlineNodes = new HashSet<>();
     private int retryTimeInSeconds = -1;
     private int nodeCounterLimit5XX = 10;
     private int pingTimeoutInSeconds = 1;
-    private DateTime lastCheck = DateTime.now();
+    private final DateTime lastCheck = DateTime.now();
 
     private HttpClient client;
 
@@ -182,8 +176,10 @@ public class NodeOnlineChecker {
         BadNode badNode = new BadNode(getNodeFromExchange(exc, destination));
         try {
             badNode.protocol = new URL(getDestinationAsString(exc, destination)).getProtocol();
-            if(exc.getRule().getSslOutboundContext() != null){
-                badNode.setSslProvider(exc.getRule().getSslOutboundContext());
+            if(exc.getProxy() instanceof SSLableProxy sp) {
+                if (sp.isOutboundSSL()) {
+                    badNode.setSslProvider(sp.getSslOutboundContext());
+                }
             }
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
@@ -219,13 +215,11 @@ public class NodeOnlineChecker {
     }
 
     private URL getUrlObjectFromDestination(Exchange exc, int destination) {
-        String url = getDestinationAsString(exc, destination);
-        URL u = null;
         try {
-            u = new URL(url);
+            return new URL(getDestinationAsString(exc, destination));
         } catch (MalformedURLException e) {
         }
-        return u;
+        return null;
     }
     public void putNodesBackUp() {
         if(retryTimeInSeconds < 0) {
@@ -258,7 +252,7 @@ public class NodeOnlineChecker {
         ArrayList<BadNode> onlineNodes = new ArrayList<>();
 
         for(BadNode node : offlineNodes){
-            URL url = null;
+            URL url;
             try {
                 url = new URL(node.getProtocol(),node.getNode().getHost(), node.getNode().getPort(), "");
             } catch (MalformedURLException ignored) {

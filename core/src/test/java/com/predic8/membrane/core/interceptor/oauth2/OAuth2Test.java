@@ -13,33 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.jwt.Jwks;
-import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
-import com.predic8.membrane.core.interceptor.misc.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
-import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import org.json.JSONObject;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.jwt.*;
+import com.predic8.membrane.core.interceptor.misc.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.json.*;
+import org.junit.jupiter.api.*;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.regex.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,10 +38,10 @@ class OAuth2Test {
     static Router router;
     static Router router2;
 
-    static Rule oAuth2ServerRule;
+    static ServiceProxy oAuth2ServerProxy;
     static OAuth2AuthorizationServerInterceptor oAuth2ASI;
 
-    static Rule jwtAuthRule;
+    static ServiceProxy jwtAuthProxy;
     static JwtAuthInterceptor jwtAuthInterceptor;
 
     static String clientId = "abc";
@@ -65,12 +54,12 @@ class OAuth2Test {
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
 
-        oAuth2ServerRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), null, 0);
+        oAuth2ServerProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), null, 0);
         oAuth2ASI = createOAuth2AuthServerInterceptor();
-        oAuth2ServerRule.setInterceptors(List.of(oAuth2ASI));
+        oAuth2ServerProxy.setInterceptors(List.of(oAuth2ASI));
 
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(oAuth2ServerRule);
+        router.getRuleManager().addProxyAndOpenPortIfNew(oAuth2ServerProxy);
         router.init();
         router.start();
 
@@ -79,15 +68,15 @@ class OAuth2Test {
         router2.setExchangeStore(new ForgetfulExchangeStore());
         router2.setTransport(new HttpTransport());
 
-        jwtAuthRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
+        jwtAuthProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
         jwtAuthInterceptor = createJwtAuthInterceptor();
 
-        jwtAuthRule.setInterceptors(List.of(
+        jwtAuthProxy.setInterceptors(List.of(
                 jwtAuthInterceptor,
                 new StaticInterceptor(){{setTextTemplate("{\"success\": \"true\"}");}},
                 new ReturnInterceptor()));
 
-        router2.getRuleManager().addProxyAndOpenPortIfNew(jwtAuthRule);
+        router2.getRuleManager().addProxyAndOpenPortIfNew(jwtAuthProxy);
         router2.init();
         router2.start();
     }

@@ -22,7 +22,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
@@ -121,12 +121,12 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	public String getBasePath() {
-		Rule rule = getRule();
-		if (rule == null)
+		Proxy proxy = getProxy();
+		if (proxy == null)
 			return "";
-		if (rule.getKey().getPath() == null || rule.getKey().isPathRegExp())
+		if (proxy.getKey().getPath() == null || proxy.getKey().isPathRegExp())
 			return "";
-		return rule.getKey().getPath();
+		return proxy.getKey().getPath();
 	}
 
 	@Override

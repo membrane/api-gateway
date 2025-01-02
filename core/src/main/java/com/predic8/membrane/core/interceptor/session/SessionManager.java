@@ -22,7 +22,8 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.rules.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.Header.COOKIE;
+import static java.util.stream.Collectors.toMap;
 
 @SuppressWarnings("unused")
 public abstract class SessionManager {
@@ -59,16 +61,15 @@ public abstract class SessionManager {
     protected boolean secure = false;
     protected boolean sessionCookie = false;
 
-    Cache<String,String> cookieExpireCache = CacheBuilder.newBuilder()
+    protected final Cache<String,String> cookieExpireCache = CacheBuilder.newBuilder()
             .maximumSize(10000)
             .expireAfterWrite(Duration.ofSeconds(10))
             .build();
 
     private void initIssuer(Exchange exc) {
-        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
-        boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
-        issuer = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
-        RuleKey key = exc.getRule().getKey();
+        issuer = OAuth2Util.getPublicURL(exc);
+
+        RuleKey key = exc.getProxy().getKey();
         if (!key.isPathRegExp() && key.getPath() != null)
             issuer += key.getPath();
         normalizePublicURL();
@@ -279,22 +280,18 @@ public abstract class SessionManager {
         return validCookiesAsListOfMaps
                 .stream()
                 .flatMap(map -> map.entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
     }
 
     private Map<String,Map<String, Object>> convertValidCookiesToAttributes(Exchange exc) {
         return getCookies(exc)
                 .filter(this::isValidCookieForThisSessionManager)
-                .collect(Collectors.toMap(cookie -> cookie, this::cookieValueToAttributes, (c1, c2) -> c1));
+                .collect(toMap(cookie -> cookie, this::cookieValueToAttributes, (c1, c2) -> c1));
     }
 
     @NotNull
     public Session getSession(Exchange exc) {
-        Optional<Session> sessionFromExchange = getSessionFromExchange(exc);
-        if(sessionFromExchange.isPresent()) // have to do it like this and not with .orElse because getSessionFromManager would be called unnecessarily (overwriting session property)
-            return sessionFromExchange.get();
-
-        return getSessionFromManager(exc);
+        return getSessionFromExchange(exc).orElseGet(() -> getSessionFromManager(exc));
     }
 
     private Session getSessionFromManager(Exchange exc) {
@@ -323,7 +320,10 @@ public abstract class SessionManager {
     }
 
     private boolean needsSecureAttribute(Exchange exc) {
-        return exc.getRule().getSslInboundContext() != null || secure;
+        if (!(exc.getProxy() instanceof SSLableProxy sp)) {
+            return secure;
+        }
+        return sp.isInboundSSL() || secure;
     }
 
     public List<String> createInvalidationAttributes(Exchange exc) {

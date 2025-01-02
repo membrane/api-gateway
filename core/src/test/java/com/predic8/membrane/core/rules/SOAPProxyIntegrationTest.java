@@ -32,11 +32,11 @@ public class SOAPProxyIntegrationTest {
 
 	@BeforeAll
 	public static void setup() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
-		rule.getInterceptors().add(new SampleSoapServiceInterceptor());
+		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
+		proxy.getInterceptors().add(new SampleSoapServiceInterceptor());
 
 		targetRouter = new HttpRouter();
-		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(proxy);
 		targetRouter.init();
 	}
 

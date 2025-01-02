@@ -14,24 +14,16 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.TerminateException;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.Response.ResponseBuilder;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-import com.predic8.membrane.core.transport.http.Connection;
-import com.predic8.membrane.core.util.HttpUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.rules.Proxy;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import java.net.*;
+import java.util.*;
 
 public class Exchange extends AbstractExchange {
 
@@ -96,7 +88,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void blockRequestIfNeeded() throws TerminateException {
-		if (getRule().isBlockRequest()) {
+		if (getProxy().isBlockRequest()) {
 			synchronized (getRequest()) {
 				setStopped();
 				block(getRequest());
@@ -105,7 +97,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void blockResponseIfNeeded() throws TerminateException {
-		if (getRule().isBlockResponse()) {
+		if (getProxy().isBlockResponse()) {
 			synchronized (getResponse()) {
 				setStopped();
 				block(getResponse());
@@ -158,7 +150,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void collectStatistics() {
-		rule.getStatisticCollector().collect(this);
+		proxy.getStatisticCollector().collect(this);
 	}
 
 	/**
@@ -178,21 +170,6 @@ public class Exchange extends AbstractExchange {
 			}
 		}
 		return getOriginalRequestUri();
-	}
-
-	// @TODO Do we really need that
-	public Outcome echo() throws IOException {
-		ResponseBuilder builder = Response.ok();
-		byte[] content = getRequest().getBody().getContent();
-		builder.body(content);
-		String contentType = getRequest().getHeader().getContentType();
-		if (contentType != null)
-			builder.header(CONTENT_TYPE, contentType);
-		String contentEncoding = getRequest().getHeader().getContentEncoding();
-		if (contentEncoding != null)
-			builder.header(CONTENT_ENCODING, contentEncoding);
-		setResponse(builder.build());
-		return RETURN;
 	}
 
 	public Map<String, String> getStringProperties() {
@@ -263,7 +240,10 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public String getInboundProtocol() {
-		if (getRule().getSslInboundContext() == null)
+		Proxy rule = getProxy();
+		if (!(rule instanceof SSLableProxy sp))
+			return "http";
+		if (sp.getSslInboundContext() == null)
 			return "http";
 		else
 			return "https";

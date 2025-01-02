@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerJwtTokenGenerator;
-import com.predic8.membrane.core.rules.NullRule;
+import com.predic8.membrane.core.rules.NullProxy;
 
 import java.io.IOException;
 
@@ -39,9 +39,9 @@ public class OAuth2TestUtil {
         return jsonGen.getJson();
     }
 
-    public static void makeExchangeValid(Exchange exc) throws Exception {
+    public static void makeExchangeValid(Exchange exc) {
         exc.setOriginalRequestUri(exc.getRequest().getUri());
-        exc.setRule(new NullRule());
+        exc.setRule(new NullProxy());
     }
 
     public static void useJWTForAccessTokensAndRefreshTokens(OAuth2AuthorizationServerInterceptor oasi) {

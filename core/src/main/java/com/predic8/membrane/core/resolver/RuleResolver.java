@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Proxy;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 
 import java.io.*;
@@ -38,15 +39,15 @@ public class RuleResolver implements SchemaResolver {
     @Override
     public InputStream resolve(String url) {
         String ruleName = url.substring(8).split("/")[0];
-        Rule rule = router.getRuleManager().getRuleByName(ruleName);
+        Proxy proxy = router.getRuleManager().getRuleByName(ruleName);
 
-        if (rule == null)
+        if (proxy == null)
             throw new RuntimeException("Rule with name '" + ruleName + "' not found");
 
-        if (!rule.isActive())
+        if (!proxy.isActive())
             throw new RuntimeException("Rule with name '" + ruleName + "' not active");
 
-        if (!(rule instanceof AbstractProxy p))
+        if (!(proxy instanceof AbstractProxy p))
             throw new RuntimeException("Rule with name '" + ruleName + "' is not of type AbstractProxy");
         FlowController interceptorFlowController = new FlowController();
         try {

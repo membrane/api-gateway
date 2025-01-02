@@ -80,20 +80,20 @@ public class UnavailableSoapProxyTest {
 	private void test() {
 		r.start();
 
-		List<Rule> rules = r.getRuleManager().getRules();
-		assertEquals(1, rules.size());
-		assertFalse(rules.get(0).isActive());
+		List<Proxy> proxies = r.getRuleManager().getRules();
+		assertEquals(1, proxies.size());
+		assertFalse(proxies.getFirst().isActive());
 		r.tryReinitialization();
 
-		rules = r.getRuleManager().getRules();
-		assertEquals(1, rules.size());
-		assertFalse(rules.get(0).isActive());
+		proxies = r.getRuleManager().getRules();
+		assertEquals(1, proxies.size());
+		assertFalse(proxies.getFirst().isActive());
 		r2.start();
 		r.tryReinitialization();
 
-		rules = r.getRuleManager().getRules();
-		assertEquals(1, rules.size());
-		assertTrue(rules.get(0).isActive());
+		proxies = r.getRuleManager().getRules();
+		assertEquals(1, proxies.size());
+		assertTrue(proxies.getFirst().isActive());
 	}
 
 	@Test

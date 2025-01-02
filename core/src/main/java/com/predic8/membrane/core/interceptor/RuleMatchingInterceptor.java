@@ -42,12 +42,12 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) {
-		if (exc.getRule() != null ) return CONTINUE;
+		if (exc.getProxy() != null ) return CONTINUE;
 
-		Rule rule = getRule(exc);
-		assignRule(exc, rule);
+		Proxy proxy = getRule(exc);
+		assignRule(exc, proxy);
 
-		if (rule instanceof NullRule) {
+		if (proxy instanceof NullProxy) {
 			// Do not log. 404 is too common
             exc.setResponse(ProblemDetails.user(router.isProduction())
                     .statusCode(404)
@@ -58,20 +58,23 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			return ABORT;
 		}
 
-		if (xForwardedForEnabled && (rule instanceof AbstractServiceProxy))
+		if (xForwardedForEnabled && (proxy instanceof AbstractServiceProxy))
 			insertXForwardedFor(exc);
 
 		return CONTINUE;
 	}
 
-	public static void assignRule(Exchange exc, Rule rule) {
-		exc.setRule(rule);
-		if(exc.getRule().getSslOutboundContext() != null){
-			exc.setProperty(SSL_CONTEXT, exc.getRule().getSslOutboundContext());
+	public static void assignRule(Exchange exc, Proxy proxy) {
+		exc.setRule(proxy);
+		if (!(proxy instanceof SSLableProxy sp))
+			return;
+
+		if(sp.isOutboundSSL()){
+			exc.setProperty(SSL_CONTEXT, sp.getSslOutboundContext());
 		}
 	}
 
-	private Rule getRule(Exchange exc) {
+	private Proxy getRule(Exchange exc) {
 		return router.getRuleManager().getMatchingRule(exc);
 	}
 
@@ -121,7 +124,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		if (getXForwardedProto(exc) != null )
 			return getXForwardedProto(exc);
 
-		return exc.getRule().getSslInboundContext() != null ? "https" : "http";
+		return exc.getProxy().getProtocol();
 	}
 
 	private String getXForwardedFor(AbstractExchange exc) {
